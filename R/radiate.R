@@ -72,10 +72,11 @@ radiate <- function(
           legend.background = ggplot2::element_rect(fill='transparent'), #transparent legend bg
           legend.box.background = ggplot2::element_rect(fill='transparent') #transparent legend panel
   ) -> g
-
+  # Add facets
   if(is.null(group1)==FALSE){
      g <- g + ggplot2::facet_wrap(.~get(group1),ncol=ncols,strip.position="top")
   }
+  # Add track paths
   if(is.null(group2)==TRUE){
     g <- g + ggplot2::geom_path(data = data,
                                 mapping = ggplot2::aes(
@@ -91,6 +92,5 @@ radiate <- function(
                          colour = eval(str2lang(paste0('.data$',group2)))
                        ))
   }
-
   return(g)
 }
