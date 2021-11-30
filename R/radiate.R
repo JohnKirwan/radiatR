@@ -43,10 +43,10 @@ if(ticks==TRUE){tick_df <- data.frame(
              x=circ2*cos(seq(0,2*pi,0.05)),y=circ2*sin(seq(0,2*pi,0.05))) +
     ggplot2::annotate("path", color="black",linetype="dashed",
              x=circ1*cos(seq(0,2*pi,0.05)),y=circ1*sin(seq(0,2*pi,0.05))) +
-    ggplot2::annotate("text", x= .8, y= .8, label=paste0('45',"\U248"))  +
-    ggplot2::annotate("text", x= .8, y=-.8, label=paste0('135',"\U248")) +
-    ggplot2::annotate("text", x=-.8, y=-.8, label=paste0('225',"\U248")) +
-    ggplot2::annotate("text", x=-.8, y= .8, label=paste0('315',"\U248")) +
+    ggplot2::annotate("text", x= .8, y= .8, label=paste0('45', "\U00B0"))  +
+    ggplot2::annotate("text", x= .8, y=-.8, label=paste0('135',"\U00B0")) +
+    ggplot2::annotate("text", x=-.8, y=-.8, label=paste0('225',"\U00B0")) +
+    ggplot2::annotate("text", x=-.8, y= .8, label=paste0('315',"\U00B0")) +
     ggplot2::geom_segment(
       data=tick_df,
       mapping = ggplot2::aes(
