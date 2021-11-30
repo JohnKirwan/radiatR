@@ -44,9 +44,7 @@ radiate <- function(
       mapping = ggplot2::aes(
       x       = .data$rel_x,
       y       = .data$rel_y,
-      #group   = .data$id,
       group  = eval(str2lang(paste0('.data$',group2))),
-      #rlang::data_sym(rlang::as_name(group2)),
       colour = eval(str2lang(paste0('.data$',group2)))
       )) +
   ggplot2::annotate("path",colour="black",linetype="dashed",
