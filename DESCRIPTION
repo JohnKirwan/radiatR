@@ -6,6 +6,13 @@ Author: John D. Kirwan
 Maintainer: The package maintainer <john@jkirwan.org>
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
+Depends: R (>= 4.1.0)
+Imports: 
+    rlang,
+    ggplot2
+Suggests: 
+    circular
+RoxygenNote: 7.1.2
