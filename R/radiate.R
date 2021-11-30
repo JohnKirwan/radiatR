@@ -28,10 +28,6 @@ radiate <- function(
   if(is.null(circ1)){circ1=0.1}
   if(is.null(circ2)){circ2=0.2}
   if(is.null(ticks)){ticks=TRUE}
-  group2a <- rlang::as_name(group2)
-  #group2b <- paste0('.data$',group2a)
-  #grp2 <- paste0('.data$',as_name(group2))
-
   if(ticks==TRUE){tick_df <- data.frame(
     x=c(0,.66,.95,.66,0,-.66,-.95,-.66),
     y=c(.95,.66,0,-.66,-.95,-.66,0,.66),
@@ -40,13 +36,6 @@ radiate <- function(
   }
 
   ggplot2::ggplot(data=data) + ggplot2::coord_fixed() +
-  ggplot2::geom_path(data = data,
-      mapping = ggplot2::aes(
-      x       = .data$rel_x,
-      y       = .data$rel_y,
-      group  = eval(str2lang(paste0('.data$',group2))),
-      colour = eval(str2lang(paste0('.data$',group2)))
-      )) +
   ggplot2::annotate("path",colour="black",linetype="dashed",
                   x=cos(seq(0,2*pi,0.06)),y=sin(seq(0,2*pi,0.06)))+
   ggplot2::annotate("path",colour="blue", linetype="dashed",
@@ -87,5 +76,21 @@ radiate <- function(
   if(is.null(group1)==FALSE){
      g <- g + ggplot2::facet_wrap(.~get(group1),ncol=ncols,strip.position="top")
   }
+  if(is.null(group2)==TRUE){
+    g <- g + ggplot2::geom_path(data = data,
+                                mapping = ggplot2::aes(
+                                  x       = .data$rel_x,
+                                  y       = .data$rel_y )
+                                  )
+  } else{
+    g <- g + ggplot2::geom_path(data = data,
+                       mapping = ggplot2::aes(
+                         x       = .data$rel_x,
+                         y       = .data$rel_y,
+                         group  = eval(str2lang(paste0('.data$',group2))),
+                         colour = eval(str2lang(paste0('.data$',group2)))
+                       ))
+  }
+
   return(g)
 }
