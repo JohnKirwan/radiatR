@@ -6,7 +6,7 @@
 #   Check Package:             'Ctrl + Shift + E'
 #   Test Package:              'Ctrl + Shift + T'
 #
-#' Make ggplot object of tracks radiating from circle centre.
+#' Make ggplot object of tracks radiating from circle centre. Accepts a data frame with x and y coordinates of the points, and optional grouping variables.
 #'
 #' @param data A data frame containing a row for each tracked point.
 #' @param ncols The number of columns used by grid_wrap.
@@ -63,12 +63,13 @@ radiate <- function(
   ggplot2::theme(plot.title       = ggplot2::element_text(size=14,hjust=0.5),
                  strip.background = ggplot2::element_blank(),
                  strip.text       = ggplot2::element_blank()) +
-  ggplot2::theme(panel.background = ggplot2::element_rect(fill='transparent'), #transparent panel bg
-                 plot.background  = ggplot2::element_rect(fill='transparent', color=NA), #transparent plot bg
-                 panel.grid.major = ggplot2::element_blank(), #remove major gridlines
-                 panel.grid.minor = ggplot2::element_blank(), #remove minor gridlines
-                 legend.background= ggplot2::element_rect(fill='transparent'), #transparent legend bg
-                 legend.box.background = ggplot2::element_rect(fill='transparent') #transparent legend panel
+  ggplot2::theme(
+    panel.background = ggplot2::element_rect(fill='transparent'), #panel bg
+    plot.background  = ggplot2::element_rect(fill='transparent', color=NA),#plot bg
+    panel.grid.major = ggplot2::element_blank(), #remove major gridlines
+    panel.grid.minor = ggplot2::element_blank(), #remove minor gridlines
+    legend.background= ggplot2::element_rect(fill='transparent'),# legend bg
+    legend.box.background = ggplot2::element_rect(fill='transparent')# legend panel
   ) -> g
   # Add facets
   if(is.null(group1)==FALSE){
@@ -114,3 +115,9 @@ radiate <- function(
   }
   return(g)
 }
+
+# For Mean Resultant Length
+#geom_spoke(data=headings_summ[
+#  headings_summ$obstacle %in% obstruct & headings_summ$arc %in% arc_angs,],
+#  aes(x=0,y=0,group=arc,angle=mu_r,radius=R),
+#  size=1.3,colour="black",arrow=arrow(length=unit(.2,"cm")))+
