@@ -11,7 +11,11 @@ radiate(
   circ2 = NULL,
   group1 = NULL,
   group2 = NULL,
-  ticks = NULL
+  ticks = NULL,
+  degrees = NULL,
+  legend = NULL,
+  xlab = NULL,
+  ylab = NULL
 )
 }
 \arguments{
@@ -28,6 +32,14 @@ radiate(
 \item{group2}{Grouping variable within data used within panel.}
 
 \item{ticks}{Logical indicating whether ticks are drawn at perimeter.}
+
+\item{degrees}{Logical indicating whether to mark degrees at panel diagonals. Defaults to TRUE.}
+
+\item{legend}{Logical indicating whether to show legend. Defaults to FALSE.}
+
+\item{xlab}{Text to include as plot x label. Defaults to none.}
+
+\item{ylab}{Text to include as plot y label. Defaults to none.}
 }
 \value{
 A ggplot2 graphical object.

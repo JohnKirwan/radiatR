@@ -14,5 +14,7 @@ Imports:
     rlang,
     ggplot2
 Suggests: 
+    testthat (>= 3.0.0),
     circular
 RoxygenNote: 7.1.2
+Config/testthat/edition: 3
