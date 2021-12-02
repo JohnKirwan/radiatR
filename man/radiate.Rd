@@ -2,7 +2,7 @@
 % Please edit documentation in R/radiate.R
 \name{radiate}
 \alias{radiate}
-\title{Make ggplot object of tracks radiating from circle centre.}
+\title{Make ggplot object of tracks radiating from circle centre. Accepts a data frame with x and y coordinates of the points, and optional grouping variables.}
 \usage{
 radiate(
   data,
@@ -15,7 +15,8 @@ radiate(
   degrees = NULL,
   legend = NULL,
   xlab = NULL,
-  ylab = NULL
+  ylab = NULL,
+  axes = NULL
 )
 }
 \arguments{
@@ -40,14 +41,16 @@ radiate(
 \item{xlab}{Text to include as plot x label. Defaults to none.}
 
 \item{ylab}{Text to include as plot y label. Defaults to none.}
+
+\item{axes}{Logical indicating whether panel axes should be shown.}
 }
 \value{
 A ggplot2 graphical object.
 }
 \description{
-Make ggplot object of tracks radiating from circle centre.
+Make ggplot object of tracks radiating from circle centre. Accepts a data frame with x and y coordinates of the points, and optional grouping variables.
 }
 \examples{
 utils::data(urchin_tracks)
-radiate(urchin_tracks, ncols=3, group1 = "arc")
+radiate(urchin_tracks, ncols=3, group1 = "arc", group2 = "id")
 }

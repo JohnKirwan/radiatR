@@ -19,6 +19,7 @@
 #' @param legend Logical indicating whether to show legend. Defaults to FALSE.
 #' @param xlab Text to include as plot x label. Defaults to none.
 #' @param ylab Text to include as plot y label. Defaults to none.
+#' @param axes Logical indicating whether panel axes should be shown.
 #' @return A ggplot2 graphical object.
 #' @examples
 #' utils::data(urchin_tracks)
@@ -28,19 +29,15 @@
 #
 radiate <- function(
   data,ncols=NULL,circ1=NULL,circ2=NULL,group1=NULL,group2=NULL,ticks=NULL,
-  degrees=NULL,legend=NULL,xlab=NULL,ylab=NULL){
-  if(is.null(ncols)){ncols=2}
+  degrees=NULL,legend=NULL,title=NULL,xlab=NULL,ylab=NULL,axes=NULL){
+  if(is.null(ncols)){ncols=3}
   if(is.null(circ1)){circ1=0.1}
   if(is.null(circ2)){circ2=0.2}
   if(is.null(ticks)){ticks=TRUE}
   if(is.null(degrees)){degrees=TRUE}
   if(is.null(legend)){legend=FALSE}
-  if(ticks==TRUE){tick_df <- data.frame(
-    x=c(0,.66,.95,.66,0,-.66,-.95,-.66),
-    y=c(.95,.66,0,-.66,-.95,-.66,0,.66),
-    xend=c(0,.74,1.05,.74,0,-.74,-1.05,-.74),
-    yend=c(1.05,.74,0,-.74,-1.05,-.74,0,.74))
-  }
+  if(is.null(axes)){axes=FALSE}
+
   ggplot2::ggplot(data=data) + ggplot2::coord_fixed() +
   ggplot2::annotate("path",colour="black",linetype="dashed",
                   x=cos(seq(0,2*pi,0.06)),y=sin(seq(0,2*pi,0.06)))+
@@ -48,28 +45,14 @@ radiate <- function(
              x=circ2*cos(seq(0,2*pi,0.05)),y=circ2*sin(seq(0,2*pi,0.05))) +
   ggplot2::annotate("path", color="black",linetype="dashed",
              x=circ1*cos(seq(0,2*pi,0.05)),y=circ1*sin(seq(0,2*pi,0.05))) +
-  ggplot2::geom_segment(
-      data=tick_df,
-      mapping = ggplot2::aes(
-        x     =.data$x,
-        y     =.data$y,
-        xend  =.data$xend,
-        yend  =.data$yend),
-      inherit.aes=F) +
-  ggplot2::theme_classic() +
-  ggplot2::theme(axis.line =ggplot2::element_blank(),
-                 axis.ticks=ggplot2::element_blank(),
-                 axis.text =ggplot2::element_blank()) +
-  ggplot2::theme(plot.title       = ggplot2::element_text(size=14,hjust=0.5),
-                 strip.background = ggplot2::element_blank(),
-                 strip.text       = ggplot2::element_blank()) +
+  ggplot2::theme(
+    strip.background = ggplot2::element_blank(),
+    strip.text       = ggplot2::element_blank()) +
   ggplot2::theme(
     panel.background = ggplot2::element_rect(fill='transparent'), #panel bg
     plot.background  = ggplot2::element_rect(fill='transparent', color=NA),#plot bg
     panel.grid.major = ggplot2::element_blank(), #remove major gridlines
-    panel.grid.minor = ggplot2::element_blank(), #remove minor gridlines
-    legend.background= ggplot2::element_rect(fill='transparent'),# legend bg
-    legend.box.background = ggplot2::element_rect(fill='transparent')# legend panel
+    panel.grid.minor = ggplot2::element_blank() #remove minor gridlines
   ) -> g
   # Add facets
   if(is.null(group1)==FALSE){
@@ -104,14 +87,41 @@ radiate <- function(
     ggplot2::annotate("text", x=-.85, y=-.85, label=paste0('225',"\U00B0")) +
     ggplot2::annotate("text", x=-.85, y= .85, label=paste0('315',"\U00B0"))
   }
+  # Add ticks to periphery
+  if(ticks==TRUE){tick_df <- data.frame(
+    x=c(0,.66,.95,.66,0,-.66,-.95,-.66),y=c(.95,.66,0,-.66,-.95,-.66,0,.66),
+    xend=c(0,.74,1.05,.74,0,-.74,-1.05,-.74),yend=c(1.05,.74,0,-.74,-1.05,-.74,0,.74))
+    g <- g +
+      ggplot2::geom_segment(
+        data=tick_df,
+        mapping = ggplot2::aes(
+          x     =.data$x,
+          y     =.data$y,
+          xend  =.data$xend,
+          yend  =.data$yend),
+        inherit.aes=F)
+    }
   if(legend==FALSE){
-    g <- g + ggplot2::theme(legend.position="none")
-  }
-  if(is.null(xlab)){g <- g + ggplot2::xlab('')
-  }else{g <- g + ggplot2::xlab(as.character(xlab))
-  }
+    g <- g + ggplot2::theme(
+      legend.position="none",
+      legend.background= ggplot2::element_rect(fill='transparent'),
+      legend.box.background = ggplot2::element_rect(fill='transparent'))
+    }
+  if(axes==FALSE){
+    g <- g + ggplot2::theme(
+      axis.line =ggplot2::element_blank(),
+      axis.ticks=ggplot2::element_blank(),
+      axis.text =ggplot2::element_blank())
+    }
+    if(is.null(xlab)){g <- g + ggplot2::xlab('')
+    }else{g <- g + ggplot2::xlab(as.character(xlab))
+    }
   if(is.null(ylab)){g <- g + ggplot2::ylab('')
   }else{g <- g + ggplot2::ylab(as.character(ylab))
+  }
+  if(is.null(title)){g <- g + ggplot2::plot.title('')
+  }else{g <- g + ggplot2::ggtitle(as.character(title)) +
+    ggplot2::theme(plot.title = ggplot2::element_text(size=14,hjust=0.5))
   }
   return(g)
 }
