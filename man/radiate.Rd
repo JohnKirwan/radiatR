@@ -14,6 +14,7 @@ radiate(
   ticks = NULL,
   degrees = NULL,
   legend = NULL,
+  title = NULL,
   xlab = NULL,
   ylab = NULL,
   axes = NULL
