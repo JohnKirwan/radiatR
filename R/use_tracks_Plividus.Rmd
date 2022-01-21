@@ -20,10 +20,7 @@ library('tidyr')
 library('tibble')
 library('circular')
 library('ggforce')
-#library('ggrepel')
-#library('RColorBrewer')
 ```
-
 
 Uses stimulus centre and point opposite stimulus centre as markers for the unit circle on arena. Gets complete track from each set of trials, makes a plot and determines headings.
 
@@ -54,7 +51,7 @@ radius_criterion   <- "first_past" # "nearest"
 stim_mid_criterion <- "mid_inflection" #"dark_trough" # #"dark_trough" #
 ```
 
-Make functions to bring angle values back into the fold
+Make functions to bring angle values back into the fold.
 
 ```{r}
 rad2clock   <- function(theta){theta<-(pi/2)-theta
@@ -70,12 +67,7 @@ rad_unclock <- function(theta){theta<-(pi/2)-theta
 rad_shepherd <- function(theta){  if(theta < -pi){theta <- theta + 2*pi
 } else{ if(theta > pi){theta <- theta - 2*pi} }
   return(theta)}
-
-rad_shepherd_clock <- function(theta){  if(theta < 0){theta <- theta + 2*pi
-} else{ if(theta > 2*pi){theta <- theta - 2*pi} }
-  return(theta)}
 ```
-
 
 #### Bring in data frame with video names and trial order
 
@@ -112,7 +104,7 @@ file_tbl  %<>% tidyr::unite("cond",c(type,arc,obstacle),remove=FALSE, sep="_")
 ```
 
 Are there any (predicted) track names not represented in the file list?
- i.e. landmark files without a matching track file
+ i.e. landmark files without a matching track file.
 
 ```{r}
 if(any(!file_tbl$track %in% list.files(normalizePath(folder),recursive = TRUE))){
@@ -136,6 +128,7 @@ animal_track = read.delim(normalizePath(paste0(folder,'/',file_tbl$track[1])),
 names(animal_track) <- c("frame","x","y")
 head(animal_track)
 ```
+
 Try with first file to get the landmarks
 
 ```{r}
@@ -147,6 +140,7 @@ head(landmarks)
 if(length(landmarks$x) %% 2 == 1){ warning("Odd number of landmarks!") }
 num_trials = length(landmarks$x)/2 
 ```
+
 ## The files 
 
 With the assignment pipe *%<>%*, the variable is assigned to itself at the end. The radius of the circle based on the stimulus distance is *r_px*. atan2 outputs angles in radians according to the unit cicle from -pi to pi.
@@ -220,7 +214,7 @@ get_trial_limits <- function(landmarks,animal_track,file_tbl,vid_num){ #,
 }
 ```
 
-Find each trial and get data, (i) frame no (ii - v) coords for centre and stimulus (vi) last frame, (vii - viii) normalised stimulus centre (ix) theta in rads (anticlock, zero=0) (x) rho in pixels 
+Find each trial and get data, (i) frame no (ii - v) coords for centre and stimulus (vi) last frame, (vii - viii) normalized stimulus centre (ix) theta in rads (anticlock, zero=0) (x) rho in pixels 
 
 Get limits from first video 
 

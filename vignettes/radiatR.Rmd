@@ -1,0 +1,41 @@
+---
+title: "radiatR"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{radiatR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(radiatR)
+```
+
+The package radiatR plots tracks in circular space. 
+
+Track data can be loaded using import_tracks(). Here we load example data.
+
+```{r}
+track_list <- import_tracks(normalizePath('../data'))
+```
+
+The data frame contains the names of the three videos. We need to import a table describing these videos. 
+
+```{r}
+file_info <- import_info(normalizePath('../data/headings.csv')) #,'stimulus','degrees'
+```
+
+The data frame contains a row for each trial. The function also checks if there is a mismatch between this data table and the track files. 
+
+```{r}
+head(file_info)
+```
+
+

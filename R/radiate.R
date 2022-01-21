@@ -119,7 +119,7 @@ radiate <- function(
   if(is.null(ylab)){g <- g + ggplot2::ylab('')
   }else{g <- g + ggplot2::ylab(as.character(ylab))
   }
-  if(is.null(title)){g <- g + ggplot2::plot.title('')
+  if(is.null(title)){g <- g + ggplot2::theme(plot.title=ggplot2::element_blank())
   }else{g <- g + ggplot2::ggtitle(as.character(title)) +
     ggplot2::theme(plot.title = ggplot2::element_text(size=14,hjust=0.5))
   }
