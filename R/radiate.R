@@ -1,11 +1,5 @@
 # radiate
 #
-# This is a function named 'radiate'
-# You can learn more about package authoring with RStudio at:
-#   Install Package:           'Ctrl + Shift + B'
-#   Check Package:             'Ctrl + Shift + E'
-#   Test Package:              'Ctrl + Shift + T'
-#
 #' Make ggplot object of tracks radiating from circle centre. Accepts a data frame with x and y coordinates of the points, and optional grouping variables.
 #'
 #' @param data A data frame containing a row for each tracked point.
