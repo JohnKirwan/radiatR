@@ -4,17 +4,16 @@
 \alias{import_info}
 \title{Import landmark coordinates from text files}
 \usage{
-import_info(filename)
+import_info(filename, ...)
 }
 \arguments{
 \item{filename}{The directory in which to look for the landmark files. Defaults to the current working directory.}
 }
 \value{
 A dataframe of file names.
+#examples
+#import_tracks(dir=data)
 }
 \description{
 Import landmark coordinates from text files
-}
-\examples{
-import_tracks(dir=data)
 }

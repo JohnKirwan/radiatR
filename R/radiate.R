@@ -11,6 +11,7 @@
 #' @param ticks Logical indicating whether ticks are drawn at perimeter.
 #' @param degrees Logical indicating whether to mark degrees at panel diagonals. Defaults to TRUE.
 #' @param legend Logical indicating whether to show legend. Defaults to FALSE.
+#' @param title Plot title
 #' @param xlab Text to include as plot x label. Defaults to none.
 #' @param ylab Text to include as plot y label. Defaults to none.
 #' @param axes Logical indicating whether panel axes should be shown.

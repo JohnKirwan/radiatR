@@ -12,7 +12,8 @@ LazyData: true
 Depends: R (>= 4.1.0)
 Imports: 
     rlang,
-    ggplot2
+    ggplot2,
+    tibble
 Suggests: 
     testthat (>= 3.0.0),
     circular,

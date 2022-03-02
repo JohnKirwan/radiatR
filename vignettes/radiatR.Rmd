@@ -29,8 +29,15 @@ track_list <- import_tracks(normalizePath('../data'))
 The data frame contains the names of the three videos. We need to import a table describing these videos. 
 
 ```{r}
-file_info <- import_info(normalizePath('../data/headings.csv')) #,'stimulus','degrees'
+#file_info <- import_info(normalizePath('../data/headings.csv')) #,'stimulus','degrees'
 ```
+
+For now
+
+```{r}
+file_info <- headings
+```
+
 
 The data frame contains a row for each trial. The function also checks if there is a mismatch between this data table and the track files. 
 

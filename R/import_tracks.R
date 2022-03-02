@@ -6,9 +6,10 @@
 #' @param landmark_suffix The suffix of files containing landmark coordinates.
 #' @param track_suffix The suffix of files containing track coordinates.
 #' @return A dataframe of file names.
-#' @examples
-#' import_tracks(dir=data)
+#' #examples
+#' #import_tracks(dir=data)
 #' @export
+#' @importFrom tibble tibble
 #
 import_tracks <- function(dir,landmark_suffix=NULL,track_suffix=NULL){
   if(is.null(dir)){dir=getwd()}

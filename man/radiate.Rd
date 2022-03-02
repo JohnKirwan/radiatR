@@ -39,6 +39,8 @@ radiate(
 
 \item{legend}{Logical indicating whether to show legend. Defaults to FALSE.}
 
+\item{title}{Plot title}
+
 \item{xlab}{Text to include as plot x label. Defaults to none.}
 
 \item{ylab}{Text to include as plot y label. Defaults to none.}

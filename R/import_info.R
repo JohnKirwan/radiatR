@@ -4,8 +4,9 @@
 #'
 #' @param filename The directory in which to look for the landmark files. Defaults to the current working directory.
 #' @return A dataframe of file names.
-#' @examples
-#' import_tracks(dir=data)
+#' #examples
+#' #import_tracks(dir=data)
+#' @importFrom utils read.csv
 #' @export
 #
 import_info <- function(filename,...){

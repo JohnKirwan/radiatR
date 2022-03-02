@@ -15,10 +15,9 @@ import_tracks(dir, landmark_suffix = NULL, track_suffix = NULL)
 }
 \value{
 A dataframe of file names.
+#examples
+#import_tracks(dir=data)
 }
 \description{
 Import landmark coordinates from text files
-}
-\examples{
-import_tracks(dir=data)
 }
