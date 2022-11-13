@@ -1,6 +1,6 @@
 Package: radiatR
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Plot Tracks in Circular Space
 Version: 0.1.0
 Author: John D. Kirwan
 Maintainer: The package maintainer <john@jkirwan.org>
@@ -19,6 +19,6 @@ Suggests:
     circular,
     knitr,
     rmarkdown
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.2
 Config/testthat/edition: 3
 VignetteBuilder: knitr

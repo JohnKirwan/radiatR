@@ -17,4 +17,3 @@ rad2clock   <- function(theta){theta<-(pi/2)-theta
   return(theta)
 }
 
-

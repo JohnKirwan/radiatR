@@ -15,4 +15,3 @@ rad_shepherd <- function(theta){  if(theta < -pi){theta <- theta + 2*pi
 } else{ if(theta > pi){theta <- theta - 2*pi} }
   return(theta)}
 
-

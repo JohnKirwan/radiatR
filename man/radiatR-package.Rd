@@ -4,7 +4,7 @@
 \name{radiatR-package}
 \alias{radiatR}
 \alias{radiatR-package}
-\title{radiatR: What the Package Does (Title Case)}
+\title{radiatR: Plot Tracks in Circular Space}
 \description{
 More about what it does (maybe more than one line) Use four spaces when indenting paragraphs within the Description.
 }

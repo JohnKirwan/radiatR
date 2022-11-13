@@ -2,6 +2,7 @@
 
 export(import_info)
 export(import_tracks)
+export(load_tracks)
 export(rad2clock)
 export(rad_shepherd)
 export(rad_shepherd_clock)
