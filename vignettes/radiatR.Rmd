@@ -14,11 +14,12 @@ knitr::opts_chunk$set(
 )
 ```
 
+
 ```{r setup}
 library(radiatR)
 ```
 
-The package radiatR plots tracks in circular space. 
+The package radiatR plots tracks in circular space.
 
 Track data can be loaded using import_tracks(). Here we load example data.
 
@@ -27,11 +28,12 @@ track_dir   <- normalizePath(
   "C:\\Documents\\2022\\P_lividus_adult_vision\\tracking")
 
 track_list <- import_tracks(track_dir,
-  landmark_suffix='_point01.txt',track_suffix='_point02.txt')
+  landmark_suffix = '_point01.txt',
+  track_suffix = '_point02.txt')
 head(track_list)
 ```
 
-The data frame contains the names of the three videos. We need to import a table describing these videos. 
+The data frame contains the names of the three videos. We need to import a table describing these videos.
 
 ```{r}
 #file_info <- import_info(normalizePath('../data/headings.csv')) #,'stimulus','degrees'
@@ -39,15 +41,13 @@ The data frame contains the names of the three videos. We need to import a table
 #head(file_info)
 ```
 
-
-The data frame contains a row for each trial. The function also checks if there is a mismatch between this data table and the track files. 
-
+The data frame contains a row for each trial. The function also checks if there is a mismatch between this data table and the track files.
 
 ```{r}
 trial_details     <- read.csv('../data/trials_list.csv')
-trial_details$obstacle[trial_details$obstacle=="none"]    <-"unobst"
-trial_details$obstacle[trial_details$obstacle=="marbles"] <-"obst"
-trial_details |> tidyr::unite("cond",c(type,arc,obstacle),remove=FALSE,sep="_") -> trial_details
+trial_details$obstacle[trial_details$obstacle == "none"]    <- "unobst"
+trial_details$obstacle[trial_details$obstacle == "marbles"] <- "obst"
+trial_details |> tidyr::unite("cond",c(type,arc,obstacle),remove=FALSE,sep = "_") -> trial_details
 tail(trial_details)
 ```
 
@@ -57,9 +57,7 @@ tracks <- load_tracks(track_list, trial_details, track_dir)
 tail(tracks)
 ```
 
-
 ```{r}
-radiate(headings,ncols=NULL,circ1=NULL,circ2=NULL,group1=NULL,group2=NULL,ticks=NULL,
+radiate(headings,ncols=NULL,circ1 = NULL,circ2 = NULL,group1 = NULL,group2 = NULL,ticks = NULL,
   degrees=NULL,legend=NULL,title=NULL,xlab=NULL,ylab=NULL,axes=NULL)
 ```
-
