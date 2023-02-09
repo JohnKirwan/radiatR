@@ -7,31 +7,35 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+### Set up
+
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
-)
+  comment = "#>" )
 ```
 
 ```{r setup}
-library(radiatR)
+library('dplyr')
+library('ggplot2')
+library('purrr')
+library('ggnewscale')
+library('radiatR')
 ```
 
-The package radiatR plots tracks in circular space. 
+The package radiatR plots tracks in circular space.
 
 Track data can be loaded using import_tracks(). Here we load example data.
 
 ```{r}
-track_dir   <- normalizePath(
-  "C:\\Documents\\2022\\P_lividus_adult_vision\\tracking")
+track_dir   <- normalizePath( "C:\\Documents\\2022\\P_lividus_adult_vision\\tracking")
 
 track_list <- import_tracks(track_dir,
   landmark_suffix='_point01.txt',track_suffix='_point02.txt')
 head(track_list)
 ```
 
-The data frame contains the names of the three videos. We need to import a table describing these videos. 
+The data frame contains the names of the three videos. We need to import a table describing these videos.
 
 ```{r}
 #file_info <- import_info(normalizePath('../data/headings.csv')) #,'stimulus','degrees'
@@ -39,9 +43,7 @@ The data frame contains the names of the three videos. We need to import a table
 #head(file_info)
 ```
 
-
-The data frame contains a row for each trial. The function also checks if there is a mismatch between this data table and the track files. 
-
+The data frame contains a row for each trial. The function also checks if there is a mismatch between this data table and the track files.
 
 ```{r}
 trial_details     <- read.csv('../data/trials_list.csv')
@@ -52,14 +54,386 @@ tail(trial_details)
 ```
 
 ```{r}
-# file_tbl, track_list_df,track_dir
-tracks <- load_tracks(track_list, trial_details, track_dir)
-tail(tracks)
+#> file_tbl, track_list_df,track_dir
+file_tbl <- load_tracks(track_list, trial_details, track_dir)
+tail(file_tbl)
 ```
 
+Add part above to put trial, cond, type, arc, obstacle into file_tbl and therefore to trackz_tbl and trialz.
 
 ```{r}
-radiate(headings,ncols=NULL,circ1=NULL,circ2=NULL,group1=NULL,group2=NULL,ticks=NULL,
-  degrees=NULL,legend=NULL,title=NULL,xlab=NULL,ylab=NULL,axes=NULL)
+#> which track rows shares vid name with df
+file_tbl$arc  <- rep(0,dim(file_tbl)[1])
+file_tbl$type <- as.character(rep("",dim(file_tbl)[1]))
+file_tbl$obstacle <- as.character(rep("",dim(file_tbl)[1]))
+file_tbl$id       <- as.character(rep("",dim(file_tbl)[1]))
+tail(file_tbl)
 ```
 
+```{r}
+i=1
+while(i <= dim(trial_details)[1]){
+ file_tbl$arc [which(file_tbl$basename==trial_details$file[i])] <- trial_details$arc[i]
+ file_tbl$type[which(file_tbl$basename==trial_details$file[i])] <- trial_details$type[i]
+ file_tbl$obstacle[which(file_tbl$basename==trial_details$file[i])] <- trial_details$obstacle[i]
+ file_tbl$id[which(file_tbl$basename==trial_details$file[i])] <- trial_details$id[i]
+ i=i+1      
+ }
+
+file_tbl |> tidyr::unite("cond",c(type,arc,obstacle),remove=FALSE, sep="_")
+```
+
+Are there any (predicted) track names not represented in the file list? i.e. landmark files without a matching track file
+
+```{r}
+if(any(!file_tbl$track %in% list.files((track_dir),recursive = TRUE))){
+  stop(print(paste0("The following track file is missing:",
+    file_tbl$track[which(!file_tbl$track %in% list.files(
+      (track_dir),recursive = TRUE))])))                            }
+```
+
+```{r}
+#> are any track files in the file list without a match in the landmark files?
+if(any(!list.files((track_dir),recursive = TRUE)[grep('*point02.txt$',
+    list.files((track_dir),recursive = TRUE))] %in% file_tbl$track)){
+  stop(print(paste0("The following track file lacks a counterpart:",
+    list.files((track_dir),recursive = TRUE)[grep('*point02.txt$',
+    list.files((track_dir),recursive = TRUE))])))  
+}
+```
+
+```{r}
+landmarks = read.delim(normalizePath(paste0(track_dir,'/',file_tbl$landmark[1])),
+                          sep="\t", header = FALSE)[,1:3]
+names(landmarks) <- c("frame","x","y")
+
+if(length(landmarks$x) %% 2 == 1){ warning("Odd number of landmarks!") }
+num_trials = length(landmarks$x)/2 
+```
+
+```{r}
+animal_track = read.delim(normalizePath(paste0(track_dir,'/',file_tbl$track[1])),
+                          sep="\t", header = FALSE)[,1:3]
+names(animal_track) <- c("frame","x","y")
+```
+
+### Trial Limits
+
+```{r}
+trial_limits <- get_trial_limits(landmarks,animal_track,file_tbl,1)
+trial_limits
+```
+
+### Get Tracked Object Position
+
+```{r}
+trial_track_list <- get_tracked_object_pos(trial_limits,animal_track,
+                                           circ0=.1,circ1=.2)
+trackz           <- trial_track_list[[1]]
+tail(trackz[[1]])
+```
+
+```{r}
+trial_limits      <- trial_track_list[[2]]
+tail(trial_limits)
+```
+
+### Get All Object Positions
+
+```{r}
+trackz_n_limits <- get_all_object_pos(
+                      landmarks,animal_track,file_tbl,track_dir)
+all_trackz       <- trackz_n_limits[[1]]
+tail(all_trackz[[1]])
+```
+
+```{r}
+trialz <- trackz_n_limits[[2]]
+tail(trialz)
+```
+
+### Find cases where radii don't differ
+
+```{r}
+idx <- which(trialz$x0==trialz$x1 & trialz$y0==trialz$y1)
+if(length(idx) > 0){warning(paste("Trials",idx,"have errors!"))}
+print(paste(length(all_trackz),"tracks post culling"))
+print(paste(dim(trialz)[1],"trials in limits list post culling"))
+```
+
+Make tibble for tracks rather than list
+
+```{r}
+trackz_tbl <- purrr::map_dfr(all_trackz, ~ .x)
+tail(trackz_tbl)
+```
+
+### Line-Circle Intercept
+
+Works when vector intersects circle.
+
+```{r}
+intz <- purrr::pmap_dfr(list(
+          trialz$x0,trialz$y0,trialz$x1,trialz$y1), line_circle_intercept)
+```
+
+```{r}
+trialz$x_int    <- intz$x_int
+trialz$y_int    <- intz$y_int
+
+trialz$abs_rads <- mapply(atan2,trialz$y_int,trialz$x_int)
+abs_rads_clock  <- mapply(rad2clock,trialz$abs_rads) # convert to be 0 to 2*pi, clockwise   
+clockstim       <- mapply(rad2clock,trialz$stim_theta) # stim theta to clock
+rel_radians     <- mapply(rad_shepherd_clock,abs_rads_clock - clockstim) #herd in clock
+trialz$radians  <- mapply(rad_unclock,rel_radians) # back to unit circle
+
+# degree clockwise variable for the trials and tracks
+trialz$degs     <- (180/pi)*mapply(rad2clock,trialz$radians)
+trackz_tbl$degs <- (180/pi)*mapply(rad2clock,trackz_tbl$rel_theta)
+```
+
+### Make variables for *successful* orientation to target sector
+
+Then, plug these into the tracks table.
+
+```{r}
+trialz$succ4 <- rep(FALSE,dim(trialz)[1])
+trialz$succ5 <- rep(FALSE,dim(trialz)[1])
+trialz$succ6 <- rep(FALSE,dim(trialz)[1])
+trialz$succ4[trialz$degs<=45|trialz$degs>315]<-TRUE
+trialz$succ5[trialz$degs<=36|trialz$degs>324]<-TRUE
+trialz$succ6[trialz$degs<=30|trialz$degs>330]<-TRUE
+
+trackz_tbl$succ4 <- rep(FALSE,dim(trackz_tbl)[1])
+trackz_tbl$succ5 <- rep(FALSE,dim(trackz_tbl)[1])
+trackz_tbl$succ6 <- rep(FALSE,dim(trackz_tbl)[1])
+
+i = 1
+while(i <= dim(trialz)[1]){
+  trackz_tbl$succ4[trackz_tbl$vid_ord==trialz$vid_ord[i]] <- trialz$succ4[i]
+  trackz_tbl$succ5[trackz_tbl$vid_ord==trialz$vid_ord[i]] <- trialz$succ5[i]
+  trackz_tbl$succ6[trackz_tbl$vid_ord==trialz$vid_ord[i]] <- trialz$succ6[i]
+  i=i+1
+}
+```
+
+Temporary fix - remove observations with rho value greater than 1. Remove cases where there were more than 4 trials in the same video.
+
+```{r}
+trackz_tbl <- trackz_tbl[trackz_tbl$trans_rho <= 1,]
+trackz_tbl <- trackz_tbl[!trackz_tbl$order > 4,]
+trialz <- trialz[!trialz$order > 4,]
+```
+
+Check which trails are also in df
+
+```{r}
+# which track rows shares vid name with df
+trackz_tbl$arc  <- rep(0,dim(trackz_tbl)[1])
+trackz_tbl$type <- as.character(rep("",dim(trackz_tbl)[1]))
+trackz_tbl$obstacle <- as.character(rep("",dim(trackz_tbl)[1]))
+trackz_tbl$id <- as.character(rep("",dim(trackz_tbl)[1]))
+
+trialz$arc  <- rep(0,dim(trialz)[1])
+trialz$type <- as.character(rep("",dim(trialz)[1]))
+trialz$obstacle <- as.character(rep("",dim(trialz)[1]))
+```
+
+```{r}
+i=1
+while(i <= dim(trial_details)[1]){
+  trackz_tbl$arc [which(
+  trackz_tbl$video==trial_details$file[i])] <- trial_details$arc[i]
+  trackz_tbl$type[which(trackz_tbl$video==trial_details$file[i])] <- trial_details$type[i]
+  trackz_tbl$obstacle[which(trackz_tbl$video==trial_details$file[i])] <- trial_details$obstacle[i]
+  trackz_tbl$id[which(trackz_tbl$video==trial_details$file[i])] <- trial_details$id[i]
+  trialz$arc [which(trialz$video==trial_details$file[i])] <- trial_details$arc[i]
+  trialz$type[which(trialz$video==trial_details$file[i])] <- trial_details$type[i]
+  trialz$obstacle[which(trialz$video==trial_details$file[i])] <- trial_details$obstacle[i]
+  i=i+1
+}
+```
+
+```{r}
+trackz_tbl |> tidyr::unite("cond",c(type,arc,obstacle),remove=F, sep=" ") -> trackz_tbl
+trialz     |> tidyr::unite("cond",c(type,arc,obstacle),remove=F, sep=" ") -> trialz
+```
+
+### Make variables for inner radius relative to the stimulus
+
+Make something close to stimulus relative versions of the inner circle intersects. Make angles +ve real and subtract the stimulus to get the relative angular position of the inner circle intersect. Then, turn into Cartesian coordinates.
+
+```{r}
+clockINtheta    <- mapply(rad2clock,atan2(trialz$y0,trialz$x0))
+clockstim       <- mapply(rad2clock,trialz$stim_theta)
+rel_circ0_theta <- mapply(rad_shepherd_clock,clockINtheta-clockstim)
+rel_circ0_theta <- mapply(rad_unclock,rel_circ0_theta) 
+trialz$rho0     <- sqrt(trialz$x0^2 + trialz$y0^2)
+trialz$rel_x0   <- trialz$rho0*cos(rel_circ0_theta)
+trialz$rel_y0   <- trialz$rho0*sin(rel_circ0_theta)
+```
+
+Make the arc width a factor. This doesn't seem to influence the plotting order and may be redundant.
+
+```{r}
+trackz_tbl <- within(trackz_tbl, cond <- factor(trackz_tbl$cond,levels=c(
+  'Herm 0 obst','Herm 15 obst','Herm 30 obst','Herm 45 obst','Herm 60 obst',
+  'Herm 150 obst','Herm 150 unobst')))
+```
+
+Make degree class circular
+
+```{r}
+# trialz$degs <- as.circular(trialz$degs,type="angles",
+#     units="degrees",zero=pi/2,rotation="clock",template= 'none',modulo='asis')
+```
+
+```{r}
+line_df <- data.frame(x= c(0,.66,.95,.66,0,-.66,-.95,-.66),y = c(.95,.66,0,-.66,-.95,-.66,0,.66),
+ xend = c(0,.74,1.05,.74,0,-.74,-1.05,-.74),
+ yend = c(1.05,.74,0,-.74,-1.05,-.74,0,.74) )
+```
+
+### Absolute position of tracks with regard to the arena (not the stimulus)
+
+```{r abs headings fig, fig.height = 9.5, fig.width = 7}
+how_many <- 150
+circ0 <- .1
+circ1 <- .2
+
+# geom_path is already facing up, without (pi/2)- , geom_point() is not
+trackz_tbl |> dplyr::filter(obstacle=="obst") |> 
+  ggplot() + coord_fixed() +
+  geom_path(aes(x=trans_x,y=trans_y,group=id,color=id),
+             alpha=.5, linewidth=.75) + 
+  geom_point(aes(x=trans_x, y=trans_y,group=id,color=id),
+             alpha=.05, size=.5) + 
+  facet_wrap(vars(arc),ncol=2) + # obstacle
+  annotate("path", color="orange",
+  x=0+1*cos(seq(0,2*pi,length.out=100)),y=0+1*sin(seq(0,2*pi,length.out=100))) +
+  annotate("path", color="blue",linetype="dashed",
+  x=0+circ1*cos(seq(0,2*pi,length.out=100)),
+  y=0+circ1*sin(seq(0,2*pi,length.out=100))) +
+  annotate("path", color="black",linetype="dashed",
+  x=0+circ0*cos(seq(0,2*pi,length.out=100)),
+  y=0+circ0*sin(seq(0,2*pi,length.out=100))) +
+  geom_point(data=trialz[
+    trialz$obstacle=="obst" & as.numeric(trialz$id) <= how_many,],   
+    aes(x=x_int,y=y_int,group=cond,color=id),
+             alpha=.1,size=6,shape=1) +
+  geom_text(data=trialz[
+    trialz$obstacle=="obst" & as.numeric(trialz$id) <= how_many,],
+   aes(x=x_int,y=y_int,color=id,label=id),alpha=1,size=3) +
+  geom_segment(data=trialz[
+    trialz$obstacle=="obst" & as.numeric(trialz$id) <= how_many,],
+   aes(x=x0,y=y0,xend=x_int,yend=y_int,alpha=0.5,colour=id)) +
+  geom_segment(data=line_df,aes(x=x,y=y,xend=xend,yend=yend),inherit.aes=F)+
+   xlab('') + ylab('') + theme_classic() + 
+  labs(title='')+#Plot tracks with obstacle relative to stimulus') +
+  theme(axis.line=element_blank(),axis.ticks=element_blank(),
+        axis.text=element_blank()) + 
+    theme(legend.position = "none") +
+  theme(panel.spacing = unit(.5, "cm")) +
+  theme(plot.title=element_text(size=14,hjust=0.5),#vjust=-62), 
+        strip.background=element_blank(),strip.text=element_blank()) +
+  theme(panel.background = element_rect(fill='transparent'), #transparent panel bg
+    plot.background = element_rect(fill='transparent', color=NA), #transparent plot bg
+    panel.grid.major = element_blank(), #remove major gridlines
+    panel.grid.minor = element_blank(), #remove minor gridlines
+    legend.background = element_rect(fill='transparent'), #transparent legend bg
+    legend.box.background = element_rect(fill='transparent')
+  )
+```
+
+### Obstructed all absolute headings powerpoint
+
+```{r rel headings all Obst abs sheet fig, fig.height = 5.625, fig.width = 10}
+
+library(circular)
+#trackz_tbl$arc <- factor(trackz_tbl$arc)
+trial_details$id <- factor(trial_details$id)
+obstruct <- "obst"#c("unobst","obst") #"obst" #
+arc_angs <- c(0:150)
+
+linetypez <- c("FALSE"="dashed","TRUE"="solid")
+
+trackz_tbl |>  filter(obstacle %in% obstruct & arc %in% arc_angs) |> 
+ggplot() + coord_fixed() + 
+ #facet_wrap(vars(arc,obstacle),ncol=3,strip.position="top")+
+ annotate("path",colour="black",x=cos(seq(0,2*pi,0.06)),y=sin(seq(0,2*pi,0.06)))+
+ new_scale("color")+  
+ geom_path(aes(x=trans_x, y=trans_y,color=factor(arc),group=vid_ord))+ 
+ theme(legend.position = "none") +
+ annotate("path", color="blue",linetype="dashed",
+  x=circ1*cos(seq(0,2*pi,0.05)),
+  y=circ1*sin(seq(0,2*pi,0.05))) +
+ annotate("path", color="black",linetype="dashed",
+  x=circ0*cos(seq(0,2*pi,0.05)),y=circ0*sin(seq(0,2*pi,0.05))) +
+ #annotate("text",x=c(1.1,0,-1.1,0),y=c(0,1.1,0,-1.1),label=c("90","0","270","180"))+
+ #annotate("text", x=c(1.1,0),y=c(0,1.1),label=c("90","0")) +  
+ annotate("text", x= .8, y= .8, label=paste0('NW',""))  +  
+ annotate("text", x= 0, y= 1.1, label=paste0('W',""))  +  
+ annotate("text", x= .8, y=-.8, label=paste0('NE',"")) +  
+ annotate("text", x= 0, y= -1.1, label=paste0('E',""))  +  
+ annotate("text", x=-.8, y=-.8, label=paste0('SE',"")) +  
+ annotate("text", x= -1.1, y= 0, label=paste0('S',""))  +  
+ annotate("text", x=-.8, y= .8, label=paste0('SW',"")) +
+ annotate("text", x=1.1, y= 0, label=paste0('N',"")) +
+ geom_point(data=trialz[ # Stick on final relative headings
+  trialz$obstacle==obstruct & trialz$arc %in% arc_angs & as.numeric(trialz$id) <= how_many,],
+  aes(x=cos(abs_rads),y=sin(abs_rads),color=factor(arc)),size=2,shape=1) +
+  scale_shape_identity() +  
+  
+  directedness_arrow(trialz[trialz$obstacle %in% obstruct & trialz$arc %in% c(0:15),],color="grey",size=2) +
+  
+#  directedness_arrow(trialz[ trialz$obstacle %in% obstruct & trialz$arc %in% c(40:60),],color="black",size=2) +
+  
+ geom_segment(data=line_df,aes(x=x,y=y,xend=xend,yend=yend),inherit.aes=F) +
+  sparse_theme() 
+  
+  # xlab('') + ylab('') + theme_classic() + 
+  # labs(title='',color = "Width")+#Plot tracks with obstacle relative to stimulus') +
+  # theme(axis.line=element_blank(),axis.ticks=element_blank(),
+  #       axis.text=element_blank()) + 
+  # theme(panel.spacing = unit(.5, "cm")) +
+  # theme(plot.title=element_text(size=14,hjust=0.5),#vjust=-62), 
+  #       strip.background=element_blank(),strip.text=element_blank()) +
+  # theme(panel.background = element_rect(fill='transparent'), #transparent panel bg
+  #   plot.background = element_rect(fill='transparent', color=NA), #transparent plot bg
+  #   panel.grid.major = element_blank(), #remove major gridlines
+  #   panel.grid.minor = element_blank(), #remove minor gridlines
+  #   legend.background = element_rect(fill='transparent',color=NA), #transparent legend bg
+  #   legend.box.background = element_rect(fill='transparent',color=NA) #transparent legend panel
+  # )
+
+
+```
+
+```{r}
+radiate_plot <- function(data.frame,trans_x,trans_y,arc,vid_ord){
+  # if(is.null(xvar)){xvar=trans_x}
+  # if(is.null(yvar)){yvar=trans_y}
+  # if(is.null(colorvar)){xvar=arc}
+  # if(is.null(groupvar)){yvar=vid_ord}
+
+  ggplot() + coord_fixed() + 
+  annotate("path",color="black",
+           x=cos(seq(0,2*pi,0.06)),y=sin(seq(0,2*pi,0.06))) + 
+  ggnewscale::new_scale("color") + 
+  geom_path(aes(data=data.frame,
+                x=.data[[trans_x]],
+                y=.data[[trans_y]],
+                color=factor(.data[[arc]]),
+                group=data[[vid_ord]]
+                )) +
+  theme(legend.position = "none") 
+}
+```
+
+```{r}
+trackz_tbl |> dplyr::filter(obstacle %in% obstruct & arc %in% arc_angs) -> trackz_tbl2
+
+p <- radiate_plot(trackz_tbl2, trans_y, arc, vid_ord)
+
+plot(p)
+```
