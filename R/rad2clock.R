@@ -11,9 +11,9 @@
 #' mapply(rad2clock,a)
 #' @export
 #
-rad2clock   <- function(theta){theta<-(pi/2)-theta
-  if(theta < 0){theta <- theta + 2*pi
-  }else{ if(theta > 2*pi){theta <- theta - 2*pi} }
+rad2clock   <- function(theta){theta <- (pi/2) - theta
+  if (theta < 0) {theta <- theta + 2*pi
+  }else{ if (theta > 2*pi) {theta <- theta - 2*pi} }
   return(theta)
 }
 

@@ -10,13 +10,13 @@
 #' @export
 #
 import_info <- function(filename,...){
-  df <- read.csv(file=filename,header=TRUE)
+  df <- read.csv(file = filename,header = TRUE)
   x <- list(...)
-  if(!is.null(x)){
+  if (!is.null(x)) {
     df$cond <- do.call(paste,list(df[,unlist(x)]))
   }
-  if(any(!file_tbl$basename %in% df$file)){warning("Missing file")}
-  if(any(!df$file %in% file_tbl$basename)){warning("Missing file")}
+  if (any(!file_tbl$basename %in% df$file)) {warning("Missing file")}
+  if (any(!df$file %in% file_tbl$basename)) {warning("Missing file")}
 
   return(x)
 }
