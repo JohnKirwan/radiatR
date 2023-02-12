@@ -21,20 +21,28 @@ library('dplyr')
 library('ggplot2')
 library('purrr')
 library('ggnewscale')
-library('radiatR')
+library('ggplot2')
+library('dplyr')
+library('ggforce')
+library('ggrepel')
+library('ggnewscale')
+library(''radiatR'')
 ```
 
 The package radiatR plots tracks in circular space.
 
 Track data can be loaded using import_tracks(). Here we load example data.
 
+
 ```{r}
-track_dir   <- normalizePath( "C:\\Documents\\2022\\P_lividus_adult_vision\\tracking")
+path1 <- "../P_lividus_adult_vision/tracking"
+path2 <- "C:\\Users\\jkirwan\\source\\repos\\P_lividus_adult_vision\\tracking"
+
+track_dir   <- normalizePath(path2)
 
 track_list <- import_tracks(track_dir,
-  landmark_suffix = '_point01.txt',
-  track_suffix = '_point02.txt')
-head(track_list)
+  landmark_suffix = '_point01.txt', track_suffix = '_point02.txt')
+tail(track_list)
 ```
 
 The data frame contains the names of the three videos. We need to import a table describing these videos.
@@ -51,7 +59,8 @@ The data frame contains a row for each trial. The function also checks if there 
 trial_details     <- read.csv('../data/trials_list.csv')
 trial_details$obstacle[trial_details$obstacle == "none"]    <- "unobst"
 trial_details$obstacle[trial_details$obstacle == "marbles"] <- "obst"
-trial_details |> tidyr::unite("cond",c(type,arc,obstacle),remove=FALSE,sep = "_") -> trial_details
+trial_details |> 
+  tidyr::unite("cond", c(type,arc,obstacle),remove = FALSE,sep = "_") -> trial_details
 tail(trial_details)
 ```
 
@@ -141,6 +150,13 @@ tail(trial_limits)
 ```
 
 ```{r}
-radiate(headings,ncols=NULL,circ1 = NULL,circ2 = NULL,group1 = NULL,group2 = NULL,ticks = NULL,
-  degrees=NULL,legend=NULL,title=NULL,xlab=NULL,ylab=NULL,axes=NULL)
+
+```
+
+
+```{r}
+radiate(headings, ncols = NULL,circ1 = NULL,circ2 = NULL, 
+        group1 = NULL, group2 = NULL, ticks = NULL,
+  degrees = NULL,legend = NULL,
+  title = NULL,xlab = NULL,ylab = NULL,axes = NULL)
 ```
