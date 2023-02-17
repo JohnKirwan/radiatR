@@ -9,10 +9,10 @@ vignette: >
 
 ### Set up
 
-```{r, include = FALSE}
+```{r, include  =  FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>" )
+  collapse  =  TRUE,
+  comment  =  "#>" )
 ```
 
 
@@ -21,12 +21,9 @@ library('dplyr')
 library('ggplot2')
 library('purrr')
 library('ggnewscale')
-library('ggplot2')
-library('dplyr')
 library('ggforce')
 library('ggrepel')
-library('ggnewscale')
-library(''radiatR'')
+library('radiatR')
 ```
 
 The package radiatR plots tracks in circular space.
@@ -41,7 +38,7 @@ path2 <- "C:\\Users\\jkirwan\\source\\repos\\P_lividus_adult_vision\\tracking"
 track_dir   <- normalizePath(path2)
 
 track_list <- import_tracks(track_dir,
-  landmark_suffix = '_point01.txt', track_suffix = '_point02.txt')
+  landmark_suffix  =  '_point01.txt', track_suffix  =  '_point02.txt')
 tail(track_list)
 ```
 
@@ -57,10 +54,10 @@ The data frame contains a row for each trial. The function also checks if there 
 
 ```{r}
 trial_details     <- read.csv('../data/trials_list.csv')
-trial_details$obstacle[trial_details$obstacle == "none"]    <- "unobst"
+trial_details$obstacle[trial_details$obstacle ==  "none"]    <- "unobst"
 trial_details$obstacle[trial_details$obstacle == "marbles"] <- "obst"
 trial_details |> 
-  tidyr::unite("cond", c(type,arc,obstacle),remove = FALSE,sep = "_") -> trial_details
+  tidyr::unite("cond", c(type,arc,obstacle), remove = FALSE, sep = "_") -> trial_details
 tail(trial_details)
 ```
 
@@ -82,31 +79,31 @@ tail(file_tbl)
 ```
 
 ```{r}
-i=1
-while(i <= dim(trial_details)[1]){
- file_tbl$arc [which(file_tbl$basename==trial_details$file[i])] <- trial_details$arc[i]
- file_tbl$type[which(file_tbl$basename==trial_details$file[i])] <- trial_details$type[i]
- file_tbl$obstacle[which(file_tbl$basename==trial_details$file[i])] <- trial_details$obstacle[i]
- file_tbl$id[which(file_tbl$basename==trial_details$file[i])] <- trial_details$id[i]
- i=i+1      
+i = 1
+while(i <=  dim(trial_details)[1]){
+ file_tbl$arc [which(file_tbl$basename == trial_details$file[i])] <- trial_details$arc[i]
+ file_tbl$type[which(file_tbl$basename == trial_details$file[i])] <- trial_details$type[i]
+ file_tbl$obstacle[which(file_tbl$basename == trial_details$file[i])] <- trial_details$obstacle[i]
+ file_tbl$id[which(file_tbl$basename == trial_details$file[i])] <- trial_details$id[i]
+ i = i + 1      
  }
 
-file_tbl |> tidyr::unite("cond",c(type,arc,obstacle),remove=FALSE, sep="_")
+file_tbl |> tidyr::unite("cond",c(type,arc,obstacle),remove = FALSE, sep = "_")
 ```
 
 Are there any (predicted) track names not represented in the file list? i.e. landmark files without a matching track file
 
 ```{r}
-if(any(!file_tbl$track %in% list.files((track_dir),recursive = TRUE))){
+if (any(!file_tbl$track %in% list.files((track_dir), recursive = TRUE))) {
   stop(print(paste0("The following track file is missing:",
     file_tbl$track[which(!file_tbl$track %in% list.files(
-      (track_dir),recursive = TRUE))])))                            }
+      (track_dir),recursive = TRUE))])))  }
 ```
 
 ```{r}
 #> are any track files in the file list without a match in the landmark files?
-if(any(!list.files((track_dir),recursive = TRUE)[grep('*point02.txt$',
-    list.files((track_dir),recursive = TRUE))] %in% file_tbl$track)){
+if (any(!list.files((track_dir),recursive = TRUE)[grep('*point02.txt$',
+    list.files((track_dir),recursive = TRUE))] %in% file_tbl$track)) {
   stop(print(paste0("The following track file lacks a counterpart:",
     list.files((track_dir),recursive = TRUE)[grep('*point02.txt$',
     list.files((track_dir),recursive = TRUE))])))  
@@ -114,17 +111,17 @@ if(any(!list.files((track_dir),recursive = TRUE)[grep('*point02.txt$',
 ```
 
 ```{r}
-landmarks = read.delim(normalizePath(paste0(track_dir,'/',file_tbl$landmark[1])),
-                          sep="\t", header = FALSE)[,1:3]
+landmarks  =  read.delim(normalizePath(paste0(track_dir,'/',file_tbl$landmark[1])),
+                          sep = "\t", header  =  FALSE)[,1:3]
 names(landmarks) <- c("frame","x","y")
 
-if(length(landmarks$x) %% 2 == 1){ warning("Odd number of landmarks!") }
-num_trials = length(landmarks$x)/2 
+if (length(landmarks$x) %% 2 == 1) {warning("Odd number of landmarks!") }
+num_trials  =  length(landmarks$x)/2 
 ```
 
 ```{r}
-animal_track = read.delim(normalizePath(paste0(track_dir,'/',file_tbl$track[1])),
-                          sep="\t", header = FALSE)[,1:3]
+animal_track  =  read.delim(normalizePath(paste0(track_dir,'/',file_tbl$track[1])),
+                          sep = "\t", header = FALSE)[,1:3]
 names(animal_track) <- c("frame","x","y")
 ```
 
@@ -138,8 +135,8 @@ trial_limits
 ### Get Tracked Object Position
 
 ```{r}
-trial_track_list <- get_tracked_object_pos(trial_limits,animal_track,
-                                           circ0=.1,circ1=.2)
+trial_track_list <- get_tracked_object_pos(trial_limits, animal_track,
+                                           circ0  =  .1,circ1  =  .2)
 trackz           <- trial_track_list[[1]]
 tail(trackz[[1]])
 ```
@@ -150,13 +147,42 @@ tail(trial_limits)
 ```
 
 ```{r}
-
+radiate(trackz[[1]], ncols  =  NULL, circ1  =  NULL, circ2  =  NULL, 
+        group1  =  NULL, group2  =  NULL, ticks  =  NULL,
+  degrees  =  NULL,legend  =  NULL,
+  title  =  NULL, xlab  =  NULL,ylab  =  NULL,axes  =  NULL)
 ```
+
+```{r}
+trackz_n_limits <- get_all_object_pos(trial_limits, animal_track, file_tbl, track_dir)
+all_tracks_df       <- trackz_n_limits[[1]]
+tail(all_tracks_df)
+```                            
 
 
 ```{r}
-radiate(headings, ncols = NULL,circ1 = NULL,circ2 = NULL, 
-        group1 = NULL, group2 = NULL, ticks = NULL,
-  degrees = NULL,legend = NULL,
-  title = NULL,xlab = NULL,ylab = NULL,axes = NULL)
+trialz <- trackz_n_limits[[2]]
+tail(trialz)  
 ```
+
+Below can be left out for a wee bit. **This can be moved into the get_all_obj_pos functon**. 
+This has stopped working to remove those trials - that's OK as identifying them is more important.
+
+```{r}
+# idx <- which(trialz$x0 == trialz$x1 & trialz$y0 == trialz$y1)
+# if (length(idx) > 0) {warning(paste("Trials", idx, "have errors!"))}
+# #all_trackz[idx] <- NULL
+# ##### LEAVE OUT FOR MOMENT!
+# #trialz <- trialz[-c(idx),] 
+# ## something wrong with this line!
+# print(paste(length(all_trackz),"tracks post culling"))
+# print(paste(dim(trialz)[1],"trials in limits list post culling"))
+```
+
+```{r}
+radiate(all_tracks_df, ncols  =  NULL, circ1  =  NULL, circ2  =  NULL, 
+        group1  =  NULL, group2  =  trial_num, ticks  =  NULL,
+  degrees  =  NULL,legend  =  NULL,
+  title  =  NULL, xlab  =  NULL,ylab  =  NULL,axes  =  NULL)
+```
+

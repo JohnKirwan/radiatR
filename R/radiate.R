@@ -71,8 +71,8 @@ radiate <- function(
       mapping = ggplot2::aes(
         x       = .data$rel_x,
         y       = .data$rel_y,
-        group   = eval(str2lang(paste0('.data$',group2))),
-        colour  = eval(str2lang(paste0('.data$',group2)))
+        group   = eval(str2lang(paste0('.data$', group2))),
+        colour  = eval(str2lang(paste0('.data$', group2)))
         )
       )
   }
