@@ -15,7 +15,6 @@ knitr::opts_chunk$set(
   comment = "#>" )
 ```
 
-
 ```{r setup}
 library('dplyr')
 library('ggplot2')
@@ -26,19 +25,18 @@ library('dplyr')
 library('ggforce')
 library('ggrepel')
 library('ggnewscale')
-library(''radiatR'')
+library('radiatR')
 ```
 
 The package radiatR plots tracks in circular space.
 
 Track data can be loaded using import_tracks(). Here we load example data.
 
-
 ```{r}
-path1 <- "../P_lividus_adult_vision/tracking"
+path1 <- "../tracking"
 path2 <- "C:\\Users\\jkirwan\\source\\repos\\P_lividus_adult_vision\\tracking"
 
-track_dir   <- normalizePath(path2)
+track_dir   <- normalizePath(path1)
 
 track_list <- import_tracks(track_dir,
   landmark_suffix = '_point01.txt', track_suffix = '_point02.txt')
@@ -147,10 +145,6 @@ tail(trackz[[1]])
 ```{r}
 trial_limits      <- trial_track_list[[2]]
 tail(trial_limits)
-```
-
-```{r}
-
 ```
 
 
