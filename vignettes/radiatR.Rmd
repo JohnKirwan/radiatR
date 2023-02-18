@@ -149,39 +149,39 @@ tail(trial_limits)
 radiate(trackz[[1]], ncols  =  NULL, circ1  =  NULL, circ2  =  NULL, 
         group1  =  NULL, group2  =  NULL, ticks  =  NULL,
   degrees  =  NULL,legend  =  NULL,
-  title  =  NULL, xlab  =  NULL,ylab  =  NULL,axes  =  NULL)
+  title  =  NULL, xlab  =  NULL, ylab  =  NULL, axes  =  NULL)
 ```
 
 ```{r}
 trackz_n_limits <- get_all_object_pos(trial_limits, animal_track, file_tbl, track_dir)
 all_tracks_df       <- trackz_n_limits[[1]]
-tail(all_tracks_df)
+trialz <- trackz_n_limits[[2]]
+tail(trialz)  
 ```                            
 
 
+
+
 ```{r}
-trialz <- trackz_n_limits[[2]]
-tail(trialz)  
+radiate(all_tracks_df, ncols = NULL,
+        circ1 = NULL, circ2 = NULL, 
+        group1 = NULL,
+        ticks = NULL, degrees = NULL, legend = NULL,
+        title = NULL, axes = NULL,
+        xlab = NULL, ylab = NULL, group2 = video)
 ```
 
-Below can be left out for a wee bit. **This can be moved into the get_all_obj_pos functon**. 
+
+Below can be left out for a wee bit. **This can be moved into the get_all_obj_pos function**. 
 This has stopped working to remove those trials - that's OK as identifying them is more important.
 
 ```{r}
-# idx <- which(trialz$x0 == trialz$x1 & trialz$y0 == trialz$y1)
-# if (length(idx) > 0) {warning(paste("Trials", idx, "have errors!"))}
-# #all_trackz[idx] <- NULL
-# ##### LEAVE OUT FOR MOMENT!
-# #trialz <- trialz[-c(idx),] 
-# ## something wrong with this line!
-# print(paste(length(all_trackz),"tracks post culling"))
-# print(paste(dim(trialz)[1],"trials in limits list post culling"))
+#idx <- which(trialz$x0 == trialz$x1 & trialz$y0 == trialz$y1)
+#if (length(idx) > 0) {warning(paste("Trials", idx, "have errors!"))}
+#all_trackz[idx] <- NULL
+##### LEAVE OUT FOR MOMENT!
+#trialz <- trialz[-c(idx),]
+## something wrong with this line!
+#print(paste(length(all_trackz),"tracks post culling"))
+#print(paste(dim(trialz)[1],"trials in limits list post culling"))
 ```
-
-```{r}
-radiate(all_tracks_df, ncols  =  NULL, circ1  =  NULL, circ2  =  NULL, 
-        group1  =  NULL, group2  =  trial_num, ticks  =  NULL,
-  degrees  =  NULL,legend  =  NULL,
-  title  =  NULL, xlab  =  NULL,ylab  =  NULL,axes  =  NULL)
-```
-

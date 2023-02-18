@@ -12,7 +12,7 @@
 #' @export
 #
 get_tracked_object_pos <- function(
-    trial_limits, animal_track,circ0=NULL, circ1 = NULL, radius_criterion = NULL){
+    trial_limits, animal_track, circ0 = NULL, circ1 = NULL, radius_criterion = NULL){
     #if(is.null(midpoint)) {midpoint="midpoint"}
     if (is.null(radius_criterion)) {radius_criterion = "first_past"}
     if (is.null(circ0)) {circ0 = .1}
@@ -57,7 +57,7 @@ get_tracked_object_pos <- function(
       XY$rel_y     <- XY$trans_rho*sin(XY$rel_theta)
       trackz[[i]]  <- XY
       # assign tracks less than 40% of arena to be empty
-      if (min(XY$trans_rho > .4)) {trackz[[i]] <- 
+      if (min(XY$trans_rho > .4)) {trackz[[i]] <-
         "Track starts too far from centre"
       warning(paste('Track starts too far from centre:'), XY$video[1])}
       if (any(XY$trans_rho > 1)) {
@@ -88,12 +88,14 @@ get_tracked_object_pos <- function(
         trial_limits$x1[i] <- XY$trans_x[which.min(abs(XY$trans_rho - circ1))] #.5
         trial_limits$y1[i] <- XY$trans_y[which.min(abs(XY$trans_rho - circ1))]
       }
+#
+#       if (is.null(trial_limits$x1) == FALSE & trial_limits$x0 == trial_limits$x1 & trial_limits$y0 == trial_limits$y1){
+#         print(paste0("Trial ",i," is unchanged post transform"))
+#       }
 
       i = i + 1
     }
     #trackz_tbl <- purrr::map_dfr(trackz, ~ .x)
-    
+
     return(list(trackz,trial_limits)) # norm to radius
   }
-
-

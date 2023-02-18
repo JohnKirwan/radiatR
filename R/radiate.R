@@ -23,10 +23,11 @@
 #' @export
 #
 radiate <- function(
-  data, ncols = NULL, 
-  circ1 = NULL, circ2 = NULL, group1 = NULL, group2 = NULL, ticks = NULL,
-  degrees = NULL, legend = NULL, title = NULL, 
-  xlab = NULL, ylab = NULL, axes = NULL){
+  data, ncols = NULL,
+  group1 = NULL, group2 = NULL,
+  circ1 = NULL, circ2 = NULL, ticks = NULL,
+  degrees = NULL, legend = NULL, title = NULL,
+  xlab = NULL, ylab = NULL, axes = NULL, ...){
   if (is.null(ncols)) {ncols = 3}
   if (is.null(circ1)) {circ1 = 0.1}
   if (is.null(circ2)) {circ2 = 0.2}
@@ -54,28 +55,23 @@ radiate <- function(
   # Add facets
   if (is.null(group1) == FALSE) {
      g <- g + ggplot2::facet_wrap(
-       .~get(group1), ncol = ncols,strip.position = "top") +
+       .~get({{group1}}), ncol = ncols,strip.position = "top") +
        ggplot2::theme(panel.spacing = ggplot2::unit(.5,"cm"))
   }
   # Add track paths
-  if (is.null(group2) == TRUE) {
-    g <- g + ggplot2::geom_path(
-      data = data,
-      mapping = ggplot2::aes(
-      x       = .data$rel_x,
-      y       = .data$rel_y )
-      )
-  } else{
-    g <- g + ggplot2::geom_path(
+  # data |>
+  #   group_by({{ group2 }}) |>
+  g <- g +
+      ggplot2::geom_path(
       data = data,
       mapping = ggplot2::aes(
         x       = .data$rel_x,
         y       = .data$rel_y,
-        group   = eval(str2lang(paste0('.data$', group2))),
-        colour  = eval(str2lang(paste0('.data$', group2)))
+        group   = {{group2}},
+        colour  = {{group2}}
         )
       )
-  }
+
   # Add degrees at diagonals
   if (degrees == TRUE) {
     g <- g +
