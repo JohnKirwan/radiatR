@@ -5,3 +5,4 @@
 *.Rproj
 tests/
 inst/doc
+.vs/
