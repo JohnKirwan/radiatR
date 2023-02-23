@@ -141,8 +141,7 @@ tail(trackz[[1]])
 ```
 
 ```{r}
-trial_limits      <- trial_track_list[[2]]
-tail(trial_limits)
+tail(trial_track_list[[2]])
 ```
 
 ```{r}
@@ -165,10 +164,23 @@ tail(trialz)
 ```{r}
 radiate(all_tracks_df, ncols = NULL,
         circ1 = NULL, circ2 = NULL, 
+        color = NULL,
+        ticks = NULL, degrees = NULL, legend = NULL,
+        title = NULL, axes = NULL,
+        xlab = NULL, ylab = NULL, group2 = video)
+```
+
+```{r}
+p <- radiate(all_tracks_df, ncols = NULL,
+        circ1 = NULL, circ2 = NULL, 
         group1 = NULL,
         ticks = NULL, degrees = NULL, legend = NULL,
         title = NULL, axes = NULL,
         xlab = NULL, ylab = NULL, group2 = video)
+```
+
+```{r}
+plot(p) + facet_wrap(vars(trial_num))
 ```
 
 
@@ -185,3 +197,11 @@ This has stopped working to remove those trials - that's OK as identifying them 
 #print(paste(length(all_trackz),"tracks post culling"))
 #print(paste(dim(trialz)[1],"trials in limits list post culling"))
 ```
+
+
+```{r}
+trialz |>
+  right_join(all_tracks_df, by = c(video,order))
+
+```
+

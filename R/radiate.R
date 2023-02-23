@@ -24,7 +24,7 @@
 #
 radiate <- function(
   data, ncols = NULL,
-  group1 = NULL, group2 = NULL,
+  color = NULL, group2 = NULL,
   circ1 = NULL, circ2 = NULL, ticks = NULL,
   degrees = NULL, legend = NULL, title = NULL,
   xlab = NULL, ylab = NULL, axes = NULL, ...){
@@ -53,11 +53,11 @@ radiate <- function(
     panel.grid.minor = ggplot2::element_blank() #remove minor gridlines
   ) -> g
   # Add facets
-  if (is.null(group1) == FALSE) {
-     g <- g + ggplot2::facet_wrap(
-       .~get({{group1}}), ncol = ncols,strip.position = "top") +
-       ggplot2::theme(panel.spacing = ggplot2::unit(.5,"cm"))
-  }
+  # if (is.null(group1) == FALSE) {
+  #    g <- g + ggplot2::facet_wrap(
+  #      .~get({{group1}}), ncol = ncols,strip.position = "top") +
+  #      ggplot2::theme(panel.spacing = ggplot2::unit(.5,"cm"))
+  # }
   # Add track paths
   # data |>
   #   group_by({{ group2 }}) |>
@@ -68,7 +68,7 @@ radiate <- function(
         x       = .data$rel_x,
         y       = .data$rel_y,
         group   = {{group2}},
-        colour  = {{group2}}
+        if (is.null(color) == F){color = {{color}}}
         )
       )
 
