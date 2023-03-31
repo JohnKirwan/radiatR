@@ -79,8 +79,8 @@ tail(file_tbl)
 
 ```{r}
 i = 1
-while(i <=  dim(trial_details)[1]){
- file_tbl$arc [which(file_tbl$basename == trial_details$file[i])] <- trial_details$arc[i]
+while (i <=  dim(trial_details)[1]) {
+ file_tbl$arc[which(file_tbl$basename == trial_details$file[i])] <- trial_details$arc[i]
  file_tbl$type[which(file_tbl$basename == trial_details$file[i])] <- trial_details$type[i]
  file_tbl$obstacle[which(file_tbl$basename == trial_details$file[i])] <- trial_details$obstacle[i]
  file_tbl$id[which(file_tbl$basename == trial_details$file[i])] <- trial_details$id[i]
@@ -167,17 +167,20 @@ radiate(all_tracks_df, ncols = NULL,
         color = NULL,
         ticks = NULL, degrees = NULL, legend = NULL,
         title = NULL, axes = NULL,
-        xlab = NULL, ylab = NULL, group2 = video)
+        xlab = NULL, ylab = NULL)
 ```
+
+
 
 ```{r}
 p <- radiate(all_tracks_df, ncols = NULL,
         circ1 = NULL, circ2 = NULL, 
-        group1 = NULL,
         ticks = NULL, degrees = NULL, legend = NULL,
         title = NULL, axes = NULL,
-        xlab = NULL, ylab = NULL, group2 = video)
+        xlab = NULL, ylab = NULL)
 ```
+
+
 
 ```{r}
 plot(p) + facet_wrap(vars(trial_num))

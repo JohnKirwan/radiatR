@@ -6,30 +6,22 @@
 \usage{
 radiate(
   data,
-  ncols = NULL,
+  color = NULL,
+  group2 = NULL,
   circ1 = NULL,
   circ2 = NULL,
-  group1 = NULL,
-  group2 = NULL,
   ticks = NULL,
   degrees = NULL,
   legend = NULL,
   title = NULL,
   xlab = NULL,
   ylab = NULL,
-  axes = NULL
+  axes = NULL,
+  ...
 )
 }
 \arguments{
 \item{data}{A data frame containing a row for each tracked point.}
-
-\item{ncols}{The number of columns used by grid_wrap.}
-
-\item{circ1}{Inner circle drawn.}
-
-\item{circ2}{Outer circle drawn.}
-
-\item{group1}{Grouping variable within data used by grid facet.}
 
 \item{group2}{Grouping variable within data used within panel.}
 
@@ -55,5 +47,5 @@ Make ggplot object of tracks radiating from circle centre. Accepts a data frame 
 }
 \examples{
 utils::data(urchin_tracks)
-radiate(urchin_tracks, ncols=3, group1 = "arc", group2 = "id")
+radiate(urchin_tracks, ncols = 3, group1 = "arc", group2 = "id")
 }

@@ -18,18 +18,23 @@ get_tracked_object_pos <- function(
     if (is.null(circ0)) {circ0 = .1}
     if (is.null(circ1)) {circ0 = .2}
 
-    num_trials = dim(trial_limits)[1] # count number of trials
-    animal_track$y <- -animal_track$y # invert y so that runs from bottom up
+    num_trials = dim(trial_limits)[1] 
+    # count number of trials
+    animal_track$y <- -animal_track$y 
+    # invert y so that runs from bottom up
     # make nested tibble of the sets
     trackz <- purrr::map(vector(length = num_trials), tibble::tibble)
 
     i <- 1 # initialize i
-    while (i <= dim(trial_limits)[1]) {    # for each trial in a video
+    while (i <= dim(trial_limits)[1]) {    
+      # for each trial in a video
 
+      # get the trial no for each obs
       animal_track$trial_num[ animal_track$frame >= trial_limits$first_f[i] &
-                                animal_track$frame <= trial_limits$last_f[i]] <- i # get the trial no for each obs
+                                animal_track$frame <= trial_limits$last_f[i]] <- i 
       XY <- tibble::as_tibble(animal_track[animal_track$frame >= trial_limits$first_f[i] &
-                                     animal_track$frame <= trial_limits$last_f[i],]) # make a tibble of that trial
+                                     animal_track$frame <= trial_limits$last_f[i],]) 
+      # make a tibble of that trial
       XY |> tibble::add_column(trans_x = 0,trans_y = 0,abs_theta = 0,
                                trans_rho = 0, video = NA,
                          order = NA,vid_ord = NA,rel_theta = 0) -> XY
@@ -57,30 +62,36 @@ get_tracked_object_pos <- function(
       XY$rel_y     <- XY$trans_rho*sin(XY$rel_theta)
       trackz[[i]]  <- XY
       # assign tracks less than 40% of arena to be empty
-      if (min(XY$trans_rho > .4)) {trackz[[i]] <-
-        "Track starts too far from centre"
+      if (min(XY$trans_rho > .4)) {trackz[[i]] <- "Track starts too far from centre"
       warning(paste('Track starts too far from centre:'), XY$video[1])}
       if (any(XY$trans_rho > 1)) {
-        warning(paste('Track exceeds arena width: '), XY$video[1])}
+        warning(paste('Track exceeds arena width: '), XY$video[1])
+        }
 
       trial_limits$order[i]   <- as.character(i)
-      trial_limits$vid_ord[i] <- paste0(trial_limits[i,12],"_",i)
+      trial_limits$vid_ord[i] <- paste0(trial_limits[i,12], "_", i)
 
 
-      if (radius_criterion == "first_past") { # if taking 1st point outside radii
+      if (radius_criterion == "first_past") { 
+        # if taking 1st point outside radii
         if (!any(XY$trans_rho > circ0)) {warning('NO PTS BEYOND INNER CIRC!!')}
-        trial_limits$x0[i] <- XY$trans_x[XY$trans_rho >= circ0][1] #get 1st pts
-        trial_limits$y0[i] <- XY$trans_y[XY$trans_rho >= circ0][1] #beyond inner circ
+        trial_limits$x0[i] <- XY$trans_x[XY$trans_rho >= circ0][1] 
+        trial_limits$y0[i] <- XY$trans_y[XY$trans_rho >= circ0][1] 
+        # beyond inner circ
         # if pts both sides of outer circ
         if (any(XY$trans_rho <= circ1) & any(XY$trans_rho > circ1)) {
           trial_limits$x1[i] <- XY$trans_x[XY$trans_rho >= circ1][1]
           trial_limits$y1[i] <- XY$trans_y[XY$trans_rho >= circ1][1]
         } else if (!any(XY$trans_rho > circ1)) {warning("NO POINT BEYOND OUTER RADIUS!!!")
-          trial_limits$x1[i] <- XY$trans_x[which.max(XY$trans_rho)] # get most distant point
-          trial_limits$y1[i] <- XY$trans_y[which.max(XY$trans_rho)] # get most distant point
+          trial_limits$x1[i] <- XY$trans_x[which.max(XY$trans_rho)] 
+          # get most distant point
+          trial_limits$y1[i] <- XY$trans_y[which.max(XY$trans_rho)] 
+          # get most distant point
         } else {warning("NO POINT WITHIN OUTER RADIUS!!!")
-          trial_limits$x1[i] <- XY$trans_x[i + 1] # take the 2nd points outside
-          trial_limits$y1[i] <- XY$trans_y[i + 1] # as x0,y0 will be 1st
+          trial_limits$x1[i] <- XY$trans_x[i + 1] 
+          # take the 2nd points outside
+          trial_limits$y1[i] <- XY$trans_y[i + 1] 
+          # as x0,y0 will be 1st
         }
       } else {
         trial_limits$x0[i] <- XY$trans_x[which.min(abs(XY$trans_rho - circ0))]
@@ -88,14 +99,7 @@ get_tracked_object_pos <- function(
         trial_limits$x1[i] <- XY$trans_x[which.min(abs(XY$trans_rho - circ1))] #.5
         trial_limits$y1[i] <- XY$trans_y[which.min(abs(XY$trans_rho - circ1))]
       }
-#
-#       if (is.null(trial_limits$x1) == FALSE & trial_limits$x0 == trial_limits$x1 & trial_limits$y0 == trial_limits$y1){
-#         print(paste0("Trial ",i," is unchanged post transform"))
-#       }
-
       i = i + 1
     }
-    #trackz_tbl <- purrr::map_dfr(trackz, ~ .x)
-
     return(list(trackz,trial_limits)) # norm to radius
   }

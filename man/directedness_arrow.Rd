@@ -16,7 +16,7 @@ directedness_arrow(dataframe, arrow_head_cm = NULL, color = NULL, size = NULL)
 \item{trials_df}{The directory in which to look for the landmark files. Defaults to the current working directory.}
 }
 \value{
-A dataframe of file names.
+A data frame of file names.
 #examples
 #import_tracks(dir=data)
 }
