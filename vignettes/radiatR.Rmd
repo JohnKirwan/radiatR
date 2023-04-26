@@ -31,12 +31,7 @@ The package radiatR plots tracks in circular space.
 Track data can be loaded using import_tracks(). Here we load example data.
 
 ```{r}
-path1 <- "../tracking"
-path2 <- "C:\\Users\\jkirwan\\source\\repos\\P_lividus_adult_vision\\tracking"
-
-track_dir   <- normalizePath(path1)
-
-track_list <- import_tracks(track_dir,
+track_list <- import_tracks("../tracking",
   landmark_suffix  =  '_point01.txt', track_suffix  =  '_point02.txt')
 tail(track_list)
 ```
@@ -59,6 +54,14 @@ trial_details |>
   tidyr::unite("cond", c(type,arc,obstacle), remove = FALSE, sep = "_") -> trial_details
 tail(trial_details)
 ```
+
+```{r}
+colnames <- list( arc = "arc", type = "type", obstacle = "obstacle", id = "id" )
+
+file_tbl <- load_tracks2(track_list, trial_details, track_dir, colnames  )
+tail(file_tbl)
+```
+
 
 ```{r}
 #> file_tbl, track_list_df,track_dir
@@ -99,6 +102,7 @@ if (any(!file_tbl$track %in% list.files((track_dir), recursive = TRUE))) {
       (track_dir),recursive = TRUE))])))  }
 ```
 
+
 ```{r}
 #> are any track files in the file list without a match in the landmark files?
 if (any(!list.files((track_dir),recursive = TRUE)[grep('*point02.txt$',
@@ -109,6 +113,7 @@ if (any(!list.files((track_dir),recursive = TRUE)[grep('*point02.txt$',
 }
 ```
 
+
 ```{r}
 landmarks  =  read.delim(normalizePath(paste0(track_dir,'/',file_tbl$landmark[1])),
                           sep = "\t", header  =  FALSE)[,1:3]
@@ -117,6 +122,7 @@ names(landmarks) <- c("frame","x","y")
 if (length(landmarks$x) %% 2 == 1) {warning("Odd number of landmarks!") }
 num_trials  =  length(landmarks$x)/2 
 ```
+
 
 ```{r}
 animal_track  =  read.delim(normalizePath(paste0(track_dir,'/',file_tbl$track[1])),
@@ -144,11 +150,13 @@ tail(trackz[[1]])
 tail(trial_track_list[[2]])
 ```
 
+
 ```{r}
-radiate(trackz[[1]], ncols  =  NULL, circ1  =  NULL, circ2  =  NULL, 
+radiate(trackz[[1]], geom = "geom_path", 
+        circ1  =  NULL, circ2  =  NULL, 
         group1  =  NULL, group2  =  NULL, ticks  =  NULL,
-  degrees  =  NULL,legend  =  NULL,
-  title  =  NULL, xlab  =  NULL, ylab  =  NULL, axes  =  NULL)
+        degrees  =  NULL, legend  =  NULL, title  =  NULL, 
+        xlab  =  NULL, ylab  =  NULL, axes  =  NULL)
 ```
 
 ```{r}
@@ -162,9 +170,8 @@ tail(trialz)
 
 
 ```{r}
-radiate(all_tracks_df, ncols = NULL,
+radiate(all_tracks_df, mapping = aes(color = vid_ord),
         circ1 = NULL, circ2 = NULL, 
-        color = NULL,
         ticks = NULL, degrees = NULL, legend = NULL,
         title = NULL, axes = NULL,
         xlab = NULL, ylab = NULL)
@@ -173,7 +180,7 @@ radiate(all_tracks_df, ncols = NULL,
 
 
 ```{r}
-p <- radiate(all_tracks_df, ncols = NULL,
+p <- radiate(all_tracks_df, mapping = aes(color = vid_ord),
         circ1 = NULL, circ2 = NULL, 
         ticks = NULL, degrees = NULL, legend = NULL,
         title = NULL, axes = NULL,
@@ -205,6 +212,49 @@ This has stopped working to remove those trials - that's OK as identifying them 
 ```{r}
 trialz |>
   right_join(all_tracks_df, by = c(video,order))
-
 ```
 
+Tidy Evaluation: `{{ }}` `!!` and `!!!` - use these.
+
+`!!` bang-bang - unquoting operator
+e.g. below gives `x + y + z`
+xy <- expr(x + y)
+expr(!!xy + z)
+
+Always need to quote arguments to function, before unquoting when passed to other function with !!. 
+
+To deal with data columns but also objects in environment, we use 'quosures', i.e. quote + closure, to capture expression and environment - do this using **enquo()**
+
+
+ ggplot_aesthetics = list(),
+    ggplot_args = list(), geom_path_aesthetics = list(),
+    geom_path_args = list(), facet_wrap_args = list()) {
+
+
+  ggplot2::ggplot(data = data, aes_string(!!!ggplot_aesthetics), !!!ggplot_args) +
+
+g <- g +
+  ggplot2::geom_path(
+    data = data,
+    mapping = ggplot2::aes_string(
+      x       = .data$rel_x,
+      y       = .data$rel_y,
+      !!!geom_path_aesthetics
+    ),
+    !!!geom_path_args
+  )
+    
+> If you know the mapping or facet specification is col in advance, use aes(.data$col) or vars(.data$col).
+> If col is a variable that contains the column name as a character vector, use aes(.data[[col]] or vars(.data[[col]]).
+> If you would like the behaviour of col to look and feel like it would within aes() and vars(), use aes({{ col }}) or vars({{ col }}).
+>
+> You will see a lot of other ways to do this in the wild, but the syntax we use here is the only one we can guarantee will work in the future! In particular, don’t use aes_() or aes_string(), as they are deprecated and may be removed in a future version. 
+
+
+```{r}
+test_that("output of ggplot() is stable", {
+  vdiffr::expect_doppelganger("A blank plot", ggplot())
+})
+```
+
+> Once you have captured an expression, you can inspect and modify it. Complex expressions behave much like lists. That means you can modify them using [[ and $

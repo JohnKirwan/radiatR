@@ -4,7 +4,7 @@
 \alias{spartan_theme}
 \title{Create a custom ggplot theme}
 \usage{
-spartan_theme()
+spartan_theme(...)
 }
 \value{
 A ggplot theme object with the specified customizations

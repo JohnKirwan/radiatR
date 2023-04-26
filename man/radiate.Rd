@@ -6,7 +6,9 @@
 \usage{
 radiate(
   data,
-  color = NULL,
+  xcol,
+  ycol,
+  geom = NULL,
   group2 = NULL,
   circ1 = NULL,
   circ2 = NULL,
@@ -38,6 +40,10 @@ radiate(
 \item{ylab}{Text to include as plot y label. Defaults to none.}
 
 \item{axes}{Logical indicating whether panel axes should be shown.}
+
+\item{x_col}{A character specifying the name of the column representing the x coordinates}
+
+\item{y_col}{A character specifying the name of the column representing the y coordinates}
 }
 \value{
 A ggplot2 graphical object.
