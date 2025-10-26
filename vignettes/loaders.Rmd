@@ -1,0 +1,144 @@
+---
+title: "Working with Loaders"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Working with Loaders}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(radiatR)
+```
+
+## Overview
+
+`radiatR` provides a flexible loader framework that turns tracking exports
+from a wide variety of systems into `TrajSet` objects.  The helpers cover
+three typical tasks:
+
+1. Reading experiment manifests (`import_info()` and `import_tracks()`).
+2. Ingesting trajectory tables with `TrajSet_read()` or
+   `TrajSet_read_dir()`.
+3. Extending the loader registry with `register_loader_dialect()` for
+   custom formats.
+
+This vignette walks through each step and finishes with a user-defined
+loader for a fictitious exporter.
+
+## Manifest helpers
+
+Many capture systems write a manifest CSV describing trial files.  The
+`import_info()` helper reads the manifest and can optionally generate a
+compound condition column.
+
+```{r manifest}
+manifest_path <- tempfile(fileext = ".csv")
+writeLines(
+  c("file,type, arc", "trial01.csv, baseline,90", "trial02.csv,stimulus,135"),
+  manifest_path
+)
+manifest <- import_info(manifest_path, cond_cols = c("type", "arc"))
+manifest
+```
+
+If your data follow a consistent naming scheme (for example,
+`*_point01.txt` for landmarks and `*_point02.txt` for trajectories),
+`import_tracks()` creates a quick index.
+
+```{r tracks}
+dir_path <- tempfile()
+dir.create(dir_path)
+file.create(
+  file.path(dir_path, c("trial01_point01.txt", "trial01_point02.txt",
+                        "trial02_point01.txt", "trial02_point02.txt"))
+)
+import_tracks(dir_path)
+```
+
+## Reading tabular trajectories
+
+The central entrypoint is `TrajSet_read()`.  It accepts either a data
+frame or a file path and converts it to a `TrajSet`, performing the angle
+wrangling you request.
+
+```{r basic-load}
+example_df <- data.frame(
+  id = rep(c("A", "B"), each = 4),
+  time = rep(seq(0, 3), times = 2),
+  x = c(1, 1.2, 1.4, 1.5, -0.2, -0.1, 0, 0.15),
+  y = c(0, 0.1, 0.3, 0.4, 1, 1.1, 1.3, 1.5)
+)
+
+ts <- TrajSet_read(example_df, mapping = list(id = "id", time = "time", x = "x", y = "y"))
+ts
+```
+
+To batch a directory of files, use `TrajSet_read_dir()` which simply
+calls `TrajSet_read()` for each match and row-binds the result.
+
+```{r dir-load}
+csv_dir <- tempfile()
+dir.create(csv_dir)
+
+write.csv(example_df, file.path(csv_dir, "trial01.csv"), row.names = FALSE)
+write.csv(transform(example_df, id = paste0(id, "_2")),
+          file.path(csv_dir, "trial02.csv"), row.names = FALSE)
+
+dset <- TrajSet_read_dir(csv_dir, pattern = "\\.csv$")
+length(dset)
+```
+
+## Registering a custom dialect
+
+When your exporter does not match the built-in dialects, register a
+custom function.  A dialect receives either a data frame or a file path
+and must return a data frame with at least `id`, `time`, and either
+`angle` or `(x, y)`.
+
+Below we define a loader for a hypothetical JSON file where each track is
+stored under an ID with arrays of `timestamp`, `px`, and `py`.
+
+```{r custom-loader}
+fake_json <- tempfile(fileext = ".json")
+jsonlite::write_json(
+  list(
+    tracks = list(
+      A = list(timestamp = c(0, 1, 2), px = c(0, 1, 2), py = c(0, 0.2, 0.5)),
+      B = list(timestamp = c(0, 1, 2), px = c(1, 1.3, 1.5), py = c(0, -0.1, -0.2))
+    )
+  ),
+  fake_json,
+  auto_unbox = TRUE
+)
+
+register_loader_dialect("json_tracks", function(x) {
+  dat <- if (is.character(x) && file.exists(x)) jsonlite::read_json(x) else x
+  entries <- purrr::imap(dat$tracks, function(track, id) {
+    data.frame(
+      id = id,
+      time = track$timestamp,
+      x = track$px,
+      y = track$py,
+      stringsAsFactors = FALSE
+    )
+  })
+  do.call(rbind, entries)
+})
+```
+
+After registration the new dialect can be used by name when calling
+`TrajSet_read()`:
+
+```{r use-custom}
+ts_json <- TrajSet_read(fake_json, format = "json_tracks")
+ts_json
+```
+
+Dialects live in-memory for the current session.  To persist them across
+projects consider placing the registration call in a package or in an
+R profile that you source before using `radiatR`.

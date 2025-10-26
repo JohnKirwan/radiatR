@@ -3,6 +3,9 @@
 .RData
 .Ruserdata
 *.Rproj
-tests/
 inst/doc
 .vs/
+.Rbuildignore
+.Rprofile
+/renv
+renv.lock

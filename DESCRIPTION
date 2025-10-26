@@ -3,9 +3,11 @@ Type: Package
 Title: Plot Tracks in Circular Space
 Version: 0.1.0
 Author: John D. Kirwan
-Maintainer: The package maintainer <john@jkirwan.org>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Maintainer: John D. Kirwan <john@jkirwan.org>
+Description: Import, transform, and visualise trajectories recorded in circular
+    arenas. The package provides utilities for reading tracking metadata,
+    computing circular summary statistics, and rendering tidy ggplot2
+    visualisations with concentric annotations.
 License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
@@ -13,12 +15,34 @@ Depends: R (>= 4.1.0)
 Imports: 
     rlang,
     ggplot2,
-    tibble
+    tibble,
+    purrr,
+    circular,
+    methods,
+    utils,
+    stats
 Suggests: 
     testthat (>= 3.0.0),
-    circular,
     knitr,
-    rmarkdown
-RoxygenNote: 7.2.3
+    rmarkdown,
+    ggrepel,
+    arrow,
+    data.table,
+    jsonlite,
+    readr,
+    yaml,
+    withr
+RoxygenNote: 7.3.3
 Config/testthat/edition: 3
 VignetteBuilder: knitr
+Collate: 
+    'TrajSet.R'
+    'calibration.R'
+    'circular_plotting.R'
+    'circular_statistics.R'
+    'circular_trials.R'
+    'globals.R'
+    'headings.R'
+    'loaders.R'
+    'radiatR-package.R'
+    'simulate_tracks.R'

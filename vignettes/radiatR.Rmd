@@ -7,254 +7,121 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-### Set up
-
-```{r, include  =  FALSE}
+```{r, include=FALSE}
 knitr::opts_chunk$set(
-  collapse  =  TRUE,
-  comment  =  "#>" )
+  collapse = TRUE,
+  comment = "#>"
+)
 ```
 
 ```{r setup}
-library('dplyr')
-library('ggplot2')
-library('purrr')
-library('ggnewscale')
-library('ggforce')
-library('ggrepel')
-library('ggnewscale')
-library('radiatR')
+library(radiatR)
+library(ggplot2)
 ```
 
-The package radiatR plots tracks in circular space.
+## Overview
 
-Track data can be loaded using import_tracks(). Here we load example data.
+`radiatR` streamlines the journey from raw tracking files to publication-ready plots for experiments conducted in circular arenas. The package includes:
 
-```{r}
-track_list <- import_tracks("../tracking",
-  landmark_suffix  =  '_point01.txt', track_suffix  =  '_point02.txt')
-tail(track_list)
+-   utilities for importing paired landmark/track text files produced by popular tracking suites;
+-   helpers for extracting trial limits and computing circular summary statistics;
+-   polished `ggplot2` layers for drawing concentric guides and annotated paths.
+
+## Simulating Demo Data
+
+Large tracking files are rarely suitable for inclusion in a package. To make example workflows reproducible, `simulate_tracks()` creates tidy demo data with controllable tortuosity.
+
+```{r simulate}
+demo_tracks <- simulate_tracks(n_trials = 4, n_points = 150, seed = 42)
+head(demo_tracks)
 ```
 
-The data frame contains the names of the three videos. We need to import a table describing these videos.
+The resulting tibble already contains relative coordinates (`rel_x`, `rel_y`) and angular summaries, so we can visualise it directly.
 
-```{r}
-#file_info <- import_info(normalizePath('../data/headings.csv')) #,'stimulus','degrees'
-#file_info <- headings
-#head(file_info)
+```{r radiate}
+radiate(
+  demo_tracks,
+  x_col = "rel_x",
+  y_col = "rel_y",
+  group_col = "trial_id",
+  colour_col = "tortuosity"
+)
 ```
 
-The data frame contains a row for each trial. The function also checks if there is a mismatch between this data table and the track files.
+## File-Based Ingest Pipeline
 
-```{r}
-trial_details     <- read.csv('../data/trials_list.csv')
-trial_details$obstacle[trial_details$obstacle ==  "none"]    <- "unobst"
-trial_details$obstacle[trial_details$obstacle == "marbles"] <- "obst"
-trial_details |> 
-  tidyr::unite("cond", c(type,arc,obstacle), remove = FALSE, sep = "_") -> trial_details
-tail(trial_details)
+When you have landmark/track text files on disk, the import helpers stitch them into tidy data structures. The example below creates a minimal synthetic data set to illustrate the workflow without requiring external assets.
+
+```{r ingest}
+tmp_dir <- tempfile("radiatr_ingest")
+dir.create(tmp_dir)
+
+# Write paired landmark/track files for a single video with two trials
+landmarks <- data.frame(
+  frame = c(1, 1, 120, 120),
+  x = c(0, 40, 0, -35),
+  y = c(0, 0, 0, 0)
+)
+tracks <- data.frame(
+  frame = 1:200,
+  x = c(seq(0, 25, length.out = 120), seq(25, -10, length.out = 80)),
+  y = c(seq(0, 35, length.out = 120), seq(35, -5, length.out = 80))
+)
+
+write.table(
+  landmarks,
+  file = file.path(tmp_dir, "demo_video_point01.txt"),
+  sep = "\t", col.names = FALSE, row.names = FALSE
+)
+write.table(
+  tracks,
+  file = file.path(tmp_dir, "demo_video_point02.txt"),
+  sep = "\t", col.names = FALSE, row.names = FALSE
+)
+
+# Import metadata and enrich it with trial annotations
+file_tbl <- import_tracks(tmp_dir)
+manifest <- data.frame(
+  file = file_tbl$basename,
+  arc = c(0),
+  type = "demo",
+  obstacle = "none",
+  id = "subject_01",
+  stringsAsFactors = FALSE
+)
+file_tbl <- load_tracks(file_tbl, manifest, tmp_dir)
+
+# Derive trial limits and normalised coordinates
+landmarks_df <- read.delim(file.path(tmp_dir, file_tbl$landmark[1]),
+                           header = FALSE)[, 1:3]
+names(landmarks_df) <- c("frame", "x", "y")
+tracks_df <- read.delim(file.path(tmp_dir, file_tbl$track[1]),
+                        header = FALSE)[, 1:3]
+names(tracks_df) <- c("frame", "x", "y")
+
+trial_limits <- get_trial_limits(landmarks_df, tracks_df, file_tbl, vid_num = 1)
+trial_objects <- get_tracked_object_pos(trial_limits, tracks_df)
+
+str(trial_objects[[1]][[1]])
 ```
 
-```{r}
-colnames <- list( arc = "arc", type = "type", obstacle = "obstacle", id = "id" )
+The list returned by `get_tracked_object_pos()` contains one tibble per trial as well as the augmented `trial_limits` data frame. These outputs feed directly into `radiate()` or any downstream statistical workflow.
 
-file_tbl <- load_tracks2(track_list, trial_details, track_dir, colnames  )
-tail(file_tbl)
+```{r ingest-plot}
+all_trial_tracks <- do.call(rbind, trial_objects[[1]])
+radiate(
+  all_trial_tracks,
+  x_col = "rel_x",
+  y_col = "rel_y",
+  group_col = "trial_num",
+  colour_col = "trial_num",
+  label_col = "trial_num",
+  show_arrow = TRUE
+)
 ```
 
+Remember to clean up when you are finished:
 
-```{r}
-#> file_tbl, track_list_df,track_dir
-file_tbl <- load_tracks(track_list, trial_details, track_dir)
-tail(file_tbl)
+```{r cleanup, echo=FALSE}
+unlink(tmp_dir, recursive = TRUE)
 ```
-
-Add part above to put trial, cond, type, arc, obstacle into file_tbl and therefore to trackz_tbl and trialz.
-
-```{r}
-#> which track rows shares vid name with df
-file_tbl$arc  <- rep(0,dim(file_tbl)[1])
-file_tbl$type <- as.character(rep("",dim(file_tbl)[1]))
-file_tbl$obstacle <- as.character(rep("",dim(file_tbl)[1]))
-file_tbl$id       <- as.character(rep("",dim(file_tbl)[1]))
-tail(file_tbl)
-```
-
-```{r}
-i = 1
-while (i <=  dim(trial_details)[1]) {
- file_tbl$arc[which(file_tbl$basename == trial_details$file[i])] <- trial_details$arc[i]
- file_tbl$type[which(file_tbl$basename == trial_details$file[i])] <- trial_details$type[i]
- file_tbl$obstacle[which(file_tbl$basename == trial_details$file[i])] <- trial_details$obstacle[i]
- file_tbl$id[which(file_tbl$basename == trial_details$file[i])] <- trial_details$id[i]
- i = i + 1      
- }
-
-file_tbl |> tidyr::unite("cond",c(type,arc,obstacle),remove = FALSE, sep = "_")
-```
-
-Are there any (predicted) track names not represented in the file list? i.e. landmark files without a matching track file
-
-```{r}
-if (any(!file_tbl$track %in% list.files((track_dir), recursive = TRUE))) {
-  stop(print(paste0("The following track file is missing:",
-    file_tbl$track[which(!file_tbl$track %in% list.files(
-      (track_dir),recursive = TRUE))])))  }
-```
-
-
-```{r}
-#> are any track files in the file list without a match in the landmark files?
-if (any(!list.files((track_dir),recursive = TRUE)[grep('*point02.txt$',
-    list.files((track_dir),recursive = TRUE))] %in% file_tbl$track)) {
-  stop(print(paste0("The following track file lacks a counterpart:",
-    list.files((track_dir),recursive = TRUE)[grep('*point02.txt$',
-    list.files((track_dir),recursive = TRUE))])))  
-}
-```
-
-
-```{r}
-landmarks  =  read.delim(normalizePath(paste0(track_dir,'/',file_tbl$landmark[1])),
-                          sep = "\t", header  =  FALSE)[,1:3]
-names(landmarks) <- c("frame","x","y")
-
-if (length(landmarks$x) %% 2 == 1) {warning("Odd number of landmarks!") }
-num_trials  =  length(landmarks$x)/2 
-```
-
-
-```{r}
-animal_track  =  read.delim(normalizePath(paste0(track_dir,'/',file_tbl$track[1])),
-                          sep = "\t", header = FALSE)[,1:3]
-names(animal_track) <- c("frame","x","y")
-```
-
-### Trial Limits
-
-```{r}
-trial_limits <- get_trial_limits(landmarks,animal_track,file_tbl,1)
-trial_limits
-```
-
-### Get Tracked Object Position
-
-```{r}
-trial_track_list <- get_tracked_object_pos(trial_limits, animal_track,
-                                           circ0  =  .1,circ1  =  .2)
-trackz           <- trial_track_list[[1]]
-tail(trackz[[1]])
-```
-
-```{r}
-tail(trial_track_list[[2]])
-```
-
-
-```{r}
-radiate(trackz[[1]], geom = "geom_path", 
-        circ1  =  NULL, circ2  =  NULL, 
-        group1  =  NULL, group2  =  NULL, ticks  =  NULL,
-        degrees  =  NULL, legend  =  NULL, title  =  NULL, 
-        xlab  =  NULL, ylab  =  NULL, axes  =  NULL)
-```
-
-```{r}
-trackz_n_limits <- get_all_object_pos(trial_limits, animal_track, file_tbl, track_dir)
-all_tracks_df       <- trackz_n_limits[[1]]
-trialz <- trackz_n_limits[[2]]
-tail(trialz)  
-```                            
-
-
-
-
-```{r}
-radiate(all_tracks_df, mapping = aes(color = vid_ord),
-        circ1 = NULL, circ2 = NULL, 
-        ticks = NULL, degrees = NULL, legend = NULL,
-        title = NULL, axes = NULL,
-        xlab = NULL, ylab = NULL)
-```
-
-
-
-```{r}
-p <- radiate(all_tracks_df, mapping = aes(color = vid_ord),
-        circ1 = NULL, circ2 = NULL, 
-        ticks = NULL, degrees = NULL, legend = NULL,
-        title = NULL, axes = NULL,
-        xlab = NULL, ylab = NULL)
-```
-
-
-
-```{r}
-plot(p) + facet_wrap(vars(trial_num))
-```
-
-
-Below can be left out for a wee bit. **This can be moved into the get_all_obj_pos function**. 
-This has stopped working to remove those trials - that's OK as identifying them is more important.
-
-```{r}
-#idx <- which(trialz$x0 == trialz$x1 & trialz$y0 == trialz$y1)
-#if (length(idx) > 0) {warning(paste("Trials", idx, "have errors!"))}
-#all_trackz[idx] <- NULL
-##### LEAVE OUT FOR MOMENT!
-#trialz <- trialz[-c(idx),]
-## something wrong with this line!
-#print(paste(length(all_trackz),"tracks post culling"))
-#print(paste(dim(trialz)[1],"trials in limits list post culling"))
-```
-
-
-```{r}
-trialz |>
-  right_join(all_tracks_df, by = c(video,order))
-```
-
-Tidy Evaluation: `{{ }}` `!!` and `!!!` - use these.
-
-`!!` bang-bang - unquoting operator
-e.g. below gives `x + y + z`
-xy <- expr(x + y)
-expr(!!xy + z)
-
-Always need to quote arguments to function, before unquoting when passed to other function with !!. 
-
-To deal with data columns but also objects in environment, we use 'quosures', i.e. quote + closure, to capture expression and environment - do this using **enquo()**
-
-
- ggplot_aesthetics = list(),
-    ggplot_args = list(), geom_path_aesthetics = list(),
-    geom_path_args = list(), facet_wrap_args = list()) {
-
-
-  ggplot2::ggplot(data = data, aes_string(!!!ggplot_aesthetics), !!!ggplot_args) +
-
-g <- g +
-  ggplot2::geom_path(
-    data = data,
-    mapping = ggplot2::aes_string(
-      x       = .data$rel_x,
-      y       = .data$rel_y,
-      !!!geom_path_aesthetics
-    ),
-    !!!geom_path_args
-  )
-    
-> If you know the mapping or facet specification is col in advance, use aes(.data$col) or vars(.data$col).
-> If col is a variable that contains the column name as a character vector, use aes(.data[[col]] or vars(.data[[col]]).
-> If you would like the behaviour of col to look and feel like it would within aes() and vars(), use aes({{ col }}) or vars({{ col }}).
->
-> You will see a lot of other ways to do this in the wild, but the syntax we use here is the only one we can guarantee will work in the future! In particular, don’t use aes_() or aes_string(), as they are deprecated and may be removed in a future version. 
-
-
-```{r}
-test_that("output of ggplot() is stable", {
-  vdiffr::expect_doppelganger("A blank plot", ggplot())
-})
-```
-
-> Once you have captured an expression, you can inspect and modify it. Complex expressions behave much like lists. That means you can modify them using [[ and $
