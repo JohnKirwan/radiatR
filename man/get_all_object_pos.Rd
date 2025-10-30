@@ -18,8 +18,9 @@ for backwards compatibility; values are overwritten internally.}
 \item{track_dir}{Directory containing the landmark and track text files.}
 }
 \value{
-A list with two elements: a tibble of all valid track observations
-  and the corresponding trial limits tibble.
+A `TrajSet` combining the normalised observations for all valid
+  trials in the manifest. The aggregated trial limits are available via
+  `meta$trial_limits`.
 }
 \description{
 Iterates over the rows of `file_tbl`, reading the paired landmark and track

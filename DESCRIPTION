@@ -38,6 +38,7 @@ VignetteBuilder: knitr
 Collate: 
     'TrajSet.R'
     'calibration.R'
+    'circular_mapping.R'
     'circular_plotting.R'
     'circular_statistics.R'
     'circular_trials.R'

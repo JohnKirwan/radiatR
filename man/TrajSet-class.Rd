@@ -19,7 +19,8 @@ TrajSet(
   angle_unit = c("radians", "degrees"),
   weight = NULL,
   normalize_xy = TRUE,
-  meta = list()
+  meta = list(),
+  transform_history = NULL
 )
 
 \S4method{length}{TrajSet}(x)
@@ -44,6 +45,10 @@ TrajSet(
 \item{normalize_xy}{If TRUE, (x,y) are normalized to unit vectors (zero-length -> NA)}
 
 \item{meta}{Free-form list of metadata}
+
+\item{transform_history}{Optional tibble describing transformation steps applied to the
+trajectories. Must contain columns `step`, `order`, `id`, `implementation`, `params`,
+and `depends_on`.}
 
 \item{i}{Trajectory identifiers (character ids, numeric indices, or logical vector)}
 

@@ -22,10 +22,10 @@ test_that("trial utilities summarise and transform tracks", {
   expect_equal(limits$video[1], "video1")
   expect_true(all(c("stim_theta", "r_px") %in% names(limits)))
 
-  track_res <- suppressWarnings(get_tracked_object_pos(limits, animal_track))
-  expect_type(track_res, "list")
-  expect_length(track_res, 2)
-  expect_s3_class(track_res[[2]], "data.frame")
+  track_ts <- suppressWarnings(get_tracked_object_pos(limits, animal_track))
+  expect_s4_class(track_ts, "TrajSet")
+  expect_true(nrow(as.data.frame(track_ts)) > 0)
+  expect_s3_class(track_ts@meta$trial_limits, "data.frame")
 
   tmp <- withr::local_tempdir()
   track_path <- file.path(tmp, "video1_point02.txt")
@@ -40,6 +40,8 @@ test_that("trial utilities summarise and transform tracks", {
   )
 
   agg <- suppressWarnings(get_all_object_pos(file_tbl = file_tbl_disk, track_dir = tmp))
-  expect_type(agg, "list")
-  expect_true(all(c("rel_x", "rel_y") %in% names(agg[[1]])))
+  expect_s4_class(agg, "TrajSet")
+  df <- as.data.frame(agg)
+  expect_true(all(c("rel_x", "rel_y") %in% names(df)))
+  expect_s3_class(agg@meta$trial_limits, "data.frame")
 })

@@ -27,8 +27,9 @@ selects the first point beyond each threshold, while `"closest"` chooses the
 closest sample to the specified radius.}
 }
 \value{
-A list containing the per-trial track tibbles and the updated
-  `trial_limits` data frame.
+A `TrajSet` containing all valid trial observations. The corresponding
+  trial limits (including `valid_track` flags) are stored in
+  `meta$trial_limits`.
 }
 \description{
 Using the trial limits returned by [get_trial_limits()], this helper extracts

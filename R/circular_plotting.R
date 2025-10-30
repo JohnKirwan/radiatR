@@ -479,6 +479,9 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #' @param ticks,degrees,legend,title,xlab,ylab,axes Additional styling options.
 #' @param ... Additional arguments forwarded to [draw_tracks()].
 #' @return A `ggplot2` object.
+#' @examples
+#' tracks_demo <- simulate_tracks(n_trials = 1, n_points = 200, seed = 1)
+#' radiate(tracks_demo, x_col = "rel_x", y_col = "rel_y", group_col = "trial_num")
 #' @export
 radiate <- function(
   data,
@@ -509,15 +512,40 @@ radiate <- function(
     show_labels <- identical(style, "classic")
   }
 
-  is_trajset <- inherits(data, "TrajSet")
-  if (is_trajset) {
+  # Coerce non-TrajSet inputs to TrajSet to keep a single canonical path
+  if (!inherits(data, "TrajSet")) {
+    if (!missing(x_col) && !missing(y_col) && all(c(x_col, y_col) %in% names(data))) {
+      # Prefer explicit mapping if provided
+      guessed_id <- if (!is.null(group_col) && group_col %in% names(data)) group_col else {
+        cand <- intersect(c("trial_id","id","track","trajectory"), names(data)); if (length(cand)) cand[1] else stop("Could not infer id column; supply `group_col`.")
+      }
+      guessed_time <- {
+        cand <- intersect(c("frame","time","t"), names(data)); if (length(cand)) cand[1] else stop("Could not infer time column (e.g., 'frame').")
+      }
+      angle_col_guess <- if ("rel_theta" %in% names(data)) "rel_theta" else if ("abs_theta" %in% names(data)) "abs_theta" else NULL
+      ts <- TrajSet(
+        data,
+        id = guessed_id,
+        time = guessed_time,
+        angle = angle_col_guess,
+        x = x_col,
+        y = y_col,
+        angle_unit = "radians",
+        normalize_xy = FALSE
+      )
+    } else {
+      # Fall back to heuristic coercion
+      ts <- methods::as(data, "TrajSet")
+    }
+  } else {
     ts <- data
-    data <- ts@data
-    if (!is.null(ts@cols$x) && identical(x_col, "rel_x")) x_col <- ts@cols$x
-    if (!is.null(ts@cols$y) && identical(y_col, "rel_y")) y_col <- ts@cols$y
-    if (is.null(group_col)) group_col <- ts@cols$id
-    if (is.null(arrow_angle_col)) arrow_angle_col <- ts@cols$angle
   }
+
+  data <- ts@data
+  if (!is.null(ts@cols$x) && identical(x_col, "rel_x")) x_col <- ts@cols$x
+  if (!is.null(ts@cols$y) && identical(y_col, "rel_y")) y_col <- ts@cols$y
+  if (is.null(group_col)) group_col <- ts@cols$id
+  if (is.null(arrow_angle_col)) arrow_angle_col <- ts@cols$angle
 
   x_sym <- rlang::sym(x_col)
   y_sym <- rlang::sym(y_col)
@@ -713,78 +741,4 @@ build_label_data <- function(data, label_col, x_col, y_col, colour_col = NULL, p
     label_data$colour_value <- NULL
   }
   label_data
-}
-
-# ---- circular angle utilities ------------------------------------------------
-
-#' Wrap angles to (-pi, pi]
-#'
-#' @param theta Angles in radians using the conventional unit-circle orientation.
-#' @return Angles wrapped to (-pi, pi].
-#' @examples
-#' theta <- seq(from = -5, to = 5, length.out = 6)
-#' rad_shepherd(theta)
-#' @export
-rad_shepherd <- function(theta) {
-  theta <- as.numeric(theta)
-  if (any(!is.finite(theta))) {
-    warning("Non-finite values detected; returning NA for those entries.", call. = FALSE)
-    theta[!is.finite(theta)] <- NA_real_
-  }
-  ((theta + pi) %% (2 * pi)) - pi
-}
-
-#' Wrap clockwise angles to [0, 2*pi)
-#'
-#' @param theta Angles in radians measured clockwise (clock format).
-#' @return Angles wrapped to [0, 2*pi).
-#' @examples
-#' theta <- seq(from = -2, to = 8, length.out = 6)
-#' rad_shepherd_clock(theta)
-#' @export
-rad_shepherd_clock <- function(theta) {
-  theta <- as.numeric(theta)
-  if (any(!is.finite(theta))) {
-    warning("Non-finite values detected; returning NA for those entries.", call. = FALSE)
-    theta[!is.finite(theta)] <- NA_real_
-  }
-  wrapped <- theta %% (2 * pi)
-  wrapped[wrapped < 0] <- wrapped[wrapped < 0] + 2 * pi
-  wrapped
-}
-
-#' Convert unit-circle angles to clock orientation
-#'
-#' @param theta Angle (radians) using the standard unit-circle convention.
-#' @return Angle in radians measured clockwise with zero at the top.
-#' @examples
-#' theta <- seq(from = pi/2, to = -pi/2, length.out = 5)
-#' rad2clock(theta)
-#' @export
-rad2clock <- function(theta) {
-  theta <- as.numeric(theta)
-  if (any(!is.finite(theta))) {
-    warning("Non-finite values detected; returning NA for those entries.", call. = FALSE)
-    theta[!is.finite(theta)] <- NA_real_
-  }
-  clock_theta <- (pi / 2) - theta
-  rad_shepherd_clock(clock_theta)
-}
-
-#' Convert clock-oriented angles back to unit-circle orientation
-#'
-#' @param theta Angle (radians) measured clockwise with zero at the top.
-#' @return Angle in radians using the standard unit-circle convention.
-#' @examples
-#' theta <- seq(from = 0, to = 2 * pi, length.out = 5)
-#' rad_unclock(theta)
-#' @export
-rad_unclock <- function(theta) {
-  theta <- as.numeric(theta)
-  if (any(!is.finite(theta))) {
-    warning("Non-finite values detected; returning NA for those entries.", call. = FALSE)
-    theta[!is.finite(theta)] <- NA_real_
-  }
-  ttheta <- (pi / 2) - theta
-  rad_shepherd(ttheta)
 }

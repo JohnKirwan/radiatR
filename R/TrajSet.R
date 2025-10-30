@@ -6,13 +6,8 @@
 #' @keywords internal
 
 ## ---- helpers -----------------------------------------------------------------
-.wrap_to_2pi <- function(x) x %% (2*pi)
-
-.as_radians <- function(x, unit = c("radians","degrees")) {
-  unit <- match.arg(unit)
-  if (unit == "degrees") x <- x * pi/180
-  .wrap_to_2pi(as.numeric(x))
-}
+.wrap_to_2pi <- function(x) wrap_to_2pi(x)
+.as_radians <- function(x, unit = c("radians","degrees")) as_radians(x, unit)
 
 # Fallback approximation for kappa from resultant length Rbar (Mardia & Jupp)
 .kappa_from_Rbar <- function(R) {
@@ -40,6 +35,105 @@
     }
   }
   fallback
+}
+
+.empty_transform_history <- function() {
+  tibble::tibble(
+    step = character(),
+    order = integer(),
+    id = character(),
+    implementation = character(),
+    params = list(),
+    depends_on = list()
+  )
+}
+
+.ensure_transform_history <- function(history) {
+  if (is.null(history)) {
+    return(.empty_transform_history())
+  }
+  if (inherits(history, "TrajSet")) {
+    history <- transform_history(history)
+  } else if (is.list(history) && !inherits(history, "data.frame")) {
+    history <- tibble::as_tibble(history)
+  }
+  required <- c("step", "order", "id", "implementation", "params", "depends_on")
+  missing_cols <- setdiff(required, names(history))
+  if (length(missing_cols)) {
+    stop("Transform history is missing column(s): ", paste(missing_cols, collapse = ", "))
+  }
+  history$step <- as.character(history$step)
+  history$order <- as.integer(history$order)
+  history$id <- as.character(history$id)
+  history$implementation <- as.character(history$implementation)
+  if (!is.list(history$params)) {
+    history$params <- as.list(history$params)
+  }
+  if (!is.list(history$depends_on)) {
+    history$depends_on <- as.list(history$depends_on)
+  }
+  history
+}
+
+.append_transform_history <- function(history, step, ids, implementation,
+                                      params, order = NULL, depends_on = NULL) {
+  history <- .ensure_transform_history(history)
+  if (is.null(ids)) stop("`ids` cannot be NULL when logging a transform step.")
+  ids <- as.character(ids)
+  if (is.null(params)) {
+    params <- vector("list", length(ids))
+  } else if (!is.list(params)) {
+    params <- rep(list(params), length(ids))
+  } else if (length(params) == 1L && length(ids) > 1L) {
+    params <- rep(params, length(ids))
+  } else if (length(params) != length(ids)) {
+    stop("Length of `params` (", length(params),
+         ") must equal length of `ids` (", length(ids), ").")
+  }
+  if (is.null(order)) {
+    current <- if (nrow(history)) max(history$order, na.rm = TRUE) else 0L
+    order <- current + 1L
+  }
+  depends_on <- if (is.null(depends_on)) list(character()) else as.list(rep(list(depends_on), length(ids)))
+  if (length(depends_on) == 1L && length(ids) > 1L) {
+    depends_on <- rep(depends_on, length(ids))
+  } else if (length(depends_on) != length(ids)) {
+    stop("Length of `depends_on` (", length(depends_on),
+         ") must equal length of `ids` (", length(ids), ").")
+  }
+  for (i in seq_along(ids)) {
+    history <- tibble::add_row(
+      history,
+      step = as.character(step),
+      order = as.integer(order),
+      id = ids[i],
+      implementation = as.character(implementation),
+      params = list(params[[i]]),
+      depends_on = list(depends_on[[i]])
+    )
+  }
+  history
+}
+
+.combine_transform_histories <- function(histories) {
+  out <- .empty_transform_history()
+  if (!length(histories)) return(out)
+  for (hist in histories) {
+    hist <- .ensure_transform_history(hist)
+    if (!nrow(hist)) next
+    for (i in seq_len(nrow(hist))) {
+      out <- tibble::add_row(
+        out,
+        step = hist$step[[i]],
+        order = hist$order[[i]],
+        id = hist$id[[i]],
+        implementation = hist$implementation[[i]],
+        params = list(hist$params[[i]]),
+        depends_on = list(hist$depends_on[[i]])
+      )
+    }
+  }
+  out
 }
 
 ## ---- class -------------------------------------------------------------------
@@ -82,6 +176,15 @@ setValidity("TrajSet", function(object) {
     if (!all(c(cl$x, cl$y) %in% names(d))) return("x/y columns not present in data")
     if (!is.numeric(d[[cl$x]]) || !is.numeric(d[[cl$y]])) return("x/y must be numeric")
   }
+  if (!is.null(cl$raw_x) || !is.null(cl$raw_y)) {
+    if (is.null(cl$raw_x) || is.null(cl$raw_y)) return("both raw_x and raw_y must be named in cols if either is used")
+    if (!all(c(cl$raw_x, cl$raw_y) %in% names(d))) return("raw x/y columns not present in data")
+    if (!is.numeric(d[[cl$raw_x]]) || !is.numeric(d[[cl$raw_y]])) return("raw x/y must be numeric")
+  }
+  if (!is.null(cl$rho)) {
+    if (!cl$rho %in% names(d)) return("rho column not present in data")
+    if (!is.numeric(d[[cl$rho]])) return("rho column must be numeric")
+  }
 
   # enforce (id,time) sorted order
   o <- order(d[[cl$id]], d[[cl$time]])
@@ -100,6 +203,9 @@ setValidity("TrajSet", function(object) {
 #' @param weight Optional weight column name
 #' @param normalize_xy If TRUE, (x,y) are normalized to unit vectors (zero-length -> NA)
 #' @param meta Free-form list of metadata
+#' @param transform_history Optional tibble describing transformation steps applied to the
+#'   trajectories. Must contain columns `step`, `order`, `id`, `implementation`, `params`,
+#'   and `depends_on`.
 #' @return A TrajSet S4 object
 #' @rdname TrajSet-class
 #' @export
@@ -110,9 +216,11 @@ TrajSet <- function(df,
                     angle_unit = c("radians","degrees"),
                     weight = NULL,
                     normalize_xy = TRUE,
-                    meta = list()) {
+                    meta = list(),
+                    transform_history = NULL) {
   stopifnot(is.data.frame(df))
   angle_unit <- match.arg(angle_unit)
+  if (is.null(meta)) meta <- list()
 
   if (!id %in% names(df))   stop("Column '", id, "' not found")
   if (!time %in% names(df)) stop("Column '", time, "' not found")
@@ -124,29 +232,53 @@ TrajSet <- function(df,
 
   d <- df
 
-  # If cartesian present, (optionally) normalize to unit circle and compute angle
-  if (have_xy) {
-    r <- sqrt(d[[x]]^2 + d[[y]]^2)
-    zero <- r == 0 | is.na(r)
-    if (normalize_xy) {
-      d[[x]][!zero] <- d[[x]][!zero] / r[!zero]
-      d[[y]][!zero] <- d[[y]][!zero] / r[!zero]
+  # Ensure consistent polar/cartesian representation
+  make_unique_name <- function(existing, proposal) {
+    if (proposal %in% existing) {
+      make.unique(c(existing, proposal))[length(existing) + 1]
+    } else {
+      proposal
     }
-    theta_from_xy <- atan2(d[[y]], d[[x]])
-    theta_from_xy <- .wrap_to_2pi(theta_from_xy)
   }
 
+  theta_from_xy <- NULL
+  rho_col <- NULL
+  raw_cols <- list(x = NULL, y = NULL)
+  if (have_xy) {
+    if (isTRUE(normalize_xy)) {
+      raw_x_name <- make_unique_name(names(d), paste0(x, "_raw"))
+      raw_y_name <- make_unique_name(names(d), paste0(y, "_raw"))
+      d[[raw_x_name]] <- d[[x]]
+      d[[raw_y_name]] <- d[[y]]
+      raw_cols$x <- raw_x_name
+      raw_cols$y <- raw_y_name
+    }
+
+    conv <- cartesian_to_polar(d[[x]], d[[y]], normalize = normalize_xy)
+    d[[x]] <- conv$x
+    d[[y]] <- conv$y
+    theta_from_xy <- conv$theta
+    # Store radius information when available
+    if (!all(is.na(conv$rho))) {
+      rho_name <- make_unique_name(names(d), if (normalize_xy) "rho" else "radius")
+      d[[rho_name]] <- conv$rho
+      rho_col <- rho_name
+    }
+  }
+
+  theta_from_ang <- NULL
   if (have_angle) {
     theta_from_ang <- .as_radians(d[[angle]], angle_unit)
   }
 
-  # Choose authoritative angle; prefer explicit angle if provided
-  if (have_angle && have_xy) {
-    d$..theta_tmp <- theta_from_ang
-  } else if (have_angle) {
+  if (have_angle) {
     d$..theta_tmp <- theta_from_ang
   } else {
     d$..theta_tmp <- theta_from_xy
+  }
+
+  if (is.null(d$..theta_tmp)) {
+    stop("Unable to derive angles from the supplied inputs.")
   }
 
   # Optional weights sanity
@@ -161,20 +293,40 @@ TrajSet <- function(df,
   # Finalize angle column
   angle_col <- if (have_angle) angle else "angle"
   if (!have_angle) {
-    angle_col <- "angle"
+    angle_col <- make_unique_name(names(d), angle_col)
     d[[angle_col]] <- d$..theta_tmp
   } else {
-    d[[angle]] <- d$..theta_tmp
+    d[[angle_col]] <- d$..theta_tmp
   }
   d$..theta_tmp <- NULL
+
+  if (!have_xy) {
+    cart_out <- polar_to_cartesian(d[[angle_col]])
+    existing <- names(d)
+    x <- make_unique_name(existing, if (is.null(x)) "x" else x)
+    d[[x]] <- cart_out$x
+    existing <- names(d)
+    y <- make_unique_name(existing, if (is.null(y)) "y" else y)
+    d[[y]] <- cart_out$y
+  }
+
+  meta[["normalize_xy"]] <- isTRUE(normalize_xy)
+  meta[["raw_xy_cols"]] <- raw_cols
+  if (is.null(transform_history) && !is.null(meta$transform_history)) {
+    transform_history <- meta$transform_history
+  }
+  meta$transform_history <- .ensure_transform_history(transform_history)
 
   new("TrajSet",
       data = d,
       cols = list(id = id, time = time, angle = angle_col,
-                  x = if (have_xy) x else NULL,
-                  y = if (have_xy) y else NULL,
+                  x = if (!is.null(x)) x else NULL,
+                  y = if (!is.null(y)) y else NULL,
+                  raw_x = raw_cols$x,
+                  raw_y = raw_cols$y,
+                  rho = rho_col,
                   weight = weight),
-      angle_unit = "radians",
+      angle_unit = angle_unit,
       meta = meta)
 }
 
@@ -198,9 +350,88 @@ setMethod("angles", "TrajSet", function(x, as = c("numeric","circular"), unit = 
 setMethod("show", "TrajSet", function(object) {
   id <- object@cols$id; tm <- object@cols$time; th <- object@cols$angle
   xy <- if (!is.null(object@cols$x)) paste0(", x='", object@cols$x, "', y='", object@cols$y, "'") else ""
+  raw_xy <- if (!is.null(object@cols$raw_x)) paste0(", raw_x='", object@cols$raw_x, "', raw_y='", object@cols$raw_y, "'") else ""
   cat(sprintf("TrajSet: %d trajectories, %d observations\n", length(ids(object)), nrow(object@data)))
-  cat(sprintf("Columns: id='%s', time='%s', angle='%s' (radians)%s\n", id, tm, th, xy))
+  cat(sprintf("Columns: id='%s', time='%s', angle='%s' (radians)%s%s\n", id, tm, th, xy, raw_xy))
+  hist <- transform_history(object)
+  if (nrow(hist)) {
+    steps <- unique(hist$step[order(hist$order, hist$step)])
+    cat("Transform steps:", paste(steps, collapse = " -> "), "\n")
+  }
   print(utils::head(object@data, 6))
+})
+
+## ---- transform history helpers ----------------------------------------------
+#' Transform history helpers for TrajSet objects
+#'
+#' @param x A `TrajSet` object.
+#' @param step Character identifier for the transform step.
+#' @param traj_ids Character vector of trajectory identifiers affected by the step.
+#'   Defaults to all trajectories in `x` when `NULL`.
+#' @param implementation Character label for the implementation used to apply
+#'   the step. Defaults to `step`.
+#' @param params List-column of per-trajectory parameter sets (recycled when a
+#'   single entry is provided).
+#' @param order Optional integer giving the execution order. When omitted the
+#'   step is appended to the end of the log.
+#' @param depends_on Optional character vector naming prerequisite step(s).
+#' @param history Tibble or list describing the full transform history to
+#'   replace.
+#'
+#' @return For `transform_history`, a tibble describing the recorded steps. For
+#'   `log_transform` and `set_transform_history`, the updated `TrajSet` object.
+#' @name transform_history
+NULL
+
+#' @rdname transform_history
+#' @export
+setGeneric("transform_history", function(x) standardGeneric("transform_history"))
+
+#' @rdname transform_history
+#' @export
+setMethod("transform_history", "TrajSet", function(x) {
+  .ensure_transform_history(x@meta$transform_history)
+})
+
+#' @rdname transform_history
+#' @export
+setGeneric("log_transform", function(x, step, traj_ids = NULL,
+                                     implementation = step, params = NULL,
+                                     order = NULL, depends_on = NULL)
+  standardGeneric("log_transform"))
+
+#' @rdname transform_history
+#' @export
+setMethod("log_transform", "TrajSet", function(x, step, traj_ids = NULL,
+                                               implementation = step, params = NULL,
+                                               order = NULL, depends_on = NULL) {
+  if (is.null(traj_ids)) {
+    traj_ids <- ids(x)
+  }
+  history <- .append_transform_history(
+    transform_history(x),
+    step = step,
+    ids = traj_ids,
+    implementation = implementation,
+    params = params,
+    order = order,
+    depends_on = depends_on
+  )
+  x@meta$transform_history <- history
+  methods::validObject(x)
+  x
+})
+
+#' @rdname transform_history
+#' @export
+setGeneric("set_transform_history", function(x, history) standardGeneric("set_transform_history"))
+
+#' @rdname transform_history
+#' @export
+setMethod("set_transform_history", "TrajSet", function(x, history) {
+  x@meta$transform_history <- .ensure_transform_history(history)
+  methods::validObject(x)
+  x
 })
 
 ## ---- subsetting & extraction -------------------------------------------------
@@ -313,8 +544,12 @@ setMethod("c", signature(x="TrajSet"), function(x, ..., recursive = FALSE) {
   same_map <- vapply(xs, function(z) identical(z@cols, x@cols) && identical(z@angle_unit, x@angle_unit), logical(1))
   if (!all(same_map)) stop("All TrajSet objects must share identical column mapping")
   df <- do.call(rbind, lapply(xs, slot, "data"))
-  TrajSet(df,
-          id = x@cols$id, time = x@cols$time, angle = x@cols$angle,
-          x = x@cols$x, y = x@cols$y, angle_unit = "radians",
-          weight = x@cols$weight, meta = x@meta)
+  histories <- lapply(xs, transform_history)
+  meta <- x@meta
+  meta$transform_history <- .combine_transform_histories(histories)
+  new("TrajSet",
+      data = df,
+      cols = x@cols,
+      angle_unit = x@angle_unit,
+      meta = meta)
 })

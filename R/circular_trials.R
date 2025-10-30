@@ -70,19 +70,27 @@ get_trial_limits <- function(landmarks, animal_track, file_tbl, vid_num,
   ), .name_repair = "minimal")
 
   tl$video <- as.character(tl$video)
-  landmarks_df$y <- -landmarks_df$y
 
   for (i in seq_len(num_trials)) {
+    origin <- landmarks_df[(i * 2) - 1, c("x", "y"), drop = TRUE]
+    reference <- landmarks_df[i * 2, c("x", "y"), drop = TRUE]
+
     tl$first_f[i] <- landmarks_df[(i * 2) - 1, "frame", drop = TRUE]
-    tl$orig_x[i]  <- landmarks_df[(i * 2) - 1, "x", drop = TRUE]
-    tl$orig_y[i]  <- landmarks_df[(i * 2) - 1, "y", drop = TRUE]
-    tl$stim_x[i]  <- landmarks_df[i * 2, "x", drop = TRUE]
-    tl$stim_y[i]  <- landmarks_df[i * 2, "y", drop = TRUE]
+    tl$orig_x[i]  <- origin[["x"]]
+    tl$orig_y[i]  <- origin[["y"]]
+    tl$stim_x[i]  <- reference[["x"]]
+    tl$stim_y[i]  <- reference[["y"]]
     if (i < num_trials) {
       tl$last_f[i] <- landmarks_df[((i + 1) * 2) - 1, "frame", drop = TRUE] - 1
     } else {
       tl$last_f[i] <- max(track_df$frame, na.rm = TRUE)
     }
+
+    mapping <- build_unit_circle_mapping(origin, reference, flip_y = TRUE)
+    tl$r_px[i] <- mapping$radius
+    tl$stim_theta[i] <- mapping$stim_theta_unit
+    tl$stim_x_0[i] <- cos(mapping$stim_theta_unit)
+    tl$stim_y_0[i] <- sin(mapping$stim_theta_unit)
   }
 
   tl$video <- file_tbl$basename[vid_num]
@@ -92,20 +100,14 @@ get_trial_limits <- function(landmarks, animal_track, file_tbl, vid_num,
     }
   }
 
-  tl$stim_x_0 <- tl$stim_x - tl$orig_x
-  tl$stim_y_0 <- tl$stim_y - tl$orig_y
-  tl$stim_theta <- atan2(tl$stim_y_0, tl$stim_x_0)
-  tl$r_px <- sqrt(tl$stim_x_0^2 + tl$stim_y_0^2)
-
   if (identical(midpoint, "midpoint") && "type" %in% names(tl) && tl$type[1] == "Herm") {
     stim_theta <- mapply(rad2clock, tl$stim_theta)
     stim_theta <- stim_theta - tl$arc * (pi / 360)
     stim_theta <- mapply(rad_shepherd_clock, stim_theta)
     tl$stim_theta <- mapply(rad_unclock, stim_theta)
+    tl$stim_x_0 <- cos(tl$stim_theta)
+    tl$stim_y_0 <- sin(tl$stim_theta)
   }
-
-  tl$stim_x_0 <- cos(tl$stim_theta)
-  tl$stim_y_0 <- sin(tl$stim_theta)
 
   tl$quadrant <- "right"
   tl$quadrant[tl$stim_theta > .25 * pi & tl$stim_theta <= .75 * pi] <- "top"
@@ -131,8 +133,9 @@ get_trial_limits <- function(landmarks, animal_track, file_tbl, vid_num,
 #' @param radius_criterion Strategy for choosing the radius landmarks. `"first_past"`
 #'   selects the first point beyond each threshold, while `"closest"` chooses the
 #'   closest sample to the specified radius.
-#' @return A list containing the per-trial track tibbles and the updated
-#'   `trial_limits` data frame.
+#' @return A `TrajSet` containing all valid trial observations. The corresponding
+#'   trial limits (including `valid_track` flags) are stored in
+#'   `meta$trial_limits`.
 #'
 #' @importFrom purrr compact map
 #' @importFrom tibble tibble add_column as_tibble
@@ -143,7 +146,6 @@ get_tracked_object_pos <- function(
 
   radius_criterion <- match.arg(radius_criterion)
   track_df <- .coerce_xy_frame(animal_track, "track")
-  track_df$y <- -track_df$y
 
   num_trials <- nrow(trial_limits)
   if (!"valid_track" %in% names(trial_limits)) {
@@ -151,73 +153,124 @@ get_tracked_object_pos <- function(
   }
 
   trackz <- purrr::map(vector(length = num_trials), tibble::tibble)
+  transform_entries <- vector("list", num_trials)
 
   for (i in seq_len(num_trials)) {
     idx <- track_df$frame >= trial_limits$first_f[i] &
       track_df$frame <= trial_limits$last_f[i]
     XY <- tibble::as_tibble(track_df[idx, , drop = FALSE])
+    trial_id <- paste0(trial_limits$video[i], "_", i)
+
+    mapping <- build_unit_circle_mapping(
+      origin = c(trial_limits$orig_x[i], trial_limits$orig_y[i]),
+      reference = c(trial_limits$stim_x[i], trial_limits$stim_y[i]),
+      flip_y = TRUE
+    )
+    mapped <- mapping$map(XY$x, XY$y)
 
     XY <- XY |>
       tibble::add_column(
-        trans_x = 0, trans_y = 0, abs_theta = 0,
-        trans_rho = 0, video = NA_character_,
-        order = NA_character_, vid_ord = NA_character_, rel_theta = 0
+        trans_x = mapped$trans_x,
+        trans_y = mapped$trans_y,
+        trans_rho = mapped$trans_rho,
+        abs_theta = mapped$abs_theta_unit,
+        rel_theta = mapped$rel_theta_unit,
+        rel_x = mapped$rel_x,
+        rel_y = mapped$rel_y,
+        video = trial_limits$video[i],
+        order = as.character(i),
+        vid_ord = trial_id,
+        .after = "y"
       )
 
-    XY$trans_x <- (XY$x - trial_limits$orig_x[i]) / trial_limits$r_px[i]
-    XY$trans_y <- (XY$y - trial_limits$orig_y[i]) / trial_limits$r_px[i]
-
-    abs_theta <- atan2(XY$trans_y, XY$trans_x)
-    XY$abs_theta <- mapply(rad2clock, abs_theta)
-    XY$trans_rho <- sqrt(XY$trans_x^2 + XY$trans_y^2)
-    XY$video <- trial_limits$video[i]
-    XY$order <- as.character(i)
-    XY$vid_ord <- paste(XY$video, XY$order, sep = "_")
-
-    stim_theta <- rad2clock(trial_limits$stim_theta[i])
-    XY$rel_theta <- XY$abs_theta - stim_theta
-    XY$rel_theta <- mapply(rad_shepherd_clock, XY$rel_theta)
-    XY$rel_theta <- mapply(rad_unclock, XY$rel_theta)
-    XY$abs_theta <- mapply(rad_unclock, XY$abs_theta)
-    XY$rel_x <- XY$trans_rho * cos(XY$rel_theta)
-    XY$rel_y <- XY$trans_rho * sin(XY$rel_theta)
     trackz[[i]] <- XY
+    transform_entries[[i]] <- list(
+      step = "unit_circle_mapping",
+      order = 1L,
+      id = trial_id,
+      implementation = "build_unit_circle_mapping",
+      params = mapping,
+      depends_on = character()
+    )
 
-    if (all(XY$trans_rho > .4, na.rm = TRUE)) {
+    if (all(mapped$trans_rho > .4, na.rm = TRUE)) {
       trackz[[i]] <- NULL
+      transform_entries[[i]] <- NULL
       trial_limits$valid_track[i] <- FALSE
-      warning("Track starts too far from centre: ", XY$video[1])
+      warning("Track starts too far from centre: ", trial_limits$video[i])
       next
     } else {
       trial_limits$valid_track[i] <- TRUE
     }
-    if (any(XY$trans_rho > 1, na.rm = TRUE)) {
-      warning("Track exceeds arena width: ", XY$video[1])
+    if (any(mapped$trans_rho > 1, na.rm = TRUE)) {
+      warning("Track exceeds arena width: ", trial_limits$video[i])
     }
 
     trial_limits$order[i] <- as.character(i)
-    trial_limits$vid_ord[i] <- paste0(trial_limits$video[i], "_", i)
+    trial_limits$vid_ord[i] <- trial_id
 
     if (radius_criterion == "first_past") {
-      if (!any(XY$trans_rho > circ0, na.rm = TRUE)) {
-        warning("No points beyond inner radius for ", XY$video[1])
+      if (!any(mapped$trans_rho > circ0, na.rm = TRUE)) {
+        warning("No points beyond inner radius for ", trial_limits$video[i])
       }
-      inner_idx <- which(XY$trans_rho >= circ0)
-      inner_idx <- if (length(inner_idx)) inner_idx[1] else which.max(XY$trans_rho)
-      outer_idx <- which(XY$trans_rho >= circ1)
-      outer_idx <- if (length(outer_idx)) outer_idx[1] else which.max(XY$trans_rho)
+      inner_idx <- which(mapped$trans_rho >= circ0)
+      inner_idx <- if (length(inner_idx)) inner_idx[1] else which.max(mapped$trans_rho)
+      outer_idx <- which(mapped$trans_rho >= circ1)
+      outer_idx <- if (length(outer_idx)) outer_idx[1] else which.max(mapped$trans_rho)
     } else {
-      inner_idx <- which.min(abs(XY$trans_rho - circ0))
-      outer_idx <- which.min(abs(XY$trans_rho - circ1))
+      inner_idx <- which.min(abs(mapped$trans_rho - circ0))
+      outer_idx <- which.min(abs(mapped$trans_rho - circ1))
     }
 
-    trial_limits$x0[i] <- XY$trans_x[inner_idx]
-    trial_limits$y0[i] <- XY$trans_y[inner_idx]
-    trial_limits$x1[i] <- XY$trans_x[outer_idx]
-    trial_limits$y1[i] <- XY$trans_y[outer_idx]
+    trial_limits$x0[i] <- mapped$trans_x[inner_idx]
+    trial_limits$y0[i] <- mapped$trans_y[inner_idx]
+    trial_limits$x1[i] <- mapped$trans_x[outer_idx]
+    trial_limits$y1[i] <- mapped$trans_y[outer_idx]
   }
 
-  list(purrr::compact(trackz), trial_limits)
+  trackz <- purrr::compact(trackz)
+  transform_entries <- purrr::compact(transform_entries)
+  transform_history <- .empty_transform_history()
+  if (length(transform_entries)) {
+    for (entry in transform_entries) {
+      transform_history <- tibble::add_row(
+        transform_history,
+        step = entry$step,
+        order = entry$order,
+        id = entry$id,
+        implementation = entry$implementation,
+        params = list(entry$params),
+        depends_on = list(entry$depends_on)
+      )
+    }
+  }
+
+  if (!length(trackz)) {
+    return(NULL)
+  }
+
+  combined <- tibble::as_tibble(do.call(rbind, trackz))
+  combined <- tibble::add_column(
+    combined,
+    trial_id = combined$vid_ord,
+    .before = "frame"
+  )
+
+  trajset <- TrajSet(
+    combined,
+    id = "trial_id",
+    time = "frame",
+    angle = "rel_theta",
+    x = "trans_x",
+    y = "trans_y",
+    angle_unit = "radians",
+    normalize_xy = FALSE,
+    meta = list(source = "get_tracked_object_pos")
+  )
+  trajset <- set_transform_history(trajset, transform_history)
+  trajset@meta$trial_limits <- trial_limits
+
+  trajset
 }
 
 #' Aggregate track positions across all videos in a manifest.
@@ -234,16 +287,16 @@ get_tracked_object_pos <- function(
 #'   [load_tracks()] or [load_tracks2()].
 #' @param track_dir Directory containing the landmark and track text files.
 #'
-#' @return A list with two elements: a tibble of all valid track observations
-#'   and the corresponding trial limits tibble.
+#' @return A `TrajSet` combining the normalised observations for all valid
+#'   trials in the manifest. The aggregated trial limits are available via
+#'   `meta$trial_limits`.
 #'
-#' @importFrom purrr compact
-#' @importFrom tibble tibble as_tibble
+#' @importFrom utils read.delim
 #' @export
 get_all_object_pos <- function(landmarks = NULL, animal_track = NULL,
                                file_tbl, track_dir) {
-  all_trackz <- list()
-  trialz <- NULL
+  trajsets <- list()
+  trial_limits_list <- list()
 
   for (i in seq_len(nrow(file_tbl))) {
     animal_track_df <- utils::read.delim(
@@ -260,22 +313,28 @@ get_all_object_pos <- function(landmarks = NULL, animal_track = NULL,
       warning("Odd number of landmarks: ", file_tbl$basename[i])
     }
     trial_limits <- get_trial_limits(landmarks_df, animal_track_df, file_tbl, i)
-    trial_track_list <- get_tracked_object_pos(trial_limits, animal_track_df)
-    all_trackz <- c(all_trackz, trial_track_list[[1]])
-    if (is.null(trialz)) {
-      trialz <- trial_track_list[[2]]
-    } else {
-      trialz <- rbind(trialz, trial_track_list[[2]])
+    ts <- get_tracked_object_pos(trial_limits, animal_track_df)
+    if (!is.null(ts)) {
+      trajsets <- c(trajsets, list(ts))
+      trial_limits_list <- c(trial_limits_list, list(ts@meta$trial_limits))
     }
   }
 
-  valid_tracks <- purrr::compact(all_trackz)
-  if (length(valid_tracks) == 0) {
+  if (!length(trajsets)) {
     warning("No valid tracks were produced for the supplied files.")
-    trackz_tbl <- tibble::tibble()
-  } else {
-    trackz_tbl <- tibble::as_tibble(do.call(rbind, valid_tracks))
+    return(NULL)
   }
 
-  list(trackz_tbl, trialz)
+  combined_ts <- trajsets[[1]]
+  if (length(trajsets) > 1) {
+    for (j in 2:length(trajsets)) {
+      combined_ts <- c(combined_ts, trajsets[[j]])
+    }
+  }
+
+  if (length(trial_limits_list)) {
+    combined_ts@meta$trial_limits <- do.call(rbind, trial_limits_list)
+  }
+
+  combined_ts
 }

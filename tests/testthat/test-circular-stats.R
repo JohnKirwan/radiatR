@@ -1,15 +1,37 @@
-test_that("mean resultant length and circular mean behave as expected", {
-  angles <- c(0, pi / 2, pi / 4)
-  expected_mean <- atan2(mean(sin(angles)), mean(cos(angles)))
-  expect_equal(circular_mean(angles), expected_mean, tolerance = 1e-8)
+test_that("circ_summary matches circular package statistics", {
+  df <- data.frame(
+    id = rep(c("a", "b"), each = 4),
+    time = rep(seq_len(4), times = 2),
+    angle = c(0, pi / 6, pi / 3, pi / 2, pi, 5 * pi / 4, 3 * pi / 2, 11 * pi / 6)
+  )
 
-  expected_R <- sqrt(mean(cos(angles))^2 + mean(sin(angles))^2)
-  expect_equal(mean_resultant_length(angles), expected_R, tolerance = 1e-8)
-})
+  ts <- TrajSet(df, id = "id", time = "time", angle = "angle", angle_unit = "radians")
+  summary_by_id <- circ_summary(ts, by = "id")
 
-test_that("circular standard deviation validates inputs", {
-  expect_equal(circular_sd_from_R(1), 0)
-  expect_error(circular_sd_from_R(0), "`R` must lie in the interval")
+  wrap_to_2pi_local <- function(theta) {
+    out <- theta %% (2 * pi)
+    out[out < 0] <- out[out < 0] + 2 * pi
+    out
+  }
+
+  expected <- lapply(split(df$angle, df$id), function(theta) {
+    tc <- circular::circular(theta, units = "radians", modulo = "2pi")
+    list(
+      mean = wrap_to_2pi_local(as.numeric(circular::mean.circular(tc))),
+      R = as.numeric(circular::rho.circular(tc))
+    )
+  })
+
+  for (grp in names(expected)) {
+    row <- summary_by_id[summary_by_id$id == grp, ]
+    expect_equal(row$mean_dir, expected[[grp]]$mean, tolerance = 1e-8)
+    expect_equal(row$resultant_R, expected[[grp]]$R, tolerance = 1e-8)
+  }
+
+  global <- circ_summary(ts, by = "global")
+  tc_global <- circular::circular(df$angle, units = "radians", modulo = "2pi")
+  expect_equal(global$mean_dir, wrap_to_2pi_local(as.numeric(circular::mean.circular(tc_global))), tolerance = 1e-8)
+  expect_equal(global$resultant_R, as.numeric(circular::rho.circular(tc_global)), tolerance = 1e-8)
 })
 
 test_that("clockwise conversions preserve angles", {

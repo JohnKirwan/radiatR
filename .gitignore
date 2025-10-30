@@ -9,3 +9,5 @@ inst/doc
 .Rprofile
 /renv
 renv.lock
+/.quarto/
+**/*.quarto_ipynb

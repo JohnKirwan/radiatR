@@ -1,77 +1,8 @@
-# Circular statistics helpers (means, resultant length, dispersion)
+# Circular statistics bridge helpers
 #
-
-#' Calculate the circular mean of a set of angles in radians
-#'
-#' @param angles A numeric vector of angles in radians
-#' @param normalize_range Logical, if TRUE (default), the output will be in the range (-pi, pi], otherwise in the range [0, 2 * pi)
-#'
-#' @return The circular mean angle in radians
-#' @export
-#'
-#' @examples
-#' angles <- c(0, pi, pi/2, 3*pi/2)
-#' circular_mean(angles)
-#' circular_mean(angles, normalize_range = FALSE)
-circular_mean <- function(angles, normalize_range = TRUE) {
-  if (!is.numeric(angles)) {
-    stop("The input must be a numeric vector of angles in radians")
-  }
-
-  mean_cos <- mean(cos(angles))
-  mean_sin <- mean(sin(angles))
-  circular_mean_angle <- atan2(mean_sin, mean_cos)
-
-  if (normalize_range) {
-    if (circular_mean_angle <= -pi) {
-      circular_mean_angle <- circular_mean_angle + 2 * pi
-    }
-  } else if (circular_mean_angle < 0) {
-    circular_mean_angle <- circular_mean_angle + 2 * pi
-  }
-
-  circular_mean_angle
-}
-
-#' Calculate the mean resultant length of a set of angles in radians
-#'
-#' @param angles A numeric vector of angles in radians
-#'
-#' @return The mean resultant length (R)
-#' @export
-#'
-#' @examples
-#' angles <- c(0, pi, pi/2, 3*pi/2)
-#' mean_resultant_length(angles)
-mean_resultant_length <- function(angles) {
-  if (!is.numeric(angles)) {
-    stop("The input must be a numeric vector of angles in radians")
-  }
-
-  mean_cos <- mean(cos(angles))
-  mean_sin <- mean(sin(angles))
-  sqrt(mean_cos^2 + mean_sin^2)
-}
-
-#' Calculate the circular standard deviation using the mean resultant length (R)
-#'
-#' @param R The mean resultant length (R)
-#'
-#' @return The circular standard deviation
-#' @export
-#'
-#' @examples
-#' R <- mean_resultant_length(c(0, pi, pi/2, 3*pi/2))
-#' circular_sd_from_R(R)
-circular_sd_from_R <- function(R) {
-  if (!is.numeric(R) || length(R) != 1) {
-    stop("The input must be a single numeric value")
-  }
-  if (R <= 0 || R > 1) {
-    stop("`R` must lie in the interval (0, 1].")
-  }
-  sqrt(-2 * log(R))
-}
+# Users should rely on the `circular` package for low-level statistics such as
+# means, resultant length, and dispersion. This module focuses on higher-level
+# summaries that combine those primitives for trajectory sets.
 
 #' Circular summary statistics for trajectories
 #'
@@ -108,10 +39,36 @@ setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")
     ii <- split_idx[[k]]
     theta <- d[[th]][ii]
     wts <- if (!is.null(wcol) && wcol %in% names(d)) d[[wcol]][ii] else NULL
-    tc <- circular::circular(theta, units="radians", modulo="2pi")
-    mu <- circular::mean.circular(tc, na.rm = TRUE, weights = wts)
-    R  <- circular::rho.circular(tc,  na.rm = TRUE, weights = wts)
-    kap <- .est_kappa_safe(tc, fallback = NA_real_, w = wts)
+
+    valid <- !is.na(theta)
+    if (!is.null(wts)) {
+      valid <- valid & !is.na(wts)
+    }
+    theta_valid <- theta[valid]
+    wts_valid <- if (!is.null(wts)) wts[valid] else NULL
+
+    tc <- circular::circular(theta_valid, units = "radians", modulo = "2pi")
+    mu <- if (length(theta_valid)) {
+      circular::mean.circular(tc, na.rm = TRUE, weights = wts_valid)
+    } else {
+      NA_real_
+    }
+
+    if (length(theta_valid)) {
+      if (is.null(wts_valid)) {
+        mean_cos <- mean(cos(theta_valid))
+        mean_sin <- mean(sin(theta_valid))
+      } else {
+        w_norm <- wts_valid / sum(wts_valid)
+        mean_cos <- sum(w_norm * cos(theta_valid))
+        mean_sin <- sum(w_norm * sin(theta_valid))
+      }
+      R <- sqrt(mean_cos^2 + mean_sin^2)
+    } else {
+      R <- NA_real_
+    }
+
+    kap <- .est_kappa_safe(tc, fallback = NA_real_, w = wts_valid)
     data.frame(
       id          = if (by == "id") k else "global",
       n           = sum(!is.na(theta)),

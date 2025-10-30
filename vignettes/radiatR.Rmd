@@ -15,7 +15,14 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-library(radiatR)
+if (requireNamespace("radiatR", quietly = TRUE)) {
+  library(radiatR)
+} else if (requireNamespace("pkgload", quietly = TRUE)) {
+  # Load package from source when knitting the vignette interactively
+  pkgload::load_all("..", export_all = FALSE, helpers = FALSE, quiet = TRUE)
+} else {
+  stop("Package 'radiatR' not installed and 'pkgload' not available. Install with remotes::install_local('.') or install.packages('pkgload').")
+}
 library(ggplot2)
 ```
 
@@ -32,20 +39,25 @@ library(ggplot2)
 Large tracking files are rarely suitable for inclusion in a package. To make example workflows reproducible, `simulate_tracks()` creates tidy demo data with controllable tortuosity.
 
 ```{r simulate}
-demo_tracks <- simulate_tracks(n_trials = 4, n_points = 150, seed = 42)
-head(demo_tracks)
+# Simulated demo is a tibble; coerce to TrajSet for a single canonical workflow
+sim_df <- simulate_tracks(n_trials = 4, n_points = 150, seed = 42)
+ts <- TrajSet(
+  sim_df,
+  id = "trial_id",
+  time = "frame",
+  angle = "rel_theta",
+  x = "rel_x",
+  y = "rel_y",
+  angle_unit = "radians",
+  normalize_xy = FALSE
+)
+ts
 ```
 
-The resulting tibble already contains relative coordinates (`rel_x`, `rel_y`) and angular summaries, so we can visualise it directly.
+With a `TrajSet` in hand, plotting is straightforward:
 
 ```{r radiate}
-radiate(
-  demo_tracks,
-  x_col = "rel_x",
-  y_col = "rel_y",
-  group_col = "trial_id",
-  colour_col = "tortuosity"
-)
+radiate(ts, group_col = "trial_id", colour_col = "tortuosity")
 ```
 
 ## File-Based Ingest Pipeline
@@ -81,7 +93,7 @@ write.table(
 
 # Import metadata and enrich it with trial annotations
 file_tbl <- import_tracks(tmp_dir)
-manifest <- data.frame(
+manifests <- data.frame(
   file = file_tbl$basename,
   arc = c(0),
   type = "demo",
@@ -89,7 +101,7 @@ manifest <- data.frame(
   id = "subject_01",
   stringsAsFactors = FALSE
 )
-file_tbl <- load_tracks(file_tbl, manifest, tmp_dir)
+file_tbl <- load_tracks(file_tbl, manifests, tmp_dir)
 
 # Derive trial limits and normalised coordinates
 landmarks_df <- read.delim(file.path(tmp_dir, file_tbl$landmark[1]),
@@ -100,24 +112,30 @@ tracks_df <- read.delim(file.path(tmp_dir, file_tbl$track[1]),
 names(tracks_df) <- c("frame", "x", "y")
 
 trial_limits <- get_trial_limits(landmarks_df, tracks_df, file_tbl, vid_num = 1)
-trial_objects <- get_tracked_object_pos(trial_limits, tracks_df)
+trial_ts <- get_tracked_object_pos(trial_limits, tracks_df)  # This is a TrajSet
 
-str(trial_objects[[1]][[1]])
+trial_ts
 ```
 
-The list returned by `get_tracked_object_pos()` contains one tibble per trial as well as the augmented `trial_limits` data frame. These outputs feed directly into `radiate()` or any downstream statistical workflow.
+The result is a `TrajSet` that stores trial-level metadata (including `trial_limits`) in `meta` and is ready to use with all downstream package functions. You can use it directly in visualisation or summary tools:
 
 ```{r ingest-plot}
-all_trial_tracks <- do.call(rbind, trial_objects[[1]])
 radiate(
-  all_trial_tracks,
-  x_col = "rel_x",
-  y_col = "rel_y",
-  group_col = "trial_num",
-  colour_col = "trial_num",
-  label_col = "trial_num",
+  trial_ts,                           # Directly plot the TrajSet
+  group_col = "trial_id",
+  colour_col = "video",
+  label_col = "trial_id",
   show_arrow = TRUE
 )
+```
+
+## Advanced: Accessing table-like data
+
+You can still access the underlying data frame for legacy code or custom analysis, but the main workflow is TrajSet-centric:
+
+```{r trajset-advanced}
+head(trial_ts@data)
+head(trial_ts@meta$trial_limits)
 ```
 
 Remember to clean up when you are finished:

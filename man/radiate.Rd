@@ -74,3 +74,7 @@ Accepts either a precomputed data frame of polar/cartesian coordinates or a
 `TrajSet`. When a `TrajSet` is supplied, column mappings are inferred from
 the object and handed off to the plotting helpers.
 }
+\examples{
+tracks_demo <- simulate_tracks(n_trials = 1, n_points = 200, seed = 1)
+radiate(tracks_demo, x_col = "rel_x", y_col = "rel_y", group_col = "trial_num")
+}
