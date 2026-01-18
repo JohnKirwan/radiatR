@@ -1,13 +1,6 @@
-.Rproj.user
-.Rhistory
-.RData
-.Ruserdata
-*.Rproj
 inst/doc
 .vs/
-.Rbuildignore
-.Rprofile
-/renv
-renv.lock
 /.quarto/
 **/*.quarto_ipynb
+inst/doc/
+vignettes/*_files/

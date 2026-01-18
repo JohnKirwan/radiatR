@@ -321,6 +321,7 @@ TrajSet_read_format <- function(x, format, ...) {
 #' @param drop drop these columns after mapping
 #' @param id_from_filename if TRUE and id missing, derive id from file stem when reading multiple files
 #' @param validate if TRUE run S4 validity checks
+#' @param format Optional loader format name or list spec registered via [register_loader_format()]
 #' @return TrajSet
 #' @export
 TrajSet_read <- function(x,
@@ -332,9 +333,29 @@ TrajSet_read <- function(x,
                          mutate = NULL,
                          keep = NULL, drop = NULL,
                          id_from_filename = TRUE,
-                         validate = TRUE) {
+                         validate = TRUE,
+                         format = NULL) {
   angle_unit <- match.arg(angle_unit)
   time_type  <- match.arg(time_type)
+
+  if (!is.null(format)) {
+    return(TrajSet_read_format(
+      x,
+      format,
+      mapping = mapping,
+      angle_unit = angle_unit,
+      time_type = time_type,
+      tz = tz,
+      fps = fps,
+      normalize_xy = normalize_xy,
+      dialect = dialect,
+      mutate = mutate,
+      keep = keep,
+      drop = drop,
+      id_from_filename = id_from_filename,
+      validate = validate
+    ))
+  }
 
   # read
   if (is.data.frame(x)) {
@@ -438,6 +459,7 @@ TrajSet_read <- function(x,
 #' @param drop drop these columns after mapping
 #' @param id_from_filename if TRUE and id missing, derive id from file stem when reading multiple files
 #' @param validate if TRUE run S4 validity checks
+#' @param format Optional loader format name or list spec registered via [register_loader_format()]
 #' @return TrajSet
 #' @export
 TrajSet_read <- function(x,
@@ -449,9 +471,29 @@ TrajSet_read <- function(x,
                          mutate = NULL,
                          keep = NULL, drop = NULL,
                          id_from_filename = TRUE,
-                         validate = TRUE) {
+                         validate = TRUE,
+                         format = NULL) {
   angle_unit <- match.arg(angle_unit)
   time_type  <- match.arg(time_type)
+
+  if (!is.null(format)) {
+    return(TrajSet_read_format(
+      x,
+      format,
+      mapping = mapping,
+      angle_unit = angle_unit,
+      time_type = time_type,
+      tz = tz,
+      fps = fps,
+      normalize_xy = normalize_xy,
+      dialect = dialect,
+      mutate = mutate,
+      keep = keep,
+      drop = drop,
+      id_from_filename = id_from_filename,
+      validate = validate
+    ))
+  }
 
   # read
   if (is.data.frame(x)) {
@@ -506,7 +548,7 @@ TrajSet_read <- function(x,
   df[[time]] <- .coerce_time(df[[time]], time_type = time_type, tz = tz, fps = fps)
 
   # angle unit
-  ang_unit <- if (angle_unit == "auto") .guess_angle_unit(df[[angle]]) else angle_unit
+  ang_unit <- if (angle_unit == "auto" && !is.null(angle)) .guess_angle_unit(df[[angle]]) else angle_unit
 
   # cleanup names and select
   keep_cols <- unique(c(id, time, angle, xcol, ycol, wcol, keep, "..source_file"))

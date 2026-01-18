@@ -1,6 +1,6 @@
 # radiatR
 
-radiatR is an R package that provides a toolkit for working with movement trajectories, particularly those with circular or angular support. It is designed to import, summarise, analyze, and visualise large numbers of movement tracks—especially suited for behavioural experiments involving movement from or around a central origin, such as radial mazes or arena-based trials.
+radiatR is an R package that provides a toolkit for working with movement trajectories with circular support. It is designed to import, summarise, analyze, and visualise large numbers of movement tracks—especially suited for behavioural experiments involving movement from or around a central origin, such as radial mazes or arena-based trials.
 
 ## Overview
 
