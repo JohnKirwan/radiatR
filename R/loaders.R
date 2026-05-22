@@ -1011,17 +1011,14 @@ register_loader_dialect("boris_xy", function(x) {
 
 
 # dtrack (https://bitbucket.org/jochensmolka/dtrack)
-# Expects a data frame with >=3 columns: frame, x, y[, confidence].
-# The confidence column is dropped. Use dtrack_read() to read from a file path.
+# Accepts a pre-parsed data frame with >=3 columns: frame, x, y[, confidence].
+# The confidence column is dropped silently. id is set to "1" because no
+# filename is available; use dtrack_read() when reading from a file path —
+# it derives id from the filename stem instead.
 register_loader_dialect("dtrack", function(x) {
-  df <- if (is.character(x) && file.exists(x)) {
-    utils::read.delim(x, sep = "\t", header = FALSE, stringsAsFactors = FALSE)
-  } else {
-    x
-  }
-  stopifnot(is.data.frame(df))
-  if (ncol(df) < 3L) stop("dtrack: expected at least 3 columns (frame, x, y)")
-  df <- df[, 1:3, drop = FALSE]
+  stopifnot(is.data.frame(x))
+  if (ncol(x) < 3L) stop("dtrack: expected at least 3 columns (frame, x, y)")
+  df <- x[, 1:3, drop = FALSE]
   names(df) <- c("frame", "x", "y")
   df$id <- "1"
   df
