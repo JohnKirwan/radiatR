@@ -4,3 +4,4 @@ inst/doc
 **/*.quarto_ipynb
 inst/doc/
 vignettes/*_files/
+vignettes/*.html

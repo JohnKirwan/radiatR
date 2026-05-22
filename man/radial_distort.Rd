@@ -2,18 +2,29 @@
 % Please edit documentation in R/calibration.R
 \name{radial_distort}
 \alias{radial_distort}
-\title{Apply radial distortion to the given point}
+\title{Remove radial/tangential distortion from a point on the image plane.}
 \usage{
-radial_distort(xy, k)
+radial_distort(xy, k, max_iterations = 5, tolerance = 1e-09)
 }
 \arguments{
-\item{xy}{point}
+\item{xy}{Numeric vector of length two, or a two-column matrix of distorted
+points expressed in normalised image coordinates (after subtracting the
+principal point and dividing by the focal lengths).}
 
-\item{k}{radial distortion coefficients}
+\item{k}{Distortion coefficients. Supports numeric vectors, named vectors
+containing entries such as `k1`, `k2`, `k3`, `p1`, `p2`, or lists with
+`radial` and `tangential` components. Missing coefficients are treated as
+zero.}
+
+\item{max_iterations}{Maximum number of fixed-point iterations used when
+inverting the distortion model. Defaults to `5`.}
+
+\item{tolerance}{Convergence tolerance for the iterative solve. Defaults to
+`1e-9`.}
 }
 \value{
-distorted point
+Distortion-corrected point(s) with the same shape as `xy`.
 }
 \description{
-Apply radial distortion to the given point
+Remove radial/tangential distortion from a point on the image plane.
 }

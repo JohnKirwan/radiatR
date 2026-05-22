@@ -7,7 +7,7 @@
 scaled_xy2mm(xy, f, F)
 }
 \arguments{
-\item{xy}{point}
+\item{xy}{point (normalised coordinate after division by the focal lengths)}
 
 \item{f}{focal length in pixels}
 

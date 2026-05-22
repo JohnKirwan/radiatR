@@ -71,7 +71,7 @@ circ_summary(ts)
 When you need a reproducible toy dataset without any files on disk, `simulate_tracks()` creates tidy data with controllable tortuosity:
 
 ```{r simulate}
-sim_df <- simulate_tracks(n_trials = 4, n_points = 150, seed = 42)
+sim_df <- simulate_tracks(conditions = data.frame(n_trials = 4L), n_points = 150, seed = 42)
 ts_sim <- TrajSet(
   sim_df,
   id = "trial_id",

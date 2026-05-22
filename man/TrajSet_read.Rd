@@ -17,7 +17,8 @@ TrajSet_read(
   keep = NULL,
   drop = NULL,
   id_from_filename = TRUE,
-  validate = TRUE
+  validate = TRUE,
+  format = NULL
 )
 
 TrajSet_read(
@@ -33,7 +34,8 @@ TrajSet_read(
   keep = NULL,
   drop = NULL,
   id_from_filename = TRUE,
-  validate = TRUE
+  validate = TRUE,
+  format = NULL
 )
 }
 \arguments{
@@ -62,6 +64,8 @@ TrajSet_read(
 \item{id_from_filename}{if TRUE and id missing, derive id from file stem when reading multiple files}
 
 \item{validate}{if TRUE run S4 validity checks}
+
+\item{format}{Optional loader format name or list spec registered via [register_loader_format()]}
 }
 \value{
 TrajSet

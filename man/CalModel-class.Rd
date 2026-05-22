@@ -12,7 +12,7 @@ Camera calibration model for trajectory correction
 \describe{
 \item{\code{K}}{3x3 intrinsic calibration matrix}
 
-\item{\code{k}}{Numeric vector of radial distortion coefficients (k1, k2, ...)}
+\item{\code{k}}{Numeric vector or list of distortion coefficients (radial first, optional tangential)}
 
 \item{\code{F}}{Numeric scalar or length-2 vector giving focal length scaling (e.g., mm per pixel)}
 }}
@@ -20,7 +20,7 @@ Camera calibration model for trajectory correction
 \seealso{
 \code{\link{calibrate_positions}}
 
-Other calibration: 
-\code{\link{calibrate_positions}()}
+Other calibration:
+\code{\link[=calibrate_positions]{calibrate_positions()}}
 }
 \concept{calibration}
