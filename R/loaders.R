@@ -93,6 +93,36 @@ import_tracks <- function(dir, landmark_suffix = NULL, track_suffix = NULL){
   return(file_tbl)
 }
 
+#' Read a dtrack trajectory file into a TrajSet
+#'
+#' Reads a tab-separated, headerless file produced by dtrack
+#' (\url{https://bitbucket.org/jochensmolka/dtrack}). The file is expected to
+#' have at least three columns: frame number, x coordinate, y coordinate. A
+#' fourth confidence/flag column (always \code{1} in practice) is silently
+#' dropped.
+#'
+#' @param path Path to a dtrack \code{_point02.txt} trajectory file.
+#' @param normalize_xy Logical; passed to [TrajSet_read()]. Default \code{FALSE}
+#'   because dtrack files are in pixel space.
+#' @param ... Additional arguments passed to [TrajSet_read()].
+#' @return A \code{TrajSet}.
+#' @seealso [import_tracks()] for discovering dtrack file pairs in a directory.
+#' @export
+dtrack_read <- function(path, normalize_xy = FALSE, ...) {
+  stopifnot(is.character(path), length(path) == 1L, file.exists(path))
+  df <- utils::read.delim(path, sep = "\t", header = FALSE, stringsAsFactors = FALSE)
+  if (ncol(df) < 3L) stop("dtrack: expected at least 3 columns (frame, x, y)")
+  df <- df[, 1:3, drop = FALSE]
+  names(df) <- c("frame", "x", "y")
+  df$id <- tools::file_path_sans_ext(basename(path))
+  TrajSet_read(
+    df,
+    mapping = list(id = "id", time = "frame", x = "x", y = "y"),
+    normalize_xy = normalize_xy,
+    ...
+  )
+}
+
 escape_specials <- function(x) {
   gsub("([.|()\\^{}+$*?]|\\[|\\]|\\\\)", "\\\\\\1", x)
 }
@@ -979,6 +1009,23 @@ register_loader_dialect("boris_xy", function(x) {
 })
 
 
+
+# dtrack (https://bitbucket.org/jochensmolka/dtrack)
+# Expects a data frame with >=3 columns: frame, x, y[, confidence].
+# The confidence column is dropped. Use dtrack_read() to read from a file path.
+register_loader_dialect("dtrack", function(x) {
+  df <- if (is.character(x) && file.exists(x)) {
+    utils::read.delim(x, sep = "\t", header = FALSE, stringsAsFactors = FALSE)
+  } else {
+    x
+  }
+  stopifnot(is.data.frame(df))
+  if (ncol(df) < 3L) stop("dtrack: expected at least 3 columns (frame, x, y)")
+  df <- df[, 1:3, drop = FALSE]
+  names(df) <- c("frame", "x", "y")
+  df$id <- "1"
+  df
+})
 
 # ---- built-in dialects: general (non-animal) ---------------------------------
 # 1) MOTChallenge / SORT / DeepSORT-like track files
