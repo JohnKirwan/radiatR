@@ -57,14 +57,27 @@ import_info <- function(filename, cond_cols = NULL, file_tbl = NULL){
 
 # import_tracks
 #
-#' Import landmark coordinates from text files
+#' Discover dtrack (or compatible) landmark/track file pairs in a directory
 #'
-#' @param dir The directory in which to look for the landmark files. Defaults to the current working directory.
-#' @param landmark_suffix The suffix of files containing landmark coordinates.
-#' @param track_suffix The suffix of files containing track coordinates.
-#' @return A dataframe of file names.
-#' #examples
-#' #import_tracks(dir=data)
+#' Scans \code{dir} for paired files matching \code{landmark_suffix} and
+#' \code{track_suffix} and returns a tibble of basenames and paths.
+#'
+#' @param dir Directory to scan. Defaults to the current working directory.
+#' @param landmark_suffix Suffix identifying landmark files. Default
+#'   \code{"_point01.txt"}.
+#' @param track_suffix Suffix identifying trajectory files. Default
+#'   \code{"_point02.txt"}.
+#' @return A tibble with columns \code{basename}, \code{landmark}, and
+#'   \code{track}.
+#' @details
+#'   The default suffixes match the export naming convention used by dtrack
+#'   (\url{https://bitbucket.org/jochensmolka/dtrack}). In the bundled
+#'   \emph{P. lividus} example data, \code{_point01} files contain two
+#'   landmark rows per trial (arena centre and stimulus edge on the arena wall)
+#'   and \code{_point02} files contain the per-frame animal trajectory. This
+#'   two-file role split is specific to that experiment and is not a general
+#'   dtrack convention. Use [dtrack_read()] to read an individual trajectory
+#'   file.
 #' @export
 #' @importFrom tibble tibble
 #
