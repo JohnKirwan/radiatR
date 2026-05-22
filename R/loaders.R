@@ -57,14 +57,27 @@ import_info <- function(filename, cond_cols = NULL, file_tbl = NULL){
 
 # import_tracks
 #
-#' Import landmark coordinates from text files
+#' Discover dtrack (or compatible) landmark/track file pairs in a directory
 #'
-#' @param dir The directory in which to look for the landmark files. Defaults to the current working directory.
-#' @param landmark_suffix The suffix of files containing landmark coordinates.
-#' @param track_suffix The suffix of files containing track coordinates.
-#' @return A dataframe of file names.
-#' #examples
-#' #import_tracks(dir=data)
+#' Scans \code{dir} for paired files matching \code{landmark_suffix} and
+#' \code{track_suffix} and returns a tibble of basenames and paths.
+#'
+#' @param dir Directory to scan. Defaults to the current working directory.
+#' @param landmark_suffix Suffix identifying landmark files. Default
+#'   \code{"_point01.txt"}.
+#' @param track_suffix Suffix identifying trajectory files. Default
+#'   \code{"_point02.txt"}.
+#' @return A tibble with columns \code{basename}, \code{landmark}, and
+#'   \code{track}.
+#' @details
+#'   The default suffixes match the export naming convention used by dtrack
+#'   (\url{https://bitbucket.org/jochensmolka/dtrack}). In the bundled
+#'   \emph{P. lividus} example data, \code{_point01} files contain two
+#'   landmark rows per trial (arena centre and stimulus edge on the arena wall)
+#'   and \code{_point02} files contain the per-frame animal trajectory. This
+#'   two-file role split is specific to that experiment and is not a general
+#'   dtrack convention. Use [dtrack_read()] to read an individual trajectory
+#'   file.
 #' @export
 #' @importFrom tibble tibble
 #
@@ -91,6 +104,36 @@ import_tracks <- function(dir, landmark_suffix = NULL, track_suffix = NULL){
   file_tbl$track <- paste0(file_tbl$basename, track_suffix)
 
   return(file_tbl)
+}
+
+#' Read a dtrack trajectory file into a TrajSet
+#'
+#' Reads a tab-separated, headerless file produced by dtrack
+#' (\url{https://bitbucket.org/jochensmolka/dtrack}). The file is expected to
+#' have at least three columns: frame number, x coordinate, y coordinate. A
+#' fourth confidence/flag column (always \code{1} in practice) is silently
+#' dropped.
+#'
+#' @param path Path to a dtrack \code{_point02.txt} trajectory file.
+#' @param normalize_xy Logical; passed to [TrajSet_read()]. Default \code{FALSE}
+#'   because dtrack files are in pixel space.
+#' @param ... Additional arguments passed to [TrajSet_read()].
+#' @return A \code{TrajSet}.
+#' @seealso [import_tracks()] for discovering dtrack file pairs in a directory.
+#' @export
+dtrack_read <- function(path, normalize_xy = FALSE, ...) {
+  stopifnot(is.character(path), length(path) == 1L, file.exists(path))
+  df <- utils::read.delim(path, sep = "\t", header = FALSE, stringsAsFactors = FALSE)
+  if (ncol(df) < 3L) stop("dtrack: expected at least 3 columns (frame, x, y)")
+  df <- df[, 1:3, drop = FALSE]
+  names(df) <- c("frame", "x", "y")
+  df$id <- tools::file_path_sans_ext(basename(path))
+  TrajSet_read(
+    df,
+    mapping = list(id = "id", time = "frame", x = "x", y = "y"),
+    normalize_xy = normalize_xy,
+    ...
+  )
 }
 
 escape_specials <- function(x) {
@@ -979,6 +1022,20 @@ register_loader_dialect("boris_xy", function(x) {
 })
 
 
+
+# dtrack (https://bitbucket.org/jochensmolka/dtrack)
+# Accepts a pre-parsed data frame with >=3 columns: frame, x, y[, confidence].
+# The confidence column is dropped silently. id is set to "1" because no
+# filename is available; use dtrack_read() when reading from a file path —
+# it derives id from the filename stem instead.
+register_loader_dialect("dtrack", function(x) {
+  stopifnot(is.data.frame(x))
+  if (ncol(x) < 3L) stop("dtrack: expected at least 3 columns (frame, x, y)")
+  df <- x[, 1:3, drop = FALSE]
+  names(df) <- c("frame", "x", "y")
+  df$id <- "1"
+  df
+})
 
 # ---- built-in dialects: general (non-animal) ---------------------------------
 # 1) MOTChallenge / SORT / DeepSORT-like track files

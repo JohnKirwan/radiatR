@@ -2,22 +2,34 @@
 % Please edit documentation in R/loaders.R
 \name{import_tracks}
 \alias{import_tracks}
-\title{Import landmark coordinates from text files}
+\title{Discover dtrack (or compatible) landmark/track file pairs in a directory}
 \usage{
 import_tracks(dir, landmark_suffix = NULL, track_suffix = NULL)
 }
 \arguments{
-\item{dir}{The directory in which to look for the landmark files. Defaults to the current working directory.}
+\item{dir}{Directory to scan. Defaults to the current working directory.}
 
-\item{landmark_suffix}{The suffix of files containing landmark coordinates.}
+\item{landmark_suffix}{Suffix identifying landmark files. Default
+\code{"_point01.txt"}.}
 
-\item{track_suffix}{The suffix of files containing track coordinates.}
+\item{track_suffix}{Suffix identifying trajectory files. Default
+\code{"_point02.txt"}.}
 }
 \value{
-A dataframe of file names.
-#examples
-#import_tracks(dir=data)
+A tibble with columns \code{basename}, \code{landmark}, and
+  \code{track}.
 }
 \description{
-Import landmark coordinates from text files
+Scans \code{dir} for paired files matching \code{landmark_suffix} and
+\code{track_suffix} and returns a tibble of basenames and paths.
+}
+\details{
+The default suffixes match the export naming convention used by dtrack
+  (\url{https://bitbucket.org/jochensmolka/dtrack}). In the bundled
+  \emph{P. lividus} example data, \code{_point01} files contain two
+  landmark rows per trial (arena centre and stimulus edge on the arena wall)
+  and \code{_point02} files contain the per-frame animal trajectory. This
+  two-file role split is specific to that experiment and is not a general
+  dtrack convention. Use [dtrack_read()] to read an individual trajectory
+  file.
 }

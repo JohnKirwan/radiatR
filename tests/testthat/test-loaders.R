@@ -59,3 +59,31 @@ test_that("legacy loader wrappers still augment file tables", {
   expect_true("group" %in% names(custom))
   expect_equal(custom$group, "demo")
 })
+
+test_that("dtrack_read() reads a headerless tab-sep file into a TrajSet", {
+  tmp <- withr::local_tempfile(fileext = ".txt")
+  writeLines(
+    c("1\t100.5\t200.3\t1", "2\t101.0\t201.1\t1", "3\t102.2\t199.8\t1"),
+    tmp
+  )
+  ts <- dtrack_read(tmp)
+  expect_s4_class(ts, "TrajSet")
+  expect_equal(nrow(ts@data), 3L)
+  expect_true(all(c("x", "y") %in% names(ts@data)))
+  expect_false("V4" %in% names(ts@data))
+})
+
+test_that("dtrack_read() errors on a file with fewer than 3 columns", {
+  tmp <- withr::local_tempfile(fileext = ".txt")
+  writeLines(c("1\t100.5", "2\t101.0"), tmp)
+  expect_error(dtrack_read(tmp), "at least 3 columns")
+})
+
+test_that("dtrack dialect processes a pre-parsed data frame", {
+  df <- data.frame(V1 = 1:3, V2 = c(10.1, 10.2, 10.3), V3 = c(20.1, 20.2, 20.3),
+                   stringsAsFactors = FALSE)
+  result <- get("dtrack", envir = radiatR:::.loader_registry)(df)
+  expect_equal(names(result), c("frame", "x", "y", "id"))
+  expect_equal(nrow(result), 3L)
+  expect_equal(result$id[1], "1")
+})
