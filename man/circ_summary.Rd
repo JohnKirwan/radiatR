@@ -12,19 +12,30 @@ circ_summary(x, w = NULL, by = c("id", "global"))
 \S4method{circ_summary}{TrajSet}(x, w = NULL, by = c("id", "global"))
 }
 \arguments{
-\item{x}{TrajSet input}
+\item{x}{A [`TrajSet`] object.}
 
-\item{w}{Optional weight column name}
+\item{w}{Character. Name of a weight column in `x@data`. When `NULL`
+(default), all steps are weighted equally.}
 
-\item{by}{Summarise per id or globally across all observations}
+\item{by}{Character. `"id"` (default) returns one row per trial;
+`"global"` pools all observations into a single summary row.}
 }
 \value{
 data.frame(id, n, t_start, t_end, mean_dir, resultant_R, kappa)
 
-data.frame with summary metrics per group
+A `data.frame` with columns `id`, `n`, `t_start`, `t_end`,
+  `mean_dir` (radians, 0 to 2π), `resultant_R` (0–1), and `kappa`
+  (von Mises concentration; `NA` when estimation fails).
 }
 \description{
-Circular summaries per trajectory
+Computes per-trial or global circular statistics (mean direction, resultant
+length, concentration) from the step-angle column of a `TrajSet`.
+}
+\examples{
+\dontrun{
+data(plividus)
+circ_summary(plividus, by = "id")
+circ_summary(plividus, by = "global")
+}
 
-Circular summary statistics for trajectories
 }

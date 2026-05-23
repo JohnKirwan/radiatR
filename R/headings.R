@@ -509,11 +509,38 @@ setMethod("derive_headings", "TrajSet", function(x, rule = c("crossing","distal"
 
 # ---- circular summaries over headings ----------------------------------------
 #' Circular statistics over derived headings
-#' @param x TrajSet
-#' @param rule heading derivation rule (passed to derive_headings)
-#' @param group_by character vector of columns to group by (default = "id"). Use NULL for global.
-#' @param ... parameters forwarded to derive_headings
-#' @return data.frame with group columns + mean_dir, resultant_R, kappa, n
+#'
+#' Derives one heading per trial via `derive_headings()`, then computes
+#' circular summary statistics (mean direction, resultant length, concentration)
+#' optionally grouped by one or more metadata columns.
+#'
+#' @param x A [`TrajSet`] object.
+#' @param rule Character. Heading derivation rule passed to [derive_headings()].
+#'   One of `"crossing"`, `"distal"`, `"straight"`, `"origin_mean"`, `"net"`,
+#'   or `"velocity_mean"`.
+#' @param group_by Character vector of column names used to group headings
+#'   before summarising. Default `"id"` returns one row per trial. Use `NULL`
+#'   for a single global summary row. Any column carried through by
+#'   [derive_headings()] (e.g. `"arc"`) is valid.
+#' @param ... Additional arguments forwarded to [derive_headings()], such as
+#'   `circ0`, `circ1`, or `return_coords`.
+#'
+#' @return A `data.frame` with grouping columns followed by `mean_dir`
+#'   (radians, 0 to 2π), `resultant_R` (0–1), `kappa` (von Mises
+#'   concentration), and `n` (number of valid headings in the group).
+#'
+#' @examples
+#' \dontrun{
+#' data(plividus)
+#' # per-trial headings (default)
+#' circ_summary_headings(plividus, rule = "crossing", circ0 = 0.2, circ1 = 0.4)
+#'
+#' # per-condition summary (requires an "arc" column carried through)
+#' circ_summary_headings(plividus, rule = "crossing",
+#'                       circ0 = 0.2, circ1 = 0.4,
+#'                       group_by = "arc")
+#' }
+#'
 #' @export
 circ_summary_headings <- function(x, rule = c("crossing","distal","straight","origin_mean","net","velocity_mean"), group_by = "id", ...) {
   rule <- match.arg(rule)
