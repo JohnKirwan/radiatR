@@ -42,6 +42,7 @@ Collate:
     'circular_plotting.R'
     'circular_statistics.R'
     'circular_trials.R'
+    'data.R'
     'globals.R'
     'headings.R'
     'loaders.R'

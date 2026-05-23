@@ -173,6 +173,67 @@ directedness_arrow <- function(data, angle_col, arrow_head_cm = 0.2,
   )
 }
 
+# ---- colour utilities --------------------------------------------------------
+
+#' Assign cycling colour indices to trajectories
+#'
+#' Creates a factor column that assigns each unique trajectory a colour index
+#' in the range `1:n`, cycling back to 1 after every `n` trajectories. When
+#' `panel_col` is supplied the cycle resets independently within each panel so
+#' that trajectory 1 in every panel gets index 1.
+#'
+#' The resulting column can be passed to `colour_col` in [radiate()],
+#' [add_heading_points()], or [add_heading_vectors()] to keep colours
+#' consistent across layers.
+#'
+#' @param data A data frame containing at least `id_col` and, if supplied,
+#'   `panel_col`.
+#' @param id_col Name of the column identifying individual trajectories.
+#' @param n Number of colours to cycle through (positive integer), or a
+#'   character vector of colour values whose length determines `n`.
+#' @param panel_col Optional column name. When set the cycle restarts for each
+#'   unique value of this column.
+#' @param out_col Name of the new factor column added to `data`. Default
+#'   `"cycle_colour"`.
+#'
+#' @return `data` with an additional factor column named `out_col` (levels
+#'   `"1"` through `"n"`).
+#'
+#' @examples
+#' df <- data.frame(id = paste0("T", 1:12), panel = rep(c("A","B"), each = 6))
+#' df <- assign_cycle_colours(df, id_col = "id", n = 4, panel_col = "panel")
+#' table(df$panel, df$cycle_colour)
+#'
+#' @export
+assign_cycle_colours <- function(data, id_col, n, panel_col = NULL,
+                                 out_col = "cycle_colour") {
+  if (!id_col %in% names(data))
+    stop("`id_col` '", id_col, "' not found in data.")
+  n_int <- if (is.character(n)) length(n) else as.integer(n)
+  if (n_int < 1L) stop("`n` must be a positive integer or non-empty colour vector.")
+
+  ids <- data[[id_col]]
+
+  idx <- if (is.null(panel_col)) {
+    unique_ids <- unique(ids)
+    ((match(ids, unique_ids) - 1L) %% n_int) + 1L
+  } else {
+    if (!panel_col %in% names(data))
+      stop("`panel_col` '", panel_col, "' not found in data.")
+    panels <- data[[panel_col]]
+    out <- integer(length(ids))
+    for (p in unique(panels)) {
+      rows        <- panels == p
+      unique_ids_p <- unique(ids[rows])
+      out[rows]   <- ((match(ids[rows], unique_ids_p) - 1L) %% n_int) + 1L
+    }
+    out
+  }
+
+  data[[out_col]] <- factor(idx, levels = seq_len(n_int))
+  data
+}
+
 # ---- heading overlay layers --------------------------------------------------
 
 #' Add heading endpoint markers on the unit circle
@@ -183,7 +244,10 @@ directedness_arrow <- function(data, angle_col, arrow_head_cm = 0.2,
 #' output of [derive_headings()].
 #'
 #' @param headings_df Data frame with a `heading` column (angles in radians).
-#' @param colour_col Optional name of a column in `headings_df` to map to colour.
+#' @param colour_col Optional name of a column in `headings_df` to map to the
+#'   colour aesthetic. When set, `colour` is ignored.
+#' @param colour Fixed colour string used when `colour_col` is `NULL` or not
+#'   found in `headings_df`. Defaults to `"black"`.
 #' @param size Point size passed to `geom_point`.
 #' @param alpha Point alpha transparency.
 #'
@@ -199,7 +263,9 @@ directedness_arrow <- function(data, angle_col, arrow_head_cm = 0.2,
 #' # headings from a TrajSet via derive_headings(ts, rule = "crossing", ...)
 #' hd <- data.frame(id = "A", time = 1, heading = pi / 4)
 #' ggplot() + coord_fixed() + add_heading_points(hd)
-add_heading_points <- function(headings_df, colour_col = NULL, size = 2, alpha = 1) {
+#' ggplot() + coord_fixed() + add_heading_points(hd, colour = "steelblue")
+add_heading_points <- function(headings_df, colour_col = NULL, colour = "black",
+                              size = 2, alpha = 1) {
   if (!("heading" %in% names(headings_df))) {
     stop("`headings_df` must contain a `heading` column (radians).")
   }
@@ -207,18 +273,13 @@ add_heading_points <- function(headings_df, colour_col = NULL, size = 2, alpha =
   headings_df[[".y_head"]] <- sin(headings_df$heading)
 
   mapping <- ggplot2::aes(x = .data[[".x_head"]], y = .data[[".y_head"]])
-  if (!is.null(colour_col) && colour_col %in% names(headings_df)) {
-    mapping[["colour"]] <- rlang::sym(colour_col)
-  }
+  use_fixed_colour <- is.null(colour_col) || !colour_col %in% names(headings_df)
+  if (!use_fixed_colour) mapping[["colour"]] <- rlang::sym(colour_col)
 
-  ggplot2::geom_point(
-    data        = headings_df,
-    mapping     = mapping,
-    size        = size,
-    alpha       = alpha,
-    shape       = 1,
-    inherit.aes = FALSE
-  )
+  args <- list(data = headings_df, mapping = mapping,
+               size = size, alpha = alpha, shape = 1, inherit.aes = FALSE)
+  if (use_fixed_colour) args$colour <- colour
+  do.call(ggplot2::geom_point, args)
 }
 
 #' Add heading vector segments from inner crossing to unit circle
@@ -234,7 +295,10 @@ add_heading_points <- function(headings_df, colour_col = NULL, size = 2, alpha =
 #'
 #' @param headings_df Data frame with columns `heading` (radians), `x_inner`,
 #'   and `y_inner`.
-#' @param colour_col Optional name of a column in `headings_df` to map to colour.
+#' @param colour_col Optional name of a column in `headings_df` to map to the
+#'   colour aesthetic. When set, `colour` is ignored.
+#' @param colour Fixed colour string used when `colour_col` is `NULL` or not
+#'   found in `headings_df`. Defaults to `"black"`.
 #' @param linetype Line type string or integer passed to `geom_segment`.
 #'
 #' @return A `geom_segment()` layer.
@@ -249,7 +313,8 @@ add_heading_points <- function(headings_df, colour_col = NULL, size = 2, alpha =
 #' hd <- data.frame(id = "A", time = 1, heading = pi / 4,
 #'                  x_inner = 0.15, y_inner = 0.15)
 #' ggplot() + coord_fixed() + add_heading_vectors(hd)
-add_heading_vectors <- function(headings_df, colour_col = NULL, linetype = "dotted") {
+add_heading_vectors <- function(headings_df, colour_col = NULL, colour = "black",
+                               linetype = "dotted") {
   required <- c("heading", "x_inner", "y_inner")
   missing_cols <- setdiff(required, names(headings_df))
   if (length(missing_cols)) {
@@ -269,16 +334,13 @@ add_heading_vectors <- function(headings_df, colour_col = NULL, linetype = "dott
     xend = .data[[".x_head"]],
     yend = .data[[".y_head"]]
   )
-  if (!is.null(colour_col) && colour_col %in% names(headings_df)) {
-    mapping[["colour"]] <- rlang::sym(colour_col)
-  }
+  use_fixed_colour <- is.null(colour_col) || !colour_col %in% names(headings_df)
+  if (!use_fixed_colour) mapping[["colour"]] <- rlang::sym(colour_col)
 
-  ggplot2::geom_segment(
-    data        = headings_df,
-    mapping     = mapping,
-    linetype    = linetype,
-    inherit.aes = FALSE
-  )
+  args <- list(data = headings_df, mapping = mapping,
+               linetype = linetype, inherit.aes = FALSE)
+  if (use_fixed_colour) args$colour <- colour
+  do.call(ggplot2::geom_segment, args)
 }
 
 # ---- themes ------------------------------------------------------------------
@@ -577,7 +639,13 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #' @param data Data frame or `TrajSet`.
 #' @param geom Geom specification passed to [draw_tracks()].
 #' @param group_col Optional column for grouping aesthetics.
-#' @param colour_col Optional column for colour aesthetics.
+#' @param colour_col Optional column for colour aesthetics. Mutually exclusive
+#'   with `colour_cycle`.
+#' @param colour_cycle Optional cycling colour specification. Either a positive
+#'   integer `n` (trajectories are assigned colours 1–n, cycling back to 1 after
+#'   every `n` trajectories) or a character vector of colour values (e.g.
+#'   `c("red","blue","green")`). When `panel_by` is set the cycle restarts
+#'   independently within each panel. Mutually exclusive with `colour_col`.
 #' @param style Either `"classic"` (default) or `"minimal"`.
 #' @param show_labels Whether to place labels at the perimeter.
 #' @param label_col Column containing label values.
@@ -606,6 +674,7 @@ radiate <- function(
   geom = "path",
   group_col = NULL,
   colour_col = NULL,
+  colour_cycle = NULL,
   panel_by = NULL,
   ncol = NULL,
   ticks = NULL,
@@ -665,6 +734,15 @@ radiate <- function(
   if (!is.null(ts@cols$y) && identical(y_col, "rel_y")) y_col <- ts@cols$y
   if (is.null(group_col)) group_col <- ts@cols$id
   if (is.null(arrow_angle_col)) arrow_angle_col <- ts@cols$angle
+
+  if (!is.null(colour_cycle)) {
+    if (!is.null(colour_col))
+      stop("`colour_col` and `colour_cycle` cannot both be set.")
+    n_cycle <- if (is.character(colour_cycle)) length(colour_cycle) else as.integer(colour_cycle)
+    data <- assign_cycle_colours(data, id_col = group_col, n = n_cycle,
+                                 panel_col = panel_by, out_col = ".cycle_colour")
+    colour_col <- ".cycle_colour"
+  }
 
   x_sym <- rlang::sym(x_col)
   y_sym <- rlang::sym(y_col)
@@ -771,6 +849,11 @@ radiate <- function(
       warning("Arrow requested but column `", arrow_angle_col,
               "` is unavailable or not numeric; skipping arrow layer.", call. = FALSE)
     }
+  }
+
+  if (is.character(colour_cycle)) {
+    scale_vals <- stats::setNames(colour_cycle, as.character(seq_along(colour_cycle)))
+    g <- g + ggplot2::scale_colour_manual(values = scale_vals)
   }
 
   if (!is.null(panel_by)) {

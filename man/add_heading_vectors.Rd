@@ -4,13 +4,22 @@
 \alias{add_heading_vectors}
 \title{Add heading vector segments from inner crossing to unit circle}
 \usage{
-add_heading_vectors(headings_df, colour_col = NULL, linetype = "dotted")
+add_heading_vectors(
+  headings_df,
+  colour_col = NULL,
+  colour = "black",
+  linetype = "dotted"
+)
 }
 \arguments{
 \item{headings_df}{Data frame with columns `heading` (radians), `x_inner`,
 and `y_inner`.}
 
-\item{colour_col}{Optional name of a column in `headings_df` to map to colour.}
+\item{colour_col}{Optional name of a column in `headings_df` to map to the
+colour aesthetic. When set, `colour` is ignored.}
+
+\item{colour}{Fixed colour string used when `colour_col` is `NULL` or not
+found in `headings_df`. Defaults to `"black"`.}
 
 \item{linetype}{Line type string or integer passed to `geom_segment`.}
 }
