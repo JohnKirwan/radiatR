@@ -12,11 +12,15 @@ add_heading_density(
   n_theta = 500L,
   bins = 36L,
   bw = NULL,
+  boot_reps = 0L,
+  boot_alpha = 0.05,
   scale = 0.4,
   colour = "black",
   fill = NA,
   alpha = 0.2,
-  linewidth = 0.8
+  linewidth = 0.8,
+  ci_fill = "grey70",
+  ci_alpha = 0.3
 )
 }
 \arguments{
@@ -39,6 +43,13 @@ Default `500`.}
 \item{bw}{Bandwidth passed to [circular::density.circular()]. `NULL`
 uses [circular::bw.nrd.circular()].}
 
+\item{boot_reps}{Integer. Number of bootstrap replicates for a `"vonmises"`
+confidence band. `0` (default) skips the bootstrap. Ignored for `"kernel"`
+and `"histogram"`.}
+
+\item{boot_alpha}{Significance level for the bootstrap band. Default `0.05`
+produces a 95% interval.}
+
 \item{scale}{Maximum radial extension above the unit circle. Default `0.4`
 (peak at r = 1.4). Density is normalised within each group before scaling.}
 
@@ -51,6 +62,14 @@ curve. `NA` (default) draws no fill.}
 \item{alpha}{Alpha transparency for the filled polygon. Default `0.2`.}
 
 \item{linewidth}{Width of the density path. Default `0.8`.}
+
+\item{ci_fill}{Fill colour for the bootstrap confidence band. Only used when
+`density_df` contains `density_lower` and `density_upper` columns (produced
+by [compute_circular_density()] with `boot_reps > 0`, or supplied
+manually). Default `"grey70"`.}
+
+\item{ci_alpha}{Alpha transparency for the confidence band polygon. Default
+`0.3`.}
 }
 \value{
 A list of one or two ggplot2 layers.

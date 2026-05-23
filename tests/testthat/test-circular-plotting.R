@@ -515,6 +515,61 @@ test_that("add_heading_density works inside radiate context", {
   expect_silent(ggplot_build(p))
 })
 
+# ---- bootstrap CI band -------------------------------------------------------
+
+test_that("compute_circular_density boot_reps adds density_lower/upper columns", {
+  set.seed(42)
+  hd <- data.frame(heading = rnorm(50, 0.5, 0.4))
+  d  <- compute_circular_density(hd, method = "vonmises", boot_reps = 99L,
+                                 boot_alpha = 0.05, n_theta = 100L)
+  expect_true(all(c("density_lower", "density_upper") %in% names(d)))
+  expect_true(all(d$density_lower <= d$density + 1e-8))
+  expect_true(all(d$density_upper >= d$density - 1e-8))
+})
+
+test_that("compute_circular_density without boot_reps has no CI columns", {
+  set.seed(1)
+  hd <- data.frame(heading = rnorm(30, 0, 0.5))
+  d  <- compute_circular_density(hd, method = "vonmises")
+  expect_false("density_lower" %in% names(d))
+  expect_false("density_upper" %in% names(d))
+})
+
+test_that("add_circular_density CI band adds an extra polygon layer", {
+  library(ggplot2)
+  set.seed(43)
+  hd <- data.frame(heading = rnorm(50, 0.3, 0.5))
+  dens_no_ci <- compute_circular_density(hd, n_theta = 100L)
+  dens_ci    <- compute_circular_density(hd, boot_reps = 99L, n_theta = 100L)
+  layers_no_ci <- add_circular_density(dens_no_ci)
+  layers_ci    <- add_circular_density(dens_ci)
+  expect_equal(length(layers_ci), length(layers_no_ci) + 1L)
+})
+
+test_that("add_circular_density CI band polygon stays outside unit circle", {
+  library(ggplot2)
+  set.seed(44)
+  hd      <- data.frame(heading = rnorm(60, 0, 0.6))
+  dens_ci <- compute_circular_density(hd, boot_reps = 99L, n_theta = 100L)
+  layers  <- add_circular_density(dens_ci, scale = 0.4)
+  p       <- ggplot() + coord_fixed() + layers
+  built   <- ggplot_build(p)
+  # CI band is first layer; all its radii should be >= 1
+  ci_d  <- built$data[[1]]
+  r_vals <- sqrt(ci_d$x^2 + ci_d$y^2)
+  expect_true(all(r_vals >= 1 - 1e-6))
+})
+
+test_that("add_heading_density boot_reps convenience path renders without error", {
+  library(ggplot2)
+  set.seed(45)
+  hd <- data.frame(heading = rnorm(50, 0.5, 0.4))
+  p  <- ggplot() + coord_fixed() +
+    add_heading_density(hd, boot_reps = 99L, fill = "grey80", ci_fill = "grey60")
+  expect_s3_class(p, "ggplot")
+  expect_silent(ggplot_build(p))
+})
+
 test_that("add_heading_points and add_heading_vectors accept fixed colour parameter", {
   library(ggplot2)
   hd <- data.frame(heading = pi / 3, x_inner = 0.1, y_inner = 0.1)
