@@ -50,44 +50,78 @@ ts <- get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir)
 ts
 ```
 
-`get_all_object_pos()` reads each landmark/track pair, normalises coordinates to a unit circle (arena radius = 1), and returns a single `TrajSet` containing all trials. Trial metadata is available in `ts@meta$trial_limits`.
+`get_all_object_pos()` reads each landmark/track pair, normalises coordinates to a unit circle (arena radius = 1), and returns a single `TrajSet` containing all trials. Trial metadata (arena radius, stimulus position, frame limits) is available in `ts@meta$trial_limits`.
 
-```{r plot-real}
-radiate(ts, group_col = "trial_id", colour_col = "trial_id", show_arrow = TRUE)
+## Plotting Trajectories
+
+`radiate()` draws all trajectories on a unit circle with concentric reference rings. Passing `colour_col` assigns a distinct colour to each trial; short numeric labels are added at the outermost point of each path.
+
+```{r trial-labels}
+# Compact per-trial label for legend readability
+ts@data$trial_num <- as.character(
+  match(ts@data$trial_id, unique(ts@data$trial_id))
+)
 ```
 
-Each arc represents one urchin's path from the arena centre outward. The arrow shows the grand mean direction weighted by resultant length.
+```{r plot-real}
+radiate(ts,
+        group_col  = "trial_id",
+        colour_col = "trial_num",
+        label_col  = "trial_num",
+        show_arrow = FALSE)
+```
+
+Each arc traces one urchin's path from near the arena centre to the outer radius. Trials 1, 3 and 5 head roughly East (toward the 0° stimulus), while trials 2 and 4 depart in other directions.
 
 ## Heading Overlays
 
-The **crossing method** — projecting the vector between two concentric-ring crossings to the unit circle — is one way to assign a single heading per trial. `derive_headings()` with `rule = "crossing"` and `return_coords = TRUE` returns both the heading angle and the inner-ring crossing position needed to draw the extrapolated vector.
+The **crossing method** — projecting the vector between two concentric-ring crossings to the unit circle — assigns one heading per trial without requiring the full path to reach the boundary. `derive_headings()` with `rule = "crossing"` and `return_coords = TRUE` returns both the heading angle and the inner-ring crossing position used to draw the extrapolated vector.
 
 ```{r headings}
 hd <- derive_headings(ts, rule = "crossing",
                       circ0 = 0.2, circ1 = 0.4,
                       return_coords = TRUE)
-# align id column name with TrajSet so colour scales merge
 names(hd)[names(hd) == "id"] <- "trial_id"
-hd[, c("trial_id", "heading", "x_inner", "y_inner")]
+hd$trial_num <- as.character(match(hd$trial_id, unique(ts@data$trial_id)))
+hd[, c("trial_num", "heading", "x_inner", "y_inner")]
 ```
 
-Layer the heading markers onto the track plot with `+`:
+`circ_summary_headings()` computes circular mean direction and resultant length *R* from those per-trial headings. `circ_mean_segments()` converts the summary into arrow geometry ready for `gg_add_circ_mean()`.
+
+```{r heading-summary}
+summ_hd <- circ_summary_headings(ts, rule = "crossing",
+                                  circ0 = 0.2, circ1 = 0.4,
+                                  group_by = NULL)
+summ_hd[, c("mean_dir", "resultant_R", "n")]
+```
+
+Layer the heading markers and grand-mean arrow onto the track plot:
 
 ```{r headings-plot}
-radiate(ts, group_col = "trial_id", colour_col = "trial_id", show_arrow = FALSE) +
-  add_heading_vectors(hd, colour_col = "trial_id") +
-  add_heading_points(hd, colour_col = "trial_id", size = 3)
+seg <- circ_mean_segments(summ_hd)
+
+p <- radiate(ts,
+             group_col   = "trial_id",
+             colour_col  = "trial_num",
+             show_labels = FALSE,
+             show_arrow  = FALSE) +
+  add_heading_vectors(hd, colour_col = "trial_num") +
+  add_heading_points(hd, colour_col = "trial_num", size = 3)
+
+gg_add_circ_mean(p, seg)
 ```
 
-Hollow circles mark where each heading vector intersects the unit circle; dotted lines trace back to the inner-ring crossing point. The `show_arrow = FALSE` argument suppresses the grand-mean arrow so the per-trial endpoints are unobscured.
+Hollow circles mark where each heading vector intersects the unit circle; dotted lines trace back to the inner-ring crossing point. The solid arrow shows the grand mean of the five crossing headings; its length equals the resultant length *R* (`r round(summ_hd$resultant_R, 2)`), reflecting the spread across trials.
 
 ## Circular Summary Statistics
 
-`circ_summary()` computes mean angle, resultant length, and related statistics for a `TrajSet`:
+`circ_summary()` characterises the distribution of step-by-step angles within each trial — useful for quantifying path tortuosity:
 
 ```{r stats}
 circ_summary(ts)
 ```
+
+High resultant lengths (close to 1) indicate that the urchin's movement direction is consistent within a trial. For between-trial directedness, use `circ_summary_headings()` as shown above.
 
 ## Simulating Demo Data
 
