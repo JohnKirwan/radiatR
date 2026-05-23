@@ -113,6 +113,48 @@ gg_add_circ_mean(p, seg)
 
 Hollow circles mark where each heading vector intersects the unit circle; dotted lines trace back to the inner-ring crossing point. The solid arrow shows the grand mean of the five crossing headings; its length equals the resultant length *R* (`r round(summ_hd$resultant_R, 2)`), reflecting the spread across trials.
 
+## Per-Trial Panels
+
+Overlaying all five paths on one plot makes individual trajectories hard to distinguish. Passing `panel_by` to `radiate()` gives each trial its own panel while retaining the full concentric-circle geometry.
+
+To add a per-panel directedness arrow, compute the within-trial circular mean of the absolute bearing (`abs_theta`) using `circ_mean_segments()`, then layer the result as a `geom_segment`. Because the segment data frame contains a `trial_num` column, ggplot2 routes each arrow to the correct panel automatically.
+
+```{r per-trial-panels}
+per_trial_stats <- do.call(rbind, lapply(
+  split(ts@data, ts@data$trial_num),
+  function(d) {
+    a <- d$abs_theta
+    data.frame(
+      trial_num   = d$trial_num[1],
+      mean_dir    = atan2(mean(sin(a), na.rm = TRUE), mean(cos(a), na.rm = TRUE)),
+      resultant_R = sqrt(mean(cos(a), na.rm = TRUE)^2 + mean(sin(a), na.rm = TRUE)^2)
+    )
+  }
+))
+
+segs <- circ_mean_segments(per_trial_stats)
+
+radiate(ts,
+        group_col   = "trial_id",
+        colour_col  = "trial_num",
+        panel_by    = "trial_num",
+        ncol        = 3,
+        show_labels = FALSE,
+        show_arrow  = FALSE) +
+  add_heading_vectors(hd, colour_col = "trial_num") +
+  add_heading_points(hd, colour_col = "trial_num", size = 3) +
+  geom_segment(
+    data        = segs,
+    aes(x = x, y = y, xend = xend, yend = yend),
+    arrow       = grid::arrow(length = grid::unit(0.2, "cm")),
+    colour      = "black",
+    linewidth   = 1,
+    inherit.aes = FALSE
+  )
+```
+
+Each panel shows one trial's trajectory (coloured path), the crossing heading (dotted line from the inner 20 % ring to the unit circle, with a hollow endpoint), and a solid arrow whose direction is the within-trial mean absolute bearing and whose length equals the resultant length *R*. Arrows near length 1 (trials 1, 2, 4, 5) indicate very consistent step-by-step direction; the shorter arrow in trial 3 reflects a more variable path.
+
 ## Circular Summary Statistics
 
 `circ_summary()` characterises the distribution of step-by-step angles within each trial — useful for quantifying path tortuosity:
@@ -121,7 +163,7 @@ Hollow circles mark where each heading vector intersects the unit circle; dotted
 circ_summary(ts)
 ```
 
-High resultant lengths (close to 1) indicate that the urchin's movement direction is consistent within a trial. For between-trial directedness, use `circ_summary_headings()` as shown above.
+High resultant lengths (close to 1) indicate that the urchin's movement direction is consistent within a trial. For between-trial directedness, use `circ_summary_headings()` as shown in the Heading Overlays section.
 
 ## Simulating Demo Data
 
