@@ -177,3 +177,110 @@ test_that("line-circle intercept utilities behave as expected", {
   ints_traj <- line_circle_intercept_traj(ts, "A", 1:2)
   expect_equal(ints_traj$y_int, 0, tolerance = 1e-8)
 })
+
+# ---- assign_cycle_colours ---------------------------------------------------
+
+test_that("assign_cycle_colours cycles indices 1:n across trajectories", {
+  df <- data.frame(id = paste0("T", 1:12), val = 1:12)
+  out <- assign_cycle_colours(df, id_col = "id", n = 4L)
+  expect_true("cycle_colour" %in% names(out))
+  expect_s3_class(out$cycle_colour, "factor")
+  expect_equal(levels(out$cycle_colour), as.character(1:4))
+  # 12 ids with n=4 should give indices 1,2,3,4,1,2,3,4,1,2,3,4
+  expect_equal(as.integer(out$cycle_colour), rep(1:4, 3))
+})
+
+test_that("assign_cycle_colours resets cycle within each panel", {
+  df <- data.frame(id = paste0("T", 1:12),
+                   panel = rep(c("A", "B"), each = 6))
+  out <- assign_cycle_colours(df, id_col = "id", n = 4L, panel_col = "panel")
+  # within panel A: ids T1-T6 get indices 1,2,3,4,1,2
+  idx_A <- as.integer(out$cycle_colour[out$panel == "A"])
+  expect_equal(idx_A, c(1, 2, 3, 4, 1, 2))
+  # within panel B: ids T7-T12 get indices 1,2,3,4,1,2
+  idx_B <- as.integer(out$cycle_colour[out$panel == "B"])
+  expect_equal(idx_B, c(1, 2, 3, 4, 1, 2))
+})
+
+test_that("assign_cycle_colours accepts character vector for n", {
+  df <- data.frame(id = paste0("T", 1:6), val = 1:6)
+  cols <- c("red", "blue", "green")
+  out <- assign_cycle_colours(df, id_col = "id", n = cols)
+  expect_equal(levels(out$cycle_colour), as.character(1:3))
+  expect_equal(as.integer(out$cycle_colour), c(1, 2, 3, 1, 2, 3))
+})
+
+test_that("assign_cycle_colours errors on missing id_col", {
+  df <- data.frame(x = 1:3)
+  expect_error(assign_cycle_colours(df, id_col = "id", n = 3), "id_col")
+})
+
+test_that("assign_cycle_colours errors on missing panel_col", {
+  df <- data.frame(id = c("A", "B"))
+  expect_error(assign_cycle_colours(df, id_col = "id", n = 2, panel_col = "grp"), "panel_col")
+})
+
+test_that("assign_cycle_colours custom out_col name is honoured", {
+  df <- data.frame(id = c("A", "B", "C"))
+  out <- assign_cycle_colours(df, id_col = "id", n = 2L, out_col = ".cyc")
+  expect_true(".cyc" %in% names(out))
+  expect_false("cycle_colour" %in% names(out))
+})
+
+# ---- radiate() colour_cycle parameter ---------------------------------------
+
+test_that("radiate colour_cycle integer produces a ggplot with colour scale", {
+  library(ggplot2)
+  sim <- simulate_tracks(conditions = data.frame(n_trials = 6L), n_points = 20, seed = 1)
+  p <- radiate(sim, x_col = "rel_x", y_col = "rel_y",
+               group_col = "trial_id", colour_cycle = 3L,
+               show_arrow = FALSE, show_labels = FALSE)
+  expect_s3_class(p, "ggplot")
+  built <- ggplot_build(p)
+  # At least one built layer (the paths) should carry >= 2 distinct colours
+  # (3-cycle over 6 trajectories → 2 repetitions of 3 colours)
+  any_varied <- any(vapply(built$data, function(d) {
+    "colour" %in% names(d) && length(unique(d$colour)) >= 2L
+  }, logical(1)))
+  expect_true(any_varied)
+})
+
+test_that("radiate colour_cycle character vector applies a discrete colour scale", {
+  library(ggplot2)
+  sim <- simulate_tracks(conditions = data.frame(n_trials = 3L), n_points = 20, seed = 2)
+  cols <- c("red", "blue", "green")
+  p <- radiate(sim, x_col = "rel_x", y_col = "rel_y",
+               group_col = "trial_id", colour_cycle = cols,
+               show_arrow = FALSE, show_labels = FALSE)
+  expect_s3_class(p, "ggplot")
+  # A ScaleDiscrete should be present for the colour aesthetic
+  has_discrete_colour <- any(vapply(p$scales$scales, function(s)
+    inherits(s, "ScaleDiscrete"), logical(1)))
+  expect_true(has_discrete_colour)
+  # The built paths should use only the supplied colours
+  built <- ggplot_build(p)
+  path_colours <- unlist(lapply(built$data, function(d) {
+    if ("colour" %in% names(d) && length(unique(d$colour)) >= 2L) unique(d$colour)
+  }))
+  expect_true(all(path_colours %in% cols))
+})
+
+test_that("radiate errors when colour_col and colour_cycle both set", {
+  sim <- simulate_tracks(conditions = data.frame(n_trials = 2L), n_points = 10, seed = 3)
+  expect_error(
+    radiate(sim, x_col = "rel_x", y_col = "rel_y",
+            group_col = "trial_id", colour_col = "trial_id", colour_cycle = 3L),
+    "colour_col.*colour_cycle|colour_cycle.*colour_col"
+  )
+})
+
+test_that("add_heading_points and add_heading_vectors accept fixed colour parameter", {
+  library(ggplot2)
+  hd <- data.frame(heading = pi / 3, x_inner = 0.1, y_inner = 0.1)
+  p_pts <- ggplot() + add_heading_points(hd, colour = "steelblue")
+  p_vec <- ggplot() + add_heading_vectors(hd, colour = "tomato")
+  expect_s3_class(p_pts, "ggplot")
+  expect_s3_class(p_vec, "ggplot")
+  built_pts <- ggplot_build(p_pts)
+  expect_true(all(built_pts$data[[1]]$colour == "steelblue"))
+})

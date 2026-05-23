@@ -4,12 +4,22 @@
 \alias{add_heading_points}
 \title{Add heading endpoint markers on the unit circle}
 \usage{
-add_heading_points(headings_df, colour_col = NULL, size = 2, alpha = 1)
+add_heading_points(
+  headings_df,
+  colour_col = NULL,
+  colour = "black",
+  size = 2,
+  alpha = 1
+)
 }
 \arguments{
 \item{headings_df}{Data frame with a `heading` column (angles in radians).}
 
-\item{colour_col}{Optional name of a column in `headings_df` to map to colour.}
+\item{colour_col}{Optional name of a column in `headings_df` to map to the
+colour aesthetic. When set, `colour` is ignored.}
+
+\item{colour}{Fixed colour string used when `colour_col` is `NULL` or not
+found in `headings_df`. Defaults to `"black"`.}
 
 \item{size}{Point size passed to `geom_point`.}
 
@@ -29,6 +39,7 @@ library(ggplot2)
 # headings from a TrajSet via derive_headings(ts, rule = "crossing", ...)
 hd <- data.frame(id = "A", time = 1, heading = pi / 4)
 ggplot() + coord_fixed() + add_heading_points(hd)
+ggplot() + coord_fixed() + add_heading_points(hd, colour = "steelblue")
 }
 \seealso{
 [add_heading_vectors()], [derive_headings()]

@@ -11,6 +11,7 @@ radiate(
   geom = "path",
   group_col = NULL,
   colour_col = NULL,
+  colour_cycle = NULL,
   panel_by = NULL,
   ncol = NULL,
   ticks = NULL,
@@ -44,7 +45,14 @@ radiate(
 
 \item{group_col}{Optional column for grouping aesthetics.}
 
-\item{colour_col}{Optional column for colour aesthetics.}
+\item{colour_col}{Optional column for colour aesthetics. Mutually exclusive
+with `colour_cycle`.}
+
+\item{colour_cycle}{Optional cycling colour specification. Either a positive
+integer `n` (trajectories are assigned colours 1–n, cycling back to 1 after
+every `n` trajectories) or a character vector of colour values (e.g.
+`c("red","blue","green")`). When `panel_by` is set the cycle restarts
+independently within each panel. Mutually exclusive with `colour_col`.}
 
 \item{panel_by}{NULL, a column name, or a character vector of column names
 to facet by (via [ggplot2::facet_wrap()]). The named column(s) must be

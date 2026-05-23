@@ -115,9 +115,19 @@ gg_add_circ_mean(p_all, seg_all)
 
 The grand mean arrow points at `r round(summ_all$mean_dir * 180 / pi, 1)`° with *R* = `r round(summ_all$resultant_R, 2)`, reflecting a moderate overall tendency across all conditions.
 
+## Colour Options
+
+Three strategies control how trajectories are coloured.
+
+**Option 1 — single colour.** Pass a colour string directly to the heading-overlay helpers; omit `colour_col` from `radiate()` to draw all tracks in the default grey.
+
+**Option 2 — cycling palette.** `colour_cycle` assigns each trajectory a colour index that cycles back to 1 after every *n* trajectories. When `panel_by` is set the cycle restarts independently within each panel so that trajectory 1 in every panel always gets colour 1. Pass an integer for automatic palette assignment, or a character vector to specify colours explicitly.
+
+**Option 3 — variable mapping.** `colour_col` maps any data column to colour (e.g. the `arc` factor used in the combined-trajectory plot above).
+
 ## Per-Condition Panels
 
-Faceting by arc angle shows each condition separately. Per-condition mean arrows are computed from the crossing headings and routed to the correct panel automatically via the shared `arc` column.
+Faceting by arc angle shows each condition separately. Within each panel, `colour_cycle = 10` distinguishes individual trajectories — more informative than colouring by arc when every panel already corresponds to a single arc value. Per-condition mean arrows are computed from the crossing headings and routed to the correct panel automatically via the shared `arc` column.
 
 ```{r arc-panels, fig.width=8, fig.height=5}
 arc_summ <- do.call(rbind, lapply(split(hd, hd$arc), function(sub) {
@@ -131,14 +141,14 @@ arc_summ <- do.call(rbind, lapply(split(hd, hd$arc), function(sub) {
 segs <- circ_mean_segments(arc_summ)
 
 radiate(plividus,
-        group_col   = "trial_id",
-        colour_col  = "arc",
-        panel_by    = "arc",
-        ncol        = 3,
-        show_labels = FALSE,
-        show_arrow  = FALSE) +
-  add_heading_vectors(hd, colour_col = "arc") +
-  add_heading_points(hd, colour_col = "arc", size = 2) +
+        group_col    = "trial_id",
+        colour_cycle = 10,
+        panel_by     = "arc",
+        ncol         = 3,
+        show_labels  = FALSE,
+        show_arrow   = FALSE) +
+  add_heading_vectors(hd, colour = "grey40") +
+  add_heading_points(hd, colour = "grey40", size = 2) +
   geom_segment(
     data        = segs,
     aes(x = x, y = y, xend = xend, yend = yend),
@@ -149,7 +159,7 @@ radiate(plividus,
   )
 ```
 
-Each panel shows all trajectories for one arc condition (coloured paths), the crossing heading vectors (dotted lines from the inner 20% ring to the unit circle, with hollow endpoints), and a solid arrow whose direction and length represent the within-condition circular mean direction and resultant *R*.
+Each panel shows all trajectories for one arc condition (cycling colours distinguish individual paths), the crossing heading vectors (dotted lines, grey), and a solid arrow whose direction and length represent the within-condition circular mean direction and resultant *R*.
 
 ## Circular Summary Statistics
 
@@ -184,11 +194,11 @@ ts_sim <- TrajSet(
   angle_unit = "radians", normalize_xy = FALSE
 )
 radiate(ts_sim,
-        group_col  = "trial_id",
-        colour_col = "trial_id",
-        panel_by   = "condition",
-        ncol       = 2,
-        show_arrow = TRUE)
+        group_col    = "trial_id",
+        colour_cycle = 5,
+        panel_by     = "condition",
+        ncol         = 2,
+        show_arrow   = TRUE)
 ```
 
 The left panel (low `kappa`) shows tortuous paths; the right (high `kappa`) shows straighter, more directed tracks. The mean resultant arrow is computed independently per panel.
