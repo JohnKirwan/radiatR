@@ -41,6 +41,92 @@ test_that("derive_headings crossing without crossing returns NA row", {
   expect_true(is.na(hd$heading))
 })
 
+# ---- multi-trajectory crossing accuracy -------------------------------------
+
+# Helper: build a TrajSet of N straight-line trajectories, each heading at
+# a different angle.  normalize_xy=FALSE keeps raw coordinates intact.
+make_multi_crossing_ts <- function(angles, n = 20, r_max = 0.8) {
+  r <- seq(0, r_max, length.out = n)
+  rows <- do.call(rbind, lapply(seq_along(angles), function(i) {
+    th <- angles[i]
+    data.frame(id = paste0("T", i), time = seq_len(n),
+               x  = r * cos(th), y = r * sin(th))
+  }))
+  TrajSet(rows, id = "id", time = "time", x = "x", y = "y",
+          normalize_xy = FALSE)
+}
+
+test_that("crossing rule recovers correct heading for each of N trajectories", {
+  # Four cardinal directions; each should produce the correct angle after wrapping.
+  angles <- c(0, pi / 2, pi, 3 * pi / 2)
+  ts  <- make_multi_crossing_ts(angles)
+  hd  <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4)
+
+  expect_equal(nrow(hd), 4)
+  # align by id order so comparison is deterministic
+  hd_s <- hd[order(hd$id), ]
+  expect_equal(hd_s$heading, angles %% (2 * pi), tolerance = 1e-6)
+})
+
+test_that("return_coords places inner crossing on circ0 circle in correct direction", {
+  angles <- c(pi / 6, pi / 2, 5 * pi / 6)
+  ts <- make_multi_crossing_ts(angles)
+  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                        return_coords = TRUE)
+
+  hd_s <- hd[order(hd$id), ]
+  # radius of each inner crossing should equal circ0
+  r_inner <- sqrt(hd_s$x_inner^2 + hd_s$y_inner^2)
+  expect_equal(r_inner, rep(0.2, 3), tolerance = 1e-6)
+  # direction of inner crossing should match heading
+  inner_angle <- atan2(hd_s$y_inner, hd_s$x_inner) %% (2 * pi)
+  expect_equal(inner_angle, angles %% (2 * pi), tolerance = 1e-6)
+})
+
+# ---- circ_summary_headings accuracy -----------------------------------------
+
+test_that("circ_summary_headings mean_dir and resultant_R are analytically correct", {
+  # Three headings: pi/6, pi/2, 5*pi/6
+  #   mean_cos = (cos(pi/6) + cos(pi/2) + cos(5*pi/6)) / 3
+  #            = (sqrt(3)/2 + 0 - sqrt(3)/2) / 3 = 0
+  #   mean_sin = (sin(pi/6) + sin(pi/2) + sin(5*pi/6)) / 3
+  #            = (1/2 + 1 + 1/2) / 3 = 2/3
+  #   mean_dir = atan2(2/3, 0) = pi/2;  resultant_R = 2/3
+  angles <- c(pi / 6, pi / 2, 5 * pi / 6)
+  ts <- make_multi_crossing_ts(angles)
+
+  summ <- circ_summary_headings(ts, rule = "crossing",
+                                circ0 = 0.2, circ1 = 0.4,
+                                group_by = NULL)
+
+  expect_equal(summ$resultant_R,              2 / 3, tolerance = 1e-6)
+  expect_equal(summ$mean_dir %% (2 * pi), pi / 2,   tolerance = 1e-6)
+})
+
+test_that("circ_summary_headings gives resultant_R = 1 when all headings are identical", {
+  angles <- rep(pi / 3, 4)
+  ts <- make_multi_crossing_ts(angles)
+
+  summ <- circ_summary_headings(ts, rule = "crossing",
+                                circ0 = 0.2, circ1 = 0.4,
+                                group_by = NULL)
+
+  expect_equal(summ$resultant_R,             1,       tolerance = 1e-6)
+  expect_equal(summ$mean_dir %% (2 * pi), pi / 3,    tolerance = 1e-6)
+})
+
+test_that("circ_summary_headings gives resultant_R near 0 for uniformly spread headings", {
+  # Four headings evenly at 0, pi/2, pi, 3*pi/2 cancel perfectly.
+  angles <- c(0, pi / 2, pi, 3 * pi / 2)
+  ts <- make_multi_crossing_ts(angles)
+
+  summ <- circ_summary_headings(ts, rule = "crossing",
+                                circ0 = 0.2, circ1 = 0.4,
+                                group_by = NULL)
+
+  expect_equal(summ$resultant_R, 0, tolerance = 1e-6)
+})
+
 test_that("derive_headings computes simple net direction", {
   df <- data.frame(
     id = c("A", "A", "A"),

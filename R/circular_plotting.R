@@ -150,15 +150,18 @@ directedness_arrow <- function(data, angle_col, arrow_head_cm = 0.2,
     warning("`angle_col` must refer to a numeric column expressed in radians; skipping arrow layer.", call. = FALSE)
     return(ggplot2::geom_blank())
   }
-  mean_angle <- circular::mean.circular(angles)
-  rho <- circular::rho.circular(angles)
+  mean_angle <- as.numeric(circular::mean.circular(angles))
+  rho        <- as.numeric(circular::rho.circular(angles))
 
-  arrow_df <- tibble::tibble(
-    x = 0,
-    y = 0,
-    xend = rho * cos(mean_angle),
-    yend = rho * sin(mean_angle)
-  )
+  # When resultant length is zero the mean direction is undefined; keep tip at origin.
+  if (!is.finite(rho) || !is.finite(mean_angle) || rho == 0) {
+    xend <- 0; yend <- 0
+  } else {
+    xend <- rho * cos(mean_angle)
+    yend <- rho * sin(mean_angle)
+  }
+
+  arrow_df <- tibble::tibble(x = 0, y = 0, xend = xend, yend = yend)
 
   ggplot2::geom_segment(
     data = arrow_df,
