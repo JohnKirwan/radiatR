@@ -161,6 +161,42 @@ radiate(plividus,
 
 Each panel is labelled with its arc condition (strip above each panel), shows all trajectories coloured by cycling palette, the crossing heading vectors (dotted lines, grey), and a solid arrow whose direction and length represent the within-condition circular mean direction and resultant *R*. Use `strip_position = "inside"` to place the label inside the plot area, or `strip_labels = FALSE` to suppress it.
 
+## Circular Density Overlays
+
+`add_circular_density()` wraps a directional density estimate around the unit circle boundary. Three estimation methods are available:
+
+* `"vonmises"` (default) — fits a von Mises distribution by MLE and traces the fitted density curve.
+* `"kernel"` — circular kernel density estimate; bandwidth chosen automatically via `bw.nrd.circular()` or supplied with `bw`.
+* `"histogram"` — angular bin counts (a circular rose diagram).
+
+The peak of the density extends to `r = 1 + scale` (default `scale = 0.4`). Setting `fill` adds a shaded region between the unit circle and the density curve.
+
+The combined plot below overlays per-condition von Mises densities alongside the heading vectors from the previous section, using `colour_col = "arc"` so each panel receives only its own density:
+
+```{r density-overlay, fig.width=8, fig.height=5}
+radiate(plividus,
+        group_col    = "trial_id",
+        colour_cycle = 10,
+        panel_by     = "arc",
+        ncol         = 3,
+        show_labels  = FALSE,
+        show_arrow   = FALSE) +
+  add_circular_density(hd, colour_col = "arc",
+                       method = "vonmises", scale = 0.4,
+                       fill = "grey80", alpha = 0.35) +
+  add_heading_vectors(hd, colour = "grey40") +
+  geom_segment(
+    data        = segs,
+    aes(x = x, y = y, xend = xend, yend = yend),
+    arrow       = grid::arrow(length = grid::unit(0.2, "cm")),
+    colour      = "black",
+    linewidth   = 1,
+    inherit.aes = FALSE
+  )
+```
+
+The shaded region represents the von Mises density fitted to the crossing headings within each arc condition. A narrower, taller peak indicates more concentrated (precise) directional responses. Switch to `method = "kernel"` for a non-parametric estimate, or `method = "histogram"` for a raw count display.
+
 ## Circular Summary Statistics
 
 `circ_summary_headings()` provides the per-condition statistics behind the arrows above:
