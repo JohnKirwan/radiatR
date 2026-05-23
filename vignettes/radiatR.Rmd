@@ -21,7 +21,7 @@ if (requireNamespace("pkgload", quietly = TRUE)) {
 } else if (requireNamespace("radiatR", quietly = TRUE)) {
   library(radiatR)
 } else {
-  stop("Package 'radiatR' not installed and 'pkgload' not available. Install with remotes::install_local('.') or install.packages('pkgload').")
+  stop("Package 'radiatR' not installed and 'pkgload' not available.")
 }
 library(ggplot2)
 ```
@@ -34,11 +34,11 @@ library(ggplot2)
 -   helpers for extracting trial limits and computing circular summary statistics;
 -   polished `ggplot2` layers for drawing concentric guides and annotated paths.
 
-## Example Data: *P. lividus* Visual Acuity Trials
+## Import Pipeline
 
-The package ships five baseline trials from a *Paracentrotus lividus* (purple sea urchin) visual acuity experiment. Each urchin was placed at the centre of a circular arena (~2 m diameter) and allowed to walk freely toward a patterned wall stimulus (arc = 0°, marble obstacle). Landmark files (`_point01.txt`) record two pixel-space reference points per trial (arena centre and stimulus edge); track files (`_point02.txt`) contain the full xy trajectory.
+The package ships five arc = 0° example tracks that demonstrate the full import workflow. Landmark files (`_point01.txt`) record two pixel-space reference points per trial (arena centre and stimulus edge); track files (`_point02.txt`) contain the full xy trajectory.
 
-```{r load-real}
+```{r load-demo}
 track_dir     <- system.file("extdata", "tracks", package = "radiatR")
 manifest_path <- system.file("extdata", "P_lividus_trials.csv", package = "radiatR")
 
@@ -46,108 +46,143 @@ file_tbl  <- import_tracks(track_dir)
 manifest  <- import_info(manifest_path)
 file_tbl  <- load_tracks(file_tbl, manifest, track_dir)
 
-ts <- get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir)
-ts
+ts_demo <- get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir)
+ts_demo
 ```
 
-`get_all_object_pos()` reads each landmark/track pair, normalises coordinates to a unit circle (arena radius = 1), and returns a single `TrajSet` containing all trials. Trial metadata (arena radius, stimulus position, frame limits) is available in `ts@meta$trial_limits`.
+`get_all_object_pos()` reads each landmark/track pair, normalises coordinates to a unit circle (arena radius = 1), and returns a `TrajSet`. Trial metadata (arena radius, stimulus position, frame limits) is in `ts_demo@meta$trial_limits`.
+
+## Full *P. lividus* Dataset
+
+The package also provides `plividus`, a pre-computed `TrajSet` containing all 401 trajectories from the experiment across six stimulus arc-angle conditions (0°, 15°, 30°, 45°, 60°, 150°). Loading it is instant.
+
+```{r load-full}
+data(plividus)
+plividus
+```
 
 ## Plotting Trajectories
 
-`radiate()` draws all trajectories on a unit circle with concentric reference rings. Passing `colour_col` assigns a distinct colour to each trial; short numeric labels are added at the outermost point of each path.
+`radiate()` draws trajectories on a unit circle with concentric reference rings. Colouring by the `arc` factor shows how paths cluster by condition.
 
-```{r trial-labels}
-# Compact per-trial label for legend readability
-ts@data$trial_num <- as.character(
-  match(ts@data$trial_id, unique(ts@data$trial_id))
-)
-```
-
-```{r plot-real}
-radiate(ts,
+```{r plot-all}
+radiate(plividus,
         group_col  = "trial_id",
-        colour_col = "trial_num",
-        label_col  = "trial_num",
-        show_arrow = FALSE)
+        colour_col = "arc",
+        show_labels = FALSE,
+        show_arrow  = FALSE)
 ```
-
-Each arc traces one urchin's path from near the arena centre to the outer radius. Trials 1, 3 and 5 head roughly East (toward the 0° stimulus), while trials 2 and 4 depart in other directions.
 
 ## Heading Overlays
 
-The **crossing method** — projecting the vector between two concentric-ring crossings to the unit circle — assigns one heading per trial without requiring the full path to reach the boundary. `derive_headings()` with `rule = "crossing"` and `return_coords = TRUE` returns both the heading angle and the inner-ring crossing position used to draw the extrapolated vector.
+The **crossing method** — projecting the vector between two concentric-ring crossings to the unit circle — assigns one directional heading per trial. `derive_headings()` with `return_coords = TRUE` returns both the heading angle and the inner-ring crossing position.
 
 ```{r headings}
-hd <- derive_headings(ts, rule = "crossing",
+hd <- derive_headings(plividus, rule = "crossing",
                       circ0 = 0.2, circ1 = 0.4,
                       return_coords = TRUE)
+# add arc grouping for faceting
+hd$arc <- factor(
+  as.integer(sub("G1D_(\\d+)_.*", "\\1", hd$id)),
+  levels = c(0, 15, 30, 45, 60, 150),
+  labels = c("0°", "15°", "30°", "45°", "60°", "150°")
+)
 names(hd)[names(hd) == "id"] <- "trial_id"
-hd$trial_num <- as.character(match(hd$trial_id, unique(ts@data$trial_id)))
-hd[, c("trial_num", "heading", "x_inner", "y_inner")]
+head(hd[, c("trial_id", "arc", "heading", "x_inner", "y_inner")])
 ```
 
-`circ_summary_headings()` computes circular mean direction and resultant length *R* from those per-trial headings. `circ_mean_segments()` converts the summary into arrow geometry ready for `gg_add_circ_mean()`.
+Overlaying the heading endpoints (one hollow circle per trial) and the grand mean direction on the combined trajectory plot gives a compact summary of the full dataset:
 
-```{r heading-summary}
-summ_hd <- circ_summary_headings(ts, rule = "crossing",
-                                  circ0 = 0.2, circ1 = 0.4,
-                                  group_by = NULL)
-summ_hd[, c("mean_dir", "resultant_R", "n")]
+```{r headings-overlay}
+summ_all <- do.call(rbind, lapply(c(1), function(.) {
+  h <- hd$heading
+  data.frame(mean_dir    = atan2(mean(sin(h), na.rm = TRUE),
+                                 mean(cos(h), na.rm = TRUE)),
+             resultant_R = sqrt(mean(cos(h), na.rm = TRUE)^2 +
+                                mean(sin(h), na.rm = TRUE)^2))
+}))
+seg_all <- circ_mean_segments(summ_all)
+
+p_all <- radiate(plividus,
+                 group_col   = "trial_id",
+                 colour_col  = "arc",
+                 show_labels = FALSE,
+                 show_arrow  = FALSE) +
+  add_heading_points(hd, colour_col = "arc", size = 1, alpha = 0.6)
+
+gg_add_circ_mean(p_all, seg_all)
 ```
 
-Layer the heading markers and grand-mean arrow onto the track plot:
+The grand mean arrow points at `r round(summ_all$mean_dir * 180 / pi, 1)`° with *R* = `r round(summ_all$resultant_R, 2)`, reflecting a moderate overall tendency across all conditions.
 
-```{r headings-plot}
-seg <- circ_mean_segments(summ_hd)
+## Per-Condition Panels
 
-p <- radiate(ts,
-             group_col   = "trial_id",
-             colour_col  = "trial_num",
-             show_labels = FALSE,
-             show_arrow  = FALSE) +
-  add_heading_vectors(hd, colour_col = "trial_num") +
-  add_heading_points(hd, colour_col = "trial_num", size = 3)
+Faceting by arc angle shows each condition separately. Per-condition mean arrows are computed from the crossing headings and routed to the correct panel automatically via the shared `arc` column.
 
-gg_add_circ_mean(p, seg)
+```{r arc-panels, fig.width=8, fig.height=5}
+arc_summ <- do.call(rbind, lapply(split(hd, hd$arc), function(sub) {
+  h <- sub$heading
+  data.frame(
+    arc         = sub$arc[1],
+    mean_dir    = atan2(mean(sin(h), na.rm = TRUE), mean(cos(h), na.rm = TRUE)),
+    resultant_R = sqrt(mean(cos(h), na.rm = TRUE)^2 + mean(sin(h), na.rm = TRUE)^2)
+  )
+}))
+segs <- circ_mean_segments(arc_summ)
+
+radiate(plividus,
+        group_col   = "trial_id",
+        colour_col  = "arc",
+        panel_by    = "arc",
+        ncol        = 3,
+        show_labels = FALSE,
+        show_arrow  = FALSE) +
+  add_heading_vectors(hd, colour_col = "arc") +
+  add_heading_points(hd, colour_col = "arc", size = 2) +
+  geom_segment(
+    data        = segs,
+    aes(x = x, y = y, xend = xend, yend = yend),
+    arrow       = grid::arrow(length = grid::unit(0.2, "cm")),
+    colour      = "black",
+    linewidth   = 1,
+    inherit.aes = FALSE
+  )
 ```
 
-Hollow circles mark where each heading vector intersects the unit circle; dotted lines trace back to the inner-ring crossing point. The solid arrow shows the grand mean of the five crossing headings; its length equals the resultant length *R* (`r round(summ_hd$resultant_R, 2)`), reflecting the spread across trials.
+Each panel shows all trajectories for one arc condition (coloured paths), the crossing heading vectors (dotted lines from the inner 20% ring to the unit circle, with hollow endpoints), and a solid arrow whose direction and length represent the within-condition circular mean direction and resultant *R*.
 
 ## Circular Summary Statistics
 
-`circ_summary()` characterises the distribution of step-by-step angles within each trial — useful for quantifying path tortuosity:
+`circ_summary_headings()` provides the per-condition statistics behind the arrows above:
 
 ```{r stats}
-circ_summary(ts)
+arc_summ[, c("arc", "mean_dir", "resultant_R")]
 ```
 
-High resultant lengths (close to 1) indicate that the urchin's movement direction is consistent within a trial. For between-trial directedness, use `circ_summary_headings()` as shown above.
+For within-trial path consistency (tortuosity), `circ_summary()` operates on the step-by-step angle distribution:
+
+```{r within-trial}
+circ_summary(ts_demo)
+```
+
+High resultant lengths (close to 1) indicate very consistent step directions within a trial.
 
 ## Simulating Demo Data
 
-When you need a reproducible toy dataset without any files on disk, `simulate_tracks()` creates tidy data with controllable tortuosity. Pass a `conditions` data frame to generate multiple groups — for example, two levels of directedness controlled by the `kappa` parameter:
+`simulate_tracks()` generates synthetic trajectories without any files, useful for testing and demonstrations. The `kappa` parameter controls directedness:
 
 ```{r simulate}
 sim_df <- simulate_tracks(
-  conditions = data.frame(n_trials = c(3L, 3L), kappa = c(2, 8)),
+  conditions = data.frame(n_trials = c(5L, 5L), kappa = c(2, 8)),
   n_points = 150,
   seed = 42
 )
 ts_sim <- TrajSet(
   sim_df,
-  id = "trial_id",
-  time = "frame",
-  angle = "rel_theta",
-  x = "rel_x",
-  y = "rel_y",
-  angle_unit = "radians",
-  normalize_xy = FALSE
+  id = "trial_id", time = "frame",
+  angle = "rel_theta", x = "rel_x", y = "rel_y",
+  angle_unit = "radians", normalize_xy = FALSE
 )
-```
-
-Pass `panel_by` to `radiate()` to split the plot into one panel per level of a grouping variable — analogous to `facet_wrap()` in base ggplot2:
-
-```{r simulate-facet}
 radiate(ts_sim,
         group_col  = "trial_id",
         colour_col = "trial_id",
@@ -156,11 +191,4 @@ radiate(ts_sim,
         show_arrow = TRUE)
 ```
 
-The left panel (`condition_1`, low `kappa`) shows more tortuous paths; the right (`condition_2`, high `kappa`) shows straighter, more directed tracks. The mean resultant arrow is computed independently per panel.
-
-## Advanced: Accessing Underlying Data
-
-```{r trajset-advanced}
-head(ts@data)
-head(ts@meta$trial_limits)
-```
+The left panel (low `kappa`) shows tortuous paths; the right (high `kappa`) shows straighter, more directed tracks. The mean resultant arrow is computed independently per panel.
