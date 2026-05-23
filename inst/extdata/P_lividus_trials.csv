@@ -1,6 +1,6 @@
-trial,type,arc,id,stim_loc,date,time,obstacle,file
-1,Herm,0,4,-32,01/02/2021,11:24:00,marbles,G1D_0_obstacle/WIN_20210201_11_24_19_Pro
-2,Herm,0,6,148,04/02/2021,16:55:00,marbles,G1D_0_obstacle/WIN_20210201_11_32_56_Pro
-3,Herm,0,9,49,01/02/2021,11:32:00,marbles,G1D_0_obstacle/WIN_20210204_16_55_13_Pro
-4,Herm,0,32,266,04/02/2021,17:12:00,marbles,G1D_0_obstacle/WIN_20210204_17_12_38_Pro
-5,Herm,0,20,75,04/02/2021,17:30:00,marbles,G1D_0_obstacle/WIN_20210204_17_30_19_Pro
+"trial","type","arc","id","stim_loc","date","time","obstacle","file"
+1,"Herm",0,4,-32,"01/02/2021","11:24:00","marbles","G1D_0_obstacle/WIN_20210201_11_24_19_Pro"
+2,"Herm",0,6,148,"04/02/2021","16:55:00","marbles","G1D_0_obstacle/WIN_20210201_11_32_56_Pro"
+3,"Herm",0,9,49,"01/02/2021","11:32:00","marbles","G1D_0_obstacle/WIN_20210204_16_55_13_Pro"
+4,"Herm",0,32,266,"04/02/2021","17:12:00","marbles","G1D_0_obstacle/WIN_20210204_17_12_38_Pro"
+5,"Herm",0,20,75,"04/02/2021","17:30:00","marbles","G1D_0_obstacle/WIN_20210204_17_30_19_Pro"
