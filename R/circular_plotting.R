@@ -660,6 +660,15 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   present in the data.
 #' @param ncol Number of columns passed to [ggplot2::facet_wrap()] when
 #'   `panel_by` is set.
+#' @param strip_labels Logical or `NULL`. Whether to show a label identifying
+#'   the panel variable value on each panel. Defaults to `TRUE` when `panel_by`
+#'   is set, `FALSE` otherwise. Ignored when `panel_by` is `NULL`.
+#' @param strip_position Position of the panel label. One of `"top"` (default),
+#'   `"bottom"`, `"left"`, `"right"` (ggplot2 strip positions), or `"inside"`
+#'   (places a text annotation inside the plot area, centred below the unit
+#'   circle at y = −1.25).
+#' @param strip_label_size Font size for strip labels. Applies to both strip
+#'   text and the in-panel `"inside"` annotation.
 #' @param ticks,degrees,legend,title,xlab,ylab,axes Additional styling options.
 #' @param ... Additional arguments forwarded to [draw_tracks()].
 #' @return A `ggplot2` object.
@@ -677,6 +686,9 @@ radiate <- function(
   colour_cycle = NULL,
   panel_by = NULL,
   ncol = NULL,
+  strip_labels = NULL,
+  strip_position = c("top", "bottom", "left", "right", "inside"),
+  strip_label_size = 11,
   ticks = NULL,
   degrees = NULL, legend = NULL, title = NULL,
   xlab = NULL, ylab = NULL, axes = NULL,
@@ -860,10 +872,37 @@ radiate <- function(
     if (!is.character(panel_by)) stop("`panel_by` must be a character vector of column names.")
     missing_pby <- setdiff(panel_by, names(data))
     if (length(missing_pby)) stop("panel_by column(s) not found in data: ", paste(missing_pby, collapse = ", "))
+
+    strip_position <- match.arg(strip_position)
+    show_strip <- if (is.null(strip_labels)) TRUE else isTRUE(strip_labels)
+
+    fw_pos <- if (strip_position == "inside") "top" else strip_position
     g <- g + ggplot2::facet_wrap(
       stats::as.formula(paste("~", paste(panel_by, collapse = "+"))),
-      ncol = ncol
+      ncol = ncol,
+      strip.position = fw_pos
     )
+
+    if (show_strip && strip_position != "inside") {
+      g <- g + ggplot2::theme(
+        strip.text = ggplot2::element_text(size = strip_label_size)
+      )
+    }
+
+    if (show_strip && strip_position == "inside") {
+      panel_col <- panel_by[[1]]
+      label_df <- unique(data[, c(panel_by), drop = FALSE])
+      label_df[[".x_lab"]] <- 0
+      label_df[[".y_lab"]] <- -1.25
+      label_df[[".label"]] <- as.character(label_df[[panel_col]])
+      g <- g + ggplot2::geom_text(
+        data        = label_df,
+        mapping     = ggplot2::aes(x = .data[[".x_lab"]], y = .data[[".y_lab"]],
+                                   label = .data[[".label"]]),
+        size        = strip_label_size / ggplot2::.pt,
+        inherit.aes = FALSE
+      )
+    }
   }
 
   if (legend == FALSE) {

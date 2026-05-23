@@ -159,7 +159,7 @@ radiate(plividus,
   )
 ```
 
-Each panel shows all trajectories for one arc condition (cycling colours distinguish individual paths), the crossing heading vectors (dotted lines, grey), and a solid arrow whose direction and length represent the within-condition circular mean direction and resultant *R*.
+Each panel is labelled with its arc condition (strip above each panel), shows all trajectories coloured by cycling palette, the crossing heading vectors (dotted lines, grey), and a solid arrow whose direction and length represent the within-condition circular mean direction and resultant *R*. Use `strip_position = "inside"` to place the label inside the plot area, or `strip_labels = FALSE` to suppress it.
 
 ## Circular Summary Statistics
 

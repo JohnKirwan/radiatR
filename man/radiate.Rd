@@ -14,6 +14,9 @@ radiate(
   colour_cycle = NULL,
   panel_by = NULL,
   ncol = NULL,
+  strip_labels = NULL,
+  strip_position = c("top", "bottom", "left", "right", "inside"),
+  strip_label_size = 11,
   ticks = NULL,
   degrees = NULL,
   legend = NULL,
@@ -60,6 +63,18 @@ present in the data.}
 
 \item{ncol}{Number of columns passed to [ggplot2::facet_wrap()] when
 `panel_by` is set.}
+
+\item{strip_labels}{Logical or `NULL`. Whether to show a label identifying
+the panel variable value on each panel. Defaults to `TRUE` when `panel_by`
+is set, `FALSE` otherwise. Ignored when `panel_by` is `NULL`.}
+
+\item{strip_position}{Position of the panel label. One of `"top"` (default),
+`"bottom"`, `"left"`, `"right"` (ggplot2 strip positions), or `"inside"`
+(places a text annotation inside the plot area, centred below the unit
+circle at y = −1.25).}
+
+\item{strip_label_size}{Font size for strip labels. Applies to both strip
+text and the in-panel `"inside"` annotation.}
 
 \item{ticks, degrees, legend, title, xlab, ylab, axes}{Additional styling options.}
 

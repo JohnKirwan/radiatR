@@ -274,6 +274,71 @@ test_that("radiate errors when colour_col and colour_cycle both set", {
   )
 })
 
+# ---- strip_labels: panel annotations ----------------------------------------
+
+test_that("strip_labels defaults to shown when panel_by is set", {
+  library(ggplot2)
+  sim <- suppressWarnings(
+    simulate_tracks(conditions = data.frame(n_trials = 3L, condition = c("A","B","C")),
+                    n_points = 5, seed = 9)
+  )
+  sim$grp <- rep(c("X","Y","Z"), each = nrow(sim) / 3)
+  # Default (strip_labels = NULL) with panel_by set should show strip text
+  p <- radiate(sim, x_col = "rel_x", y_col = "rel_y",
+               group_col = "trial_id", panel_by = "condition",
+               show_arrow = FALSE, show_labels = FALSE)
+  # strip.text should NOT be element_blank after radiate override
+  strip_el <- ggplot2::calc_element("strip.text", p$theme)
+  expect_false(inherits(strip_el, "element_blank"))
+})
+
+test_that("strip_labels = FALSE hides strip text", {
+  library(ggplot2)
+  sim <- suppressWarnings(
+    simulate_tracks(conditions = data.frame(n_trials = 2L),
+                    n_points = 5, seed = 10)
+  )
+  p <- radiate(sim, x_col = "rel_x", y_col = "rel_y",
+               group_col = "trial_id", panel_by = "condition",
+               strip_labels = FALSE,
+               show_arrow = FALSE, show_labels = FALSE)
+  strip_el <- ggplot2::calc_element("strip.text", p$theme)
+  expect_true(inherits(strip_el, "element_blank"))
+})
+
+test_that("strip_position inside adds a geom_text layer inside the plot", {
+  library(ggplot2)
+  sim <- suppressWarnings(
+    simulate_tracks(conditions = data.frame(n_trials = 2L),
+                    n_points = 5, seed = 11)
+  )
+  p <- radiate(sim, x_col = "rel_x", y_col = "rel_y",
+               group_col = "trial_id", panel_by = "condition",
+               strip_position = "inside",
+               show_arrow = FALSE, show_labels = FALSE)
+  built <- ggplot_build(p)
+  # One geom_text layer should carry y = -1.25 annotation
+  text_layers <- Filter(function(d) "label" %in% names(d), built$data)
+  expect_true(length(text_layers) >= 1L)
+  y_vals <- unlist(lapply(text_layers, function(d) d$y))
+  expect_true(any(abs(y_vals - (-1.25)) < 1e-6))
+})
+
+test_that("strip_position bottom passes through to facet_wrap", {
+  library(ggplot2)
+  sim <- suppressWarnings(
+    simulate_tracks(conditions = data.frame(n_trials = 2L),
+                    n_points = 5, seed = 12)
+  )
+  p <- radiate(sim, x_col = "rel_x", y_col = "rel_y",
+               group_col = "trial_id", panel_by = "condition",
+               strip_position = "bottom",
+               show_arrow = FALSE, show_labels = FALSE)
+  # facet_wrap stores strip.position in its params
+  facet_params <- p$facet$params
+  expect_equal(facet_params$strip.position, "bottom")
+})
+
 test_that("add_heading_points and add_heading_vectors accept fixed colour parameter", {
   library(ggplot2)
   hd <- data.frame(heading = pi / 3, x_inner = 0.1, y_inner = 0.1)
