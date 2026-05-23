@@ -234,6 +234,291 @@ assign_cycle_colours <- function(data, id_col, n, panel_col = NULL,
   data
 }
 
+# ---- circular density overlay ------------------------------------------------
+
+#' Internal: evaluate one density method for a numeric angle vector.
+#' Returns a two-column data frame (theta, density) with NO radial scaling.
+#' @noRd
+.eval_circ_dens <- function(angles, method, n_theta, bins, bw) {
+  angles <- angles[is.finite(angles)]
+  if (length(angles) < 3L) return(NULL)
+
+  circ <- circular::circular(angles, units = "radians", template = "none",
+                              modulo = "2pi", zero = 0, rotation = "counter")
+
+  if (method == "vonmises") {
+    fit      <- circular::mle.vonmises(circ)
+    theta_sq <- seq(-pi, pi, length.out = n_theta + 1L)[-(n_theta + 1L)]
+    ev       <- circular::circular(theta_sq, units = "radians", template = "none",
+                                   modulo = "2pi", zero = 0, rotation = "counter")
+    dens     <- as.numeric(circular::dvonmises(ev, mu = fit$mu, kappa = fit$kappa))
+
+  } else if (method == "kernel") {
+    bw_use   <- if (is.null(bw)) circular::bw.nrd.circular(circ) else bw
+    dens_obj <- circular::density.circular(circ, bw = bw_use)
+    theta_sq <- atan2(sin(as.numeric(dens_obj$x)), cos(as.numeric(dens_obj$x)))
+    dens     <- as.numeric(dens_obj$y)
+    ord      <- order(theta_sq)
+    theta_sq <- theta_sq[ord]
+    dens     <- dens[ord]
+
+  } else {
+    breaks   <- seq(-pi, pi, length.out = bins + 1L)
+    counts   <- tabulate(cut(angles, breaks = breaks, include.lowest = TRUE),
+                         nbins = bins)
+    theta_sq <- (breaks[-1L] + breaks[-length(breaks)]) / 2
+    dens     <- as.numeric(counts)
+  }
+
+  data.frame(theta = theta_sq, density = dens)
+}
+
+#' Compute a circular density data frame from heading observations
+#'
+#' Evaluates a directional density for a set of heading angles and returns a
+#' tidy data frame of `(theta, density)` pairs. The result can be passed
+#' directly to [add_circular_density()] for rendering, or inspected and
+#' modified before plotting — for example to replace the `density` column with
+#' a Bayesian posterior predictive density obtained from `brms` or another
+#' modelling package.
+#'
+#' Three built-in estimation methods are provided:
+#'
+#' * `"vonmises"` — fit a von Mises distribution by MLE
+#'   ([circular::mle.vonmises()]) and evaluate the fitted density on a regular
+#'   grid of `n_theta` angles.
+#' * `"kernel"` — circular kernel density estimate
+#'   ([circular::density.circular()]) with bandwidth chosen by
+#'   [circular::bw.nrd.circular()] unless `bw` is supplied.
+#' * `"histogram"` — angular bin counts (a circular rose diagram); `bins`
+#'   controls the number of bins.
+#'
+#' When `colour_col` is supplied the density is computed independently for each
+#' group and the group label is preserved in the output, enabling per-panel use
+#' with [radiate()]'s `panel_by`.
+#'
+#' @param headings_df Data frame containing heading angles.
+#' @param heading_col Name of the heading column (radians). Default `"heading"`.
+#' @param colour_col Optional grouping column. When set, one density is
+#'   computed per group and the column is included in the output.
+#' @param method Estimation method: `"vonmises"` (default), `"kernel"`, or
+#'   `"histogram"`.
+#' @param n_theta Number of angular evaluation points for smooth methods.
+#'   Default `500`.
+#' @param bins Number of angular bins for the histogram method. Default `36`
+#'   (10° each).
+#' @param bw Bandwidth passed to [circular::density.circular()]. `NULL`
+#'   uses [circular::bw.nrd.circular()].
+#'
+#' @return A data frame with columns `theta` (radians, −π to π) and `density`
+#'   (non-negative), plus `colour_col` if supplied. Suitable for passing to
+#'   [add_circular_density()].
+#'
+#' @seealso [add_circular_density()], [add_heading_density()]
+#' @importFrom circular circular mle.vonmises dvonmises density.circular bw.nrd.circular
+#' @export
+#'
+#' @examples
+#' hd <- data.frame(heading = c(0.2, 0.3, 0.4, 0.5, -0.1, 0.1, 0.6, 0.2))
+#' dens_df <- compute_circular_density(hd)
+#' head(dens_df)
+#'
+#' # Replace the density column with values from an external model before plotting:
+#' # dens_df$density <- my_bayesian_density(dens_df$theta)
+#' # ggplot() + coord_fixed() + add_circular_density(dens_df)
+compute_circular_density <- function(headings_df,
+                                     heading_col = "heading",
+                                     colour_col  = NULL,
+                                     method      = c("vonmises", "kernel", "histogram"),
+                                     n_theta     = 500L,
+                                     bins        = 36L,
+                                     bw          = NULL) {
+  method     <- match.arg(method)
+  use_colour <- !is.null(colour_col) && colour_col %in% names(headings_df)
+
+  if (!heading_col %in% names(headings_df))
+    stop("`heading_col` '", heading_col, "' not found in headings_df.")
+
+  groups    <- if (use_colour) split(headings_df, headings_df[[colour_col]]) else list(headings_df)
+  dens_list <- lapply(seq_along(groups), function(i) {
+    d <- .eval_circ_dens(groups[[i]][[heading_col]], method, n_theta, bins, bw)
+    if (!is.null(d) && use_colour) d[[colour_col]] <- names(groups)[[i]]
+    d
+  })
+  out <- do.call(rbind, Filter(Negate(is.null), dens_list))
+
+  if (use_colour && is.factor(headings_df[[colour_col]]))
+    out[[colour_col]] <- factor(out[[colour_col]],
+                                levels = levels(headings_df[[colour_col]]))
+  out
+}
+
+#' Wrap a pre-computed circular density around the unit circle
+#'
+#' Takes a data frame of `(theta, density)` pairs — from any source: MLE,
+#' kernel estimation, Bayesian posterior predictive, or hand-crafted — and
+#' renders it as a radial path (and optionally a filled polygon) around the
+#' unit circle boundary. At each angle θ the plotted radius is
+#' `1 + scale * density(θ) / max(density)`.
+#'
+#' Because this function only handles rendering, it is agnostic to how the
+#' density was produced. To compute from raw headings use
+#' [compute_circular_density()] first, or call the convenience wrapper
+#' [add_heading_density()] which combines both steps.
+#'
+#' @param density_df Data frame with columns named by `theta_col` and
+#'   `density_col` (and, optionally, `colour_col`). Each row represents one
+#'   evaluated angle.
+#' @param theta_col Name of the angle column (radians, −π to π). Default
+#'   `"theta"`.
+#' @param density_col Name of the density/count column. Default `"density"`.
+#' @param colour_col Optional grouping column. When set, separate paths are
+#'   drawn per group, enabling ggplot2 faceting.
+#' @param scale Maximum radial extension above the unit circle. Default `0.4`
+#'   (peak at r = 1.4). Density is normalised within each group before scaling.
+#' @param colour Fixed line colour used when `colour_col` is `NULL`. Default
+#'   `"black"`.
+#' @param fill Colour for the region between the unit circle and the density
+#'   curve. `NA` (default) draws no fill.
+#' @param alpha Alpha transparency for the filled polygon. Default `0.2`.
+#' @param linewidth Width of the density path. Default `0.8`.
+#'
+#' @return A list of one or two ggplot2 layers (fill polygon + path line).
+#'
+#' @seealso [compute_circular_density()], [add_heading_density()]
+#' @importFrom ggplot2 geom_path geom_polygon aes
+#' @importFrom rlang .data sym
+#' @export
+#'
+#' @examples
+#' library(ggplot2)
+#' # From compute_circular_density:
+#' hd <- data.frame(heading = c(0.2, 0.3, 0.4, 0.5, -0.1, 0.1, 0.6, 0.2))
+#' dens_df <- compute_circular_density(hd)
+#' ggplot() + coord_fixed() + add_circular_density(dens_df)
+#'
+#' # From an external model (e.g. brms posterior predictive):
+#' theta_grid <- seq(-pi, pi, length.out = 200)
+#' external_dens <- data.frame(
+#'   theta   = theta_grid,
+#'   density = exp(-2 * (1 - cos(theta_grid - 0.5)))  # von Mises-like
+#' )
+#' ggplot() + coord_fixed() + add_circular_density(external_dens, fill = "steelblue")
+add_circular_density <- function(density_df,
+                                 theta_col   = "theta",
+                                 density_col = "density",
+                                 colour_col  = NULL,
+                                 scale       = 0.4,
+                                 colour      = "black",
+                                 fill        = NA,
+                                 alpha       = 0.2,
+                                 linewidth   = 0.8) {
+  use_colour <- !is.null(colour_col) && colour_col %in% names(density_df)
+
+  for (col in c(theta_col, density_col)) {
+    if (!col %in% names(density_df))
+      stop("`density_df` is missing column '", col, "'.")
+  }
+
+  # Normalise density within each group and compute Cartesian coordinates
+  groups    <- if (use_colour) split(density_df, density_df[[colour_col]]) else list(density_df)
+  dens_list <- lapply(groups, function(d) {
+    theta <- d[[theta_col]]
+    dens  <- d[[density_col]]
+    max_d <- max(dens, na.rm = TRUE)
+    r     <- if (max_d > 0) 1 + scale * dens / max_d else rep(1, length(theta))
+    d$.r  <- r
+    d$.x  <- r * cos(theta)
+    d$.y  <- r * sin(theta)
+    d$.theta_raw <- theta
+    d
+  })
+  dens_df <- do.call(rbind, dens_list)
+
+  layers <- list()
+
+  if (!is.na(fill)) {
+    grp_ids <- if (use_colour) unique(dens_df[[colour_col]]) else list(NULL)
+    poly_parts <- lapply(grp_ids, function(gid) {
+      d  <- if (use_colour) dens_df[dens_df[[colour_col]] == gid, ] else dens_df
+      th <- d$.theta_raw
+      out <- data.frame(x = c(d$.x, cos(rev(th))),
+                        y = c(d$.y, sin(rev(th))))
+      if (use_colour) out[[colour_col]] <- gid
+      out
+    })
+    poly_df  <- do.call(rbind, poly_parts)
+    poly_map <- ggplot2::aes(x = .data$x, y = .data$y)
+    if (use_colour) poly_map[["group"]] <- rlang::sym(colour_col)
+
+    poly_args <- list(data = poly_df, mapping = poly_map,
+                      fill = fill, colour = NA, alpha = alpha, inherit.aes = FALSE)
+    layers <- c(layers, list(do.call(ggplot2::geom_polygon, poly_args)))
+  }
+
+  path_map <- ggplot2::aes(x = .data$.x, y = .data$.y)
+  if (use_colour) {
+    path_map[["colour"]] <- rlang::sym(colour_col)
+    path_map[["group"]]  <- rlang::sym(colour_col)
+  }
+  path_args <- list(data = dens_df, mapping = path_map,
+                    linewidth = linewidth, inherit.aes = FALSE)
+  if (!use_colour) path_args$colour <- colour
+
+  c(layers, list(do.call(ggplot2::geom_path, path_args)))
+}
+
+#' Compute a circular density and add it to a radial plot in one step
+#'
+#' Convenience wrapper that calls [compute_circular_density()] followed by
+#' [add_circular_density()]. Equivalent to:
+#' ```r
+#' add_circular_density(
+#'   compute_circular_density(headings_df, heading_col, colour_col, method, ...),
+#'   colour_col = colour_col, scale = scale, ...
+#' )
+#' ```
+#'
+#' Use [compute_circular_density()] + [add_circular_density()] directly when you
+#' need to inspect or replace the density values before plotting (e.g. to
+#' substitute a Bayesian posterior predictive density from `brms`).
+#'
+#' @inheritParams compute_circular_density
+#' @inheritParams add_circular_density
+#'
+#' @return A list of one or two ggplot2 layers.
+#'
+#' @seealso [compute_circular_density()], [add_circular_density()]
+#' @importFrom circular circular mle.vonmises dvonmises density.circular bw.nrd.circular
+#' @importFrom ggplot2 geom_path geom_polygon aes
+#' @importFrom rlang .data sym
+#' @export
+#'
+#' @examples
+#' library(ggplot2)
+#' hd <- data.frame(heading = c(0.2, 0.3, 0.4, 0.5, -0.1, 0.1, 0.6, 0.2))
+#' ggplot() + coord_fixed() + add_heading_density(hd, fill = "steelblue", scale = 0.5)
+add_heading_density <- function(headings_df,
+                                heading_col = "heading",
+                                colour_col  = NULL,
+                                method      = c("vonmises", "kernel", "histogram"),
+                                n_theta     = 500L,
+                                bins        = 36L,
+                                bw          = NULL,
+                                scale       = 0.4,
+                                colour      = "black",
+                                fill        = NA,
+                                alpha       = 0.2,
+                                linewidth   = 0.8) {
+  method  <- match.arg(method)
+  dens_df <- compute_circular_density(headings_df, heading_col = heading_col,
+                                      colour_col = colour_col, method = method,
+                                      n_theta = n_theta, bins = bins, bw = bw)
+  add_circular_density(dens_df, colour_col = colour_col,
+                       scale = scale, colour = colour,
+                       fill = fill, alpha = alpha, linewidth = linewidth)
+}
+
 # ---- heading overlay layers --------------------------------------------------
 
 #' Add heading endpoint markers on the unit circle
@@ -660,6 +945,15 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   present in the data.
 #' @param ncol Number of columns passed to [ggplot2::facet_wrap()] when
 #'   `panel_by` is set.
+#' @param strip_labels Logical or `NULL`. Whether to show a label identifying
+#'   the panel variable value on each panel. Defaults to `TRUE` when `panel_by`
+#'   is set, `FALSE` otherwise. Ignored when `panel_by` is `NULL`.
+#' @param strip_position Position of the panel label. One of `"top"` (default),
+#'   `"bottom"`, `"left"`, `"right"` (ggplot2 strip positions), or `"inside"`
+#'   (places a text annotation inside the plot area, centred below the unit
+#'   circle at y = −1.25).
+#' @param strip_label_size Font size for strip labels. Applies to both strip
+#'   text and the in-panel `"inside"` annotation.
 #' @param ticks,degrees,legend,title,xlab,ylab,axes Additional styling options.
 #' @param ... Additional arguments forwarded to [draw_tracks()].
 #' @return A `ggplot2` object.
@@ -677,6 +971,9 @@ radiate <- function(
   colour_cycle = NULL,
   panel_by = NULL,
   ncol = NULL,
+  strip_labels = NULL,
+  strip_position = c("top", "bottom", "left", "right", "inside"),
+  strip_label_size = 11,
   ticks = NULL,
   degrees = NULL, legend = NULL, title = NULL,
   xlab = NULL, ylab = NULL, axes = NULL,
@@ -860,10 +1157,37 @@ radiate <- function(
     if (!is.character(panel_by)) stop("`panel_by` must be a character vector of column names.")
     missing_pby <- setdiff(panel_by, names(data))
     if (length(missing_pby)) stop("panel_by column(s) not found in data: ", paste(missing_pby, collapse = ", "))
+
+    strip_position <- match.arg(strip_position)
+    show_strip <- if (is.null(strip_labels)) TRUE else isTRUE(strip_labels)
+
+    fw_pos <- if (strip_position == "inside") "top" else strip_position
     g <- g + ggplot2::facet_wrap(
       stats::as.formula(paste("~", paste(panel_by, collapse = "+"))),
-      ncol = ncol
+      ncol = ncol,
+      strip.position = fw_pos
     )
+
+    if (show_strip && strip_position != "inside") {
+      g <- g + ggplot2::theme(
+        strip.text = ggplot2::element_text(size = strip_label_size)
+      )
+    }
+
+    if (show_strip && strip_position == "inside") {
+      panel_col <- panel_by[[1]]
+      label_df <- unique(data[, c(panel_by), drop = FALSE])
+      label_df[[".x_lab"]] <- 0
+      label_df[[".y_lab"]] <- -1.25
+      label_df[[".label"]] <- as.character(label_df[[panel_col]])
+      g <- g + ggplot2::geom_text(
+        data        = label_df,
+        mapping     = ggplot2::aes(x = .data[[".x_lab"]], y = .data[[".y_lab"]],
+                                   label = .data[[".label"]]),
+        size        = strip_label_size / ggplot2::.pt,
+        inherit.aes = FALSE
+      )
+    }
   }
 
   if (legend == FALSE) {
