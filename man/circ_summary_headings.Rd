@@ -12,17 +12,40 @@ circ_summary_headings(
 )
 }
 \arguments{
-\item{x}{TrajSet}
+\item{x}{A [`TrajSet`] object.}
 
-\item{rule}{heading derivation rule (passed to derive_headings)}
+\item{rule}{Character. Heading derivation rule passed to [derive_headings()].
+One of `"crossing"`, `"distal"`, `"straight"`, `"origin_mean"`, `"net"`,
+or `"velocity_mean"`.}
 
-\item{group_by}{character vector of columns to group by (default = "id"). Use NULL for global.}
+\item{group_by}{Character vector of column names used to group headings
+before summarising. Default `"id"` returns one row per trial. Use `NULL`
+for a single global summary row. Any column carried through by
+[derive_headings()] (e.g. `"arc"`) is valid.}
 
-\item{...}{parameters forwarded to derive_headings}
+\item{...}{Additional arguments forwarded to [derive_headings()], such as
+`circ0`, `circ1`, or `return_coords`.}
 }
 \value{
-data.frame with group columns + mean_dir, resultant_R, kappa, n
+A `data.frame` with grouping columns followed by `mean_dir`
+  (radians, 0 to 2π), `resultant_R` (0–1), `kappa` (von Mises
+  concentration), and `n` (number of valid headings in the group).
 }
 \description{
-Circular statistics over derived headings
+Derives one heading per trial via `derive_headings()`, then computes
+circular summary statistics (mean direction, resultant length, concentration)
+optionally grouped by one or more metadata columns.
+}
+\examples{
+\dontrun{
+data(plividus)
+# per-trial headings (default)
+circ_summary_headings(plividus, rule = "crossing", circ0 = 0.2, circ1 = 0.4)
+
+# per-condition summary (requires an "arc" column carried through)
+circ_summary_headings(plividus, rule = "crossing",
+                      circ0 = 0.2, circ1 = 0.4,
+                      group_by = "arc")
+}
+
 }

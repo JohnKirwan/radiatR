@@ -6,10 +6,26 @@
 
 #' Circular summary statistics for trajectories
 #'
-#' @param x TrajSet input
-#' @param w Optional weight column name
-#' @param by Summarise per id or globally across all observations
-#' @return data.frame with summary metrics per group
+#' Computes per-trial or global circular statistics (mean direction, resultant
+#' length, concentration) from the step-angle column of a `TrajSet`.
+#'
+#' @param x A [`TrajSet`] object.
+#' @param w Character. Name of a weight column in `x@data`. When `NULL`
+#'   (default), all steps are weighted equally.
+#' @param by Character. `"id"` (default) returns one row per trial;
+#'   `"global"` pools all observations into a single summary row.
+#'
+#' @return A `data.frame` with columns `id`, `n`, `t_start`, `t_end`,
+#'   `mean_dir` (radians, 0 to 2π), `resultant_R` (0–1), and `kappa`
+#'   (von Mises concentration; `NA` when estimation fails).
+#'
+#' @examples
+#' \dontrun{
+#' data(plividus)
+#' circ_summary(plividus, by = "id")
+#' circ_summary(plividus, by = "global")
+#' }
+#'
 #' @export
 #' @importFrom circular mean.circular rho.circular circular
 setGeneric("circ_summary", function(x, w = NULL, by = c("id","global")) standardGeneric("circ_summary"))
