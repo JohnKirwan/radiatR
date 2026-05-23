@@ -11,6 +11,8 @@ radiate(
   geom = "path",
   group_col = NULL,
   colour_col = NULL,
+  panel_by = NULL,
+  ncol = NULL,
   ticks = NULL,
   degrees = NULL,
   legend = NULL,
@@ -44,6 +46,13 @@ radiate(
 
 \item{colour_col}{Optional column for colour aesthetics.}
 
+\item{panel_by}{NULL, a column name, or a character vector of column names
+to facet by (via [ggplot2::facet_wrap()]). The named column(s) must be
+present in the data.}
+
+\item{ncol}{Number of columns passed to [ggplot2::facet_wrap()] when
+`panel_by` is set.}
+
 \item{ticks, degrees, legend, title, xlab, ylab, axes}{Additional styling options.}
 
 \item{style}{Either `"classic"` (default) or `"minimal"`.}
@@ -75,6 +84,7 @@ Accepts either a precomputed data frame of polar/cartesian coordinates or a
 the object and handed off to the plotting helpers.
 }
 \examples{
-tracks_demo <- simulate_tracks(n_trials = 1, n_points = 200, seed = 1)
-radiate(tracks_demo, x_col = "rel_x", y_col = "rel_y", group_col = "trial_num")
+tracks_demo <- simulate_tracks(conditions = data.frame(n_trials = 1L),
+                               n_points = 200, seed = 1)
+radiate(tracks_demo, x_col = "rel_x", y_col = "rel_y", group_col = "trial_id")
 }

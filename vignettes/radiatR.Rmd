@@ -53,10 +53,33 @@ ts
 `get_all_object_pos()` reads each landmark/track pair, normalises coordinates to a unit circle (arena radius = 1), and returns a single `TrajSet` containing all trials. Trial metadata is available in `ts@meta$trial_limits`.
 
 ```{r plot-real}
-radiate(ts, group_col = "trial_id", show_arrow = TRUE)
+radiate(ts, group_col = "trial_id", colour_col = "trial_id", show_arrow = TRUE)
 ```
 
-Each arc represents one urchin's path from the arena centre outward. The arrow indicates where the animal first crossed the outer 20 % annulus.
+Each arc represents one urchin's path from the arena centre outward. The arrow shows the grand mean direction weighted by resultant length.
+
+## Heading Overlays
+
+The **crossing method** — projecting the vector between two concentric-ring crossings to the unit circle — is one way to assign a single heading per trial. `derive_headings()` with `rule = "crossing"` and `return_coords = TRUE` returns both the heading angle and the inner-ring crossing position needed to draw the extrapolated vector.
+
+```{r headings}
+hd <- derive_headings(ts, rule = "crossing",
+                      circ0 = 0.2, circ1 = 0.4,
+                      return_coords = TRUE)
+# align id column name with TrajSet so colour scales merge
+names(hd)[names(hd) == "id"] <- "trial_id"
+hd[, c("trial_id", "heading", "x_inner", "y_inner")]
+```
+
+Layer the heading markers onto the track plot with `+`:
+
+```{r headings-plot}
+radiate(ts, group_col = "trial_id", colour_col = "trial_id", show_arrow = FALSE) +
+  add_heading_vectors(hd, colour_col = "trial_id") +
+  add_heading_points(hd, colour_col = "trial_id", size = 3)
+```
+
+Hollow circles mark where each heading vector intersects the unit circle; dotted lines trace back to the inner-ring crossing point. The `show_arrow = FALSE` argument suppresses the grand-mean arrow so the per-trial endpoints are unobscured.
 
 ## Circular Summary Statistics
 
@@ -68,10 +91,14 @@ circ_summary(ts)
 
 ## Simulating Demo Data
 
-When you need a reproducible toy dataset without any files on disk, `simulate_tracks()` creates tidy data with controllable tortuosity:
+When you need a reproducible toy dataset without any files on disk, `simulate_tracks()` creates tidy data with controllable tortuosity. Pass a `conditions` data frame to generate multiple groups — for example, two levels of directedness controlled by the `kappa` parameter:
 
 ```{r simulate}
-sim_df <- simulate_tracks(conditions = data.frame(n_trials = 4L), n_points = 150, seed = 42)
+sim_df <- simulate_tracks(
+  conditions = data.frame(n_trials = c(3L, 3L), kappa = c(2, 8)),
+  n_points = 150,
+  seed = 42
+)
 ts_sim <- TrajSet(
   sim_df,
   id = "trial_id",
@@ -82,8 +109,20 @@ ts_sim <- TrajSet(
   angle_unit = "radians",
   normalize_xy = FALSE
 )
-radiate(ts_sim, group_col = "trial_id", colour_col = "tortuosity")
 ```
+
+Pass `panel_by` to `radiate()` to split the plot into one panel per level of a grouping variable — analogous to `facet_wrap()` in base ggplot2:
+
+```{r simulate-facet}
+radiate(ts_sim,
+        group_col  = "trial_id",
+        colour_col = "trial_id",
+        panel_by   = "condition",
+        ncol       = 2,
+        show_arrow = TRUE)
+```
+
+The left panel (`condition_1`, low `kappa`) shows more tortuous paths; the right (`condition_2`, high `kappa`) shows straighter, more directed tracks. The mean resultant arrow is computed independently per panel.
 
 ## Advanced: Accessing Underlying Data
 
