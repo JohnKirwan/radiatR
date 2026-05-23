@@ -4,16 +4,20 @@
 \alias{cam_cal_many}
 \title{Calibrate the camera on the given set of points}
 \usage{
-cam_cal_many(points_idx, K, k, F)
+cam_cal_many(points_idx, K, k, F, max_iterations = 5, tolerance = 1e-09)
 }
 \arguments{
-\item{points_idx}{matrix of points}
+\item{points_idx}{matrix of points (pixel coordinates)}
 
 \item{K}{intrinsic camera matrix}
 
-\item{k}{radial distortion coefficients}
+\item{k}{distortion coefficients (see [radial_distort()])}
 
 \item{F}{focal length in millimeters}
+
+\item{max_iterations}{Maximum number of iterations passed to [radial_distort()].}
+
+\item{tolerance}{Convergence tolerance passed to [radial_distort()].}
 }
 \value{
 matrix of calibrated points

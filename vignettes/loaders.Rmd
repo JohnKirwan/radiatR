@@ -180,8 +180,8 @@ jsonlite::write_json(
   auto_unbox = TRUE
 )
 
-register_loader_dialect("json_tracks", function(x) {
-  dat <- if (is.character(x) && file.exists(x)) jsonlite::read_json(x) else x
+json_tracks_fn <- function(x) {
+  dat <- if (is.character(x) && file.exists(x)) jsonlite::fromJSON(x) else x
   entries <- purrr::imap(dat$tracks, function(track, id) {
     data.frame(
       id   = id,
@@ -192,13 +192,18 @@ register_loader_dialect("json_tracks", function(x) {
     )
   })
   do.call(rbind, entries)
-})
+}
+register_loader_dialect("json_tracks", json_tracks_fn)
 ```
 
-After registration the new dialect can be used by name:
+After registration, call the dialect function directly on the file to get a
+tidy data frame, then pass it to `TrajSet_read()`. (For standard tabular
+formats that R's CSV/TSV readers handle natively, `TrajSet_read(path,
+dialect = "name")` works directly—but non-tabular formats such as JSON
+require this two-step approach.)
 
 ```{r use-custom}
-ts_json <- TrajSet_read(fake_json, dialect = "json_tracks")
+ts_json <- TrajSet_read(json_tracks_fn(fake_json))
 ts_json
 ```
 

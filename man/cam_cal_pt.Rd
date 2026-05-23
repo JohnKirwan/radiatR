@@ -4,18 +4,22 @@
 \alias{cam_cal_pt}
 \title{Calibrate the camera on the given xy coordinate}
 \usage{
-cam_cal_pt(x, y, K, k, F)
+cam_cal_pt(x, y, K, k, F, max_iterations = 5, tolerance = 1e-09)
 }
 \arguments{
-\item{x}{x-coordinate}
+\item{x}{x-coordinate in pixels}
 
-\item{y}{y-coordinate}
+\item{y}{y-coordinate in pixels}
 
 \item{K}{intrinsic camera matrix}
 
-\item{k}{radial distortion coefficients}
+\item{k}{distortion coefficients (see [radial_distort()] for supported layouts)}
 
-\item{F}{focal length in millimeters}
+\item{F}{focal length in millimeters (scalar or length-2 vector)}
+
+\item{max_iterations}{Maximum number of iterations passed to [radial_distort()].}
+
+\item{tolerance}{Convergence tolerance passed to [radial_distort()].}
 }
 \value{
 calibrated point

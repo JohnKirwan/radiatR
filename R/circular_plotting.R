@@ -629,8 +629,21 @@ radiate <- function(
         angle_col %in% names(data) &&
         is.numeric(data[[angle_col]]) &&
         any(!is.na(data[[angle_col]]))) {
+      # Reduce to one circular mean per trial before computing the grand mean
+      # direction and rho.  Averaging all individual timepoint angles would
+      # weight dense within-trial sampling rather than between-trial spread.
+      arrow_angles <- if (!is.null(group_col) && group_col %in% names(data)) {
+        vapply(split(data[[angle_col]], data[[group_col]]), function(a) {
+          a <- a[!is.na(a)]
+          if (length(a) == 0L) return(NA_real_)
+          atan2(mean(sin(a)), mean(cos(a)))
+        }, numeric(1L))
+      } else {
+        data[[angle_col]]
+      }
+      arrow_angles <- arrow_angles[!is.na(arrow_angles)]
       g <- g + directedness_arrow(
-        data = data.frame(theta = data[[angle_col]]),
+        data = data.frame(theta = arrow_angles),
         angle_col = theta,
         colour = arrow_colour,
         size = arrow_size

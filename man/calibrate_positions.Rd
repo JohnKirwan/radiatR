@@ -18,10 +18,10 @@ calibrate_positions(x, model)
 TrajSet with updated `x`/`y` and angles in metric space
 }
 \description{
-Applies camera intrinsics + radial distortion to convert pixel coordinates to metric space.
+Applies camera intrinsics and distortion removal to convert pixel coordinates to metric space.
 }
 \seealso{
-Other calibration: 
+Other calibration:
 \code{\link{CalModel-class}}
 }
 \concept{calibration}

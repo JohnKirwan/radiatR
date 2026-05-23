@@ -2,38 +2,99 @@
 % Please edit documentation in R/simulate_tracks.R
 \name{simulate_tracks}
 \alias{simulate_tracks}
-\title{Simulate radial tracks with controlled tortuosity.}
+\title{Simulate trajectory sets under configurable experimental conditions}
 \usage{
 simulate_tracks(
-  n_trials = 6,
   n_points = 200,
-  tortuosity_levels = c("low", "medium", "high"),
-  seed = 123
+  conditions = NULL,
+  output = c("tibble", "trajset", "both"),
+  write_path = NULL,
+  seed = NULL,
+  radial_noise = 0.02,
+  phi = 0.85
 )
 }
 \arguments{
-\item{n_trials}{Number of independent trials to simulate.}
+\item{n_points}{Integer number of frames per trajectory.}
 
-\item{n_points}{Number of frames (rows) per trial.}
+\item{conditions}{Optional data frame describing experimental conditions. See
+Details for column descriptions. When omitted, a three-condition template is
+used.}
 
-\item{tortuosity_levels}{Character vector of tortuosity labels; recycled over
-`n_trials`. Valid values are `"low"`, `"medium"`, and `"high"`.}
+\item{output}{Character string controlling the return type: "tibble"
+(default) returns a long-form data frame, "trajset" returns a [TrajSet]
+object, and "both" returns a list containing both representations.}
 
-\item{seed}{Seed passed to [set.seed()] to ensure reproducibility.}
+\item{write_path}{Optional file path (CSV) to which the simulated data should
+be written.}
+
+\item{seed}{Optional integer seed supplied to [set.seed()] for
+reproducibility.}
+
+\item{radial_noise}{Standard deviation of radial noise applied to the unit
+radius profile.}
+
+\item{phi}{Autocorrelation parameter (0-1) used when generating angular noise
+series; higher values produce smoother paths.}
 }
 \value{
-A tibble with columns describing the simulated tracks, including:
-  `trial_id`, `trial_num`, `frame`, `tortuosity`, `stim_theta`, `rho`,
-  `abs_theta`, `rel_theta`, `rel_x`, `rel_y`, `abs_x`, and `abs_y`.
+Depending on `output`, a tibble, a `TrajSet`, or a list containing
+  both. When `write_path` is supplied the data are also written to disk.
 }
 \description{
-This helper generates synthetic tracks radiating away from the origin. The
-output is useful for examples, tests, and demonstrations that should not rely
-on large raw tracking files bundled with the package. Each simulated trial is
-assigned a stimulus direction (`stim_theta`) and a tortuosity level that
-controls the angular noise around that direction.
+This module generates synthetic trajectories whose directional concentration
+and tortuosity vary across experimental conditions and continuous predictors.
+It is useful for creating reproducible examples, tutorials, and test fixtures
+without relying on large raw tracking files.
+}
+\details{
+The `conditions` data frame can contain the following columns (defaults are
+supplied when missing):
+
+- `condition` (character): condition label.
+- `n_trials` (integer): number of trajectories to simulate for the condition.
+- `stim_mean` (numeric radian): baseline stimulus heading (default 0).
+- `concentration_base` (numeric): baseline von Mises concentration (kappa).
+- `concentration_slope` (numeric): optional slope applied to the predictor.
+- `tortuosity_base` (numeric): baseline angular noise scale.
+- `tortuosity_slope` (numeric): slope applied to the predictor.
+- `tortuosity_sd` (numeric): additional random variation per trial.
+- `predictor_mean`, `predictor_sd` (numeric): parameters used to sample the
+  per-trial predictor when explicit values are not supplied.
+- `predictor_values` (list-column): optional explicit predictor values (length
+  `n_trials`) overriding the generated values.
+
+The predictor can represent any continuous covariate (e.g. stimulus
+intensity). The final heading concentration increases with larger kappa,
+whereas larger tortuosity values produce more sinuous paths.
 }
 \examples{
-tracks <- simulate_tracks(n_trials = 3, n_points = 100, seed = 1)
-head(tracks)
+sim <- simulate_tracks(seed = 1)
+head(sim)
+
+# Request both tibble and TrajSet representations
+sim_both <- simulate_tracks(output = "both", seed = 123)
+names(sim_both)
+
+example_conditions <- tibble::tibble(
+  condition = paste0("level_", 1:4),
+  n_trials = 30L,
+  stim_mean = seq(-pi/8, pi/8, length.out = 4),
+  concentration_base = c(2, 4, 6, 8),
+  concentration_slope = 0.8,
+  tortuosity_base = c(0.12, 0.09, 0.06, 0.04),
+  tortuosity_slope = -0.01,
+  tortuosity_sd = 0.015,
+  predictor_mean = seq(-1, 1, length.out = 4),
+  predictor_sd = 0.15
+)
+sim_four_levels <- simulate_tracks(
+  n_points = 120,
+  conditions = example_conditions,
+  output = "both",
+  seed = 42
+)
+aggregate(trial_id ~ condition, data = sim_four_levels$tibble, length)
+names(sim_four_levels)
+
 }

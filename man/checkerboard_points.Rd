@@ -13,21 +13,30 @@ checkerboard_points(
 )
 }
 \arguments{
-\item{board_dims}{Integer vector of length 2 giving the number of squares in the
-checkerboard along the vertical (rows) and horizontal (columns) directions. Must be >= 2 in each dimension.}
+\item{board_dims}{Integer vector of length 2 giving the number of squares in
+the checkerboard along the vertical (rows) and horizontal (columns)
+directions. Must be >= 2 in each dimension.}
 
-\item{square_size}{Numeric scalar or length-2 vector giving the spacing between
-adjacent corners in world units. When length-1, the same spacing is used in both directions.}
+\item{square_size}{Numeric scalar or length-2 vector giving the spacing
+between adjacent corners in world units. When length-1, the same spacing is
+used in both directions.}
 
-\item{origin}{Length-2 numeric vector specifying the world coordinate to assign to the corner at row 0, column 0.}
+\item{origin}{Length-2 numeric vector specifying the world coordinate to
+assign to the corner at row 0, column 0. Defaults to `c(0, 0)`.}
 
-\item{order}{Traversal order for the returned points. "row_major" increments the row index fastest, while "col_major" increments the column index fastest.}
+\item{order}{Traversal order for the returned points. `"row_major"`
+increments the row index fastest (matching MATLAB), while `"col_major"`
+increments the column index fastest.}
 
-\item{as_tibble}{Logical; if \code{TRUE} (default), return a tibble with columns corner, row, col, x, and y. If \code{FALSE}, return a numeric matrix of x/y coordinates.}
+\item{as_tibble}{Logical; if `TRUE` (default), return a tibble with columns
+`corner`, `row`, `col`, `x`, and `y`. If `FALSE`, return a numeric matrix of
+x/y coordinates.}
 }
 \value{
-Tibble or matrix describing the checkerboard corner coordinates in world units.
+Tibble or matrix describing the checkerboard corner coordinates in
+  world units.
 }
 \description{
-Helper mirroring MATLAB's \code{generateCheckerboardPoints}, returning the coordinates of inner checkerboard corners in world units.
+Helper mirroring MATLAB's `generateCheckerboardPoints`, returning the
+coordinates of inner checkerboard corners in world units.
 }
