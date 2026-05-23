@@ -2,17 +2,14 @@
 % Please edit documentation in R/circular_plotting.R
 \name{add_circular_density}
 \alias{add_circular_density}
-\title{Overlay a circular density estimate on a radial plot}
+\title{Wrap a pre-computed circular density around the unit circle}
 \usage{
 add_circular_density(
-  headings_df,
-  heading_col = "heading",
+  density_df,
+  theta_col = "theta",
+  density_col = "density",
   colour_col = NULL,
-  method = c("vonmises", "kernel", "histogram"),
   scale = 0.4,
-  n_theta = 500L,
-  bins = 36L,
-  bw = NULL,
   colour = "black",
   fill = NA,
   alpha = 0.2,
@@ -20,66 +17,62 @@ add_circular_density(
 )
 }
 \arguments{
-\item{headings_df}{Data frame containing heading angles.}
+\item{density_df}{Data frame with columns named by `theta_col` and
+`density_col` (and, optionally, `colour_col`). Each row represents one
+evaluated angle.}
 
-\item{heading_col}{Name of the heading column (radians). Default `"heading"`.}
+\item{theta_col}{Name of the angle column (radians, −π to π). Default
+`"theta"`.}
 
-\item{colour_col}{Optional column in `headings_df` to compute separate
-densities per group and map to colour.}
+\item{density_col}{Name of the density/count column. Default `"density"`.}
 
-\item{method}{Estimation method: `"vonmises"` (default), `"kernel"`, or
-`"histogram"`.}
+\item{colour_col}{Optional grouping column. When set, separate paths are
+drawn per group, enabling ggplot2 faceting.}
 
-\item{scale}{Maximum radial extension of the density above the unit circle.
-A value of `0.4` means the peak of the density reaches `r = 1.4`.
-Default `0.4`.}
+\item{scale}{Maximum radial extension above the unit circle. Default `0.4`
+(peak at r = 1.4). Density is normalised within each group before scaling.}
 
-\item{n_theta}{Number of angular evaluation points for smooth methods.
-Default `500`.}
-
-\item{bins}{Number of angular bins for the histogram method. Default `36`
-(10° each).}
-
-\item{bw}{Bandwidth passed to [circular::density.circular()]. `NULL` (default)
-uses [circular::bw.nrd.circular()].}
-
-\item{colour}{Fixed line colour when `colour_col` is `NULL`. Default
+\item{colour}{Fixed line colour used when `colour_col` is `NULL`. Default
 `"black"`.}
 
-\item{fill}{Fill colour for the region between the unit circle and the
-density curve. `NA` (default) draws no fill.}
+\item{fill}{Colour for the region between the unit circle and the density
+curve. `NA` (default) draws no fill.}
 
 \item{alpha}{Alpha transparency for the filled polygon. Default `0.2`.}
 
 \item{linewidth}{Width of the density path. Default `0.8`.}
 }
 \value{
-A list of one or two ggplot2 layers (polygon + path, or path only).
+A list of one or two ggplot2 layers (fill polygon + path line).
 }
 \description{
-Computes a directional density for heading angles and traces it as a radial
-path around the unit circle: at each angle θ the path radius is
-`1 + scale * normalised_density(θ)`. Three estimation methods are supported:
+Takes a data frame of `(theta, density)` pairs — from any source: MLE,
+kernel estimation, Bayesian posterior predictive, or hand-crafted — and
+renders it as a radial path (and optionally a filled polygon) around the
+unit circle boundary. At each angle θ the plotted radius is
+`1 + scale * density(θ) / max(density)`.
 }
 \details{
-* `"vonmises"` — fit a von Mises distribution by MLE
-  ([circular::mle.vonmises()]) and evaluate the fitted density.
-* `"kernel"` — circular kernel density estimate
-  ([circular::density.circular()]) with bandwidth selected by
-  [circular::bw.nrd.circular()] unless `bw` is supplied.
-* `"histogram"` — angular bin counts (a circular histogram / rose diagram).
-
-When `colour_col` is supplied the density is computed and drawn separately
-for each group, matching the usage of [add_heading_points()]. This makes the
-layer compatible with ggplot2 faceting via [radiate()]'s `panel_by`.
+Because this function only handles rendering, it is agnostic to how the
+density was produced. To compute from raw headings use
+[compute_circular_density()] first, or call the convenience wrapper
+[add_heading_density()] which combines both steps.
 }
 \examples{
 library(ggplot2)
-hd <- data.frame(heading = c(0.2, 0.4, 0.3, 0.5, -0.1, 0.1))
-ggplot() + coord_fixed() + add_circular_density(hd)
-ggplot() + coord_fixed() +
-  add_circular_density(hd, method = "vonmises", fill = "steelblue", scale = 0.5)
+# From compute_circular_density:
+hd <- data.frame(heading = c(0.2, 0.3, 0.4, 0.5, -0.1, 0.1, 0.6, 0.2))
+dens_df <- compute_circular_density(hd)
+ggplot() + coord_fixed() + add_circular_density(dens_df)
+
+# From an external model (e.g. brms posterior predictive):
+theta_grid <- seq(-pi, pi, length.out = 200)
+external_dens <- data.frame(
+  theta   = theta_grid,
+  density = exp(-2 * (1 - cos(theta_grid - 0.5)))  # von Mises-like
+)
+ggplot() + coord_fixed() + add_circular_density(external_dens, fill = "steelblue")
 }
 \seealso{
-[add_heading_points()], [add_heading_vectors()]
+[compute_circular_density()], [add_heading_density()]
 }

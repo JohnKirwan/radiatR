@@ -339,82 +339,166 @@ test_that("strip_position bottom passes through to facet_wrap", {
   expect_equal(facet_params$strip.position, "bottom")
 })
 
-# ---- add_circular_density ---------------------------------------------------
+# ---- compute_circular_density -----------------------------------------------
 
-test_that("add_circular_density vonmises returns a ggplot layer list", {
-  library(ggplot2)
+test_that("compute_circular_density vonmises returns theta and density columns", {
   set.seed(1)
   hd <- data.frame(heading = rnorm(40, 0.3, 0.5))
-  layers <- add_circular_density(hd, method = "vonmises")
-  expect_type(layers, "list")
-  expect_s3_class(layers[[length(layers)]], "LayerInstance")
+  d  <- compute_circular_density(hd, method = "vonmises")
+  expect_true(all(c("theta", "density") %in% names(d)))
+  expect_true(all(is.finite(d$theta)))
+  expect_true(all(d$density >= 0))
 })
 
-test_that("add_circular_density kernel returns a ggplot layer list", {
-  library(ggplot2)
+test_that("compute_circular_density kernel returns theta and density columns", {
   set.seed(2)
   hd <- data.frame(heading = rnorm(40, 0.3, 0.5))
-  layers <- add_circular_density(hd, method = "kernel")
-  expect_type(layers, "list")
-  expect_s3_class(layers[[length(layers)]], "LayerInstance")
+  d  <- compute_circular_density(hd, method = "kernel")
+  expect_true(all(c("theta", "density") %in% names(d)))
+  expect_true(all(d$density >= 0))
 })
 
-test_that("add_circular_density histogram returns a ggplot layer list", {
-  library(ggplot2)
+test_that("compute_circular_density histogram returns bin-count densities", {
   set.seed(3)
   hd <- data.frame(heading = rnorm(40, 0.3, 0.5))
-  layers <- add_circular_density(hd, method = "histogram", bins = 24)
+  d  <- compute_circular_density(hd, method = "histogram", bins = 24)
+  expect_equal(nrow(d), 24L)
+  expect_true(all(d$density >= 0))
+})
+
+test_that("compute_circular_density with colour_col returns per-group rows", {
+  set.seed(4)
+  hd <- data.frame(
+    heading = c(rnorm(30, 0.3, 0.4), rnorm(30, -1.2, 0.4)),
+    grp     = rep(c("A", "B"), each = 30)
+  )
+  d <- compute_circular_density(hd, colour_col = "grp", n_theta = 100L)
+  expect_true("grp" %in% names(d))
+  expect_equal(sort(unique(d$grp)), c("A", "B"))
+  expect_equal(nrow(d), 200L)
+})
+
+test_that("compute_circular_density errors on missing heading_col", {
+  expect_error(compute_circular_density(data.frame(x = 1:5)), "heading_col")
+})
+
+# ---- add_circular_density (rendering only) ----------------------------------
+
+test_that("add_circular_density renders a pre-computed density data frame", {
+  library(ggplot2)
+  theta_grid <- seq(-pi, pi, length.out = 200)
+  dens_df <- data.frame(theta = theta_grid,
+                        density = exp(-2 * (1 - cos(theta_grid - 0.5))))
+  layers <- add_circular_density(dens_df)
   expect_type(layers, "list")
   expect_s3_class(layers[[length(layers)]], "LayerInstance")
 })
 
 test_that("add_circular_density fill adds a polygon layer", {
   library(ggplot2)
-  set.seed(4)
-  hd <- data.frame(heading = rnorm(30, 1, 0.4))
-  layers_no_fill <- add_circular_density(hd)
-  layers_fill    <- add_circular_density(hd, fill = "steelblue")
+  dens_df <- compute_circular_density(
+    data.frame(heading = rnorm(30, 1, 0.4)), method = "vonmises"
+  )
+  layers_no_fill <- add_circular_density(dens_df)
+  layers_fill    <- add_circular_density(dens_df, fill = "steelblue")
   expect_equal(length(layers_fill), length(layers_no_fill) + 1L)
 })
 
-test_that("add_circular_density density path stays within [1, 1+scale]", {
+test_that("add_circular_density path stays within [1, 1+scale]", {
   library(ggplot2)
   set.seed(5)
-  hd <- data.frame(heading = rnorm(50, 0, 0.6))
+  dens_df   <- compute_circular_density(data.frame(heading = rnorm(50, 0, 0.6)))
   scale_val <- 0.5
-  p <- ggplot() + coord_fixed() +
-    add_circular_density(hd, scale = scale_val)
-  built <- ggplot_build(p)
+  p <- ggplot() + coord_fixed() + add_circular_density(dens_df, scale = scale_val)
+  built  <- ggplot_build(p)
   path_d <- built$data[[1]]
   r_vals <- sqrt(path_d$x^2 + path_d$y^2)
   expect_true(all(r_vals >= 1 - 1e-6))
   expect_true(all(r_vals <= 1 + scale_val + 1e-6))
 })
 
-test_that("add_circular_density with colour_col computes per-group densities", {
+test_that("add_circular_density with colour_col draws per-group paths", {
   library(ggplot2)
   set.seed(6)
   hd <- data.frame(
     heading = c(rnorm(30, 0.3, 0.4), rnorm(30, -1.2, 0.4)),
     grp     = rep(c("A", "B"), each = 30)
   )
-  layers <- add_circular_density(hd, colour_col = "grp")
-  p <- ggplot() + coord_fixed() + layers
-  built <- ggplot_build(p)
-  path_d <- built$data[[1]]
-  expect_true(length(unique(path_d$group)) >= 2L)
+  dens_df <- compute_circular_density(hd, colour_col = "grp")
+  layers  <- add_circular_density(dens_df, colour_col = "grp")
+  p       <- ggplot() + coord_fixed() + layers
+  built   <- ggplot_build(p)
+  expect_true(length(unique(built$data[[1]]$group)) >= 2L)
 })
 
-test_that("add_circular_density errors on missing heading_col", {
-  hd <- data.frame(x = 1:5)
-  expect_error(add_circular_density(hd), "heading_col")
+test_that("add_circular_density errors on missing theta or density column", {
+  expect_error(add_circular_density(data.frame(theta = 1:5)), "density")
+  expect_error(add_circular_density(data.frame(density = 1:5)), "theta")
 })
 
-test_that("add_circular_density works as ggplot layer in radiate context", {
+test_that("add_circular_density accepts external (Bayesian-style) density", {
   library(ggplot2)
-  set.seed(7)
+  theta_grid  <- seq(-pi, pi, length.out = 360)
+  # Simulate a Bayesian posterior predictive density: mixture of two von Mises
+  external_d  <- 0.6 * exp(3 * cos(theta_grid - 0.3)) +
+                 0.4 * exp(2 * cos(theta_grid + 1.2))
+  ext_df <- data.frame(theta = theta_grid, density = external_d)
+  layers <- add_circular_density(ext_df, fill = "tomato", alpha = 0.3)
+  p <- ggplot() + coord_fixed() + layers
+  expect_s3_class(p, "ggplot")
+  expect_silent(ggplot_build(p))
+})
+
+# ---- add_heading_density (convenience wrapper) ------------------------------
+
+test_that("add_heading_density vonmises returns ggplot layers", {
+  library(ggplot2)
+  set.seed(8)
+  hd <- data.frame(heading = rnorm(40, 0.3, 0.5))
+  layers <- add_heading_density(hd, method = "vonmises")
+  expect_type(layers, "list")
+  expect_s3_class(layers[[length(layers)]], "LayerInstance")
+})
+
+test_that("add_heading_density kernel returns ggplot layers", {
+  library(ggplot2)
+  set.seed(9)
+  hd <- data.frame(heading = rnorm(40, 0.3, 0.5))
+  layers <- add_heading_density(hd, method = "kernel")
+  expect_type(layers, "list")
+  expect_s3_class(layers[[length(layers)]], "LayerInstance")
+})
+
+test_that("add_heading_density histogram returns ggplot layers", {
+  library(ggplot2)
+  set.seed(10)
+  hd <- data.frame(heading = rnorm(40, 0.3, 0.5))
+  layers <- add_heading_density(hd, method = "histogram", bins = 24)
+  expect_type(layers, "list")
+  expect_s3_class(layers[[length(layers)]], "LayerInstance")
+})
+
+test_that("add_heading_density result matches compute + add in sequence", {
+  library(ggplot2)
+  set.seed(11)
+  hd <- data.frame(heading = rnorm(50, -0.5, 0.6))
+  # Convenience wrapper
+  p_conv <- ggplot() + coord_fixed() +
+    add_heading_density(hd, method = "vonmises", scale = 0.3)
+  # Two-step
+  dens_df <- compute_circular_density(hd, method = "vonmises")
+  p_step  <- ggplot() + coord_fixed() +
+    add_circular_density(dens_df, scale = 0.3)
+  # Both should build without error
+  expect_silent(ggplot_build(p_conv))
+  expect_silent(ggplot_build(p_step))
+})
+
+test_that("add_heading_density works inside radiate context", {
+  library(ggplot2)
+  set.seed(12)
   sim <- suppressWarnings(
-    simulate_tracks(conditions = data.frame(n_trials = 10L), n_points = 30, seed = 7)
+    simulate_tracks(conditions = data.frame(n_trials = 10L), n_points = 30, seed = 12)
   )
   hd <- suppressWarnings(
     derive_headings(
@@ -426,7 +510,7 @@ test_that("add_circular_density works as ggplot layer in radiate context", {
   )
   p <- radiate(sim, x_col = "rel_x", y_col = "rel_y",
                group_col = "trial_id", show_arrow = FALSE, show_labels = FALSE) +
-    add_circular_density(hd, method = "vonmises")
+    add_heading_density(hd, method = "vonmises")
   expect_s3_class(p, "ggplot")
   expect_silent(ggplot_build(p))
 })
