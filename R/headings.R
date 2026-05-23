@@ -104,7 +104,11 @@ setGeneric(
 # ---- crossing rule -----------------------------------------------------------
 # Picks vector between successive crossings of two radii circ0 < circ1 (default outward).
 # Heading = atan2(p1 - p0). If multiple such pairs occur, return one row per pair unless first_only=TRUE.
-.set_headings_crossing_one <- function(d, id, tc, xc, yc, circ0, circ1, direction = c("outward","inward"), first_only = FALSE) {
+# When return_coords=TRUE, also returns x_inner/y_inner (position at circ0 crossing).
+.set_headings_crossing_one <- function(d, id, tc, xc, yc, circ0, circ1,
+                                       direction = c("outward", "inward"),
+                                       first_only = FALSE,
+                                       return_coords = FALSE) {
   direction <- match.arg(direction)
   r <- sqrt(d[[xc]]^2 + d[[yc]]^2)
   n <- nrow(d)
@@ -113,10 +117,8 @@ setGeneric(
   while (i < n) {
     if (direction == "outward") {
       cond0 <- r[ i ] <= circ0 & r[i+1] >  circ0
-      cond1 <- r[ i ] <= circ1 & r[i+1] >  circ1
     } else {
       cond0 <- r[ i ] >= circ0 & r[i+1] <  circ0
-      cond1 <- r[ i ] >= circ1 & r[i+1] <  circ1
     }
     if (cond0) {
       c0 <- .segment_cross(d[[xc]][i], d[[yc]][i], d[[xc]][i+1], d[[yc]][i+1], circ0)
@@ -129,10 +131,15 @@ setGeneric(
       if (found1) {
         c1 <- .segment_cross(d[[xc]][j], d[[yc]][j], d[[xc]][j+1], d[[yc]][j+1], circ1)
         heading <- atan2(c1[2] - c0[2], c1[1] - c0[1])
-        out[[k]] <- data.frame(id = d[[id]][i],
-                               time = mean(c(d[[tc]][i] + c0[3]*(d[[tc]][i+1]-d[[tc]][i]),
-                                              d[[tc]][j] + c1[3]*(d[[tc]][j+1]-d[[tc]][j]))),
-                               heading = .wrap_to_2pi(heading))
+        row <- data.frame(id = d[[id]][i],
+                          time = mean(c(d[[tc]][i] + c0[3] * (d[[tc]][i+1] - d[[tc]][i]),
+                                        d[[tc]][j] + c1[3] * (d[[tc]][j+1] - d[[tc]][j]))),
+                          heading = .wrap_to_2pi(heading))
+        if (return_coords) {
+          row$x_inner <- c0[1]
+          row$y_inner <- c0[2]
+        }
+        out[[k]] <- row
         k <- k + 1L
         i <- j + 1L
         if (first_only) break
@@ -141,7 +148,15 @@ setGeneric(
     }
     i <- i + 1L
   }
-  if (length(out)) do.call(rbind, out) else data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_)
+  if (length(out)) {
+    do.call(rbind, out)
+  } else {
+    if (return_coords) {
+      data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_, x_inner = NA_real_, y_inner = NA_real_)
+    } else {
+      data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_)
+    }
+  }
 }
 
 # ---- distal rule ------------------------------------------------------------- -------------------------------------------------------------
@@ -424,12 +439,15 @@ setMethod("derive_headings", "TrajSet", function(x, rule = c("crossing","distal"
     rule <- match.arg(rule)
     res <- switch(rule,
       crossing = {
-        circ0 <- dots$circ0; circ1 <- dots$circ1; direction <- dots$direction %||% "outward"
+        circ0 <- dots$circ0; circ1 <- dots$circ1
+        direction     <- dots$direction     %||% "outward"
+        return_coords <- dots$return_coords %||% FALSE
         if (is.null(circ0) || is.null(circ1)) stop("crossing rule requires circ0 and circ1")
         do.call(rbind, lapply(sp, function(ii) .set_headings_crossing_one(d[ii, , drop = FALSE], id, tc, xc, yc,
                                                                           circ0 = circ0, circ1 = circ1,
                                                                           direction = direction,
-                                                                          first_only = first_only)))
+                                                                          first_only = first_only,
+                                                                          return_coords = return_coords)))
       },
       distal   = do.call(rbind, lapply(sp, function(ii) .set_headings_distal_one(d[ii, , drop = FALSE], id, tc, xc, yc))),
       straight = {

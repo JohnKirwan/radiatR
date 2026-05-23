@@ -1,3 +1,38 @@
+test_that("add_heading_points returns a geom_point layer", {
+  hd <- data.frame(id = "A", time = 1, heading = pi / 4)
+  layer <- add_heading_points(hd)
+  expect_s3_class(layer, "LayerInstance")
+  # colour_col mapping
+  hd$grp <- "X"
+  layer_col <- add_heading_points(hd, colour_col = "grp")
+  expect_s3_class(layer_col, "LayerInstance")
+  # missing heading column should error
+  expect_error(add_heading_points(data.frame(x = 1)), "heading")
+})
+
+test_that("add_heading_vectors returns a geom_segment layer", {
+  hd <- data.frame(id = "A", time = 1, heading = pi / 4,
+                   x_inner = 0.14, y_inner = 0.14)
+  layer <- add_heading_vectors(hd)
+  expect_s3_class(layer, "LayerInstance")
+  # missing required columns should error
+  expect_error(add_heading_vectors(data.frame(heading = 1)), "x_inner")
+})
+
+test_that("add_heading_points and add_heading_vectors can be added to ggplot", {
+  library(ggplot2)
+  hd <- data.frame(id = c("A", "B"), time = c(1, 1),
+                   heading   = c(pi / 4, pi),
+                   x_inner   = c(0.14,  -0.14),
+                   y_inner   = c(0.14,   0.00))
+  p <- ggplot() + coord_fixed() +
+    add_heading_points(hd) +
+    add_heading_vectors(hd)
+  expect_s3_class(p, "ggplot")
+  # should build without error
+  expect_silent(ggplot_build(p))
+})
+
 test_that("plotting helpers return ggplot layers", {
   ticks <- add_ticks()
   expect_s3_class(ticks, "LayerInstance")
