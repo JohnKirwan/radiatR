@@ -15,11 +15,11 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-if (requireNamespace("radiatR", quietly = TRUE)) {
-  library(radiatR)
-} else if (requireNamespace("pkgload", quietly = TRUE)) {
-  # Load package from source when knitting the vignette interactively
+if (requireNamespace("pkgload", quietly = TRUE)) {
+  # Always load from source so the vignette reflects the current development state.
   pkgload::load_all("..", export_all = FALSE, helpers = FALSE, quiet = TRUE)
+} else if (requireNamespace("radiatR", quietly = TRUE)) {
+  library(radiatR)
 } else {
   stop("Package 'radiatR' not installed and 'pkgload' not available. Install with remotes::install_local('.') or install.packages('pkgload').")
 }
