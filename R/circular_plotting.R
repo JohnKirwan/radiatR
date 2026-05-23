@@ -170,6 +170,114 @@ directedness_arrow <- function(data, angle_col, arrow_head_cm = 0.2,
   )
 }
 
+# ---- heading overlay layers --------------------------------------------------
+
+#' Add heading endpoint markers on the unit circle
+#'
+#' Draws a hollow circle at `(cos(heading), sin(heading))` for each row of a
+#' headings data frame, placing one marker per trajectory on the unit-circle
+#' boundary at the derived heading direction. The data frame is normally the
+#' output of [derive_headings()].
+#'
+#' @param headings_df Data frame with a `heading` column (angles in radians).
+#' @param colour_col Optional name of a column in `headings_df` to map to colour.
+#' @param size Point size passed to `geom_point`.
+#' @param alpha Point alpha transparency.
+#'
+#' @return A `geom_point()` layer (shape = 1, hollow circle).
+#'
+#' @seealso [add_heading_vectors()], [derive_headings()]
+#' @importFrom ggplot2 geom_point aes
+#' @importFrom rlang .data sym
+#' @export
+#'
+#' @examples
+#' library(ggplot2)
+#' # headings from a TrajSet via derive_headings(ts, rule = "crossing", ...)
+#' hd <- data.frame(id = "A", time = 1, heading = pi / 4)
+#' ggplot() + coord_fixed() + add_heading_points(hd)
+add_heading_points <- function(headings_df, colour_col = NULL, size = 2, alpha = 1) {
+  if (!("heading" %in% names(headings_df))) {
+    stop("`headings_df` must contain a `heading` column (radians).")
+  }
+  headings_df[[".x_head"]] <- cos(headings_df$heading)
+  headings_df[[".y_head"]] <- sin(headings_df$heading)
+
+  mapping <- ggplot2::aes(x = .data[[".x_head"]], y = .data[[".y_head"]])
+  if (!is.null(colour_col) && colour_col %in% names(headings_df)) {
+    mapping[["colour"]] <- rlang::sym(colour_col)
+  }
+
+  ggplot2::geom_point(
+    data        = headings_df,
+    mapping     = mapping,
+    size        = size,
+    alpha       = alpha,
+    shape       = 1,
+    inherit.aes = FALSE
+  )
+}
+
+#' Add heading vector segments from inner crossing to unit circle
+#'
+#' Draws a segment from the inner-radius crossing position to the heading
+#' endpoint on the unit circle for each row of a headings data frame. This
+#' visualises the extrapolated vector used to derive the heading and mirrors
+#' the dotted-line display in the original P. lividus tracking workflow.
+#'
+#' Requires columns `heading`, `x_inner`, and `y_inner`, which are present
+#' when [derive_headings()] is called with `rule = "crossing"` and
+#' `return_coords = TRUE`.
+#'
+#' @param headings_df Data frame with columns `heading` (radians), `x_inner`,
+#'   and `y_inner`.
+#' @param colour_col Optional name of a column in `headings_df` to map to colour.
+#' @param linetype Line type string or integer passed to `geom_segment`.
+#'
+#' @return A `geom_segment()` layer.
+#'
+#' @seealso [add_heading_points()], [derive_headings()]
+#' @importFrom ggplot2 geom_segment aes
+#' @importFrom rlang .data sym
+#' @export
+#'
+#' @examples
+#' library(ggplot2)
+#' hd <- data.frame(id = "A", time = 1, heading = pi / 4,
+#'                  x_inner = 0.15, y_inner = 0.15)
+#' ggplot() + coord_fixed() + add_heading_vectors(hd)
+add_heading_vectors <- function(headings_df, colour_col = NULL, linetype = "dotted") {
+  required <- c("heading", "x_inner", "y_inner")
+  missing_cols <- setdiff(required, names(headings_df))
+  if (length(missing_cols)) {
+    stop(sprintf(
+      paste0("`headings_df` is missing columns: %s. ",
+             "Call derive_headings(rule = 'crossing', return_coords = TRUE)."),
+      paste(missing_cols, collapse = ", ")
+    ))
+  }
+
+  headings_df[[".x_head"]] <- cos(headings_df$heading)
+  headings_df[[".y_head"]] <- sin(headings_df$heading)
+
+  mapping <- ggplot2::aes(
+    x    = .data$x_inner,
+    y    = .data$y_inner,
+    xend = .data[[".x_head"]],
+    yend = .data[[".y_head"]]
+  )
+  if (!is.null(colour_col) && colour_col %in% names(headings_df)) {
+    mapping[["colour"]] <- rlang::sym(colour_col)
+  }
+
+  ggplot2::geom_segment(
+    data        = headings_df,
+    mapping     = mapping,
+    linetype    = linetype,
+    inherit.aes = FALSE
+  )
+}
+
 # ---- themes ------------------------------------------------------------------
 
 #' Sparse overlay theme for radial plots.
