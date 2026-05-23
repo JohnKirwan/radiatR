@@ -150,15 +150,18 @@ directedness_arrow <- function(data, angle_col, arrow_head_cm = 0.2,
     warning("`angle_col` must refer to a numeric column expressed in radians; skipping arrow layer.", call. = FALSE)
     return(ggplot2::geom_blank())
   }
-  mean_angle <- circular::mean.circular(angles)
-  rho <- circular::rho.circular(angles)
+  mean_angle <- as.numeric(circular::mean.circular(angles))
+  rho        <- as.numeric(circular::rho.circular(angles))
 
-  arrow_df <- tibble::tibble(
-    x = 0,
-    y = 0,
-    xend = rho * cos(mean_angle),
-    yend = rho * sin(mean_angle)
-  )
+  # When resultant length is zero the mean direction is undefined; keep tip at origin.
+  if (!is.finite(rho) || !is.finite(mean_angle) || rho == 0) {
+    xend <- 0; yend <- 0
+  } else {
+    xend <- rho * cos(mean_angle)
+    yend <- rho * sin(mean_angle)
+  }
+
+  arrow_df <- tibble::tibble(x = 0, y = 0, xend = xend, yend = yend)
 
   ggplot2::geom_segment(
     data = arrow_df,
@@ -584,12 +587,18 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #' @param arrow_angle_col Column containing angles (radians) to summarise for the arrow.
 #' @param arrow_colour Arrow colour.
 #' @param arrow_size Arrow linewidth.
+#' @param panel_by NULL, a column name, or a character vector of column names
+#'   to facet by (via [ggplot2::facet_wrap()]). The named column(s) must be
+#'   present in the data.
+#' @param ncol Number of columns passed to [ggplot2::facet_wrap()] when
+#'   `panel_by` is set.
 #' @param ticks,degrees,legend,title,xlab,ylab,axes Additional styling options.
 #' @param ... Additional arguments forwarded to [draw_tracks()].
 #' @return A `ggplot2` object.
 #' @examples
-#' tracks_demo <- simulate_tracks(n_trials = 1, n_points = 200, seed = 1)
-#' radiate(tracks_demo, x_col = "rel_x", y_col = "rel_y", group_col = "trial_num")
+#' tracks_demo <- simulate_tracks(conditions = data.frame(n_trials = 1L),
+#'                                n_points = 200, seed = 1)
+#' radiate(tracks_demo, x_col = "rel_x", y_col = "rel_y", group_col = "trial_id")
 #' @export
 radiate <- function(
   data,
@@ -597,6 +606,8 @@ radiate <- function(
   geom = "path",
   group_col = NULL,
   colour_col = NULL,
+  panel_by = NULL,
+  ncol = NULL,
   ticks = NULL,
   degrees = NULL, legend = NULL, title = NULL,
   xlab = NULL, ylab = NULL, axes = NULL,
@@ -760,6 +771,16 @@ radiate <- function(
       warning("Arrow requested but column `", arrow_angle_col,
               "` is unavailable or not numeric; skipping arrow layer.", call. = FALSE)
     }
+  }
+
+  if (!is.null(panel_by)) {
+    if (!is.character(panel_by)) stop("`panel_by` must be a character vector of column names.")
+    missing_pby <- setdiff(panel_by, names(data))
+    if (length(missing_pby)) stop("panel_by column(s) not found in data: ", paste(missing_pby, collapse = ", "))
+    g <- g + ggplot2::facet_wrap(
+      stats::as.formula(paste("~", paste(panel_by, collapse = "+"))),
+      ncol = ncol
+    )
   }
 
   if (legend == FALSE) {
