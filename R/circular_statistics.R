@@ -150,6 +150,12 @@ zone_dwell <- function(x, target_angle, target_radius = 1,
                        ring_breaks = c(0, 0.5, 0.8, 1),
                        coords = c("absolute", "relative")) {
   coords <- match.arg(coords)
+  if (!is.numeric(ring_breaks) || length(ring_breaks) < 2L)
+    stop("ring_breaks must be a numeric vector of length >= 2.")
+  if (ring_breaks[1L] != 0)
+    stop("ring_breaks must start at 0.")
+  if (is.unsorted(ring_breaks))
+    stop("ring_breaks must be in increasing order.")
   if (coords == "relative") {
     if (is.null(x@cols$rel_x) || is.null(x@cols$rel_y))
       stop("coords='relative' requires rel_x and rel_y registered in TrajSet@cols.")
@@ -174,20 +180,19 @@ zone_dwell <- function(x, target_angle, target_radius = 1,
   rel_angle <- (atan2(py, px) - target_angle + 2 * pi) %% (2 * pi)
   quadrant  <- floor((rel_angle + pi / 4) %% (2 * pi) / (pi / 2)) + 1L
 
-  d$.ring     <- ring
-  d$.quadrant <- quadrant
-
   rows <- lapply(split(seq_len(nrow(d)), d[[id_col]]), function(ii) {
-    sub <- d[ii, , drop = FALSE]
-    sub <- sub[!is.na(sub$.ring), , drop = FALSE]
-    if (nrow(sub) == 0L) return(NULL)
-    total <- nrow(sub)
+    r_sub <- ring[ii]
+    q_sub <- quadrant[ii]
+    id_sub <- d[[id_col]][ii]
+    valid <- !is.na(r_sub)
+    if (!any(valid)) return(NULL)
+    total <- sum(valid)
     agg <- aggregate(
-      list(n_frames = rep(1L, nrow(sub))),
-      by  = list(quadrant = sub$.quadrant, ring = sub$.ring),
+      list(n_frames = rep(1L, sum(valid))),
+      by  = list(quadrant = q_sub[valid], ring = r_sub[valid]),
       FUN = sum
     )
-    agg$id         <- sub[[id_col]][1L]
+    agg$id         <- id_sub[1L]
     agg$zone       <- paste0("Q", agg$quadrant, ".R", agg$ring)
     agg$quadrant   <- as.integer(agg$quadrant)
     agg$n_frames   <- as.integer(agg$n_frames)
@@ -195,5 +200,11 @@ zone_dwell <- function(x, target_angle, target_radius = 1,
     agg[, c("id", "quadrant", "ring", "zone", "n_frames", "proportion")]
   })
 
-  do.call(rbind, Filter(Negate(is.null), rows))
+  result <- do.call(rbind, Filter(Negate(is.null), rows))
+  if (is.null(result)) {
+    return(data.frame(id = character(), quadrant = integer(), ring = integer(),
+                      zone = character(), n_frames = integer(),
+                      proportion = numeric(), stringsAsFactors = FALSE))
+  }
+  result
 }
