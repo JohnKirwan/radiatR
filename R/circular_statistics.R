@@ -189,6 +189,7 @@ zone_dwell <- function(x, target_angle, target_radius = 1,
     )
     agg$id         <- sub[[id_col]][1L]
     agg$zone       <- paste0("Q", agg$quadrant, ".R", agg$ring)
+    agg$quadrant   <- as.integer(agg$quadrant)
     agg$n_frames   <- as.integer(agg$n_frames)
     agg$proportion <- agg$n_frames / total
     agg[, c("id", "quadrant", "ring", "zone", "n_frames", "proportion")]
