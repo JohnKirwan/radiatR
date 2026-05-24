@@ -13,7 +13,9 @@ add_circular_density(
   colour = "black",
   fill = NA,
   alpha = 0.2,
-  linewidth = 0.8
+  linewidth = 0.8,
+  ci_fill = "grey70",
+  ci_alpha = 0.3
 )
 }
 \arguments{
@@ -41,9 +43,19 @@ curve. `NA` (default) draws no fill.}
 \item{alpha}{Alpha transparency for the filled polygon. Default `0.2`.}
 
 \item{linewidth}{Width of the density path. Default `0.8`.}
+
+\item{ci_fill}{Fill colour for the bootstrap confidence band. Only used when
+`density_df` contains `density_lower` and `density_upper` columns (produced
+by [compute_circular_density()] with `boot_reps > 0`, or supplied
+manually). Default `"grey70"`.}
+
+\item{ci_alpha}{Alpha transparency for the confidence band polygon. Default
+`0.3`.}
 }
 \value{
-A list of one or two ggplot2 layers (fill polygon + path line).
+A list of one, two, or three ggplot2 layers: optional CI band
+  polygon, optional fill polygon between density and unit circle, and density
+  path line.
 }
 \description{
 Takes a data frame of `(theta, density)` pairs — from any source: MLE,

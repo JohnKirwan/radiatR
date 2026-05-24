@@ -171,7 +171,7 @@ Three functions handle directional density overlays; they are designed to compos
 | `add_circular_density()` | Renders any `(theta, density)` data frame as a radial overlay — agnostic to how the density was produced |
 | `add_heading_density()` | Convenience wrapper: calls the two above in sequence |
 
-Three built-in methods are available in `compute_circular_density()`: `"vonmises"` (MLE), `"kernel"` (circular KDE), and `"histogram"` (bin counts). Because the computation and rendering steps are separate, the `density` column can be replaced with values from any other model — including a Bayesian posterior predictive density from `brms` — before calling `add_circular_density()`:
+Three built-in methods are available in `compute_circular_density()`: `"vonmises"` (MLE via `circular::mle.vonmises()`), `"kernel"` (circular KDE), and `"histogram"` (bin counts). Because the computation and rendering steps are separate, the `density` column can be replaced with values from any other model — including a Bayesian posterior predictive density from `brms` — before calling `add_circular_density()`:
 
 ```{r density-concept, eval=FALSE}
 dens_df <- compute_circular_density(hd, colour_col = "arc", method = "vonmises")
@@ -204,6 +204,38 @@ radiate(plividus,
 ```
 
 The shaded region is the von Mises density fitted to the crossing headings within each arc condition. A narrower, taller peak indicates more concentrated directional responses. Switch to `method = "kernel"` for a non-parametric estimate, or `method = "histogram"` for a raw count display.
+
+## Bootstrap Confidence Band
+
+`compute_circular_density()` with `boot_reps > 0` runs a non-parametric bootstrap: heading samples are drawn with replacement, a von Mises MLE is fitted to each replicate, and the density is re-evaluated on the same angular grid. The `boot_alpha / 2` and `1 - boot_alpha / 2` quantiles across replicates become `density_lower` and `density_upper` columns, which `add_circular_density()` renders as a shaded band around the fitted curve.
+
+```{r bootstrap-ci, fig.width=8, fig.height=5}
+dens_boot <- compute_circular_density(hd, colour_col = "arc",
+                                      method = "vonmises",
+                                      boot_reps = 499L, boot_alpha = 0.05,
+                                      n_theta = 300L)
+
+radiate(plividus,
+        group_col    = "trial_id",
+        colour_cycle = 10,
+        panel_by     = "arc",
+        ncol         = 3,
+        show_labels  = FALSE,
+        show_arrow   = FALSE) +
+  add_circular_density(dens_boot, colour_col = "arc",
+                       scale = 0.4, fill = "grey80", alpha = 0.35,
+                       ci_fill = "grey60", ci_alpha = 0.35) +
+  geom_segment(
+    data        = segs,
+    aes(x = x, y = y, xend = xend, yend = yend),
+    arrow       = grid::arrow(length = grid::unit(0.2, "cm")),
+    colour      = "black",
+    linewidth   = 1,
+    inherit.aes = FALSE
+  )
+```
+
+The darker band is the 95% bootstrap confidence interval for the fitted von Mises density. A wider band reflects greater parametric uncertainty, typically seen in the smaller or more diffuse conditions. The `density_lower` and `density_upper` columns in `dens_boot` can be replaced with interval values from a Bayesian model (e.g. the 2.5th and 97.5th percentiles of a `brms` posterior predictive distribution) before passing to `add_circular_density()`.
 
 ## Circular Summary Statistics
 

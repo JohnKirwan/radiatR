@@ -239,7 +239,8 @@ assign_cycle_colours <- function(data, id_col, n, panel_col = NULL,
 #' Internal: evaluate one density method for a numeric angle vector.
 #' Returns a two-column data frame (theta, density) with NO radial scaling.
 #' @noRd
-.eval_circ_dens <- function(angles, method, n_theta, bins, bw) {
+.eval_circ_dens <- function(angles, method, n_theta, bins, bw,
+                             boot_reps = 0L, boot_alpha = 0.05) {
   angles <- angles[is.finite(angles)]
   if (length(angles) < 3L) return(NULL)
 
@@ -252,6 +253,22 @@ assign_cycle_colours <- function(data, id_col, n, panel_col = NULL,
     ev       <- circular::circular(theta_sq, units = "radians", template = "none",
                                    modulo = "2pi", zero = 0, rotation = "counter")
     dens     <- as.numeric(circular::dvonmises(ev, mu = fit$mu, kappa = fit$kappa))
+    df       <- data.frame(theta = theta_sq, density = dens)
+
+    if (boot_reps > 0L) {
+      n <- length(angles)
+      boot_mat <- vapply(seq_len(boot_reps), function(.) {
+        samp  <- circ[sample(n, n, replace = TRUE)]
+        fit_b <- tryCatch(circular::mle.vonmises(samp), error = function(e) NULL)
+        if (is.null(fit_b)) return(rep(NA_real_, n_theta))
+        as.numeric(circular::dvonmises(ev, mu = fit_b$mu, kappa = fit_b$kappa))
+      }, numeric(n_theta))
+      lo <- boot_alpha / 2
+      hi <- 1 - lo
+      df$density_lower <- apply(boot_mat, 1L, stats::quantile, probs = lo, na.rm = TRUE)
+      df$density_upper <- apply(boot_mat, 1L, stats::quantile, probs = hi, na.rm = TRUE)
+    }
+    return(df)
 
   } else if (method == "kernel") {
     bw_use   <- if (is.null(bw)) circular::bw.nrd.circular(circ) else bw
@@ -286,7 +303,8 @@ assign_cycle_colours <- function(data, id_col, n, panel_col = NULL,
 #'
 #' * `"vonmises"` — fit a von Mises distribution by MLE
 #'   ([circular::mle.vonmises()]) and evaluate the fitted density on a regular
-#'   grid of `n_theta` angles.
+#'   grid of `n_theta` angles. Bootstrap confidence bands are available via
+#'   `boot_reps`.
 #' * `"kernel"` — circular kernel density estimate
 #'   ([circular::density.circular()]) with bandwidth chosen by
 #'   [circular::bw.nrd.circular()] unless `bw` is supplied.
@@ -296,6 +314,14 @@ assign_cycle_colours <- function(data, id_col, n, panel_col = NULL,
 #' When `colour_col` is supplied the density is computed independently for each
 #' group and the group label is preserved in the output, enabling per-panel use
 #' with [radiate()]'s `panel_by`.
+#'
+#' When `boot_reps > 0` and `method = "vonmises"`, a non-parametric bootstrap
+#' is run: `boot_reps` samples are drawn with replacement, a von Mises MLE is
+#' fitted to each, and the density is evaluated on the same grid. The
+#' `boot_alpha / 2` and `1 - boot_alpha / 2` quantiles across replicates are
+#' returned as `density_lower` and `density_upper` columns. These can be
+#' rendered as a confidence band by [add_circular_density()], or replaced with
+#' interval values from a Bayesian model before plotting.
 #'
 #' @param headings_df Data frame containing heading angles.
 #' @param heading_col Name of the heading column (radians). Default `"heading"`.
@@ -309,10 +335,16 @@ assign_cycle_colours <- function(data, id_col, n, panel_col = NULL,
 #'   (10° each).
 #' @param bw Bandwidth passed to [circular::density.circular()]. `NULL`
 #'   uses [circular::bw.nrd.circular()].
+#' @param boot_reps Integer. Number of bootstrap replicates for a `"vonmises"`
+#'   confidence band. `0` (default) skips the bootstrap. Ignored for `"kernel"`
+#'   and `"histogram"`.
+#' @param boot_alpha Significance level for the bootstrap band. Default `0.05`
+#'   produces a 95% interval.
 #'
 #' @return A data frame with columns `theta` (radians, −π to π) and `density`
-#'   (non-negative), plus `colour_col` if supplied. Suitable for passing to
-#'   [add_circular_density()].
+#'   (non-negative), plus `colour_col` if supplied. When `boot_reps > 0` and
+#'   `method = "vonmises"`, also includes `density_lower` and `density_upper`.
+#'   Suitable for passing to [add_circular_density()].
 #'
 #' @seealso [add_circular_density()], [add_heading_density()]
 #' @importFrom circular circular mle.vonmises dvonmises density.circular bw.nrd.circular
@@ -323,6 +355,13 @@ assign_cycle_colours <- function(data, id_col, n, panel_col = NULL,
 #' dens_df <- compute_circular_density(hd)
 #' head(dens_df)
 #'
+#' # Bootstrap CI band (vonmises only):
+#' \dontrun{
+#' dens_df <- compute_circular_density(hd, boot_reps = 999L)
+#' # density_lower / density_upper can be replaced with Bayesian interval values
+#' # before passing to add_circular_density()
+#' }
+#'
 #' # Replace the density column with values from an external model before plotting:
 #' # dens_df$density <- my_bayesian_density(dens_df$theta)
 #' # ggplot() + coord_fixed() + add_circular_density(dens_df)
@@ -332,7 +371,9 @@ compute_circular_density <- function(headings_df,
                                      method      = c("vonmises", "kernel", "histogram"),
                                      n_theta     = 500L,
                                      bins        = 36L,
-                                     bw          = NULL) {
+                                     bw          = NULL,
+                                     boot_reps   = 0L,
+                                     boot_alpha  = 0.05) {
   method     <- match.arg(method)
   use_colour <- !is.null(colour_col) && colour_col %in% names(headings_df)
 
@@ -341,7 +382,8 @@ compute_circular_density <- function(headings_df,
 
   groups    <- if (use_colour) split(headings_df, headings_df[[colour_col]]) else list(headings_df)
   dens_list <- lapply(seq_along(groups), function(i) {
-    d <- .eval_circ_dens(groups[[i]][[heading_col]], method, n_theta, bins, bw)
+    d <- .eval_circ_dens(groups[[i]][[heading_col]], method, n_theta, bins, bw,
+                         boot_reps = boot_reps, boot_alpha = boot_alpha)
     if (!is.null(d) && use_colour) d[[colour_col]] <- names(groups)[[i]]
     d
   })
@@ -382,8 +424,16 @@ compute_circular_density <- function(headings_df,
 #'   curve. `NA` (default) draws no fill.
 #' @param alpha Alpha transparency for the filled polygon. Default `0.2`.
 #' @param linewidth Width of the density path. Default `0.8`.
+#' @param ci_fill Fill colour for the bootstrap confidence band. Only used when
+#'   `density_df` contains `density_lower` and `density_upper` columns (produced
+#'   by [compute_circular_density()] with `boot_reps > 0`, or supplied
+#'   manually). Default `"grey70"`.
+#' @param ci_alpha Alpha transparency for the confidence band polygon. Default
+#'   `0.3`.
 #'
-#' @return A list of one or two ggplot2 layers (fill polygon + path line).
+#' @return A list of one, two, or three ggplot2 layers: optional CI band
+#'   polygon, optional fill polygon between density and unit circle, and density
+#'   path line.
 #'
 #' @seealso [compute_circular_density()], [add_heading_density()]
 #' @importFrom ggplot2 geom_path geom_polygon aes
@@ -412,30 +462,60 @@ add_circular_density <- function(density_df,
                                  colour      = "black",
                                  fill        = NA,
                                  alpha       = 0.2,
-                                 linewidth   = 0.8) {
+                                 linewidth   = 0.8,
+                                 ci_fill     = "grey70",
+                                 ci_alpha    = 0.3) {
   use_colour <- !is.null(colour_col) && colour_col %in% names(density_df)
+  has_ci     <- all(c("density_lower", "density_upper") %in% names(density_df))
 
   for (col in c(theta_col, density_col)) {
     if (!col %in% names(density_df))
       stop("`density_df` is missing column '", col, "'.")
   }
 
-  # Normalise density within each group and compute Cartesian coordinates
+  # Normalise density within each group and compute Cartesian coordinates.
+  # CI bounds use the same max_d so the band is on the same scale as the curve.
   groups    <- if (use_colour) split(density_df, density_df[[colour_col]]) else list(density_df)
   dens_list <- lapply(groups, function(d) {
     theta <- d[[theta_col]]
     dens  <- d[[density_col]]
     max_d <- max(dens, na.rm = TRUE)
-    r     <- if (max_d > 0) 1 + scale * dens / max_d else rep(1, length(theta))
+    scl   <- if (max_d > 0) scale / max_d else 0
+    r     <- 1 + scl * dens
     d$.r  <- r
     d$.x  <- r * cos(theta)
     d$.y  <- r * sin(theta)
     d$.theta_raw <- theta
+    if (has_ci) {
+      d$.r_lower <- 1 + scl * d$density_lower
+      d$.r_upper <- 1 + scl * d$density_upper
+    }
     d
   })
   dens_df <- do.call(rbind, dens_list)
 
   layers <- list()
+
+  # Bootstrap CI band: polygon from upper envelope forward + lower envelope reversed
+  if (has_ci) {
+    grp_ids <- if (use_colour) unique(dens_df[[colour_col]]) else list(NULL)
+    ci_parts <- lapply(grp_ids, function(gid) {
+      d  <- if (use_colour) dens_df[dens_df[[colour_col]] == gid, ] else dens_df
+      th <- d$.theta_raw
+      out <- data.frame(
+        x = c(d$.r_upper * cos(th),       rev(d$.r_lower * cos(th))),
+        y = c(d$.r_upper * sin(th),       rev(d$.r_lower * sin(th)))
+      )
+      if (use_colour) out[[colour_col]] <- gid
+      out
+    })
+    ci_df  <- do.call(rbind, ci_parts)
+    ci_map <- ggplot2::aes(x = .data$x, y = .data$y)
+    if (use_colour) ci_map[["group"]] <- rlang::sym(colour_col)
+    ci_args <- list(data = ci_df, mapping = ci_map,
+                    fill = ci_fill, colour = NA, alpha = ci_alpha, inherit.aes = FALSE)
+    layers <- c(layers, list(do.call(ggplot2::geom_polygon, ci_args)))
+  }
 
   if (!is.na(fill)) {
     grp_ids <- if (use_colour) unique(dens_df[[colour_col]]) else list(NULL)
@@ -505,18 +585,24 @@ add_heading_density <- function(headings_df,
                                 n_theta     = 500L,
                                 bins        = 36L,
                                 bw          = NULL,
+                                boot_reps   = 0L,
+                                boot_alpha  = 0.05,
                                 scale       = 0.4,
                                 colour      = "black",
                                 fill        = NA,
                                 alpha       = 0.2,
-                                linewidth   = 0.8) {
+                                linewidth   = 0.8,
+                                ci_fill     = "grey70",
+                                ci_alpha    = 0.3) {
   method  <- match.arg(method)
   dens_df <- compute_circular_density(headings_df, heading_col = heading_col,
                                       colour_col = colour_col, method = method,
-                                      n_theta = n_theta, bins = bins, bw = bw)
+                                      n_theta = n_theta, bins = bins, bw = bw,
+                                      boot_reps = boot_reps, boot_alpha = boot_alpha)
   add_circular_density(dens_df, colour_col = colour_col,
                        scale = scale, colour = colour,
-                       fill = fill, alpha = alpha, linewidth = linewidth)
+                       fill = fill, alpha = alpha, linewidth = linewidth,
+                       ci_fill = ci_fill, ci_alpha = ci_alpha)
 }
 
 # ---- heading overlay layers --------------------------------------------------
