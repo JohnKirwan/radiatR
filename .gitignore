@@ -5,3 +5,5 @@ inst/doc
 inst/doc/
 vignettes/*_files/
 vignettes/*.html
+/doc/
+/Meta/
