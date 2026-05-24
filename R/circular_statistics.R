@@ -192,7 +192,7 @@ zone_dwell <- function(x, target_angle, target_radius = 1,
       by  = list(quadrant = q_sub[valid], ring = r_sub[valid]),
       FUN = sum
     )
-    agg$id         <- id_sub[1L]
+    agg$id         <- as.character(id_sub[1L])
     agg$zone       <- paste0("Q", agg$quadrant, ".R", agg$ring)
     agg$quadrant   <- as.integer(agg$quadrant)
     agg$n_frames   <- as.integer(agg$n_frames)
@@ -270,7 +270,7 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
     dist   <- sqrt((sub[[xc]] - gx)^2 + (sub[[yc]] - gy)^2)
     inside <- dist < crossing_radius
     n_entries <- sum(diff(c(FALSE, inside)) == 1L)
-    data.frame(id = sub[[id_col]][1L], n_entries = as.integer(n_entries),
+    data.frame(id = as.character(sub[[id_col]][1L]), n_entries = as.integer(n_entries),
                stringsAsFactors = FALSE)
   })
 
