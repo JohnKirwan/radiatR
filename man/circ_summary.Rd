@@ -34,6 +34,10 @@ circ_summary(
 
 \item{by}{Character. `"id"` (default) returns one row per trial;
 `"global"` pools all observations into a single summary row.}
+
+\item{angle_convention}{Character. Output convention for `mean_dir`:
+`"unit_circle"` (default; 0 = East, counterclockwise) or `"clock"`
+(0 = North, clockwise).}
 }
 \value{
 data.frame(id, n, t_start, t_end, mean_dir, resultant_R, kappa)

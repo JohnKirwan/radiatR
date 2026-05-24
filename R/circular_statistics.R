@@ -14,6 +14,9 @@
 #'   (default), all steps are weighted equally.
 #' @param by Character. `"id"` (default) returns one row per trial;
 #'   `"global"` pools all observations into a single summary row.
+#' @param angle_convention Character. Output convention for `mean_dir`:
+#'   `"unit_circle"` (default; 0 = East, counterclockwise) or `"clock"`
+#'   (0 = North, clockwise).
 #'
 #' @return A `data.frame` with columns `id`, `n`, `t_start`, `t_end`,
 #'   `mean_dir` (radians, 0 to 2π), `resultant_R` (0–1), and `kappa`

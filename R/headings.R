@@ -107,6 +107,14 @@
 #' @param x TrajSet
 #' @param rule one of "crossing", "distal", "straight"
 #' @param ... rule-specific parameters
+#' @param coords Character. Which Cartesian columns to use: `"absolute"` (default,
+#'   uses `x`/`y` from `TrajSet@@cols`) or `"relative"` (uses `rel_x`/`rel_y`;
+#'   errors if not registered).
+#' @param angle_convention Character. Output angle convention: `"clock"` (default;
+#'   0 = North/top, clockwise) or `"unit_circle"` (0 = East, counterclockwise).
+#'   The returned data frame carries `attr(result, "angle_convention")` and
+#'   `attr(result, "coords")` for downstream auto-detection by
+#'   [circ_summary_headings()] and [circ_mean_segments()].
 #' @return data.frame with columns id, time (approx), heading (radians). For some rules there may be multiple headings per id.
 #' @export
 setGeneric(
@@ -574,7 +582,11 @@ setMethod("derive_headings", "TrajSet", function(
 #'   for a single global summary row. Any column carried through by
 #'   [derive_headings()] (e.g. `"arc"`) is valid.
 #' @param ... Additional arguments forwarded to [derive_headings()], such as
-#'   `circ0`, `circ1`, or `return_coords`.
+#'   `circ0`, `circ1`, `return_coords`, or `coords`.
+#' @param angle_convention Character. Output convention for `mean_dir`:
+#'   `"clock"` (default; 0 = North, clockwise) or `"unit_circle"` (0 = East,
+#'   counterclockwise). The returned summary carries the same
+#'   `angle_convention` attribute for downstream use by [circ_mean_segments()].
 #'
 #' @return A `data.frame` with grouping columns followed by `mean_dir`
 #'   (radians, 0 to 2π), `resultant_R` (0–1), `kappa` (von Mises

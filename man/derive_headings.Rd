@@ -34,6 +34,16 @@ derive_headings(
 
 \item{...}{rule-specific parameters}
 
+\item{coords}{Character. Which Cartesian columns to use: `"absolute"` (default,
+uses `x`/`y` from `TrajSet@cols`) or `"relative"` (uses `rel_x`/`rel_y`;
+errors if not registered).}
+
+\item{angle_convention}{Character. Output angle convention: `"clock"` (default;
+0 = North/top, clockwise) or `"unit_circle"` (0 = East, counterclockwise).
+The returned data frame carries `attr(result, "angle_convention")` and
+`attr(result, "coords")` for downstream auto-detection by
+[circ_summary_headings()] and [circ_mean_segments()].}
+
 \item{first_only}{logical; if TRUE, return only the first matching heading per trajectory}
 
 \item{carry}{optional character vector of columns from the source data to append via nearest time}
