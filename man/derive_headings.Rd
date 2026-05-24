@@ -10,7 +10,9 @@ derive_headings(
   rule = c("crossing", "distal", "straight", "origin_mean", "net", "velocity_mean",
     "window_net", "goal_bias", "pca_axis", "ransac_straight", "maxspeed_window",
     "vm_fit", "exit", "entry", "ring_tangent"),
-  ...
+  ...,
+  coords = c("absolute", "relative"),
+  angle_convention = c("clock", "unit_circle")
 )
 
 \S4method{derive_headings}{TrajSet}(
@@ -20,7 +22,9 @@ derive_headings(
     "vm_fit", "exit", "entry", "ring_tangent"),
   ...,
   first_only = FALSE,
-  carry = NULL
+  carry = NULL,
+  coords = c("absolute", "relative"),
+  angle_convention = c("clock", "unit_circle")
 )
 }
 \arguments{
@@ -29,6 +33,16 @@ derive_headings(
 \item{rule}{one of "crossing", "distal", "straight"}
 
 \item{...}{rule-specific parameters}
+
+\item{coords}{Character. Which Cartesian columns to use: `"absolute"` (default,
+uses `x`/`y` from `TrajSet@cols`) or `"relative"` (uses `rel_x`/`rel_y`;
+errors if not registered).}
+
+\item{angle_convention}{Character. Output angle convention: `"clock"` (default;
+0 = North/top, clockwise) or `"unit_circle"` (0 = East, counterclockwise).
+The returned data frame carries `attr(result, "angle_convention")` and
+`attr(result, "coords")` for downstream auto-detection by
+[circ_summary_headings()] and [circ_mean_segments()].}
 
 \item{first_only}{logical; if TRUE, return only the first matching heading per trajectory}
 

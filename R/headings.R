@@ -40,6 +40,23 @@
   fallback
 }
 
+# angle convention helpers
+.uc_to_clock <- function(uc_heading, coords) {
+  if (coords == "relative") {
+    (-uc_heading) %% (2 * pi)
+  } else {
+    (pi / 2 - uc_heading) %% (2 * pi)
+  }
+}
+
+.clock_to_uc <- function(clock_heading, coords) {
+  if (coords == "relative") {
+    (-clock_heading) %% (2 * pi)
+  } else {
+    wrap_to_2pi(rad_unclock(clock_heading))
+  }
+}
+
 # carry helper: add columns from nearest time per id
 .carry_nearest <- function(res, data, idc, tc, cols) {
   if (is.null(cols) || !length(cols)) return(res)
@@ -90,6 +107,14 @@
 #' @param x TrajSet
 #' @param rule one of "crossing", "distal", "straight"
 #' @param ... rule-specific parameters
+#' @param coords Character. Which Cartesian columns to use: `"absolute"` (default,
+#'   uses `x`/`y` from `TrajSet@@cols`) or `"relative"` (uses `rel_x`/`rel_y`;
+#'   errors if not registered).
+#' @param angle_convention Character. Output angle convention: `"clock"` (default;
+#'   0 = North/top, clockwise) or `"unit_circle"` (0 = East, counterclockwise).
+#'   The returned data frame carries `attr(result, "angle_convention")` and
+#'   `attr(result, "coords")` for downstream auto-detection by
+#'   [circ_summary_headings()] and [circ_mean_segments()].
 #' @return data.frame with columns id, time (approx), heading (radians). For some rules there may be multiple headings per id.
 #' @export
 setGeneric(
@@ -97,7 +122,9 @@ setGeneric(
   function(
     x,
     rule = c("crossing","distal","straight","origin_mean","net","velocity_mean","window_net","goal_bias","pca_axis","ransac_straight","maxspeed_window","vm_fit","exit","entry","ring_tangent"),
-    ...
+    ...,
+    coords = c("absolute", "relative"),
+    angle_convention = c("clock", "unit_circle")
   ) standardGeneric("derive_headings")
 )
 
@@ -405,10 +432,35 @@ setGeneric(
 #' @param carry optional character vector of columns from the source data to append via nearest time
 #' @rdname derive_headings
 #' @export
-setMethod("derive_headings", "TrajSet", function(x, rule = c("crossing","distal","straight","origin_mean","net","velocity_mean","window_net","goal_bias","pca_axis","ransac_straight","maxspeed_window","vm_fit","exit","entry","ring_tangent"),
-                                                  ..., first_only = FALSE, carry = NULL) {
-  id <- x@cols$id; tc <- x@cols$time; xc <- x@cols$x; yc <- x@cols$y
-  if (is.null(xc) || is.null(yc)) stop("derive_headings: TrajSet needs x/y columns for these rules.")
+setMethod("derive_headings", "TrajSet", function(
+    x,
+    rule = c("crossing","distal","straight","origin_mean","net","velocity_mean",
+             "window_net","goal_bias","pca_axis","ransac_straight","maxspeed_window",
+             "vm_fit","exit","entry","ring_tangent"),
+    ...,
+    first_only = FALSE,
+    carry = NULL,
+    coords = c("absolute", "relative"),
+    angle_convention = c("clock", "unit_circle")) {
+
+  coords           <- match.arg(coords)
+  angle_convention <- match.arg(angle_convention)
+
+  id <- x@cols$id; tc <- x@cols$time
+
+  if (coords == "relative") {
+    if (is.null(x@cols$rel_x) || is.null(x@cols$rel_y))
+      stop("coords='relative' requires rel_x and rel_y registered in TrajSet@cols.")
+    xc <- x@cols$rel_x
+    yc <- x@cols$rel_y
+  } else {
+    xc <- x@cols$x
+    yc <- x@cols$y
+  }
+
+  if (is.null(xc) || is.null(yc))
+    stop("derive_headings: TrajSet needs x/y columns for these rules.")
+
   d <- x@data
   sp <- split(seq_len(nrow(d)), d[[id]])
 
@@ -502,8 +554,15 @@ setMethod("derive_headings", "TrajSet", function(x, rule = c("crossing","distal"
     )
   }
 
+  if (angle_convention == "clock") {
+    res$heading <- .uc_to_clock(res$heading, coords)
+  }
+
   rownames(res) <- NULL
   if (!is.null(carry)) res <- .carry_nearest(res, d, idc = id, tc = tc, cols = carry)
+
+  attr(res, "angle_convention") <- angle_convention
+  attr(res, "coords")           <- coords
   res
 })
 
@@ -523,7 +582,11 @@ setMethod("derive_headings", "TrajSet", function(x, rule = c("crossing","distal"
 #'   for a single global summary row. Any column carried through by
 #'   [derive_headings()] (e.g. `"arc"`) is valid.
 #' @param ... Additional arguments forwarded to [derive_headings()], such as
-#'   `circ0`, `circ1`, or `return_coords`.
+#'   `circ0`, `circ1`, `return_coords`, or `coords`.
+#' @param angle_convention Character. Output convention for `mean_dir`:
+#'   `"clock"` (default; 0 = North, clockwise) or `"unit_circle"` (0 = East,
+#'   counterclockwise). The returned summary carries the same
+#'   `angle_convention` attribute for downstream use by [circ_mean_segments()].
 #'
 #' @return A `data.frame` with grouping columns followed by `mean_dir`
 #'   (radians, 0 to 2π), `resultant_R` (0–1), `kappa` (von Mises
@@ -542,23 +605,30 @@ setMethod("derive_headings", "TrajSet", function(x, rule = c("crossing","distal"
 #' }
 #'
 #' @export
-circ_summary_headings <- function(x, rule = c("crossing","distal","straight","origin_mean","net","velocity_mean"), group_by = "id", ...) {
-  rule <- match.arg(rule)
-  hd <- derive_headings(x, rule = rule, ...)
+circ_summary_headings <- function(x, rule = c("crossing","distal","straight","origin_mean","net","velocity_mean"),
+                                  group_by = "id", ...,
+                                  angle_convention = c("clock", "unit_circle")) {
+  rule             <- match.arg(rule)
+  angle_convention <- match.arg(angle_convention)
+
+  hd <- derive_headings(x, rule = rule, ..., angle_convention = angle_convention)
+  coords <- attr(hd, "coords") %||% "absolute"
+
   if (nrow(hd) == 0L || all(is.na(hd$heading))) {
     return(data.frame(mean_dir = NA_real_, resultant_R = NA_real_, kappa = NA_real_, n = 0L))
   }
+
+  # Convert back to UC for circular mean computation
+  uc_heading <- if (angle_convention == "clock") .clock_to_uc(hd$heading, coords) else hd$heading
+  hd$.uc_heading <- uc_heading
+
   # group keys
   if (is.null(group_by)) {
-    keys <- factor("all")
-    grp_df <- data.frame(.grp = keys)
-    hd$..grp <- keys
+    hd$..grp <- factor("all")
   } else {
-    # ensure columns exist (only 'id' guaranteed)
     if (!all(group_by %in% names(hd))) {
-      if (identical(group_by, "id")) {
-        # ok; 'id' exists in hd
-      } else stop("group_by contains unknown column(s) in derived heading table")
+      if (!identical(group_by, "id"))
+        stop("group_by contains unknown column(s) in derived heading table")
     }
     if (length(group_by) == 1L && group_by == "id") {
       hd$..grp <- hd$id
@@ -568,16 +638,19 @@ circ_summary_headings <- function(x, rule = c("crossing","distal","straight","or
     }
   }
 
-  sp <- split(hd$heading, hd$..grp)
+  sp <- split(hd$.uc_heading, hd$..grp)
   res <- lapply(names(sp), function(g) {
     th <- sp[[g]]
     th <- th[is.finite(th)]
     if (!length(th)) return(data.frame(mean_dir = NA_real_, resultant_R = NA_real_, kappa = NA_real_, n = 0L))
-    tc <- .as_circ(th)
-    mu <- circular::mean.circular(tc, na.rm = TRUE)
-    R  <- circular::rho.circular(tc,  na.rm = TRUE)
+    tc  <- .as_circ(th)
+    mu  <- circular::mean.circular(tc, na.rm = TRUE)
+    R   <- circular::rho.circular(tc,  na.rm = TRUE)
     kap <- .est_kappa_safe(tc, fallback = .kappa_from_Rbar(as.numeric(R)))
-    data.frame(.grp = g, mean_dir = .wrap_to_2pi(as.numeric(mu)), resultant_R = as.numeric(R), kappa = as.numeric(kap), n = length(th))
+    uc_mu  <- .wrap_to_2pi(as.numeric(mu))
+    out_mu <- if (angle_convention == "clock") .uc_to_clock(uc_mu, coords) else uc_mu
+    data.frame(.grp = g, mean_dir = out_mu, resultant_R = as.numeric(R),
+               kappa = as.numeric(kap), n = length(th))
   })
   res <- do.call(rbind, res)
 
@@ -594,6 +667,8 @@ circ_summary_headings <- function(x, rule = c("crossing","distal","straight","or
     res <- cbind(parts, res[, setdiff(names(res), ".grp"), drop = FALSE])
   }
   rownames(res) <- NULL
+  attr(res, "angle_convention") <- angle_convention
+  attr(res, "coords")           <- coords
   res
 }
 
@@ -607,8 +682,10 @@ circ_summary_headings <- function(x, rule = c("crossing","distal","straight","or
 #' @export
 circ_mean_segments <- function(stats_df, x0 = 0, y0 = 0, scale = 1) {
   stopifnot(all(c("mean_dir","resultant_R") %in% names(stats_df)))
-  xend <- x0 + scale * stats_df$resultant_R * cos(stats_df$mean_dir)
-  yend <- y0 + scale * stats_df$resultant_R * sin(stats_df$mean_dir)
+  convention <- attr(stats_df, "angle_convention") %||% "unit_circle"
+  uc_dir <- if (convention == "clock") rad_unclock(stats_df$mean_dir) else stats_df$mean_dir
+  xend <- x0 + scale * stats_df$resultant_R * cos(uc_dir)
+  yend <- y0 + scale * stats_df$resultant_R * sin(uc_dir)
   cbind(stats_df, x = x0, y = y0, xend = xend, yend = yend)
 }
 

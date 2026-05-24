@@ -8,7 +8,8 @@ test_that("derive_headings crossing rule returns heading angle", {
                    x = r * cos(theta), y = r * sin(theta))
   ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
                 normalize_xy = FALSE)
-  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4)
+  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                        angle_convention = "unit_circle")
   expect_equal(nrow(hd), 1)
   expect_named(hd, c("id", "time", "heading"))
   expect_equal(hd$heading, theta %% (2 * pi), tolerance = 1e-6)
@@ -60,7 +61,8 @@ test_that("crossing rule recovers correct heading for each of N trajectories", {
   # Four cardinal directions; each should produce the correct angle after wrapping.
   angles <- c(0, pi / 2, pi, 3 * pi / 2)
   ts  <- make_multi_crossing_ts(angles)
-  hd  <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4)
+  hd  <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                         angle_convention = "unit_circle")
 
   expect_equal(nrow(hd), 4)
   # align by id order so comparison is deterministic
@@ -97,7 +99,8 @@ test_that("circ_summary_headings mean_dir and resultant_R are analytically corre
 
   summ <- circ_summary_headings(ts, rule = "crossing",
                                 circ0 = 0.2, circ1 = 0.4,
-                                group_by = NULL)
+                                group_by = NULL,
+                                angle_convention = "unit_circle")
 
   expect_equal(summ$resultant_R,              2 / 3, tolerance = 1e-6)
   expect_equal(summ$mean_dir %% (2 * pi), pi / 2,   tolerance = 1e-6)
@@ -109,7 +112,8 @@ test_that("circ_summary_headings gives resultant_R = 1 when all headings are ide
 
   summ <- circ_summary_headings(ts, rule = "crossing",
                                 circ0 = 0.2, circ1 = 0.4,
-                                group_by = NULL)
+                                group_by = NULL,
+                                angle_convention = "unit_circle")
 
   expect_equal(summ$resultant_R,             1,       tolerance = 1e-6)
   expect_equal(summ$mean_dir %% (2 * pi), pi / 3,    tolerance = 1e-6)
@@ -122,7 +126,8 @@ test_that("circ_summary_headings gives resultant_R near 0 for uniformly spread h
 
   summ <- circ_summary_headings(ts, rule = "crossing",
                                 circ0 = 0.2, circ1 = 0.4,
-                                group_by = NULL)
+                                group_by = NULL,
+                                angle_convention = "unit_circle")
 
   expect_equal(summ$resultant_R, 0, tolerance = 1e-6)
 })
@@ -135,9 +140,40 @@ test_that("derive_headings computes simple net direction", {
     y = c(0, 1, 1)
   )
   ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y", angle = "time")
-  headings <- derive_headings(ts, rule = "net")
+  headings <- derive_headings(ts, rule = "net", angle_convention = "unit_circle")
   expect_equal(nrow(headings), 1)
   expect_equal(headings$heading, atan2(1, 1), tolerance = 1e-8)
+})
+
+test_that("TrajSet accepts rel_x/rel_y col pointers", {
+  df <- data.frame(id = "A", time = 1:3,
+                   x = c(0.1, 0.2, 0.3), y = c(0.0, 0.1, 0.2),
+                   rx = c(-0.1, -0.2, -0.3), ry = c(0.0, -0.1, -0.2))
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                rel_x = "rx", rel_y = "ry", normalize_xy = FALSE)
+  expect_equal(ts@cols$rel_x, "rx")
+  expect_equal(ts@cols$rel_y, "ry")
+})
+
+test_that("TrajSet validator rejects rel_x without rel_y", {
+  df <- data.frame(id = "A", time = 1:3,
+                   x = c(0.1, 0.2, 0.3), y = c(0.0, 0.1, 0.2),
+                   rx = c(-0.1, -0.2, -0.3))
+  expect_error(
+    TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+            rel_x = "rx", normalize_xy = FALSE),
+    "rel_y"
+  )
+})
+
+test_that("TrajSet validator rejects rel_x pointing to absent column", {
+  df <- data.frame(id = "A", time = 1:3,
+                   x = c(0.1, 0.2, 0.3), y = c(0.0, 0.1, 0.2))
+  expect_error(
+    TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+            rel_x = "no_such", rel_y = "y", normalize_xy = FALSE),
+    "rel_x"
+  )
 })
 
 test_that("custom heading rules can be registered and listed", {
@@ -154,7 +190,129 @@ test_that("custom heading rules can be registered and listed", {
 
   df <- data.frame(id = "A", time = 0:1, x = c(0, 1), y = c(0, 0))
   ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y", angle = "time")
-  res <- derive_headings(ts, rule = "zero_heading")
+  res <- derive_headings(ts, rule = "zero_heading", angle_convention = "unit_circle")
   expect_equal(res$heading, 0)
   expect_true("zero_heading" %in% list_heading_rules())
+})
+
+# ---- coords parameter tests --------------------------------------------------
+
+# Helper: TrajSet with both abs and rel coord columns
+make_ts_with_rel <- function() {
+  df <- data.frame(
+    id = "A", time = 1:10,
+    x  = seq(0, 0.8, length.out = 10),  # heading East in absolute
+    y  = rep(0, 10),
+    rx = rep(0, 10),                     # heading North in relative
+    ry = seq(0, 0.8, length.out = 10)
+  )
+  TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+          rel_x = "rx", rel_y = "ry", normalize_xy = FALSE)
+}
+
+test_that("derive_headings coords='absolute' uses x/y columns", {
+  ts <- make_ts_with_rel()
+  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                        coords = "absolute", angle_convention = "unit_circle")
+  expect_equal(hd$heading, 0, tolerance = 1e-6)  # East
+})
+
+test_that("derive_headings coords='relative' uses rel_x/rel_y columns", {
+  ts <- make_ts_with_rel()
+  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                        coords = "relative", angle_convention = "unit_circle")
+  expect_equal(hd$heading, pi / 2, tolerance = 1e-6)  # North
+})
+
+test_that("derive_headings errors when coords='relative' but rel_x/rel_y not registered", {
+  df <- data.frame(id = "A", time = 1:10,
+                   x = seq(0, 0.8, length.out = 10), y = rep(0, 10))
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                normalize_xy = FALSE)
+  expect_error(
+    derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                    coords = "relative"),
+    "rel_x"
+  )
+})
+
+# ---- angle_convention tests --------------------------------------------------
+
+test_that("derive_headings clock convention converts absolute heading correctly", {
+  # Straight East trajectory => UC heading 0. Absolute clock: (pi/2 - 0) = pi/2 = 90°
+  df <- data.frame(id = "A", time = 1:10,
+                   x = seq(0, 0.8, length.out = 10), y = rep(0, 10))
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                normalize_xy = FALSE)
+  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                        angle_convention = "clock")
+  expect_equal(hd$heading, pi / 2, tolerance = 1e-6)
+})
+
+test_that("derive_headings clock convention converts relative heading correctly", {
+  df <- data.frame(
+    id = "A", time = 1:10,
+    x = rep(0, 10), y = seq(0, 0.8, length.out = 10),
+    rx = seq(0, 0.8, length.out = 10), ry = rep(0, 10) # rel East = toward stimulus
+  )
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                rel_x = "rx", rel_y = "ry", normalize_xy = FALSE)
+  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                        coords = "relative", angle_convention = "clock")
+  # rel UC heading = 0 (toward stimulus). Relative clock = (-0) %% 2pi = 0.
+  expect_equal(hd$heading, 0, tolerance = 1e-6)
+})
+
+test_that("derive_headings attaches angle_convention and coords attrs", {
+  df <- data.frame(id = "A", time = 1:10,
+                   x = seq(0, 0.8, length.out = 10), y = rep(0, 10))
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                normalize_xy = FALSE)
+  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                        angle_convention = "clock")
+  expect_equal(attr(hd, "angle_convention"), "clock")
+  expect_equal(attr(hd, "coords"), "absolute")
+})
+
+test_that("derive_headings with angle_convention='unit_circle' matches raw atan2", {
+  theta <- pi / 4
+  n <- 20
+  r <- seq(0, 0.8, length.out = n)
+  df <- data.frame(id = "A", time = seq_len(n),
+                   x = r * cos(theta), y = r * sin(theta))
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                normalize_xy = FALSE)
+  hd_uc <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                            angle_convention = "unit_circle")
+  expect_equal(hd_uc$heading, theta %% (2 * pi), tolerance = 1e-10)
+})
+
+# ---- circ_summary_headings angle_convention tests ----------------------------
+
+test_that("circ_summary_headings respects angle_convention='clock'", {
+  # Four trajectories all heading North (UC pi/2).
+  # Absolute clock: (pi/2 - pi/2) %% 2pi = 0
+  angles <- rep(pi / 2, 4)
+  ts <- make_multi_crossing_ts(angles)
+  summ <- circ_summary_headings(ts, rule = "crossing",
+                                circ0 = 0.2, circ1 = 0.4,
+                                group_by = NULL,
+                                angle_convention = "clock")
+  expect_equal(summ$mean_dir, 0, tolerance = 1e-6)
+  expect_equal(attr(summ, "angle_convention"), "clock")
+})
+
+test_that("circ_summary_headings clock vs unit_circle give different mean_dir for non-North headings", {
+  angles <- rep(pi / 2, 4)
+  ts <- make_multi_crossing_ts(angles)
+  summ_clock <- circ_summary_headings(ts, rule = "crossing",
+                                      circ0 = 0.2, circ1 = 0.4,
+                                      group_by = NULL,
+                                      angle_convention = "clock")
+  summ_uc    <- circ_summary_headings(ts, rule = "crossing",
+                                      circ0 = 0.2, circ1 = 0.4,
+                                      group_by = NULL,
+                                      angle_convention = "unit_circle")
+  expect_equal(summ_uc$mean_dir,    pi / 2, tolerance = 1e-6)
+  expect_equal(summ_clock$mean_dir, 0,      tolerance = 1e-6)
 })

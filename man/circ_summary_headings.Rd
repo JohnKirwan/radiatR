@@ -8,7 +8,8 @@ circ_summary_headings(
   x,
   rule = c("crossing", "distal", "straight", "origin_mean", "net", "velocity_mean"),
   group_by = "id",
-  ...
+  ...,
+  angle_convention = c("clock", "unit_circle")
 )
 }
 \arguments{
@@ -24,7 +25,12 @@ for a single global summary row. Any column carried through by
 [derive_headings()] (e.g. `"arc"`) is valid.}
 
 \item{...}{Additional arguments forwarded to [derive_headings()], such as
-`circ0`, `circ1`, or `return_coords`.}
+`circ0`, `circ1`, `return_coords`, or `coords`.}
+
+\item{angle_convention}{Character. Output convention for `mean_dir`:
+`"clock"` (default; 0 = North, clockwise) or `"unit_circle"` (0 = East,
+counterclockwise). The returned summary carries the same
+`angle_convention` attribute for downstream use by [circ_mean_segments()].}
 }
 \value{
 A `data.frame` with grouping columns followed by `mean_dir`

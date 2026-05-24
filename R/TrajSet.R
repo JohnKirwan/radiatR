@@ -181,6 +181,11 @@ setValidity("TrajSet", function(object) {
     if (!all(c(cl$raw_x, cl$raw_y) %in% names(d))) return("raw x/y columns not present in data")
     if (!is.numeric(d[[cl$raw_x]]) || !is.numeric(d[[cl$raw_y]])) return("raw x/y must be numeric")
   }
+  if (!is.null(cl$rel_x) || !is.null(cl$rel_y)) {
+    if (is.null(cl$rel_x) || is.null(cl$rel_y)) return("both rel_x and rel_y must be in cols if either is used")
+    if (!all(c(cl$rel_x, cl$rel_y) %in% names(d))) return("rel_x/rel_y columns not present in data")
+    if (!is.numeric(d[[cl$rel_x]]) || !is.numeric(d[[cl$rel_y]])) return("rel_x/rel_y must be numeric")
+  }
   if (!is.null(cl$rho)) {
     if (!cl$rho %in% names(d)) return("rho column not present in data")
     if (!is.numeric(d[[cl$rho]])) return("rho column must be numeric")
@@ -213,6 +218,7 @@ TrajSet <- function(df,
                     id = "id", time = "time",
                     angle = NULL,
                     x = NULL, y = NULL,
+                    rel_x = NULL, rel_y = NULL,
                     angle_unit = c("radians","degrees"),
                     weight = NULL,
                     normalize_xy = TRUE,
@@ -229,6 +235,17 @@ TrajSet <- function(df,
   have_xy    <- !is.null(x) && !is.null(y) && all(c(x,y) %in% names(df))
   if (!have_angle && !have_xy)
     stop("Provide either an angle column or both x and y columns")
+
+  # Validate rel_x/rel_y pairing
+  have_rel <- !is.null(rel_x) || !is.null(rel_y)
+  if (have_rel) {
+    if (is.null(rel_x) || is.null(rel_y))
+      stop("Both rel_x and rel_y must be supplied if either is provided.")
+    if (!rel_x %in% names(df))
+      stop("rel_x column '", rel_x, "' not found in df.")
+    if (!rel_y %in% names(df))
+      stop("rel_y column '", rel_y, "' not found in df.")
+  }
 
   d <- df
 
@@ -322,6 +339,8 @@ TrajSet <- function(df,
       cols = list(id = id, time = time, angle = angle_col,
                   x = if (!is.null(x)) x else NULL,
                   y = if (!is.null(y)) y else NULL,
+                  rel_x = if (have_rel) rel_x else NULL,
+                  rel_y = if (have_rel) rel_y else NULL,
                   raw_x = raw_cols$x,
                   raw_y = raw_cols$y,
                   rho = rho_col,
@@ -350,9 +369,10 @@ setMethod("angles", "TrajSet", function(x, as = c("numeric","circular"), unit = 
 setMethod("show", "TrajSet", function(object) {
   id <- object@cols$id; tm <- object@cols$time; th <- object@cols$angle
   xy <- if (!is.null(object@cols$x)) paste0(", x='", object@cols$x, "', y='", object@cols$y, "'") else ""
+  rel_xy <- if (!is.null(object@cols$rel_x)) paste0(", rel_x='", object@cols$rel_x, "', rel_y='", object@cols$rel_y, "'") else ""
   raw_xy <- if (!is.null(object@cols$raw_x)) paste0(", raw_x='", object@cols$raw_x, "', raw_y='", object@cols$raw_y, "'") else ""
   cat(sprintf("TrajSet: %d trajectories, %d observations\n", length(ids(object)), nrow(object@data)))
-  cat(sprintf("Columns: id='%s', time='%s', angle='%s' (radians)%s%s\n", id, tm, th, xy, raw_xy))
+  cat(sprintf("Columns: id='%s', time='%s', angle='%s' (radians)%s%s%s\n", id, tm, th, xy, rel_xy, raw_xy))
   hist <- transform_history(object)
   if (nrow(hist)) {
     steps <- unique(hist$step[order(hist$order, hist$step)])

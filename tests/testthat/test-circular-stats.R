@@ -51,3 +51,17 @@ test_that("shepherding functions wrap angles into valid ranges", {
   wrapped_clock <- rad_shepherd_clock(clock_angles)
   expect_true(all(wrapped_clock >= 0 & wrapped_clock < 2*pi + 1e-10))
 })
+
+test_that("circ_summary angle_convention='clock' converts mean_dir output", {
+  # x=0, y>0 gives atan2(y,x) = pi/2 for all points (North in unit-circle)
+  df <- data.frame(id = "A", time = 1:4,
+                   x = c(0, 0, 0, 0), y = c(0.2, 0.4, 0.6, 0.8))
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                normalize_xy = FALSE)
+  summ_clock <- circ_summary(ts, angle_convention = "clock")
+  # Absolute clock: (pi/2 - pi/2) %% 2pi = 0
+  expect_equal(summ_clock$mean_dir, 0, tolerance = 1e-6)
+  # Default (unit_circle) unchanged
+  summ_uc <- circ_summary(ts)
+  expect_equal(summ_uc$mean_dir, pi / 2, tolerance = 1e-6)
+})

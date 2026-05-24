@@ -25,6 +25,9 @@
 #'     \item{trans_x, trans_y}{Numeric. Unit-circle Cartesian coordinates.}
 #'     \item{abs_theta}{Numeric. Absolute bearing (radians, −π to π).}
 #'     \item{rel_theta}{Numeric. Step bearing relative to arena orientation.}
+#'     \item{rel_x, rel_y}{Numeric. Stimulus-relative unit-circle Cartesian
+#'       coordinates. Registered in `@@cols` so
+#'       `derive_headings(..., coords = "relative")` works directly.}
 #'     \item{arc}{Ordered factor. Stimulus arc angle in degrees
 #'       (`0°` < `15°` < `30°` < `45°` < `60°` < `150°`).}
 #'   }
