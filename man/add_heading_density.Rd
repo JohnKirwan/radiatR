@@ -48,7 +48,7 @@ confidence band. `0` (default) skips the bootstrap. Ignored for `"kernel"`
 and `"histogram"`.}
 
 \item{boot_alpha}{Significance level for the bootstrap band. Default `0.05`
-produces a 95% interval.}
+produces a 95\% interval.}
 
 \item{scale}{Maximum radial extension above the unit circle. Default `0.4`
 (peak at r = 1.4). Density is normalised within each group before scaling.}
