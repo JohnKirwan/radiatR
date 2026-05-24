@@ -5,11 +5,26 @@
 \alias{circ_summary,TrajSet-method}
 \title{Circular summaries per trajectory}
 \usage{
-circ_summary(x, w = NULL, by = c("id", "global"))
+circ_summary(
+  x,
+  w = NULL,
+  by = c("id", "global"),
+  angle_convention = c("unit_circle", "clock")
+)
 
-circ_summary(x, w = NULL, by = c("id", "global"))
+circ_summary(
+  x,
+  w = NULL,
+  by = c("id", "global"),
+  angle_convention = c("unit_circle", "clock")
+)
 
-\S4method{circ_summary}{TrajSet}(x, w = NULL, by = c("id", "global"))
+\S4method{circ_summary}{TrajSet}(
+  x,
+  w = NULL,
+  by = c("id", "global"),
+  angle_convention = c("unit_circle", "clock")
+)
 }
 \arguments{
 \item{x}{A [`TrajSet`] object.}

@@ -8,7 +8,8 @@ circ_summary_headings(
   x,
   rule = c("crossing", "distal", "straight", "origin_mean", "net", "velocity_mean"),
   group_by = "id",
-  ...
+  ...,
+  angle_convention = c("clock", "unit_circle")
 )
 }
 \arguments{

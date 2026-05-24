@@ -10,7 +10,9 @@ derive_headings(
   rule = c("crossing", "distal", "straight", "origin_mean", "net", "velocity_mean",
     "window_net", "goal_bias", "pca_axis", "ransac_straight", "maxspeed_window",
     "vm_fit", "exit", "entry", "ring_tangent"),
-  ...
+  ...,
+  coords = c("absolute", "relative"),
+  angle_convention = c("clock", "unit_circle")
 )
 
 \S4method{derive_headings}{TrajSet}(
@@ -20,7 +22,9 @@ derive_headings(
     "vm_fit", "exit", "entry", "ring_tangent"),
   ...,
   first_only = FALSE,
-  carry = NULL
+  carry = NULL,
+  coords = c("absolute", "relative"),
+  angle_convention = c("clock", "unit_circle")
 )
 }
 \arguments{
