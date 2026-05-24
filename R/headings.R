@@ -593,23 +593,30 @@ setMethod("derive_headings", "TrajSet", function(
 #' }
 #'
 #' @export
-circ_summary_headings <- function(x, rule = c("crossing","distal","straight","origin_mean","net","velocity_mean"), group_by = "id", ...) {
-  rule <- match.arg(rule)
-  hd <- derive_headings(x, rule = rule, ..., angle_convention = "unit_circle")
+circ_summary_headings <- function(x, rule = c("crossing","distal","straight","origin_mean","net","velocity_mean"),
+                                  group_by = "id", ...,
+                                  angle_convention = c("clock", "unit_circle")) {
+  rule             <- match.arg(rule)
+  angle_convention <- match.arg(angle_convention)
+
+  hd <- derive_headings(x, rule = rule, ..., angle_convention = angle_convention)
+  coords <- attr(hd, "coords") %||% "absolute"
+
   if (nrow(hd) == 0L || all(is.na(hd$heading))) {
     return(data.frame(mean_dir = NA_real_, resultant_R = NA_real_, kappa = NA_real_, n = 0L))
   }
+
+  # Convert back to UC for circular mean computation
+  uc_heading <- if (angle_convention == "clock") .clock_to_uc(hd$heading, coords) else hd$heading
+  hd$.uc_heading <- uc_heading
+
   # group keys
   if (is.null(group_by)) {
-    keys <- factor("all")
-    grp_df <- data.frame(.grp = keys)
-    hd$..grp <- keys
+    hd$..grp <- factor("all")
   } else {
-    # ensure columns exist (only 'id' guaranteed)
     if (!all(group_by %in% names(hd))) {
-      if (identical(group_by, "id")) {
-        # ok; 'id' exists in hd
-      } else stop("group_by contains unknown column(s) in derived heading table")
+      if (!identical(group_by, "id"))
+        stop("group_by contains unknown column(s) in derived heading table")
     }
     if (length(group_by) == 1L && group_by == "id") {
       hd$..grp <- hd$id
@@ -619,16 +626,19 @@ circ_summary_headings <- function(x, rule = c("crossing","distal","straight","or
     }
   }
 
-  sp <- split(hd$heading, hd$..grp)
+  sp <- split(hd$.uc_heading, hd$..grp)
   res <- lapply(names(sp), function(g) {
     th <- sp[[g]]
     th <- th[is.finite(th)]
     if (!length(th)) return(data.frame(mean_dir = NA_real_, resultant_R = NA_real_, kappa = NA_real_, n = 0L))
-    tc <- .as_circ(th)
-    mu <- circular::mean.circular(tc, na.rm = TRUE)
-    R  <- circular::rho.circular(tc,  na.rm = TRUE)
+    tc  <- .as_circ(th)
+    mu  <- circular::mean.circular(tc, na.rm = TRUE)
+    R   <- circular::rho.circular(tc,  na.rm = TRUE)
     kap <- .est_kappa_safe(tc, fallback = .kappa_from_Rbar(as.numeric(R)))
-    data.frame(.grp = g, mean_dir = .wrap_to_2pi(as.numeric(mu)), resultant_R = as.numeric(R), kappa = as.numeric(kap), n = length(th))
+    uc_mu  <- .wrap_to_2pi(as.numeric(mu))
+    out_mu <- if (angle_convention == "clock") .uc_to_clock(uc_mu, coords) else uc_mu
+    data.frame(.grp = g, mean_dir = out_mu, resultant_R = as.numeric(R),
+               kappa = as.numeric(kap), n = length(th))
   })
   res <- do.call(rbind, res)
 
@@ -645,6 +655,8 @@ circ_summary_headings <- function(x, rule = c("crossing","distal","straight","or
     res <- cbind(parts, res[, setdiff(names(res), ".grp"), drop = FALSE])
   }
   rownames(res) <- NULL
+  attr(res, "angle_convention") <- angle_convention
+  attr(res, "coords")           <- coords
   res
 }
 

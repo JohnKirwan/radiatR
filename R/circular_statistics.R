@@ -28,7 +28,9 @@
 #'
 #' @export
 #' @importFrom circular mean.circular rho.circular circular
-setGeneric("circ_summary", function(x, w = NULL, by = c("id","global")) standardGeneric("circ_summary"))
+setGeneric("circ_summary", function(x, w = NULL, by = c("id","global"),
+                                    angle_convention = c("unit_circle","clock"))
+  standardGeneric("circ_summary"))
 
 .est_kappa_safe <- function(tc, fallback = NA_real_, ...) {
   if (exists("est.kappa", envir = asNamespace("circular"), inherits = FALSE)) {
@@ -44,8 +46,10 @@ setGeneric("circ_summary", function(x, w = NULL, by = c("id","global")) standard
 
 #' @rdname circ_summary
 #' @export
-setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")) {
-  by <- match.arg(by)
+setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global"),
+                                              angle_convention = c("unit_circle","clock")) {
+  by               <- match.arg(by)
+  angle_convention <- match.arg(angle_convention)
   id <- x@cols$id; tm <- x@cols$time; th <- x@cols$angle
   wcol <- if (is.null(w)) x@cols$weight else w
   d <- x@data
@@ -85,12 +89,14 @@ setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")
     }
 
     kap <- .est_kappa_safe(tc, fallback = NA_real_, w = wts_valid)
+    uc_mu  <- .wrap_to_2pi(as.numeric(mu))
+    out_mu <- if (angle_convention == "clock") (pi/2 - uc_mu) %% (2*pi) else uc_mu
     data.frame(
       id          = if (by == "id") k else "global",
       n           = sum(!is.na(theta)),
       t_start     = d[[tm]][ii[1]],
       t_end       = d[[tm]][ii[length(ii)]],
-      mean_dir    = .wrap_to_2pi(as.numeric(mu)),
+      mean_dir    = out_mu,
       resultant_R = as.numeric(R),
       kappa       = as.numeric(kap),
       stringsAsFactors = FALSE

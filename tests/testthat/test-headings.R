@@ -8,7 +8,8 @@ test_that("derive_headings crossing rule returns heading angle", {
                    x = r * cos(theta), y = r * sin(theta))
   ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
                 normalize_xy = FALSE)
-  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4)
+  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                        angle_convention = "unit_circle")
   expect_equal(nrow(hd), 1)
   expect_named(hd, c("id", "time", "heading"))
   expect_equal(hd$heading, theta %% (2 * pi), tolerance = 1e-6)
@@ -98,7 +99,8 @@ test_that("circ_summary_headings mean_dir and resultant_R are analytically corre
 
   summ <- circ_summary_headings(ts, rule = "crossing",
                                 circ0 = 0.2, circ1 = 0.4,
-                                group_by = NULL)
+                                group_by = NULL,
+                                angle_convention = "unit_circle")
 
   expect_equal(summ$resultant_R,              2 / 3, tolerance = 1e-6)
   expect_equal(summ$mean_dir %% (2 * pi), pi / 2,   tolerance = 1e-6)
@@ -110,7 +112,8 @@ test_that("circ_summary_headings gives resultant_R = 1 when all headings are ide
 
   summ <- circ_summary_headings(ts, rule = "crossing",
                                 circ0 = 0.2, circ1 = 0.4,
-                                group_by = NULL)
+                                group_by = NULL,
+                                angle_convention = "unit_circle")
 
   expect_equal(summ$resultant_R,             1,       tolerance = 1e-6)
   expect_equal(summ$mean_dir %% (2 * pi), pi / 3,    tolerance = 1e-6)
@@ -123,7 +126,8 @@ test_that("circ_summary_headings gives resultant_R near 0 for uniformly spread h
 
   summ <- circ_summary_headings(ts, rule = "crossing",
                                 circ0 = 0.2, circ1 = 0.4,
-                                group_by = NULL)
+                                group_by = NULL,
+                                angle_convention = "unit_circle")
 
   expect_equal(summ$resultant_R, 0, tolerance = 1e-6)
 })
@@ -136,7 +140,7 @@ test_that("derive_headings computes simple net direction", {
     y = c(0, 1, 1)
   )
   ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y", angle = "time")
-  headings <- derive_headings(ts, rule = "net")
+  headings <- derive_headings(ts, rule = "net", angle_convention = "unit_circle")
   expect_equal(nrow(headings), 1)
   expect_equal(headings$heading, atan2(1, 1), tolerance = 1e-8)
 })
@@ -281,4 +285,34 @@ test_that("derive_headings with angle_convention='unit_circle' matches raw atan2
   hd_uc <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
                             angle_convention = "unit_circle")
   expect_equal(hd_uc$heading, theta %% (2 * pi), tolerance = 1e-10)
+})
+
+# ---- circ_summary_headings angle_convention tests ----------------------------
+
+test_that("circ_summary_headings respects angle_convention='clock'", {
+  # Four trajectories all heading North (UC pi/2).
+  # Absolute clock: (pi/2 - pi/2) %% 2pi = 0
+  angles <- rep(pi / 2, 4)
+  ts <- make_multi_crossing_ts(angles)
+  summ <- circ_summary_headings(ts, rule = "crossing",
+                                circ0 = 0.2, circ1 = 0.4,
+                                group_by = NULL,
+                                angle_convention = "clock")
+  expect_equal(summ$mean_dir, 0, tolerance = 1e-6)
+  expect_equal(attr(summ, "angle_convention"), "clock")
+})
+
+test_that("circ_summary_headings clock vs unit_circle give different mean_dir for non-North headings", {
+  angles <- rep(pi / 2, 4)
+  ts <- make_multi_crossing_ts(angles)
+  summ_clock <- circ_summary_headings(ts, rule = "crossing",
+                                      circ0 = 0.2, circ1 = 0.4,
+                                      group_by = NULL,
+                                      angle_convention = "clock")
+  summ_uc    <- circ_summary_headings(ts, rule = "crossing",
+                                      circ0 = 0.2, circ1 = 0.4,
+                                      group_by = NULL,
+                                      angle_convention = "unit_circle")
+  expect_equal(summ_uc$mean_dir,    pi / 2, tolerance = 1e-6)
+  expect_equal(summ_clock$mean_dir, 0,      tolerance = 1e-6)
 })
