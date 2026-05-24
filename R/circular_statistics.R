@@ -107,3 +107,179 @@ setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")
   })
   do.call(rbind, rows)
 })
+
+#' Dwell-time proportions across quadrant x ring zones
+#'
+#' Classifies each trajectory observation into one of N quadrant sectors and M
+#' annular rings, then returns per-trial frame counts and proportions. Applicable
+#' to any circular arena experiment where spatial dwell time is of interest
+#' (water maze, open-field, Drosophila preference assay, etc.).
+#'
+#' The target quadrant (Q1) is centred on `target_angle`; Q2–Q4 follow
+#' counter-clockwise. Observations outside `max(ring_breaks)` are excluded from
+#' both counts and the proportion denominator.
+#'
+#' @param x A [`TrajSet`] object with x/y (or rel_x/rel_y) columns registered.
+#' @param target_angle Numeric. Radians. Direction of the target zone from the
+#'   arena centre. Q1 spans ±45° around this angle.
+#' @param target_radius Numeric. Accepted for API symmetry with
+#'   [count_goal_entries()] but not used in zone assignment. Default `1`.
+#' @param ring_breaks Numeric vector. Annular ring boundaries, must start at
+#'   `0`. Default `c(0, 0.5, 0.8, 1)` gives three rings: inner / middle /
+#'   outer (thigmotaxis).
+#' @param coords Character. `"absolute"` (default) uses `@cols$x`/`@cols$y`;
+#'   `"relative"` uses `@cols$rel_x`/`@cols$rel_y`.
+#'
+#' @return A `data.frame` with one row per observed (id x quadrant x ring)
+#'   combination, with columns `id`, `quadrant` (integer, 1 = target),
+#'   `ring` (integer, 1 = innermost), `zone` (e.g. `"Q1.R3"`), `n_frames`
+#'   (integer), and `proportion` (numeric). Combinations with zero observations
+#'   are omitted.
+#'
+#' @examples
+#' \dontrun{
+#' # Water maze probe trial: platform was at 45 degrees (NE)
+#' dwell <- zone_dwell(ts, target_angle = pi / 4,
+#'                     ring_breaks = c(0, 0.5, 0.8, 1))
+#' # Q1 proportion > 0.25 indicates above-chance target preference
+#' }
+#'
+#' @seealso [count_goal_entries()]
+#' @export
+zone_dwell <- function(x, target_angle, target_radius = 1,
+                       ring_breaks = c(0, 0.5, 0.8, 1),
+                       coords = c("absolute", "relative")) {
+  coords <- match.arg(coords)
+  if (!is.numeric(ring_breaks) || length(ring_breaks) < 2L)
+    stop("ring_breaks must be a numeric vector of length >= 2.")
+  if (ring_breaks[1L] != 0)
+    stop("ring_breaks must start at 0.")
+  if (is.unsorted(ring_breaks))
+    stop("ring_breaks must be in increasing order.")
+  if (coords == "relative") {
+    if (is.null(x@cols$rel_x) || is.null(x@cols$rel_y))
+      stop("coords='relative' requires rel_x and rel_y registered in TrajSet@cols.")
+    xc <- x@cols$rel_x
+    yc <- x@cols$rel_y
+  } else {
+    xc <- x@cols$x
+    yc <- x@cols$y
+  }
+  if (is.null(xc) || is.null(yc))
+    stop("zone_dwell: TrajSet needs x/y columns.")
+
+  id_col <- x@cols$id
+  d      <- x@data
+  px     <- d[[xc]]
+  py     <- d[[yc]]
+  r      <- sqrt(px^2 + py^2)
+
+  ring <- findInterval(r, ring_breaks, rightmost.closed = TRUE)
+  ring[ring == 0L | ring >= length(ring_breaks)] <- NA_integer_
+
+  rel_angle <- (atan2(py, px) - target_angle + 2 * pi) %% (2 * pi)
+  quadrant  <- floor((rel_angle + pi / 4) %% (2 * pi) / (pi / 2)) + 1L
+
+  rows <- lapply(split(seq_len(nrow(d)), d[[id_col]]), function(ii) {
+    r_sub <- ring[ii]
+    q_sub <- quadrant[ii]
+    id_sub <- d[[id_col]][ii]
+    valid <- !is.na(r_sub)
+    if (!any(valid)) return(NULL)
+    total <- sum(valid)
+    agg <- aggregate(
+      list(n_frames = rep(1L, sum(valid))),
+      by  = list(quadrant = q_sub[valid], ring = r_sub[valid]),
+      FUN = sum
+    )
+    agg$id         <- as.character(id_sub[1L])
+    agg$zone       <- paste0("Q", agg$quadrant, ".R", agg$ring)
+    agg$quadrant   <- as.integer(agg$quadrant)
+    agg$n_frames   <- as.integer(agg$n_frames)
+    agg$proportion <- agg$n_frames / total
+    agg[, c("id", "quadrant", "ring", "zone", "n_frames", "proportion")]
+  })
+
+  result <- do.call(rbind, Filter(Negate(is.null), rows))
+  if (is.null(result)) {
+    return(data.frame(id = character(), quadrant = integer(), ring = integer(),
+                      zone = character(), n_frames = integer(),
+                      proportion = numeric(), stringsAsFactors = FALSE))
+  }
+  result
+}
+
+#' Count entries into a goal zone for circular arena trajectories
+#'
+#' For each trial, counts the number of times the trajectory enters a circular
+#' zone of radius `crossing_radius` centred on the goal location. Applicable to
+#' any circular arena experiment with a defined goal (hidden platform in a water
+#' maze, reward zone in an open-field, etc.).
+#'
+#' An "entry" is a `FALSE -> TRUE` transition in the `distance < crossing_radius`
+#' sequence (ordered by time). An animal that starts inside the zone on the
+#' first frame counts as one entry.
+#'
+#' @param x A [`TrajSet`] object with x/y (or rel_x/rel_y) columns registered.
+#' @param target_angle Numeric. Radians. Direction of the goal from the arena centre.
+#' @param target_radius Numeric. Distance of the goal from the arena centre.
+#'   Default `1` (wall). Together with `target_angle` gives the goal position:
+#'   `gx = target_radius * cos(target_angle)`, `gy = target_radius * sin(target_angle)`.
+#' @param crossing_radius Numeric. Radius of the goal zone in unit-circle
+#'   coordinates. Default `0.15` (15\% of arena radius; roughly a 10 cm platform
+#'   in a 60 cm pool).
+#' @param coords Character. `"absolute"` (default) or `"relative"`.
+#'   See [zone_dwell()].
+#'
+#' @return A `data.frame` with one row per trial: `id` (character) and
+#'   `n_entries` (integer).
+#'
+#' @examples
+#' \dontrun{
+#' # Water maze probe trial: former platform at 45 degrees (NE), at wall
+#' entries <- count_goal_entries(ts, target_angle = pi / 4,
+#'                               crossing_radius = 0.15)
+#' # n_entries > 1 indicates memory of the platform location
+#' }
+#'
+#' @seealso [zone_dwell()]
+#' @export
+count_goal_entries <- function(x, target_angle, target_radius = 1,
+                               crossing_radius = 0.15,
+                               coords = c("absolute", "relative")) {
+  coords <- match.arg(coords)
+  if (!is.numeric(crossing_radius) || length(crossing_radius) != 1L || crossing_radius <= 0)
+    stop("crossing_radius must be a single positive number.")
+  if (coords == "relative") {
+    if (is.null(x@cols$rel_x) || is.null(x@cols$rel_y))
+      stop("coords='relative' requires rel_x and rel_y registered in TrajSet@cols.")
+    xc <- x@cols$rel_x
+    yc <- x@cols$rel_y
+  } else {
+    xc <- x@cols$x
+    yc <- x@cols$y
+  }
+  if (is.null(xc) || is.null(yc))
+    stop("count_goal_entries: TrajSet needs x/y columns.")
+
+  id_col <- x@cols$id
+  d      <- x@data
+  gx     <- target_radius * cos(target_angle)
+  gy     <- target_radius * sin(target_angle)
+
+  rows <- lapply(split(seq_len(nrow(d)), d[[id_col]]), function(ii) {
+    dist   <- sqrt((d[[xc]][ii] - gx)^2 + (d[[yc]][ii] - gy)^2)
+    inside <- dist < crossing_radius
+    inside[is.na(inside)] <- FALSE
+    n_entries <- sum(diff(c(FALSE, inside)) == 1L)
+    data.frame(id = as.character(d[[id_col]][ii[1L]]), n_entries = as.integer(n_entries),
+               stringsAsFactors = FALSE)
+  })
+
+  result <- do.call(rbind, rows)
+  if (is.null(result)) {
+    return(data.frame(id = character(), n_entries = integer(),
+                      stringsAsFactors = FALSE))
+  }
+  result
+}
