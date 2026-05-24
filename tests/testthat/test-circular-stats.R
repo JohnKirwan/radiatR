@@ -249,3 +249,23 @@ test_that("count_goal_entries handles multiple trials", {
   expect_equal(res[res$id == "t1", "n_entries"], 1L)
   expect_equal(res[res$id == "t2", "n_entries"], 0L)
 })
+
+test_that("count_goal_entries uses rel_x/rel_y when coords='relative'", {
+  df <- data.frame(
+    id    = "t1",
+    time  = 1:3,
+    x     = c(50.0, 50.0, 50.0),   # absolute coords — far from (1,0)
+    y     = c(50.0, 50.0, 50.0),
+    rel_x = c(0.5, 0.9, 0.5),      # relative: enters goal zone at frame 2
+    rel_y = c(0.0, 0.0, 0.0)
+  )
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                rel_x = "rel_x", rel_y = "rel_y", normalize_xy = FALSE)
+  res <- count_goal_entries(ts, target_angle = 0, target_radius = 1,
+                            crossing_radius = 0.2, coords = "relative")
+  expect_equal(res$n_entries, 1L)
+  # Verify absolute coords give 0 entries (confirming dispatch is correct)
+  res_abs <- count_goal_entries(ts, target_angle = 0, target_radius = 1,
+                                crossing_radius = 0.2, coords = "absolute")
+  expect_equal(res_abs$n_entries, 0L)
+})

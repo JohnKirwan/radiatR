@@ -248,6 +248,8 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
                                crossing_radius = 0.15,
                                coords = c("absolute", "relative")) {
   coords <- match.arg(coords)
+  if (!is.numeric(crossing_radius) || length(crossing_radius) != 1L || crossing_radius <= 0)
+    stop("crossing_radius must be a single positive number.")
   if (coords == "relative") {
     if (is.null(x@cols$rel_x) || is.null(x@cols$rel_y))
       stop("coords='relative' requires rel_x and rel_y registered in TrajSet@cols.")
@@ -266,13 +268,18 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
   gy     <- target_radius * sin(target_angle)
 
   rows <- lapply(split(seq_len(nrow(d)), d[[id_col]]), function(ii) {
-    sub    <- d[ii, , drop = FALSE]
-    dist   <- sqrt((sub[[xc]] - gx)^2 + (sub[[yc]] - gy)^2)
+    dist   <- sqrt((d[[xc]][ii] - gx)^2 + (d[[yc]][ii] - gy)^2)
     inside <- dist < crossing_radius
+    inside[is.na(inside)] <- FALSE
     n_entries <- sum(diff(c(FALSE, inside)) == 1L)
-    data.frame(id = as.character(sub[[id_col]][1L]), n_entries = as.integer(n_entries),
+    data.frame(id = as.character(d[[id_col]][ii[1L]]), n_entries = as.integer(n_entries),
                stringsAsFactors = FALSE)
   })
 
-  do.call(rbind, rows)
+  result <- do.call(rbind, rows)
+  if (is.null(result)) {
+    return(data.frame(id = character(), n_entries = integer(),
+                      stringsAsFactors = FALSE))
+  }
+  result
 }
