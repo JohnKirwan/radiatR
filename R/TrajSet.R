@@ -181,6 +181,11 @@ setValidity("TrajSet", function(object) {
     if (!all(c(cl$raw_x, cl$raw_y) %in% names(d))) return("raw x/y columns not present in data")
     if (!is.numeric(d[[cl$raw_x]]) || !is.numeric(d[[cl$raw_y]])) return("raw x/y must be numeric")
   }
+  if (!is.null(cl$rel_x) || !is.null(cl$rel_y)) {
+    if (is.null(cl$rel_x) || is.null(cl$rel_y)) return("both rel_x and rel_y must be in cols if either is used")
+    if (!all(c(cl$rel_x, cl$rel_y) %in% names(d))) return("rel_x/rel_y columns not present in data")
+    if (!is.numeric(d[[cl$rel_x]]) || !is.numeric(d[[cl$rel_y]])) return("rel_x/rel_y must be numeric")
+  }
   if (!is.null(cl$rho)) {
     if (!cl$rho %in% names(d)) return("rho column not present in data")
     if (!is.numeric(d[[cl$rho]])) return("rho column must be numeric")
