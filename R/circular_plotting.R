@@ -92,6 +92,40 @@ add_multiple_circles <- function(radii = c(0.25, 0.5, 0.75),
   lapply(radii, function(radius) add_circ(radius, circle_color, circle_alpha, circle_size))
 }
 
+#' Add quadrant lines to a radial plot
+#'
+#' Draws two dashed lines through the centre of the unit circle — one
+#' horizontal (0°/180°) and one vertical (90°/270°) — dividing the arena into
+#' four quadrants. The lines extend to the arena boundary (unit circle).
+#'
+#' @param colour Line colour. Default `"grey60"`.
+#' @param linewidth Line width. Default `0.5`.
+#' @param linetype Line type. Default `"dashed"`.
+#'
+#' @return A `geom_segment()` layer.
+#'
+#' @examples
+#' library(ggplot2)
+#' ggplot() + coord_fixed() + add_quadrant_lines()
+#' @export
+add_quadrant_lines <- function(colour = "grey60", linewidth = 0.5, linetype = "dashed") {
+  seg_df <- data.frame(
+    x    = c(-1,  0),
+    y    = c( 0, -1),
+    xend = c( 1,  0),
+    yend = c( 0,  1)
+  )
+  ggplot2::geom_segment(
+    data        = seg_df,
+    mapping     = ggplot2::aes(x = .data$x, y = .data$y,
+                               xend = .data$xend, yend = .data$yend),
+    colour      = colour,
+    linewidth   = linewidth,
+    linetype    = linetype,
+    inherit.aes = FALSE
+  )
+}
+
 #' Label the four diagonal directions.
 #'
 #' Provides a list of annotation layers that mark 45, 135, 225, and 315 degrees on a
@@ -1135,8 +1169,6 @@ radiate <- function(
     ggplot2::coord_fixed()
 
   g <- g + spartan_theme()
-  g <- g + add_multiple_circles()
-  g <- g + add_multiple_circles(radii = c(0.1, 0.2), circle_color = "skyblue")
 
   layer_mapping <- NULL
   if (!is.null(group_col) || !is.null(colour_col)) {
@@ -1157,13 +1189,13 @@ radiate <- function(
 
   if (style == "minimal") {
     g <- g + spartan_theme()
-    g <- g + add_multiple_circles(radii = c(0.25, 0.5, 0.75), circle_color = "grey80", circle_size = 0.5)
+    g <- g + add_quadrant_lines()
     g <- g + add_circ(circle_color = "grey60", circle_size = 1)
     if (degrees) g <- g + degree_labs()
     if (ticks) g <- g + add_ticks()
   } else {
     g <- g + sparse_theme()
-    g <- g + add_multiple_circles(radii = c(0.25, 0.5, 0.75), circle_color = "grey80", circle_size = 0.5)
+    g <- g + add_quadrant_lines()
     g <- g + add_circ(circle_color = "black", circle_size = 1.5)
     g <- g + add_ticks()
     if (degrees) g <- g + degree_labs()
