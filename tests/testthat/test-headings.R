@@ -60,7 +60,8 @@ test_that("crossing rule recovers correct heading for each of N trajectories", {
   # Four cardinal directions; each should produce the correct angle after wrapping.
   angles <- c(0, pi / 2, pi, 3 * pi / 2)
   ts  <- make_multi_crossing_ts(angles)
-  hd  <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4)
+  hd  <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                         angle_convention = "unit_circle")
 
   expect_equal(nrow(hd), 4)
   # align by id order so comparison is deterministic
@@ -185,7 +186,7 @@ test_that("custom heading rules can be registered and listed", {
 
   df <- data.frame(id = "A", time = 0:1, x = c(0, 1), y = c(0, 0))
   ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y", angle = "time")
-  res <- derive_headings(ts, rule = "zero_heading")
+  res <- derive_headings(ts, rule = "zero_heading", angle_convention = "unit_circle")
   expect_equal(res$heading, 0)
   expect_true("zero_heading" %in% list_heading_rules())
 })
@@ -229,4 +230,55 @@ test_that("derive_headings errors when coords='relative' but rel_x/rel_y not reg
                     coords = "relative"),
     "rel_x"
   )
+})
+
+# ---- angle_convention tests --------------------------------------------------
+
+test_that("derive_headings clock convention converts absolute heading correctly", {
+  # Straight East trajectory => UC heading 0. Absolute clock: (pi/2 - 0) = pi/2 = 90°
+  df <- data.frame(id = "A", time = 1:10,
+                   x = seq(0, 0.8, length.out = 10), y = rep(0, 10))
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                normalize_xy = FALSE)
+  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                        angle_convention = "clock")
+  expect_equal(hd$heading, pi / 2, tolerance = 1e-6)
+})
+
+test_that("derive_headings clock convention converts relative heading correctly", {
+  df <- data.frame(
+    id = "A", time = 1:10,
+    x = rep(0, 10), y = seq(0, 0.8, length.out = 10),
+    rx = seq(0, 0.8, length.out = 10), ry = rep(0, 10) # rel East = toward stimulus
+  )
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                rel_x = "rx", rel_y = "ry", normalize_xy = FALSE)
+  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                        coords = "relative", angle_convention = "clock")
+  # rel UC heading = 0 (toward stimulus). Relative clock = (-0) %% 2pi = 0.
+  expect_equal(hd$heading, 0, tolerance = 1e-6)
+})
+
+test_that("derive_headings attaches angle_convention and coords attrs", {
+  df <- data.frame(id = "A", time = 1:10,
+                   x = seq(0, 0.8, length.out = 10), y = rep(0, 10))
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                normalize_xy = FALSE)
+  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                        angle_convention = "clock")
+  expect_equal(attr(hd, "angle_convention"), "clock")
+  expect_equal(attr(hd, "coords"), "absolute")
+})
+
+test_that("derive_headings with angle_convention='unit_circle' matches raw atan2", {
+  theta <- pi / 4
+  n <- 20
+  r <- seq(0, 0.8, length.out = n)
+  df <- data.frame(id = "A", time = seq_len(n),
+                   x = r * cos(theta), y = r * sin(theta))
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                normalize_xy = FALSE)
+  hd_uc <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                            angle_convention = "unit_circle")
+  expect_equal(hd_uc$heading, theta %% (2 * pi), tolerance = 1e-10)
 })

@@ -40,6 +40,23 @@
   fallback
 }
 
+# angle convention helpers
+.uc_to_clock <- function(uc_heading, coords) {
+  if (coords == "relative") {
+    (-uc_heading) %% (2 * pi)
+  } else {
+    (pi / 2 - uc_heading) %% (2 * pi)
+  }
+}
+
+.clock_to_uc <- function(clock_heading, coords) {
+  if (coords == "relative") {
+    (-clock_heading) %% (2 * pi)
+  } else {
+    wrap_to_2pi(rad_unclock(clock_heading))
+  }
+}
+
 # carry helper: add columns from nearest time per id
 .carry_nearest <- function(res, data, idc, tc, cols) {
   if (is.null(cols) || !length(cols)) return(res)
@@ -529,8 +546,15 @@ setMethod("derive_headings", "TrajSet", function(
     )
   }
 
+  if (angle_convention == "clock") {
+    res$heading <- .uc_to_clock(res$heading, coords)
+  }
+
   rownames(res) <- NULL
   if (!is.null(carry)) res <- .carry_nearest(res, d, idc = id, tc = tc, cols = carry)
+
+  attr(res, "angle_convention") <- angle_convention
+  attr(res, "coords")           <- coords
   res
 })
 
@@ -571,7 +595,7 @@ setMethod("derive_headings", "TrajSet", function(
 #' @export
 circ_summary_headings <- function(x, rule = c("crossing","distal","straight","origin_mean","net","velocity_mean"), group_by = "id", ...) {
   rule <- match.arg(rule)
-  hd <- derive_headings(x, rule = rule, ...)
+  hd <- derive_headings(x, rule = rule, ..., angle_convention = "unit_circle")
   if (nrow(hd) == 0L || all(is.na(hd$heading))) {
     return(data.frame(mean_dir = NA_real_, resultant_R = NA_real_, kappa = NA_real_, n = 0L))
   }
