@@ -189,3 +189,44 @@ test_that("custom heading rules can be registered and listed", {
   expect_equal(res$heading, 0)
   expect_true("zero_heading" %in% list_heading_rules())
 })
+
+# ---- coords parameter tests --------------------------------------------------
+
+# Helper: TrajSet with both abs and rel coord columns
+make_ts_with_rel <- function() {
+  df <- data.frame(
+    id = "A", time = 1:10,
+    x  = seq(0, 0.8, length.out = 10),  # heading East in absolute
+    y  = rep(0, 10),
+    rx = rep(0, 10),                     # heading North in relative
+    ry = seq(0, 0.8, length.out = 10)
+  )
+  TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+          rel_x = "rx", rel_y = "ry", normalize_xy = FALSE)
+}
+
+test_that("derive_headings coords='absolute' uses x/y columns", {
+  ts <- make_ts_with_rel()
+  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                        coords = "absolute", angle_convention = "unit_circle")
+  expect_equal(hd$heading, 0, tolerance = 1e-6)  # East
+})
+
+test_that("derive_headings coords='relative' uses rel_x/rel_y columns", {
+  ts <- make_ts_with_rel()
+  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                        coords = "relative", angle_convention = "unit_circle")
+  expect_equal(hd$heading, pi / 2, tolerance = 1e-6)  # North
+})
+
+test_that("derive_headings errors when coords='relative' but rel_x/rel_y not registered", {
+  df <- data.frame(id = "A", time = 1:10,
+                   x = seq(0, 0.8, length.out = 10), y = rep(0, 10))
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                normalize_xy = FALSE)
+  expect_error(
+    derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                    coords = "relative"),
+    "rel_x"
+  )
+})

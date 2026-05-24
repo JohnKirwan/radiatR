@@ -97,7 +97,9 @@ setGeneric(
   function(
     x,
     rule = c("crossing","distal","straight","origin_mean","net","velocity_mean","window_net","goal_bias","pca_axis","ransac_straight","maxspeed_window","vm_fit","exit","entry","ring_tangent"),
-    ...
+    ...,
+    coords = c("absolute", "relative"),
+    angle_convention = c("clock", "unit_circle")
   ) standardGeneric("derive_headings")
 )
 
@@ -405,10 +407,35 @@ setGeneric(
 #' @param carry optional character vector of columns from the source data to append via nearest time
 #' @rdname derive_headings
 #' @export
-setMethod("derive_headings", "TrajSet", function(x, rule = c("crossing","distal","straight","origin_mean","net","velocity_mean","window_net","goal_bias","pca_axis","ransac_straight","maxspeed_window","vm_fit","exit","entry","ring_tangent"),
-                                                  ..., first_only = FALSE, carry = NULL) {
-  id <- x@cols$id; tc <- x@cols$time; xc <- x@cols$x; yc <- x@cols$y
-  if (is.null(xc) || is.null(yc)) stop("derive_headings: TrajSet needs x/y columns for these rules.")
+setMethod("derive_headings", "TrajSet", function(
+    x,
+    rule = c("crossing","distal","straight","origin_mean","net","velocity_mean",
+             "window_net","goal_bias","pca_axis","ransac_straight","maxspeed_window",
+             "vm_fit","exit","entry","ring_tangent"),
+    ...,
+    first_only = FALSE,
+    carry = NULL,
+    coords = c("absolute", "relative"),
+    angle_convention = c("clock", "unit_circle")) {
+
+  coords           <- match.arg(coords)
+  angle_convention <- match.arg(angle_convention)
+
+  id <- x@cols$id; tc <- x@cols$time
+
+  if (coords == "relative") {
+    if (is.null(x@cols$rel_x) || is.null(x@cols$rel_y))
+      stop("coords='relative' requires rel_x and rel_y registered in TrajSet@cols.")
+    xc <- x@cols$rel_x
+    yc <- x@cols$rel_y
+  } else {
+    xc <- x@cols$x
+    yc <- x@cols$y
+  }
+
+  if (is.null(xc) || is.null(yc))
+    stop("derive_headings: TrajSet needs x/y columns for these rules.")
+
   d <- x@data
   sp <- split(seq_len(nrow(d)), d[[id]])
 
