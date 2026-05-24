@@ -1,17 +1,17 @@
-# Water Maze Zone Analysis — Design Spec
+# Circular Arena Zone Analysis — Design Spec
 
 **Date:** 2026-05-24
-**Branch:** feat/coord-convention (to be implemented on a new feature branch)
+**Branch:** to be implemented on a new feature branch off master
 **Status:** Approved
 
 ---
 
 ## Overview
 
-Two new plain functions added to `R/circular_statistics.R` to support water maze probe-trial analysis:
+Two new plain functions added to `R/circular_statistics.R` for analysing spatial distributions in circular arenas — applicable to any experiment where dwell time matters more than (or alongside) heading: water mazes, open-field tests, Drosophila preference assays, place-preference arenas, etc.
 
 1. `zone_dwell()` — dwell-time proportions across a quadrant × annular-ring grid
-2. `count_platform_crossings()` — number of entries into a circular zone around the platform location
+2. `count_goal_entries()` — number of entries into a circular zone around a defined goal location
 
 Both follow the existing `derive_headings()` / `circ_summary_headings()` pattern: accept a `TrajSet`, return a plain `data.frame`.
 
@@ -33,7 +33,7 @@ zone_dwell(x, target_angle, target_radius = 1,
 |---|---|---|---|
 | `x` | TrajSet | — | Trajectories normalised to unit circle |
 | `target_angle` | numeric | — | Radians. Centre of the target quadrant (Q1). Must match the angle convention already on `x` |
-| `target_radius` | numeric | `1` | Accepted for API symmetry with `count_platform_crossings()` but not used in zone assignment; quadrant splitting uses `target_angle` only |
+| `target_radius` | numeric | `1` | Accepted for API symmetry with `count_goal_entries()` but not used in zone assignment; quadrant splitting uses `target_angle` only |
 | `ring_breaks` | numeric vector | `c(0, 0.5, 0.8, 1)` | Breakpoints for annular rings. Must start at `0`; last value should be ≥ 1. Produces `length(ring_breaks) - 1` rings |
 | `coords` | character | `"absolute"` | `"absolute"` uses `@cols$x`/`@cols$y`; `"relative"` uses `@cols$rel_x`/`@cols$rel_y` |
 
@@ -67,16 +67,25 @@ One row per `(id × quadrant × ring)` combination present in the data. Combinat
 | `n_frames` | integer | Observations in this zone for this trial |
 | `proportion` | numeric | `n_frames / sum(n_frames for this id)` (excludes NA-ring rows from denominator) |
 
+### Example (water maze)
+
+```r
+# Platform at 45° (NE), 3 rings: inner / middle / thigmotaxis
+dwell <- zone_dwell(ts, target_angle = pi / 4,
+                    ring_breaks = c(0, 0.5, 0.8, 1))
+# Q1 proportion > 0.25 indicates above-chance target preference
+```
+
 ---
 
-## Function 2: `count_platform_crossings()`
+## Function 2: `count_goal_entries()`
 
 ### Signature
 
 ```r
-count_platform_crossings(x, target_angle, target_radius = 1,
-                         crossing_radius = 0.15,
-                         coords = "absolute")
+count_goal_entries(x, target_angle, target_radius = 1,
+                   crossing_radius = 0.15,
+                   coords = "absolute")
 ```
 
 ### Parameters
@@ -84,24 +93,24 @@ count_platform_crossings(x, target_angle, target_radius = 1,
 | param | type | default | description |
 |---|---|---|---|
 | `x` | TrajSet | — | Trajectories normalised to unit circle |
-| `target_angle` | numeric | — | Radians. Direction of platform from centre |
-| `target_radius` | numeric | `1` | Distance of platform from centre. Together with `target_angle` gives `(px, py)` |
-| `crossing_radius` | numeric | `0.15` | Radius of the crossing zone around the platform. Default ≈ 15% of arena radius |
+| `target_angle` | numeric | — | Radians. Direction of the goal from the arena centre |
+| `target_radius` | numeric | `1` | Distance of the goal from the centre. Together with `target_angle` gives `(gx, gy)` |
+| `crossing_radius` | numeric | `0.15` | Radius of the goal zone. Default ≈ 15% of arena radius (e.g. a 10 cm platform in a 60 cm pool) |
 | `coords` | character | `"absolute"` | Same as `zone_dwell()` |
 
-### Platform location
+### Goal location
 
 ```r
-px <- target_radius * cos(target_angle)
-py <- target_radius * sin(target_angle)
+gx <- target_radius * cos(target_angle)
+gy <- target_radius * sin(target_angle)
 ```
 
-### Crossing detection (per trial, sorted by time)
+### Entry detection (per trial, ordered by time)
 
 ```r
-d      <- sqrt((x - px)^2 + (y - py)^2)
+d      <- sqrt((x - gx)^2 + (y - gy)^2)
 inside <- d < crossing_radius
-n_crossings <- sum(diff(c(FALSE, inside)) == 1L)
+n_entries <- sum(diff(c(FALSE, inside)) == 1L)
 ```
 
 Prepending `FALSE` ensures an animal starting inside the zone on frame 1 counts as one entry rather than being silently ignored.
@@ -113,7 +122,16 @@ One row per trial:
 | column | type | description |
 |---|---|---|
 | `id` | character | Trial identifier |
-| `n_crossings` | integer | Number of entries into the crossing zone |
+| `n_entries` | integer | Number of entries into the goal zone |
+
+### Example (water maze)
+
+```r
+# Former platform at 45° (NE), at the wall (radius = 1)
+entries <- count_goal_entries(ts, target_angle = pi / 4,
+                              crossing_radius = 0.15)
+# n_entries > 1 in probe trial indicates spatial memory of platform location
+```
 
 ---
 
@@ -130,17 +148,17 @@ One row per trial:
 ## Testing Plan
 
 ### `zone_dwell()`
-- Synthetic TrajSet: a few points placed in known quadrants and rings → assert output proportions match expected
+- Synthetic TrajSet: points placed in known quadrants and rings → assert output proportions match expected
 - All-in-one-zone trial: proportion = 1.0 for that zone
 - Points outside `ring_breaks` range → excluded (ring = NA), denominator unaffected
 - `coords = "relative"` uses `rel_x`/`rel_y` columns
 
-### `count_platform_crossings()`
-- Path that enters zone exactly once → `n_crossings = 1`
-- Path that enters, exits, re-enters → `n_crossings = 2`
-- Animal starting inside zone → counts as 1 crossing
-- Path that never enters zone → `n_crossings = 0`
-- `crossing_radius` = 0 → `n_crossings = 0` for all trials (no points exactly on the platform)
+### `count_goal_entries()`
+- Path that enters zone exactly once → `n_entries = 1`
+- Path that enters, exits, re-enters → `n_entries = 2`
+- Animal starting inside zone → counts as 1 entry
+- Path that never enters zone → `n_entries = 0`
+- `crossing_radius = 0` → `n_entries = 0` for all trials
 
 ---
 
