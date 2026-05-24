@@ -140,6 +140,37 @@ test_that("derive_headings computes simple net direction", {
   expect_equal(headings$heading, atan2(1, 1), tolerance = 1e-8)
 })
 
+test_that("TrajSet accepts rel_x/rel_y col pointers", {
+  df <- data.frame(id = "A", time = 1:3,
+                   x = c(0.1, 0.2, 0.3), y = c(0.0, 0.1, 0.2),
+                   rx = c(-0.1, -0.2, -0.3), ry = c(0.0, -0.1, -0.2))
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                rel_x = "rx", rel_y = "ry", normalize_xy = FALSE)
+  expect_equal(ts@cols$rel_x, "rx")
+  expect_equal(ts@cols$rel_y, "ry")
+})
+
+test_that("TrajSet validator rejects rel_x without rel_y", {
+  df <- data.frame(id = "A", time = 1:3,
+                   x = c(0.1, 0.2, 0.3), y = c(0.0, 0.1, 0.2),
+                   rx = c(-0.1, -0.2, -0.3))
+  expect_error(
+    TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+            rel_x = "rx", normalize_xy = FALSE),
+    "rel_y"
+  )
+})
+
+test_that("TrajSet validator rejects rel_x pointing to absent column", {
+  df <- data.frame(id = "A", time = 1:3,
+                   x = c(0.1, 0.2, 0.3), y = c(0.0, 0.1, 0.2))
+  expect_error(
+    TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+            rel_x = "no_such", rel_y = "y", normalize_xy = FALSE),
+    "rel_x"
+  )
+})
+
 test_that("custom heading rules can be registered and listed", {
   custom_rule <- function(d, cols, ...) {
     data.frame(
