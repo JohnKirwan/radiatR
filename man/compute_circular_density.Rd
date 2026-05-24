@@ -41,10 +41,10 @@ confidence band. `0` (default) skips the bootstrap. Ignored for `"kernel"`
 and `"histogram"`.}
 
 \item{boot_alpha}{Significance level for the bootstrap band. Default `0.05`
-produces a 95% interval.}
+produces a 95\% interval.}
 }
 \value{
-A data frame with columns `theta` (radians, −π to π) and `density`
+A data frame with columns `theta` (radians, -pi to pi) and `density`
   (non-negative), plus `colour_col` if supplied. When `boot_reps > 0` and
   `method = "vonmises"`, also includes `density_lower` and `density_upper`.
   Suitable for passing to [add_circular_density()].
