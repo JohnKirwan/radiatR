@@ -80,6 +80,8 @@ The **crossing method** — projecting the vector between two concentric-ring cr
 ```{r headings}
 hd <- derive_headings(plividus, rule = "crossing",
                       circ0 = 0.2, circ1 = 0.4,
+                      coords = "relative",
+                      angle_convention = "clock",
                       return_coords = TRUE)
 # add arc grouping for faceting
 hd$arc <- factor(
@@ -94,13 +96,11 @@ head(hd[, c("trial_id", "arc", "heading", "x_inner", "y_inner")])
 Overlaying the heading endpoints (one hollow circle per trial) and the grand mean direction on the combined trajectory plot gives a compact summary of the full dataset:
 
 ```{r headings-overlay}
-summ_all <- do.call(rbind, lapply(c(1), function(.) {
-  h <- hd$heading
-  data.frame(mean_dir    = atan2(mean(sin(h), na.rm = TRUE),
-                                 mean(cos(h), na.rm = TRUE)),
-             resultant_R = sqrt(mean(cos(h), na.rm = TRUE)^2 +
-                                mean(sin(h), na.rm = TRUE)^2))
-}))
+summ_all <- circ_summary_headings(plividus, rule = "crossing",
+                                  circ0 = 0.2, circ1 = 0.4,
+                                  group_by = NULL,
+                                  coords = "relative",
+                                  angle_convention = "clock")
 seg_all <- circ_mean_segments(summ_all)
 
 p_all <- radiate(plividus,
@@ -113,7 +113,7 @@ p_all <- radiate(plividus,
 gg_add_circ_mean(p_all, seg_all)
 ```
 
-The grand mean arrow points at `r round(summ_all$mean_dir * 180 / pi, 1)`° with *R* = `r round(summ_all$resultant_R, 2)`, reflecting a moderate overall tendency across all conditions.
+The grand mean arrow points at `r round(summ_all$mean_dir * 180 / pi, 1)`° relative to the stimulus (clock convention; 0° = toward stimulus) with *R* = `r round(summ_all$resultant_R, 2)`, reflecting the overall stimulus-relative tendency across all conditions.
 
 ## Colour Options
 
@@ -131,13 +131,19 @@ Faceting by arc angle shows each condition separately. Within each panel, `colou
 
 ```{r arc-panels, fig.width=8, fig.height=5}
 arc_summ <- do.call(rbind, lapply(split(hd, hd$arc), function(sub) {
-  h <- sub$heading
+  # Reverse relative clock -> UC: clock = (-uc) %% 2pi, so uc = (-clock) %% 2pi
+  h_uc <- (-sub$heading) %% (2 * pi)
+  uc_mean <- atan2(mean(sin(h_uc), na.rm = TRUE),
+                   mean(cos(h_uc), na.rm = TRUE)) %% (2 * pi)
   data.frame(
     arc         = sub$arc[1],
-    mean_dir    = atan2(mean(sin(h), na.rm = TRUE), mean(cos(h), na.rm = TRUE)),
-    resultant_R = sqrt(mean(cos(h), na.rm = TRUE)^2 + mean(sin(h), na.rm = TRUE)^2)
+    mean_dir    = (-uc_mean) %% (2 * pi),  # back to relative clock
+    resultant_R = sqrt(mean(cos(h_uc), na.rm = TRUE)^2 +
+                       mean(sin(h_uc), na.rm = TRUE)^2)
   )
 }))
+attr(arc_summ, "angle_convention") <- "clock"
+attr(arc_summ, "coords")           <- "relative"
 segs <- circ_mean_segments(arc_summ)
 
 radiate(plividus,
@@ -159,7 +165,7 @@ radiate(plividus,
   )
 ```
 
-Each panel is labelled with its arc condition (strip above each panel), shows all trajectories coloured by cycling palette, the crossing heading vectors (dotted lines, grey), and a solid arrow whose direction and length represent the within-condition circular mean direction and resultant *R*. Use `strip_position = "inside"` to place the label inside the plot area, or `strip_labels = FALSE` to suppress it.
+Each panel is labelled with its arc condition (strip above each panel), shows all trajectories coloured by cycling palette, the crossing heading vectors (dotted lines, grey), and a solid arrow whose direction and length represent the within-condition stimulus-relative circular mean direction (clock convention; 0° = toward stimulus, clockwise) and resultant *R*. Use `strip_position = "inside"` to place the label inside the plot area, or `strip_labels = FALSE` to suppress it.
 
 ## Circular Density Overlays
 
