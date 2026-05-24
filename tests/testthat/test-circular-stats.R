@@ -167,3 +167,85 @@ test_that("zone_dwell uses rel_x/rel_y when coords='relative'", {
   expect_true("Q1.R1" %in% dw$zone)
   expect_true("Q1.R2" %in% dw$zone)
 })
+
+# ---- count_goal_entries -------------------------------------------------------
+
+test_that("count_goal_entries counts a single entry correctly", {
+  # Goal at (1, 0); crossing_radius = 0.2 -> zone is x in [0.8, 1.2]
+  # Path: outside -> inside -> inside -> outside => 1 entry
+  df <- data.frame(
+    id   = "t1",
+    time = 1:4,
+    x    = c(0.5, 0.9, 0.85, 0.5),
+    y    = c(0.0, 0.0, 0.00, 0.0)
+  )
+  # distances from (1,0): 0.5, 0.1, 0.15, 0.5
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                normalize_xy = FALSE)
+  res <- count_goal_entries(ts, target_angle = 0, target_radius = 1,
+                            crossing_radius = 0.2)
+  expect_equal(res$n_entries, 1L)
+})
+
+test_that("count_goal_entries counts multiple entries", {
+  # distances from (1,0): 0.5, 0.1, 0.5, 0.1 -> enter, exit, enter = 2 entries
+  df <- data.frame(
+    id   = "t1",
+    time = 1:4,
+    x    = c(0.5, 0.9, 0.5, 0.9),
+    y    = c(0.0, 0.0, 0.0, 0.0)
+  )
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                normalize_xy = FALSE)
+  res <- count_goal_entries(ts, target_angle = 0, target_radius = 1,
+                            crossing_radius = 0.2)
+  expect_equal(res$n_entries, 2L)
+})
+
+test_that("count_goal_entries counts initial inside-zone position as one entry", {
+  # Animal starts at goal; should count as 1 entry
+  df <- data.frame(
+    id   = "t1",
+    time = 1:3,
+    x    = c(1.0, 0.5, 0.3),
+    y    = c(0.0, 0.0, 0.0)
+  )
+  # distances from (1,0): 0.0, 0.5, 0.7 -> inside=T,F,F -> prepend F -> diff=1,-1,0 -> 1 entry
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                normalize_xy = FALSE)
+  res <- count_goal_entries(ts, target_angle = 0, target_radius = 1,
+                            crossing_radius = 0.2)
+  expect_equal(res$n_entries, 1L)
+})
+
+test_that("count_goal_entries returns zero when path never enters zone", {
+  df <- data.frame(
+    id   = "t1",
+    time = 1:3,
+    x    = c(0.0, -0.5, 0.0),
+    y    = c(0.0,  0.0, 0.5)
+  )
+  # all distances from (1,0) > 0.2
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                normalize_xy = FALSE)
+  res <- count_goal_entries(ts, target_angle = 0, target_radius = 1,
+                            crossing_radius = 0.2)
+  expect_equal(res$n_entries, 0L)
+})
+
+test_that("count_goal_entries handles multiple trials", {
+  df <- data.frame(
+    id   = c("t1", "t1", "t2", "t2"),
+    time = c(1L, 2L, 1L, 2L),
+    x    = c(0.5, 0.9, 0.0, 0.0),
+    y    = c(0.0, 0.0, 0.0, 0.0)
+  )
+  # t1: 1 entry (enters zone at x=0.9); t2: 0 entries (far from (1,0))
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                normalize_xy = FALSE)
+  res <- count_goal_entries(ts, target_angle = 0, target_radius = 1,
+                            crossing_radius = 0.2)
+  expect_equal(nrow(res), 2L)
+  expect_equal(res[res$id == "t1", "n_entries"], 1L)
+  expect_equal(res[res$id == "t2", "n_entries"], 0L)
+})

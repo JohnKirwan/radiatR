@@ -208,3 +208,71 @@ zone_dwell <- function(x, target_angle, target_radius = 1,
   }
   result
 }
+
+#' Count entries into a goal zone for circular arena trajectories
+#'
+#' For each trial, counts the number of times the trajectory enters a circular
+#' zone of radius `crossing_radius` centred on the goal location. Applicable to
+#' any circular arena experiment with a defined goal (hidden platform in a water
+#' maze, reward zone in an open-field, etc.).
+#'
+#' An "entry" is a `FALSE -> TRUE` transition in the `distance < crossing_radius`
+#' sequence (ordered by time). An animal that starts inside the zone on the
+#' first frame counts as one entry.
+#'
+#' @param x A [`TrajSet`] object with x/y (or rel_x/rel_y) columns registered.
+#' @param target_angle Numeric. Radians. Direction of the goal from the arena centre.
+#' @param target_radius Numeric. Distance of the goal from the arena centre.
+#'   Default `1` (wall). Together with `target_angle` gives the goal position:
+#'   `gx = target_radius * cos(target_angle)`, `gy = target_radius * sin(target_angle)`.
+#' @param crossing_radius Numeric. Radius of the goal zone in unit-circle
+#'   coordinates. Default `0.15` (15\% of arena radius; roughly a 10 cm platform
+#'   in a 60 cm pool).
+#' @param coords Character. `"absolute"` (default) or `"relative"`.
+#'   See [zone_dwell()].
+#'
+#' @return A `data.frame` with one row per trial: `id` (character) and
+#'   `n_entries` (integer).
+#'
+#' @examples
+#' \dontrun{
+#' # Water maze probe trial: former platform at 45 degrees (NE), at wall
+#' entries <- count_goal_entries(ts, target_angle = pi / 4,
+#'                               crossing_radius = 0.15)
+#' # n_entries > 1 indicates memory of the platform location
+#' }
+#'
+#' @seealso [zone_dwell()]
+#' @export
+count_goal_entries <- function(x, target_angle, target_radius = 1,
+                               crossing_radius = 0.15,
+                               coords = c("absolute", "relative")) {
+  coords <- match.arg(coords)
+  if (coords == "relative") {
+    if (is.null(x@cols$rel_x) || is.null(x@cols$rel_y))
+      stop("coords='relative' requires rel_x and rel_y registered in TrajSet@cols.")
+    xc <- x@cols$rel_x
+    yc <- x@cols$rel_y
+  } else {
+    xc <- x@cols$x
+    yc <- x@cols$y
+  }
+  if (is.null(xc) || is.null(yc))
+    stop("count_goal_entries: TrajSet needs x/y columns.")
+
+  id_col <- x@cols$id
+  d      <- x@data
+  gx     <- target_radius * cos(target_angle)
+  gy     <- target_radius * sin(target_angle)
+
+  rows <- lapply(split(seq_len(nrow(d)), d[[id_col]]), function(ii) {
+    sub    <- d[ii, , drop = FALSE]
+    dist   <- sqrt((sub[[xc]] - gx)^2 + (sub[[yc]] - gy)^2)
+    inside <- dist < crossing_radius
+    n_entries <- sum(diff(c(FALSE, inside)) == 1L)
+    data.frame(id = sub[[id_col]][1L], n_entries = as.integer(n_entries),
+               stringsAsFactors = FALSE)
+  })
+
+  do.call(rbind, rows)
+}
