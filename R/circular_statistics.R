@@ -107,3 +107,92 @@ setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")
   })
   do.call(rbind, rows)
 })
+
+#' Dwell-time proportions across quadrant x ring zones
+#'
+#' Classifies each trajectory observation into one of N quadrant sectors and M
+#' annular rings, then returns per-trial frame counts and proportions. Applicable
+#' to any circular arena experiment where spatial dwell time is of interest
+#' (water maze, open-field, Drosophila preference assay, etc.).
+#'
+#' The target quadrant (Q1) is centred on `target_angle`; Q2–Q4 follow
+#' counter-clockwise. Observations outside `max(ring_breaks)` are excluded from
+#' both counts and the proportion denominator.
+#'
+#' @param x A [`TrajSet`] object with x/y (or rel_x/rel_y) columns registered.
+#' @param target_angle Numeric. Radians. Direction of the target zone from the
+#'   arena centre. Q1 spans ±45° around this angle.
+#' @param target_radius Numeric. Accepted for API symmetry with
+#'   [count_goal_entries()] but not used in zone assignment. Default `1`.
+#' @param ring_breaks Numeric vector. Annular ring boundaries, must start at
+#'   `0`. Default `c(0, 0.5, 0.8, 1)` gives three rings: inner / middle /
+#'   outer (thigmotaxis).
+#' @param coords Character. `"absolute"` (default) uses `@cols$x`/`@cols$y`;
+#'   `"relative"` uses `@cols$rel_x`/`@cols$rel_y`.
+#'
+#' @return A `data.frame` with one row per observed (id x quadrant x ring)
+#'   combination, with columns `id`, `quadrant` (integer, 1 = target),
+#'   `ring` (integer, 1 = innermost), `zone` (e.g. `"Q1.R3"`), `n_frames`
+#'   (integer), and `proportion` (numeric). Combinations with zero observations
+#'   are omitted.
+#'
+#' @examples
+#' \dontrun{
+#' # Water maze probe trial: platform was at 45 degrees (NE)
+#' dwell <- zone_dwell(ts, target_angle = pi / 4,
+#'                     ring_breaks = c(0, 0.5, 0.8, 1))
+#' # Q1 proportion > 0.25 indicates above-chance target preference
+#' }
+#'
+#' @seealso [count_goal_entries()]
+#' @export
+zone_dwell <- function(x, target_angle, target_radius = 1,
+                       ring_breaks = c(0, 0.5, 0.8, 1),
+                       coords = c("absolute", "relative")) {
+  coords <- match.arg(coords)
+  if (coords == "relative") {
+    if (is.null(x@cols$rel_x) || is.null(x@cols$rel_y))
+      stop("coords='relative' requires rel_x and rel_y registered in TrajSet@cols.")
+    xc <- x@cols$rel_x
+    yc <- x@cols$rel_y
+  } else {
+    xc <- x@cols$x
+    yc <- x@cols$y
+  }
+  if (is.null(xc) || is.null(yc))
+    stop("zone_dwell: TrajSet needs x/y columns.")
+
+  id_col <- x@cols$id
+  d      <- x@data
+  px     <- d[[xc]]
+  py     <- d[[yc]]
+  r      <- sqrt(px^2 + py^2)
+
+  ring <- findInterval(r, ring_breaks, rightmost.closed = TRUE)
+  ring[ring == 0L | ring >= length(ring_breaks)] <- NA_integer_
+
+  rel_angle <- (atan2(py, px) - target_angle + 2 * pi) %% (2 * pi)
+  quadrant  <- floor((rel_angle + pi / 4) %% (2 * pi) / (pi / 2)) + 1L
+
+  d$.ring     <- ring
+  d$.quadrant <- quadrant
+
+  rows <- lapply(split(seq_len(nrow(d)), d[[id_col]]), function(ii) {
+    sub <- d[ii, , drop = FALSE]
+    sub <- sub[!is.na(sub$.ring), , drop = FALSE]
+    if (nrow(sub) == 0L) return(NULL)
+    total <- nrow(sub)
+    agg <- aggregate(
+      list(n_frames = rep(1L, nrow(sub))),
+      by  = list(quadrant = sub$.quadrant, ring = sub$.ring),
+      FUN = sum
+    )
+    agg$id         <- sub[[id_col]][1L]
+    agg$zone       <- paste0("Q", agg$quadrant, ".R", agg$ring)
+    agg$n_frames   <- as.integer(agg$n_frames)
+    agg$proportion <- agg$n_frames / total
+    agg[, c("id", "quadrant", "ring", "zone", "n_frames", "proportion")]
+  })
+
+  do.call(rbind, Filter(Negate(is.null), rows))
+}
