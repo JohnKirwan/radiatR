@@ -670,8 +670,10 @@ circ_summary_headings <- function(x, rule = c("crossing","distal","straight","or
 #' @export
 circ_mean_segments <- function(stats_df, x0 = 0, y0 = 0, scale = 1) {
   stopifnot(all(c("mean_dir","resultant_R") %in% names(stats_df)))
-  xend <- x0 + scale * stats_df$resultant_R * cos(stats_df$mean_dir)
-  yend <- y0 + scale * stats_df$resultant_R * sin(stats_df$mean_dir)
+  convention <- attr(stats_df, "angle_convention") %||% "unit_circle"
+  uc_dir <- if (convention == "clock") rad_unclock(stats_df$mean_dir) else stats_df$mean_dir
+  xend <- x0 + scale * stats_df$resultant_R * cos(uc_dir)
+  yend <- y0 + scale * stats_df$resultant_R * sin(uc_dir)
   cbind(stats_df, x = x0, y = y0, xend = xend, yend = yend)
 }
 

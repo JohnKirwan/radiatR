@@ -580,3 +580,31 @@ test_that("add_heading_points and add_heading_vectors accept fixed colour parame
   built_pts <- ggplot_build(p_pts)
   expect_true(all(built_pts$data[[1]]$colour == "steelblue"))
 })
+
+# ---- circ_mean_segments clock convention auto-detect -------------------------
+
+test_that("circ_mean_segments with clock attr draws arrow pointing North for mean_dir=0", {
+  # mean_dir = 0 in clock convention = North = (0, 1) in Cartesian
+  stats_df <- data.frame(mean_dir = 0, resultant_R = 1)
+  attr(stats_df, "angle_convention") <- "clock"
+  seg <- circ_mean_segments(stats_df)
+  expect_equal(seg$xend, 0, tolerance = 1e-10)
+  expect_equal(seg$yend, 1, tolerance = 1e-10)
+})
+
+test_that("circ_mean_segments with clock attr draws arrow pointing East for mean_dir=pi/2", {
+  # mean_dir = pi/2 in absolute clock = East = (1, 0) in Cartesian
+  stats_df <- data.frame(mean_dir = pi / 2, resultant_R = 1)
+  attr(stats_df, "angle_convention") <- "clock"
+  seg <- circ_mean_segments(stats_df)
+  expect_equal(seg$xend, 1, tolerance = 1e-10)
+  expect_equal(seg$yend, 0, tolerance = 1e-10)
+})
+
+test_that("circ_mean_segments without clock attr is unchanged", {
+  # Without clock attr, mean_dir is treated as unit-circle
+  stats_df <- data.frame(mean_dir = pi / 3, resultant_R = 0.7)
+  seg <- circ_mean_segments(stats_df)
+  expect_equal(seg$xend, 0.7 * cos(pi / 3), tolerance = 1e-10)
+  expect_equal(seg$yend, 0.7 * sin(pi / 3), tolerance = 1e-10)
+})
