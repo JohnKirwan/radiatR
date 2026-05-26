@@ -743,3 +743,42 @@ test_that("add_circ_interval wraps correctly when wraps column is absent", {
   # Arc passes through angle pi => x near -1.05
   expect_true(any(pts$x < -1.0))
 })
+
+# ---- add_heading_interval ----------------------------------------------------
+
+test_that("add_heading_interval returns a LayerInstance", {
+  hd    <- data.frame(heading = c(0.1, 0.2, 0.15, 0.05, 0.12))
+  layer <- add_heading_interval(hd, stat = "sd")
+  expect_s3_class(layer, "LayerInstance")
+})
+
+test_that("add_heading_interval sd matches compute_circ_interval + add_circ_interval", {
+  library(ggplot2)
+  hd <- data.frame(heading = c(0.1, 0.2, 0.15, 0.05, 0.25, 0.3))
+  p_conv <- ggplot() + coord_fixed() + add_heading_interval(hd, stat = "sd")
+  iv     <- compute_circ_interval(hd, stat = "sd")
+  p_step <- ggplot() + coord_fixed() + add_circ_interval(iv)
+  b_conv <- ggplot_build(p_conv)
+  b_step <- ggplot_build(p_step)
+  expect_equal(b_conv$data[[1]]$x, b_step$data[[1]]$x, tolerance = 1e-8)
+  expect_equal(b_conv$data[[1]]$y, b_step$data[[1]]$y, tolerance = 1e-8)
+})
+
+test_that("add_heading_interval can be added to a radiate plot without error", {
+  library(ggplot2)
+  sim <- simulate_tracks(conditions = data.frame(n_trials = 5L), n_points = 20, seed = 1)
+  hd  <- suppressWarnings(
+    derive_headings(
+      TrajSet(sim, id = "trial_id", time = "frame",
+              angle = "rel_theta", x = "rel_x", y = "rel_y",
+              angle_unit = "radians", normalize_xy = FALSE),
+      rule = "crossing", circ0 = 0.2, circ1 = 0.4
+    )
+  )
+  p <- radiate(sim, x_col = "rel_x", y_col = "rel_y",
+               group_col = "trial_id",
+               show_arrow = FALSE, show_labels = FALSE) +
+    add_heading_interval(hd, stat = "sd", radius = 1.05)
+  expect_s3_class(p, "ggplot")
+  expect_silent(ggplot_build(p))
+})

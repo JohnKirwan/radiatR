@@ -823,6 +823,43 @@ add_circ_interval <- function(interval_df,
   do.call(ggplot2::geom_path, path_args)
 }
 
+#' Compute a circular interval arc and add it to a radial plot in one step
+#'
+#' Convenience wrapper that calls [compute_circ_interval()] followed by
+#' [add_circ_interval()]. Use [compute_circ_interval()] + [add_circ_interval()]
+#' directly when you need to replace `lower`/`upper` with Bayesian credible
+#' interval bounds before rendering.
+#'
+#' @inheritParams compute_circ_interval
+#' @inheritParams add_circ_interval
+#'
+#' @return A `geom_path()` layer.
+#'
+#' @seealso [compute_circ_interval()], [add_circ_interval()]
+#' @importFrom circular circular mean.circular sd.circular mle.vonmises.bootstrap.ci
+#' @importFrom ggplot2 geom_path aes
+#' @importFrom rlang .data sym
+#' @export
+add_heading_interval <- function(headings_df,
+                                 heading_col = "heading",
+                                 colour_col  = NULL,
+                                 stat        = c("bootstrap_ci", "sd"),
+                                 boot_reps   = 1000L,
+                                 boot_alpha  = 0.05,
+                                 radius      = 1.05,
+                                 linewidth   = 1.5,
+                                 colour      = "black",
+                                 linetype    = "solid",
+                                 n_theta     = 500L) {
+  stat <- match.arg(stat)
+  iv   <- compute_circ_interval(headings_df, heading_col = heading_col,
+                                colour_col = colour_col, stat = stat,
+                                boot_reps = boot_reps, boot_alpha = boot_alpha)
+  add_circ_interval(iv, colour_col = colour_col,
+                    radius = radius, linewidth = linewidth,
+                    colour = colour, linetype = linetype, n_theta = n_theta)
+}
+
 # ---- heading overlay layers --------------------------------------------------
 
 #' Add heading endpoint markers on the unit circle
