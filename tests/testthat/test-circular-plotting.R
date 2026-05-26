@@ -636,7 +636,17 @@ test_that("compute_circ_interval wider spread gives wider sd arc", {
   wide  <- data.frame(heading = c(-1.0, 0.0, 1.0))
   iv_tight <- compute_circ_interval(tight, stat = "sd")
   iv_wide  <- compute_circ_interval(wide,  stat = "sd")
+  expect_false(iv_tight$wraps)
+  expect_false(iv_wide$wraps)
   expect_true((iv_wide$upper - iv_wide$lower) > (iv_tight$upper - iv_tight$lower))
+})
+
+test_that("compute_circ_interval sd wraps=TRUE for distribution centred near pi", {
+  # Angles tightly clustered around pi/-pi boundary
+  hd <- data.frame(heading = c(pi - 0.1, pi, pi + 0.1, -(pi - 0.1), -pi))
+  iv <- compute_circ_interval(hd, stat = "sd")
+  # mean_dir is near pi/-pi; after atan2 normalisation lower > upper
+  expect_true(iv$wraps)
 })
 
 test_that("compute_circ_interval stat='bootstrap_ci' returns finite bounds", {

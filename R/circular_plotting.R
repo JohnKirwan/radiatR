@@ -648,8 +648,8 @@ add_heading_density <- function(headings_df,
   circ   <- circular::circular(angles, units = "radians", modulo = "2pi")
 
   mean_dir <- if (n >= 1L) {
-    atan2(sin(as.numeric(circular::mean.circular(circ))),
-          cos(as.numeric(circular::mean.circular(circ))))
+    mu <- as.numeric(circular::mean.circular(circ))
+    atan2(sin(mu), cos(mu))
   } else NA_real_
 
   if (n < 3L) {
