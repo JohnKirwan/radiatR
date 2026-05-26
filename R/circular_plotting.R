@@ -775,6 +775,11 @@ add_circ_interval <- function(interval_df,
                               colour     = "black",
                               linetype   = "solid",
                               n_theta    = 500L) {
+  for (col in c("lower", "upper")) {
+    if (!col %in% names(interval_df))
+      stop("`interval_df` is missing required column '", col, "'.")
+  }
+
   use_colour <- !is.null(colour_col) && colour_col %in% names(interval_df)
   has_wraps  <- "wraps" %in% names(interval_df)
 
@@ -793,7 +798,7 @@ add_circ_interval <- function(interval_df,
     lower <- interval_df$lower[i]
     upper <- interval_df$upper[i]
     wraps <- if (has_wraps) isTRUE(interval_df$wraps[i]) else lower > upper
-    theta_seq <- if (wraps || lower > upper) {
+    theta_seq <- if (wraps) {
       seq(lower, upper + 2 * pi, length.out = n_theta)
     } else {
       seq(lower, upper, length.out = n_theta)

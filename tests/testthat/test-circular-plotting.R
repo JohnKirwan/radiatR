@@ -731,3 +731,15 @@ test_that("add_circ_interval with colour_col draws per-group arcs", {
   built <- ggplot_build(ggplot() + coord_fixed() + layer)
   expect_true(length(unique(built$data[[1]]$group)) >= 2L)
 })
+
+test_that("add_circ_interval wraps correctly when wraps column is absent", {
+  library(ggplot2)
+  # No wraps column — function should detect lower > upper and take the long arc
+  iv <- data.frame(mean_dir = pi, lower = 2.8, upper = -2.8)
+  p  <- ggplot() + coord_fixed() +
+    add_circ_interval(iv, radius = 1.05, n_theta = 500L)
+  built  <- ggplot_build(p)
+  pts    <- built$data[[1]]
+  # Arc passes through angle pi => x near -1.05
+  expect_true(any(pts$x < -1.0))
+})
