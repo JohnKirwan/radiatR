@@ -679,3 +679,55 @@ test_that("compute_circ_interval colour_col returns one row per group", {
   expect_true("grp" %in% names(iv))
   expect_equal(sort(iv$grp), c("A", "B"))
 })
+
+# ---- add_circ_interval -------------------------------------------------------
+
+test_that("add_circ_interval returns a geom_path LayerInstance", {
+  iv    <- data.frame(mean_dir = 0.3, lower = 0.1, upper = 0.5, wraps = FALSE)
+  layer <- add_circ_interval(iv)
+  expect_s3_class(layer, "LayerInstance")
+})
+
+test_that("add_circ_interval arc points lie at the specified radius", {
+  library(ggplot2)
+  iv     <- data.frame(mean_dir = 0.0, lower = -0.4, upper = 0.4, wraps = FALSE)
+  p      <- ggplot() + coord_fixed() + add_circ_interval(iv, radius = 1.1, n_theta = 200L)
+  built  <- ggplot_build(p)
+  r_vals <- sqrt(built$data[[1]]$x^2 + built$data[[1]]$y^2)
+  expect_true(all(abs(r_vals - 1.1) < 1e-4))
+})
+
+test_that("add_circ_interval silently skips NA rows without error", {
+  library(ggplot2)
+  iv <- data.frame(mean_dir = 0.3, lower = NA_real_, upper = NA_real_, wraps = FALSE)
+  expect_silent(layer <- add_circ_interval(iv))
+  expect_silent(ggplot_build(ggplot() + coord_fixed() + layer))
+})
+
+test_that("add_circ_interval wrapping arc passes through angle pi", {
+  library(ggplot2)
+  # lower=2.8, upper=-2.8: arc wraps through +/-pi; seq(2.8, -2.8+2pi)=[2.8,3.48]
+  iv    <- data.frame(mean_dir = pi, lower = 2.8, upper = -2.8, wraps = TRUE)
+  p     <- ggplot() + coord_fixed() +
+    add_circ_interval(iv, radius = 1.05, n_theta = 500L)
+  built  <- ggplot_build(p)
+  pts    <- built$data[[1]]
+  r_vals <- sqrt(pts$x^2 + pts$y^2)
+  expect_true(all(abs(r_vals - 1.05) < 1e-4))
+  # Arc passes through angle pi => x near -1.05
+  expect_true(any(pts$x < -1.0))
+})
+
+test_that("add_circ_interval with colour_col draws per-group arcs", {
+  library(ggplot2)
+  iv <- data.frame(
+    mean_dir = c(0.3, 1.5),
+    lower    = c(0.1, 1.3),
+    upper    = c(0.5, 1.7),
+    wraps    = c(FALSE, FALSE),
+    grp      = c("A", "B")
+  )
+  layer <- add_circ_interval(iv, colour_col = "grp")
+  built <- ggplot_build(ggplot() + coord_fixed() + layer)
+  expect_true(length(unique(built$data[[1]]$group)) >= 2L)
+})

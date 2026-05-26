@@ -735,6 +735,89 @@ compute_circ_interval <- function(headings_df,
   out
 }
 
+#' Render a pre-computed circular interval arc on a radial plot
+#'
+#' Takes a data frame produced by [compute_circ_interval()] (or equivalent)
+#' and renders it as a `geom_path()` arc at radius `radius`. Each row produces
+#' one arc. Rows where `lower` or `upper` is `NA` are silently skipped.
+#'
+#' For the Bayesian extension, replace `lower` and `upper` in the output of
+#' [compute_circ_interval()] with credible interval bounds from any model
+#' before calling this function:
+#' ```r
+#' iv <- compute_circ_interval(hd)
+#' iv$lower <- posterior_lower
+#' iv$upper <- posterior_upper
+#' ggplot() + coord_fixed() + add_circ_interval(iv)
+#' ```
+#'
+#' @param interval_df Data frame with columns `mean_dir`, `lower`, `upper`
+#'   (radians, `[-π, π]`), and optionally `wraps` (logical). Typically the
+#'   output of [compute_circ_interval()].
+#' @param colour_col Optional column name to map to the colour aesthetic.
+#' @param radius Radial position of the arc. Default `1.05`.
+#' @param linewidth Line width. Default `1.5`.
+#' @param colour Fixed line colour when `colour_col` is `NULL`. Default
+#'   `"black"`.
+#' @param linetype Line type. Default `"solid"`.
+#' @param n_theta Number of points along the arc. Default `500L`.
+#'
+#' @return A `geom_path()` layer.
+#'
+#' @seealso [compute_circ_interval()], [add_heading_interval()]
+#' @importFrom ggplot2 geom_path aes
+#' @importFrom rlang .data sym
+#' @export
+add_circ_interval <- function(interval_df,
+                              colour_col = NULL,
+                              radius     = 1.05,
+                              linewidth  = 1.5,
+                              colour     = "black",
+                              linetype   = "solid",
+                              n_theta    = 500L) {
+  use_colour <- !is.null(colour_col) && colour_col %in% names(interval_df)
+  has_wraps  <- "wraps" %in% names(interval_df)
+
+  valid_rows <- which(!is.na(interval_df$lower) & !is.na(interval_df$upper))
+
+  if (!length(valid_rows)) {
+    empty <- data.frame(.x = numeric(0), .y = numeric(0), .group_id = integer(0))
+    return(ggplot2::geom_path(
+      data    = empty,
+      mapping = ggplot2::aes(x = .data$.x, y = .data$.y, group = .data$.group_id),
+      inherit.aes = FALSE
+    ))
+  }
+
+  parts <- lapply(valid_rows, function(i) {
+    lower <- interval_df$lower[i]
+    upper <- interval_df$upper[i]
+    wraps <- if (has_wraps) isTRUE(interval_df$wraps[i]) else lower > upper
+    theta_seq <- if (wraps || lower > upper) {
+      seq(lower, upper + 2 * pi, length.out = n_theta)
+    } else {
+      seq(lower, upper, length.out = n_theta)
+    }
+    d <- data.frame(
+      .x        = radius * cos(theta_seq),
+      .y        = radius * sin(theta_seq),
+      .group_id = i
+    )
+    if (use_colour) d[[colour_col]] <- interval_df[[colour_col]][i]
+    d
+  })
+  arc_df <- do.call(rbind, parts)
+
+  path_map <- ggplot2::aes(x = .data$.x, y = .data$.y, group = .data$.group_id)
+  if (use_colour) path_map[["colour"]] <- rlang::sym(colour_col)
+
+  path_args <- list(data = arc_df, mapping = path_map,
+                    linewidth = linewidth, linetype = linetype,
+                    inherit.aes = FALSE)
+  if (!use_colour) path_args$colour <- colour
+  do.call(ggplot2::geom_path, path_args)
+}
+
 # ---- heading overlay layers --------------------------------------------------
 
 #' Add heading endpoint markers on the unit circle
