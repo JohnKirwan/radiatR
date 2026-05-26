@@ -639,6 +639,102 @@ add_heading_density <- function(headings_df,
                        ci_fill = ci_fill, ci_alpha = ci_alpha)
 }
 
+# ---- circular interval arc ---------------------------------------------------
+
+#' @noRd
+.compute_one_interval <- function(angles, stat, boot_reps, boot_alpha) {
+  angles <- angles[is.finite(angles)]
+  n      <- length(angles)
+  circ   <- circular::circular(angles, units = "radians", modulo = "2pi")
+
+  mean_dir <- if (n >= 1L) {
+    atan2(sin(as.numeric(circular::mean.circular(circ))),
+          cos(as.numeric(circular::mean.circular(circ))))
+  } else NA_real_
+
+  if (n < 3L) {
+    return(data.frame(mean_dir = mean_dir, lower = NA_real_, upper = NA_real_,
+                      wraps = FALSE, stringsAsFactors = FALSE))
+  }
+
+  if (stat == "sd") {
+    sd_val <- as.numeric(circular::sd.circular(circ))
+    lower  <- mean_dir - sd_val
+    upper  <- mean_dir + sd_val
+  } else {
+    ci <- tryCatch(
+      as.numeric(
+        circular::mle.vonmises.bootstrap.ci(circ, alpha = boot_alpha,
+                                            bias = TRUE, reps = boot_reps)$mu.ci
+      ),
+      error = function(e) c(NA_real_, NA_real_)
+    )
+    lower <- ci[1L]
+    upper <- ci[2L]
+  }
+
+  lower <- atan2(sin(lower), cos(lower))
+  upper <- atan2(sin(upper), cos(upper))
+  wraps <- is.finite(lower) && is.finite(upper) && lower > upper
+
+  data.frame(mean_dir = mean_dir, lower = lower, upper = upper,
+             wraps = wraps, stringsAsFactors = FALSE)
+}
+
+#' Compute a circular interval arc from heading angles
+#'
+#' Returns a data frame of arc bounds centred on the circular mean direction.
+#' Two built-in statistics are available: a bootstrap confidence interval for
+#' the mean direction (`"bootstrap_ci"`, via
+#' [circular::mle.vonmises.bootstrap.ci()]) and +/-1 circular SD (`"sd"`, via
+#' [circular::sd.circular()]). The `lower` and `upper` columns of the output
+#' can be replaced with Bayesian credible interval bounds from any model
+#' before passing to [add_circ_interval()].
+#'
+#' @param headings_df Data frame containing heading angles.
+#' @param heading_col Name of the heading column (radians). Default `"heading"`.
+#' @param colour_col Optional grouping column. When set, one row is returned per
+#'   group and the column is preserved in the output.
+#' @param stat Statistic: `"bootstrap_ci"` (default) or `"sd"`.
+#' @param boot_reps Integer. Bootstrap replicates for `stat = "bootstrap_ci"`.
+#'   Default `1000L`. Ignored when `stat = "sd"`.
+#' @param boot_alpha Significance level for the bootstrap CI. Default `0.05`
+#'   produces a 95\% interval.
+#'
+#' @return A data frame with columns `mean_dir`, `lower`, `upper` (radians,
+#'   `[-pi, pi]`), and `wraps` (logical, `TRUE` when the arc crosses the +/-pi
+#'   discontinuity). `lower` and `upper` are `NA` when `n < 3`.
+#'
+#' @seealso [add_circ_interval()], [add_heading_interval()]
+#' @importFrom circular circular mean.circular sd.circular mle.vonmises.bootstrap.ci
+#' @export
+compute_circ_interval <- function(headings_df,
+                                  heading_col = "heading",
+                                  colour_col  = NULL,
+                                  stat        = c("bootstrap_ci", "sd"),
+                                  boot_reps   = 1000L,
+                                  boot_alpha  = 0.05) {
+  stat <- match.arg(stat)
+  if (!heading_col %in% names(headings_df))
+    stop("`heading_col` '", heading_col, "' not found in headings_df.")
+
+  use_colour <- !is.null(colour_col) && colour_col %in% names(headings_df)
+  groups     <- if (use_colour) split(headings_df, headings_df[[colour_col]]) else list(headings_df)
+
+  out_list <- lapply(seq_along(groups), function(i) {
+    angles <- groups[[i]][[heading_col]]
+    row    <- .compute_one_interval(angles, stat, boot_reps, boot_alpha)
+    if (use_colour) row[[colour_col]] <- names(groups)[[i]]
+    row
+  })
+
+  out <- do.call(rbind, out_list)
+  if (use_colour && is.factor(headings_df[[colour_col]]))
+    out[[colour_col]] <- factor(out[[colour_col]],
+                                levels = levels(headings_df[[colour_col]]))
+  out
+}
+
 # ---- heading overlay layers --------------------------------------------------
 
 #' Add heading endpoint markers on the unit circle

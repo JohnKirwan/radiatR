@@ -608,3 +608,64 @@ test_that("circ_mean_segments without clock attr is unchanged", {
   expect_equal(seg$xend, 0.7 * cos(pi / 3), tolerance = 1e-10)
   expect_equal(seg$yend, 0.7 * sin(pi / 3), tolerance = 1e-10)
 })
+
+# ---- compute_circ_interval ---------------------------------------------------
+
+test_that("compute_circ_interval stat='sd' arc width equals 2 * circular SD", {
+  hd <- data.frame(heading = c(-0.1, 0.0, 0.1, -0.05, 0.05))
+  iv <- compute_circ_interval(hd, stat = "sd")
+  expect_true(all(c("mean_dir", "lower", "upper", "wraps") %in% names(iv)))
+  expect_equal(nrow(iv), 1L)
+  circ   <- circular::circular(hd$heading, units = "radians", modulo = "2pi")
+  sd_val <- as.numeric(circular::sd.circular(circ))
+  expect_equal(iv$upper - iv$lower, 2 * sd_val, tolerance = 1e-8)
+  expect_false(iv$wraps)
+})
+
+test_that("compute_circ_interval sd mean_dir matches circular::mean.circular", {
+  hd   <- data.frame(heading = c(0.2, 0.3, 0.25, 0.1, 0.4))
+  iv   <- compute_circ_interval(hd, stat = "sd")
+  circ <- circular::circular(hd$heading, units = "radians", modulo = "2pi")
+  expected <- atan2(sin(as.numeric(circular::mean.circular(circ))),
+                    cos(as.numeric(circular::mean.circular(circ))))
+  expect_equal(iv$mean_dir, expected, tolerance = 1e-8)
+})
+
+test_that("compute_circ_interval wider spread gives wider sd arc", {
+  tight <- data.frame(heading = c(-0.05, 0.0, 0.05))
+  wide  <- data.frame(heading = c(-1.0, 0.0, 1.0))
+  iv_tight <- compute_circ_interval(tight, stat = "sd")
+  iv_wide  <- compute_circ_interval(wide,  stat = "sd")
+  expect_true((iv_wide$upper - iv_wide$lower) > (iv_tight$upper - iv_tight$lower))
+})
+
+test_that("compute_circ_interval stat='bootstrap_ci' returns finite bounds", {
+  set.seed(42)
+  hd <- data.frame(heading = c(0.2, 0.3, 0.1, 0.4, 0.25, 0.15))
+  iv <- compute_circ_interval(hd, stat = "bootstrap_ci", boot_reps = 99L)
+  expect_equal(nrow(iv), 1L)
+  expect_true(all(c("mean_dir", "lower", "upper", "wraps") %in% names(iv)))
+  expect_true(is.finite(iv$lower))
+  expect_true(is.finite(iv$upper))
+  expect_true(is.finite(iv$mean_dir))
+})
+
+test_that("compute_circ_interval returns NA bounds for n < 3", {
+  iv2 <- compute_circ_interval(data.frame(heading = c(0.1, 0.2)), stat = "sd")
+  expect_true(is.na(iv2$lower))
+  expect_true(is.na(iv2$upper))
+  iv0 <- compute_circ_interval(data.frame(heading = numeric(0)), stat = "sd")
+  expect_true(is.na(iv0$lower))
+  expect_true(is.na(iv0$upper))
+})
+
+test_that("compute_circ_interval colour_col returns one row per group", {
+  hd <- data.frame(
+    heading = c(0.1, 0.2, 0.15, 1.0, 1.1, 1.05),
+    grp     = rep(c("A", "B"), each = 3)
+  )
+  iv <- compute_circ_interval(hd, colour_col = "grp", stat = "sd")
+  expect_equal(nrow(iv), 2L)
+  expect_true("grp" %in% names(iv))
+  expect_equal(sort(iv$grp), c("A", "B"))
+})
