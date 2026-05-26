@@ -608,3 +608,177 @@ test_that("circ_mean_segments without clock attr is unchanged", {
   expect_equal(seg$xend, 0.7 * cos(pi / 3), tolerance = 1e-10)
   expect_equal(seg$yend, 0.7 * sin(pi / 3), tolerance = 1e-10)
 })
+
+# ---- compute_circ_interval ---------------------------------------------------
+
+test_that("compute_circ_interval stat='sd' arc width equals 2 * circular SD", {
+  hd <- data.frame(heading = c(-0.1, 0.0, 0.1, -0.05, 0.05))
+  iv <- compute_circ_interval(hd, stat = "sd")
+  expect_true(all(c("mean_dir", "lower", "upper", "wraps") %in% names(iv)))
+  expect_equal(nrow(iv), 1L)
+  circ   <- circular::circular(hd$heading, units = "radians", modulo = "2pi")
+  sd_val <- as.numeric(circular::sd.circular(circ))
+  expect_equal(iv$upper - iv$lower, 2 * sd_val, tolerance = 1e-8)
+  expect_false(iv$wraps)
+})
+
+test_that("compute_circ_interval sd mean_dir matches circular::mean.circular", {
+  hd   <- data.frame(heading = c(0.2, 0.3, 0.25, 0.1, 0.4))
+  iv   <- compute_circ_interval(hd, stat = "sd")
+  circ <- circular::circular(hd$heading, units = "radians", modulo = "2pi")
+  expected <- atan2(sin(as.numeric(circular::mean.circular(circ))),
+                    cos(as.numeric(circular::mean.circular(circ))))
+  expect_equal(iv$mean_dir, expected, tolerance = 1e-8)
+})
+
+test_that("compute_circ_interval wider spread gives wider sd arc", {
+  tight <- data.frame(heading = c(-0.05, 0.0, 0.05))
+  wide  <- data.frame(heading = c(-1.0, 0.0, 1.0))
+  iv_tight <- compute_circ_interval(tight, stat = "sd")
+  iv_wide  <- compute_circ_interval(wide,  stat = "sd")
+  expect_false(iv_tight$wraps)
+  expect_false(iv_wide$wraps)
+  expect_true((iv_wide$upper - iv_wide$lower) > (iv_tight$upper - iv_tight$lower))
+})
+
+test_that("compute_circ_interval sd wraps=TRUE for distribution centred near pi", {
+  # Angles tightly clustered around pi/-pi boundary
+  hd <- data.frame(heading = c(pi - 0.1, pi, pi + 0.1, -(pi - 0.1), -pi))
+  iv <- compute_circ_interval(hd, stat = "sd")
+  # mean_dir is near pi/-pi; after atan2 normalisation lower > upper
+  expect_true(iv$wraps)
+})
+
+test_that("compute_circ_interval stat='bootstrap_ci' returns finite bounds", {
+  set.seed(42)
+  hd <- data.frame(heading = c(0.2, 0.3, 0.1, 0.4, 0.25, 0.15))
+  iv <- compute_circ_interval(hd, stat = "bootstrap_ci", boot_reps = 99L)
+  expect_equal(nrow(iv), 1L)
+  expect_true(all(c("mean_dir", "lower", "upper", "wraps") %in% names(iv)))
+  expect_true(is.finite(iv$lower))
+  expect_true(is.finite(iv$upper))
+  expect_true(is.finite(iv$mean_dir))
+})
+
+test_that("compute_circ_interval returns NA bounds for n < 3", {
+  iv2 <- compute_circ_interval(data.frame(heading = c(0.1, 0.2)), stat = "sd")
+  expect_true(is.na(iv2$lower))
+  expect_true(is.na(iv2$upper))
+  iv0 <- compute_circ_interval(data.frame(heading = numeric(0)), stat = "sd")
+  expect_true(is.na(iv0$lower))
+  expect_true(is.na(iv0$upper))
+})
+
+test_that("compute_circ_interval colour_col returns one row per group", {
+  hd <- data.frame(
+    heading = c(0.1, 0.2, 0.15, 1.0, 1.1, 1.05),
+    grp     = rep(c("A", "B"), each = 3)
+  )
+  iv <- compute_circ_interval(hd, colour_col = "grp", stat = "sd")
+  expect_equal(nrow(iv), 2L)
+  expect_true("grp" %in% names(iv))
+  expect_equal(sort(iv$grp), c("A", "B"))
+})
+
+# ---- add_circ_interval -------------------------------------------------------
+
+test_that("add_circ_interval returns a geom_path LayerInstance", {
+  iv    <- data.frame(mean_dir = 0.3, lower = 0.1, upper = 0.5, wraps = FALSE)
+  layer <- add_circ_interval(iv)
+  expect_s3_class(layer, "LayerInstance")
+})
+
+test_that("add_circ_interval arc points lie at the specified radius", {
+  library(ggplot2)
+  iv     <- data.frame(mean_dir = 0.0, lower = -0.4, upper = 0.4, wraps = FALSE)
+  p      <- ggplot() + coord_fixed() + add_circ_interval(iv, radius = 1.1, n_theta = 200L)
+  built  <- ggplot_build(p)
+  r_vals <- sqrt(built$data[[1]]$x^2 + built$data[[1]]$y^2)
+  expect_true(all(abs(r_vals - 1.1) < 1e-4))
+})
+
+test_that("add_circ_interval silently skips NA rows without error", {
+  library(ggplot2)
+  iv <- data.frame(mean_dir = 0.3, lower = NA_real_, upper = NA_real_, wraps = FALSE)
+  expect_silent(layer <- add_circ_interval(iv))
+  expect_silent(ggplot_build(ggplot() + coord_fixed() + layer))
+})
+
+test_that("add_circ_interval wrapping arc passes through angle pi", {
+  library(ggplot2)
+  # lower=2.8, upper=-2.8: arc wraps through +/-pi; seq(2.8, -2.8+2pi)=[2.8,3.48]
+  iv    <- data.frame(mean_dir = pi, lower = 2.8, upper = -2.8, wraps = TRUE)
+  p     <- ggplot() + coord_fixed() +
+    add_circ_interval(iv, radius = 1.05, n_theta = 500L)
+  built  <- ggplot_build(p)
+  pts    <- built$data[[1]]
+  r_vals <- sqrt(pts$x^2 + pts$y^2)
+  expect_true(all(abs(r_vals - 1.05) < 1e-4))
+  # Arc passes through angle pi => x near -1.05
+  expect_true(any(pts$x < -1.0))
+})
+
+test_that("add_circ_interval with colour_col draws per-group arcs", {
+  library(ggplot2)
+  iv <- data.frame(
+    mean_dir = c(0.3, 1.5),
+    lower    = c(0.1, 1.3),
+    upper    = c(0.5, 1.7),
+    wraps    = c(FALSE, FALSE),
+    grp      = c("A", "B")
+  )
+  layer <- add_circ_interval(iv, colour_col = "grp")
+  built <- ggplot_build(ggplot() + coord_fixed() + layer)
+  expect_true(length(unique(built$data[[1]]$group)) >= 2L)
+})
+
+test_that("add_circ_interval wraps correctly when wraps column is absent", {
+  library(ggplot2)
+  # No wraps column — function should detect lower > upper and take the long arc
+  iv <- data.frame(mean_dir = pi, lower = 2.8, upper = -2.8)
+  p  <- ggplot() + coord_fixed() +
+    add_circ_interval(iv, radius = 1.05, n_theta = 500L)
+  built  <- ggplot_build(p)
+  pts    <- built$data[[1]]
+  # Arc passes through angle pi => x near -1.05
+  expect_true(any(pts$x < -1.0))
+})
+
+# ---- add_heading_interval ----------------------------------------------------
+
+test_that("add_heading_interval returns a LayerInstance", {
+  hd    <- data.frame(heading = c(0.1, 0.2, 0.15, 0.05, 0.12))
+  layer <- add_heading_interval(hd, stat = "sd")
+  expect_s3_class(layer, "LayerInstance")
+})
+
+test_that("add_heading_interval sd matches compute_circ_interval + add_circ_interval", {
+  library(ggplot2)
+  hd <- data.frame(heading = c(0.1, 0.2, 0.15, 0.05, 0.25, 0.3))
+  p_conv <- ggplot() + coord_fixed() + add_heading_interval(hd, stat = "sd")
+  iv     <- compute_circ_interval(hd, stat = "sd")
+  p_step <- ggplot() + coord_fixed() + add_circ_interval(iv)
+  b_conv <- ggplot_build(p_conv)
+  b_step <- ggplot_build(p_step)
+  expect_equal(b_conv$data[[1]]$x, b_step$data[[1]]$x, tolerance = 1e-8)
+  expect_equal(b_conv$data[[1]]$y, b_step$data[[1]]$y, tolerance = 1e-8)
+})
+
+test_that("add_heading_interval can be added to a radiate plot without error", {
+  library(ggplot2)
+  sim <- simulate_tracks(conditions = data.frame(n_trials = 5L), n_points = 20, seed = 1)
+  hd  <- suppressWarnings(
+    derive_headings(
+      TrajSet(sim, id = "trial_id", time = "frame",
+              angle = "rel_theta", x = "rel_x", y = "rel_y",
+              angle_unit = "radians", normalize_xy = FALSE),
+      rule = "crossing", circ0 = 0.2, circ1 = 0.4
+    )
+  )
+  p <- radiate(sim, x_col = "rel_x", y_col = "rel_y",
+               group_col = "trial_id",
+               show_arrow = FALSE, show_labels = FALSE) +
+    add_heading_interval(hd, stat = "sd", radius = 1.05)
+  expect_s3_class(p, "ggplot")
+  expect_silent(ggplot_build(p))
+})
