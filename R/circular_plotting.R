@@ -970,9 +970,11 @@ compute_circ_mean <- function(headings_df,
 #' @param summary_df Data frame with columns `mean_dir` (UC radians, 0 to 2π)
 #'   and `resultant_R` (0–1). Typically the output of [compute_circ_mean()].
 #' @param colour_col Optional. Name of a column in `summary_df` to map to the
-#'   colour aesthetic.
+#'   colour aesthetic. Ignored when `colour` is also supplied.
 #' @param linewidth Line width of the arrow segment. Default `1`.
-#' @param colour Fixed colour when `colour_col` is `NULL`. Default `"black"`.
+#' @param colour Fixed colour. When `NULL` (default) and `colour_col` is set,
+#'   colour is mapped from that column; when `NULL` and no `colour_col`, draws
+#'   in `"black"`. Supplying any colour string always overrides `colour_col`.
 #' @param arrow_length_cm Arrowhead length in cm. Default `0.2`.
 #' @param ... Additional arguments forwarded to `geom_segment` (e.g.
 #'   `linetype`, `alpha`, or a custom `arrow` spec that overrides the default).
@@ -987,7 +989,7 @@ compute_circ_mean <- function(headings_df,
 add_circ_mean <- function(summary_df,
                           colour_col      = NULL,
                           linewidth       = 1,
-                          colour          = "black",
+                          colour          = NULL,
                           arrow_length_cm = 0.2,
                           ...) {
   for (col in c("mean_dir", "resultant_R")) {
@@ -995,7 +997,7 @@ add_circ_mean <- function(summary_df,
       stop("`summary_df` is missing required column '", col, "'.")
   }
 
-  use_colour <- !is.null(colour_col) && colour_col %in% names(summary_df)
+  use_colour <- is.null(colour) && !is.null(colour_col) && colour_col %in% names(summary_df)
   valid_rows <- which(!is.na(summary_df$mean_dir) & !is.na(summary_df$resultant_R))
 
   if (!length(valid_rows)) {
@@ -1033,7 +1035,7 @@ add_circ_mean <- function(summary_df,
     inherit.aes = FALSE,
     ...
   )
-  if (!use_colour) seg_args$colour <- colour
+  if (!use_colour) seg_args$colour <- if (is.null(colour)) "black" else colour
 
   do.call(ggplot2::geom_segment, seg_args)
 }
@@ -1061,7 +1063,7 @@ add_heading_arrow <- function(headings_df,
                               angle_convention = NULL,
                               coords           = NULL,
                               linewidth        = 1,
-                              colour           = "black",
+                              colour           = NULL,
                               arrow_length_cm  = 0.2,
                               ...) {
   sm <- compute_circ_mean(headings_df, heading_col = heading_col,
@@ -1083,9 +1085,10 @@ add_heading_arrow <- function(headings_df,
 #'
 #' @param headings_df Data frame with a `heading` column (angles in radians).
 #' @param colour_col Optional name of a column in `headings_df` to map to the
-#'   colour aesthetic. When set, `colour` is ignored.
-#' @param colour Fixed colour string used when `colour_col` is `NULL` or not
-#'   found in `headings_df`. Defaults to `"black"`.
+#'   colour aesthetic. Ignored when `colour` is also supplied.
+#' @param colour Fixed colour. When `NULL` (default) and `colour_col` is set,
+#'   colour is mapped from that column; when `NULL` and no `colour_col`, draws
+#'   in `"black"`. Supplying any colour string always overrides `colour_col`.
 #' @param size Point size passed to `geom_point`.
 #' @param alpha Point alpha transparency.
 #'
@@ -1102,7 +1105,7 @@ add_heading_arrow <- function(headings_df,
 #' hd <- data.frame(id = "A", time = 1, heading = pi / 4)
 #' ggplot() + coord_fixed() + add_heading_points(hd)
 #' ggplot() + coord_fixed() + add_heading_points(hd, colour = "steelblue")
-add_heading_points <- function(headings_df, colour_col = NULL, colour = "black",
+add_heading_points <- function(headings_df, colour_col = NULL, colour = NULL,
                               size = 2, alpha = 1) {
   if (!("heading" %in% names(headings_df))) {
     stop("`headings_df` must contain a `heading` column (radians).")
@@ -1117,12 +1120,12 @@ add_heading_points <- function(headings_df, colour_col = NULL, colour = "black",
   }
 
   mapping <- ggplot2::aes(x = .data[[".x_head"]], y = .data[[".y_head"]])
-  use_fixed_colour <- is.null(colour_col) || !colour_col %in% names(headings_df)
+  use_fixed_colour <- !is.null(colour) || is.null(colour_col) || !colour_col %in% names(headings_df)
   if (!use_fixed_colour) mapping[["colour"]] <- rlang::sym(colour_col)
 
   args <- list(data = headings_df, mapping = mapping,
                size = size, alpha = alpha, shape = 1, inherit.aes = FALSE)
-  if (use_fixed_colour) args$colour <- colour
+  if (use_fixed_colour) args$colour <- if (is.null(colour)) "black" else colour
   do.call(ggplot2::geom_point, args)
 }
 
@@ -1140,9 +1143,10 @@ add_heading_points <- function(headings_df, colour_col = NULL, colour = "black",
 #' @param headings_df Data frame with columns `heading` (radians), `x_inner`,
 #'   and `y_inner`.
 #' @param colour_col Optional name of a column in `headings_df` to map to the
-#'   colour aesthetic. When set, `colour` is ignored.
-#' @param colour Fixed colour string used when `colour_col` is `NULL` or not
-#'   found in `headings_df`. Defaults to `"black"`.
+#'   colour aesthetic. Ignored when `colour` is also supplied.
+#' @param colour Fixed colour. When `NULL` (default) and `colour_col` is set,
+#'   colour is mapped from that column; when `NULL` and no `colour_col`, draws
+#'   in `"black"`. Supplying any colour string always overrides `colour_col`.
 #' @param linetype Line type string or integer passed to `geom_segment`.
 #'
 #' @return A `geom_segment()` layer.
@@ -1157,7 +1161,7 @@ add_heading_points <- function(headings_df, colour_col = NULL, colour = "black",
 #' hd <- data.frame(id = "A", time = 1, heading = pi / 4,
 #'                  x_inner = 0.15, y_inner = 0.15)
 #' ggplot() + coord_fixed() + add_heading_vectors(hd)
-add_heading_vectors <- function(headings_df, colour_col = NULL, colour = "black",
+add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
                                linetype = "dotted") {
   required <- c("heading", "x_inner", "y_inner")
   missing_cols <- setdiff(required, names(headings_df))
@@ -1190,12 +1194,12 @@ add_heading_vectors <- function(headings_df, colour_col = NULL, colour = "black"
     xend = .data[[".x_head"]],
     yend = .data[[".y_head"]]
   )
-  use_fixed_colour <- is.null(colour_col) || !colour_col %in% names(headings_df)
+  use_fixed_colour <- !is.null(colour) || is.null(colour_col) || !colour_col %in% names(headings_df)
   if (!use_fixed_colour) mapping[["colour"]] <- rlang::sym(colour_col)
 
   args <- list(data = headings_df, mapping = mapping,
                linetype = linetype, inherit.aes = FALSE)
-  if (use_fixed_colour) args$colour <- colour
+  if (use_fixed_colour) args$colour <- if (is.null(colour)) "black" else colour
   do.call(ggplot2::geom_segment, args)
 }
 
