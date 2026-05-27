@@ -45,3 +45,24 @@ test_that("trial utilities summarise and transform tracks", {
   expect_true(all(c("rel_x", "rel_y") %in% names(df)))
   expect_s3_class(agg@meta$trial_limits, "data.frame")
 })
+
+test_that("get_tracked_object_pos sets display convention meta keys", {
+  landmarks <- data.frame(
+    frame = c(1, 2, 6, 7),
+    x = c(0, 1, 0, -1),
+    y = c(0, 0, 0, 0)
+  )
+  animal_track <- data.frame(
+    frame = 1:10,
+    x = seq(0, -1, length.out = 10),
+    y = seq(0, 0.2, length.out = 10)
+  )
+  file_tbl <- tibble::tibble(
+    basename = "video1", arc = 0, type = "Herm", obstacle = "none", id = "animal"
+  )
+  limits <- suppressWarnings(get_trial_limits(landmarks, animal_track, file_tbl, vid_num = 1))
+  ts     <- suppressWarnings(get_tracked_object_pos(limits, animal_track))
+  expect_equal(ts@meta$display_convention, "clock")
+  expect_equal(ts@meta$plot_x_col,         "rel_x")
+  expect_equal(ts@meta$plot_y_col,         "rel_y")
+})

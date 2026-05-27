@@ -271,7 +271,10 @@ get_tracked_object_pos <- function(
     meta = list(source = "get_tracked_object_pos")
   )
   trajset <- set_transform_history(trajset, transform_history)
-  trajset@meta$trial_limits <- trial_limits
+  trajset@meta$trial_limits        <- trial_limits
+  trajset@meta$display_convention  <- "clock"
+  trajset@meta$plot_x_col          <- "rel_x"
+  trajset@meta$plot_y_col          <- "rel_y"
 
   trajset
 }

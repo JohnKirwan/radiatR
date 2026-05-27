@@ -1046,3 +1046,45 @@ test_that("add_heading_vectors with display_convention='clock' rotates both endp
   expect_equal(seg$xend, 0,   tolerance = 1e-6)
   expect_equal(seg$yend, 1,   tolerance = 1e-6)
 })
+
+# ---- radiate() clock display convention -------------------------------------
+
+test_that("radiate uses meta plot_x_col/plot_y_col and rotates when display_convention='clock'", {
+  library(ggplot2)
+  # A TrajSet with trans_x going East but rel_x going North (toward stimulus).
+  # With display_convention='clock', rel coords rotate: disp_x=-rel_y=0, disp_y=rel_x
+  df <- data.frame(
+    id = "A", frame = 1:3,
+    trans_x   = c(0, 0.3, 0.6),   # absolute (East-going; would be wrong if used)
+    trans_y   = c(0, 0,   0),
+    rel_x     = c(0, 0.3, 0.6),   # relative toward stimulus (East in UC)
+    rel_y     = c(0, 0,   0),
+    rel_theta = rep(0, 3)
+  )
+  ts <- TrajSet(df, id = "id", time = "frame", x = "trans_x", y = "trans_y",
+                rel_x = "rel_x", rel_y = "rel_y",
+                angle = "rel_theta", angle_unit = "radians", normalize_xy = FALSE)
+  ts@meta$display_convention <- "clock"
+  ts@meta$plot_x_col         <- "rel_x"
+  ts@meta$plot_y_col         <- "rel_y"
+
+  p <- radiate(ts, show_arrow = FALSE, show_labels = FALSE)
+  # After rotation: disp_x = -rel_y = 0, disp_y = rel_x = 0, 0.3, 0.6
+  expect_true(".disp_x" %in% names(p$data))
+  expect_equal(p$data$.disp_x, rep(0, 3),        tolerance = 1e-6)
+  expect_equal(p$data$.disp_y, c(0, 0.3, 0.6),   tolerance = 1e-6)
+})
+
+test_that("radiate without clock meta uses @cols$x as before", {
+  library(ggplot2)
+  df <- data.frame(
+    id = "A", frame = 1:3,
+    trans_x = c(0, 0.3, 0.6), trans_y = rep(0, 3),
+    rel_theta = rep(0, 3)
+  )
+  ts <- TrajSet(df, id = "id", time = "frame", x = "trans_x", y = "trans_y",
+                angle = "rel_theta", angle_unit = "radians", normalize_xy = FALSE)
+  # No meta keys set -> should fall through to @cols$x = "trans_x"
+  p <- radiate(ts, show_arrow = FALSE, show_labels = FALSE)
+  expect_false(".disp_x" %in% names(p$data))
+})
