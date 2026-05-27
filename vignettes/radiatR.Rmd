@@ -115,6 +115,69 @@ gg_add_circ_mean(p_all, seg_all)
 
 The grand mean arrow points at `r round(summ_all$mean_dir * 180 / pi, 1)`° relative to the stimulus (clock convention; 0° = toward stimulus) with *R* = `r round(summ_all$resultant_R, 2)`, reflecting the overall stimulus-relative tendency across all conditions.
 
+## Circular Interval Arc
+
+Three functions handle directional uncertainty arcs in parallel with the density overlay functions:
+
+| Function | Role |
+|---|---|
+| `compute_circ_interval()` | Computes arc bounds from raw headings; returns a data frame with `lower`, `upper`, `mean_dir`, and `wraps` |
+| `add_circ_interval()` | Renders any bounds data frame as an arc at a configurable radius — agnostic to how the bounds were produced |
+| `add_heading_interval()` | Convenience wrapper: calls the two above in sequence |
+
+Two statistics are supported: `stat = "bootstrap_ci"` bootstraps the von Mises MLE confidence interval for the mean direction; `stat = "sd"` draws a ±1 circular SD arc. The split design lets you substitute Bayesian credible bounds into the data frame before rendering:
+
+```{r interval-concept, eval=FALSE}
+iv <- compute_circ_interval(hd, colour_col = "arc", stat = "bootstrap_ci")
+# replace with Bayesian posteriors: iv$lower <- ...; iv$upper <- ...
+add_circ_interval(iv, colour_col = "arc")
+```
+
+## Building Up a Panel
+
+Layers compose with the standard `ggplot2` `+` operator, so a plot can be assembled feature by feature. The four chunks below start from trajectories only and add heading endpoints, the grand mean arrow, and finally a bootstrap CI arc.
+
+**Trajectories:**
+
+```{r build-1}
+p <- radiate(plividus,
+             group_col   = "trial_id",
+             colour_col  = "arc",
+             show_labels = FALSE,
+             show_arrow  = FALSE)
+p
+```
+
+**+ Heading endpoints** at each trial's crossing location:
+
+```{r build-2}
+p <- p + add_heading_points(hd, colour_col = "arc", size = 1.5, alpha = 0.7)
+p
+```
+
+**+ Grand mean direction arrow:**
+
+```{r build-3}
+p <- p + geom_segment(
+  data        = seg_all,
+  aes(x = x, y = y, xend = xend, yend = yend),
+  arrow       = grid::arrow(length = grid::unit(0.25, "cm")),
+  colour      = "black",
+  linewidth   = 1.2,
+  inherit.aes = FALSE
+)
+p
+```
+
+**+ Bootstrap CI arc** for the grand mean direction:
+
+```{r build-4}
+p <- p + add_heading_interval(hd, stat = "bootstrap_ci", boot_reps = 999L)
+p
+```
+
+The arc at radius 1.05 spans the 95 % bootstrap confidence interval for the grand mean direction pooled across all arc conditions.
+
 ## Colour Options
 
 Three strategies control how trajectories are coloured.
