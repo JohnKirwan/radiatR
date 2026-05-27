@@ -699,6 +699,12 @@ add_heading_density <- function(headings_df,
 #' @param heading_col Name of the heading column (radians). Default `"heading"`.
 #' @param colour_col Optional grouping column. When set, one row is returned per
 #'   group and the column is preserved in the output.
+#' @param angle_convention Angle convention of the heading column: `"unit_circle"`
+#'   (default, 0 = East CCW) or `"clock"` (0 = North CW). If `NULL`, read from
+#'   `attr(headings_df, "angle_convention")`.
+#' @param coords Coordinate system used when `angle_convention = "clock"`:
+#'   `"relative"` or `"absolute"`. If `NULL`, read from
+#'   `attr(headings_df, "coords")`.
 #' @param stat Statistic: `"bootstrap_ci"` (default) or `"sd"`.
 #' @param boot_reps Integer. Bootstrap replicates for `stat = "bootstrap_ci"`.
 #'   Default `1000L`. Ignored when `stat = "sd"`.
@@ -713,20 +719,35 @@ add_heading_density <- function(headings_df,
 #' @importFrom circular circular mean.circular sd.circular mle.vonmises.bootstrap.ci
 #' @export
 compute_circ_interval <- function(headings_df,
-                                  heading_col = "heading",
-                                  colour_col  = NULL,
-                                  stat        = c("bootstrap_ci", "sd"),
-                                  boot_reps   = 1000L,
-                                  boot_alpha  = 0.05) {
+                                  heading_col      = "heading",
+                                  colour_col       = NULL,
+                                  angle_convention = NULL,
+                                  coords           = NULL,
+                                  stat             = c("bootstrap_ci", "sd"),
+                                  boot_reps        = 1000L,
+                                  boot_alpha       = 0.05) {
   stat <- match.arg(stat)
   if (!heading_col %in% names(headings_df))
     stop("`heading_col` '", heading_col, "' not found in headings_df.")
+
+  if (is.null(angle_convention)) {
+    angle_convention <- attr(headings_df, "angle_convention")
+    if (is.null(angle_convention)) angle_convention <- "unit_circle"
+  }
+  angle_convention <- match.arg(angle_convention, c("clock", "unit_circle"))
+
+  if (is.null(coords)) {
+    coords <- attr(headings_df, "coords")
+    if (is.null(coords)) coords <- "absolute"
+  }
+  coords <- match.arg(coords, c("relative", "absolute"))
 
   use_colour <- !is.null(colour_col) && colour_col %in% names(headings_df)
   groups     <- if (use_colour) split(headings_df, headings_df[[colour_col]]) else list(headings_df)
 
   out_list <- lapply(seq_along(groups), function(i) {
     angles <- groups[[i]][[heading_col]]
+    angles <- if (angle_convention == "clock") .clock_to_uc(angles, coords) else angles
     row    <- .compute_one_interval(angles, stat, boot_reps, boot_alpha)
     if (use_colour) row[[colour_col]] <- names(groups)[[i]]
     row
@@ -854,19 +875,24 @@ add_circ_interval <- function(interval_df,
 #' @importFrom rlang .data sym
 #' @export
 add_heading_interval <- function(headings_df,
-                                 heading_col = "heading",
-                                 colour_col  = NULL,
-                                 stat        = c("bootstrap_ci", "sd"),
-                                 boot_reps   = 1000L,
-                                 boot_alpha  = 0.05,
-                                 radius      = 1.05,
-                                 linewidth   = 1.5,
-                                 colour      = "black",
-                                 linetype    = "solid",
-                                 n_theta     = 500L) {
+                                 heading_col      = "heading",
+                                 colour_col       = NULL,
+                                 angle_convention = NULL,
+                                 coords           = NULL,
+                                 stat             = c("bootstrap_ci", "sd"),
+                                 boot_reps        = 1000L,
+                                 boot_alpha       = 0.05,
+                                 radius           = 1.05,
+                                 linewidth        = 1.5,
+                                 colour           = "black",
+                                 linetype         = "solid",
+                                 n_theta          = 500L) {
   stat <- match.arg(stat)
   iv   <- compute_circ_interval(headings_df, heading_col = heading_col,
-                                colour_col = colour_col, stat = stat,
+                                colour_col = colour_col,
+                                angle_convention = angle_convention,
+                                coords = coords,
+                                stat = stat,
                                 boot_reps = boot_reps, boot_alpha = boot_alpha)
   add_circ_interval(iv, colour_col = colour_col,
                     radius = radius, linewidth = linewidth,

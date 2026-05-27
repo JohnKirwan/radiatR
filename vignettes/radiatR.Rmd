@@ -212,15 +212,16 @@ p
 ```
 
 
-**+ Bootstrap CI arc** for the grand mean direction:
+**+ Bootstrap CI arc** for the per-condition mean direction:
 
 ```{r build-4}
-p <- p + add_heading_interval(hd, stat = "bootstrap_ci", boot_reps = 999L)
+p <- p + add_heading_interval(hd, colour_col = "arc", colour = "black",
+                               stat = "bootstrap_ci", boot_reps = 999L)
 p
 ```
 
 
-Each panel is labelled with its arc condition (strip above each panel), shows all trajectories coloured by cycling palette, the crossing heading vectors (dotted lines, grey), and a solid arrow whose direction and length represent the within-condition stimulus-relative circular mean direction (clock convention; 0° = toward stimulus, clockwise) and resultant *R*. Use `strip_position = "inside"` to place the label inside the plot area, or `strip_labels = FALSE` to suppress it.
+Each panel is labelled with its arc condition (strip above each panel), shows all trajectories coloured by cycling palette, the crossing heading vectors (dotted lines, grey), a solid arrow for the within-condition circular mean direction and resultant *R*, and a bootstrap CI arc at radius 1.05. All in clock convention (0° = toward stimulus, clockwise). Use `strip_position = "inside"` to place the label inside the plot area, or `strip_labels = FALSE` to suppress it.
 
 ## Circular Density Overlays
 
