@@ -169,12 +169,7 @@ p <- p + geom_segment(
 p
 ```
 
-**+ Bootstrap CI arc** for the grand mean direction:
 
-```{r build-4}
-p <- p + add_heading_interval(hd, stat = "bootstrap_ci", boot_reps = 999L)
-p
-```
 
 The arc at radius 1.05 spans the 95 % bootstrap confidence interval for the grand mean direction pooled across all arc conditions.
 
@@ -191,6 +186,31 @@ Three strategies control how trajectories are coloured.
 ## Per-Condition Panels
 
 Faceting by arc angle shows each condition separately. Within each panel, `colour_cycle = 10` distinguishes individual trajectories — more informative than colouring by arc when every panel already corresponds to a single arc value. Per-condition mean arrows are computed from the crossing headings and routed to the correct panel automatically via the shared `arc` column.
+
+```{r arc-panels-simple, fig.width=8, fig.height=5}
+p <- radiate(plividus,
+        group_col    = "trial_id",
+        colour_cycle = 10,
+        panel_by     = "arc",
+        ncol         = 3,
+        show_labels  = FALSE,
+        show_arrow   = FALSE) 
+p
+```
+
+
+
+```{r arc-panels-headings, fig.width=8, fig.height=5}
+p <- p + add_heading_points(hd, colour = "grey40", size = 4)
+p
+```
+
+
+```{r arc-panels-vectors, fig.width=8, fig.height=5}
+p <- p + add_heading_vectors(hd, colour = "grey40")
+p
+```
+
 
 ```{r arc-panels, fig.width=8, fig.height=5}
 arc_summ <- do.call(rbind, lapply(split(hd, hd$arc), function(sub) {
@@ -209,15 +229,7 @@ attr(arc_summ, "angle_convention") <- "clock"
 attr(arc_summ, "coords")           <- "relative"
 segs <- circ_mean_segments(arc_summ)
 
-radiate(plividus,
-        group_col    = "trial_id",
-        colour_cycle = 10,
-        panel_by     = "arc",
-        ncol         = 3,
-        show_labels  = FALSE,
-        show_arrow   = FALSE) +
-  add_heading_vectors(hd, colour = "grey40") +
-  add_heading_points(hd, colour = "grey40", size = 2) +
+p <-  p +
   geom_segment(
     data        = segs,
     aes(x = x, y = y, xend = xend, yend = yend),
@@ -226,7 +238,17 @@ radiate(plividus,
     linewidth   = 1,
     inherit.aes = FALSE
   )
+p
 ```
+
+
+**+ Bootstrap CI arc** for the grand mean direction:
+
+```{r build-4}
+p <- p + add_heading_interval(hd, stat = "bootstrap_ci", boot_reps = 999L)
+p
+```
+
 
 Each panel is labelled with its arc condition (strip above each panel), shows all trajectories coloured by cycling palette, the crossing heading vectors (dotted lines, grey), and a solid arrow whose direction and length represent the within-condition stimulus-relative circular mean direction (clock convention; 0° = toward stimulus, clockwise) and resultant *R*. Use `strip_position = "inside"` to place the label inside the plot area, or `strip_labels = FALSE` to suppress it.
 
