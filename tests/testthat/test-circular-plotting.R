@@ -1075,6 +1075,30 @@ test_that("radiate uses meta plot_x_col/plot_y_col and rotates when display_conv
   expect_equal(p$data$.disp_y, c(0, 0.3, 0.6),   tolerance = 1e-6)
 })
 
+test_that("radiate does not rotate when x_col supplied explicitly (not from meta)", {
+  library(ggplot2)
+  # TrajSet has clock convention but caller passes x_col explicitly (non-default value).
+  # col_from_meta stays FALSE, so rotation must not fire.
+  df <- data.frame(
+    id = "A", frame = 1:3,
+    my_x  = c(0, 0.3, 0.6),
+    my_y  = c(0, 0,   0),
+    rel_x = c(0, 0.3, 0.6),
+    rel_y = c(0, 0,   0),
+    rel_theta = rep(0, 3)
+  )
+  ts <- TrajSet(df, id = "id", time = "frame", x = "my_x", y = "my_y",
+                angle = "rel_theta", angle_unit = "radians", normalize_xy = FALSE)
+  ts@meta$display_convention <- "clock"
+  ts@meta$plot_x_col         <- "rel_x"
+  ts@meta$plot_y_col         <- "rel_y"
+
+  # Supply x_col explicitly — different from the default "rel_x", so col_from_meta = FALSE
+  p <- radiate(ts, x_col = "my_x", y_col = "my_y",
+               show_arrow = FALSE, show_labels = FALSE)
+  expect_false(".disp_x" %in% names(p$data))
+})
+
 test_that("radiate without clock meta uses @cols$x as before", {
   library(ggplot2)
   df <- data.frame(

@@ -1598,15 +1598,17 @@ radiate <- function(
   }
 
   data <- ts@data
+  col_from_meta <- FALSE
   if (!is.null(ts@meta$plot_x_col) && identical(x_col, "rel_x")) {
     x_col <- ts@meta$plot_x_col
+    col_from_meta <- TRUE
     if (!is.null(ts@meta$plot_y_col) && identical(y_col, "rel_y"))
       y_col <- ts@meta$plot_y_col
   } else if (!is.null(ts@cols$x) && identical(x_col, "rel_x")) {
     x_col <- ts@cols$x
     if (!is.null(ts@cols$y) && identical(y_col, "rel_y")) y_col <- ts@cols$y
   }
-  if (identical(ts@meta$display_convention, "clock") &&
+  if (col_from_meta && identical(ts@meta$display_convention, "clock") &&
       all(c(x_col, y_col) %in% names(data))) {
     disp <- .to_clock_display(data[[x_col]], data[[y_col]])
     data[[".disp_x"]] <- disp$x
