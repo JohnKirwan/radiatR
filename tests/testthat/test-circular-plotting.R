@@ -927,6 +927,18 @@ test_that("add_circ_mean drops NA rows when some but not all rows are NA", {
   expect_false(any(is.na(built$data[[1]]$xend)))
 })
 
+test_that("add_circ_mean with display_convention='clock' rotates arrow 90 CCW", {
+  library(ggplot2)
+  # mean_dir=0 (East in UC), R=0.8
+  # Clock display: endpoint = (-R*sin(0), R*cos(0)) = (0, 0.8) -> North
+  sm <- data.frame(mean_dir = 0, resultant_R = 0.8)
+  attr(sm, "display_convention") <- "clock"
+  built <- ggplot_build(ggplot() + add_circ_mean(sm))
+  seg   <- built$data[[1]]
+  expect_equal(seg$xend, 0,   tolerance = 1e-6)
+  expect_equal(seg$yend, 0.8, tolerance = 1e-6)
+})
+
 # ---- add_heading_arrow -------------------------------------------------------
 
 test_that("add_heading_arrow returns a LayerInstance", {

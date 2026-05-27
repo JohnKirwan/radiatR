@@ -1003,10 +1003,15 @@ add_circ_mean <- function(summary_df,
 
   summary_df <- summary_df[valid_rows, , drop = FALSE]
 
-  summary_df$.x    <- 0
-  summary_df$.y    <- 0
-  summary_df$.xend <- summary_df$resultant_R * cos(summary_df$mean_dir)
-  summary_df$.yend <- summary_df$resultant_R * sin(summary_df$mean_dir)
+  summary_df$.x <- 0
+  summary_df$.y <- 0
+  if (identical(attr(summary_df, "display_convention"), "clock")) {
+    summary_df$.xend <- -summary_df$resultant_R * sin(summary_df$mean_dir)
+    summary_df$.yend <-  summary_df$resultant_R * cos(summary_df$mean_dir)
+  } else {
+    summary_df$.xend <- summary_df$resultant_R * cos(summary_df$mean_dir)
+    summary_df$.yend <- summary_df$resultant_R * sin(summary_df$mean_dir)
+  }
 
   seg_map <- ggplot2::aes(x = .data$.x, y = .data$.y,
                           xend = .data$.xend, yend = .data$.yend)
