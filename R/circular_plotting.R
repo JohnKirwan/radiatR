@@ -1019,6 +1019,40 @@ add_circ_mean <- function(summary_df,
   do.call(ggplot2::geom_segment, seg_args)
 }
 
+#' Compute a circular mean arrow and add it to a radial plot in one step
+#'
+#' Convenience wrapper that calls [compute_circ_mean()] followed by
+#' [add_circ_mean()]. Use the two-step form directly when you need to inspect
+#' or modify the summary data frame before rendering.
+#'
+#' @inheritParams compute_circ_mean
+#' @inheritParams add_circ_mean
+#'
+#' @return A `geom_segment()` layer.
+#'
+#' @seealso [compute_circ_mean()], [add_circ_mean()]
+#' @importFrom circular circular mean.circular rho.circular
+#' @importFrom ggplot2 geom_segment aes
+#' @importFrom rlang .data sym
+#' @importFrom grid arrow unit
+#' @export
+add_heading_arrow <- function(headings_df,
+                              heading_col      = "heading",
+                              colour_col       = NULL,
+                              angle_convention = NULL,
+                              coords           = NULL,
+                              linewidth        = 1,
+                              colour           = "black",
+                              arrow_length_cm  = 0.2,
+                              ...) {
+  sm <- compute_circ_mean(headings_df, heading_col = heading_col,
+                          colour_col = colour_col,
+                          angle_convention = angle_convention, coords = coords)
+  add_circ_mean(sm, colour_col = colour_col,
+                linewidth = linewidth, colour = colour,
+                arrow_length_cm = arrow_length_cm, ...)
+}
+
 # ---- heading overlay layers --------------------------------------------------
 
 #' Add heading endpoint markers on the unit circle

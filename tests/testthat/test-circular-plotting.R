@@ -888,3 +888,44 @@ test_that("add_circ_mean drops NA rows when some but not all rows are NA", {
   expect_equal(nrow(built$data[[1]]), 1L)
   expect_false(any(is.na(built$data[[1]]$xend)))
 })
+
+# ---- add_heading_arrow -------------------------------------------------------
+
+test_that("add_heading_arrow returns a LayerInstance", {
+  hd <- data.frame(heading = c(0.1, 0.2, 0.3, 0.4, 0.5))
+  expect_s3_class(add_heading_arrow(hd, angle_convention = "unit_circle"), "LayerInstance")
+})
+
+test_that("add_heading_arrow matches two-step compute_circ_mean + add_circ_mean", {
+  library(ggplot2)
+  hd     <- data.frame(heading = c(0.1, 0.2, 0.15, 0.12, 0.18))
+  p_wrap <- ggplot() + coord_fixed() +
+    add_heading_arrow(hd, angle_convention = "unit_circle")
+  sm     <- compute_circ_mean(hd, angle_convention = "unit_circle")
+  p_step <- ggplot() + coord_fixed() + add_circ_mean(sm)
+  bw <- ggplot_build(p_wrap)
+  bs <- ggplot_build(p_step)
+  expect_equal(bw$data[[1]]$x,    bs$data[[1]]$x,    tolerance = 1e-8)
+  expect_equal(bw$data[[1]]$xend, bs$data[[1]]$xend, tolerance = 1e-8)
+  expect_equal(bw$data[[1]]$y,    bs$data[[1]]$y,    tolerance = 1e-8)
+  expect_equal(bw$data[[1]]$yend, bs$data[[1]]$yend, tolerance = 1e-8)
+})
+
+test_that("add_heading_arrow integrates with radiate() without error", {
+  library(ggplot2)
+  sim <- simulate_tracks(conditions = data.frame(n_trials = 5L), n_points = 20, seed = 1)
+  hd  <- suppressWarnings(
+    derive_headings(
+      TrajSet(sim, id = "trial_id", time = "frame",
+              angle = "rel_theta", x = "rel_x", y = "rel_y",
+              angle_unit = "radians", normalize_xy = FALSE),
+      rule = "crossing", circ0 = 0.2, circ1 = 0.4
+    )
+  )
+  p <- radiate(sim, x_col = "rel_x", y_col = "rel_y",
+               group_col = "trial_id",
+               show_arrow = FALSE, show_labels = FALSE) +
+    add_heading_arrow(hd)
+  expect_s3_class(p, "ggplot")
+  expect_silent(ggplot_build(p))
+})
