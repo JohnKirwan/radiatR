@@ -782,3 +782,72 @@ test_that("add_heading_interval can be added to a radiate plot without error", {
   expect_s3_class(p, "ggplot")
   expect_silent(ggplot_build(p))
 })
+
+# ---- compute_circ_mean -------------------------------------------------------
+
+test_that("compute_circ_mean UC input returns correct mean_dir and R", {
+  hd <- data.frame(heading = c(0, 0, 0, 0, 0))
+  result <- compute_circ_mean(hd, angle_convention = "unit_circle", coords = "absolute")
+  expect_equal(result$mean_dir,    0, tolerance = 1e-10)
+  expect_equal(result$resultant_R, 1, tolerance = 1e-10)
+})
+
+test_that("compute_circ_mean clock+absolute maps 0 to UC pi/2", {
+  hd <- data.frame(heading = c(0, 0, 0, 0, 0))
+  result <- compute_circ_mean(hd, angle_convention = "clock", coords = "absolute")
+  expect_equal(result$mean_dir, pi / 2, tolerance = 1e-10)
+})
+
+test_that("compute_circ_mean clock+relative maps 0 to UC 0", {
+  hd <- data.frame(heading = c(0, 0, 0, 0, 0))
+  result <- compute_circ_mean(hd, angle_convention = "clock", coords = "relative")
+  expect_equal(result$mean_dir, 0, tolerance = 1e-10)
+})
+
+test_that("compute_circ_mean clock+relative and clock+absolute differ for nonzero angle", {
+  hd <- data.frame(heading = rep(pi / 4, 5))
+  r_rel <- compute_circ_mean(hd, angle_convention = "clock", coords = "relative")
+  r_abs <- compute_circ_mean(hd, angle_convention = "clock", coords = "absolute")
+  expect_false(isTRUE(all.equal(r_rel$mean_dir, r_abs$mean_dir)))
+})
+
+test_that("compute_circ_mean grouped output has one row per group", {
+  hd <- data.frame(heading = c(0, 0, pi, pi),
+                   grp     = c("A", "A", "B", "B"))
+  result <- compute_circ_mean(hd, colour_col = "grp",
+                              angle_convention = "unit_circle", coords = "absolute")
+  expect_equal(nrow(result), 2L)
+  expect_true("grp" %in% names(result))
+})
+
+test_that("compute_circ_mean returns NA for fewer than 2 finite angles", {
+  hd <- data.frame(heading = c(0.5))
+  result <- compute_circ_mean(hd, angle_convention = "unit_circle", coords = "absolute")
+  expect_true(is.na(result$mean_dir))
+  expect_true(is.na(result$resultant_R))
+})
+
+test_that("compute_circ_mean handles all-NA input without error", {
+  hd <- data.frame(heading = c(NA_real_, NA_real_, NA_real_))
+  result <- compute_circ_mean(hd, angle_convention = "unit_circle", coords = "absolute")
+  expect_equal(nrow(result), 1L)
+  expect_true(is.na(result$mean_dir))
+})
+
+test_that("compute_circ_mean preserves factor levels on colour_col", {
+  hd <- data.frame(heading = c(0.1, 0.2, 0.3, 0.4),
+                   grp     = factor(c("B", "A", "B", "A"), levels = c("A", "B", "C")))
+  result <- compute_circ_mean(hd, colour_col = "grp",
+                              angle_convention = "unit_circle", coords = "absolute")
+  expect_equal(levels(result$grp), c("A", "B", "C"))
+})
+
+test_that("compute_circ_mean reads convention from headings_df attributes", {
+  hd <- data.frame(heading = c(0.1, 0.2, 0.3, 0.2, 0.1))
+  attr(hd, "angle_convention") <- "clock"
+  attr(hd, "coords")           <- "absolute"
+  result_attr     <- compute_circ_mean(hd)
+  result_explicit <- compute_circ_mean(hd, angle_convention = "clock", coords = "absolute")
+  expect_equal(result_attr$mean_dir,    result_explicit$mean_dir,    tolerance = 1e-12)
+  expect_equal(result_attr$resultant_R, result_explicit$resultant_R, tolerance = 1e-12)
+})

@@ -860,6 +860,92 @@ add_heading_interval <- function(headings_df,
                     colour = colour, linetype = linetype, n_theta = n_theta)
 }
 
+# ---- circular mean arrow -----------------------------------------------------
+
+#' Compute circular mean direction and resultant length from a headings data frame
+#'
+#' Computes the circular mean direction and resultant length (R) per group from
+#' a headings data frame, typically the output of [derive_headings()].
+#' `mean_dir` in the returned data frame is **always in unit-circle convention**
+#' (0 = East, counterclockwise), regardless of the input convention, making it
+#' suitable for direct use in [add_circ_mean()].
+#'
+#' @param headings_df Data frame with a column of heading angles in radians.
+#'   [derive_headings()] sets `attr(headings_df, "angle_convention")` and
+#'   `attr(headings_df, "coords")` automatically.
+#' @param heading_col Name of the column containing heading angles. Default
+#'   `"heading"`.
+#' @param colour_col Optional. Name of a column to group by. One row is
+#'   returned per group. The same column maps to colour in [add_circ_mean()].
+#' @param angle_convention Convention for angles in `heading_col`: `"clock"`
+#'   (0 = North, clockwise) or `"unit_circle"` (0 = East, CCW). If `NULL`
+#'   (default), read from `attr(headings_df, "angle_convention")`; defaults to
+#'   `"unit_circle"` with a message if the attribute is also absent.
+#' @param coords Coordinate system: `"relative"` or `"absolute"`. If `NULL`
+#'   (default), read from `attr(headings_df, "coords")`; defaults to
+#'   `"absolute"` with a message if absent.
+#'
+#' @return A data frame with columns `mean_dir` (unit-circle radians, 0 to
+#'   2π), `resultant_R` (0–1), and `colour_col` when supplied. Both are `NA`
+#'   when a group contains fewer than 2 finite angles.
+#'
+#' @seealso [add_circ_mean()], [add_heading_arrow()]
+#' @importFrom circular circular mean.circular rho.circular
+#' @export
+compute_circ_mean <- function(headings_df,
+                              heading_col      = "heading",
+                              colour_col       = NULL,
+                              angle_convention = NULL,
+                              coords           = NULL) {
+  if (!heading_col %in% names(headings_df))
+    stop("`heading_col` '", heading_col, "' not found in headings_df.")
+
+  if (is.null(angle_convention)) {
+    angle_convention <- attr(headings_df, "angle_convention")
+    if (is.null(angle_convention)) {
+      message("`angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.")
+      angle_convention <- "unit_circle"
+    }
+  }
+  angle_convention <- match.arg(angle_convention, c("clock", "unit_circle"))
+
+  if (is.null(coords)) {
+    coords <- attr(headings_df, "coords")
+    if (is.null(coords)) {
+      message("`coords` not found in headings_df attributes; defaulting to 'absolute'.")
+      coords <- "absolute"
+    }
+  }
+  coords <- match.arg(coords, c("relative", "absolute"))
+
+  use_colour <- !is.null(colour_col) && colour_col %in% names(headings_df)
+  groups     <- if (use_colour) split(headings_df, headings_df[[colour_col]]) else list(headings_df)
+
+  out_list <- lapply(seq_along(groups), function(i) {
+    angles <- groups[[i]][[heading_col]]
+    angles <- angles[is.finite(angles)]
+
+    if (length(angles) < 2L) {
+      row <- data.frame(mean_dir = NA_real_, resultant_R = NA_real_,
+                        stringsAsFactors = FALSE)
+    } else {
+      uc_angles <- if (angle_convention == "clock") .clock_to_uc(angles, coords) else angles
+      circ_obj  <- circular::circular(uc_angles, units = "radians", modulo = "2pi")
+      mean_dir  <- .wrap_to_2pi(as.numeric(circular::mean.circular(circ_obj, na.rm = TRUE)))
+      R         <- as.numeric(circular::rho.circular(circ_obj, na.rm = TRUE))
+      row <- data.frame(mean_dir = mean_dir, resultant_R = R, stringsAsFactors = FALSE)
+    }
+
+    if (use_colour) row[[colour_col]] <- names(groups)[[i]]
+    row
+  })
+
+  out <- do.call(rbind, out_list)
+  if (use_colour && is.factor(headings_df[[colour_col]]))
+    out[[colour_col]] <- factor(out[[colour_col]], levels = levels(headings_df[[colour_col]]))
+  out
+}
+
 # ---- heading overlay layers --------------------------------------------------
 
 #' Add heading endpoint markers on the unit circle
