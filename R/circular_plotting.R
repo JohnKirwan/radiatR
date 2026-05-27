@@ -787,6 +787,7 @@ add_circ_interval <- function(interval_df,
 
   use_colour <- !is.null(colour_col) && colour_col %in% names(interval_df)
   has_wraps  <- "wraps" %in% names(interval_df)
+  use_clock  <- identical(attr(interval_df, "display_convention"), "clock")
 
   valid_rows <- which(!is.na(interval_df$lower) & !is.na(interval_df$upper))
 
@@ -810,7 +811,7 @@ add_circ_interval <- function(interval_df,
     }
     cos_vals <- radius * cos(theta_seq)
     sin_vals <- radius * sin(theta_seq)
-    if (identical(attr(interval_df, "display_convention"), "clock")) {
+    if (use_clock) {
       disp     <- .to_clock_display(cos_vals, sin_vals)
       cos_vals <- disp$x
       sin_vals <- disp$y
