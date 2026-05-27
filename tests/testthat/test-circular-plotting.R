@@ -993,3 +993,19 @@ test_that(".to_clock_display maps (0,-1) to (1,0)", {
   expect_equal(r$x, 1)
   expect_equal(r$y, 0)
 })
+
+test_that("add_heading_vectors with display_convention='clock' rotates both endpoints 90 CCW", {
+  library(ggplot2)
+  # heading=0 (East), inner crossing at (0.5, 0)
+  hd <- data.frame(heading = 0, x_inner = 0.5, y_inner = 0)
+  attr(hd, "display_convention") <- "clock"
+  p     <- ggplot() + add_heading_vectors(hd)
+  built <- ggplot_build(p)
+  seg   <- built$data[[1]]
+  # start (0.5, 0) rotated -> (0, 0.5)
+  # end   (1,   0) rotated -> (0, 1)
+  expect_equal(seg$x,    0,   tolerance = 1e-6)
+  expect_equal(seg$y,    0.5, tolerance = 1e-6)
+  expect_equal(seg$xend, 0,   tolerance = 1e-6)
+  expect_equal(seg$yend, 1,   tolerance = 1e-6)
+})

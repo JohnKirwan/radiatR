@@ -1159,9 +1159,21 @@ add_heading_vectors <- function(headings_df, colour_col = NULL, colour = "black"
   headings_df[[".x_head"]] <- cos(headings_df$heading)
   headings_df[[".y_head"]] <- sin(headings_df$heading)
 
+  if (identical(attr(headings_df, "display_convention"), "clock")) {
+    disp_end   <- .to_clock_display(headings_df[[".x_head"]], headings_df[[".y_head"]])
+    disp_start <- .to_clock_display(headings_df$x_inner,     headings_df$y_inner)
+    headings_df[[".x_head"]]  <- disp_end$x
+    headings_df[[".y_head"]]  <- disp_end$y
+    headings_df[[".x_inner"]] <- disp_start$x
+    headings_df[[".y_inner"]] <- disp_start$y
+  } else {
+    headings_df[[".x_inner"]] <- headings_df$x_inner
+    headings_df[[".y_inner"]] <- headings_df$y_inner
+  }
+
   mapping <- ggplot2::aes(
-    x    = .data$x_inner,
-    y    = .data$y_inner,
+    x    = .data[[".x_inner"]],
+    y    = .data[[".y_inner"]],
     xend = .data[[".x_head"]],
     yend = .data[[".y_head"]]
   )
