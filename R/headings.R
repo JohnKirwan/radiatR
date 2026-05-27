@@ -563,6 +563,7 @@ setMethod("derive_headings", "TrajSet", function(
 
   attr(res, "angle_convention") <- angle_convention
   attr(res, "coords")           <- coords
+  if (coords == "relative") attr(res, "display_convention") <- "clock"
   res
 })
 

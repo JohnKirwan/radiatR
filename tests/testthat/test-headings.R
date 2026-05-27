@@ -316,3 +316,19 @@ test_that("circ_summary_headings clock vs unit_circle give different mean_dir fo
   expect_equal(summ_uc$mean_dir,    pi / 2, tolerance = 1e-6)
   expect_equal(summ_clock$mean_dir, 0,      tolerance = 1e-6)
 })
+
+# ---- display_convention attribute --------------------------------------------
+
+test_that("derive_headings sets display_convention='clock' when coords='relative'", {
+  ts <- make_ts_with_rel()
+  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                        coords = "relative", angle_convention = "unit_circle")
+  expect_equal(attr(hd, "display_convention"), "clock")
+})
+
+test_that("derive_headings does not set display_convention when coords='absolute'", {
+  ts <- make_ts_with_rel()
+  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                        coords = "absolute", angle_convention = "unit_circle")
+  expect_null(attr(hd, "display_convention"))
+})

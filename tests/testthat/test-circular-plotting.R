@@ -929,3 +929,29 @@ test_that("add_heading_arrow integrates with radiate() without error", {
   expect_s3_class(p, "ggplot")
   expect_silent(ggplot_build(p))
 })
+
+# ---- clock display convention: .to_clock_display helper ---------------------
+
+test_that(".to_clock_display maps (1,0) to (0,1)", {
+  r <- .to_clock_display(1, 0)
+  expect_equal(r$x, 0)
+  expect_equal(r$y, 1)
+})
+
+test_that(".to_clock_display maps (0,1) to (-1,0)", {
+  r <- .to_clock_display(0, 1)
+  expect_equal(r$x, -1)
+  expect_equal(r$y,  0)
+})
+
+test_that(".to_clock_display maps (-1,0) to (0,-1)", {
+  r <- .to_clock_display(-1, 0)
+  expect_equal(r$x,  0)
+  expect_equal(r$y, -1)
+})
+
+test_that(".to_clock_display maps (0,-1) to (1,0)", {
+  r <- .to_clock_display(0, -1)
+  expect_equal(r$x, 1)
+  expect_equal(r$y, 0)
+})

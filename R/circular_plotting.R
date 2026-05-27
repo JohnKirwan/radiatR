@@ -639,6 +639,10 @@ add_heading_density <- function(headings_df,
                        ci_fill = ci_fill, ci_alpha = ci_alpha)
 }
 
+# ---- display helpers ---------------------------------------------------------
+
+.to_clock_display <- function(x, y) list(x = -y, y = x)
+
 # ---- circular interval arc ---------------------------------------------------
 
 #' @noRd
