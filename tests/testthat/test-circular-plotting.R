@@ -851,3 +851,29 @@ test_that("compute_circ_mean reads convention from headings_df attributes", {
   expect_equal(result_attr$mean_dir,    result_explicit$mean_dir,    tolerance = 1e-12)
   expect_equal(result_attr$resultant_R, result_explicit$resultant_R, tolerance = 1e-12)
 })
+
+# ---- add_circ_mean -----------------------------------------------------------
+
+test_that("add_circ_mean returns a LayerInstance", {
+  sm <- data.frame(mean_dir = 0, resultant_R = 0.8)
+  expect_s3_class(add_circ_mean(sm), "LayerInstance")
+})
+
+test_that("add_circ_mean returns empty layer for all-NA summary", {
+  library(ggplot2)
+  sm    <- data.frame(mean_dir = NA_real_, resultant_R = NA_real_)
+  layer <- add_circ_mean(sm)
+  expect_s3_class(layer, "LayerInstance")
+  p <- ggplot() + coord_fixed() + layer
+  expect_silent(ggplot_build(p))
+})
+
+test_that("add_circ_mean maps colour_col as aesthetic when present", {
+  library(ggplot2)
+  sm <- data.frame(mean_dir = c(0, pi / 2), resultant_R = c(0.8, 0.6),
+                   grp = c("A", "B"))
+  layer <- add_circ_mean(sm, colour_col = "grp")
+  p     <- ggplot() + coord_fixed() + layer
+  built <- ggplot_build(p)
+  expect_equal(length(unique(built$data[[1]]$colour)), 2L)
+})

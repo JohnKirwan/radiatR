@@ -946,6 +946,77 @@ compute_circ_mean <- function(headings_df,
   out
 }
 
+#' Render pre-computed circular mean arrows on a radial plot
+#'
+#' Takes a data frame produced by [compute_circ_mean()] and renders each row
+#' as a `geom_segment()` arrow. `mean_dir` must be in unit-circle convention
+#' (0 = East, CCW), as returned by [compute_circ_mean()]. Rows where
+#' `mean_dir` or `resultant_R` is `NA` are silently skipped.
+#'
+#' @param summary_df Data frame with columns `mean_dir` (UC radians, 0 to 2π)
+#'   and `resultant_R` (0–1). Typically the output of [compute_circ_mean()].
+#' @param colour_col Optional. Name of a column in `summary_df` to map to the
+#'   colour aesthetic.
+#' @param linewidth Line width of the arrow segment. Default `1`.
+#' @param colour Fixed colour when `colour_col` is `NULL`. Default `"black"`.
+#' @param arrow_length_cm Arrowhead length in cm. Default `0.2`.
+#' @param ... Additional arguments forwarded to `geom_segment` (e.g.
+#'   `linetype`, `alpha`, or a custom `arrow` spec that overrides the default).
+#'
+#' @return A `geom_segment()` layer.
+#'
+#' @seealso [compute_circ_mean()], [add_heading_arrow()]
+#' @importFrom ggplot2 geom_segment aes
+#' @importFrom rlang .data sym
+#' @importFrom grid arrow unit
+#' @export
+add_circ_mean <- function(summary_df,
+                          colour_col      = NULL,
+                          linewidth       = 1,
+                          colour          = "black",
+                          arrow_length_cm = 0.2,
+                          ...) {
+  for (col in c("mean_dir", "resultant_R")) {
+    if (!col %in% names(summary_df))
+      stop("`summary_df` is missing required column '", col, "'.")
+  }
+
+  use_colour <- !is.null(colour_col) && colour_col %in% names(summary_df)
+  valid_rows <- which(!is.na(summary_df$mean_dir) & !is.na(summary_df$resultant_R))
+
+  if (!length(valid_rows)) {
+    empty <- data.frame(.x = numeric(0), .y = numeric(0),
+                        .xend = numeric(0), .yend = numeric(0))
+    return(ggplot2::geom_segment(
+      data    = empty,
+      mapping = ggplot2::aes(x = .data$.x, y = .data$.y,
+                             xend = .data$.xend, yend = .data$.yend),
+      inherit.aes = FALSE
+    ))
+  }
+
+  summary_df$.x    <- 0
+  summary_df$.y    <- 0
+  summary_df$.xend <- summary_df$resultant_R * cos(summary_df$mean_dir)
+  summary_df$.yend <- summary_df$resultant_R * sin(summary_df$mean_dir)
+
+  seg_map <- ggplot2::aes(x = .data$.x, y = .data$.y,
+                          xend = .data$.xend, yend = .data$.yend)
+  if (use_colour) seg_map[["colour"]] <- rlang::sym(colour_col)
+
+  seg_args <- list(
+    data        = summary_df,
+    mapping     = seg_map,
+    linewidth   = linewidth,
+    arrow       = grid::arrow(length = grid::unit(arrow_length_cm, "cm")),
+    inherit.aes = FALSE,
+    ...
+  )
+  if (!use_colour) seg_args$colour <- colour
+
+  do.call(ggplot2::geom_segment, seg_args)
+}
+
 # ---- heading overlay layers --------------------------------------------------
 
 #' Add heading endpoint markers on the unit circle
