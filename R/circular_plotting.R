@@ -808,9 +808,16 @@ add_circ_interval <- function(interval_df,
     } else {
       seq(lower, upper, length.out = n_theta)
     }
+    cos_vals <- radius * cos(theta_seq)
+    sin_vals <- radius * sin(theta_seq)
+    if (identical(attr(interval_df, "display_convention"), "clock")) {
+      disp     <- .to_clock_display(cos_vals, sin_vals)
+      cos_vals <- disp$x
+      sin_vals <- disp$y
+    }
     d <- data.frame(
-      .x        = radius * cos(theta_seq),
-      .y        = radius * sin(theta_seq),
+      .x        = cos_vals,
+      .y        = sin_vals,
       .group_id = i
     )
     if (use_colour) d[[colour_col]] <- interval_df[[colour_col]][i]

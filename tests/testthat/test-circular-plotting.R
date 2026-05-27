@@ -769,6 +769,18 @@ test_that("add_circ_interval wraps correctly when wraps column is absent", {
   expect_true(any(pts$x < -1.0))
 })
 
+test_that("add_circ_interval with display_convention='clock' rotates arc 90 CCW", {
+  library(ggplot2)
+  # Degenerate arc at theta=0 (East in UC): all points at (radius, 0)
+  # After clock rotation: all points at (0, radius) (North)
+  iv <- data.frame(lower = 0, upper = 0)
+  attr(iv, "display_convention") <- "clock"
+  built <- ggplot_build(ggplot() + add_circ_interval(iv, radius = 1.0, n_theta = 3))
+  pts   <- built$data[[1]]
+  expect_equal(pts$x, rep(0,   3), tolerance = 1e-6)
+  expect_equal(pts$y, rep(1.0, 3), tolerance = 1e-6)
+})
+
 # ---- add_heading_interval ----------------------------------------------------
 
 test_that("add_heading_interval returns a LayerInstance", {
