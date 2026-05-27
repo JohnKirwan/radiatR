@@ -995,6 +995,8 @@ add_circ_mean <- function(summary_df,
     ))
   }
 
+  summary_df <- summary_df[valid_rows, , drop = FALSE]
+
   summary_df$.x    <- 0
   summary_df$.y    <- 0
   summary_df$.xend <- summary_df$resultant_R * cos(summary_df$mean_dir)

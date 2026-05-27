@@ -877,3 +877,14 @@ test_that("add_circ_mean maps colour_col as aesthetic when present", {
   built <- ggplot_build(p)
   expect_equal(length(unique(built$data[[1]]$colour)), 2L)
 })
+
+test_that("add_circ_mean drops NA rows when some but not all rows are NA", {
+  library(ggplot2)
+  sm <- data.frame(mean_dir = c(0, NA), resultant_R = c(0.8, NA),
+                   grp = c("A", "B"))
+  layer <- add_circ_mean(sm, colour_col = "grp")
+  p     <- ggplot() + coord_fixed() + layer
+  built <- ggplot_build(p)
+  expect_equal(nrow(built$data[[1]]), 1L)
+  expect_false(any(is.na(built$data[[1]]$xend)))
+})
