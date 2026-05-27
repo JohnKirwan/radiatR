@@ -680,6 +680,19 @@ test_that("compute_circ_interval colour_col returns one row per group", {
   expect_equal(sort(iv$grp), c("A", "B"))
 })
 
+test_that("compute_circ_interval propagates display_convention='clock'", {
+  hd <- data.frame(heading = c(0, pi / 4, pi / 2, pi))
+  attr(hd, "display_convention") <- "clock"
+  result <- compute_circ_interval(hd, stat = "sd")
+  expect_equal(attr(result, "display_convention"), "clock")
+})
+
+test_that("compute_circ_interval leaves display_convention NULL when absent", {
+  hd <- data.frame(heading = c(0, pi / 4, pi / 2, pi))
+  result <- compute_circ_interval(hd, stat = "sd")
+  expect_null(attr(result, "display_convention"))
+})
+
 # ---- add_circ_interval -------------------------------------------------------
 
 test_that("add_circ_interval returns a geom_path LayerInstance", {
@@ -850,6 +863,19 @@ test_that("compute_circ_mean reads convention from headings_df attributes", {
   result_explicit <- compute_circ_mean(hd, angle_convention = "clock", coords = "absolute")
   expect_equal(result_attr$mean_dir,    result_explicit$mean_dir,    tolerance = 1e-12)
   expect_equal(result_attr$resultant_R, result_explicit$resultant_R, tolerance = 1e-12)
+})
+
+test_that("compute_circ_mean propagates display_convention='clock'", {
+  hd <- data.frame(heading = c(0, pi / 2, pi))
+  attr(hd, "display_convention") <- "clock"
+  result <- suppressMessages(compute_circ_mean(hd))
+  expect_equal(attr(result, "display_convention"), "clock")
+})
+
+test_that("compute_circ_mean leaves display_convention NULL when absent", {
+  hd <- data.frame(heading = c(0, pi / 2, pi))
+  result <- suppressMessages(compute_circ_mean(hd))
+  expect_null(attr(result, "display_convention"))
 })
 
 # ---- add_circ_mean -----------------------------------------------------------

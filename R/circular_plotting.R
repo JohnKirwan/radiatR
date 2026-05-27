@@ -736,6 +736,7 @@ compute_circ_interval <- function(headings_df,
   if (use_colour && is.factor(headings_df[[colour_col]]))
     out[[colour_col]] <- factor(out[[colour_col]],
                                 levels = levels(headings_df[[colour_col]]))
+  attr(out, "display_convention") <- attr(headings_df, "display_convention")
   out
 }
 
@@ -947,6 +948,7 @@ compute_circ_mean <- function(headings_df,
   out <- do.call(rbind, out_list)
   if (use_colour && is.factor(headings_df[[colour_col]]))
     out[[colour_col]] <- factor(out[[colour_col]], levels = levels(headings_df[[colour_col]]))
+  attr(out, "display_convention") <- attr(headings_df, "display_convention")
   out
 }
 
