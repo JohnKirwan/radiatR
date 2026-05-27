@@ -127,6 +127,18 @@ test_that("add_heading_vectors segments run from (x_inner,y_inner) to (cos(h),si
   expect_equal(seg$yend, sin(pi / 4),   tolerance = 1e-6)
 })
 
+test_that("add_heading_points with display_convention='clock' rotates marker 90 CCW", {
+  library(ggplot2)
+  hd <- data.frame(heading = 0)          # heading 0 = East in UC
+  attr(hd, "display_convention") <- "clock"
+  p     <- ggplot() + add_heading_points(hd)
+  built <- ggplot_build(p)
+  pts   <- built$data[[1]]
+  # East (1,0) rotated 90 CCW -> North (0,1)
+  expect_equal(pts$x, 0, tolerance = 1e-6)
+  expect_equal(pts$y, 1, tolerance = 1e-6)
+})
+
 test_that("plotting helpers return ggplot layers", {
   ticks <- add_ticks()
   expect_s3_class(ticks, "LayerInstance")

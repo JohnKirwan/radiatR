@@ -1094,8 +1094,14 @@ add_heading_points <- function(headings_df, colour_col = NULL, colour = "black",
   if (!("heading" %in% names(headings_df))) {
     stop("`headings_df` must contain a `heading` column (radians).")
   }
-  headings_df[[".x_head"]] <- cos(headings_df$heading)
-  headings_df[[".y_head"]] <- sin(headings_df$heading)
+  if (identical(attr(headings_df, "display_convention"), "clock")) {
+    disp <- .to_clock_display(cos(headings_df$heading), sin(headings_df$heading))
+    headings_df[[".x_head"]] <- disp$x
+    headings_df[[".y_head"]] <- disp$y
+  } else {
+    headings_df[[".x_head"]] <- cos(headings_df$heading)
+    headings_df[[".y_head"]] <- sin(headings_df$heading)
+  }
 
   mapping <- ggplot2::aes(x = .data[[".x_head"]], y = .data[[".y_head"]])
   use_fixed_colour <- is.null(colour_col) || !colour_col %in% names(headings_df)
