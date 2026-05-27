@@ -96,13 +96,6 @@ head(hd[, c("trial_id", "arc", "heading", "x_inner", "y_inner")])
 Overlaying the heading endpoints (one hollow circle per trial) and the grand mean direction on the combined trajectory plot gives a compact summary of the full dataset:
 
 ```{r headings-overlay}
-summ_all <- circ_summary_headings(plividus, rule = "crossing",
-                                  circ0 = 0.2, circ1 = 0.4,
-                                  group_by = NULL,
-                                  coords = "relative",
-                                  angle_convention = "clock")
-seg_all <- circ_mean_segments(summ_all)
-
 p_all <- radiate(plividus,
                  group_col   = "trial_id",
                  colour_col  = "arc",
@@ -110,10 +103,18 @@ p_all <- radiate(plividus,
                  show_arrow  = FALSE) +
   add_heading_points(hd, colour_col = "arc", size = 1, alpha = 0.6)
 
-gg_add_circ_mean(p_all, seg_all)
+p_all + add_heading_arrow(hd)
 ```
 
-The grand mean arrow points at `r round(summ_all$mean_dir * 180 / pi, 1)`° relative to the stimulus (clock convention; 0° = toward stimulus) with *R* = `r round(summ_all$resultant_R, 2)`, reflecting the overall stimulus-relative tendency across all conditions.
+```{r summ-display, include=FALSE}
+summ_hd <- compute_circ_mean(hd)
+# Convert UC mean_dir back to relative-clock degrees for the narrative:
+# .clock_to_uc(theta, "relative") = (-theta) %% 2pi, so inverse = (-uc) %% 2pi
+summ_hd_deg <- round(((-summ_hd$mean_dir) %% (2 * pi)) * 180 / pi, 1)
+summ_hd_R   <- round(summ_hd$resultant_R, 2)
+```
+
+The grand mean arrow points at `r summ_hd_deg`° relative to the stimulus (clock convention; 0° = toward stimulus) with *R* = `r summ_hd_R`, reflecting the overall stimulus-relative tendency across all conditions.
 
 ## Circular Interval Arc
 
@@ -158,14 +159,7 @@ p
 **+ Grand mean direction arrow:**
 
 ```{r build-3}
-p <- p + geom_segment(
-  data        = seg_all,
-  aes(x = x, y = y, xend = xend, yend = yend),
-  arrow       = grid::arrow(length = grid::unit(0.25, "cm")),
-  colour      = "black",
-  linewidth   = 1.2,
-  inherit.aes = FALSE
-)
+p <- p + add_heading_arrow(hd)
 p
 ```
 
@@ -213,31 +207,7 @@ p
 
 
 ```{r arc-panels, fig.width=8, fig.height=5}
-arc_summ <- do.call(rbind, lapply(split(hd, hd$arc), function(sub) {
-  # Reverse relative clock -> UC: clock = (-uc) %% 2pi, so uc = (-clock) %% 2pi
-  h_uc <- (-sub$heading) %% (2 * pi)
-  uc_mean <- atan2(mean(sin(h_uc), na.rm = TRUE),
-                   mean(cos(h_uc), na.rm = TRUE)) %% (2 * pi)
-  data.frame(
-    arc         = sub$arc[1],
-    mean_dir    = (-uc_mean) %% (2 * pi),  # back to relative clock
-    resultant_R = sqrt(mean(cos(h_uc), na.rm = TRUE)^2 +
-                       mean(sin(h_uc), na.rm = TRUE)^2)
-  )
-}))
-attr(arc_summ, "angle_convention") <- "clock"
-attr(arc_summ, "coords")           <- "relative"
-segs <- circ_mean_segments(arc_summ)
-
-p <-  p +
-  geom_segment(
-    data        = segs,
-    aes(x = x, y = y, xend = xend, yend = yend),
-    arrow       = grid::arrow(length = grid::unit(0.2, "cm")),
-    colour      = "black",
-    linewidth   = 1,
-    inherit.aes = FALSE
-  )
+p <- p + add_heading_arrow(hd, colour_col = "arc", colour = "black")
 p
 ```
 
@@ -284,14 +254,7 @@ radiate(plividus,
                       method = "vonmises", scale = 0.4,
                       fill = "grey80", alpha = 0.35) +
   add_heading_vectors(hd, colour = "grey40") +
-  geom_segment(
-    data        = segs,
-    aes(x = x, y = y, xend = xend, yend = yend),
-    arrow       = grid::arrow(length = grid::unit(0.2, "cm")),
-    colour      = "black",
-    linewidth   = 1,
-    inherit.aes = FALSE
-  )
+  add_heading_arrow(hd, colour_col = "arc", colour = "black")
 ```
 
 The shaded region is the von Mises density fitted to the crossing headings within each arc condition. A narrower, taller peak indicates more concentrated directional responses. Switch to `method = "kernel"` for a non-parametric estimate, or `method = "histogram"` for a raw count display.
@@ -316,24 +279,17 @@ radiate(plividus,
   add_circular_density(dens_boot, colour_col = "arc",
                        scale = 0.4, fill = "grey80", alpha = 0.35,
                        ci_fill = "grey60", ci_alpha = 0.35) +
-  geom_segment(
-    data        = segs,
-    aes(x = x, y = y, xend = xend, yend = yend),
-    arrow       = grid::arrow(length = grid::unit(0.2, "cm")),
-    colour      = "black",
-    linewidth   = 1,
-    inherit.aes = FALSE
-  )
+  add_heading_arrow(hd, colour_col = "arc", colour = "black")
 ```
 
 The darker band is the 95% bootstrap confidence interval for the fitted von Mises density. A wider band reflects greater parametric uncertainty, typically seen in the smaller or more diffuse conditions. The `density_lower` and `density_upper` columns in `dens_boot` can be replaced with interval values from a Bayesian model (e.g. the 2.5th and 97.5th percentiles of a `brms` posterior predictive distribution) before passing to `add_circular_density()`.
 
 ## Circular Summary Statistics
 
-`circ_summary_headings()` provides the per-condition statistics behind the arrows above:
+`compute_circ_mean()` returns the per-condition statistics behind the arrows above:
 
 ```{r stats}
-arc_summ[, c("arc", "mean_dir", "resultant_R")]
+compute_circ_mean(hd, colour_col = "arc")[, c("arc", "mean_dir", "resultant_R")]
 ```
 
 For within-trial path consistency (tortuosity), `circ_summary()` operates on the step-by-step angle distribution:
