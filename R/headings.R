@@ -681,6 +681,9 @@ circ_summary_headings <- function(x, rule = c("crossing","distal","straight","or
 #' @return data.frame with x,y,xend,yend and any grouping columns kept
 #' @export
 circ_mean_segments <- function(stats_df, x0 = 0, y0 = 0, scale = 1) {
+  .Deprecated("compute_circ_mean",
+              msg = paste0("circ_mean_segments() is deprecated. ",
+                           "Use compute_circ_mean() + add_circ_mean() instead."))
   stopifnot(all(c("mean_dir","resultant_R") %in% names(stats_df)))
   convention <- attr(stats_df, "angle_convention") %||% "unit_circle"
   uc_dir <- if (convention == "clock") rad_unclock(stats_df$mean_dir) else stats_df$mean_dir
@@ -700,6 +703,9 @@ circ_mean_segments <- function(stats_df, x0 = 0, y0 = 0, scale = 1) {
 gg_add_circ_mean <- function(p, segments_df, color = "black", linewidth = 0.8,
                              arrow_spec = ggplot2::arrow(length = grid::unit(0.02, "npc")),
                              inherit_aes = FALSE) {
+  .Deprecated("add_heading_arrow",
+              msg = paste0("gg_add_circ_mean() is deprecated. ",
+                           "Use p + add_heading_arrow(headings_df) instead."))
   p + ggplot2::geom_segment(data = segments_df,
                            ggplot2::aes(x = .data$x, y = .data$y, xend = .data$xend, yend = .data$yend),
                            color = color, linewidth = linewidth,
