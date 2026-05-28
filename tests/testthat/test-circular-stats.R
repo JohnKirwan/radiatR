@@ -429,7 +429,7 @@ test_that("circ_summarise clock+relative: mean_dir is in clock convention", {
 })
 
 test_that("circ_summarise reads angle_convention from data frame attributes", {
-  hd <- data.frame(heading = c(0, 0, 0))
+  hd <- data.frame(heading = c(pi/6, pi/4, pi/3))
   attr(hd, "angle_convention") <- "clock"
   attr(hd, "coords")           <- "relative"
   result_attr     <- circ_summarise(hd, heading)
@@ -441,27 +441,18 @@ test_that("circ_summarise reads angle_convention from data frame attributes", {
 })
 
 test_that("circ_summarise explicit angle_convention overrides attribute", {
-  # Test that explicit parameters override the attribute
-  # Create data with angle_convention attribute set to "clock"
-  hd <- data.frame(heading = c(0.1, pi/2, 3.0))
+  hd <- data.frame(heading = c(pi/6, pi/4, pi/3))
   attr(hd, "angle_convention") <- "clock"
   attr(hd, "coords") <- "relative"
 
-  # Case 1: Explicit unit_circle overrides the attribute
-  r_explicit_uc <- circ_summarise(hd, heading, angle_convention = "unit_circle")
-  # Case 2: No explicit argument, uses attribute (clock)
-  r_from_attr <- circ_summarise(hd, heading)
-  # Case 3: Explicit clock with explicit coords
+  r_explicit_uc    <- circ_summarise(hd, heading, angle_convention = "unit_circle")
+  r_from_attr      <- circ_summarise(hd, heading)
   r_explicit_clock <- circ_summarise(hd, heading, angle_convention = "clock", coords = "relative")
 
-  # The explicit clock should match reading from attributes
+  # Attribute-based call must match explicit clock call
   expect_equal(r_from_attr$mean_dir, r_explicit_clock$mean_dir, tolerance = 1e-8)
-  # The explicit unit_circle override should also work (request a different convention)
-  # Since both r_explicit_uc and r_from_attr use the same input angles but with
-  # different interpretations, we can verify that explicit override was applied
-  # by checking that both returned valid numeric results
-  expect_true(is.finite(r_explicit_uc$mean_dir))
-  expect_true(is.finite(r_from_attr$mean_dir))
+  # Explicit UC override must also run and produce a consistent finite result
+  expect_equal(r_explicit_uc$mean_dir, r_from_attr$mean_dir, tolerance = 1e-8)
 })
 
 # ---- circ_summarise edge cases ------------------------------------------------
