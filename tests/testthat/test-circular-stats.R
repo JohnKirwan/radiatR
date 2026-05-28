@@ -269,3 +269,33 @@ test_that("count_goal_entries uses rel_x/rel_y when coords='relative'", {
                                 crossing_radius = 0.2, coords = "absolute")
   expect_equal(res_abs$n_entries, 0L)
 })
+
+# ---- circ_summarise -----------------------------------------------------------
+
+test_that("circ_summarise grand summary returns single-row tibble with correct columns", {
+  hd <- data.frame(heading = c(pi/6, pi/4, pi/3))
+  result <- circ_summarise(hd, heading)
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 1L)
+  expect_named(result, c("n", "mean_dir", "mean_dir_deg", "resultant_R", "kappa"))
+})
+
+test_that("circ_summarise grand summary matches circular package values", {
+  angles <- c(pi/6, pi/4, pi/3)
+  tc     <- circular::circular(angles, units = "radians", modulo = "2pi")
+  exp_mean <- as.numeric(circular::mean.circular(tc)) %% (2 * pi)
+  exp_R    <- as.numeric(circular::rho.circular(tc))
+
+  result <- circ_summarise(data.frame(heading = angles), heading)
+
+  expect_equal(result$n,           3L,       tolerance = 1e-8)
+  expect_equal(result$mean_dir,    exp_mean, tolerance = 1e-8)
+  expect_equal(result$mean_dir_deg, exp_mean * 180 / pi, tolerance = 1e-8)
+  expect_equal(result$resultant_R, exp_R,    tolerance = 1e-8)
+})
+
+test_that("circ_summarise result is ungrouped tibble", {
+  result <- circ_summarise(data.frame(heading = c(0, pi/2)), heading)
+  expect_false(inherits(result, "grouped_df"))
+  expect_s3_class(result, "tbl_df")
+})

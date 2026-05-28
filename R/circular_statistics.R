@@ -283,3 +283,113 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
   }
   result
 }
+
+# ---------------------------------------------------------------------------
+# circ_summarise — tidy grouped circular summary
+
+.circ_summarise_one <- function(angles, stats, angle_convention, coords) {
+  angles <- angles[is.finite(angles)]
+  n      <- length(angles)
+  uc_angles <- if (angle_convention == "clock") .clock_to_uc(angles, coords) else angles
+
+  if (n == 0L) {
+    uc_mu <- NA_real_
+    R     <- NA_real_
+    kap   <- NA_real_
+  } else {
+    tc    <- circular::circular(uc_angles, units = "radians", modulo = "2pi")
+    uc_mu <- .wrap_to_2pi(as.numeric(circular::mean.circular(tc)))
+    R     <- as.numeric(circular::rho.circular(tc))
+    kap   <- if (n >= 3L) .est_kappa_safe(tc) else NA_real_
+  }
+
+  out_mu <- if (!is.na(uc_mu) && angle_convention == "clock") {
+    if (coords == "relative") (-uc_mu) %% (2 * pi) else rad2clock(uc_mu)
+  } else {
+    uc_mu
+  }
+
+  row <- vector("list", length(stats))
+  names(row) <- stats
+  for (s in stats) {
+    row[[s]] <- switch(s,
+      n            = as.integer(n),
+      mean_dir     = out_mu,
+      mean_dir_deg = if (is.na(out_mu)) NA_real_ else out_mu * 180 / pi,
+      resultant_R  = R,
+      kappa        = kap
+    )
+  }
+  row
+}
+
+#' Tidy circular summary of a grouped data frame
+#'
+#' Computes circular summary statistics from any data frame column containing
+#' angles in radians. Supports grouped tibbles and an explicit \code{.by}
+#' argument, returning one row per group.
+#'
+#' @param data A data frame or grouped tibble.
+#' @param col Unquoted or quoted name of the column containing angles (radians).
+#' @param .by Character vector of grouping column names. Overrides any
+#'   \code{group_by()} groups on \code{data}.
+#' @param stats Character vector selecting which statistics to compute. Order
+#'   determines column order in the output. Valid values: \code{"n"},
+#'   \code{"mean_dir"}, \code{"mean_dir_deg"}, \code{"resultant_R"},
+#'   \code{"kappa"}. Default: all five.
+#' @param angle_convention \code{"unit_circle"} (0 = East, CCW) or
+#'   \code{"clock"} (0 = North, CW). When \code{NULL}, read from
+#'   \code{attr(data, "angle_convention")}; defaults to \code{"unit_circle"}.
+#' @param coords \code{"relative"} or \code{"absolute"}. Only used when
+#'   \code{angle_convention = "clock"}. When \code{NULL}, read from
+#'   \code{attr(data, "coords")}; defaults to \code{"absolute"}.
+#'
+#' @return An ungrouped \code{tibble} with group columns first followed by
+#'   requested stat columns in the order given in \code{stats}.
+#'
+#' @examples
+#' hd <- data.frame(heading = c(0, pi/4, pi/2), arc = c("a", "a", "b"))
+#' circ_summarise(hd, heading)
+#' circ_summarise(hd, heading, .by = "arc")
+#' circ_summarise(hd, heading, .by = "arc", stats = c("n", "mean_dir"))
+#'
+#' @importFrom rlang ensym as_string
+#' @importFrom tibble as_tibble
+#' @importFrom circular circular mean.circular rho.circular
+#' @export
+circ_summarise <- function(data,
+                           col,
+                           .by              = NULL,
+                           stats            = c("n", "mean_dir", "mean_dir_deg",
+                                               "resultant_R", "kappa"),
+                           angle_convention = NULL,
+                           coords           = NULL) {
+  col_name <- rlang::as_string(rlang::ensym(col))
+  if (!col_name %in% names(data))
+    stop(sprintf("`col` column '%s' not found in data.", col_name))
+
+  valid_stats <- c("n", "mean_dir", "mean_dir_deg", "resultant_R", "kappa")
+  unknown <- setdiff(stats, valid_stats)
+  if (length(unknown))
+    stop(sprintf("Unknown stats: '%s'. Valid values are: %s.",
+                 paste(unknown, collapse = "', '"),
+                 paste(valid_stats, collapse = ", ")))
+
+  if (is.null(angle_convention))
+    angle_convention <- if (!is.null(attr(data, "angle_convention")))
+      attr(data, "angle_convention") else "unit_circle"
+  angle_convention <- match.arg(angle_convention, c("unit_circle", "clock"))
+
+  if (is.null(coords))
+    coords <- if (!is.null(attr(data, "coords"))) attr(data, "coords") else "absolute"
+  coords <- match.arg(coords, c("relative", "absolute"))
+
+  group_vars <- character(0)   # grouping added in Tasks 2-3
+
+  data_df <- as.data.frame(data)
+
+  if (length(group_vars) == 0L) {
+    srow <- .circ_summarise_one(data_df[[col_name]], stats, angle_convention, coords)
+    return(tibble::as_tibble(as.data.frame(srow, stringsAsFactors = FALSE)))
+  }
+}
