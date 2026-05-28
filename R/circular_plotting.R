@@ -781,10 +781,12 @@ compute_circ_interval <- function(headings_df,
 #'   (radians, `[-π, π]`), and optionally `wraps` (logical). Typically the
 #'   output of [compute_circ_interval()].
 #' @param colour_col Optional column name to map to the colour aesthetic.
+#'   Ignored when `colour` is also supplied.
 #' @param radius Radial position of the arc. Default `1.05`.
 #' @param linewidth Line width. Default `1.5`.
-#' @param colour Fixed line colour when `colour_col` is `NULL`. Default
-#'   `"black"`.
+#' @param colour Fixed colour. When `NULL` (default) and `colour_col` is set,
+#'   colour is mapped from that column; when `NULL` and no `colour_col`, draws
+#'   in `"black"`. Supplying any colour string always overrides `colour_col`.
 #' @param linetype Line type. Default `"solid"`.
 #' @param n_theta Number of points along the arc. Default `500L`.
 #'
@@ -798,7 +800,7 @@ add_circ_interval <- function(interval_df,
                               colour_col = NULL,
                               radius     = 1.05,
                               linewidth  = 1.5,
-                              colour     = "black",
+                              colour     = NULL,
                               linetype   = "solid",
                               n_theta    = 500L) {
   for (col in c("lower", "upper")) {
@@ -806,7 +808,7 @@ add_circ_interval <- function(interval_df,
       stop("`interval_df` is missing required column '", col, "'.")
   }
 
-  use_colour <- !is.null(colour_col) && colour_col %in% names(interval_df)
+  use_colour <- is.null(colour) && !is.null(colour_col) && colour_col %in% names(interval_df)
   has_wraps  <- "wraps" %in% names(interval_df)
   use_clock  <- identical(attr(interval_df, "display_convention"), "clock")
 
@@ -853,7 +855,7 @@ add_circ_interval <- function(interval_df,
   path_args <- list(data = arc_df, mapping = path_map,
                     linewidth = linewidth, linetype = linetype,
                     inherit.aes = FALSE)
-  if (!use_colour) path_args$colour <- colour
+  if (!use_colour) path_args$colour <- if (is.null(colour)) "black" else colour
   do.call(ggplot2::geom_path, path_args)
 }
 
@@ -884,7 +886,7 @@ add_heading_interval <- function(headings_df,
                                  boot_alpha       = 0.05,
                                  radius           = 1.05,
                                  linewidth        = 1.5,
-                                 colour           = "black",
+                                 colour           = NULL,
                                  linetype         = "solid",
                                  n_theta          = 500L) {
   stat <- match.arg(stat)
