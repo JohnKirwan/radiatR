@@ -384,7 +384,9 @@ circ_summarise <- function(data,
     coords <- if (!is.null(attr(data, "coords"))) attr(data, "coords") else "absolute"
   coords <- match.arg(coords, c("relative", "absolute"))
 
-  group_vars <- character(0)   # grouping added in Tasks 2-3
+  if (!is.null(.by) || inherits(data, "grouped_df"))
+    stop("Grouping (.by / group_by) is not yet implemented in this version.")
+  group_vars <- character(0)
 
   data_df <- as.data.frame(data)
 
