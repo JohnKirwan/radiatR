@@ -391,8 +391,7 @@ circ_summarise <- function(data,
     .by
   } else if (inherits(data, "grouped_df")) {
     grp_attr <- attr(data, "groups")
-    nms      <- names(grp_attr)
-    nms[nms != ".rows"]
+    if (is.null(grp_attr)) character(0) else setdiff(names(grp_attr), ".rows")
   } else {
     character(0)
   }
