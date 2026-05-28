@@ -7,7 +7,7 @@
 add_heading_vectors(
   headings_df,
   colour_col = NULL,
-  colour = "black",
+  colour = NULL,
   linetype = "dotted"
 )
 }
@@ -16,10 +16,11 @@ add_heading_vectors(
 and `y_inner`.}
 
 \item{colour_col}{Optional name of a column in `headings_df` to map to the
-colour aesthetic. When set, `colour` is ignored.}
+colour aesthetic. Ignored when `colour` is also supplied.}
 
-\item{colour}{Fixed colour string used when `colour_col` is `NULL` or not
-found in `headings_df`. Defaults to `"black"`.}
+\item{colour}{Fixed colour. When `NULL` (default) and `colour_col` is set,
+colour is mapped from that column; when `NULL` and no `colour_col`, draws
+in `"black"`. Supplying any colour string always overrides `colour_col`.}
 
 \item{linetype}{Line type string or integer passed to `geom_segment`.}
 }

@@ -463,3 +463,63 @@ test_that("circ_summarise explicit angle_convention overrides attribute", {
   expect_true(is.finite(r_explicit_uc$mean_dir))
   expect_true(is.finite(r_from_attr$mean_dir))
 })
+
+# ---- circ_summarise edge cases ------------------------------------------------
+
+test_that("circ_summarise all-NA angles returns n=0 and NA stats", {
+  hd     <- data.frame(heading = c(NA_real_, NA_real_))
+  result <- circ_summarise(hd, heading)
+  expect_equal(result$n, 0L)
+  expect_true(is.na(result$mean_dir))
+  expect_true(is.na(result$mean_dir_deg))
+  expect_true(is.na(result$resultant_R))
+  expect_true(is.na(result$kappa))
+})
+
+test_that("circ_summarise n=1 returns kappa=NA but valid mean_dir and R", {
+  hd     <- data.frame(heading = pi/4)
+  result <- circ_summarise(hd, heading)
+  expect_equal(result$n, 1L)
+  expect_true(is.na(result$kappa))
+  expect_false(is.na(result$mean_dir))
+  expect_equal(result$resultant_R, 1, tolerance = 1e-6)
+})
+
+test_that("circ_summarise n=2 returns kappa=NA but valid mean_dir and R", {
+  hd     <- data.frame(heading = c(pi/4, pi/4))
+  result <- circ_summarise(hd, heading)
+  expect_equal(result$n, 2L)
+  expect_true(is.na(result$kappa))
+  expect_false(is.na(result$mean_dir))
+})
+
+test_that("circ_summarise non-finite angles are excluded from n", {
+  hd     <- data.frame(heading = c(pi/4, Inf, -Inf, NaN, NA))
+  result <- circ_summarise(hd, heading)
+  expect_equal(result$n, 1L)
+  expect_equal(result$mean_dir, pi/4, tolerance = 1e-6)
+})
+
+test_that("circ_summarise all-NA group within multi-group data", {
+  hd <- data.frame(
+    heading = c(pi/4, NA_real_, NA_real_),
+    arc     = c("a",  "b",     "b")
+  )
+  result <- circ_summarise(hd, heading, .by = "arc")
+  row_b  <- result[result$arc == "b", ]
+  expect_equal(row_b$n, 0L)
+  expect_true(is.na(row_b$mean_dir))
+})
+
+test_that("circ_summarise missing col raises informative error", {
+  hd <- data.frame(heading = pi/4)
+  expect_error(
+    circ_summarise(hd, foo),
+    "`col` column 'foo' not found in data"
+  )
+})
+
+test_that("circ_summarise quoted col name also works", {
+  hd <- data.frame(angle = c(0, pi/2))
+  expect_no_error(circ_summarise(hd, "angle"))
+})

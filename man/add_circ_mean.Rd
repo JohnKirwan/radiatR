@@ -8,7 +8,7 @@ add_circ_mean(
   summary_df,
   colour_col = NULL,
   linewidth = 1,
-  colour = "black",
+  colour = NULL,
   arrow_length_cm = 0.2,
   ...
 )
@@ -18,11 +18,13 @@ add_circ_mean(
 and `resultant_R` (0–1). Typically the output of [compute_circ_mean()].}
 
 \item{colour_col}{Optional. Name of a column in `summary_df` to map to the
-colour aesthetic.}
+colour aesthetic. Ignored when `colour` is also supplied.}
 
 \item{linewidth}{Line width of the arrow segment. Default `1`.}
 
-\item{colour}{Fixed colour when `colour_col` is `NULL`. Default `"black"`.}
+\item{colour}{Fixed colour. When `NULL` (default) and `colour_col` is set,
+colour is mapped from that column; when `NULL` and no `colour_col`, draws
+in `"black"`. Supplying any colour string always overrides `colour_col`.}
 
 \item{arrow_length_cm}{Arrowhead length in cm. Default `0.2`.}
 

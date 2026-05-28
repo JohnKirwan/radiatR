@@ -8,12 +8,14 @@ add_heading_interval(
   headings_df,
   heading_col = "heading",
   colour_col = NULL,
+  angle_convention = NULL,
+  coords = NULL,
   stat = c("bootstrap_ci", "sd"),
   boot_reps = 1000L,
   boot_alpha = 0.05,
   radius = 1.05,
   linewidth = 1.5,
-  colour = "black",
+  colour = NULL,
   linetype = "solid",
   n_theta = 500L
 )
@@ -25,6 +27,14 @@ add_heading_interval(
 
 \item{colour_col}{Optional grouping column. When set, one row is returned per
 group and the column is preserved in the output.}
+
+\item{angle_convention}{Angle convention of the heading column: `"unit_circle"`
+(default, 0 = East CCW) or `"clock"` (0 = North CW). If `NULL`, read from
+`attr(headings_df, "angle_convention")`.}
+
+\item{coords}{Coordinate system used when `angle_convention = "clock"`:
+`"relative"` or `"absolute"`. If `NULL`, read from
+`attr(headings_df, "coords")`.}
 
 \item{stat}{Statistic: `"bootstrap_ci"` (default) or `"sd"`.}
 
@@ -38,8 +48,9 @@ produces a 95\% interval.}
 
 \item{linewidth}{Line width. Default `1.5`.}
 
-\item{colour}{Fixed line colour when `colour_col` is `NULL`. Default
-`"black"`.}
+\item{colour}{Fixed colour. When `NULL` (default) and `colour_col` is set,
+colour is mapped from that column; when `NULL` and no `colour_col`, draws
+in `"black"`. Supplying any colour string always overrides `colour_col`.}
 
 \item{linetype}{Line type. Default `"solid"`.}
 

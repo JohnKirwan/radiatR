@@ -9,7 +9,7 @@ add_circ_interval(
   colour_col = NULL,
   radius = 1.05,
   linewidth = 1.5,
-  colour = "black",
+  colour = NULL,
   linetype = "solid",
   n_theta = 500L
 )
@@ -19,14 +19,16 @@ add_circ_interval(
 (radians, `[-π, π]`), and optionally `wraps` (logical). Typically the
 output of [compute_circ_interval()].}
 
-\item{colour_col}{Optional column name to map to the colour aesthetic.}
+\item{colour_col}{Optional column name to map to the colour aesthetic.
+Ignored when `colour` is also supplied.}
 
 \item{radius}{Radial position of the arc. Default `1.05`.}
 
 \item{linewidth}{Line width. Default `1.5`.}
 
-\item{colour}{Fixed line colour when `colour_col` is `NULL`. Default
-`"black"`.}
+\item{colour}{Fixed colour. When `NULL` (default) and `colour_col` is set,
+colour is mapped from that column; when `NULL` and no `colour_col`, draws
+in `"black"`. Supplying any colour string always overrides `colour_col`.}
 
 \item{linetype}{Line type. Default `"solid"`.}
 
