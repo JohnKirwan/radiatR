@@ -379,3 +379,31 @@ test_that("circ_summarise .by overrides group_by groups", {
   expect_false("arc"  %in% names(result))
   expect_equal(nrow(result), 2L)
 })
+
+test_that("circ_summarise stats subset returns only requested columns", {
+  hd     <- data.frame(heading = c(0, pi/2, pi))
+  result <- circ_summarise(hd, heading, stats = c("n", "resultant_R"))
+  expect_named(result, c("n", "resultant_R"))
+})
+
+test_that("circ_summarise stats column order matches stats argument order", {
+  hd     <- data.frame(heading = c(0, pi/2))
+  result <- circ_summarise(hd, heading,
+                            stats = c("resultant_R", "n", "mean_dir"))
+  expect_equal(names(result), c("resultant_R", "n", "mean_dir"))
+})
+
+test_that("circ_summarise unknown stats value raises informative error", {
+  hd <- data.frame(heading = c(0, pi/2))
+  expect_error(
+    circ_summarise(hd, heading, stats = c("n", "foo")),
+    "Unknown stats: 'foo'"
+  )
+})
+
+test_that("circ_summarise stats ordering applies within grouped output too", {
+  hd     <- data.frame(heading = c(0, pi), arc = c("a","b"))
+  result <- circ_summarise(hd, heading, .by = "arc",
+                            stats = c("resultant_R", "n"))
+  expect_equal(names(result), c("arc", "resultant_R", "n"))
+})
