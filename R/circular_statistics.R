@@ -390,7 +390,9 @@ circ_summarise <- function(data,
       stop(sprintf(".by column '%s' not found in data.", missing_by[1L]))
     .by
   } else if (inherits(data, "grouped_df")) {
-    stop("group_by() grouping is not yet implemented in this version.")
+    grp_attr <- attr(data, "groups")
+    nms      <- names(grp_attr)
+    nms[nms != ".rows"]
   } else {
     character(0)
   }

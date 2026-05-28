@@ -21,7 +21,8 @@ Imports:
     methods,
     utils,
     stats
-Suggests: 
+Suggests:
+    dplyr,
     testthat (>= 3.0.0),
     knitr,
     rmarkdown,

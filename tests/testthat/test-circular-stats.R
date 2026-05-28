@@ -353,3 +353,29 @@ test_that("circ_summarise .by missing column raises informative error", {
     ".by column 'nonexistent' not found in data"
   )
 })
+
+test_that("circ_summarise respects group_by groups on a grouped tibble", {
+  skip_if_not_installed("dplyr")
+  hd <- dplyr::group_by(
+    data.frame(heading = c(0, pi/2, pi, 3*pi/2), arc = c("a","a","b","b")),
+    arc
+  )
+  result <- circ_summarise(hd, heading)
+  expect_equal(nrow(result), 2L)
+  expect_true("arc" %in% names(result))
+  expect_false(inherits(result, "grouped_df"))
+})
+
+test_that("circ_summarise .by overrides group_by groups", {
+  skip_if_not_installed("dplyr")
+  hd <- dplyr::group_by(
+    data.frame(heading = c(0, pi/2, pi, 3*pi/2),
+               arc  = c("a","a","b","b"),
+               cond = c("x","y","x","y")),
+    arc
+  )
+  result <- circ_summarise(hd, heading, .by = "cond")
+  expect_true("cond" %in% names(result))
+  expect_false("arc"  %in% names(result))
+  expect_equal(nrow(result), 2L)
+})
