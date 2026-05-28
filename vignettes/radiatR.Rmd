@@ -214,7 +214,7 @@ p
 
 **+ Bootstrap CI arc** for the per-condition mean direction:
 
-```{r build-4}
+```{r build-4, fig.width=8, fig.height=5}
 p <- p + add_heading_interval(hd, colour_col = "arc", colour = "black",
                                stat = "bootstrap_ci", boot_reps = 999L)
 p
