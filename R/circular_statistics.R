@@ -386,9 +386,16 @@ circ_summarise <- function(data,
     coords <- if (!is.null(attr(data, "coords"))) attr(data, "coords") else "absolute"
   coords <- match.arg(coords, c("relative", "absolute"))
 
-  if (!is.null(.by) || inherits(data, "grouped_df"))
-    stop("Grouping (.by / group_by) is not yet implemented in this version.")
-  group_vars <- character(0)
+  group_vars <- if (!is.null(.by)) {
+    missing_by <- setdiff(.by, names(data))
+    if (length(missing_by))
+      stop(sprintf(".by column '%s' not found in data.", missing_by[1L]))
+    .by
+  } else if (inherits(data, "grouped_df")) {
+    stop("group_by() grouping is not yet implemented in this version.")
+  } else {
+    character(0)
+  }
 
   data_df <- as.data.frame(data)
 
@@ -396,4 +403,23 @@ circ_summarise <- function(data,
     srow <- .circ_summarise_one(data_df[[col_name]], stats, angle_convention, coords)
     return(tibble::as_tibble(as.data.frame(srow, stringsAsFactors = FALSE)))
   }
+
+  split_key <- if (length(group_vars) == 1L) {
+    data_df[[group_vars]]
+  } else {
+    interaction(data_df[group_vars], drop = TRUE, sep = "\001")
+  }
+  idx_list <- split(seq_len(nrow(data_df)), split_key, drop = TRUE)
+
+  result_rows <- lapply(names(idx_list), function(k) {
+    ii   <- idx_list[[k]]
+    srow <- .circ_summarise_one(data_df[[col_name]][ii], stats, angle_convention, coords)
+    krow <- data_df[ii[1L], group_vars, drop = FALSE]
+    rownames(krow) <- NULL
+    cbind(krow, as.data.frame(srow, stringsAsFactors = FALSE))
+  })
+
+  result <- do.call(rbind, result_rows)
+  rownames(result) <- NULL
+  tibble::as_tibble(result)
 }

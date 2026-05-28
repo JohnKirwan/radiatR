@@ -299,3 +299,57 @@ test_that("circ_summarise result is ungrouped tibble", {
   expect_false(inherits(result, "grouped_df"))
   expect_s3_class(result, "tbl_df")
 })
+
+test_that("circ_summarise .by returns one row per group with correct columns", {
+  hd <- data.frame(
+    heading = c(pi/6, pi/4, pi/3, pi),
+    arc     = c("a", "a", "b", "b")
+  )
+  result <- circ_summarise(hd, heading, .by = "arc")
+  expect_equal(nrow(result), 2L)
+  expect_named(result, c("arc", "n", "mean_dir", "mean_dir_deg", "resultant_R", "kappa"))
+  expect_equal(sort(result$arc), c("a", "b"))
+  expect_equal(result$n[result$arc == "a"], 2L)
+  expect_equal(result$n[result$arc == "b"], 2L)
+})
+
+test_that("circ_summarise .by group stats match per-group circular package values", {
+  angles_a <- c(pi/6, pi/4)
+  angles_b <- c(pi/3, pi/2)
+  hd <- data.frame(heading = c(angles_a, angles_b), arc = c("a","a","b","b"))
+
+  result <- circ_summarise(hd, heading, .by = "arc")
+
+  for (grp_name in c("a", "b")) {
+    angs <- if (grp_name == "a") angles_a else angles_b
+    tc   <- circular::circular(angs, units = "radians", modulo = "2pi")
+    exp_mean <- as.numeric(circular::mean.circular(tc)) %% (2*pi)
+    exp_R    <- as.numeric(circular::rho.circular(tc))
+    row      <- result[result$arc == grp_name, ]
+    expect_equal(row$mean_dir,    exp_mean, tolerance = 1e-8)
+    expect_equal(row$resultant_R, exp_R,    tolerance = 1e-8)
+  }
+})
+
+test_that("circ_summarise .by group cols appear before stat cols", {
+  hd <- data.frame(heading = c(0, pi), arc = c("x","y"), cond = c("A","A"))
+  result <- circ_summarise(hd, heading, .by = c("arc", "cond"))
+  expect_equal(names(result)[1:2], c("arc", "cond"))
+})
+
+test_that("circ_summarise .by factor column preserves level order in output", {
+  hd <- data.frame(
+    heading = c(0, pi/2, pi, 3*pi/2),
+    arc     = factor(c("b","b","a","a"), levels = c("b","a"))
+  )
+  result <- circ_summarise(hd, heading, .by = "arc")
+  expect_equal(as.character(result$arc), c("b", "a"))
+})
+
+test_that("circ_summarise .by missing column raises informative error", {
+  hd <- data.frame(heading = pi/4)
+  expect_error(
+    circ_summarise(hd, heading, .by = "nonexistent"),
+    ".by column 'nonexistent' not found in data"
+  )
+})
