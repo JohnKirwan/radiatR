@@ -350,8 +350,10 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 #' @examples
 #' hd <- data.frame(heading = c(0, pi/4, pi/2), arc = c("a", "a", "b"))
 #' circ_summarise(hd, heading)
+#' \dontrun{
 #' circ_summarise(hd, heading, .by = "arc")
 #' circ_summarise(hd, heading, .by = "arc", stats = c("n", "mean_dir"))
+#' }
 #'
 #' @importFrom rlang ensym as_string
 #' @importFrom tibble as_tibble
