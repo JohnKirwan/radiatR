@@ -46,9 +46,7 @@ argument, returning one row per group.
 \examples{
 hd <- data.frame(heading = c(0, pi/4, pi/2), arc = c("a", "a", "b"))
 circ_summarise(hd, heading)
-\dontrun{
 circ_summarise(hd, heading, .by = "arc")
 circ_summarise(hd, heading, .by = "arc", stats = c("n", "mean_dir"))
-}
 
 }
