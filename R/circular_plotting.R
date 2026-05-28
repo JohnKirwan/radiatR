@@ -808,9 +808,10 @@ add_circ_interval <- function(interval_df,
       stop("`interval_df` is missing required column '", col, "'.")
   }
 
-  use_colour <- is.null(colour) && !is.null(colour_col) && colour_col %in% names(interval_df)
-  has_wraps  <- "wraps" %in% names(interval_df)
-  use_clock  <- identical(attr(interval_df, "display_convention"), "clock")
+  has_group_col <- !is.null(colour_col) && colour_col %in% names(interval_df)
+  map_colour    <- has_group_col && is.null(colour)
+  has_wraps     <- "wraps" %in% names(interval_df)
+  use_clock     <- identical(attr(interval_df, "display_convention"), "clock")
 
   valid_rows <- which(!is.na(interval_df$lower) & !is.na(interval_df$upper))
 
@@ -844,18 +845,18 @@ add_circ_interval <- function(interval_df,
       .y        = sin_vals,
       .group_id = i
     )
-    if (use_colour) d[[colour_col]] <- interval_df[[colour_col]][i]
+    if (has_group_col) d[[colour_col]] <- interval_df[[colour_col]][i]
     d
   })
   arc_df <- do.call(rbind, parts)
 
   path_map <- ggplot2::aes(x = .data$.x, y = .data$.y, group = .data$.group_id)
-  if (use_colour) path_map[["colour"]] <- rlang::sym(colour_col)
+  if (map_colour) path_map[["colour"]] <- rlang::sym(colour_col)
 
   path_args <- list(data = arc_df, mapping = path_map,
                     linewidth = linewidth, linetype = linetype,
                     inherit.aes = FALSE)
-  if (!use_colour) path_args$colour <- if (is.null(colour)) "black" else colour
+  if (!map_colour) path_args$colour <- if (is.null(colour)) "black" else colour
   do.call(ggplot2::geom_path, path_args)
 }
 
