@@ -47,9 +47,7 @@ test_that("shepherding functions wrap angles into valid ranges", {
   wrapped_unit <- rad_shepherd(angles)
   expect_true(all(wrapped_unit <= pi & wrapped_unit > -pi - 1e-10))
 
-  clock_angles <- c(-2*pi, -0.1, 0, pi, 3*pi, 5*pi)
-  wrapped_clock <- rad_shepherd_clock(clock_angles)
-  expect_true(all(wrapped_clock >= 0 & wrapped_clock < 2*pi + 1e-10))
+
 })
 
 test_that("circ_summary angle_convention='clock' converts mean_dir output", {

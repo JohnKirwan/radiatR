@@ -103,7 +103,7 @@ get_trial_limits <- function(landmarks, animal_track, file_tbl, vid_num,
   if (identical(midpoint, "midpoint") && "type" %in% names(tl) && tl$type[1] == "Herm") {
     stim_theta <- mapply(rad2clock, tl$stim_theta)
     stim_theta <- stim_theta - tl$arc * (pi / 360)
-    stim_theta <- mapply(rad_shepherd_clock, stim_theta)
+    stim_theta <- wrap_to_2pi(stim_theta)
     tl$stim_theta <- mapply(rad_unclock, stim_theta)
     tl$stim_x_0 <- cos(tl$stim_theta)
     tl$stim_y_0 <- sin(tl$stim_theta)

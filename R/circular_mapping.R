@@ -26,19 +26,6 @@ rad_shepherd <- function(theta) {
   theta
 }
 
-#' Wrap angles to the interval [0, 2*pi)
-#'
-#' @param theta Numeric vector of angles (radians).
-#' @return Angles wrapped to [0, 2*pi).
-#' @examples
-#' theta <- seq(from = -2, to = 8, length.out = 6)
-#' rad_shepherd_clock(theta)
-#' @export
-rad_shepherd_clock <- function(theta) {
-  theta <- as.numeric(theta)
-  theta %% (2 * pi)
-}
-
 #' Convert unit-circle angles to clock orientation
 #'
 #' @param theta Angle in radians using the standard unit-circle convention.
@@ -54,7 +41,7 @@ rad2clock <- function(theta) {
     theta[!is.finite(theta)] <- NA_real_
   }
   clock_theta <- (pi / 2) - theta
-  rad_shepherd_clock(clock_theta)
+  wrap_to_2pi(clock_theta)
 }
 
 #' Convert clock-oriented angles back to unit-circle orientation

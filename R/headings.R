@@ -75,9 +75,6 @@
   out
 }
 
-.wrap_to_2pi <- function(x) x %% (2*pi)
-.as_circ <- function(theta) circular::circular(theta, units = "radians", type = "angles", modulo = "2pi", zero = 0)
-
 .kappa_from_Rbar <- function(R) {
   out <- R
   low  <- R < 0.53
