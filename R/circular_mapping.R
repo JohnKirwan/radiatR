@@ -9,7 +9,7 @@
 #' @name circular_mapping
 NULL
 
-# ---- Angle wrapping -----------------------------------------------------------
+# ---- Angle wrapping ---------------------------------------------------------
 
 #' Wrap angles to the interval (-pi, pi]
 #'
@@ -37,7 +37,8 @@ rad_shepherd <- function(theta) {
 rad2clock <- function(theta) {
   theta <- as.numeric(theta)
   if (any(!is.finite(theta))) {
-    warning("Non-finite values detected; returning NA for those entries.", call. = FALSE)
+    warning("Non-finite values detected; returning NA for those entries.",
+            call. = FALSE)
     theta[!is.finite(theta)] <- NA_real_
   }
   clock_theta <- (pi / 2) - theta
@@ -55,13 +56,14 @@ rad2clock <- function(theta) {
 rad_unclock <- function(theta) {
   theta <- as.numeric(theta)
   if (any(!is.finite(theta))) {
-    warning("Non-finite values detected; returning NA for those entries.", call. = FALSE)
+    warning("Non-finite values detected; returning NA for those entries.",
+            call. = FALSE)
     theta[!is.finite(theta)] <- NA_real_
   }
   wrap_to_2pi((pi / 2) - theta)
 }
 
-# Internal wrappers -------------------------------------------------------------
+# Internal wrappers -----------------------------------------------------------
 
 wrap_to_2pi <- function(theta) {
   if (is.null(theta)) {
@@ -84,7 +86,8 @@ as_radians <- function(x, unit) {
     return(invisible(NULL))
   x_fin <- x[is.finite(x)]
   if (!length(x_fin)) return(invisible(NULL))
-  id <- paste0("radiatR_units_", if (!is.null(col_name)) col_name else "angles")
+  id <- paste0("radiatR_units_",
+               if (!is.null(col_name)) col_name else "angles")
   mx <- max(abs(x_fin))
   if (units == "radians" && mx > 2 * pi * 1.05) {
     rlang::warn(
@@ -107,7 +110,7 @@ as_radians <- function(x, unit) {
   invisible(NULL)
 }
 
-# ---- Cartesian/polar conversions ---------------------------------------------
+# ---- Cartesian/polar conversions --------------------------------------------
 
 cartesian_to_polar <- function(x, y, normalize = TRUE,
                                zero_tol = sqrt(.Machine$double.eps)) {
@@ -147,7 +150,7 @@ polar_to_cartesian <- function(theta, rho = 1) {
   )
 }
 
-# ---- Trial mapping -----------------------------------------------------------
+# ---- Trial mapping ----------------------------------------------------------
 
 #' Build a mapping from raw pixels to unit-circle coordinates
 #'
