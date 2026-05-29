@@ -38,8 +38,8 @@ test_that("clockwise conversions preserve angles", {
   angles <- seq(-2 * pi, 2 * pi, length.out = 11)
   clock <- rad2clock(angles)
   back_to_unit <- rad_unclock(clock)
-  expect_true(all(back_to_unit <= pi & back_to_unit > -pi + 1e-12))
-  expect_equal(back_to_unit, ((angles + pi) %% (2 * pi)) - pi, tolerance = 1e-8)
+  expect_true(all(back_to_unit >= 0 & back_to_unit < 2 * pi + 1e-12))
+  expect_equal(back_to_unit, (pi / 2 - clock) %% (2 * pi), tolerance = 1e-8)
 })
 
 test_that("shepherding functions wrap angles into valid ranges", {

@@ -111,10 +111,10 @@ get_trial_limits <- function(landmarks, animal_track, file_tbl, vid_num,
 
   theta <- tl$stim_theta
   quadrant <- rep(NA_character_, length(theta))
-  quadrant[theta > -pi / 4 & theta <= pi / 4] <- "right"
-  quadrant[theta > pi / 4 & theta <= 3 * pi / 4] <- "top"
-  quadrant[theta > -3 * pi / 4 & theta <= -pi / 4] <- "bottom"
-  quadrant[theta > 3 * pi / 4 | theta <= -3 * pi / 4] <- "left"
+  quadrant[theta < pi / 4 | theta >= 7 * pi / 4] <- "right"
+  quadrant[theta >= pi / 4 & theta < 3 * pi / 4] <- "top"
+  quadrant[theta >= 5 * pi / 4 & theta < 7 * pi / 4] <- "bottom"
+  quadrant[theta >= 3 * pi / 4 & theta < 5 * pi / 4] <- "left"
   tl$quadrant <- quadrant
 
   tl

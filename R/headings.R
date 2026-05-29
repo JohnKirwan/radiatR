@@ -53,7 +53,7 @@
   if (coords == "relative") {
     (-clock_heading) %% (2 * pi)
   } else {
-    wrap_to_2pi(rad_unclock(clock_heading))
+    rad_unclock(clock_heading)
   }
 }
 

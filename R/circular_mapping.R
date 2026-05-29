@@ -47,7 +47,7 @@ rad2clock <- function(theta) {
 #' Convert clock-oriented angles back to unit-circle orientation
 #'
 #' @param theta Angle (radians) measured clockwise with zero at the top.
-#' @return Angle in radians using the standard unit-circle convention.
+#' @return Angle in radians in [0, 2*pi), unit-circle convention.
 #' @examples
 #' theta <- seq(from = 0, to = 2 * pi, length.out = 5)
 #' rad_unclock(theta)
@@ -58,7 +58,7 @@ rad_unclock <- function(theta) {
     warning("Non-finite values detected; returning NA for those entries.", call. = FALSE)
     theta[!is.finite(theta)] <- NA_real_
   }
-  rad_shepherd((pi / 2) - theta)
+  wrap_to_2pi((pi / 2) - theta)
 }
 
 # Internal wrappers -------------------------------------------------------------
