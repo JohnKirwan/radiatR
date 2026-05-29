@@ -139,7 +139,7 @@ test_that("derive_headings computes simple net direction", {
     x = c(0, 0, 1),
     y = c(0, 1, 1)
   )
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y", angle = "time")
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y", angle = "time", angle_unit = "radians")
   headings <- derive_headings(ts, rule = "net", angle_convention = "unit_circle")
   expect_equal(nrow(headings), 1)
   expect_equal(headings$heading, atan2(1, 1), tolerance = 1e-8)
@@ -189,7 +189,7 @@ test_that("custom heading rules can be registered and listed", {
   withr::defer(rm(list = "zero_heading", envir = registry), envir = parent.frame())
 
   df <- data.frame(id = "A", time = 0:1, x = c(0, 1), y = c(0, 0))
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y", angle = "time")
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y", angle = "time", angle_unit = "radians")
   res <- derive_headings(ts, rule = "zero_heading", angle_convention = "unit_circle")
   expect_equal(res$heading, 0)
   expect_true("zero_heading" %in% list_heading_rules())

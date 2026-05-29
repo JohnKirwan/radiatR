@@ -73,12 +73,38 @@ wrap_to_2pi <- function(theta) {
   theta
 }
 
-as_radians <- function(x, unit = c("radians", "degrees")) {
-  unit <- match.arg(unit)
-  if (unit == "degrees") {
-    x <- x * pi / 180
-  }
+as_radians <- function(x, unit) {
+  unit <- match.arg(unit, c("radians", "degrees"))
+  if (unit == "degrees") x <- x * pi / 180
   wrap_to_2pi(as.numeric(x))
+}
+
+.check_angle_units <- function(x, units, col_name = NULL) {
+  if (!isTRUE(getOption("radiatR.check_units", default = TRUE)))
+    return(invisible(NULL))
+  x_fin <- x[is.finite(x)]
+  if (!length(x_fin)) return(invisible(NULL))
+  id <- paste0("radiatR_units_", if (!is.null(col_name)) col_name else "angles")
+  mx <- max(abs(x_fin))
+  if (units == "radians" && mx > 2 * pi * 1.05) {
+    rlang::warn(
+      c(paste0(if (!is.null(col_name)) paste0("'", col_name, "': ") else "",
+               "max |value| = ", round(mx, 2),
+               " exceeds 2π — did you mean units = \"degrees\"?"),
+        i = "Suppress with options(radiatR.check_units = FALSE)."),
+      .frequency = "once",
+      .frequency_id = id
+    )
+  } else if (units == "degrees" && mx < 0.1 * pi) {
+    rlang::warn(
+      c(paste0(if (!is.null(col_name)) paste0("'", col_name, "': ") else "",
+               "all |values| < π/10 — did you mean units = \"radians\"?"),
+        i = "Suppress with options(radiatR.check_units = FALSE)."),
+      .frequency = "once",
+      .frequency_id = id
+    )
+  }
+  invisible(NULL)
 }
 
 # ---- Cartesian/polar conversions ---------------------------------------------

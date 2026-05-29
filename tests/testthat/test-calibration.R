@@ -10,7 +10,7 @@ test_that("camera calibration helpers preserve identity under neutral parameters
     y = c(0, 0),
     angle = c(0, 0)
   )
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y", angle = "angle", normalize_xy = FALSE)
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y", angle = "angle", angle_unit = "radians", normalize_xy = FALSE)
   calibrated <- calibrate_positions(ts, model)
   expect_equal(calibrated@data$x, df$x)
   expect_equal(calibrated@data$y, df$y)
@@ -55,7 +55,7 @@ test_that("calibrate_positions records calibration transform", {
     y = c(0, 1, 1, 2),
     angle = c(0, 0, 0, 0)
   )
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y", angle = "angle", normalize_xy = FALSE)
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y", angle = "angle", angle_unit = "radians", normalize_xy = FALSE)
   ts <- log_transform(ts, step = "preexisting", traj_ids = ids(ts), implementation = "test_step", params = list(list()))
   n_ids <- length(ids(ts))
   calibrated <- calibrate_positions(ts, model)

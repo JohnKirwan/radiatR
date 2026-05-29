@@ -7,7 +7,7 @@
 
 ## ---- helpers -----------------------------------------------------------------
 .wrap_to_2pi <- function(x) wrap_to_2pi(x)
-.as_radians <- function(x, unit = c("radians","degrees")) as_radians(x, unit)
+.as_radians <- function(x, unit) as_radians(x, unit)
 
 # Fallback approximation for kappa from resultant length Rbar (Mardia & Jupp)
 .kappa_from_Rbar <- function(R) {
@@ -219,13 +219,12 @@ TrajSet <- function(df,
                     angle = NULL,
                     x = NULL, y = NULL,
                     rel_x = NULL, rel_y = NULL,
-                    angle_unit = c("radians","degrees"),
+                    angle_unit = NULL,
                     weight = NULL,
                     normalize_xy = TRUE,
                     meta = list(),
                     transform_history = NULL) {
   stopifnot(is.data.frame(df))
-  angle_unit <- match.arg(angle_unit)
   if (is.null(meta)) meta <- list()
 
   if (!id %in% names(df))   stop("Column '", id, "' not found")
@@ -235,6 +234,16 @@ TrajSet <- function(df,
   have_xy    <- !is.null(x) && !is.null(y) && all(c(x,y) %in% names(df))
   if (!have_angle && !have_xy)
     stop("Provide either an angle column or both x and y columns")
+
+  if (have_angle) {
+    if (is.null(angle_unit))
+      stop("'angle_unit' must be specified when an angle column is provided: ",
+           "use \"radians\" or \"degrees\".")
+    angle_unit <- match.arg(angle_unit, c("radians", "degrees"))
+    .check_angle_units(df[[angle]], angle_unit, col_name = angle)
+  } else {
+    angle_unit <- "radians"  # angles derived from x/y via atan2, always radians
+  }
 
   # Validate rel_x/rel_y pairing
   have_rel <- !is.null(rel_x) || !is.null(rel_y)

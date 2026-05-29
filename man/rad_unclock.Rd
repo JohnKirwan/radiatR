@@ -10,7 +10,7 @@ rad_unclock(theta)
 \item{theta}{Angle (radians) measured clockwise with zero at the top.}
 }
 \value{
-Angle in radians using the standard unit-circle convention.
+Angle in radians in [0, 2*pi), unit-circle convention.
 }
 \description{
 Convert clock-oriented angles back to unit-circle orientation

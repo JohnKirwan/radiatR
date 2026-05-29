@@ -18,7 +18,7 @@ TrajSet(
   y = NULL,
   rel_x = NULL,
   rel_y = NULL,
-  angle_unit = c("radians", "degrees"),
+  angle_unit = NULL,
   weight = NULL,
   normalize_xy = TRUE,
   meta = list(),

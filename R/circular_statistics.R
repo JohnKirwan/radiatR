@@ -325,12 +325,21 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 
 #' Tidy circular summary of a grouped data frame
 #'
-#' Computes circular summary statistics from any data frame column containing
-#' angles in radians. Supports grouped tibbles and an explicit \code{.by}
-#' argument, returning one row per group.
+#' Computes circular summary statistics from a data frame column of angles.
+#' Supports grouped tibbles and an explicit \code{.by} argument, returning
+#' one row per group. Output \code{mean_dir} is always in radians;
+#' \code{mean_dir_deg} is the same value converted to degrees.
 #'
 #' @param data A data frame or grouped tibble.
-#' @param col Unquoted or quoted name of the column containing angles (radians).
+#' @param col Unquoted or quoted name of the column containing angles.
+#' @param units Units of the angle column: \code{"radians"} or
+#'   \code{"degrees"}. No default — must be specified explicitly. Values are
+#'   converted to radians internally before computation; output is always
+#'   in radians (\code{mean_dir}) or degrees (\code{mean_dir_deg}).
+#'   A warning is issued when the value range appears inconsistent with the
+#'   declared units (e.g. values > 2π when \code{units = "radians"}).
+#'   Suppress range warnings with
+#'   \code{options(radiatR.check_units = FALSE)}.
 #' @param .by Character vector of grouping column names. Overrides any
 #'   \code{group_by()} groups on \code{data}.
 #' @param stats Character vector selecting which statistics to compute. Order
@@ -349,9 +358,10 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 #'
 #' @examples
 #' hd <- data.frame(heading = c(0, pi/4, pi/2), arc = c("a", "a", "b"))
-#' circ_summarise(hd, heading)
-#' circ_summarise(hd, heading, .by = "arc")
-#' circ_summarise(hd, heading, .by = "arc", stats = c("n", "mean_dir"))
+#' circ_summarise(hd, heading, units = "radians")
+#' circ_summarise(hd, heading, units = "radians", .by = "arc")
+#' circ_summarise(hd, heading, units = "radians", .by = "arc",
+#'                stats = c("n", "mean_dir"))
 #'
 #' @importFrom rlang ensym as_string
 #' @importFrom tibble as_tibble
@@ -359,6 +369,7 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 #' @export
 circ_summarise <- function(data,
                            col,
+                           units,
                            .by              = NULL,
                            stats            = c("n", "mean_dir", "mean_dir_deg",
                                                "resultant_R", "kappa"),
@@ -367,6 +378,11 @@ circ_summarise <- function(data,
   col_name <- rlang::as_string(rlang::ensym(col))
   if (!col_name %in% names(data))
     stop(sprintf("`col` column '%s' not found in data.", col_name))
+
+  if (missing(units))
+    stop("'units' must be specified: use \"radians\" or \"degrees\".\n",
+         "  Hint: most behavioral data is recorded in degrees.")
+  units <- match.arg(units, c("radians", "degrees"))
 
   valid_stats <- c("n", "mean_dir", "mean_dir_deg", "resultant_R", "kappa")
   unknown <- setdiff(stats, valid_stats)
@@ -383,6 +399,9 @@ circ_summarise <- function(data,
   if (is.null(coords))
     coords <- if (!is.null(attr(data, "coords"))) attr(data, "coords") else "absolute"
   coords <- match.arg(coords, c("relative", "absolute"))
+
+  .check_angle_units(data[[col_name]], units, col_name)
+  if (units == "degrees") data[[col_name]] <- data[[col_name]] * pi / 180
 
   group_vars <- if (!is.null(.by)) {
     missing_by <- setdiff(.by, names(data))

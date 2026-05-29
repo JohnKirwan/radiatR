@@ -7,6 +7,7 @@
 circ_summarise(
   data,
   col,
+  units,
   .by = NULL,
   stats = c("n", "mean_dir", "mean_dir_deg", "resultant_R", "kappa"),
   angle_convention = NULL,
@@ -16,7 +17,16 @@ circ_summarise(
 \arguments{
 \item{data}{A data frame or grouped tibble.}
 
-\item{col}{Unquoted or quoted name of the column containing angles (radians).}
+\item{col}{Unquoted or quoted name of the column containing angles.}
+
+\item{units}{Units of the angle column: \code{"radians"} or
+\code{"degrees"}. No default — must be specified explicitly. Values are
+converted to radians internally before computation; output is always
+in radians (\code{mean_dir}) or degrees (\code{mean_dir_deg}).
+A warning is issued when the value range appears inconsistent with the
+declared units (e.g. values > 2π when \code{units = "radians"}).
+Suppress range warnings with
+\code{options(radiatR.check_units = FALSE)}.}
 
 \item{.by}{Character vector of grouping column names. Overrides any
 \code{group_by()} groups on \code{data}.}
@@ -39,14 +49,16 @@ An ungrouped \code{tibble} with group columns first followed by
   requested stat columns in the order given in \code{stats}.
 }
 \description{
-Computes circular summary statistics from any data frame column containing
-angles in radians. Supports grouped tibbles and an explicit \code{.by}
-argument, returning one row per group.
+Computes circular summary statistics from a data frame column of angles.
+Supports grouped tibbles and an explicit \code{.by} argument, returning
+one row per group. Output \code{mean_dir} is always in radians;
+\code{mean_dir_deg} is the same value converted to degrees.
 }
 \examples{
 hd <- data.frame(heading = c(0, pi/4, pi/2), arc = c("a", "a", "b"))
-circ_summarise(hd, heading)
-circ_summarise(hd, heading, .by = "arc")
-circ_summarise(hd, heading, .by = "arc", stats = c("n", "mean_dir"))
+circ_summarise(hd, heading, units = "radians")
+circ_summarise(hd, heading, units = "radians", .by = "arc")
+circ_summarise(hd, heading, units = "radians", .by = "arc",
+               stats = c("n", "mean_dir"))
 
 }

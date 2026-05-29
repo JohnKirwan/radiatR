@@ -272,7 +272,7 @@ test_that("count_goal_entries uses rel_x/rel_y when coords='relative'", {
 
 test_that("circ_summarise grand summary returns single-row tibble with correct columns", {
   hd <- data.frame(heading = c(pi/6, pi/4, pi/3))
-  result <- circ_summarise(hd, heading)
+  result <- circ_summarise(hd, heading, units = "radians")
   expect_s3_class(result, "tbl_df")
   expect_equal(nrow(result), 1L)
   expect_named(result, c("n", "mean_dir", "mean_dir_deg", "resultant_R", "kappa"))
@@ -284,7 +284,7 @@ test_that("circ_summarise grand summary matches circular package values", {
   exp_mean <- as.numeric(circular::mean.circular(tc)) %% (2 * pi)
   exp_R    <- as.numeric(circular::rho.circular(tc))
 
-  result <- circ_summarise(data.frame(heading = angles), heading)
+  result <- circ_summarise(data.frame(heading = angles), heading, units = "radians")
 
   expect_equal(result$n,           3L,       tolerance = 1e-8)
   expect_equal(result$mean_dir,    exp_mean, tolerance = 1e-8)
@@ -293,7 +293,7 @@ test_that("circ_summarise grand summary matches circular package values", {
 })
 
 test_that("circ_summarise result is ungrouped tibble", {
-  result <- circ_summarise(data.frame(heading = c(0, pi/2)), heading)
+  result <- circ_summarise(data.frame(heading = c(0, pi/2)), heading, units = "radians")
   expect_false(inherits(result, "grouped_df"))
   expect_s3_class(result, "tbl_df")
 })
@@ -303,7 +303,7 @@ test_that("circ_summarise .by returns one row per group with correct columns", {
     heading = c(pi/6, pi/4, pi/3, pi),
     arc     = c("a", "a", "b", "b")
   )
-  result <- circ_summarise(hd, heading, .by = "arc")
+  result <- circ_summarise(hd, heading, units = "radians", .by = "arc")
   expect_equal(nrow(result), 2L)
   expect_named(result, c("arc", "n", "mean_dir", "mean_dir_deg", "resultant_R", "kappa"))
   expect_equal(sort(result$arc), c("a", "b"))
@@ -316,7 +316,7 @@ test_that("circ_summarise .by group stats match per-group circular package value
   angles_b <- c(pi/3, pi/2)
   hd <- data.frame(heading = c(angles_a, angles_b), arc = c("a","a","b","b"))
 
-  result <- circ_summarise(hd, heading, .by = "arc")
+  result <- circ_summarise(hd, heading, units = "radians", .by = "arc")
 
   for (grp_name in c("a", "b")) {
     angs <- if (grp_name == "a") angles_a else angles_b
@@ -331,7 +331,7 @@ test_that("circ_summarise .by group stats match per-group circular package value
 
 test_that("circ_summarise .by group cols appear before stat cols", {
   hd <- data.frame(heading = c(0, pi), arc = c("x","y"), cond = c("A","A"))
-  result <- circ_summarise(hd, heading, .by = c("arc", "cond"))
+  result <- circ_summarise(hd, heading, units = "radians", .by = c("arc", "cond"))
   expect_equal(names(result)[1:2], c("arc", "cond"))
 })
 
@@ -340,14 +340,14 @@ test_that("circ_summarise .by factor column preserves level order in output", {
     heading = c(0, pi/2, pi, 3*pi/2),
     arc     = factor(c("b","b","a","a"), levels = c("b","a"))
   )
-  result <- circ_summarise(hd, heading, .by = "arc")
+  result <- circ_summarise(hd, heading, units = "radians", .by = "arc")
   expect_equal(as.character(result$arc), c("b", "a"))
 })
 
 test_that("circ_summarise .by missing column raises informative error", {
   hd <- data.frame(heading = pi/4)
   expect_error(
-    circ_summarise(hd, heading, .by = "nonexistent"),
+    circ_summarise(hd, heading, units = "radians", .by = "nonexistent"),
     ".by column 'nonexistent' not found in data"
   )
 })
@@ -358,7 +358,7 @@ test_that("circ_summarise respects group_by groups on a grouped tibble", {
     data.frame(heading = c(0, pi/2, pi, 3*pi/2), arc = c("a","a","b","b")),
     arc
   )
-  result <- circ_summarise(hd, heading)
+  result <- circ_summarise(hd, heading, units = "radians")
   expect_equal(nrow(result), 2L)
   expect_true("arc" %in% names(result))
   expect_false(inherits(result, "grouped_df"))
@@ -372,7 +372,7 @@ test_that("circ_summarise .by overrides group_by groups", {
                cond = c("x","y","x","y")),
     arc
   )
-  result <- circ_summarise(hd, heading, .by = "cond")
+  result <- circ_summarise(hd, heading, units = "radians", .by = "cond")
   expect_true("cond" %in% names(result))
   expect_false("arc"  %in% names(result))
   expect_equal(nrow(result), 2L)
@@ -380,13 +380,13 @@ test_that("circ_summarise .by overrides group_by groups", {
 
 test_that("circ_summarise stats subset returns only requested columns", {
   hd     <- data.frame(heading = c(0, pi/2, pi))
-  result <- circ_summarise(hd, heading, stats = c("n", "resultant_R"))
+  result <- circ_summarise(hd, heading, units = "radians", stats = c("n", "resultant_R"))
   expect_named(result, c("n", "resultant_R"))
 })
 
 test_that("circ_summarise stats column order matches stats argument order", {
   hd     <- data.frame(heading = c(0, pi/2))
-  result <- circ_summarise(hd, heading,
+  result <- circ_summarise(hd, heading, units = "radians",
                             stats = c("resultant_R", "n", "mean_dir"))
   expect_equal(names(result), c("resultant_R", "n", "mean_dir"))
 })
@@ -394,14 +394,14 @@ test_that("circ_summarise stats column order matches stats argument order", {
 test_that("circ_summarise unknown stats value raises informative error", {
   hd <- data.frame(heading = c(0, pi/2))
   expect_error(
-    circ_summarise(hd, heading, stats = c("n", "foo")),
+    circ_summarise(hd, heading, units = "radians", stats = c("n", "foo")),
     "Unknown stats: 'foo'"
   )
 })
 
 test_that("circ_summarise stats ordering applies within grouped output too", {
   hd     <- data.frame(heading = c(0, pi), arc = c("a","b"))
-  result <- circ_summarise(hd, heading, .by = "arc",
+  result <- circ_summarise(hd, heading, units = "radians", .by = "arc",
                             stats = c("resultant_R", "n"))
   expect_equal(names(result), c("arc", "resultant_R", "n"))
 })
@@ -410,7 +410,7 @@ test_that("circ_summarise clock+relative: all-zero angles give mean_dir=0, R=1",
   # Clock 0 (toward stimulus, relative) -> UC 0 via (-0) %% 2pi = 0
   # mean of UC 0 is UC 0 -> back to clock: (-0) %% 2pi = 0
   hd     <- data.frame(heading = c(0, 0, 0))
-  result <- circ_summarise(hd, heading,
+  result <- circ_summarise(hd, heading, units = "radians",
                             angle_convention = "clock", coords = "relative")
   expect_equal(result$mean_dir,    0,          tolerance = 1e-6)
   expect_equal(result$resultant_R, 1,          tolerance = 1e-6)
@@ -421,7 +421,7 @@ test_that("circ_summarise clock+relative: mean_dir is in clock convention", {
   # Clock 90 deg = pi/2 rad -> UC: (-pi/2) %% 2pi = 3pi/2 = 270 deg
   # mean of c(3pi/2, 3pi/2) in UC = 3pi/2 -> back to clock: (-3pi/2) %% 2pi = pi/2
   hd     <- data.frame(heading = c(pi/2, pi/2))
-  result <- circ_summarise(hd, heading,
+  result <- circ_summarise(hd, heading, units = "radians",
                             angle_convention = "clock", coords = "relative")
   expect_equal(result$mean_dir, pi/2, tolerance = 1e-6)
 })
@@ -430,8 +430,8 @@ test_that("circ_summarise reads angle_convention from data frame attributes", {
   hd <- data.frame(heading = c(pi/6, pi/4, pi/3))
   attr(hd, "angle_convention") <- "clock"
   attr(hd, "coords")           <- "relative"
-  result_attr     <- circ_summarise(hd, heading)
-  result_explicit <- circ_summarise(hd, heading,
+  result_attr     <- circ_summarise(hd, heading, units = "radians")
+  result_explicit <- circ_summarise(hd, heading, units = "radians",
                                      angle_convention = "clock",
                                      coords = "relative")
   expect_equal(result_attr$mean_dir, result_explicit$mean_dir, tolerance = 1e-8)
@@ -443,9 +443,10 @@ test_that("circ_summarise explicit angle_convention overrides attribute", {
   attr(hd, "angle_convention") <- "clock"
   attr(hd, "coords") <- "relative"
 
-  r_explicit_uc    <- circ_summarise(hd, heading, angle_convention = "unit_circle")
-  r_from_attr      <- circ_summarise(hd, heading)
-  r_explicit_clock <- circ_summarise(hd, heading, angle_convention = "clock", coords = "relative")
+  r_explicit_uc    <- circ_summarise(hd, heading, units = "radians", angle_convention = "unit_circle")
+  r_from_attr      <- circ_summarise(hd, heading, units = "radians")
+  r_explicit_clock <- circ_summarise(hd, heading, units = "radians",
+                                      angle_convention = "clock", coords = "relative")
 
   # Attribute-based call must match explicit clock call
   expect_equal(r_from_attr$mean_dir, r_explicit_clock$mean_dir, tolerance = 1e-8)
@@ -458,7 +459,7 @@ test_that("circ_summarise explicit angle_convention overrides attribute", {
 
 test_that("circ_summarise all-NA angles returns n=0 and NA stats", {
   hd     <- data.frame(heading = c(NA_real_, NA_real_))
-  result <- circ_summarise(hd, heading)
+  result <- circ_summarise(hd, heading, units = "radians")
   expect_equal(result$n, 0L)
   expect_true(is.na(result$mean_dir))
   expect_true(is.na(result$mean_dir_deg))
@@ -468,7 +469,7 @@ test_that("circ_summarise all-NA angles returns n=0 and NA stats", {
 
 test_that("circ_summarise n=1 returns kappa=NA but valid mean_dir and R", {
   hd     <- data.frame(heading = pi/4)
-  result <- circ_summarise(hd, heading)
+  result <- circ_summarise(hd, heading, units = "radians")
   expect_equal(result$n, 1L)
   expect_true(is.na(result$kappa))
   expect_false(is.na(result$mean_dir))
@@ -477,7 +478,7 @@ test_that("circ_summarise n=1 returns kappa=NA but valid mean_dir and R", {
 
 test_that("circ_summarise n=2 returns kappa=NA but valid mean_dir and R", {
   hd     <- data.frame(heading = c(pi/4, pi/4))
-  result <- circ_summarise(hd, heading)
+  result <- circ_summarise(hd, heading, units = "radians")
   expect_equal(result$n, 2L)
   expect_true(is.na(result$kappa))
   expect_false(is.na(result$mean_dir))
@@ -485,7 +486,7 @@ test_that("circ_summarise n=2 returns kappa=NA but valid mean_dir and R", {
 
 test_that("circ_summarise non-finite angles are excluded from n", {
   hd     <- data.frame(heading = c(pi/4, Inf, -Inf, NaN, NA))
-  result <- circ_summarise(hd, heading)
+  result <- circ_summarise(hd, heading, units = "radians")
   expect_equal(result$n, 1L)
   expect_equal(result$mean_dir, pi/4, tolerance = 1e-6)
 })
@@ -495,7 +496,7 @@ test_that("circ_summarise all-NA group within multi-group data", {
     heading = c(pi/4, NA_real_, NA_real_),
     arc     = c("a",  "b",     "b")
   )
-  result <- circ_summarise(hd, heading, .by = "arc")
+  result <- circ_summarise(hd, heading, units = "radians", .by = "arc")
   row_b  <- result[result$arc == "b", ]
   expect_equal(row_b$n, 0L)
   expect_true(is.na(row_b$mean_dir))
@@ -511,5 +512,5 @@ test_that("circ_summarise missing col raises informative error", {
 
 test_that("circ_summarise quoted col name also works", {
   hd <- data.frame(angle = c(0, pi/2))
-  expect_no_error(circ_summarise(hd, "angle"))
+  expect_no_error(circ_summarise(hd, "angle", units = "radians"))
 })
