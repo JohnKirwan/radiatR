@@ -187,12 +187,12 @@ Faceting by arc angle shows each condition separately. Within each panel, `assig
 # Join to headings so heading layers can use the same column.
 plividus_cc        <- plividus
 plividus_cc@data   <- assign_cycle_colours(plividus@data,
-                                            id_col    = "id",
+                                            id_col    = "trial_id",
                                             n         = 10,
                                             panel_col = "arc")
-colour_map <- unique(plividus_cc@data[, c("id", "cycle_colour")])
+colour_map <- unique(plividus_cc@data[, c("trial_id", "cycle_colour")])
 hd_cc      <- merge(hd, colour_map,
-                    by.x = "trial_id", by.y = "id", all.x = TRUE)
+                    by      = "trial_id", all.x = TRUE)
 attr(hd_cc, "colour_col") <- "cycle_colour"
 ```
 
