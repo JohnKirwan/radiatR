@@ -193,7 +193,11 @@ plividus_cc@data   <- assign_cycle_colours(plividus@data,
 colour_map <- unique(plividus_cc@data[, c("trial_id", "cycle_colour")])
 hd_cc      <- merge(hd, colour_map,
                     by      = "trial_id", all.x = TRUE)
-attr(hd_cc, "colour_col") <- "cycle_colour"
+# merge() strips attributes — restore convention metadata from hd
+attr(hd_cc, "angle_convention")   <- attr(hd, "angle_convention")
+attr(hd_cc, "coords")             <- attr(hd, "coords")
+attr(hd_cc, "display_convention") <- attr(hd, "display_convention")
+attr(hd_cc, "colour_col")         <- "cycle_colour"
 ```
 
 ```{r arc-panels-simple, fig.width=8, fig.height=5}
