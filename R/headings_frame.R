@@ -48,3 +48,113 @@ headings_frame <- function(data,
   class(data) <- c("headings_frame", "data.frame")
   data
 }
+
+#' Add stacking columns to a headings data frame
+#'
+#' Computes radial positions for stacked dot plots on circular plots.
+#' Observations at the same angle (or within \code{tol} radians of each other)
+#' are assigned successive radial positions, preventing overplotting of
+#' coincident or binned headings.
+#'
+#' @param data A data frame with an angle column in radians.
+#' @param col Name of the angle column. Defaults to the \code{heading_col}
+#'   attribute when \code{data} is a \code{headings_frame}.
+#' @param step Radial offset per stack level as a fraction of \code{base_r}.
+#'   Default \code{0.025} matches \code{circular}'s \code{sep} default.
+#' @param tol Grouping tolerance in radians. \code{NULL} (default) = exact
+#'   equality, correct for binned data. \code{tol > 0} assigns each
+#'   observation to the nearest group centre within \code{tol} radians
+#'   (greedy, sorted-order scan); angles near \code{0} and \code{2*pi} are
+#'   not treated as neighbours.
+#' @param direction \code{"inward"} (default, stacks toward centre) or
+#'   \code{"outward"} (away from perimeter, matches \code{circular} default).
+#' @param base_r Radius of the reference circle in data units. Default 1.
+#' @param shade If \code{TRUE}, add a \code{shade_n} column (alias of
+#'   \code{stack_n}) for use as an alpha aesthetic.
+#' @param shape If \code{TRUE}, add a \code{shape_code} integer column:
+#'   1 = hollow (outermost / singleton), 2 = filled (middle), 3 = filled with
+#'   ring (innermost in a stack of 3+).
+#'
+#' @return \code{data} augmented with \code{stack_r} and \code{stack_n}
+#'   columns (always), plus \code{shade_n} and/or \code{shape_code} when
+#'   requested. Row count is unchanged.
+#'
+#' @seealso \code{\link{headings_frame}}, \code{add_stacked_headings}
+#' @export
+stack_headings <- function(data,
+                           col       = NULL,
+                           step      = 0.025,
+                           tol       = NULL,
+                           direction = "inward",
+                           base_r    = 1,
+                           shade     = FALSE,
+                           shape     = FALSE) {
+  if (is.null(col))
+    col <- if (!is.null(attr(data, "heading_col"))) attr(data, "heading_col")
+           else "heading"
+  if (!col %in% names(data))
+    stop(sprintf("column '%s' not found in data.", col))
+  if (step <= 0)
+    stop("'step' must be positive.")
+  if (!is.null(tol) && tol < 0)
+    stop("'tol' must be NULL or non-negative.")
+  direction <- match.arg(direction, c("inward", "outward"))
+
+  angles <- data[[col]]
+  n      <- length(angles)
+
+  # --- Assign group IDs -------------------------------------------------------
+  if (is.null(tol)) {
+    grp <- match(angles, unique(angles[!is.na(angles)]))
+  } else {
+    ord <- order(angles, na.last = TRUE)
+    grp <- integer(n)
+    centres <- numeric(0)
+    g <- 0L
+    for (i in ord) {
+      a <- angles[i]
+      if (is.na(a)) { grp[i] <- NA_integer_; next }
+      if (length(centres)) {
+        nearest <- which.min(abs(centres - a))
+        if (abs(centres[nearest] - a) <= tol) { grp[i] <- nearest; next }
+      }
+      g <- g + 1L
+      centres[g] <- a
+      grp[i] <- g
+    }
+  }
+
+  # --- Rank within each group (sorted angle order for ties) -------------------
+  rank_in_grp <- integer(n)
+  seen_g      <- if (any(!is.na(grp))) integer(max(grp, na.rm = TRUE)) else integer(0)
+  for (i in order(angles, na.last = TRUE)) {
+    g <- grp[i]
+    if (!is.na(g)) {
+      seen_g[g]      <- seen_g[g] + 1L
+      rank_in_grp[i] <- seen_g[g]
+    }
+  }
+
+  rank_in_grp[is.na(grp)] <- NA_integer_
+
+  grp_tbl   <- tabulate(grp)
+  grp_count <- ifelse(is.na(grp), NA_integer_, grp_tbl[grp])
+
+  # --- Compute stack_r --------------------------------------------------------
+  offset <- (rank_in_grp - 1L) * step
+  data$stack_r <- if (direction == "inward") base_r - offset else base_r + offset
+  data$stack_n <- as.integer(grp_count)
+
+  if (shade) data$shade_n <- data$stack_n
+
+  if (shape) {
+    n_rows         <- nrow(data)
+    sc             <- rep(2L, n_rows)
+    sc[rank_in_grp == 1L]                                    <- 1L
+    sc[rank_in_grp == data$stack_n & data$stack_n >= 3L]     <- 3L
+    sc[is.na(rank_in_grp) | is.na(data$stack_n)]             <- NA_integer_
+    data$shape_code <- sc
+  }
+
+  data
+}
