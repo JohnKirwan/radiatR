@@ -90,6 +90,7 @@ hd$arc <- factor(
   labels = c("0°", "15°", "30°", "45°", "60°", "150°")
 )
 names(hd)[names(hd) == "id"] <- "trial_id"
+attr(hd, "colour_col") <- "arc"
 head(hd[, c("trial_id", "arc", "heading", "x_inner", "y_inner")])
 ```
 
@@ -195,13 +196,13 @@ p
 
 
 ```{r arc-panels-headings, fig.width=8, fig.height=5}
-p <- p + add_heading_points(hd, colour = "grey40", size = 4)
+p <- p + add_heading_points(hd, size = 4)
 p
 ```
 
 
 ```{r arc-panels-vectors, fig.width=8, fig.height=5}
-p <- p + add_heading_vectors(hd, colour = "grey40")
+p <- p + add_heading_vectors(hd)
 p
 ```
 

@@ -1113,11 +1113,13 @@ add_heading_arrow <- function(headings_df,
 #' output of [derive_headings()].
 #'
 #' @param headings_df Data frame with a `heading` column (angles in radians).
-#' @param colour_col Optional name of a column in `headings_df` to map to the
-#'   colour aesthetic. Ignored when `colour` is also supplied.
-#' @param colour Fixed colour. When `NULL` (default) and `colour_col` is set,
-#'   colour is mapped from that column; when `NULL` and no `colour_col`, draws
-#'   in `"black"`. Supplying any colour string always overrides `colour_col`.
+#' @param colour_col Name of a column in `headings_df` to map to the colour
+#'   aesthetic. When `NULL` (default), the value of
+#'   `attr(headings_df, "colour_col")` is used if set — so heading markers
+#'   automatically inherit the colour mapping from the associated trajectory
+#'   plot when that attribute is present. Ignored when `colour` is supplied.
+#' @param colour Fixed colour string. Overrides `colour_col` when supplied;
+#'   when `NULL` and no `colour_col` resolves, defaults to `"black"`.
 #' @param size Point size passed to `geom_point`.
 #' @param alpha Point alpha transparency.
 #'
@@ -1139,6 +1141,7 @@ add_heading_points <- function(headings_df, colour_col = NULL, colour = NULL,
   if (!("heading" %in% names(headings_df))) {
     stop("`headings_df` must contain a `heading` column (radians).")
   }
+  if (is.null(colour_col)) colour_col <- attr(headings_df, "colour_col")
   if (identical(attr(headings_df, "display_convention"), "clock")) {
     disp <- .to_clock_display(cos(headings_df$heading), sin(headings_df$heading))
     headings_df[[".x_head"]] <- disp$x
@@ -1171,11 +1174,13 @@ add_heading_points <- function(headings_df, colour_col = NULL, colour = NULL,
 #'
 #' @param headings_df Data frame with columns `heading` (radians), `x_inner`,
 #'   and `y_inner`.
-#' @param colour_col Optional name of a column in `headings_df` to map to the
-#'   colour aesthetic. Ignored when `colour` is also supplied.
-#' @param colour Fixed colour. When `NULL` (default) and `colour_col` is set,
-#'   colour is mapped from that column; when `NULL` and no `colour_col`, draws
-#'   in `"black"`. Supplying any colour string always overrides `colour_col`.
+#' @param colour_col Name of a column in `headings_df` to map to the colour
+#'   aesthetic. When `NULL` (default), the value of
+#'   `attr(headings_df, "colour_col")` is used if set — so vectors
+#'   automatically inherit the colour mapping from the associated trajectory
+#'   plot when that attribute is present. Ignored when `colour` is supplied.
+#' @param colour Fixed colour string. Overrides `colour_col` when supplied;
+#'   when `NULL` and no `colour_col` resolves, defaults to `"black"`.
 #' @param linetype Line type string or integer passed to `geom_segment`.
 #'
 #' @return A `geom_segment()` layer.
@@ -1192,6 +1197,7 @@ add_heading_points <- function(headings_df, colour_col = NULL, colour = NULL,
 #' ggplot() + coord_fixed() + add_heading_vectors(hd)
 add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
                                linetype = "dotted") {
+  if (is.null(colour_col)) colour_col <- attr(headings_df, "colour_col")
   required <- c("heading", "x_inner", "y_inner")
   missing_cols <- setdiff(required, names(headings_df))
   if (length(missing_cols)) {
