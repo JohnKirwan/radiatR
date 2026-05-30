@@ -18,8 +18,9 @@ test_that("headings_frame accepts non-default angle_convention and coords", {
   df <- data.frame(h = c(0, pi/4))
   hf <- headings_frame(df, col = "h", units = "radians",
                        angle_convention = "clock", coords = "relative")
-  expect_equal(attr(hf, "angle_convention"), "clock")
-  expect_equal(attr(hf, "coords"),           "relative")
+  expect_equal(attr(hf, "angle_convention"),   "unit_circle")
+  expect_equal(attr(hf, "display_convention"), "clock")
+  expect_equal(attr(hf, "coords"),             "relative")
 })
 
 test_that("headings_frame errors informatively when col not found", {
@@ -44,6 +45,17 @@ test_that("headings_frame accepts unquoted col name", {
   df <- data.frame(bearing = c(0, pi/4))
   hf <- headings_frame(df, col = bearing, units = "radians")
   expect_equal(attr(hf, "heading_col"), "bearing")
+})
+
+test_that("headings_frame converts clock angles to unit-circle internally", {
+  # Clock 0 (North) should become unit-circle pi/2 (North)
+  df <- data.frame(h = c(0, 90, 180))  # degrees, clock convention
+  hf <- headings_frame(df, col = "h", units = "degrees",
+                       angle_convention = "clock")
+  # After conversion: clock 0° → UC pi/2, clock 90° → UC 0, clock 180° → UC 3pi/2
+  expect_equal(hf$h, c(pi/2, 0, 3*pi/2), tolerance = 1e-10)
+  expect_equal(attr(hf, "angle_convention"),   "unit_circle")
+  expect_equal(attr(hf, "display_convention"), "clock")
 })
 
 # ---- stack_headings -----------------------------------------------------------

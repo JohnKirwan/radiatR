@@ -41,10 +41,13 @@ headings_frame <- function(data,
   .check_angle_units(data[[col_name]], units, col_name)
   if (units == "degrees")
     data[[col_name]] <- data[[col_name]] * pi / 180
+  if (angle_convention == "clock")
+    data[[col_name]] <- wrap_to_2pi((pi / 2) - data[[col_name]])
 
-  attr(data, "angle_convention") <- angle_convention
-  attr(data, "coords")           <- coords
-  attr(data, "heading_col")      <- col_name
+  attr(data, "display_convention") <- angle_convention
+  attr(data, "angle_convention")   <- "unit_circle"
+  attr(data, "coords")             <- coords
+  attr(data, "heading_col")        <- col_name
   class(data) <- c("headings_frame", "data.frame")
   data
 }
