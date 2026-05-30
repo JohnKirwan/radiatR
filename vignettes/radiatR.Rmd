@@ -207,24 +207,7 @@ p <- radiate(plividus_cc,
 p
 ```
 
-```{r arc-panels-headings, fig.width=8, fig.height=5}
-p <- p + add_heading_points(hd_cc, size = 4)
-p
-```
-
-```{r arc-panels-vectors, fig.width=8, fig.height=5}
-p <- p + add_heading_vectors(hd_cc)
-p
-```
-
-
-```{r arc-panels, fig.width=8, fig.height=5}
-p <- p + add_heading_arrow(hd_cc, colour_col = "arc", colour = "black")
-p
-```
-
-
-**+ Bootstrap CI arc** for the per-condition mean direction:
+**+ Bootstrap CI arc** added first so it sits behind heading markers:
 
 ```{r build-4, fig.width=8, fig.height=5}
 p <- p + add_heading_interval(hd_cc, colour_col = "arc", colour = "black",
@@ -232,8 +215,26 @@ p <- p + add_heading_interval(hd_cc, colour_col = "arc", colour = "black",
 p
 ```
 
+**+ Heading vectors** (dotted lines from inner crossing to perimeter):
 
-Each panel is labelled with its arc condition (strip above each panel), shows all trajectories and their heading vectors/points coloured by the same per-trajectory cycling palette, a solid arrow for the within-condition circular mean direction and resultant *R*, and a bootstrap CI arc at radius 1.05. All in clock convention (0° = toward stimulus, clockwise). Use `strip_position = "inside"` to place the label inside the plot area, or `strip_labels = FALSE` to suppress it.
+```{r arc-panels-vectors, fig.width=8, fig.height=5}
+p <- p + add_heading_vectors(hd_cc)
+p
+```
+
+**+ Heading points** on top of the CI arc:
+
+```{r arc-panels-headings, fig.width=8, fig.height=5}
+p <- p + add_heading_points(hd_cc, size = 4)
+p
+```
+
+```{r arc-panels, fig.width=8, fig.height=5}
+p <- p + add_heading_arrow(hd_cc, colour_col = "arc", colour = "black")
+p
+```
+
+Each panel shows trajectories and heading markers coloured by per-trajectory cycling palette, a bootstrap CI arc at radius 1.05 in the condition colour (rendered behind the heading points), a solid mean direction arrow, and degree labels. All in clock convention (0° = toward stimulus, clockwise). Use `strip_position = "inside"` to place the label inside the plot area, or `strip_labels = FALSE` to suppress it.
 
 ## Circular Density Overlays
 
