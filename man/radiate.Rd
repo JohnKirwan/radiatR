@@ -4,6 +4,7 @@
 \alias{radiate}
 \alias{radiate.TrajSet}
 \alias{radiate.default}
+\alias{radiate.headings_frame}
 \title{Make ggplot object of tracks radiating from circle centre.}
 \usage{
 radiate(data, ...)
@@ -40,6 +41,24 @@ radiate(data, ...)
   arrow_angle_col = NULL,
   arrow_colour = "black",
   arrow_size = 2,
+  ...
+)
+
+\method{radiate}{headings_frame}(
+  data,
+  col = NULL,
+  step = 0.025,
+  tol = NULL,
+  direction = "inward",
+  base_r = 1,
+  shade = FALSE,
+  shape = FALSE,
+  panel_by = NULL,
+  ncol = NULL,
+  ticks = TRUE,
+  degrees = TRUE,
+  title = NULL,
+  style = c("classic", "minimal"),
   ...
 )
 }
@@ -103,6 +122,13 @@ text and the in-panel `"inside"` annotation.}
 \item{arrow_colour}{Arrow colour.}
 
 \item{arrow_size}{Arrow linewidth.}
+
+\item{col}{Name of the angle column in \code{data}. Defaults to the
+\code{heading_col} attribute when \code{data} is a
+\code{\link{headings_frame}}.}
+
+\item{step, tol, direction, base_r, shade, shape}{Passed to
+\code{\link{add_stacked_headings}}. See that function for details.}
 }
 \value{
 A `ggplot2` object.
