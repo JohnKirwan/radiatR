@@ -2,9 +2,15 @@
 % Please edit documentation in R/circular_plotting.R
 \name{radiate}
 \alias{radiate}
+\alias{radiate.TrajSet}
+\alias{radiate.default}
 \title{Make ggplot object of tracks radiating from circle centre.}
 \usage{
-radiate(
+radiate(data, ...)
+
+\method{radiate}{TrajSet}(data, ...)
+
+\method{radiate}{default}(
   data,
   x_col = "rel_x",
   y_col = "rel_y",
@@ -39,6 +45,8 @@ radiate(
 }
 \arguments{
 \item{data}{Data frame or `TrajSet`.}
+
+\item{...}{Additional arguments forwarded to [draw_tracks()].}
 
 \item{x_col}{Name of the column mapped to the x aesthetic.}
 
@@ -95,8 +103,6 @@ text and the in-panel `"inside"` annotation.}
 \item{arrow_colour}{Arrow colour.}
 
 \item{arrow_size}{Arrow linewidth.}
-
-\item{...}{Additional arguments forwarded to [draw_tracks()].}
 }
 \value{
 A `ggplot2` object.

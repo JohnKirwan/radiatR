@@ -211,3 +211,30 @@ test_that("add_stacked_headings errors when col not found", {
   df <- data.frame(x = 1)
   expect_error(add_stacked_headings(df, col = "bearing"),
                "column 'bearing' not found")})
+
+# ---- radiate() backward compatibility ----------------------------------------
+
+test_that("radiate() still works on a TrajSet after S3 refactor", {
+  skip_if_not_installed("ggplot2")
+  df <- data.frame(
+    id      = rep("A", 4L),
+    time    = 1:4,
+    x       = c(0.5, 0.7, 0.6, 0.8),
+    y       = c(0.5, 0.6, 0.7, 0.5)
+  )
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y")
+  p  <- radiate(ts)
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("radiate() still works on a plain data frame after S3 refactor", {
+  skip_if_not_installed("ggplot2")
+  df <- data.frame(
+    trial_id = rep("T1", 3L),
+    frame    = 1:3,
+    rel_x    = c(0.5, 0.6, 0.7),
+    rel_y    = c(0.5, 0.4, 0.3)
+  )
+  p <- radiate(df, x_col = "rel_x", y_col = "rel_y", group_col = "trial_id")
+  expect_s3_class(p, "ggplot")
+})

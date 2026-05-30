@@ -1666,7 +1666,16 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'                                n_points = 200, seed = 1)
 #' radiate(tracks_demo, x_col = "rel_x", y_col = "rel_y", group_col = "trial_id")
 #' @export
-radiate <- function(
+radiate <- function(data, ...) UseMethod("radiate")
+
+#' @rdname radiate
+#' @exportS3Method
+radiate.TrajSet <- function(data, ...) radiate.default(data, ...)
+
+#' @rdname radiate
+#' @exportS3Method
+radiate.default <-
+function(
   data,
   x_col = "rel_x", y_col = "rel_y",
   geom = "path",
