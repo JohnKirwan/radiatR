@@ -46,6 +46,7 @@ Collate:
     'data.R'
     'globals.R'
     'headings.R'
+    'headings_frame.R'
     'loaders.R'
     'radiatR-package.R'
     'simulate_tracks.R'

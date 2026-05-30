@@ -1248,8 +1248,11 @@ add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
 #' @param shade If \code{TRUE}, map \code{stack_n} to the alpha aesthetic
 #'   (scaled 0.2–1 across the observed range). Overrides the fixed
 #'   \code{alpha} argument.
-#' @param shape If \code{TRUE}, map \code{shape_code} to ggplot2 shape
-#'   integers (1 = hollow circle, 16 = filled, 21 = filled with ring).
+#' @param shape Passed to \code{\link{stack_headings}} to request
+#'   per-observation shape encoding. Shape is also applied when
+#'   \code{shape_code} is already a column in \code{data}.
+#'   Mapped to ggplot2 shape integers: 1 = hollow, 16 = filled,
+#'   21 = filled with ring.
 #' @param colour Fixed point colour (ignored when \code{colour_col} is set).
 #' @param colour_col Optional column name to map to the colour aesthetic.
 #' @param size Point size passed to \code{geom_point()}.
