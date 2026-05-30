@@ -180,35 +180,46 @@ Three strategies control how trajectories are coloured.
 
 ## Per-Condition Panels
 
-Faceting by arc angle shows each condition separately. Within each panel, `colour_cycle = 10` distinguishes individual trajectories — more informative than colouring by arc when every panel already corresponds to a single arc value. Per-condition mean arrows are computed from the crossing headings and routed to the correct panel automatically via the shared `arc` column.
+Faceting by arc angle shows each condition separately. Within each panel, `assign_cycle_colours()` distinguishes individual trajectories by cycling through 10 colours, resetting at each panel boundary. Calling it explicitly on both the track data and the headings data frame (joining by trial id) means heading markers inherit the exact per-trajectory colour — not a single per-condition colour — when `colour_col` is used for both.
+
+```{r arc-panels-colours}
+# Pre-compute cycling colours: 10 colours, restarting within each arc panel.
+# Join to headings so heading layers can use the same column.
+plividus_cc        <- plividus
+plividus_cc@data   <- assign_cycle_colours(plividus@data,
+                                            id_col    = "id",
+                                            n         = 10,
+                                            panel_col = "arc")
+colour_map <- unique(plividus_cc@data[, c("id", "cycle_colour")])
+hd_cc      <- merge(hd, colour_map,
+                    by.x = "trial_id", by.y = "id", all.x = TRUE)
+attr(hd_cc, "colour_col") <- "cycle_colour"
+```
 
 ```{r arc-panels-simple, fig.width=8, fig.height=5}
-p <- radiate(plividus,
+p <- radiate(plividus_cc,
         group_col    = "trial_id",
-        colour_cycle = 10,
+        colour_col   = "cycle_colour",
         panel_by     = "arc",
         ncol         = 3,
         show_labels  = FALSE,
-        show_arrow   = FALSE) 
+        show_arrow   = FALSE)
 p
 ```
-
-
 
 ```{r arc-panels-headings, fig.width=8, fig.height=5}
-p <- p + add_heading_points(hd, size = 4)
+p <- p + add_heading_points(hd_cc, size = 4)
 p
 ```
 
-
 ```{r arc-panels-vectors, fig.width=8, fig.height=5}
-p <- p + add_heading_vectors(hd)
+p <- p + add_heading_vectors(hd_cc)
 p
 ```
 
 
 ```{r arc-panels, fig.width=8, fig.height=5}
-p <- p + add_heading_arrow(hd, colour_col = "arc", colour = "black")
+p <- p + add_heading_arrow(hd_cc, colour_col = "arc", colour = "black")
 p
 ```
 
@@ -216,13 +227,13 @@ p
 **+ Bootstrap CI arc** for the per-condition mean direction:
 
 ```{r build-4, fig.width=8, fig.height=5}
-p <- p + add_heading_interval(hd, colour_col = "arc", colour = "black",
+p <- p + add_heading_interval(hd_cc, colour_col = "arc", colour = "black",
                                stat = "bootstrap_ci", boot_reps = 999L)
 p
 ```
 
 
-Each panel is labelled with its arc condition (strip above each panel), shows all trajectories coloured by cycling palette, the crossing heading vectors (dotted lines, grey), a solid arrow for the within-condition circular mean direction and resultant *R*, and a bootstrap CI arc at radius 1.05. All in clock convention (0° = toward stimulus, clockwise). Use `strip_position = "inside"` to place the label inside the plot area, or `strip_labels = FALSE` to suppress it.
+Each panel is labelled with its arc condition (strip above each panel), shows all trajectories and their heading vectors/points coloured by the same per-trajectory cycling palette, a solid arrow for the within-condition circular mean direction and resultant *R*, and a bootstrap CI arc at radius 1.05. All in clock convention (0° = toward stimulus, clockwise). Use `strip_position = "inside"` to place the label inside the plot area, or `strip_labels = FALSE` to suppress it.
 
 ## Circular Density Overlays
 
@@ -245,18 +256,18 @@ add_circular_density(dens_df, colour_col = "arc", fill = "grey80", alpha = 0.35)
 The convenience wrapper `add_heading_density()` skips the intermediate step when no substitution is needed. The combined panel plot below uses it to shade a per-condition von Mises density alongside the heading vectors:
 
 ```{r density-overlay, fig.width=8, fig.height=5}
-radiate(plividus,
+radiate(plividus_cc,
         group_col    = "trial_id",
-        colour_cycle = 10,
+        colour_col   = "cycle_colour",
         panel_by     = "arc",
         ncol         = 3,
         show_labels  = FALSE,
         show_arrow   = FALSE) +
-  add_heading_density(hd, colour_col = "arc",
+  add_heading_density(hd_cc, colour_col = "arc",
                       method = "vonmises", scale = 0.4,
                       fill = "grey80", alpha = 0.35) +
-  add_heading_vectors(hd, colour = "grey40") +
-  add_heading_arrow(hd, colour_col = "arc", colour = "black")
+  add_heading_vectors(hd_cc) +
+  add_heading_arrow(hd_cc, colour_col = "arc", colour = "black")
 ```
 
 The shaded region is the von Mises density fitted to the crossing headings within each arc condition. A narrower, taller peak indicates more concentrated directional responses. Switch to `method = "kernel"` for a non-parametric estimate, or `method = "histogram"` for a raw count display.
