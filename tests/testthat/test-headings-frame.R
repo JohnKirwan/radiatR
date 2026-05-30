@@ -170,3 +170,44 @@ test_that("stack_headings NA angles produce NA stack_r and stack_n", {
   expect_true(is.na(out$stack_r[2L]))
   expect_true(is.na(out$stack_n[2L]))
 })
+
+# ---- add_stacked_headings ----------------------------------------------------
+
+test_that("add_stacked_headings returns a ggplot2 layer", {
+  skip_if_not_installed("ggplot2")
+  df <- data.frame(heading = c(0, pi/4, pi/2))
+  hf <- headings_frame(df, col = "heading", units = "radians")
+  layer <- add_stacked_headings(hf)
+  expect_s3_class(layer, "LayerInstance")
+})
+
+test_that("add_stacked_headings auto-computes stack_r when absent", {
+  skip_if_not_installed("ggplot2")
+  df <- data.frame(heading = c(0, 0, pi/4))
+  hf <- headings_frame(df, col = "heading", units = "radians")
+  expect_no_error(add_stacked_headings(hf))
+})
+
+test_that("add_stacked_headings uses pre-computed stack_r without recomputing", {
+  skip_if_not_installed("ggplot2")
+  df <- data.frame(heading = c(0, pi/4))
+  hf <- headings_frame(df, col = "heading", units = "radians")
+  pre <- stack_headings(hf)
+  pre$stack_r <- c(0.99, 0.99)  # custom values
+  layer <- add_stacked_headings(pre)
+  # The layer data must retain our custom stack_r
+  expect_equal(layer$data$stack_r, c(0.99, 0.99))
+})
+
+test_that("add_stacked_headings col defaults to heading_col attribute", {
+  skip_if_not_installed("ggplot2")
+  df <- data.frame(bearing = c(0, pi/4))
+  hf <- headings_frame(df, col = "bearing", units = "radians")
+  expect_no_error(add_stacked_headings(hf))  # finds "bearing" via attribute
+})
+
+test_that("add_stacked_headings errors when col not found", {
+  skip_if_not_installed("ggplot2")
+  df <- data.frame(x = 1)
+  expect_error(add_stacked_headings(df, col = "bearing"),
+               "column 'bearing' not found")})

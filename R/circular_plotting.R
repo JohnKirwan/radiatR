@@ -1232,6 +1232,103 @@ add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
   do.call(ggplot2::geom_segment, args)
 }
 
+#' Add stacked heading dots as a ggplot2 layer
+#'
+#' Places one point per observation at its heading angle, stacking coincident
+#' angles radially to avoid overplotting. If \code{stack_r} is already a
+#' column in \code{data} (from a prior call to \code{\link{stack_headings}}),
+#' it is used as-is; otherwise stacking is computed internally.
+#'
+#' @param data A data frame with an angle column in radians, typically a
+#'   \code{\link{headings_frame}}.
+#' @param col Name of the angle column. Defaults to the \code{heading_col}
+#'   attribute when \code{data} is a \code{headings_frame}.
+#' @param step,tol,direction,base_r Passed to \code{\link{stack_headings}}
+#'   when \code{stack_r} is absent. See that function for details.
+#' @param shade If \code{TRUE}, map \code{stack_n} to the alpha aesthetic
+#'   (scaled 0.2–1 across the observed range). Overrides the fixed
+#'   \code{alpha} argument.
+#' @param shape If \code{TRUE}, map \code{shape_code} to ggplot2 shape
+#'   integers (1 = hollow circle, 16 = filled, 21 = filled with ring).
+#' @param colour Fixed point colour (ignored when \code{colour_col} is set).
+#' @param colour_col Optional column name to map to the colour aesthetic.
+#' @param size Point size passed to \code{geom_point()}.
+#' @param alpha Fixed alpha. Ignored when \code{shade = TRUE}.
+#' @param ... Additional arguments passed to \code{ggplot2::geom_point()}.
+#'
+#' @return A \code{geom_point()} layer.
+#'
+#' @seealso \code{\link{headings_frame}}, \code{\link{stack_headings}},
+#'   \code{\link{add_heading_points}}
+#' @importFrom ggplot2 geom_point aes
+#' @importFrom rlang .data sym
+#' @export
+add_stacked_headings <- function(data,
+                                 col        = NULL,
+                                 step       = 0.025,
+                                 tol        = NULL,
+                                 direction  = "inward",
+                                 base_r     = 1,
+                                 shade      = FALSE,
+                                 shape      = FALSE,
+                                 colour     = "black",
+                                 colour_col = NULL,
+                                 size       = 2,
+                                 alpha      = 1,
+                                 ...) {
+  if (is.null(col))
+    col <- if (!is.null(attr(data, "heading_col"))) attr(data, "heading_col")
+           else "heading"
+  if (!col %in% names(data))
+    stop(sprintf("column '%s' not found in data.", col))
+
+  if (!"stack_r" %in% names(data))
+    data <- stack_headings(data, col = col, step = step, tol = tol,
+                           direction = direction, base_r = base_r,
+                           shade = shade, shape = shape)
+
+  if (identical(attr(data, "display_convention"), "clock")) {
+    disp <- .to_clock_display(data$stack_r * cos(data[[col]]),
+                               data$stack_r * sin(data[[col]]))
+    data[[".x_stk"]] <- disp$x
+    data[[".y_stk"]] <- disp$y
+  } else {
+    data[[".x_stk"]] <- data$stack_r * cos(data[[col]])
+    data[[".y_stk"]] <- data$stack_r * sin(data[[col]])
+  }
+
+  mapping <- ggplot2::aes(x = .data[[".x_stk"]], y = .data[[".y_stk"]])
+
+  use_fixed_colour <- is.null(colour_col) || !colour_col %in% names(data)
+  if (!use_fixed_colour) mapping[["colour"]] <- rlang::sym(colour_col)
+
+  use_fixed_shape <- TRUE
+  if ("shape_code" %in% names(data)) {
+    pch_map <- c(`1` = 1L, `2` = 16L, `3` = 21L)
+    data[[".shape_pch"]] <- pch_map[as.character(data$shape_code)]
+    mapping[["shape"]] <- rlang::sym(".shape_pch")
+    use_fixed_shape <- FALSE
+  }
+
+  use_fixed_alpha <- TRUE
+  if (shade && "stack_n" %in% names(data)) {
+    mx <- max(data$stack_n, na.rm = TRUE)
+    if (mx > 0) {
+      data[[".alpha_v"]] <- 0.2 + 0.8 * data$stack_n / mx
+      mapping[["alpha"]] <- rlang::sym(".alpha_v")
+      use_fixed_alpha <- FALSE
+    }
+  }
+
+  args <- list(data = data, mapping = mapping, size = size,
+               inherit.aes = FALSE, ...)
+  if (use_fixed_colour) args$colour <- colour
+  if (use_fixed_alpha)  args$alpha  <- alpha
+  if (use_fixed_shape)  args$shape  <- 16L
+
+  do.call(ggplot2::geom_point, args)
+}
+
 # ---- themes ------------------------------------------------------------------
 
 #' Sparse overlay theme for radial plots.
