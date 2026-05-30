@@ -238,3 +238,37 @@ test_that("radiate() still works on a plain data frame after S3 refactor", {
   p <- radiate(df, x_col = "rel_x", y_col = "rel_y", group_col = "trial_id")
   expect_s3_class(p, "ggplot")
 })
+
+# ---- radiate.headings_frame --------------------------------------------------
+
+test_that("radiate(headings_frame) returns a ggplot object", {
+  skip_if_not_installed("ggplot2")
+  df <- data.frame(heading = c(0, pi/4, pi/2, pi, 3*pi/2))
+  hf <- headings_frame(df, col = "heading", units = "radians")
+  p  <- radiate(hf)
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("radiate(headings_frame) with panel_by produces facets", {
+  skip_if_not_installed("ggplot2")
+  df <- data.frame(heading = c(0, pi/4, pi/2, pi),
+                   grp     = c("a", "a", "b", "b"))
+  hf <- headings_frame(df, col = "heading", units = "radians")
+  p  <- radiate(hf, panel_by = "grp")
+  expect_false(inherits(p$facet, "FacetNull"))
+})
+
+test_that("radiate(headings_frame) forwards stacking params", {
+  skip_if_not_installed("ggplot2")
+  df <- data.frame(heading = c(0, 0, pi/4))
+  hf <- headings_frame(df, col = "heading", units = "radians")
+  expect_no_error(radiate(hf, direction = "outward"))
+})
+
+test_that("radiate(headings_frame) panel_by errors on missing column", {
+  skip_if_not_installed("ggplot2")
+  df <- data.frame(heading = c(0, pi/4))
+  hf <- headings_frame(df, col = "heading", units = "radians")
+  expect_error(radiate(hf, panel_by = "nonexistent"),
+               "panel_by column")
+})

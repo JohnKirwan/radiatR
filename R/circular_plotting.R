@@ -1942,6 +1942,74 @@ function(
   g
 }
 
+#' @rdname radiate
+#' @param col Name of the angle column in \code{data}. Defaults to the
+#'   \code{heading_col} attribute when \code{data} is a
+#'   \code{\link{headings_frame}}.
+#' @param step,tol,direction,base_r,shade,shape Passed to
+#'   \code{\link{add_stacked_headings}}. See that function for details.
+#' @exportS3Method
+radiate.headings_frame <- function(
+  data,
+  col       = NULL,
+  step      = 0.025,
+  tol       = NULL,
+  direction = "inward",
+  base_r    = 1,
+  shade     = FALSE,
+  shape     = FALSE,
+  panel_by  = NULL,
+  ncol      = NULL,
+  ticks     = TRUE,
+  degrees   = TRUE,
+  title     = NULL,
+  style     = c("classic", "minimal"),
+  ...) {
+
+  style <- match.arg(style)
+
+  if (style == "minimal") {
+    g <- ggplot2::ggplot() + ggplot2::coord_fixed() + spartan_theme()
+  } else {
+    g <- ggplot2::ggplot() + ggplot2::coord_fixed() + sparse_theme()
+  }
+
+  g <- g +
+    add_quadrant_lines() +
+    add_circ(circle_color = if (style == "minimal") "grey60" else "black",
+             circle_size  = if (style == "minimal") 1        else 1.5)
+
+  if (ticks)   g <- g + add_ticks()
+  if (degrees) g <- g + degree_labs()
+
+  g <- g + add_stacked_headings(
+    data, col = col, step = step, tol = tol, direction = direction,
+    base_r = base_r, shade = shade, shape = shape, ...
+  )
+
+  if (!is.null(panel_by)) {
+    if (!is.character(panel_by))
+      stop("`panel_by` must be a character string.")
+    missing_pby <- setdiff(panel_by, names(data))
+    if (length(missing_pby))
+      stop("panel_by column(s) not found in data: ",
+           paste(missing_pby, collapse = ", "))
+    g <- g + ggplot2::facet_wrap(
+      stats::as.formula(paste("~", paste(panel_by, collapse = "+"))),
+      ncol = ncol
+    )
+  }
+
+  if (is.null(title)) {
+    g <- g + ggplot2::theme(plot.title = ggplot2::element_blank())
+  } else {
+    g <- g + ggplot2::ggtitle(as.character(title)) +
+      ggplot2::theme(plot.title = ggplot2::element_text(size = 14, hjust = 0.5))
+  }
+
+  g
+}
+
 resolve_label_column <- function(data, label_col, group_col) {
   if (!is.null(label_col) && label_col %in% names(data)) {
     return(label_col)
