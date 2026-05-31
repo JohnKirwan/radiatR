@@ -318,6 +318,112 @@ circ_summary(ts_demo)
 
 High resultant lengths (close to 1) indicate very consistent step directions within a trial.
 
+## Alternative Heading Rules
+
+`derive_headings()` supports fourteen built-in rules. `"crossing"` is well
+suited to echinoderm-style tracks — moderate tortuosity, consistent outward
+movement — but other rules may be more appropriate depending on the taxon and
+experimental design. Use `list_heading_rules()` to see all available names;
+custom rules can be added with `register_heading_rule()`.
+
+Two parameter-free alternatives are especially useful:
+
+| Rule | What it returns | Typical use |
+|---|---|---|
+| `"distal"` | Angular position of the frame with the largest radius | Straight outward paths (dung beetles, ballistic homing) |
+| `"net"` | Direction of the start-to-end displacement vector | Sinuous or multi-phase paths where only net displacement matters |
+
+### distal
+
+The **distal** rule takes `atan2(y, x)` at the frame where the animal is
+farthest from the arena centre. It requires no ring parameters and never
+returns `NA` because every trial has a most-distal frame.
+
+```{r hd-distal}
+hd_distal <- derive_headings(plividus, rule = "distal",
+                              coords = "relative",
+                              angle_convention = "clock",
+                              return_coords = TRUE)
+hd_distal$arc <- factor(
+  as.integer(sub("G1D_(\\d+)_.*", "\\1", hd_distal$id)),
+  levels = c(0, 15, 30, 45, 60, 150),
+  labels = c("0°", "15°", "30°", "45°", "60°", "150°")
+)
+names(hd_distal)[names(hd_distal) == "id"] <- "trial_id"
+```
+
+Per-condition resultant lengths from `"distal"` are very close to those from
+`"crossing"`, consistent with *P. lividus* tracks being fairly direct:
+
+```{r hd-compare-R}
+sm_cross  <- compute_circ_mean(hd,       colour_col = "arc")[, c("arc", "resultant_R")]
+sm_distal <- compute_circ_mean(hd_distal, colour_col = "arc")[, c("arc", "resultant_R")]
+names(sm_cross)[2]  <- "crossing"
+names(sm_distal)[2] <- "distal"
+merge(sm_cross, sm_distal, by = "arc")
+```
+
+Visualising the distal headings on the per-condition panel confirms that the
+spatial pattern is consistent with the crossing method:
+
+```{r hd-distal-panel, fig.width=8, fig.height=5}
+plividus_cc_d        <- plividus
+plividus_cc_d@data   <- assign_cycle_colours(plividus@data,
+                                              id_col    = "trial_id",
+                                              n         = 10,
+                                              panel_col = "arc")
+colour_map_d <- unique(plividus_cc_d@data[, c("trial_id", "cycle_colour")])
+hd_distal_cc <- merge(hd_distal, colour_map_d, by = "trial_id", all.x = TRUE)
+attr(hd_distal_cc, "angle_convention")   <- attr(hd_distal, "angle_convention")
+attr(hd_distal_cc, "coords")             <- attr(hd_distal, "coords")
+attr(hd_distal_cc, "display_convention") <- attr(hd_distal, "display_convention")
+attr(hd_distal_cc, "colour_col")         <- "cycle_colour"
+
+radiate(plividus_cc_d,
+        group_col   = "trial_id",
+        colour_col  = "cycle_colour",
+        panel_by    = "arc",
+        ncol        = 3,
+        show_labels = FALSE,
+        show_arrow  = FALSE) +
+  add_heading_interval(hd_distal_cc, colour_col = "arc", colour = "black",
+                       stat = "bootstrap_ci", boot_reps = 999L) +
+  add_heading_points(hd_distal_cc, size = 4) +
+  add_heading_arrow(hd_distal_cc, colour_col = "arc", colour = "black")
+```
+
+Because *P. lividus* tracks are nearly radial, the heading estimates agree
+closely across methods. For more sinuous species (moths, pigeons) the choice
+of rule has a larger influence on the result.
+
+### net
+
+The **net** rule returns the direction of the vector from the first recorded
+position to the last, ignoring all intermediate points. It is the fastest
+possible estimate and is the natural match for GPS vanishing-bearing studies
+where only the release and final observed positions are available.
+
+```{r hd-net}
+hd_net <- derive_headings(plividus, rule = "net",
+                           coords = "relative",
+                           angle_convention = "clock")
+hd_net$arc <- factor(
+  as.integer(sub("G1D_(\\d+)_.*", "\\1", hd_net$id)),
+  levels = c(0, 15, 30, 45, 60, 150),
+  labels = c("0°", "15°", "30°", "45°", "60°", "150°")
+)
+names(hd_net)[names(hd_net) == "id"] <- "trial_id"
+
+sm_net <- compute_circ_mean(hd_net, colour_col = "arc")[, c("arc", "resultant_R")]
+names(sm_net)[2] <- "net"
+Reduce(function(a, b) merge(a, b, by = "arc"),
+       list(sm_cross, sm_distal, sm_net))
+```
+
+For these tracks the three methods give very similar resultant lengths. Larger
+differences would be expected for species with complex search behaviour
+before committing to a direction.
+
 ## Simulating Demo Data
 
 `simulate_tracks()` generates synthetic trajectories without any files, useful for testing and demonstrations. The `kappa` parameter controls directedness:
