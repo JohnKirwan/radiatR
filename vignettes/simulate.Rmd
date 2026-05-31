@@ -120,7 +120,7 @@ receive sensible defaults.
 |---|---|---|
 | `condition` | `"condition_N"` | Label for the condition |
 | `n_trials` | `10` | Number of trajectories |
-| `stim_mean` | `0` | Baseline stimulus direction (unit-circle radians) |
+| `ref_mean` | `0` | Baseline reference direction (unit-circle radians) |
 | `concentration_base` | `5` | Baseline von Mises κ |
 | `concentration_slope` | `0` | Slope of κ on the per-trial predictor |
 | `tortuosity_base` | `0.06` | Baseline angular noise σ |
@@ -203,10 +203,10 @@ radiate(ts_tort,
 
 ---
 
-## Directional Bias (stim_mean)
+## Directional Bias (ref_mean)
 
-`stim_mean` shifts the stimulus direction away from East (0 rad). Use it to
-simulate experiments where the stimulus is not along the positive x-axis.
+`ref_mean` shifts the reference direction away from East (0 rad). Use it to
+simulate experiments where the reference is not along the positive x-axis.
 
 ```{r stim-mean, fig.width=9, fig.height=4}
 conds_bias <- data.frame(
@@ -214,7 +214,7 @@ conds_bias <- data.frame(
   n_trials           = 20L,
   concentration_base = 5,
   tortuosity_base    = 0.06,
-  stim_mean          = c(0, pi / 2, 3 * pi / 4)
+  ref_mean          = c(0, pi / 2, 3 * pi / 4)
 )
 ts_bias <- simulate_tracks(conditions = conds_bias, seed = 99,
                            output = "trajset")
@@ -231,9 +231,9 @@ radiate(ts_bias,
 
 ## Multi-Condition Gradient
 
-A common design is a monotone gradient in stimulus strength. The example below
+A common design is a monotone gradient in cue strength. The example below
 simulates four levels with increasing concentration and decreasing tortuosity —
-mimicking an orientation experiment where stronger stimuli produce tighter,
+mimicking an orientation experiment where stronger cues produce tighter,
 smoother paths.
 
 ```{r gradient, fig.width=9, fig.height=4}

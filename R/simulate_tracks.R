@@ -27,7 +27,7 @@
 #'
 #' - `condition` (character): condition label.
 #' - `n_trials` (integer): number of trajectories to simulate for the condition.
-#' - `stim_mean` (numeric radian): baseline stimulus heading (default 0).
+#' - `ref_mean` (numeric radian): baseline reference heading (default 0).
 #' - `concentration_base` (numeric): baseline von Mises concentration (kappa).
 #' - `concentration_slope` (numeric): optional slope applied to the predictor.
 #' - `tortuosity_base` (numeric): baseline angular noise scale.
@@ -38,7 +38,7 @@
 #' - `predictor_values` (list-column): optional explicit predictor values (length
 #'   `n_trials`) overriding the generated values.
 #'
-#' The predictor can represent any continuous covariate (e.g. stimulus
+#' The predictor can represent any continuous covariate (e.g. reference
 #' intensity). The final heading concentration increases with larger kappa,
 #' whereas larger tortuosity values produce more sinuous paths.
 #'
@@ -55,7 +55,7 @@
 #' example_conditions <- tibble::tibble(
 #'   condition = paste0("level_", 1:4),
 #'   n_trials = 30L,
-#'   stim_mean = seq(-pi/8, pi/8, length.out = 4),
+#'   ref_mean = seq(-pi/8, pi/8, length.out = 4),
 #'   concentration_base = c(2, 4, 6, 8),
 #'   concentration_slope = 0.8,
 #'   tortuosity_base = c(0.12, 0.09, 0.06, 0.04),
@@ -118,7 +118,7 @@ simulate_tracks <- function(n_points = 200,
     conditions <- tibble::tibble(
       condition = c("control", "moderate", "high"),
       n_trials = c(20L, 20L, 20L),
-      stim_mean = c(0, pi / 6, -pi / 4),
+      ref_mean = c(0, pi / 6, -pi / 4),
       concentration_base = c(8, 4, 2),
       concentration_slope = c(1, 0.5, -0.2),
       tortuosity_base = c(0.04, 0.07, 0.1),
@@ -135,7 +135,7 @@ simulate_tracks <- function(n_points = 200,
     conditions$n_trials <- 10L
   }
   defaults <- list(
-    stim_mean = 0,
+    ref_mean = 0,
     concentration_base = 5,
     concentration_slope = 0,
     tortuosity_base = 0.06,
@@ -162,7 +162,7 @@ simulate_tracks <- function(n_points = 200,
       trial_index = idx,
       predictor = predictor_vals[idx],
       n_points = n_points,
-      stim_mean = condition_row$stim_mean,
+      ref_mean = condition_row$ref_mean,
       concentration_base = condition_row$concentration_base,
       concentration_slope = condition_row$concentration_slope,
       tortuosity_base = condition_row$tortuosity_base,
@@ -187,16 +187,16 @@ simulate_tracks <- function(n_points = 200,
 }
 
 .sim_single_trial <- function(condition, trial_index, predictor, n_points,
-                              stim_mean, concentration_base, concentration_slope,
+                              ref_mean, concentration_base, concentration_slope,
                               tortuosity_base, tortuosity_slope, tortuosity_sd,
                               radial_noise, phi) {
   predictor <- as.numeric(predictor)
   kappa <- max(0.1, concentration_base + concentration_slope * predictor)
-  stim_theta <- stim_mean
+  ref_theta <- ref_mean
   # Use modulo="asis" so rvonmises returns values in (-pi, pi], keeping
   # wrap_to_pi() downstream correct.  modulo="2pi" (from .as_circ) would
   # shift near-zero headings to near 2*pi, which wrap_to_pi maps to -pi.
-  mu_circ <- circular::circular(stim_theta, units = "radians",
+  mu_circ <- circular::circular(ref_theta, units = "radians",
                                 type = "angles", modulo = "asis",
                                 zero = 0, rotation = "counter")
   final_heading <- as.numeric(circular::rvonmises(1, mu = mu_circ,
@@ -225,7 +225,7 @@ simulate_tracks <- function(n_points = 200,
     predictor = predictor,
     concentration = kappa,
     tortuosity = sigma,
-    stim_heading = stim_theta,
+    ref_heading = ref_theta,
     final_heading = final_heading,
     rho = rho,
     abs_theta = abs_theta,

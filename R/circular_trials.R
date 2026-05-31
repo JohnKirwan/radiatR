@@ -30,7 +30,7 @@
 #' Summarise per-trial metadata for a single video.
 #'
 #' Uses paired landmark coordinates to determine the temporal bounds of each
-#' trial, the arena origin, and the stimulus heading. Additional metadata from
+#' trial, the arena origin, and the reference heading. Additional metadata from
 #' `file_tbl` is merged into the result. Accepts landmark and track data either
 #' as data frames or as `TrajSet` objects.
 #'
@@ -41,10 +41,10 @@
 #' @param file_tbl Tibble returned by [import_tracks()] (optionally enriched by
 #'   [load_tracks()] or [load_tracks2()]).
 #' @param vid_num Index of the current video within `file_tbl`.
-#' @param midpoint Character flag indicating whether stimulus angles should be
+#' @param midpoint Character flag indicating whether reference angles should be
 #'   shifted to the midpoint (`"midpoint"`, default) or left as-is.
 #'
-#' @return A tibble with one row per trial containing trial limits and stimulus
+#' @return A tibble with one row per trial containing trial limits and reference
 #'   metadata.
 #'
 #' @importFrom tibble as_tibble
@@ -63,8 +63,8 @@ get_trial_limits <- function(landmarks, animal_track, file_tbl, vid_num,
     0,
     dim = c(num_trials, 18),
     dimnames = list(NULL, c(
-      "first_f", "orig_x", "orig_y", "stim_x", "stim_y",
-      "last_f", "stim_x_0", "stim_y_0", "stim_theta", "r_px",
+      "first_f", "orig_x", "orig_y", "ref_x", "ref_y",
+      "last_f", "ref_x_0", "ref_y_0", "ref_theta", "r_px",
       "quadrant", "video", "order", "vid_ord", "x0", "y0", "x1", "y1"
     ))
   ), .name_repair = "minimal")
@@ -78,8 +78,8 @@ get_trial_limits <- function(landmarks, animal_track, file_tbl, vid_num,
     tl$first_f[i] <- landmarks_df[(i * 2) - 1, "frame", drop = TRUE]
     tl$orig_x[i]  <- origin[["x"]]
     tl$orig_y[i]  <- origin[["y"]]
-    tl$stim_x[i]  <- reference[["x"]]
-    tl$stim_y[i]  <- reference[["y"]]
+    tl$ref_x[i]  <- reference[["x"]]
+    tl$ref_y[i]  <- reference[["y"]]
     if (i < num_trials) {
       tl$last_f[i] <- landmarks_df[((i + 1) * 2) - 1, "frame", drop = TRUE] - 1
     } else {
@@ -88,9 +88,9 @@ get_trial_limits <- function(landmarks, animal_track, file_tbl, vid_num,
 
     mapping <- build_unit_circle_mapping(origin, reference, flip_y = TRUE)
     tl$r_px[i] <- mapping$radius
-    tl$stim_theta[i] <- mapping$stim_theta_unit
-    tl$stim_x_0[i] <- cos(mapping$stim_theta_unit)
-    tl$stim_y_0[i] <- sin(mapping$stim_theta_unit)
+    tl$ref_theta[i] <- mapping$ref_theta_unit
+    tl$ref_x_0[i] <- cos(mapping$ref_theta_unit)
+    tl$ref_y_0[i] <- sin(mapping$ref_theta_unit)
   }
 
   tl$video <- file_tbl$basename[vid_num]
@@ -101,15 +101,15 @@ get_trial_limits <- function(landmarks, animal_track, file_tbl, vid_num,
   }
 
   if (identical(midpoint, "midpoint") && "type" %in% names(tl) && tl$type[1] == "Herm") {
-    stim_theta <- mapply(rad2clock, tl$stim_theta)
-    stim_theta <- stim_theta - tl$arc * (pi / 360)
-    stim_theta <- wrap_to_2pi(stim_theta)
-    tl$stim_theta <- mapply(rad_unclock, stim_theta)
-    tl$stim_x_0 <- cos(tl$stim_theta)
-    tl$stim_y_0 <- sin(tl$stim_theta)
+    ref_theta <- mapply(rad2clock, tl$ref_theta)
+    ref_theta <- ref_theta - tl$arc * (pi / 360)
+    ref_theta <- wrap_to_2pi(ref_theta)
+    tl$ref_theta <- mapply(rad_unclock, ref_theta)
+    tl$ref_x_0 <- cos(tl$ref_theta)
+    tl$ref_y_0 <- sin(tl$ref_theta)
   }
 
-  theta <- tl$stim_theta
+  theta <- tl$ref_theta
   quadrant <- rep(NA_character_, length(theta))
   quadrant[theta < pi / 4 | theta >= 7 * pi / 4] <- "right"
   quadrant[theta >= pi / 4 & theta < 3 * pi / 4] <- "top"
@@ -125,7 +125,7 @@ get_trial_limits <- function(landmarks, animal_track, file_tbl, vid_num,
 #' Using the trial limits returned by [get_trial_limits()], this helper extracts
 #' the corresponding rows from a track data frame or `TrajSet`, centres and
 #' scales the coordinates, and computes angles in both absolute and
-#' stimulus-relative frames. The function optionally controls how inner/outer
+#' reference-relative frames. The function optionally controls how inner/outer
 #' radius crossings are selected.
 #'
 #' @param trial_limits Data frame produced by [get_trial_limits()].
@@ -166,7 +166,7 @@ get_tracked_object_pos <- function(
 
     mapping <- build_unit_circle_mapping(
       origin = c(trial_limits$orig_x[i], trial_limits$orig_y[i]),
-      reference = c(trial_limits$stim_x[i], trial_limits$stim_y[i]),
+      reference = c(trial_limits$ref_x[i], trial_limits$ref_y[i]),
       flip_y = TRUE
     )
     mapped <- mapping$map(XY$x, XY$y)

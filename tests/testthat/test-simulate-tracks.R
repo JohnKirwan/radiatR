@@ -18,7 +18,7 @@ test_that("simulate_tracks respects condition effects", {
   conds <- tibble::tibble(
     condition = c("low", "high"),
     n_trials = c(50L, 50L),
-    stim_mean = 0,
+    ref_mean = 0,
     concentration_base = c(2, 8),
     concentration_slope = c(0, 0),
     tortuosity_base = c(0.12, 0.04),

@@ -34,7 +34,7 @@ data and finishes with a user-defined loader for a custom format.
 
 The package ships five baseline trials from a *Paracentrotus lividus* visual
 acuity experiment. Tracks are stored as paired tab-separated text files:
-`_point01.txt` holds two landmark rows (arena centre + stimulus edge);
+`_point01.txt` holds two landmark rows (arena centre + reference point);
 `_point02.txt` holds the full per-frame xy trajectory.
 
 ### Step 1 — discover files

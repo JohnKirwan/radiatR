@@ -36,7 +36,7 @@ library(ggplot2)
 
 ## Import Pipeline
 
-The package ships five arc = 0° example tracks that demonstrate the full import workflow. Landmark files (`_point01.txt`) record two pixel-space reference points per trial (arena centre and stimulus edge); track files (`_point02.txt`) contain the full xy trajectory.
+The package ships five arc = 0° example tracks that demonstrate the full import workflow. Landmark files (`_point01.txt`) record two pixel-space reference points per trial (arena centre and reference point on the arena wall); track files (`_point02.txt`) contain the full xy trajectory.
 
 ```{r load-demo}
 track_dir     <- system.file("extdata", "tracks", package = "radiatR")
@@ -50,7 +50,7 @@ ts_demo <- get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir)
 ts_demo
 ```
 
-`get_all_object_pos()` reads each landmark/track pair, normalises coordinates to a unit circle (arena radius = 1), and returns a `TrajSet`. Trial metadata (arena radius, stimulus position, frame limits) is in `ts_demo@meta$trial_limits`.
+`get_all_object_pos()` reads each landmark/track pair, normalises coordinates to a unit circle (arena radius = 1), and returns a `TrajSet`. Trial metadata (arena radius, reference position, frame limits) is in `ts_demo@meta$trial_limits`.
 
 ## Full *P. lividus* Dataset
 
@@ -115,7 +115,7 @@ summ_hd_deg <- round(((-summ_hd$mean_dir) %% (2 * pi)) * 180 / pi, 1)
 summ_hd_R   <- round(summ_hd$resultant_R, 2)
 ```
 
-The grand mean arrow points at `r summ_hd_deg`° relative to the stimulus (clock convention; 0° = toward stimulus) with *R* = `r summ_hd_R`, reflecting the overall stimulus-relative tendency across all conditions.
+The grand mean arrow points at `r summ_hd_deg`° relative to the reference direction (clock convention; 0° = toward reference) with *R* = `r summ_hd_R`, reflecting the overall reference-relative tendency across all conditions.
 
 ## Circular Interval Arc
 
@@ -238,7 +238,7 @@ p <- p + add_heading_arrow(hd_cc, colour_col = "arc", colour = "black")
 p
 ```
 
-Each panel shows trajectories and heading markers coloured by per-trajectory cycling palette, a bootstrap CI arc at radius 1.05 in the condition colour (rendered behind the heading points), a solid mean direction arrow, and degree labels. All in clock convention (0° = toward stimulus, clockwise). Use `strip_position = "inside"` to place the label inside the plot area, or `strip_labels = FALSE` to suppress it.
+Each panel shows trajectories and heading markers coloured by per-trajectory cycling palette, a bootstrap CI arc at radius 1.05 in the condition colour (rendered behind the heading points), a solid mean direction arrow, and degree labels. All in clock convention (0° = toward reference, clockwise). Use `strip_position = "inside"` to place the label inside the plot area, or `strip_labels = FALSE` to suppress it.
 
 ## Circular Density Overlays
 

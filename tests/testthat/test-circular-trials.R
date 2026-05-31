@@ -20,7 +20,7 @@ test_that("trial utilities summarise and transform tracks", {
   limits <- suppressWarnings(get_trial_limits(landmarks, animal_track, file_tbl, vid_num = 1))
   expect_equal(nrow(limits), 2)
   expect_equal(limits$video[1], "video1")
-  expect_true(all(c("stim_theta", "r_px") %in% names(limits)))
+  expect_true(all(c("ref_theta", "r_px") %in% names(limits)))
 
   track_ts <- suppressWarnings(get_tracked_object_pos(limits, animal_track))
   expect_s4_class(track_ts, "TrajSet")

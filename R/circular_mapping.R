@@ -178,8 +178,8 @@ build_unit_circle_mapping <- function(origin, reference, flip_y = TRUE) {
     stop("Reference landmark must be distinct from origin (non-zero radius).")
   }
 
-  stim_theta_unit <- wrap_to_2pi(atan2(ref_vec_y, ref_vec_x))
-  stim_theta_clock <- rad2clock(stim_theta_unit)
+  ref_theta_unit <- wrap_to_2pi(atan2(ref_vec_y, ref_vec_x))
+  ref_theta_clock <- rad2clock(ref_theta_unit)
 
   map_fn <- function(x, y) {
     stopifnot(length(x) == length(y))
@@ -193,7 +193,7 @@ build_unit_circle_mapping <- function(origin, reference, flip_y = TRUE) {
 
     abs_theta_clock <- rad2clock(atan2(trans_y, trans_x))
     abs_theta_unit <- rad_unclock(abs_theta_clock)
-    rel_theta_unit <- rad_shepherd(abs_theta_unit - stim_theta_unit)
+    rel_theta_unit <- rad_shepherd(abs_theta_unit - ref_theta_unit)
 
     list(
       trans_x = trans_x,
@@ -223,8 +223,8 @@ build_unit_circle_mapping <- function(origin, reference, flip_y = TRUE) {
     origin = origin,
     reference = reference,
     radius = radius,
-    stim_theta_unit = stim_theta_unit,
-    stim_theta_clock = stim_theta_clock,
+    ref_theta_unit = ref_theta_unit,
+    ref_theta_clock = ref_theta_clock,
     flip_y = flip_y,
     map = map_fn,
     inverse = unmap_fn
