@@ -140,9 +140,9 @@ heading distributions.
 
 ```{r concentration, fig.width=9, fig.height=4}
 conds_kappa <- data.frame(
-  condition          = c("low (κ=1)", "medium (κ=4)", "high (κ=12)"),
+  condition          = c("low (κ=0.1)", "medium (κ=1)", "high (κ=12)"),
   n_trials           = 20L,
-  concentration_base = c(1, 4, 12),
+  concentration_base = c(0.1, 1, 12),
   tortuosity_base    = 0.05
 )
 ts_kappa <- simulate_tracks(conditions = conds_kappa, seed = 42,
