@@ -324,7 +324,7 @@ cond_map <- unique(sim_analysis$tibble[, c("trial_id", "condition")])
 hd <- merge(hd, cond_map, by = "trial_id")
 
 compute_circ_mean(hd, colour_col = "condition")[,
-  c("condition", "mean_dir", "resultant_R", "n")]
+  c("condition", "mean_dir", "resultant_R")]
 ```
 
 Visualise the headings alongside the trajectories:
