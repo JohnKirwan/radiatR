@@ -184,8 +184,9 @@ directedness_arrow <- function(data, angle_col, arrow_head_cm = 0.2,
     warning("`angle_col` must refer to a numeric column expressed in radians; skipping arrow layer.", call. = FALSE)
     return(ggplot2::geom_blank())
   }
-  mean_angle <- as.numeric(circular::mean.circular(angles))
-  rho        <- as.numeric(circular::rho.circular(angles))
+  angles_circ <- .as_circ(angles)
+  mean_angle <- as.numeric(circular::mean.circular(angles_circ))
+  rho        <- as.numeric(circular::rho.circular(angles_circ))
 
   # When resultant length is zero the mean direction is undefined; keep tip at origin.
   if (!is.finite(rho) || !is.finite(mean_angle) || rho == 0) {

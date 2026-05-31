@@ -193,7 +193,9 @@ simulate_tracks <- function(n_points = 200,
   predictor <- as.numeric(predictor)
   kappa <- max(0.1, concentration_base + concentration_slope * predictor)
   stim_theta <- stim_mean
-  final_heading <- as.numeric(circular::rvonmises(1, mu = stim_theta, kappa = kappa))
+  final_heading <- as.numeric(
+    circular::rvonmises(1, mu = .as_circ(stim_theta), kappa = kappa)
+  )
 
   sigma_mean <- tortuosity_base + tortuosity_slope * predictor
   sigma <- max(1e-4, sigma_mean + stats::rnorm(1, sd = tortuosity_sd))
