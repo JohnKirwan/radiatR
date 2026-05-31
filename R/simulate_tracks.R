@@ -193,9 +193,14 @@ simulate_tracks <- function(n_points = 200,
   predictor <- as.numeric(predictor)
   kappa <- max(0.1, concentration_base + concentration_slope * predictor)
   stim_theta <- stim_mean
-  final_heading <- as.numeric(
-    circular::rvonmises(1, mu = .as_circ(stim_theta), kappa = kappa)
-  )
+  # Use modulo="asis" so rvonmises returns values in (-pi, pi], keeping
+  # wrap_to_pi() downstream correct.  modulo="2pi" (from .as_circ) would
+  # shift near-zero headings to near 2*pi, which wrap_to_pi maps to -pi.
+  mu_circ <- circular::circular(stim_theta, units = "radians",
+                                type = "angles", modulo = "asis",
+                                zero = 0, rotation = "counter")
+  final_heading <- as.numeric(circular::rvonmises(1, mu = mu_circ,
+                                                   kappa = kappa))
 
   sigma_mean <- tortuosity_base + tortuosity_slope * predictor
   sigma <- max(1e-4, sigma_mean + stats::rnorm(1, sd = tortuosity_sd))
@@ -261,7 +266,7 @@ simulate_tracks <- function(n_points = 200,
 
 wrap_to_pi <- function(angle) {
   if (is.null(angle)) return(angle)
-  angle <- (angle + pi) %% (2 * pi)
+  angle <- angle %% (2 * pi)
   angle[angle > pi] <- angle[angle > pi] - 2 * pi
   angle
 }

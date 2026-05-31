@@ -1857,28 +1857,77 @@ function(
         angle_col %in% names(data) &&
         is.numeric(data[[angle_col]]) &&
         any(!is.na(data[[angle_col]]))) {
-      # Reduce to one circular mean per trial before computing the grand mean
-      # direction and rho.  Averaging all individual timepoint angles would
-      # weight dense within-trial sampling rather than between-trial spread.
-      arrow_angles <- if (!is.null(group_col) && group_col %in% names(data)) {
-        vapply(split(data[[angle_col]], data[[group_col]]), function(a) {
-          a <- a[!is.na(a)]
-          if (length(a) == 0L) return(NA_real_)
-          atan2(mean(sin(a)), mean(cos(a)))
-        }, numeric(1L))
+      # Per-trial mean angles (avoids timepoint-count bias).
+      if (!is.null(group_col) && group_col %in% names(data)) {
+        trial_means <- vapply(split(data[[angle_col]], data[[group_col]]),
+          function(a) {
+            a <- a[!is.na(a)]
+            if (length(a) == 0L) return(NA_real_)
+            atan2(mean(sin(a)), mean(cos(a)))
+          }, numeric(1L))
+        trial_df <- data.frame(.key = names(trial_means),
+                               .mean = as.numeric(trial_means),
+                               stringsAsFactors = FALSE)
+        names(trial_df)[1L] <- group_col
       } else {
-        data[[angle_col]]
+        trial_df <- data.frame(.key = seq_along(data[[angle_col]]),
+                               .mean = data[[angle_col]],
+                               stringsAsFactors = FALSE)
+        names(trial_df)[1L] <- group_col %||% ".key"
       }
-      arrow_angles <- arrow_angles[!is.na(arrow_angles)]
-      g <- g + directedness_arrow(
-        data = data.frame(theta = arrow_angles),
-        angle_col = theta,
-        colour = arrow_colour,
-        size = arrow_size
-      )
+
+      .circ_mean_seg <- function(a) {
+        a <- a[!is.na(a)]
+        if (length(a) == 0L) return(NULL)
+        ma <- atan2(mean(sin(a)), mean(cos(a)))
+        r  <- sqrt(mean(sin(a))^2 + mean(cos(a))^2)
+        data.frame(x = 0, y = 0, xend = r * cos(ma), yend = r * sin(ma))
+      }
+
+      # When panel_by is a single column, route each arrow to its own facet.
+      if (!is.null(panel_by) && length(panel_by) == 1L &&
+          panel_by %in% names(data)) {
+        panel_map <- unique(data[, c(group_col, panel_by), drop = FALSE])
+        trial_df  <- merge(trial_df, panel_map, by = group_col, all.x = TRUE)
+        arrow_rows <- lapply(
+          split(trial_df$.mean, trial_df[[panel_by]], drop = TRUE),
+          function(a) {
+            seg <- .circ_mean_seg(a)
+            seg
+          }
+        )
+        # Attach panel value (preserving original class/factor levels).
+        pby_vals <- names(arrow_rows)
+        pby_orig <- data[[panel_by]]
+        arrow_df <- do.call(rbind, Map(function(seg, pval) {
+          if (is.null(seg)) return(NULL)
+          seg[[panel_by]] <- if (is.factor(pby_orig)) {
+            factor(pval, levels = levels(pby_orig))
+          } else if (is.numeric(pby_orig)) {
+            as.numeric(pval)
+          } else {
+            pval
+          }
+          seg
+        }, arrow_rows, pby_vals))
+      } else {
+        arrow_df <- .circ_mean_seg(trial_df$.mean)
+      }
+
+      if (!is.null(arrow_df) && nrow(arrow_df) > 0L) {
+        g <- g + ggplot2::geom_segment(
+          data        = arrow_df,
+          mapping     = ggplot2::aes(x = x, y = y, xend = xend, yend = yend),
+          colour      = arrow_colour,
+          linewidth   = arrow_size,
+          arrow       = grid::arrow(length = grid::unit(0.2, "cm")),
+          inherit.aes = FALSE
+        )
+      }
     } else if (!is.null(arrow_angle_col)) {
       warning("Arrow requested but column `", arrow_angle_col,
-              "` is unavailable or not numeric; skipping arrow layer.", call. = FALSE)
+              "` is unavailable or not numeric; skipping arrow layer.",
+              call. = FALSE)
     }
   }
 
