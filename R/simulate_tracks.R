@@ -251,6 +251,7 @@ simulate_tracks <- function(n_points = 200,
     x = "abs_x",
     y = "abs_y",
     angle = "abs_theta",
+    angle_unit = "radians",
     normalize_xy = FALSE,
     meta = list(source = "simulate_tracks")
   )
