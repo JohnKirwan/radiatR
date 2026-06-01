@@ -1203,3 +1203,41 @@ test_that("add_circular_kde returns NULL for fewer than 2 observations", {
   hd <- data.frame(heading = 0.5)
   expect_null(add_circular_kde(hd))
 })
+
+# ---- add_wrappedcauchy_density -----------------------------------------------
+
+test_that("add_wrappedcauchy_density returns a ggplot2 layer", {
+  fit <- data.frame(mu = 0, rho = 0.6, convergence = 0L, n = 50L)
+  layer <- add_wrappedcauchy_density(fit)
+  expect_s3_class(layer, "LayerInstance")
+})
+
+test_that("add_wrappedcauchy_density peak radius equals scale", {
+  fit   <- data.frame(mu = 0, rho = 0.6, convergence = 0L, n = 50L)
+  layer <- add_wrappedcauchy_density(fit, scale = 0.35, n_pts = 360L)
+  r     <- sqrt(layer$data$x^2 + layer$data$y^2)
+  expect_equal(max(r), 0.35, tolerance = 1e-3)
+})
+
+test_that("add_wrappedcauchy_density peak is near mu", {
+  fit   <- data.frame(mu = pi / 3, rho = 0.7, convergence = 0L, n = 50L)
+  layer <- add_wrappedcauchy_density(fit, n_pts = 360L)
+  idx   <- which.max(sqrt(layer$data$x^2 + layer$data$y^2))
+  peak  <- atan2(layer$data$y[idx], layer$data$x[idx])
+  expect_equal(peak, pi / 3, tolerance = 0.05)
+})
+
+test_that("add_wrappedcauchy_density returns NULL for NA fit", {
+  fit <- data.frame(mu = NA_real_, rho = NA_real_, n = 1L)
+  expect_null(add_wrappedcauchy_density(fit))
+})
+
+test_that("add_wrappedcauchy_density handles group_col", {
+  fit <- data.frame(grp = c("A", "B"),
+                    mu  = c(0, pi/2),
+                    rho = c(0.6, 0.5),
+                    n   = c(40L, 40L))
+  layer <- add_wrappedcauchy_density(fit, group_col = "grp", n_pts = 36L)
+  expect_true("grp" %in% names(layer$data))
+  expect_equal(length(unique(layer$data$grp)), 2L)
+})

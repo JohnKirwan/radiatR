@@ -2392,3 +2392,85 @@ add_circular_kde <- function(hd, angle_col = "heading", group_col = NULL,
     inherit.aes = FALSE
   )
 }
+
+# ---- add_wrappedcauchy_density -----------------------------------------------
+
+#' Overlay a fitted wrapped Cauchy density curve on a radiate plot
+#'
+#' Evaluates \code{\link[circular]{dwrappedcauchy}} on a fine angular grid and
+#' draws it as a closed polygon in the same Cartesian space as
+#' \code{\link{radiate}}.  Intended as a visual companion to
+#' \code{\link{add_vonmises_density}}: overlaying both curves shows whether the
+#' data favour the lighter-tailed von Mises or the heavier-tailed wrapped
+#' Cauchy.
+#'
+#' Default colour is \code{"darkorange"} to distinguish from
+#' \code{add_vonmises_density} (\code{"steelblue"}) and
+#' \code{add_circular_kde} (\code{"tomato"}).
+#'
+#' @param fit Data frame from \code{\link{wrappedcauchy_fit}}, containing at
+#'   least \code{mu} and \code{rho} columns.
+#' @param scale Maximum outer radius as a fraction of the unit circle.
+#'   Default \code{0.4}.
+#' @param inner_r Inner radius.  Default \code{0}.
+#' @param group_col Column for faceting; must match \code{panel_by} in the
+#'   parent \code{radiate()} call.
+#' @param n_pts Angular evaluation points.  Default \code{360L}.
+#' @param colour Outline colour.  Default \code{"darkorange"}.
+#' @param linewidth Outline width.  Default \code{0.8}.
+#' @param fill Fill colour.  Default \code{NA} (outline only).
+#' @param alpha Opacity.  Default \code{0.8}.
+#' @return A \code{geom_polygon} layer, or \code{NULL} if estimation fails.
+#' @seealso \code{\link{add_vonmises_density}}, \code{\link{add_circular_kde}}
+#' @export
+add_wrappedcauchy_density <- function(fit, scale = 0.4, inner_r = 0,
+                                       group_col = NULL, n_pts = 360L,
+                                       colour = "darkorange", linewidth = 0.8,
+                                       fill = NA, alpha = 0.8) {
+  stopifnot(is.data.frame(fit))
+  miss <- setdiff(c("mu", "rho"), names(fit))
+  if (length(miss))
+    stop("add_wrappedcauchy_density: fit must contain columns: ",
+         paste(miss, collapse = ", "),
+         " -- generate with wrappedcauchy_fit()")
+
+  thetas <- seq(-pi, pi, length.out = n_pts + 1L)[seq_len(n_pts)]
+
+  .ring <- function(mu, rho, grp) {
+    if (is.na(mu) || is.na(rho) || rho < 0 || rho >= 1) return(NULL)
+    mu_c  <- circular::circular(mu,     units = "radians", type = "angles")
+    th_c  <- circular::circular(thetas, units = "radians", type = "angles")
+    d     <- as.numeric(circular::dwrappedcauchy(th_c, mu = mu_c, rho = rho))
+    d_max <- max(d, na.rm = TRUE)
+    if (!is.finite(d_max) || d_max <= 0) return(NULL)
+    r <- inner_r + scale * d / d_max
+    data.frame(x = r * cos(thetas), y = r * sin(thetas),
+               .wc_grp = grp, stringsAsFactors = FALSE)
+  }
+
+  if (!is.null(group_col)) {
+    if (!group_col %in% names(fit))
+      stop("add_wrappedcauchy_density: '", group_col, "' not found in fit")
+    polys <- do.call(rbind, lapply(seq_len(nrow(fit)), function(i) {
+      w <- .ring(fit$mu[i], fit$rho[i],
+                 paste0(as.character(fit[[group_col]][i]), "_wc"))
+      if (is.null(w)) return(NULL)
+      w[[group_col]] <- fit[[group_col]][i]
+      w
+    }))
+  } else {
+    polys <- .ring(fit$mu[1L], fit$rho[1L], "wc")
+  }
+
+  if (is.null(polys)) return(NULL)
+
+  ggplot2::geom_polygon(
+    data    = polys,
+    mapping = ggplot2::aes(x = x, y = y, group = .wc_grp),
+    colour      = colour,
+    linewidth   = linewidth,
+    fill        = fill,
+    alpha       = alpha,
+    inherit.aes = FALSE
+  )
+}

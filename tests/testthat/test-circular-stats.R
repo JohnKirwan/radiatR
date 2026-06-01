@@ -801,3 +801,40 @@ test_that("test_mean_directions holm gives family-wise control", {
   # All adjusted p-values should be > 0.05 (no spurious significance)
   expect_true(all(pw$p_value_adj > 0.05))
 })
+
+# ---- wrappedcauchy_fit -------------------------------------------------------
+
+test_that("wrappedcauchy_fit recovers rho near true value", {
+  set.seed(7)
+  hd <- data.frame(
+    heading = as.numeric(circular::rwrappedcauchy(
+      150, circular::circular(0), rho = 0.6))
+  )
+  fit <- wrappedcauchy_fit(hd)
+  expect_true(is.integer(fit$convergence))  # code passed through; 1 is common
+  expect_equal(fit$n, 150L)
+  expect_equal(fit$rho, 0.6, tolerance = 0.15)
+  # mu near 0: check minimum circular distance to 0 is small
+  mu_dist <- min(abs(fit$mu), abs(fit$mu - 2*pi), abs(fit$mu + 2*pi))
+  expect_lt(mu_dist, 0.4)
+})
+
+test_that("wrappedcauchy_fit groups by condition", {
+  set.seed(2)
+  hd <- data.frame(
+    grp     = rep(c("A", "B"), each = 50),
+    heading = c(
+      as.numeric(circular::rwrappedcauchy(50, circular::circular(0),    rho = 0.7)),
+      as.numeric(circular::rwrappedcauchy(50, circular::circular(pi/2), rho = 0.4))
+    )
+  )
+  fit <- wrappedcauchy_fit(hd, group_col = "grp")
+  expect_equal(nrow(fit), 2L)
+  expect_gt(fit$rho[fit$grp == "A"], fit$rho[fit$grp == "B"])
+})
+
+test_that("wrappedcauchy_fit returns NA row for n < 2", {
+  fit <- wrappedcauchy_fit(data.frame(heading = 0.5))
+  expect_equal(fit$n, 1L)
+  expect_true(is.na(fit$rho))
+})
