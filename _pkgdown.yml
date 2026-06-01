@@ -156,6 +156,7 @@ reference:
       - stack_headings
       - add_circ_mean
       - add_circ_interval
+      - add_critical_r
       - gg_add_circ_mean
       - circ_mean_segments
 

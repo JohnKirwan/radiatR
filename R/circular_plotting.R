@@ -2474,3 +2474,129 @@ add_wrappedcauchy_density <- function(fit, scale = 0.4, inner_r = 0,
     inherit.aes = FALSE
   )
 }
+
+# ---- add_critical_r ----------------------------------------------------------
+
+#' Add a critical resultant-length circle to a radiate plot
+#'
+#' Draws an inner reference circle at the \emph{critical mean resultant length}
+#' -- the smallest \eqn{\bar R} at which a circular significance test reaches
+#' \code{alpha} for the given sample size.  If a group's mean-direction arrow
+#' (\code{\link{add_heading_arrow}}) extends beyond this circle, that group's
+#' headings are significantly directed at the \code{alpha} level.  This is the
+#' convention used by Oriana and similar circular-statistics software.
+#'
+#' Two tests are supported:
+#' \describe{
+#'   \item{\code{"rayleigh"} (default)}{Tests against uniformity with no
+#'     hypothesised direction.  Critical value
+#'     \eqn{\bar R_{crit} = \sqrt{-\log(\alpha) / n}} (asymptotic; accurate
+#'     for \eqn{n \ge 10}).}
+#'   \item{\code{"vtest"}}{Tests against a specific direction.  Critical value
+#'     \eqn{\bar R_{crit} = z_\alpha / \sqrt{2n}} at its most powerful (when the
+#'     observed mean direction equals the hypothesised \eqn{\mu_0}); the
+#'     effective threshold rises as the observed direction departs from
+#'     \eqn{\mu_0}, so this circle is a lower bound.}
+#' }
+#'
+#' Sample size \code{n} is taken per group from \code{hd}.  When
+#' \code{group_col} matches the parent \code{radiate(panel_by = ...)} argument,
+#' one circle is drawn per panel at the radius appropriate to that panel's
+#' \code{n}.  For groups overlaid in a single panel, set \code{per_group = TRUE}
+#' to draw one circle per group (colour-matched), or \code{per_group = FALSE}
+#' (default) to draw a single conservative circle using the smallest \code{n}
+#' (largest critical radius).
+#'
+#' @param hd Data frame of headings with a heading column (radians).
+#' @param alpha Significance level.  Default \code{0.05}.
+#' @param test \code{"rayleigh"} (default) or \code{"vtest"}.
+#' @param angle_col Heading column name.  Default \code{"heading"}.
+#' @param group_col Column identifying groups.  \code{NULL} pools all rows.
+#' @param per_group Logical.  When \code{group_col} is set but the plot is not
+#'   faceted, draw one circle per group (\code{TRUE}) or a single conservative
+#'   circle (\code{FALSE}, default).  Ignored when faceting (always per panel).
+#' @param colour Circle colour.  Default \code{"firebrick"}.  When
+#'   \code{per_group = TRUE} this is overridden by the colour scale.
+#' @param linetype Line type.  Default \code{"dashed"}.
+#' @param linewidth Line width.  Default \code{0.6}.
+#' @param n_pts Points used to approximate each circle.  Default \code{200L}.
+#' @return A \code{geom_path} layer, or \code{NULL} if no group has \code{n >= 2}.
+#' @seealso \code{\link{add_heading_arrow}}, \code{\link{add_circ}}
+#' @export
+add_critical_r <- function(hd, alpha = 0.05,
+                            test = c("rayleigh", "vtest"),
+                            angle_col = "heading", group_col = NULL,
+                            per_group = FALSE, colour = "firebrick",
+                            linetype = "dashed", linewidth = 0.6,
+                            n_pts = 200L) {
+  test <- match.arg(test)
+  stopifnot(is.data.frame(hd), alpha > 0, alpha < 1)
+  if (!angle_col %in% names(hd))
+    stop("add_critical_r: column '", angle_col, "' not found")
+
+  .r_crit <- function(n) {
+    if (n < 2L) return(NA_real_)
+    switch(test,
+      rayleigh = sqrt(-log(alpha) / n),
+      vtest    = stats::qnorm(1 - alpha) / sqrt(2 * n)
+    )
+  }
+
+  .circle_df <- function(r, grp) {
+    th <- seq(0, 2 * pi, length.out = n_pts)
+    data.frame(x = r * cos(th), y = r * sin(th),
+               .cr_grp = grp, stringsAsFactors = FALSE)
+  }
+
+  # ---- no grouping: single circle from pooled n ----
+  if (is.null(group_col)) {
+    n <- sum(is.finite(hd[[angle_col]]))
+    r <- .r_crit(n)
+    if (is.na(r)) return(NULL)
+    df <- .circle_df(r, "all")
+    return(ggplot2::geom_path(
+      data = df, mapping = ggplot2::aes(x = x, y = y, group = .cr_grp),
+      colour = colour, linetype = linetype, linewidth = linewidth,
+      inherit.aes = FALSE
+    ))
+  }
+
+  if (!group_col %in% names(hd))
+    stop("add_critical_r: '", group_col, "' not found")
+
+  groups <- unique(hd[[group_col]])
+  ns <- vapply(groups, function(g)
+    sum(is.finite(hd[[angle_col]][hd[[group_col]] == g])), integer(1L))
+
+  # ---- single conservative circle (overlaid, per_group = FALSE) ----
+  if (!per_group) {
+    n_min <- min(ns[ns >= 2L], na.rm = TRUE)
+    if (!is.finite(n_min)) return(NULL)
+    df <- .circle_df(.r_crit(n_min), "conservative")
+    return(ggplot2::geom_path(
+      data = df, mapping = ggplot2::aes(x = x, y = y, group = .cr_grp),
+      colour = colour, linetype = linetype, linewidth = linewidth,
+      inherit.aes = FALSE
+    ))
+  }
+
+  # ---- one circle per group (faceted, or overlaid colour-matched) ----
+  parts <- lapply(seq_along(groups), function(i) {
+    r <- .r_crit(ns[i])
+    if (is.na(r)) return(NULL)
+    df <- .circle_df(r, as.character(groups[i]))
+    df[[group_col]] <- groups[i]
+    df
+  })
+  parts <- parts[!vapply(parts, is.null, logical(1L))]
+  if (!length(parts)) return(NULL)
+  circ_df <- do.call(rbind, parts)
+
+  ggplot2::geom_path(
+    data = circ_df,
+    mapping = ggplot2::aes(x = x, y = y,
+                           group = .cr_grp,
+                           colour = .data[[group_col]]),
+    linetype = linetype, linewidth = linewidth, inherit.aes = FALSE
+  )
+}
