@@ -838,3 +838,57 @@ test_that("wrappedcauchy_fit returns NA row for n < 2", {
   expect_equal(fit$n, 1L)
   expect_true(is.na(fit$rho))
 })
+
+# ---- circ_cor ----------------------------------------------------------------
+
+test_that("circ_cor circular-linear detects strong association", {
+  set.seed(1)
+  theta <- as.numeric(circular::rvonmises(60, circular::circular(0), kappa=3))
+  hd <- data.frame(heading = theta, body_size = theta + rnorm(60, 0, 0.3))
+  res <- circ_cor(hd, x_col = "body_size")
+  expect_equal(res$type, "circular-linear")
+  expect_gt(res$r, 0.5)
+  expect_lt(res$p_value, 0.05)
+  expect_equal(res$df, 2L)
+})
+
+test_that("circ_cor circular-linear near zero for independent variables", {
+  set.seed(2)
+  hd <- data.frame(
+    heading   = as.numeric(circular::rvonmises(80, circular::circular(0), kappa=2)),
+    covariate = rnorm(80)
+  )
+  res <- circ_cor(hd, x_col = "covariate")
+  expect_lt(res$r, 0.3)
+  expect_gt(res$p_value, 0.05)
+})
+
+test_that("circ_cor circular-circular works and returns r in [-1,1]", {
+  set.seed(3)
+  a <- as.numeric(circular::rvonmises(50, circular::circular(pi/4), kappa=2))
+  hd <- data.frame(heading = a, angle2 = a + rnorm(50, 0, 0.2))
+  res <- circ_cor(hd, x_col = "angle2", x_type = "circular")
+  expect_equal(res$type, "circular-circular")
+  expect_true(res$r >= -1 && res$r <= 1)
+})
+
+test_that("circ_cor groups correctly", {
+  set.seed(4)
+  theta_a <- as.numeric(circular::rvonmises(40, circular::circular(0), kappa=3))
+  hd <- data.frame(
+    grp     = rep(c("A","B"), each=40),
+    heading = c(theta_a, as.numeric(circular::rvonmises(40, circular::circular(pi), kappa=3))),
+    x       = c(theta_a + rnorm(40,0,0.2), rnorm(40))  # A correlated, B not
+  )
+  res <- circ_cor(hd, x_col = "x", group_col = "grp")
+  expect_equal(nrow(res), 2L)
+  expect_gt(res$r[res$grp == "A"], res$r[res$grp == "B"])
+})
+
+test_that("circ_cor test=FALSE omits test columns", {
+  hd <- data.frame(heading = rnorm(20), x = rnorm(20))
+  res <- circ_cor(hd, x_col = "x", test = FALSE)
+  expect_false("p_value" %in% names(res))
+  expect_false("statistic" %in% names(res))
+  expect_true("r" %in% names(res))
+})

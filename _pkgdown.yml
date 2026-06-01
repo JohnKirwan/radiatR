@@ -110,6 +110,13 @@ reference:
       - vonmises_fit
       - wrappedcauchy_fit
 
+  - title: "Circular statistics -- correlation"
+    desc: >
+      Measure the association between heading directions and a continuous
+      covariate (circular-linear) or a second set of angles (circular-circular).
+    contents:
+      - circ_cor
+
   - title: "Circular statistics -- hypothesis tests"
     desc: >
       Uniformity, equal mean directions, and equal concentrations.

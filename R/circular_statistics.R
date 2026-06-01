@@ -696,6 +696,112 @@ wrappedcauchy_fit <- function(hd, group_col = NULL, angle_col = "heading") {
   do.call(rbind, rows)
 }
 
+# ---- circ_cor ----------------------------------------------------------------
+
+#' Circular correlation between headings and a covariate
+#'
+#' Computes the association between a heading (angle) series and either a
+#' continuous linear covariate (\code{x_type = "linear"}, default) or a
+#' second set of angles (\code{x_type = "circular"}).
+#'
+#' \strong{Circular-linear} (T-linear association, Mardia \& Jupp 2000):
+#' \deqn{r^2 = \frac{r_{cx}^2 + r_{cy}^2 - 2r_{cx}r_{cy}r_{xy}}{1 - r_{xy}^2}}
+#' where \eqn{r_{cx} = \text{cor}(\cos\theta, x)},
+#' \eqn{r_{cy} = \text{cor}(\sin\theta, x)},
+#' \eqn{r_{xy} = \text{cor}(\cos\theta, \sin\theta)}.
+#' \eqn{r \in [0, 1]}; the test statistic \eqn{n r^2 \sim \chi^2_2} under
+#' \eqn{H_0}.  Note: \eqn{r} is unsigned (association strength only, not
+#' direction).
+#'
+#' \strong{Circular-circular} (Fisher's \eqn{\rho}, via
+#' \code{\link[circular]{cor.circular}}): \eqn{r \in [-1, 1]}.
+#'
+#' @param hd Data frame containing the heading and covariate columns.
+#' @param x_col Name of the covariate column.
+#' @param angle_col Heading column in radians.  Default \code{"heading"}.
+#' @param group_col Column to group by.  \code{NULL} uses all rows.
+#' @param x_type \code{"linear"} (default) or \code{"circular"}.
+#' @param test Logical; include hypothesis test.  Default \code{TRUE}.
+#' @return Tidy data frame with columns \code{group_col} (if supplied),
+#'   \code{r}, \code{n}, \code{type}, and when \code{test = TRUE} also
+#'   \code{statistic}, \code{df}, \code{p_value}.
+#' @export
+circ_cor <- function(hd, x_col, angle_col = "heading",
+                      group_col = NULL,
+                      x_type = c("linear", "circular"),
+                      test = TRUE) {
+  x_type <- match.arg(x_type)
+  stopifnot(is.data.frame(hd))
+  for (col in c(angle_col, x_col))
+    if (!col %in% names(hd))
+      stop("circ_cor: column '", col, "' not found")
+
+  .one <- function(sub) {
+    theta <- as.numeric(sub[[angle_col]])
+    xval  <- as.numeric(sub[[x_col]])
+    ok    <- is.finite(theta) & is.finite(xval)
+    theta <- theta[ok]; xval <- xval[ok]; n <- length(theta)
+    na_row <- data.frame(r = NA_real_, n = n, type = x_type,
+                         stringsAsFactors = FALSE)
+
+    if (n < 4L) {
+      if (test) { na_row$statistic <- NA_real_; na_row$df <- NA_real_
+                  na_row$p_value  <- NA_real_ }
+      return(na_row)
+    }
+
+    if (x_type == "linear") {
+      r_cx <- stats::cor(cos(theta), xval)
+      r_cy <- stats::cor(sin(theta), xval)
+      r_xy <- stats::cor(cos(theta), sin(theta))
+      denom <- 1 - r_xy^2
+      if (!is.finite(denom) || abs(denom) < .Machine$double.eps)
+        return(na_row)
+      r2 <- (r_cx^2 + r_cy^2 - 2*r_cx*r_cy*r_xy) / denom
+      r  <- sqrt(max(r2, 0))
+      out <- data.frame(r = r, n = n, type = "circular-linear",
+                        stringsAsFactors = FALSE)
+      if (test) {
+        stat <- n * r2
+        out$statistic <- stat
+        out$df        <- 2L
+        out$p_value   <- 1 - stats::pchisq(stat, df = 2L)
+      }
+    } else {
+      th_c <- circular::circular(theta, units = "radians", type = "angles")
+      xc   <- circular::circular(xval,  units = "radians", type = "angles")
+      res  <- tryCatch(
+        circular::cor.circular(th_c, xc, test = test),
+        error = function(e) NULL
+      )
+      if (is.null(res)) return(na_row)
+      out <- data.frame(r = as.numeric(res$cor), n = n,
+                        type = "circular-circular",
+                        stringsAsFactors = FALSE)
+      if (test) {
+        out$statistic <- as.numeric(res$statistic)
+        out$df        <- NA_integer_
+        out$p_value   <- as.numeric(res$p.value)
+      }
+    }
+    out
+  }
+
+  if (is.null(group_col)) return(.one(hd))
+  if (!group_col %in% names(hd))
+    stop("circ_cor: '", group_col, "' not found")
+
+  groups <- unique(hd[[group_col]])
+  cols   <- if (test) c(group_col, "r", "n", "type", "statistic", "df",
+                        "p_value") else c(group_col, "r", "n", "type")
+  rows <- lapply(groups, function(g) {
+    r <- .one(hd[hd[[group_col]] == g, , drop = FALSE])
+    r[[group_col]] <- g
+    r[, cols]
+  })
+  do.call(rbind, rows)
+}
+
 # ---- test_uniformity ---------------------------------------------------------
 
 #' Per-group tests of circular uniformity
