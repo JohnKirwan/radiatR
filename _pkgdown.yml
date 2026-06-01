@@ -1,0 +1,213 @@
+url: https://johnkirwan.github.io/radiatR
+
+template:
+  bootstrap: 5
+  bootswatch: flatly
+
+home:
+  title: "radiatR -- Circular Arena Tracking"
+  description: >
+    Import, analyse, and visualise animal movement trajectories recorded
+    in circular arenas. Covers the full pipeline: multi-format data loading,
+    coordinate transformation, heading derivation, circular statistics, and
+    ggplot2 visualisation.
+
+navbar:
+  structure:
+    left: [intro, reference, articles, news]
+  components:
+    articles:
+      text: Vignettes
+      menu:
+        - text: "Main workflow"
+          href: articles/radiatR.html
+        - text: "Loaders"
+          href: articles/loaders.html
+        - text: "Simulating trajectories"
+          href: articles/simulate.html
+
+reference:
+  - title: "Launch the app"
+    desc: >
+      Browser-based interface -- no R coding required.
+    contents:
+      - launch_app
+
+  - title: "Loading tracking data"
+    desc: >
+      Read and normalise trajectory files from 20+ tracking tools.
+      Use dialect_args to pass tool-specific options (bodypart selection,
+      likelihood thresholds, zone selection, etc.).
+    contents:
+      - TrajSet_read
+      - TrajSet_read_dir
+      - TrajSet_read_format
+      - TrajSet_load_manifest
+      - dtrack_read
+      - import_info
+      - import_tracks
+      - load_tracks
+      - load_tracks2
+      - get_all_object_pos
+      - get_trial_limits
+      - get_tracked_object_pos
+
+  - title: "Loader registry"
+    desc: >
+      Register custom file formats or query which dialects are available.
+    contents:
+      - register_loader_dialect
+      - list_loader_dialects
+      - register_loader_format
+      - list_loader_formats
+
+  - title: "The TrajSet class"
+    desc: >
+      S4 container holding a long-form trajectory data frame together
+      with column mappings and metadata.
+    contents:
+      - TrajSet-class
+      - calibrate_positions
+      - transform_history
+
+  - title: "Simulation"
+    desc: >
+      Generate synthetic circular-arena trajectories for teaching,
+      pipeline testing, and power analysis.
+    contents:
+      - simulate_tracks
+
+  - title: "Deriving headings"
+    desc: >
+      Extract one or more heading angles per trial from trajectory or
+      pose data using built-in rules or custom functions.
+    contents:
+      - derive_headings
+      - circ_summary_headings
+      - pose_to_headings
+      - headings_frame
+      - register_heading_rule
+      - list_heading_rules
+
+  - title: "Circular statistics -- summaries"
+    desc: >
+      Mean direction, resultant length, concentration, and within-trial
+      dispersion.
+    contents:
+      - circ_summary
+      - circ_summarise
+      - circ_dispersion
+      - sector_summary
+      - compute_circ_mean
+      - compute_circ_interval
+
+  - title: "Circular statistics -- parametric fitting"
+    desc: >
+      Fit von Mises or wrapped Cauchy distributions via MLE.
+      Pass fitted objects to the density overlay functions for
+      visual model comparison.
+    contents:
+      - vonmises_fit
+      - wrappedcauchy_fit
+
+  - title: "Circular statistics -- hypothesis tests"
+    desc: >
+      Uniformity, equal mean directions, and equal concentrations.
+      All functions return tidy data frames; use p_adjust for
+      family-wise or FDR correction when testing multiple groups.
+    contents:
+      - test_uniformity
+      - test_mean_directions
+      - test_concentration
+
+  - title: "Visualisation -- core"
+    desc: >
+      The main radiate() function and its building blocks.
+    contents:
+      - radiate
+      - gg_traj
+      - draw_tracks
+      - add_ticks
+      - add_circ
+      - degree_labs
+      - sparse_theme
+      - spartan_theme
+      - directedness_arrow
+      - assign_cycle_colours
+      - add_multiple_circles
+
+  - title: "Visualisation -- heading overlays"
+    desc: >
+      Per-trial heading markers, vectors, and mean-direction arrows.
+    contents:
+      - add_heading_points
+      - add_heading_vectors
+      - add_heading_arrow
+      - add_heading_density
+      - add_heading_interval
+      - add_stacked_headings
+      - stack_headings
+      - add_circ_mean
+      - add_circ_interval
+      - gg_add_circ_mean
+      - circ_mean_segments
+
+  - title: "Visualisation -- distribution overlays"
+    desc: >
+      Overlay empirical and fitted angular distributions on a radiate plot.
+      Default colours: rose grey, von Mises steelblue, wrapped Cauchy
+      darkorange, KDE tomato.
+    contents:
+      - add_angle_rose
+      - add_vonmises_density
+      - add_wrappedcauchy_density
+      - add_circular_kde
+      - add_circular_density
+
+  - title: "Visualisation -- arena guides"
+    desc: >
+      Zone dwell-time, quadrant lines, and goal-entry counting.
+    contents:
+      - add_quadrant_lines
+      - zone_dwell
+      - count_goal_entries
+
+  - title: "Calibration"
+    desc: >
+      Map pixel coordinates to real-world positions using a planar
+      camera calibration model (Zhang's method).
+    contents:
+      - calibration_session
+      - calibration_from_points
+      - checkerboard_points
+      - calibration_points_tibble
+      - calibration_points_from_tibble
+      - write_calibration_points
+      - read_calibration_points
+      - cam_cal_pt
+      - cam_cal_many
+      - calibration_switch_axes
+      - CalModel-class
+
+  - title: "Coordinate utilities"
+    desc: >
+      Angle-convention conversions and geometric helpers.
+    contents:
+      - rad2clock
+      - rad_unclock
+      - rad_shepherd
+      - line_circle_intercept
+      - line_circle_intercept_df
+      - line_circle_intercept_traj
+
+  - title: "Datasets"
+    desc: >
+      Bundled example data from a Paracentrotus lividus visual acuity experiment.
+    contents:
+      - plividus
+      - urchin_tracks
+
+  - title: "Miscellaneous"
+    desc: Any remaining exported topics.
+    contents:
+      - matches(".")

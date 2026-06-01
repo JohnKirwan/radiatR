@@ -6,6 +6,12 @@
 \usage{
 list_heading_rules()
 }
+\value{
+Sorted character vector of registered rule names.
+}
 \description{
 List registered custom heading rules
+}
+\seealso{
+\code{\link{register_heading_rule}}
 }
