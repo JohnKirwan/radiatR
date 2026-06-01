@@ -1153,3 +1153,53 @@ test_that("add_vonmises_density handles group_col for faceting", {
   expect_true("id" %in% names(layer$data))
   expect_equal(length(unique(layer$data$id)), 2L)
 })
+
+# ---- add_circular_kde --------------------------------------------------------
+
+test_that("add_circular_kde returns a ggplot2 layer", {
+  set.seed(1)
+  hd <- data.frame(heading = rnorm(40, 0, 0.4))
+  layer <- add_circular_kde(hd)
+  expect_s3_class(layer, "LayerInstance")
+})
+
+test_that("add_circular_kde polygon has x, y, .kde_grp columns", {
+  set.seed(1)
+  hd    <- data.frame(heading = rnorm(40, 0, 0.4))
+  layer <- add_circular_kde(hd, n_pts = 64L)
+  expect_true(all(c("x", "y", ".kde_grp") %in% names(layer$data)))
+  expect_equal(nrow(layer$data), 64L)
+})
+
+test_that("add_circular_kde peak radius equals scale", {
+  set.seed(1)
+  hd    <- data.frame(heading = rnorm(60, pi / 3, 0.3))
+  layer <- add_circular_kde(hd, scale = 0.35, n_pts = 512L)
+  r     <- sqrt(layer$data$x^2 + layer$data$y^2)
+  expect_equal(max(r), 0.35, tolerance = 1e-3)
+})
+
+test_that("add_circular_kde peak is in the correct direction", {
+  set.seed(1)
+  hd    <- data.frame(heading = rnorm(80, 0, 0.3))
+  layer <- add_circular_kde(hd, n_pts = 512L)
+  idx   <- which.max(sqrt(layer$data$x^2 + layer$data$y^2))
+  peak  <- atan2(layer$data$y[idx], layer$data$x[idx])
+  expect_equal(peak, 0, tolerance = 0.1)
+})
+
+test_that("add_circular_kde handles group_col for faceting", {
+  set.seed(1)
+  hd <- data.frame(
+    grp     = rep(c("A","B"), each = 40),
+    heading = c(rnorm(40, 0, 0.3), rnorm(40, pi, 0.3))
+  )
+  layer <- add_circular_kde(hd, group_col = "grp", n_pts = 64L)
+  expect_true("grp" %in% names(layer$data))
+  expect_equal(length(unique(layer$data$grp)), 2L)
+})
+
+test_that("add_circular_kde returns NULL for fewer than 2 observations", {
+  hd <- data.frame(heading = 0.5)
+  expect_null(add_circular_kde(hd))
+})

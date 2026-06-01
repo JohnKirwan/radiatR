@@ -2294,3 +2294,103 @@ add_vonmises_density <- function(fit, scale = 0.4, inner_r = 0,
     inherit.aes = FALSE
   )
 }
+
+# ---- add_circular_kde --------------------------------------------------------
+
+#' Overlay a non-parametric circular kernel density estimate on a radiate plot
+#'
+#' Estimates the circular density using \code{\link[circular]{density.circular}}
+#' (no distributional assumptions) and draws it as a closed polygon in the same
+#' Cartesian coordinate space used by \code{\link{radiate}} and
+#' \code{\link{add_angle_rose}}.  Unlike \code{\link{add_vonmises_density}},
+#' this makes no assumption about the shape of the distribution and handles
+#' multimodal data naturally.
+#'
+#' The \code{bw} parameter is a \emph{concentration} parameter (analogous to
+#' \eqn{\kappa} of the von Mises kernel) — larger values produce a sharper,
+#' data-following estimate; smaller values over-smooth towards uniform.
+#' \code{NULL} (default) selects bandwidth automatically via
+#' \code{\link[circular]{bw.nrd.circular}}.
+#'
+#' @param hd Data frame with a heading column in radians.
+#' @param angle_col Column name.  Default \code{"heading"}.
+#' @param group_col Column for faceting; must match \code{panel_by} in the
+#'   parent \code{radiate()} call.
+#' @param bw Bandwidth (concentration).  \code{NULL} uses
+#'   \code{bw.nrd.circular} automatic selection.
+#' @param scale Maximum outer radius as a fraction of the unit circle.
+#'   Default \code{0.4}.
+#' @param inner_r Inner radius.  Default \code{0}.
+#' @param n_pts Number of evaluation points.  Default \code{512L}.
+#' @param kernel Kernel name passed to \code{density.circular}.  Default
+#'   \code{"vonmises"} (the kernel shape, not a model assumption).
+#' @param colour Outline colour.  Default \code{"tomato"}.
+#' @param linewidth Outline width.  Default \code{0.8}.
+#' @param fill Fill colour.  Default \code{NA} (outline only).
+#' @param alpha Opacity.  Default \code{0.8}.
+#' @return A \code{geom_polygon} layer, or \code{NULL} if estimation fails.
+#' @export
+add_circular_kde <- function(hd, angle_col = "heading", group_col = NULL,
+                              bw = NULL, scale = 0.4, inner_r = 0,
+                              n_pts = 512L, kernel = "vonmises",
+                              colour = "tomato", linewidth = 0.8,
+                              fill = NA, alpha = 0.8) {
+  stopifnot(is.data.frame(hd))
+  if (!angle_col %in% names(hd))
+    stop("add_circular_kde: column '", angle_col, "' not found")
+
+  .kde_ring <- function(sub, grp) {
+    a <- as.numeric(sub[[angle_col]])
+    a <- a[is.finite(a)]
+    if (length(a) < 2L) return(NULL)
+    a_circ <- circular::circular(a, units = "radians", type = "angles")
+    bw_use <- if (is.null(bw)) {
+      tryCatch(
+        circular::bw.nrd.circular(a_circ),
+        error = function(e) 5   # conservative fallback
+      )
+    } else {
+      bw
+    }
+    kde <- tryCatch(
+      circular::density.circular(a_circ, bw = bw_use,
+                                  n = n_pts, kernel = kernel),
+      error = function(e) NULL
+    )
+    if (is.null(kde)) return(NULL)
+    thetas <- as.numeric(kde$x)
+    d      <- as.numeric(kde$y)
+    d_max  <- max(d, na.rm = TRUE)
+    if (!is.finite(d_max) || d_max <= 0) return(NULL)
+    r <- inner_r + scale * d / d_max
+    data.frame(x = r * cos(thetas), y = r * sin(thetas),
+               .kde_grp = grp, stringsAsFactors = FALSE)
+  }
+
+  if (!is.null(group_col)) {
+    if (!group_col %in% names(hd))
+      stop("add_circular_kde: '", group_col, "' not found in hd")
+    groups <- unique(hd[[group_col]])
+    polys  <- do.call(rbind, lapply(groups, function(g) {
+      w <- .kde_ring(hd[hd[[group_col]] == g, , drop = FALSE],
+                     paste0(as.character(g), "_kde"))
+      if (is.null(w)) return(NULL)
+      w[[group_col]] <- g
+      w
+    }))
+  } else {
+    polys <- .kde_ring(hd, "kde")
+  }
+
+  if (is.null(polys)) return(NULL)
+
+  ggplot2::geom_polygon(
+    data    = polys,
+    mapping = ggplot2::aes(x = x, y = y, group = .kde_grp),
+    colour      = colour,
+    linewidth   = linewidth,
+    fill        = fill,
+    alpha       = alpha,
+    inherit.aes = FALSE
+  )
+}
