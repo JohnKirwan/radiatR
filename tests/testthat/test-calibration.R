@@ -67,35 +67,88 @@ test_that("calibrate_positions records calibration transform", {
 })
 
 test_that("calibration point helpers persist data", {
-  board_dims <- c(3, 4)
+  board_dims  <- c(3, 4)
   square_size <- 1
-  template <- checkerboard_points(board_dims, square_size)
-  world <- as.matrix(template[, c("x", "y")])
-  image_points <- list(world + 0.1, world + 0.2)
+  template    <- checkerboard_points(board_dims, square_size)
+  world       <- as.matrix(template[, c("x", "y")])
+  # Simple data for persistence-only helpers (not used for calibration)
+  pts_simple  <- list(world + 0.1, world + 0.2)
 
-  tbl <- calibration_points_tibble(image_points)
-  expect_s3_class(tbl, "data.frame")
-  expect_equal(calibration_points_from_tibble(tbl), image_points)
+  tbl_simple <- calibration_points_tibble(pts_simple)
+  expect_s3_class(tbl_simple, "data.frame")
+  # column names are stripped on round-trip; test numeric values only
+  expect_equal(calibration_points_from_tibble(tbl_simple), pts_simple,
+               ignore_attr = TRUE)
 
   tmp <- tempfile(fileext = ".csv")
-  write_calibration_points(image_points, tmp)
+  write_calibration_points(pts_simple, tmp)
   expect_true(file.exists(tmp))
-  expect_equal(read_calibration_points(tmp), image_points)
+  expect_equal(read_calibration_points(tmp), pts_simple, ignore_attr = TRUE)
+})
 
-  calib <- calibration_from_points(board_dims, square_size, tbl, quiet = TRUE)
+test_that("calibration_from_points errors on fewer than 3 views", {
+  board_dims  <- c(3, 4)
+  square_size <- 1
+  template    <- checkerboard_points(board_dims, square_size)
+  world       <- as.matrix(template[, c("x", "y")])
+  tbl2 <- calibration_points_tibble(list(world + 0.1, world + 0.2))
+  expect_error(
+    calibration_from_points(board_dims, square_size, tbl2, quiet = TRUE),
+    "at least 3 views"
+  )
+})
+
+test_that("calibration point helpers run calibration with 3 perspective views", {
+  board_dims  <- c(3, 4)
+  square_size <- 1
+  template    <- checkerboard_points(board_dims, square_size)
+  world       <- as.matrix(template[, c("x", "y")])
+
+  # Helper: pinhole projection.  K uses small focal length matching world
+  # coordinate scale so Zhang's B matrix is well-conditioned.
+  .proj <- function(pts, K, R, tvec) {
+    n  <- nrow(pts)
+    P3 <- cbind(pts, 0)
+    q  <- K %*% (R %*% t(P3) + matrix(tvec, 3, n))
+    t(q[1:2, ] / q[3, ])
+  }
+  rx <- function(a)
+    matrix(c(1,0,0, 0,cos(a),-sin(a), 0,sin(a),cos(a)), 3, byrow = TRUE)
+  ry <- function(a)
+    matrix(c(cos(a),0,sin(a), 0,1,0, -sin(a),0,cos(a)), 3, byrow = TRUE)
+
+  K_syn <- matrix(c(10,0,1.5, 0,10,2, 0,0,1), 3, byrow = TRUE)
+  img_pts <- list(
+    .proj(world, K_syn, rx( 0.25),              c(-0.5, -0.5, 5)),
+    .proj(world, K_syn, ry( 0.30),              c( 0.0,  0.0, 4)),
+    .proj(world, K_syn, rx(-0.20) %*% ry(0.25), c( 0.5,  0.5, 5))
+  )
+  tbl3 <- calibration_points_tibble(img_pts)
+
+  calib <- calibration_from_points(board_dims, square_size, tbl3, quiet = TRUE)
   expect_s4_class(calib$model, "CalModel")
-  expect_equal(length(calib$image_points), length(image_points))
+  expect_equal(length(calib$image_points), 3L)
   expect_s3_class(calib$points, "data.frame")
 
-  sess <- calibration_session(board_dims = board_dims, square_size = square_size,
-                               pattern = "chessboard", load_points = tbl, quiet = TRUE)
-  expect_equal(sess$image_points, image_points)
+  sess <- calibration_session(
+    board_dims   = board_dims,
+    square_size  = square_size,
+    pattern      = "chessboard",
+    load_points  = tbl3,
+    quiet        = TRUE
+  )
+  expect_equal(sess$image_points, img_pts)
 
   tmp2 <- tempfile(fileext = ".csv")
-  calibration_session(board_dims = board_dims, square_size = square_size,
-                      pattern = "chessboard", load_points = tbl, quiet = TRUE,
-                      save_points = tmp2)
+  calibration_session(
+    board_dims  = board_dims,
+    square_size = square_size,
+    pattern     = "chessboard",
+    load_points = tbl3,
+    quiet       = TRUE,
+    save_points = tmp2
+  )
   expect_true(file.exists(tmp2))
-  expect_equal(read_calibration_points(tmp2), image_points)
+  expect_equal(read_calibration_points(tmp2), img_pts)
 })
 

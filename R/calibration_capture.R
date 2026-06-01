@@ -172,14 +172,20 @@ calibration_session <- function(frames = NULL,
 }
 
 .calib_solve <- function(template, image_points) {
+  if (length(image_points) < 3L)
+    stop("Zhang calibration requires at least 3 views; ",
+         length(image_points), " provided.")
   world <- as.matrix(template[, c("x", "y")])
   Hs <- lapply(image_points, .calib_homography, world = world)
-  V <- do.call(rbind, lapply(Hs, .calib_build_V))
+  V  <- do.call(rbind, lapply(Hs, .calib_build_V))
+  if (nrow(V) < 6L)
+    stop("Calibration constraint matrix is underdetermined (",
+         nrow(V), " rows, need >= 6). Add more views.")
   sv <- svd(V)
-  b <- sv$v[, ncol(sv$v)]
-  B <- matrix(c(b[1], b[2], b[4],
-                b[2], b[3], b[5],
-                b[4], b[5], b[6]), nrow = 3, byrow = TRUE)
+  b  <- sv$v[, ncol(sv$v)]
+  B  <- matrix(c(b[1], b[2], b[4],
+                 b[2], b[3], b[5],
+                 b[4], b[5], b[6]), nrow = 3, byrow = TRUE)
   intr <- .calib_intrinsics_from_B(B)
   extrinsics <- lapply(Hs, .calib_extrinsics, K = intr$K)
   reprojection <- .calib_reprojection(world, image_points, intr$K, extrinsics)
@@ -231,6 +237,10 @@ calibration_session <- function(frames = NULL,
   b22 <- B[2, 2]; b23 <- B[2, 3]; b33 <- B[3, 3]
   v0 <- (b12 * b13 - b11 * b23) / (b11 * b22 - b12^2)
   lambda <- b33 - (b13^2 + v0 * (b12 * b13 - b11 * b23)) / b11
+  if (!is.finite(lambda) || lambda <= 0)
+    stop("Calibration failed: degenerate camera configuration ",
+         "(lambda = ", round(lambda, 4), "). ",
+         "Ensure views have genuine perspective variation, not just translation.")
   alpha <- sqrt(lambda / b11)
   beta <- sqrt(lambda * b11 / (b11 * b22 - b12^2))
   gamma <- -b12 * alpha^2 * beta / lambda
