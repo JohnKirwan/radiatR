@@ -18,7 +18,7 @@ A `geom_segment()` layer.
 }
 \description{
 Draws two dashed lines through the centre of the unit circle -- one
-horizontal (0\u00b0/180\u00b0) and one vertical (90\u00b0/270\u00b0) -- dividing the arena into
+horizontal (0degrees/180degrees) and one vertical (90degrees/270degrees) -- dividing the arena into
 four quadrants. The lines extend to the arena boundary (unit circle).
 }
 \examples{

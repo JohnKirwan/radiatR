@@ -95,7 +95,7 @@ add_multiple_circles <- function(radii = c(0.25, 0.5, 0.75),
 #' Add quadrant lines to a radial plot
 #'
 #' Draws two dashed lines through the centre of the unit circle -- one
-#' horizontal (0\u00b0/180\u00b0) and one vertical (90\u00b0/270\u00b0) -- dividing the arena into
+#' horizontal (0degrees/180degrees) and one vertical (90degrees/270degrees) -- dividing the arena into
 #' four quadrants. The lines extend to the arena boundary (unit circle).
 #'
 #' @param colour Line colour. Default `"grey60"`.
@@ -367,7 +367,7 @@ assign_cycle_colours <- function(data, id_col, n, panel_col = NULL,
 #' @param n_theta Number of angular evaluation points for smooth methods.
 #'   Default `500`.
 #' @param bins Number of angular bins for the histogram method. Default `36`
-#'   (10\u00b0 each).
+#'   (10degrees each).
 #' @param bw Bandwidth passed to [circular::density.circular()]. `NULL`
 #'   uses [circular::bw.nrd.circular()].
 #' @param boot_reps Integer. Number of bootstrap replicates for a `"vonmises"`

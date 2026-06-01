@@ -121,7 +121,7 @@ setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")
 #'
 #' @param x A [`TrajSet`] object with x/y (or rel_x/rel_y) columns registered.
 #' @param target_angle Numeric. Radians. Direction of the target zone from the
-#'   arena centre. Q1 spans +/-45\u00b0 around this angle.
+#'   arena centre. Q1 spans +/-45degrees around this angle.
 #' @param target_radius Numeric. Accepted for API symmetry with
 #'   [count_goal_entries()] but not used in zone assignment. Default `1`.
 #' @param ring_breaks Numeric vector. Annular ring boundaries, must start at
@@ -520,7 +520,7 @@ sector_summary <- function(hd, sectors = 8L, group_col = NULL,
     bk <- sort(unique(c(-pi, as.numeric(sectors), pi)))
   }
   mids   <- (head(bk, -1L) + tail(bk, -1L)) / 2
-  labels <- sprintf("%.0f\u00b0", round(mids * 180 / pi))
+  labels <- sprintf("%.0fdegrees", round(mids * 180 / pi))
 
   .wrap <- function(a) { a <- a %% (2*pi); a[a > pi] <- a[a > pi] - 2*pi; a }
 

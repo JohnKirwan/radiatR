@@ -16,7 +16,7 @@ zone_dwell(
 \item{x}{A [`TrajSet`] object with x/y (or rel_x/rel_y) columns registered.}
 
 \item{target_angle}{Numeric. Radians. Direction of the target zone from the
-arena centre. Q1 spans +/-45\u00b0 around this angle.}
+arena centre. Q1 spans +/-45degrees around this angle.}
 
 \item{target_radius}{Numeric. Accepted for API symmetry with
 [count_goal_entries()] but not used in zone assignment. Default `1`.}

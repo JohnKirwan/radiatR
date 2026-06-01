@@ -38,7 +38,7 @@ computed per group and the column is included in the output.}
 Default `500`.}
 
 \item{bins}{Number of angular bins for the histogram method. Default `36`
-(10\u00b0 each).}
+(10degrees each).}
 
 \item{bw}{Bandwidth passed to [circular::density.circular()]. `NULL`
 uses [circular::bw.nrd.circular()].}
