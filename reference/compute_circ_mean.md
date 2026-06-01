@@ -1,0 +1,61 @@
+# Compute circular mean direction and resultant length from a headings data frame
+
+Computes the circular mean direction and resultant length (R) per group
+from a headings data frame, typically the output of
+\[derive_headings()\]. \`mean_dir\` in the returned data frame is
+\*\*always in unit-circle convention\*\* (0 = East, counterclockwise),
+regardless of the input convention, making it suitable for direct use in
+\[add_circ_mean()\].
+
+## Usage
+
+``` r
+compute_circ_mean(
+  headings_df,
+  heading_col = "heading",
+  colour_col = NULL,
+  angle_convention = NULL,
+  coords = NULL
+)
+```
+
+## Arguments
+
+- headings_df:
+
+  Data frame with a column of heading angles in radians.
+  \[derive_headings()\] sets \`attr(headings_df, "angle_convention")\`
+  and \`attr(headings_df, "coords")\` automatically.
+
+- heading_col:
+
+  Name of the column containing heading angles. Default \`"heading"\`.
+
+- colour_col:
+
+  Optional. Name of a column to group by. One row is returned per group.
+  The same column maps to colour in \[add_circ_mean()\].
+
+- angle_convention:
+
+  Convention for angles in \`heading_col\`: \`"clock"\` (0 = North,
+  clockwise) or \`"unit_circle"\` (0 = East, CCW). If \`NULL\`
+  (default), read from \`attr(headings_df, "angle_convention")\`;
+  defaults to \`"unit_circle"\` with a message if the attribute is also
+  absent.
+
+- coords:
+
+  Coordinate system: \`"relative"\` or \`"absolute"\`. If \`NULL\`
+  (default), read from \`attr(headings_df, "coords")\`; defaults to
+  \`"absolute"\` with a message if absent.
+
+## Value
+
+A data frame with columns \`mean_dir\` (unit-circle radians, 0 to 2pi),
+\`resultant_R\` (0–1), and \`colour_col\` when supplied. Both are \`NA\`
+when a group contains fewer than 2 finite angles.
+
+## See also
+
+\[add_circ_mean()\], \[add_heading_arrow()\]
