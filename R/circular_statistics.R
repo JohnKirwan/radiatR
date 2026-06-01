@@ -647,11 +647,18 @@ vonmises_fit <- function(hd, group_col = NULL, angle_col = "heading",
 #' @param angle_col Heading column name.  Default \code{"heading"}.
 #' @param test One of \code{"rayleigh"} (default), \code{"kuiper"},
 #'   \code{"rao"}, or \code{"watson"}.
+#' @param p_adjust Multiple-comparison correction method passed to
+#'   \code{\link[stats]{p.adjust}}.  Default \code{"none"}.  Applies only when
+#'   \code{group_col} is supplied; a \code{p_value_adj} column is added to the
+#'   result.  Recommended: \code{"BH"} (Benjamini-Hochberg) when testing many
+#'   conditions.  Only meaningful for the Rayleigh test (exact p-values).
 #' @return Tidy data frame with columns \code{group_col} (if supplied),
-#'   \code{statistic}, \code{p_value}, \code{n}, \code{test}.
+#'   \code{statistic}, \code{p_value}, \code{n}, \code{test}, and
+#'   \code{p_value_adj} (when \code{p_adjust != "none"}).
 #' @export
 test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
-                             test = c("rayleigh", "kuiper", "rao", "watson")) {
+                             test = c("rayleigh", "kuiper", "rao", "watson"),
+                             p_adjust = "none") {
   test <- match.arg(test)
   stopifnot(is.data.frame(hd))
   if (!angle_col %in% names(hd))
@@ -702,7 +709,10 @@ test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
     r[[group_col]] <- g
     r[, c(group_col, "statistic", "p_value", "n", "test")]
   })
-  do.call(rbind, rows[!vapply(rows, is.null, logical(1L))])
+  out <- do.call(rbind, rows[!vapply(rows, is.null, logical(1L))])
+  if (p_adjust != "none")
+    out$p_value_adj <- stats::p.adjust(out$p_value, method = p_adjust)
+  out
 }
 
 # ---- test_mean_directions ----------------------------------------------------
@@ -720,12 +730,19 @@ test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
 #' @param angle_col Heading column in radians.  Default \code{"heading"}.
 #' @param pairwise Logical.  \code{FALSE} (default) returns a single omnibus
 #'   test across all groups.  \code{TRUE} returns all pairwise comparisons.
+#' @param p_adjust Multiple-comparison correction method passed to
+#'   \code{\link[stats]{p.adjust}}.  Default \code{"none"}.  Applies only to
+#'   the pairwise output; a \code{p_value_adj} column is added.  Strongly
+#'   recommended when \code{pairwise = TRUE}: use \code{"BH"}
+#'   (Benjamini-Hochberg) or \code{"holm"} (family-wise control).  Ignored
+#'   for the omnibus test (single p-value, no adjustment needed).
 #' @return Tidy data frame.  Omnibus result has columns \code{n_groups},
 #'   \code{statistic}, \code{df1}, \code{df2}, \code{p_value}, \code{test}.
-#'   Pairwise result additionally has \code{group1} and \code{group2}.
+#'   Pairwise result additionally has \code{group1}, \code{group2}, and
+#'   \code{p_value_adj} (when \code{p_adjust != "none"}).
 #' @export
 test_mean_directions <- function(hd, group_col, angle_col = "heading",
-                                  pairwise = FALSE) {
+                                  pairwise = FALSE, p_adjust = "none") {
   stopifnot(is.data.frame(hd))
   for (col in c(angle_col, group_col))
     if (!col %in% names(hd))
@@ -774,6 +791,8 @@ test_mean_directions <- function(hd, group_col, angle_col = "heading",
   rows <- rows[!vapply(rows, is.null, logical(1L))]
   out  <- do.call(rbind, rows)
   out$test <- "Watson-Williams"
+  if (p_adjust != "none")
+    out$p_value_adj <- stats::p.adjust(out$p_value, method = p_adjust)
   out
 }
 

@@ -741,3 +741,63 @@ test_that("test_concentration detects unequal concentrations", {
   res <- suppressWarnings(test_concentration(hd, group_col = "cond"))
   expect_lt(res$p_value, 0.05)
 })
+
+# ---- p_adjust in test_uniformity and test_mean_directions --------------------
+
+test_that("test_uniformity p_adjust adds p_value_adj column", {
+  set.seed(1)
+  hd <- data.frame(
+    grp     = rep(c("A", "B", "C"), each = 30),
+    heading = c(rnorm(30, 0, 0.3),
+                rnorm(30, pi, 0.3),
+                runif(30, -pi, pi))
+  )
+  res_none <- test_uniformity(hd, group_col = "grp")
+  expect_false("p_value_adj" %in% names(res_none))
+
+  res_bh <- test_uniformity(hd, group_col = "grp", p_adjust = "BH")
+  expect_true("p_value_adj" %in% names(res_bh))
+  expect_equal(nrow(res_bh), 3L)
+  # BH p_value_adj >= p_value (adjustment can only increase or equal)
+  expect_true(all(res_bh$p_value_adj >= res_bh$p_value - 1e-9, na.rm = TRUE))
+})
+
+test_that("test_mean_directions p_adjust adds p_value_adj for pairwise only", {
+  set.seed(2)
+  hd <- data.frame(
+    cond    = rep(c("A", "B", "C"), each = 30),
+    heading = c(
+      as.numeric(circular::rvonmises(30, circular::circular(0),    kappa = 3)),
+      as.numeric(circular::rvonmises(30, circular::circular(pi/2), kappa = 3)),
+      as.numeric(circular::rvonmises(30, circular::circular(pi),   kappa = 3))
+    )
+  )
+  # Omnibus: no p_value_adj even when p_adjust is set
+  omni <- test_mean_directions(hd, group_col = "cond", p_adjust = "BH")
+  expect_false("p_value_adj" %in% names(omni))
+
+  # Pairwise without correction
+  pw_none <- test_mean_directions(hd, group_col = "cond", pairwise = TRUE)
+  expect_false("p_value_adj" %in% names(pw_none))
+
+  # Pairwise with BH correction
+  pw_bh <- test_mean_directions(hd, group_col = "cond", pairwise = TRUE,
+                                 p_adjust = "BH")
+  expect_true("p_value_adj" %in% names(pw_bh))
+  expect_equal(nrow(pw_bh), 3L)   # C(3,2) = 3 pairs
+  expect_true(all(pw_bh$p_value_adj >= pw_bh$p_value - 1e-9))
+})
+
+test_that("test_mean_directions holm gives family-wise control", {
+  set.seed(3)
+  # All three groups same direction: all pairs should have high p_value_adj
+  hd <- data.frame(
+    cond    = rep(c("A", "B", "C"), each = 40),
+    heading = as.numeric(circular::rvonmises(
+      120, circular::circular(0), kappa = 3))
+  )
+  pw <- test_mean_directions(hd, group_col = "cond", pairwise = TRUE,
+                              p_adjust = "holm")
+  # All adjusted p-values should be > 0.05 (no spurious significance)
+  expect_true(all(pw$p_value_adj > 0.05))
+})

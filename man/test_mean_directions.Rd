@@ -4,7 +4,13 @@
 \alias{test_mean_directions}
 \title{Test whether groups share the same mean direction (Watson-Williams)}
 \usage{
-test_mean_directions(hd, group_col, angle_col = "heading", pairwise = FALSE)
+test_mean_directions(
+  hd,
+  group_col,
+  angle_col = "heading",
+  pairwise = FALSE,
+  p_adjust = "none"
+)
 }
 \arguments{
 \item{hd}{Data frame with heading and group columns.}
@@ -15,11 +21,19 @@ test_mean_directions(hd, group_col, angle_col = "heading", pairwise = FALSE)
 
 \item{pairwise}{Logical.  \code{FALSE} (default) returns a single omnibus
 test across all groups.  \code{TRUE} returns all pairwise comparisons.}
+
+\item{p_adjust}{Multiple-comparison correction method passed to
+\code{\link[stats]{p.adjust}}.  Default \code{"none"}.  Applies only to
+the pairwise output; a \code{p_value_adj} column is added.  Strongly
+recommended when \code{pairwise = TRUE}: use \code{"BH"}
+(Benjamini-Hochberg) or \code{"holm"} (family-wise control).  Ignored
+for the omnibus test (single p-value, no adjustment needed).}
 }
 \value{
 Tidy data frame.  Omnibus result has columns \code{n_groups},
   \code{statistic}, \code{df1}, \code{df2}, \code{p_value}, \code{test}.
-  Pairwise result additionally has \code{group1} and \code{group2}.
+  Pairwise result additionally has \code{group1}, \code{group2}, and
+  \code{p_value_adj} (when \code{p_adjust != "none"}).
 }
 \description{
 Wraps \code{\link[circular]{watson.williams.test}} -- the circular analogue
