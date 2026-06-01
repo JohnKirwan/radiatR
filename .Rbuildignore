@@ -11,3 +11,6 @@
 ^docs$
 ^milli_trials$
 ^docs/superpowers$
+^_pkgdown\.yml$
+^pkgdown$
+^\.github$

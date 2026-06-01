@@ -8,6 +8,8 @@ Description: Import, transform, and visualise trajectories recorded in circular
     arenas. The package provides utilities for reading tracking metadata,
     computing circular summary statistics, and rendering tidy ggplot2
     visualisations with concentric annotations.
+URL: https://johnkirwan.github.io/radiatR, https://github.com/JohnKirwan/radiatR
+BugReports: https://github.com/JohnKirwan/radiatR/issues
 License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true

@@ -712,10 +712,21 @@ gg_add_circ_mean <- function(p, segments_df, color = "black", linewidth = 0.8,
 }
 
 # ---- user-defined rule registry ----------------------------------------------
-#' Register a custom heading rule by name.
-#' The function must accept (df, cols, ...) and return a data.frame with columns id, time, heading (radians)
-#' @export
 .heading_registry <- new.env(parent = emptyenv())
+
+#' Register a custom heading derivation rule
+#'
+#' Adds a named function to the heading rule registry so it can be called by
+#' \code{\link{derive_headings}} via \code{rule = "name"}.  The function must
+#' accept \code{(df, cols, ...)} and return a data frame with columns
+#' \code{id}, \code{time}, and \code{heading} (radians).
+#'
+#' @param name Character; unique rule name.
+#' @param fun Function with signature \code{function(df, cols, ...)}.
+#' @param overwrite Logical; replace an existing rule of the same name.
+#' @return The rule name, invisibly.
+#' @seealso \code{\link{list_heading_rules}}, \code{\link{derive_headings}}
+#' @export
 register_heading_rule <- function(name, fun, overwrite = FALSE) {
   stopifnot(is.character(name), length(name) == 1L, is.function(fun))
   if (exists(name, envir = .heading_registry, inherits = FALSE) && !overwrite)
@@ -725,6 +736,9 @@ register_heading_rule <- function(name, fun, overwrite = FALSE) {
 }
 
 #' List registered custom heading rules
+#'
+#' @return Sorted character vector of registered rule names.
+#' @seealso \code{\link{register_heading_rule}}
 #' @export
 list_heading_rules <- function() sort(ls(envir = .heading_registry))
 
