@@ -1241,3 +1241,57 @@ test_that("add_wrappedcauchy_density handles group_col", {
   expect_true("grp" %in% names(layer$data))
   expect_equal(length(unique(layer$data$grp)), 2L)
 })
+
+# ---- add_critical_r ----------------------------------------------------------
+
+test_that("add_critical_r pooled radius matches Rayleigh formula", {
+  set.seed(1)
+  hd <- data.frame(heading = rnorm(40, 0, 0.5))
+  layer <- add_critical_r(hd)
+  r <- sqrt(layer$data$x[1]^2 + layer$data$y[1]^2)
+  expect_equal(r, sqrt(-log(0.05) / 40), tolerance = 1e-6)
+})
+
+test_that("add_critical_r vtest radius matches formula", {
+  hd <- data.frame(heading = rnorm(30, 0, 0.5))
+  layer <- add_critical_r(hd, test = "vtest")
+  r <- sqrt(layer$data$x[1]^2 + layer$data$y[1]^2)
+  expect_equal(r, stats::qnorm(0.95) / sqrt(2 * 30), tolerance = 1e-6)
+})
+
+test_that("add_critical_r conservative uses smallest n", {
+  hd <- data.frame(
+    grp     = rep(c("A", "B"), times = c(10, 40)),
+    heading = rnorm(50, 0, 0.5)
+  )
+  layer <- add_critical_r(hd, group_col = "grp", per_group = FALSE)
+  r <- sqrt(layer$data$x[1]^2 + layer$data$y[1]^2)
+  expect_equal(r, sqrt(-log(0.05) / 10), tolerance = 1e-6)  # n = 10, smaller
+})
+
+test_that("add_critical_r per_group draws one circle per group", {
+  hd <- data.frame(
+    grp     = rep(c("A", "B", "C"), times = c(15, 30, 50)),
+    heading = rnorm(95, 0, 0.5)
+  )
+  layer <- add_critical_r(hd, group_col = "grp", per_group = TRUE)
+  expect_true("grp" %in% names(layer$data))
+  expect_equal(length(unique(layer$data$grp)), 3L)
+  # smaller n -> larger radius
+  radii <- tapply(sqrt(layer$data$x^2 + layer$data$y^2),
+                  layer$data$grp, function(v) v[1])
+  expect_gt(radii[["A"]], radii[["C"]])
+})
+
+test_that("add_critical_r higher alpha gives smaller circle", {
+  hd <- data.frame(heading = rnorm(30, 0, 0.5))
+  r05 <- sqrt(add_critical_r(hd, alpha = 0.05)$data$x[1]^2 +
+              add_critical_r(hd, alpha = 0.05)$data$y[1]^2)
+  r10 <- sqrt(add_critical_r(hd, alpha = 0.10)$data$x[1]^2 +
+              add_critical_r(hd, alpha = 0.10)$data$y[1]^2)
+  expect_lt(r10, r05)
+})
+
+test_that("add_critical_r returns NULL when n < 2", {
+  expect_null(add_critical_r(data.frame(heading = 0.5)))
+})
