@@ -67,9 +67,9 @@ radiate(data, ...)
 
 \item{...}{Additional arguments forwarded to [draw_tracks()].}
 
-\item{x_col}{Name of the column mapped to the x aesthetic.}
+\item{x_col}{Name of the x-coordinate column.  Default \code{"rel_x"}.}
 
-\item{y_col}{Name of the column mapped to the y aesthetic.}
+\item{y_col}{Name of the y-coordinate column.  Default \code{"rel_y"}.}
 
 \item{geom}{Geom specification passed to [draw_tracks()].}
 
@@ -79,7 +79,7 @@ radiate(data, ...)
 with `colour_cycle`.}
 
 \item{colour_cycle}{Optional cycling colour specification. Either a positive
-integer `n` (trajectories are assigned colours 1–n, cycling back to 1 after
+integer `n` (trajectories are assigned colours 1--n, cycling back to 1 after
 every `n` trajectories) or a character vector of colour values (e.g.
 `c("red","blue","green")`). When `panel_by` is set the cycle restarts
 independently within each panel. Mutually exclusive with `colour_col`.}
@@ -98,7 +98,7 @@ is set, `FALSE` otherwise. Ignored when `panel_by` is `NULL`.}
 \item{strip_position}{Position of the panel label. One of `"top"` (default),
 `"bottom"`, `"left"`, `"right"` (ggplot2 strip positions), or `"inside"`
 (places a text annotation inside the plot area, centred below the unit
-circle at y = −1.25).}
+circle at y = -1.25).}
 
 \item{strip_label_size}{Font size for strip labels. Applies to both strip
 text and the in-panel `"inside"` annotation.}
@@ -110,6 +110,8 @@ text and the in-panel `"inside"` annotation.}
 \item{show_labels}{Whether to place labels at the perimeter.}
 
 \item{label_col}{Column containing label values.}
+
+\item{label_size}{Text size for perimeter labels.}
 
 \item{label_padding}{Multiplier applied to the unit circle when placing labels.}
 

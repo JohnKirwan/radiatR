@@ -24,7 +24,7 @@ launch_app <- function(port = NULL, launch_browser = TRUE) {
   rlang::check_installed("bslib", reason = "to run the radiatR app")
   app_dir <- system.file("app", package = "radiatR")
   if (!nzchar(app_dir))
-    stop("radiatR app directory not found — ",
+    stop("radiatR app directory not found -- ",
          "is the package installed correctly?")
   shiny::runApp(
     app_dir,

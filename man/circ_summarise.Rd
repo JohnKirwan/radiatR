@@ -20,11 +20,11 @@ circ_summarise(
 \item{col}{Unquoted or quoted name of the column containing angles.}
 
 \item{units}{Units of the angle column: \code{"radians"} or
-\code{"degrees"}. No default — must be specified explicitly. Values are
+\code{"degrees"}. No default -- must be specified explicitly. Values are
 converted to radians internally before computation; output is always
 in radians (\code{mean_dir}) or degrees (\code{mean_dir_deg}).
 A warning is issued when the value range appears inconsistent with the
-declared units (e.g. values > 2π when \code{units = "radians"}).
+declared units (e.g. values > 2pi when \code{units = "radians"}).
 Suppress range warnings with
 \code{options(radiatR.check_units = FALSE)}.}
 

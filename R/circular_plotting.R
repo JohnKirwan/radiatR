@@ -94,8 +94,8 @@ add_multiple_circles <- function(radii = c(0.25, 0.5, 0.75),
 
 #' Add quadrant lines to a radial plot
 #'
-#' Draws two dashed lines through the centre of the unit circle — one
-#' horizontal (0°/180°) and one vertical (90°/270°) — dividing the arena into
+#' Draws two dashed lines through the centre of the unit circle -- one
+#' horizontal (0degrees/180degrees) and one vertical (90degrees/270degrees) -- dividing the arena into
 #' four quadrants. The lines extend to the arena boundary (unit circle).
 #'
 #' @param colour Line colour. Default `"grey60"`.
@@ -330,20 +330,20 @@ assign_cycle_colours <- function(data, id_col, n, panel_col = NULL,
 #' Evaluates a directional density for a set of heading angles and returns a
 #' tidy data frame of `(theta, density)` pairs. The result can be passed
 #' directly to [add_circular_density()] for rendering, or inspected and
-#' modified before plotting — for example to replace the `density` column with
+#' modified before plotting -- for example to replace the `density` column with
 #' a Bayesian posterior predictive density obtained from `brms` or another
 #' modelling package.
 #'
 #' Three built-in estimation methods are provided:
 #'
-#' * `"vonmises"` — fit a von Mises distribution by MLE
+#' * `"vonmises"` -- fit a von Mises distribution by MLE
 #'   ([circular::mle.vonmises()]) and evaluate the fitted density on a regular
 #'   grid of `n_theta` angles. Bootstrap confidence bands are available via
 #'   `boot_reps`.
-#' * `"kernel"` — circular kernel density estimate
+#' * `"kernel"` -- circular kernel density estimate
 #'   ([circular::density.circular()]) with bandwidth chosen by
 #'   [circular::bw.nrd.circular()] unless `bw` is supplied.
-#' * `"histogram"` — angular bin counts (a circular rose diagram); `bins`
+#' * `"histogram"` -- angular bin counts (a circular rose diagram); `bins`
 #'   controls the number of bins.
 #'
 #' When `colour_col` is supplied the density is computed independently for each
@@ -367,7 +367,7 @@ assign_cycle_colours <- function(data, id_col, n, panel_col = NULL,
 #' @param n_theta Number of angular evaluation points for smooth methods.
 #'   Default `500`.
 #' @param bins Number of angular bins for the histogram method. Default `36`
-#'   (10° each).
+#'   (10degrees each).
 #' @param bw Bandwidth passed to [circular::density.circular()]. `NULL`
 #'   uses [circular::bw.nrd.circular()].
 #' @param boot_reps Integer. Number of bootstrap replicates for a `"vonmises"`
@@ -432,11 +432,11 @@ compute_circular_density <- function(headings_df,
 
 #' Wrap a pre-computed circular density around the unit circle
 #'
-#' Takes a data frame of `(theta, density)` pairs — from any source: MLE,
-#' kernel estimation, Bayesian posterior predictive, or hand-crafted — and
+#' Takes a data frame of `(theta, density)` pairs -- from any source: MLE,
+#' kernel estimation, Bayesian posterior predictive, or hand-crafted -- and
 #' renders it as a radial path (and optionally a filled polygon) around the
-#' unit circle boundary. At each angle θ the plotted radius is
-#' `1 + scale * density(θ) / max(density)`.
+#' unit circle boundary. At each angle theta the plotted radius is
+#' `1 + scale * density(theta) / max(density)`.
 #'
 #' Because this function only handles rendering, it is agnostic to how the
 #' density was produced. To compute from raw headings use
@@ -446,7 +446,7 @@ compute_circular_density <- function(headings_df,
 #' @param density_df Data frame with columns named by `theta_col` and
 #'   `density_col` (and, optionally, `colour_col`). Each row represents one
 #'   evaluated angle.
-#' @param theta_col Name of the angle column (radians, −π to π). Default
+#' @param theta_col Name of the angle column (radians, -pi to pi). Default
 #'   `"theta"`.
 #' @param density_col Name of the density/count column. Default `"density"`.
 #' @param colour_col Optional grouping column. When set, separate paths are
@@ -779,7 +779,7 @@ compute_circ_interval <- function(headings_df,
 #' ```
 #'
 #' @param interval_df Data frame with columns `mean_dir`, `lower`, `upper`
-#'   (radians, `[-π, π]`), and optionally `wraps` (logical). Typically the
+#'   (radians, `[-pi, pi]`), and optionally `wraps` (logical). Typically the
 #'   output of [compute_circ_interval()].
 #' @param colour_col Optional column name to map to the colour aesthetic.
 #'   Ignored when `colour` is also supplied.
@@ -929,7 +929,7 @@ add_heading_interval <- function(headings_df,
 #'   `"absolute"` with a message if absent.
 #'
 #' @return A data frame with columns `mean_dir` (unit-circle radians, 0 to
-#'   2π), `resultant_R` (0–1), and `colour_col` when supplied. Both are `NA`
+#'   2pi), `resultant_R` (0--1), and `colour_col` when supplied. Both are `NA`
 #'   when a group contains fewer than 2 finite angles.
 #'
 #' @seealso [add_circ_mean()], [add_heading_arrow()]
@@ -997,8 +997,8 @@ compute_circ_mean <- function(headings_df,
 #' (0 = East, CCW), as returned by [compute_circ_mean()]. Rows where
 #' `mean_dir` or `resultant_R` is `NA` are silently skipped.
 #'
-#' @param summary_df Data frame with columns `mean_dir` (UC radians, 0 to 2π)
-#'   and `resultant_R` (0–1). Typically the output of [compute_circ_mean()].
+#' @param summary_df Data frame with columns `mean_dir` (UC radians, 0 to 2pi)
+#'   and `resultant_R` (0--1). Typically the output of [compute_circ_mean()].
 #' @param colour_col Optional. Name of a column in `summary_df` to map to the
 #'   colour aesthetic. Ignored when `colour` is also supplied.
 #' @param linewidth Line width of the arrow segment. Default `1`.
@@ -1116,7 +1116,7 @@ add_heading_arrow <- function(headings_df,
 #' @param headings_df Data frame with a `heading` column (angles in radians).
 #' @param colour_col Name of a column in `headings_df` to map to the colour
 #'   aesthetic. When `NULL` (default), the value of
-#'   `attr(headings_df, "colour_col")` is used if set — so heading markers
+#'   `attr(headings_df, "colour_col")` is used if set -- so heading markers
 #'   automatically inherit the colour mapping from the associated trajectory
 #'   plot when that attribute is present. Ignored when `colour` is supplied.
 #' @param colour Fixed colour string. Overrides `colour_col` when supplied;
@@ -1177,7 +1177,7 @@ add_heading_points <- function(headings_df, colour_col = NULL, colour = NULL,
 #'   and `y_inner`.
 #' @param colour_col Name of a column in `headings_df` to map to the colour
 #'   aesthetic. When `NULL` (default), the value of
-#'   `attr(headings_df, "colour_col")` is used if set — so vectors
+#'   `attr(headings_df, "colour_col")` is used if set -- so vectors
 #'   automatically inherit the colour mapping from the associated trajectory
 #'   plot when that attribute is present. Ignored when `colour` is supplied.
 #' @param colour Fixed colour string. Overrides `colour_col` when supplied;
@@ -1253,7 +1253,7 @@ add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
 #' @param step,tol,direction,base_r Passed to \code{\link{stack_headings}}
 #'   when \code{stack_r} is absent. See that function for details.
 #' @param shade If \code{TRUE}, map \code{stack_n} to the alpha aesthetic
-#'   (scaled 0.2–1 across the observed range). Overrides the fixed
+#'   (scaled 0.2--1 across the observed range). Overrides the fixed
 #'   \code{alpha} argument.
 #' @param shape Passed to \code{\link{stack_headings}} to request
 #'   per-observation shape encoding. Shape is also applied when
@@ -1478,7 +1478,6 @@ setMethod("gg_traj", "TrajSet",
 
 #' Create geom layers for Cartesian track coordinates
 #'
-#' @inheritParams ggplot2::geom_path
 #' @param data Data frame that will be plotted.
 #' @param x_col Name of the column mapped to the x aesthetic.
 #' @param y_col Name of the column mapped to the y aesthetic.
@@ -1628,23 +1627,22 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #' `TrajSet`. When a `TrajSet` is supplied, column mappings are inferred from
 #' the object and handed off to the plotting helpers.
 #'
-#' @inheritParams draw_tracks
-#' @inheritParams directedness_arrow
-#' @inheritParams add_ticks
-#' @inheritParams sparse_theme
 #' @param data Data frame or `TrajSet`.
 #' @param geom Geom specification passed to [draw_tracks()].
 #' @param group_col Optional column for grouping aesthetics.
 #' @param colour_col Optional column for colour aesthetics. Mutually exclusive
 #'   with `colour_cycle`.
 #' @param colour_cycle Optional cycling colour specification. Either a positive
-#'   integer `n` (trajectories are assigned colours 1–n, cycling back to 1 after
+#'   integer `n` (trajectories are assigned colours 1--n, cycling back to 1 after
 #'   every `n` trajectories) or a character vector of colour values (e.g.
 #'   `c("red","blue","green")`). When `panel_by` is set the cycle restarts
 #'   independently within each panel. Mutually exclusive with `colour_col`.
 #' @param style Either `"classic"` (default) or `"minimal"`.
+#' @param x_col Name of the x-coordinate column.  Default \code{"rel_x"}.
+#' @param y_col Name of the y-coordinate column.  Default \code{"rel_y"}.
 #' @param show_labels Whether to place labels at the perimeter.
 #' @param label_col Column containing label values.
+#' @param label_size Text size for perimeter labels.
 #' @param label_padding Multiplier applied to the unit circle when placing labels.
 #' @param label_use_repel Use `ggrepel::geom_text_repel()` when available.
 #' @param show_arrow Whether to draw a mean resultant arrow from the centre.
@@ -1662,7 +1660,7 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #' @param strip_position Position of the panel label. One of `"top"` (default),
 #'   `"bottom"`, `"left"`, `"right"` (ggplot2 strip positions), or `"inside"`
 #'   (places a text annotation inside the plot area, centred below the unit
-#'   circle at y = −1.25).
+#'   circle at y = -1.25).
 #' @param strip_label_size Font size for strip labels. Applies to both strip
 #'   text and the in-panel `"inside"` annotation.
 #' @param ticks,degrees,legend,title,xlab,ylab,axes Additional styling options.
@@ -2252,7 +2250,7 @@ add_vonmises_density <- function(fit, scale = 0.4, inner_r = 0,
   if (length(miss))
     stop("add_vonmises_density: fit must contain columns: ",
          paste(miss, collapse = ", "),
-         " — generate with vonmises_fit()")
+         " -- generate with vonmises_fit()")
 
   thetas <- seq(-pi, pi, length.out = n_pts + 1L)[seq_len(n_pts)]
 
@@ -2287,6 +2285,106 @@ add_vonmises_density <- function(fit, scale = 0.4, inner_r = 0,
   ggplot2::geom_polygon(
     data    = polys,
     mapping = ggplot2::aes(x = x, y = y, group = .vm_grp),
+    colour      = colour,
+    linewidth   = linewidth,
+    fill        = fill,
+    alpha       = alpha,
+    inherit.aes = FALSE
+  )
+}
+
+# ---- add_circular_kde --------------------------------------------------------
+
+#' Overlay a non-parametric circular kernel density estimate on a radiate plot
+#'
+#' Estimates the circular density using \code{\link[circular]{density.circular}}
+#' (no distributional assumptions) and draws it as a closed polygon in the same
+#' Cartesian coordinate space used by \code{\link{radiate}} and
+#' \code{\link{add_angle_rose}}.  Unlike \code{\link{add_vonmises_density}},
+#' this makes no assumption about the shape of the distribution and handles
+#' multimodal data naturally.
+#'
+#' The \code{bw} parameter is a \emph{concentration} parameter (analogous to
+#' \eqn{\kappa} of the von Mises kernel) -- larger values produce a sharper,
+#' data-following estimate; smaller values over-smooth towards uniform.
+#' \code{NULL} (default) selects bandwidth automatically via
+#' \code{\link[circular]{bw.nrd.circular}}.
+#'
+#' @param hd Data frame with a heading column in radians.
+#' @param angle_col Column name.  Default \code{"heading"}.
+#' @param group_col Column for faceting; must match \code{panel_by} in the
+#'   parent \code{radiate()} call.
+#' @param bw Bandwidth (concentration).  \code{NULL} uses
+#'   \code{bw.nrd.circular} automatic selection.
+#' @param scale Maximum outer radius as a fraction of the unit circle.
+#'   Default \code{0.4}.
+#' @param inner_r Inner radius.  Default \code{0}.
+#' @param n_pts Number of evaluation points.  Default \code{512L}.
+#' @param kernel Kernel name passed to \code{density.circular}.  Default
+#'   \code{"vonmises"} (the kernel shape, not a model assumption).
+#' @param colour Outline colour.  Default \code{"tomato"}.
+#' @param linewidth Outline width.  Default \code{0.8}.
+#' @param fill Fill colour.  Default \code{NA} (outline only).
+#' @param alpha Opacity.  Default \code{0.8}.
+#' @return A \code{geom_polygon} layer, or \code{NULL} if estimation fails.
+#' @export
+add_circular_kde <- function(hd, angle_col = "heading", group_col = NULL,
+                              bw = NULL, scale = 0.4, inner_r = 0,
+                              n_pts = 512L, kernel = "vonmises",
+                              colour = "tomato", linewidth = 0.8,
+                              fill = NA, alpha = 0.8) {
+  stopifnot(is.data.frame(hd))
+  if (!angle_col %in% names(hd))
+    stop("add_circular_kde: column '", angle_col, "' not found")
+
+  .kde_ring <- function(sub, grp) {
+    a <- as.numeric(sub[[angle_col]])
+    a <- a[is.finite(a)]
+    if (length(a) < 2L) return(NULL)
+    a_circ <- circular::circular(a, units = "radians", type = "angles")
+    bw_use <- if (is.null(bw)) {
+      tryCatch(
+        circular::bw.nrd.circular(a_circ),
+        error = function(e) 5   # conservative fallback
+      )
+    } else {
+      bw
+    }
+    kde <- tryCatch(
+      circular::density.circular(a_circ, bw = bw_use,
+                                  n = n_pts, kernel = kernel),
+      error = function(e) NULL
+    )
+    if (is.null(kde)) return(NULL)
+    thetas <- as.numeric(kde$x)
+    d      <- as.numeric(kde$y)
+    d_max  <- max(d, na.rm = TRUE)
+    if (!is.finite(d_max) || d_max <= 0) return(NULL)
+    r <- inner_r + scale * d / d_max
+    data.frame(x = r * cos(thetas), y = r * sin(thetas),
+               .kde_grp = grp, stringsAsFactors = FALSE)
+  }
+
+  if (!is.null(group_col)) {
+    if (!group_col %in% names(hd))
+      stop("add_circular_kde: '", group_col, "' not found in hd")
+    groups <- unique(hd[[group_col]])
+    polys  <- do.call(rbind, lapply(groups, function(g) {
+      w <- .kde_ring(hd[hd[[group_col]] == g, , drop = FALSE],
+                     paste0(as.character(g), "_kde"))
+      if (is.null(w)) return(NULL)
+      w[[group_col]] <- g
+      w
+    }))
+  } else {
+    polys <- .kde_ring(hd, "kde")
+  }
+
+  if (is.null(polys)) return(NULL)
+
+  ggplot2::geom_polygon(
+    data    = polys,
+    mapping = ggplot2::aes(x = x, y = y, group = .kde_grp),
     colour      = colour,
     linewidth   = linewidth,
     fill        = fill,

@@ -34,7 +34,7 @@ returned per group. The same column maps to colour in [add_circ_mean()].}
 }
 \value{
 A data frame with columns `mean_dir` (unit-circle radians, 0 to
-  2π), `resultant_R` (0–1), and `colour_col` when supplied. Both are `NA`
+  2pi), `resultant_R` (0--1), and `colour_col` when supplied. Both are `NA`
   when a group contains fewer than 2 finite angles.
 }
 \description{

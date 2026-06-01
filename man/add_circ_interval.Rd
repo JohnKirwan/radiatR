@@ -16,7 +16,7 @@ add_circ_interval(
 }
 \arguments{
 \item{interval_df}{Data frame with columns `mean_dir`, `lower`, `upper`
-(radians, `[-π, π]`), and optionally `wraps` (logical). Typically the
+(radians, `[-pi, pi]`), and optionally `wraps` (logical). Typically the
 output of [compute_circ_interval()].}
 
 \item{colour_col}{Optional column name to map to the colour aesthetic.

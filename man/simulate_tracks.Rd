@@ -53,7 +53,7 @@ supplied when missing):
 
 - `condition` (character): condition label.
 - `n_trials` (integer): number of trajectories to simulate for the condition.
-- `stim_mean` (numeric radian): baseline stimulus heading (default 0).
+- `ref_mean` (numeric radian): baseline reference heading (default 0).
 - `concentration_base` (numeric): baseline von Mises concentration (kappa).
 - `concentration_slope` (numeric): optional slope applied to the predictor.
 - `tortuosity_base` (numeric): baseline angular noise scale.
@@ -64,7 +64,7 @@ supplied when missing):
 - `predictor_values` (list-column): optional explicit predictor values (length
   `n_trials`) overriding the generated values.
 
-The predictor can represent any continuous covariate (e.g. stimulus
+The predictor can represent any continuous covariate (e.g. reference
 intensity). The final heading concentration increases with larger kappa,
 whereas larger tortuosity values produce more sinuous paths.
 }
@@ -79,7 +79,7 @@ names(sim_both)
 example_conditions <- tibble::tibble(
   condition = paste0("level_", 1:4),
   n_trials = 30L,
-  stim_mean = seq(-pi/8, pi/8, length.out = 4),
+  ref_mean = seq(-pi/8, pi/8, length.out = 4),
   concentration_base = c(2, 4, 6, 8),
   concentration_slope = 0.8,
   tortuosity_base = c(0.12, 0.09, 0.06, 0.04),

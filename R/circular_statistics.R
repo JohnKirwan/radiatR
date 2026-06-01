@@ -19,7 +19,7 @@
 #'   (0 = North, clockwise).
 #'
 #' @return A `data.frame` with columns `id`, `n`, `t_start`, `t_end`,
-#'   `mean_dir` (radians, 0 to 2π), `resultant_R` (0–1), and `kappa`
+#'   `mean_dir` (radians, 0 to 2pi), `resultant_R` (0--1), and `kappa`
 #'   (von Mises concentration; `NA` when estimation fails).
 #'
 #' @examples
@@ -115,13 +115,13 @@ setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")
 #' to any circular arena experiment where spatial dwell time is of interest
 #' (water maze, open-field, Drosophila preference assay, etc.).
 #'
-#' The target quadrant (Q1) is centred on `target_angle`; Q2–Q4 follow
+#' The target quadrant (Q1) is centred on `target_angle`; Q2--Q4 follow
 #' counter-clockwise. Observations outside `max(ring_breaks)` are excluded from
 #' both counts and the proportion denominator.
 #'
 #' @param x A [`TrajSet`] object with x/y (or rel_x/rel_y) columns registered.
 #' @param target_angle Numeric. Radians. Direction of the target zone from the
-#'   arena centre. Q1 spans ±45° around this angle.
+#'   arena centre. Q1 spans +/-45degrees around this angle.
 #' @param target_radius Numeric. Accepted for API symmetry with
 #'   [count_goal_entries()] but not used in zone assignment. Default `1`.
 #' @param ring_breaks Numeric vector. Annular ring boundaries, must start at
@@ -285,7 +285,7 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 }
 
 # ---------------------------------------------------------------------------
-# circ_summarise — tidy grouped circular summary
+# circ_summarise -- tidy grouped circular summary
 
 .circ_summarise_one <- function(angles, stats, angle_convention, coords) {
   angles <- angles[is.finite(angles)]
@@ -333,11 +333,11 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 #' @param data A data frame or grouped tibble.
 #' @param col Unquoted or quoted name of the column containing angles.
 #' @param units Units of the angle column: \code{"radians"} or
-#'   \code{"degrees"}. No default — must be specified explicitly. Values are
+#'   \code{"degrees"}. No default -- must be specified explicitly. Values are
 #'   converted to radians internally before computation; output is always
 #'   in radians (\code{mean_dir}) or degrees (\code{mean_dir_deg}).
 #'   A warning is issued when the value range appears inconsistent with the
-#'   declared units (e.g. values > 2π when \code{units = "radians"}).
+#'   declared units (e.g. values > 2pi when \code{units = "radians"}).
 #'   Suppress range warnings with
 #'   \code{options(radiatR.check_units = FALSE)}.
 #' @param .by Character vector of grouping column names. Overrides any
@@ -520,7 +520,7 @@ sector_summary <- function(hd, sectors = 8L, group_col = NULL,
     bk <- sort(unique(c(-pi, as.numeric(sectors), pi)))
   }
   mids   <- (head(bk, -1L) + tail(bk, -1L)) / 2
-  labels <- sprintf("%.0f°", round(mids * 180 / pi))
+  labels <- sprintf("%.0fdegrees", round(mids * 180 / pi))
 
   .wrap <- function(a) { a <- a %% (2*pi); a[a > pi] <- a[a > pi] - 2*pi; a }
 
@@ -628,4 +628,206 @@ vonmises_fit <- function(hd, group_col = NULL, angle_col = "heading",
           "se_kappa", "ci_lo", "ci_hi", "n")]
   })
   do.call(rbind, rows)
+}
+
+# ---- test_uniformity ---------------------------------------------------------
+
+#' Per-group tests of circular uniformity
+#'
+#' Tests whether each group's headings are uniformly distributed (i.e. no
+#' preferred direction), using any of four classical tests.  The Rayleigh test
+#' (\code{"rayleigh"}, default) returns an exact numeric p-value; the other
+#' three (\code{"kuiper"}, \code{"rao"}, \code{"watson"}) use look-up tables
+#' and the \code{p_value} column contains the tabled significance level rather
+#' than a continuous p-value.
+#'
+#' @param hd Data frame with a heading column in radians.
+#' @param group_col Column to group by.  \code{NULL} tests the whole data frame
+#'   as one group.
+#' @param angle_col Heading column name.  Default \code{"heading"}.
+#' @param test One of \code{"rayleigh"} (default), \code{"kuiper"},
+#'   \code{"rao"}, or \code{"watson"}.
+#' @return Tidy data frame with columns \code{group_col} (if supplied),
+#'   \code{statistic}, \code{p_value}, \code{n}, \code{test}.
+#' @export
+test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
+                             test = c("rayleigh", "kuiper", "rao", "watson")) {
+  test <- match.arg(test)
+  stopifnot(is.data.frame(hd))
+  if (!angle_col %in% names(hd))
+    stop("test_uniformity: column '", angle_col, "' not found")
+
+  .run <- function(a_circ) {
+    switch(test,
+      rayleigh = {
+        r <- circular::rayleigh.test(a_circ)
+        list(statistic = as.numeric(r$statistic), p_value = as.numeric(r$p.value))
+      },
+      kuiper = {
+        r <- circular::kuiper.test(a_circ)
+        p <- if (!is.null(r$alpha) && r$alpha > 0) as.numeric(r$alpha) else NA_real_
+        list(statistic = as.numeric(r$statistic), p_value = p)
+      },
+      rao = {
+        r <- circular::rao.spacing.test(a_circ)
+        p <- if (!is.null(r$alpha) && r$alpha > 0) as.numeric(r$alpha) else NA_real_
+        list(statistic = as.numeric(r$statistic), p_value = p)
+      },
+      watson = {
+        r <- circular::watson.test(a_circ)
+        p <- if (!is.null(r$alpha) && r$alpha > 0) as.numeric(r$alpha) else NA_real_
+        list(statistic = as.numeric(r$statistic), p_value = p)
+      }
+    )
+  }
+
+  .one <- function(sub) {
+    a <- as.numeric(sub[[angle_col]]); a <- a[is.finite(a)]
+    if (length(a) < 3L) return(NULL)
+    a_c <- circular::circular(a, units = "radians", type = "angles")
+    r   <- tryCatch(.run(a_c), error = function(e) NULL)
+    if (is.null(r)) return(NULL)
+    data.frame(statistic = r$statistic, p_value = r$p_value,
+               n = length(a), test = test, stringsAsFactors = FALSE)
+  }
+
+  if (is.null(group_col)) return(.one(hd))
+  if (!group_col %in% names(hd))
+    stop("test_uniformity: '", group_col, "' not found")
+
+  groups <- unique(hd[[group_col]])
+  rows   <- lapply(groups, function(g) {
+    r <- .one(hd[hd[[group_col]] == g, , drop = FALSE])
+    if (is.null(r)) return(NULL)
+    r[[group_col]] <- g
+    r[, c(group_col, "statistic", "p_value", "n", "test")]
+  })
+  do.call(rbind, rows[!vapply(rows, is.null, logical(1L))])
+}
+
+# ---- test_mean_directions ----------------------------------------------------
+
+#' Test whether groups share the same mean direction (Watson-Williams)
+#'
+#' Wraps \code{\link[circular]{watson.williams.test}} -- the circular analogue
+#' of the parametric \emph{F}-test for equal means.  Assumes von Mises-
+#' distributed data with equal concentrations across groups; if concentrations
+#' differ substantially or the distribution is non-von-Mises, consider a
+#' non-parametric alternative.
+#'
+#' @param hd Data frame with heading and group columns.
+#' @param group_col Column identifying conditions or groups.
+#' @param angle_col Heading column in radians.  Default \code{"heading"}.
+#' @param pairwise Logical.  \code{FALSE} (default) returns a single omnibus
+#'   test across all groups.  \code{TRUE} returns all pairwise comparisons.
+#' @return Tidy data frame.  Omnibus result has columns \code{n_groups},
+#'   \code{statistic}, \code{df1}, \code{df2}, \code{p_value}, \code{test}.
+#'   Pairwise result additionally has \code{group1} and \code{group2}.
+#' @export
+test_mean_directions <- function(hd, group_col, angle_col = "heading",
+                                  pairwise = FALSE) {
+  stopifnot(is.data.frame(hd))
+  for (col in c(angle_col, group_col))
+    if (!col %in% names(hd))
+      stop("test_mean_directions: column '", col, "' not found")
+
+  groups    <- unique(hd[[group_col]])
+  circ_list <- stats::setNames(lapply(groups, function(g) {
+    a <- as.numeric(hd[[angle_col]][hd[[group_col]] == g])
+    a <- a[is.finite(a)]
+    circular::circular(a, units = "radians", type = "angles")
+  }), as.character(groups))
+  circ_list <- Filter(function(x) length(x) >= 2L, circ_list)
+  if (length(circ_list) < 2L)
+    stop("test_mean_directions: need >= 2 groups with >= 2 observations each")
+
+  .ww <- function(lst) {
+    r <- tryCatch(
+      suppressWarnings(circular::watson.williams.test(lst)),
+      error = function(e) NULL
+    )
+    if (is.null(r)) return(NULL)
+    data.frame(
+      statistic = as.numeric(r$statistic),
+      df1       = as.integer(r$parameter["df1"]),
+      df2       = as.integer(r$parameter["df2"]),
+      p_value   = as.numeric(r$p.value),
+      stringsAsFactors = FALSE
+    )
+  }
+
+  if (!pairwise) {
+    out <- .ww(circ_list)
+    if (is.null(out)) stop("test_mean_directions: test failed")
+    out$n_groups <- length(circ_list)
+    out$test     <- "Watson-Williams"
+    return(out[, c("n_groups", "statistic", "df1", "df2", "p_value", "test")])
+  }
+
+  pairs <- utils::combn(names(circ_list), 2L, simplify = FALSE)
+  rows  <- lapply(pairs, function(p) {
+    r <- .ww(circ_list[p])
+    if (is.null(r)) return(NULL)
+    cbind(data.frame(group1 = p[1L], group2 = p[2L],
+                     stringsAsFactors = FALSE), r)
+  })
+  rows <- rows[!vapply(rows, is.null, logical(1L))]
+  out  <- do.call(rbind, rows)
+  out$test <- "Watson-Williams"
+  out
+}
+
+# ---- test_concentration ------------------------------------------------------
+
+#' Test whether groups share the same concentration (dispersion)
+#'
+#' Two tests are available:
+#' \describe{
+#'   \item{\code{parametric = TRUE} (default)}{Likelihood-ratio test for equal
+#'   von Mises \eqn{\kappa} across groups (\code{equal.kappa.test}).  Returns
+#'   a chi-squared statistic with \eqn{k-1} degrees of freedom.}
+#'   \item{\code{parametric = FALSE}}{Wallraff's non-parametric test for equal
+#'   angular dispersions -- no distributional assumption required.}
+#' }
+#'
+#' @param hd Data frame with heading and group columns.
+#' @param group_col Column identifying conditions or groups.
+#' @param angle_col Heading column in radians.  Default \code{"heading"}.
+#' @param parametric Logical.  \code{TRUE} (default) uses
+#'   \code{equal.kappa.test}; \code{FALSE} uses \code{wallraff.test}.
+#' @return One-row tidy data frame with \code{statistic}, \code{df} (parametric
+#'   only), \code{p_value}, and \code{test}.
+#' @export
+test_concentration <- function(hd, group_col, angle_col = "heading",
+                                parametric = TRUE) {
+  stopifnot(is.data.frame(hd))
+  for (col in c(angle_col, group_col))
+    if (!col %in% names(hd))
+      stop("test_concentration: column '", col, "' not found")
+
+  a   <- as.numeric(hd[[angle_col]]); keep <- is.finite(a)
+  a_c <- circular::circular(a[keep], units = "radians", type = "angles")
+  grp <- hd[[group_col]][keep]
+
+  if (parametric) {
+    r <- tryCatch(
+      suppressWarnings(circular::equal.kappa.test(a_c, grp)),
+      error = function(e) stop("test_concentration (equal.kappa): ", e$message)
+    )
+    data.frame(statistic = as.numeric(r$statistic),
+               df        = as.integer(r$df),
+               p_value   = as.numeric(r$p.value),
+               test      = "equal.kappa",
+               stringsAsFactors = FALSE)
+  } else {
+    r <- tryCatch(
+      circular::wallraff.test(a_c, grp),
+      error = function(e) stop("test_concentration (wallraff): ", e$message)
+    )
+    data.frame(statistic = as.numeric(r$statistic),
+               df        = NA_integer_,
+               p_value   = as.numeric(r$p.value),
+               test      = "wallraff",
+               stringsAsFactors = FALSE)
+  }
 }

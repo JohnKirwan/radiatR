@@ -17,8 +17,8 @@ add_quadrant_lines(colour = "grey60", linewidth = 0.5, linetype = "dashed")
 A `geom_segment()` layer.
 }
 \description{
-Draws two dashed lines through the centre of the unit circle — one
-horizontal (0°/180°) and one vertical (90°/270°) — dividing the arena into
+Draws two dashed lines through the centre of the unit circle -- one
+horizontal (0degrees/180degrees) and one vertical (90degrees/270degrees) -- dividing the arena into
 four quadrants. The lines extend to the arena boundary (unit circle).
 }
 \examples{

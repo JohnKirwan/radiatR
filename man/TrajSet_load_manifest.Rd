@@ -36,8 +36,15 @@ column names in `file_tbl` to column names present in `manifest`. When
 
 \item{mapping}{Optional explicit column mapping passed to [TrajSet_read()].}
 
-\item{angle_unit, }{time_type, tz, fps, normalize_xy, dialect, keep, drop, ...
-Additional parameters forwarded to [TrajSet_read()].}
+\item{angle_unit, time_type, tz, fps}{Passed to [TrajSet_read()].}
+
+\item{normalize_xy}{Logical; normalise x/y to unit circle. Default \code{TRUE}.}
+
+\item{dialect}{Optional dialect name; passed to [TrajSet_read()].}
+
+\item{keep, drop}{Column selection vectors passed to [TrajSet_read()].}
+
+\item{...}{Additional arguments forwarded to [TrajSet_read()].}
 }
 \value{
 A `TrajSet` with metadata columns replicated for each observation.

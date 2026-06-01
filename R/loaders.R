@@ -359,6 +359,8 @@ TrajSet_read_format <- function(x, format, ...) {
 #' @param fps frames-per-second when time_type = "frames"
 #' @param normalize_xy TRUE to normalize (x,y) to unit circle when both provided
 #' @param dialect optional registered dialect name to pre-process raw input
+#' @param dialect_args named list of extra arguments forwarded to the dialect
+#'   function (e.g. \code{list(bodypart = c("head","thorax"))})
 #' @param mutate list of transformations applied after reading (named functions or formulas)
 #' @param keep only keep these columns (NULL = keep all)
 #' @param drop drop these columns after mapping
@@ -500,6 +502,8 @@ TrajSet_read <- function(x,
 #' @param fps frames-per-second when time_type = "frames"
 #' @param normalize_xy TRUE to normalize (x,y) to unit circle when both provided
 #' @param dialect optional registered dialect name to pre-process raw input
+#' @param dialect_args named list of extra arguments forwarded to the dialect
+#'   function (e.g. \code{list(bodypart = c("head","thorax"))})
 #' @param mutate list of transformations applied after reading (named functions or formulas)
 #' @param keep only keep these columns (NULL = keep all)
 #' @param drop drop these columns after mapping
@@ -728,8 +732,11 @@ TrajSet_read_dir <- function(dir, pattern = "\\.(csv|tsv|txt|parquet|feather)$",
 #'   column names in `file_tbl` to column names present in `manifest`. When
 #'   `NULL`, all columns aside from `file` are carried over with the same names.
 #' @param mapping Optional explicit column mapping passed to [TrajSet_read()].
-#' @param angle_unit, time_type, tz, fps, normalize_xy, dialect, keep, drop, ...
-#'   Additional parameters forwarded to [TrajSet_read()].
+#' @param angle_unit,time_type,tz,fps Passed to [TrajSet_read()].
+#' @param normalize_xy Logical; normalise x/y to unit circle. Default \code{TRUE}.
+#' @param dialect Optional dialect name; passed to [TrajSet_read()].
+#' @param keep,drop Column selection vectors passed to [TrajSet_read()].
+#' @param ... Additional arguments forwarded to [TrajSet_read()].
 #'
 #' @return A `TrajSet` with metadata columns replicated for each observation.
 #' @export
@@ -928,8 +935,8 @@ register_loader_dialect("deeplabcut", function(x, bodypart = NULL, likelihood_mi
     ws <- vapply(sel, function(bp) {
       lc <- paste0(bp, "_likelihood")
       w  <- if (lc %in% nms) as.numeric(df[[lc]]) else rep(1, nrow(df))
-      # NA likelihood with no threshold → include at equal weight;
-      # NA likelihood with a threshold → exclude (can't verify it passes)
+      # NA likelihood with no threshold -> include at equal weight;
+      # NA likelihood with a threshold -> exclude (can't verify it passes)
       if (is.null(likelihood_min)) w[is.na(w)] <- 1 else {
         w[is.na(w)] <- 0; w[!is.na(w) & w < as.numeric(likelihood_min)] <- 0
       }
@@ -1000,12 +1007,12 @@ register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = N
 })
 
 # EthoVision XT: single- or multi-body-point exports.
-# Standard export: "X Center" / "Y Center" → x_center / y_center (prefix style).
+# Standard export: "X Center" / "Y Center" -> x_center / y_center (prefix style).
 # Multiple Body Point Tracking export adds "X Nose", "Y Nose", "X Tail", "Y Tail"
 # (also prefix style) or "<Zone> point X" / "<Zone> point Y" (suffix style).
-# zone = NULL  → use the centre/primary position (backward-compatible default).
-# zone = "nose"               → position from that single zone.
-# zone = c("nose", "tail")    → equal-weight centroid of those zones.
+# zone = NULL  -> use the centre/primary position (backward-compatible default).
+# zone = "nose"               -> position from that single zone.
+# zone = c("nose", "tail")    -> equal-weight centroid of those zones.
 # All detected zone columns are always appended for use with bodypart_axis.
 register_loader_dialect("ethovision", function(x, id_col = NULL, time_col = NULL,
                                                zone = NULL) {
@@ -1118,7 +1125,7 @@ register_loader_dialect("boris_xy", function(x) {
 # dtrack (https://bitbucket.org/jochensmolka/dtrack)
 # Accepts a pre-parsed data frame with >=3 columns: frame, x, y[, confidence].
 # The confidence column is dropped silently. id is set to "1" because no
-# filename is available; use dtrack_read() when reading from a file path —
+# filename is available; use dtrack_read() when reading from a file path --
 # it derives id from the filename stem instead.
 register_loader_dialect("dtrack", function(x) {
   stopifnot(is.data.frame(x))
@@ -1131,7 +1138,7 @@ register_loader_dialect("dtrack", function(x) {
 
 # TRex (https://trex.run): per-individual CSV export
 # Each file typically covers one individual; the individual index is inferred
-# from the numeric suffix of the filename stem (e.g. "run_0.csv" → id "0").
+# from the numeric suffix of the filename stem (e.g. "run_0.csv" -> id "0").
 # Aggregated exports that include an id/individual column are also supported.
 # Typical columns (TRex uses capitalised names): FRAME / frame, X / x, Y / y.
 register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL, fps = NULL) {
@@ -1168,8 +1175,8 @@ register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL, fps 
 # ANY-maze (Stoelting): CSV export.  Standard columns: "Trial time", "X Centre",
 # "Y Centre".  Newer versions with nose/tail tracking add "Nose X Centre",
 # "Nose Y Centre", "Tail X Centre", "Tail Y Centre" (or _Center, American).
-# zone = NULL  → primary centre position (default, backward-compatible).
-# zone = "nose" / zone = c("nose","tail") → single-zone or equal-weight centroid.
+# zone = NULL  -> primary centre position (default, backward-compatible).
+# zone = "nose" / zone = c("nose","tail") -> single-zone or equal-weight centroid.
 # skip_units_row strips the optional units row ANY-maze inserts after the header.
 register_loader_dialect("anymaze", function(x, id_col = NULL, time_col = NULL,
                                             zone = NULL, skip_units_row = TRUE) {
@@ -1178,7 +1185,7 @@ register_loader_dialect("anymaze", function(x, id_col = NULL, time_col = NULL,
   norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(trimws(v)))
   nms  <- norm(names(df)); names(df) <- nms
 
-  # Detect multi-point zones from "<zone> X Centre" → <zone>_x_centre pattern,
+  # Detect multi-point zones from "<zone> X Centre" -> <zone>_x_centre pattern,
   # then normalise to plain <zone>_x / <zone>_y for uniform access.
   pat_x <- grep("_x_centr[ei]$", nms, value = TRUE)
   pat_y <- grep("_y_centr[ei]$", nms, value = TRUE)
@@ -1244,9 +1251,9 @@ register_loader_dialect("anymaze", function(x, id_col = NULL, time_col = NULL,
 })
 
 # SLEAP (https://sleap.ai): CSV analysis export.
-# Column naming: <node>.x, <node>.y, <node>.score (dot → underscore after norm).
-# bodypart = NULL  → centroid of all nodes, score-weighted.
-# bodypart = c("head","thorax") → centroid of named subset.
+# Column naming: <node>.x, <node>.y, <node>.score (dot -> underscore after norm).
+# bodypart = NULL  -> centroid of all nodes, score-weighted.
+# bodypart = c("head","thorax") -> centroid of named subset.
 # Per-node <name>_x / <name>_y columns always appended for bodypart_axis use.
 # score_min: minimum per-node score to include in centroid (analogous to likelihood_min).
 register_loader_dialect("sleap", function(x, bodypart = NULL, score_min = NULL,
@@ -1256,7 +1263,7 @@ register_loader_dialect("sleap", function(x, bodypart = NULL, score_min = NULL,
   norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(v))
   nms  <- norm(names(df)); names(df) <- nms
 
-  # Detect nodes from <node>_x / <node>_y pairs; alias <node>_score → <node>_likelihood
+  # Detect nodes from <node>_x / <node>_y pairs; alias <node>_score -> <node>_likelihood
   bpx     <- sub("_x$", "", grep("_x$", nms, value = TRUE))
   bpy     <- sub("_y$", "", grep("_y$", nms, value = TRUE))
   bps_all <- intersect(bpx, bpy)
@@ -1342,8 +1349,8 @@ register_loader_dialect("tracktor", function(x, id_col = NULL, time_col = NULL, 
 })
 
 # Ctrax (http://ctrax.sourceforge.net): multi-animal MATLAB tracker.
-# Primary output is a .mat file whose 'trx' field is a 1×N struct array —
-# one element per tracked individual — with fields x, y, theta, a, b,
+# Primary output is a .mat file whose 'trx' field is a 1xN struct array --
+# one element per tracked individual -- with fields x, y, theta, a, b,
 # firstframe, nframes.  Requires the 'R.matlab' package.
 # ids: optional integer vector selecting a subset of individuals (1-indexed).
 register_loader_dialect("ctrax", function(x, ids = NULL) {
@@ -1353,7 +1360,7 @@ register_loader_dialect("ctrax", function(x, ids = NULL) {
   trx <- mat[["trx"]]
   if (is.null(trx)) stop("ctrax: no 'trx' field found in .mat file")
   d <- dim(trx)
-  if (length(d) < 3L) stop("ctrax: unexpected trx structure — expected a 3-D struct array from R.matlab")
+  if (length(d) < 3L) stop("ctrax: unexpected trx structure -- expected a 3-D struct array from R.matlab")
   n_ind <- d[3L]
   fly_ids <- seq_len(n_ind)
   if (!is.null(ids)) fly_ids <- intersect(fly_ids, as.integer(ids))

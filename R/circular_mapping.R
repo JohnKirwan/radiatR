@@ -93,7 +93,7 @@ as_radians <- function(x, unit) {
     rlang::warn(
       c(paste0(if (!is.null(col_name)) paste0("'", col_name, "': ") else "",
                "max |value| = ", round(mx, 2),
-               " exceeds 2π — did you mean units = \"degrees\"?"),
+               " exceeds 2pi -- did you mean units = \"degrees\"?"),
         i = "Suppress with options(radiatR.check_units = FALSE)."),
       .frequency = "once",
       .frequency_id = id
@@ -101,7 +101,7 @@ as_radians <- function(x, unit) {
   } else if (units == "degrees" && mx < 0.1 * pi) {
     rlang::warn(
       c(paste0(if (!is.null(col_name)) paste0("'", col_name, "': ") else "",
-               "all |values| < π/10 — did you mean units = \"radians\"?"),
+               "all |values| < pi/10 -- did you mean units = \"radians\"?"),
         i = "Suppress with options(radiatR.check_units = FALSE)."),
       .frequency = "once",
       .frequency_id = id

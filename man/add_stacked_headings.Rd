@@ -31,7 +31,7 @@ attribute when \code{data} is a \code{headings_frame}.}
 when \code{stack_r} is absent. See that function for details.}
 
 \item{shade}{If \code{TRUE}, map \code{stack_n} to the alpha aesthetic
-(scaled 0.2–1 across the observed range). Overrides the fixed
+(scaled 0.2--1 across the observed range). Overrides the fixed
 \code{alpha} argument.}
 
 \item{shape}{Passed to \code{\link{stack_headings}} to request

@@ -14,8 +14,8 @@ add_circ_mean(
 )
 }
 \arguments{
-\item{summary_df}{Data frame with columns `mean_dir` (UC radians, 0 to 2π)
-and `resultant_R` (0–1). Typically the output of [compute_circ_mean()].}
+\item{summary_df}{Data frame with columns `mean_dir` (UC radians, 0 to 2pi)
+and `resultant_R` (0--1). Typically the output of [compute_circ_mean()].}
 
 \item{colour_col}{Optional. Name of a column in `summary_df` to map to the
 colour aesthetic. Ignored when `colour` is also supplied.}

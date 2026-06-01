@@ -23,7 +23,7 @@ add_circular_density(
 `density_col` (and, optionally, `colour_col`). Each row represents one
 evaluated angle.}
 
-\item{theta_col}{Name of the angle column (radians, −π to π). Default
+\item{theta_col}{Name of the angle column (radians, -pi to pi). Default
 `"theta"`.}
 
 \item{density_col}{Name of the density/count column. Default `"density"`.}
@@ -58,11 +58,11 @@ A list of one, two, or three ggplot2 layers: optional CI band
   path line.
 }
 \description{
-Takes a data frame of `(theta, density)` pairs — from any source: MLE,
-kernel estimation, Bayesian posterior predictive, or hand-crafted — and
+Takes a data frame of `(theta, density)` pairs -- from any source: MLE,
+kernel estimation, Bayesian posterior predictive, or hand-crafted -- and
 renders it as a radial path (and optionally a filled polygon) around the
-unit circle boundary. At each angle θ the plotted radius is
-`1 + scale * density(θ) / max(density)`.
+unit circle boundary. At each angle theta the plotted radius is
+`1 + scale * density(theta) / max(density)`.
 }
 \details{
 Because this function only handles rendering, it is agnostic to how the

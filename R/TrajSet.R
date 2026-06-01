@@ -204,6 +204,9 @@ setValidity("TrajSet", function(object) {
 #' @param id,time Columns naming trajectory id and time
 #' @param angle Optional angle column (radians or degrees, see angle_unit)
 #' @param x,y Optional cartesian columns; if provided, converted to unit circle and angle inferred
+#' @param rel_x,rel_y Optional column names for pre-transformed relative
+#'   coordinates (arena-centred, unit-circle scaled).  Both must be supplied
+#'   together or not at all.
 #' @param angle_unit Units of provided angle ("radians" or "degrees"); stored internally as radians
 #' @param weight Optional weight column name
 #' @param normalize_xy If TRUE, (x,y) are normalized to unit vectors (zero-length -> NA)

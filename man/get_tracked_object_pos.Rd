@@ -35,6 +35,6 @@ A `TrajSet` containing all valid trial observations. The corresponding
 Using the trial limits returned by [get_trial_limits()], this helper extracts
 the corresponding rows from a track data frame or `TrajSet`, centres and
 scales the coordinates, and computes angles in both absolute and
-stimulus-relative frames. The function optionally controls how inner/outer
+reference-relative frames. The function optionally controls how inner/outer
 radius crossings are selected.
 }

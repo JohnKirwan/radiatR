@@ -31,7 +31,7 @@ computed per group and the column is included in the output.}
 Default `500`.}
 
 \item{bins}{Number of angular bins for the histogram method. Default `36`
-(10° each).}
+(10degrees each).}
 
 \item{bw}{Bandwidth passed to [circular::density.circular()]. `NULL`
 uses [circular::bw.nrd.circular()].}
@@ -53,21 +53,21 @@ A data frame with columns `theta` (radians, -pi to pi) and `density`
 Evaluates a directional density for a set of heading angles and returns a
 tidy data frame of `(theta, density)` pairs. The result can be passed
 directly to [add_circular_density()] for rendering, or inspected and
-modified before plotting — for example to replace the `density` column with
+modified before plotting -- for example to replace the `density` column with
 a Bayesian posterior predictive density obtained from `brms` or another
 modelling package.
 }
 \details{
 Three built-in estimation methods are provided:
 
-* `"vonmises"` — fit a von Mises distribution by MLE
+* `"vonmises"` -- fit a von Mises distribution by MLE
   ([circular::mle.vonmises()]) and evaluate the fitted density on a regular
   grid of `n_theta` angles. Bootstrap confidence bands are available via
   `boot_reps`.
-* `"kernel"` — circular kernel density estimate
+* `"kernel"` -- circular kernel density estimate
   ([circular::density.circular()]) with bandwidth chosen by
   [circular::bw.nrd.circular()] unless `bw` is supplied.
-* `"histogram"` — angular bin counts (a circular rose diagram); `bins`
+* `"histogram"` -- angular bin counts (a circular rose diagram); `bins`
   controls the number of bins.
 
 When `colour_col` is supplied the density is computed independently for each
