@@ -9,11 +9,12 @@
 Source:
 [`DESCRIPTION`](https://github.com/JohnKirwan/radiatR/blob/master/DESCRIPTION)
 
-Kirwan JD (2026). *radiatR: Plot Tracks in Circular Space*. R package
-version 0.2.0, <https://johnkirwan.github.io/radiatR>.
+Kirwan JD (2026). *radiatR: Analysis and Visualisation of Circular Arena
+Tracking Data*. R package version 0.2.0,
+<https://johnkirwan.github.io/radiatR>.
 
     @Manual{,
-      title = {radiatR: Plot Tracks in Circular Space},
+      title = {radiatR: Analysis and Visualisation of Circular Arena Tracking Data},
       author = {John D. Kirwan},
       year = {2026},
       note = {R package version 0.2.0},

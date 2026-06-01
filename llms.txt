@@ -276,6 +276,15 @@ objects to the density overlay functions for visual model comparison.
 - [`wrappedcauchy_fit()`](https://johnkirwan.github.io/radiatR/reference/wrappedcauchy_fit.md)
   : Fit a wrapped Cauchy distribution to per-group heading data
 
+## Circular statistics – correlation
+
+Measure the association between heading directions and a continuous
+covariate (circular-linear) or a second set of angles
+(circular-circular).
+
+- [`circ_cor()`](https://johnkirwan.github.io/radiatR/reference/circ_cor.md)
+  : Circular correlation between headings and a covariate
+
 ## Circular statistics – hypothesis tests
 
 Uniformity, equal mean directions, and equal concentrations. All
@@ -506,6 +515,8 @@ Any remaining exported topics.
   : Calibrate the camera on the given xy coordinate
 - [`checkerboard_points()`](https://johnkirwan.github.io/radiatR/reference/checkerboard_points.md)
   : Generate world coordinates for checkerboard corners
+- [`circ_cor()`](https://johnkirwan.github.io/radiatR/reference/circ_cor.md)
+  : Circular correlation between headings and a covariate
 - [`circ_dispersion()`](https://johnkirwan.github.io/radiatR/reference/circ_dispersion.md)
   : Per-group circular dispersion statistics for a dense heading series
 - [`circ_mean_segments()`](https://johnkirwan.github.io/radiatR/reference/circ_mean_segments.md)

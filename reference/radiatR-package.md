@@ -1,6 +1,27 @@
-# radiatR: Plot Tracks in Circular Space
+# radiatR: Analysis and Visualisation of Circular Arena Tracking Data
 
-Import, transform, and visualise trajectories recorded in circular
-arenas. The package provides utilities for reading tracking metadata,
-computing circular summary statistics, and rendering tidy ggplot2
-visualisations with concentric annotations.
+A complete pipeline for analysing animal orientation and movement in
+circular arenas. Reads data from 20+ tracking tools (EthoVision,
+DeepLabCut, SLEAP, TRex, ANY-maze, TrackMate, idtracker.ai, Ctrax, and
+others) via a unified dialect-based loader system, including
+multi-bodypart pose estimation with likelihood-weighted centroid.
+Derives per-trial heading directions using multiple rules
+(ring-crossing, distal point, pose body-axis, velocity-based, and more).
+Computes circular statistics including mean direction, resultant length,
+von Mises and wrapped Cauchy parametric fits, circular correlation
+(circular-linear and circular-circular), and multi-sample hypothesis
+tests (Watson-Williams, Rayleigh, and others) with multiple-comparison
+correction. Renders publication-quality ggplot2 track plots with
+overlaid rose diagrams, parametric density curves, and non-parametric
+kernel density estimates. Includes a browser-based graphical interface
+requiring no R coding via launch_app().
+
+## See also
+
+Useful links:
+
+- <https://johnkirwan.github.io/radiatR>
+
+- <https://github.com/JohnKirwan/radiatR>
+
+- Report bugs at <https://github.com/JohnKirwan/radiatR/issues>
