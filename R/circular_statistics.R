@@ -630,6 +630,72 @@ vonmises_fit <- function(hd, group_col = NULL, angle_col = "heading",
   do.call(rbind, rows)
 }
 
+# ---- wrappedcauchy_fit -------------------------------------------------------
+
+#' Fit a wrapped Cauchy distribution to per-group heading data
+#'
+#' Estimates the mean direction \eqn{\mu} and concentration \eqn{\rho} of a
+#' wrapped Cauchy distribution via maximum likelihood.  The wrapped Cauchy has
+#' heavier tails than the von Mises and is more appropriate for data with
+#' outliers, weak or noisy directionality, or when a von Mises fit looks
+#' visually poor on a rose diagram.
+#'
+#' \eqn{\rho = 0} is a uniform distribution (no preferred direction);
+#' \eqn{\rho = 1} is a point mass (perfect concentration).  Unlike von Mises
+#' \eqn{\kappa}, the wrapped Cauchy \eqn{\rho} is bounded to \eqn{[0, 1)}.
+#'
+#' Standard errors are not computed by \code{mle.wrappedcauchy}; check
+#' \code{convergence} is the \code{\link[stats]{optim}} return code (0 = fully
+#' converged; 1 = iteration limit reached but estimates are typically still
+#' reliable).  For uncertainty
+#' estimation use \code{\link{vonmises_fit}} with the same data and compare
+#' model fits visually via \code{\link{add_vonmises_density}} and
+#' \code{\link{add_wrappedcauchy_density}}.
+#'
+#' @param hd Data frame containing headings in radians.
+#' @param group_col Column(s) to group by.  \code{NULL} fits a single model.
+#' @param angle_col Name of the heading column.  Default \code{"heading"}.
+#' @return Data frame with columns \code{group_col} (if supplied), \code{mu}
+#'   (MLE mean direction, radians), \code{mu_deg} (degrees), \code{rho}
+#'   (concentration, 0--1), \code{convergence} (0 = converged), \code{n}.
+#' @seealso \code{\link{vonmises_fit}}, \code{\link{add_wrappedcauchy_density}}
+#' @export
+wrappedcauchy_fit <- function(hd, group_col = NULL, angle_col = "heading") {
+  stopifnot(is.data.frame(hd))
+  if (!angle_col %in% names(hd))
+    stop("wrappedcauchy_fit: column '", angle_col, "' not found")
+
+  .one <- function(sub) {
+    a <- as.numeric(sub[[angle_col]]); a <- a[is.finite(a)]; n <- length(a)
+    na_row <- data.frame(mu = NA_real_, mu_deg = NA_real_, rho = NA_real_,
+                         convergence = NA_integer_, n = n)
+    if (n < 2L) return(na_row)
+    fit <- tryCatch(
+      circular::mle.wrappedcauchy(
+        circular::circular(a, units = "radians", type = "angles")
+      ),
+      error = function(e) NULL
+    )
+    if (is.null(fit)) return(na_row)
+    mu <- as.numeric(fit$mu)
+    data.frame(mu          = mu,
+               mu_deg      = mu * 180 / pi,
+               rho         = as.numeric(fit$rho),
+               convergence = as.integer(fit$convergence),
+               n           = n)
+  }
+
+  if (is.null(group_col)) return(.one(hd))
+
+  groups <- unique(hd[[group_col]])
+  rows   <- lapply(groups, function(g) {
+    r <- .one(hd[hd[[group_col]] == g, , drop = FALSE])
+    r[[group_col]] <- g
+    r[, c(group_col, "mu", "mu_deg", "rho", "convergence", "n")]
+  })
+  do.call(rbind, rows)
+}
+
 # ---- test_uniformity ---------------------------------------------------------
 
 #' Per-group tests of circular uniformity
