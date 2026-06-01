@@ -2217,3 +2217,80 @@ add_angle_rose <- function(hd, bins = 12L, angle_col = "heading",
     inherit.aes = FALSE
   )
 }
+
+# ---- add_vonmises_density ----------------------------------------------------
+
+#' Overlay a fitted von Mises density curve on a radiate plot
+#'
+#' Evaluates the von Mises probability density on a fine angular grid and
+#' draws it as a closed polygon in the same Cartesian coordinate space used
+#' by \code{\link{radiate}} and \code{\link{add_angle_rose}}.  The curve
+#' peaks at \code{scale} so the two layers align when given matching
+#' \code{scale} values.
+#'
+#' @param fit Data frame from \code{\link{vonmises_fit}}, containing at least
+#'   \code{mu} and \code{kappa} columns.
+#' @param scale Maximum outer radius as a fraction of the unit circle.
+#'   Default \code{0.4} matches \code{add_angle_rose}.
+#' @param inner_r Inner radius; default \code{0}.
+#' @param group_col Column in \code{fit} for faceting; must match the
+#'   \code{panel_by} argument of the parent \code{radiate()} call.
+#' @param n_pts Angular evaluation points.  Default \code{360L}.
+#' @param colour Outline colour.  Default \code{"steelblue"}.
+#' @param linewidth Outline width.  Default \code{0.8}.
+#' @param fill Fill colour.  Default \code{NA} (outline only).
+#' @param alpha Opacity.  Default \code{0.8}.
+#' @return A \code{geom_polygon} layer, or \code{NULL} if \code{fit} is all
+#'   \code{NA}.
+#' @export
+add_vonmises_density <- function(fit, scale = 0.4, inner_r = 0,
+                                  group_col = NULL, n_pts = 360L,
+                                  colour = "steelblue", linewidth = 0.8,
+                                  fill = NA, alpha = 0.8) {
+  stopifnot(is.data.frame(fit))
+  miss <- setdiff(c("mu", "kappa"), names(fit))
+  if (length(miss))
+    stop("add_vonmises_density: fit must contain columns: ",
+         paste(miss, collapse = ", "),
+         " — generate with vonmises_fit()")
+
+  thetas <- seq(-pi, pi, length.out = n_pts + 1L)[seq_len(n_pts)]
+
+  .ring <- function(mu, kappa, grp) {
+    if (is.na(mu) || is.na(kappa) || kappa < 0) return(NULL)
+    mu_c <- circular::circular(mu,     units = "radians", type = "angles")
+    th_c <- circular::circular(thetas, units = "radians", type = "angles")
+    d     <- as.numeric(circular::dvonmises(th_c, mu = mu_c, kappa = kappa))
+    d_max <- max(d, na.rm = TRUE)
+    if (!is.finite(d_max) || d_max <= 0) return(NULL)
+    r <- inner_r + scale * d / d_max
+    data.frame(x = r * cos(thetas), y = r * sin(thetas),
+               .vm_grp = grp, stringsAsFactors = FALSE)
+  }
+
+  if (!is.null(group_col)) {
+    if (!group_col %in% names(fit))
+      stop("add_vonmises_density: '", group_col, "' not found in fit")
+    polys <- do.call(rbind, lapply(seq_len(nrow(fit)), function(i) {
+      w <- .ring(fit$mu[i], fit$kappa[i],
+                 paste0(as.character(fit[[group_col]][i]), "_vm"))
+      if (is.null(w)) return(NULL)
+      w[[group_col]] <- fit[[group_col]][i]
+      w
+    }))
+  } else {
+    polys <- .ring(fit$mu[1L], fit$kappa[1L], "vm")
+  }
+
+  if (is.null(polys)) return(NULL)
+
+  ggplot2::geom_polygon(
+    data    = polys,
+    mapping = ggplot2::aes(x = x, y = y, group = .vm_grp),
+    colour      = colour,
+    linewidth   = linewidth,
+    fill        = fill,
+    alpha       = alpha,
+    inherit.aes = FALSE
+  )
+}

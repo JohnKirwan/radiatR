@@ -1109,3 +1109,47 @@ test_that("radiate without clock meta uses @cols$x as before", {
   p <- radiate(ts, show_arrow = FALSE, show_labels = FALSE)
   expect_false(".disp_x" %in% names(p$data))
 })
+
+# ---- add_vonmises_density ----------------------------------------------------
+
+test_that("add_vonmises_density returns a ggplot2 layer", {
+  fit <- data.frame(mu = 0, kappa = 3, n = 30L)
+  layer <- add_vonmises_density(fit)
+  expect_s3_class(layer, "LayerInstance")
+})
+
+test_that("add_vonmises_density polygon data has x, y, .vm_grp columns", {
+  fit <- data.frame(mu = pi / 4, kappa = 3, n = 30L)
+  layer <- add_vonmises_density(fit, n_pts = 36L)
+  expect_true(all(c("x", "y", ".vm_grp") %in% names(layer$data)))
+  expect_equal(nrow(layer$data), 36L)
+})
+
+test_that("add_vonmises_density peak radius equals scale", {
+  # Use a synthetic fit with known kappa to avoid degenerate identical angles
+  fit   <- data.frame(mu = 0, kappa = 3, n = 50L)
+  layer <- add_vonmises_density(fit, scale = 0.3, n_pts = 360L)
+  r     <- sqrt(layer$data$x^2 + layer$data$y^2)
+  expect_equal(max(r), 0.3, tolerance = 1e-3)
+})
+
+test_that("add_vonmises_density peak is near mu", {
+  fit   <- data.frame(mu = pi / 2, kappa = 4, n = 50L)
+  layer <- add_vonmises_density(fit, n_pts = 360L)
+  idx   <- which.max(sqrt(layer$data$x^2 + layer$data$y^2))
+  peak_angle <- atan2(layer$data$y[idx], layer$data$x[idx])
+  expect_equal(peak_angle, pi / 2, tolerance = 0.05)
+})
+
+test_that("add_vonmises_density returns NULL for NA fit", {
+  fit <- data.frame(mu = NA_real_, kappa = NA_real_, n = 1L)
+  expect_null(add_vonmises_density(fit))
+})
+
+test_that("add_vonmises_density handles group_col for faceting", {
+  fit <- data.frame(id = c("A", "B"),
+                    mu = c(0, pi / 2), kappa = c(3, 3), n = c(30L, 30L))
+  layer <- add_vonmises_density(fit, group_col = "id", n_pts = 36L)
+  expect_true("id" %in% names(layer$data))
+  expect_equal(length(unique(layer$data$id)), 2L)
+})
