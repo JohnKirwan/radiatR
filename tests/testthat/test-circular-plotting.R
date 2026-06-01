@@ -1295,3 +1295,66 @@ test_that("add_critical_r higher alpha gives smaller circle", {
 test_that("add_critical_r returns NULL when n < 2", {
   expect_null(add_critical_r(data.frame(heading = 0.5)))
 })
+# ---- add_critical_v_line -----------------------------------------------------
+
+test_that("add_critical_v_line chord foot is at distance c along mu0", {
+  hd <- data.frame(heading = rnorm(50, 0, 0.5))
+  layer <- add_critical_v_line(hd, mu0 = 0)
+  ch <- layer[[1]]$data
+  mid_x <- (ch$x + ch$xend) / 2
+  mid_y <- (ch$y + ch$yend) / 2
+  c_exp <- stats::qnorm(0.95) / sqrt(2 * 50)
+  expect_equal(mid_x, c_exp, tolerance = 1e-6)
+  expect_equal(mid_y, 0,     tolerance = 1e-6)
+})
+
+test_that("add_critical_v_line endpoints lie on the unit circle", {
+  hd <- data.frame(heading = rnorm(40, 0, 0.5))
+  ch <- add_critical_v_line(hd, mu0 = pi / 3)[[1]]$data
+  expect_equal(sqrt(ch$x^2 + ch$y^2),       1, tolerance = 1e-6)
+  expect_equal(sqrt(ch$xend^2 + ch$yend^2), 1, tolerance = 1e-6)
+})
+
+test_that("add_critical_v_line mu0 rotates the chord", {
+  hd <- data.frame(heading = rnorm(50, 0, 0.5))
+  ch <- add_critical_v_line(hd, mu0 = pi / 2)[[1]]$data
+  c_exp <- stats::qnorm(0.95) / sqrt(2 * 50)
+  expect_equal((ch$x + ch$xend) / 2, 0,     tolerance = 1e-6)
+  expect_equal((ch$y + ch$yend) / 2, c_exp, tolerance = 1e-6)
+})
+
+test_that("add_critical_v_line show_region adds a polygon layer", {
+  hd <- data.frame(heading = rnorm(40, 0, 0.5))
+  no_region <- add_critical_v_line(hd, mu0 = 0, show_region = FALSE)
+  with_region <- add_critical_v_line(hd, mu0 = 0, show_region = TRUE)
+  expect_length(no_region, 1L)
+  expect_length(with_region, 2L)
+})
+
+test_that("add_critical_v_line per_group: smaller n is further from centre", {
+  hd <- data.frame(
+    grp     = rep(c("A", "B"), times = c(15, 60)),
+    heading = rnorm(75, 0, 0.5)
+  )
+  ch <- add_critical_v_line(hd, mu0 = 0, group_col = "grp",
+                            per_group = TRUE)[[1]]$data
+  foot <- tapply(seq_len(nrow(ch)), ch$grp,
+                 function(i) (ch$x[i] + ch$xend[i]) / 2)
+  expect_gt(foot[["A"]], foot[["B"]])   # n=15 line further out than n=60
+})
+
+test_that("add_critical_v_line requires mu0", {
+  hd <- data.frame(heading = rnorm(30, 0, 0.5))
+  expect_error(add_critical_v_line(hd), "mu0")
+})
+
+test_that("add_critical_v_line returns NULL when n < 2", {
+  hd <- data.frame(heading = 0.5)  # n = 1, no boundary
+  expect_null(add_critical_v_line(hd, mu0 = 0))
+})
+
+test_that("add_critical_v_line returns NULL when boundary exceeds unit circle", {
+  # tiny alpha pushes c = z / sqrt(2n) beyond 1 for small n
+  hd <- data.frame(heading = rnorm(3, 0, 0.5))  # n = 3
+  expect_null(add_critical_v_line(hd, mu0 = 0, alpha = 1e-6))
+})

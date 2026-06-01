@@ -2600,3 +2600,142 @@ add_critical_r <- function(hd, alpha = 0.05,
     linetype = linetype, linewidth = linewidth, inherit.aes = FALSE
   )
 }
+
+# ---- add_critical_v_line -----------------------------------------------------
+
+#' Add a V-test significance boundary to a radiate plot
+#'
+#' Draws the decision boundary for the Rayleigh V test against a specified
+#' direction \code{mu0}.  Unlike the Rayleigh test (a circle, see
+#' \code{\link{add_critical_r}}), the V test privileges one direction, so its
+#' boundary is a \emph{straight line} perpendicular to \code{mu0} at distance
+#' \eqn{c = z_\alpha / \sqrt{2n}} from the centre.  A mean-direction arrow
+#' (\code{\link{add_heading_arrow}}) is V-significant if and only if its tip
+#' falls on the far side of this line -- equivalently, if its projection onto
+#' \code{mu0} exceeds \eqn{c}.
+#'
+#' The line is clipped to the unit circle (drawn as a chord).  With
+#' \code{show_region = TRUE} the circular segment beyond the line -- the
+#' rejection region -- is shaded.
+#'
+#' Sample size \code{n} is taken per group from \code{hd}, with the same
+#' options as \code{\link{add_critical_r}}: per-panel when faceting,
+#' per-group when \code{per_group = TRUE}, or a single conservative boundary
+#' (smallest \code{n}, largest \eqn{c}) otherwise.
+#'
+#' @param hd Data frame of headings with a heading column (radians).
+#' @param mu0 Hypothesised direction in radians (unit-circle convention).
+#' @param alpha Significance level.  Default \code{0.05}.
+#' @param angle_col Heading column name.  Default \code{"heading"}.
+#' @param group_col Column identifying groups.  \code{NULL} pools all rows.
+#' @param per_group Logical.  Draw one boundary per group (\code{TRUE}) or a
+#'   single conservative boundary (\code{FALSE}, default).  Ignored when
+#'   faceting, where each panel gets its own boundary.
+#' @param show_region Logical; shade the rejection segment.  Default
+#'   \code{FALSE}.
+#' @param colour Line colour.  Default \code{"firebrick"}.
+#' @param linetype Line type.  Default \code{"dashed"}.
+#' @param linewidth Line width.  Default \code{0.6}.
+#' @param region_fill Fill colour for the rejection region.  Default
+#'   \code{"firebrick"}.
+#' @param region_alpha Fill opacity.  Default \code{0.08}.
+#' @param n_pts Points approximating the rejection arc.  Default \code{100L}.
+#' @return A list of ggplot2 layers, or \code{NULL} if no group has a boundary
+#'   inside the unit circle.
+#' @seealso \code{\link{add_critical_r}}, \code{\link{add_heading_arrow}}
+#' @export
+add_critical_v_line <- function(hd, mu0, alpha = 0.05,
+                                 angle_col = "heading", group_col = NULL,
+                                 per_group = FALSE, show_region = FALSE,
+                                 colour = "firebrick", linetype = "dashed",
+                                 linewidth = 0.6, region_fill = "firebrick",
+                                 region_alpha = 0.08, n_pts = 100L) {
+  stopifnot(is.data.frame(hd), alpha > 0, alpha < 1)
+  if (missing(mu0)) stop("add_critical_v_line: 'mu0' (hypothesised direction) is required")
+  if (!angle_col %in% names(hd))
+    stop("add_critical_v_line: column '", angle_col, "' not found")
+
+  z <- stats::qnorm(1 - alpha)
+  .c_of_n <- function(n) if (n < 2L) NA_real_ else z / sqrt(2 * n)
+
+  # Geometry for one boundary at perpendicular distance c along mu0.
+  # Returns list(chord = data.frame(x,y,xend,yend), region = data.frame(x,y)).
+  .geom <- function(cc, grp) {
+    if (is.na(cc) || cc >= 1) return(NULL)        # line outside the disc
+    half  <- sqrt(1 - cc^2)                        # half-chord length
+    ux <- cos(mu0); uy <- sin(mu0)                # along mu0
+    px <- -uy;      py <- ux                       # perpendicular (chord dir)
+    foot <- c(cc * ux, cc * uy)
+    e1 <- foot + half * c(px, py)
+    e2 <- foot - half * c(px, py)
+    chord <- data.frame(x = e1[1], y = e1[2], xend = e2[1], yend = e2[2],
+                        .v_grp = grp, stringsAsFactors = FALSE)
+
+    region <- NULL
+    if (show_region) {
+      span <- acos(cc)                             # arc half-width about mu0
+      phis <- seq(mu0 - span, mu0 + span, length.out = n_pts)
+      # arc points on unit circle, then close along the chord back to start
+      region <- data.frame(
+        x = c(cos(phis), e2[1], e1[1]),
+        y = c(sin(phis), e2[2], e1[2]),
+        .v_grp = grp, stringsAsFactors = FALSE
+      )
+    }
+    list(chord = chord, region = region)
+  }
+
+  # Collect (c, group-key) pairs to draw
+  if (is.null(group_col)) {
+    keys <- list(list(cc = .c_of_n(sum(is.finite(hd[[angle_col]]))),
+                      g = "all", facet = NULL))
+  } else {
+    if (!group_col %in% names(hd))
+      stop("add_critical_v_line: '", group_col, "' not found")
+    groups <- unique(hd[[group_col]])
+    ns <- vapply(groups, function(g)
+      sum(is.finite(hd[[angle_col]][hd[[group_col]] == g])), integer(1L))
+    if (per_group) {
+      keys <- lapply(seq_along(groups), function(i)
+        list(cc = .c_of_n(ns[i]), g = as.character(groups[i]),
+             facet = groups[i]))
+    } else {
+      n_min <- min(ns[ns >= 2L], na.rm = TRUE)
+      if (!is.finite(n_min)) return(NULL)
+      keys <- list(list(cc = .c_of_n(n_min), g = "conservative", facet = NULL))
+    }
+  }
+
+  geoms <- lapply(keys, function(k) {
+    g <- .geom(k$cc, k$g)
+    if (is.null(g)) return(NULL)
+    if (!is.null(k$facet)) {
+      g$chord[[group_col]] <- k$facet
+      if (!is.null(g$region)) g$region[[group_col]] <- k$facet
+    }
+    g
+  })
+  geoms <- geoms[!vapply(geoms, is.null, logical(1L))]
+  if (!length(geoms)) return(NULL)
+
+  chords  <- do.call(rbind, lapply(geoms, `[[`, "chord"))
+  regions <- do.call(rbind, lapply(geoms, `[[`, "region"))
+
+  layers <- list()
+  if (!is.null(regions) && nrow(regions)) {
+    layers[[length(layers) + 1L]] <- ggplot2::geom_polygon(
+      data = regions,
+      mapping = ggplot2::aes(x = x, y = y, group = .v_grp),
+      fill = region_fill, alpha = region_alpha, colour = NA,
+      inherit.aes = FALSE
+    )
+  }
+  layers[[length(layers) + 1L]] <- ggplot2::geom_segment(
+    data = chords,
+    mapping = ggplot2::aes(x = x, y = y, xend = xend, yend = yend,
+                           group = .v_grp),
+    colour = colour, linetype = linetype, linewidth = linewidth,
+    inherit.aes = FALSE
+  )
+  layers
+}
