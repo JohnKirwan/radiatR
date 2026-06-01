@@ -204,6 +204,8 @@ Per-trial heading markers, vectors, and mean-direction arrows.
   : Render a pre-computed circular interval arc on a radial plot
 - [`add_critical_r()`](https://johnkirwan.github.io/radiatR/reference/add_critical_r.md)
   : Add a critical resultant-length circle to a radiate plot
+- [`add_critical_v_line()`](https://johnkirwan.github.io/radiatR/reference/add_critical_v_line.md)
+  : Add a V-test significance boundary to a radiate plot
 - [`gg_add_circ_mean()`](https://johnkirwan.github.io/radiatR/reference/gg_add_circ_mean.md)
   : Add mean direction arrows to a ggplot polar plot
 - [`circ_mean_segments()`](https://johnkirwan.github.io/radiatR/reference/circ_mean_segments.md)
@@ -330,6 +332,8 @@ Any remaining exported topics.
   radiate plot
 - [`add_critical_r()`](https://johnkirwan.github.io/radiatR/reference/add_critical_r.md)
   : Add a critical resultant-length circle to a radiate plot
+- [`add_critical_v_line()`](https://johnkirwan.github.io/radiatR/reference/add_critical_v_line.md)
+  : Add a V-test significance boundary to a radiate plot
 - [`add_heading_arrow()`](https://johnkirwan.github.io/radiatR/reference/add_heading_arrow.md)
   : Compute a circular mean arrow and add it to a radial plot in one
   step
