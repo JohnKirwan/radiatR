@@ -1,7 +1,7 @@
 Package: radiatR
 Type: Package
 Title: Plot Tracks in Circular Space
-Version: 0.1.0
+Version: 0.2.0
 Author: John D. Kirwan
 Maintainer: John D. Kirwan <john@jkirwan.org>
 Description: Import, transform, and visualise trajectories recorded in circular
@@ -11,6 +11,7 @@ Description: Import, transform, and visualise trajectories recorded in circular
 License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
+LazyDataCompression: gzip
 Depends: R (>= 4.1.0)
 Imports: 
     rlang,
@@ -36,7 +37,8 @@ Suggests:
     R.matlab,
     xml2,
     shiny (>= 1.7.0),
-    bslib (>= 0.5.0)
+    bslib (>= 0.5.0),
+    pkgload
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Collate: 
@@ -51,6 +53,7 @@ Collate:
     'globals.R'
     'headings.R'
     'headings_frame.R'
+    'launch_app.R'
     'loaders.R'
     'radiatR-package.R'
     'simulate_tracks.R'

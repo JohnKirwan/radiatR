@@ -36,3 +36,17 @@
 #'   files produced with a custom video-tracking workflow; coordinates
 #'   normalised with \pkg{radiatR}.
 "plividus"
+
+#' *Paracentrotus lividus* visual acuity trajectory tibble (urchin tracks)
+#'
+#' A tidy long-form tibble of 19 505 rows from the same *P. lividus* visual
+#' acuity experiment as \code{\link{plividus}}, retained for backwards
+#' compatibility.  Each row is one frame from one trial.
+#'
+#' @format A tibble with 23 columns including \code{frame}, \code{x},
+#'   \code{y}, \code{trans_x}, \code{trans_y}, \code{rel_x}, \code{rel_y},
+#'   \code{abs_theta}, \code{rel_theta}, \code{arc}, \code{type},
+#'   \code{obstacle}, and \code{id}.
+#'
+#' @source Same experiment as \code{\link{plividus}}.
+"urchin_tracks"

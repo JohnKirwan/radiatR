@@ -67,9 +67,9 @@ radiate(data, ...)
 
 \item{...}{Additional arguments forwarded to [draw_tracks()].}
 
-\item{x_col}{Name of the column mapped to the x aesthetic.}
+\item{x_col}{Name of the x-coordinate column.  Default \code{"rel_x"}.}
 
-\item{y_col}{Name of the column mapped to the y aesthetic.}
+\item{y_col}{Name of the y-coordinate column.  Default \code{"rel_y"}.}
 
 \item{geom}{Geom specification passed to [draw_tracks()].}
 
@@ -110,6 +110,8 @@ text and the in-panel `"inside"` annotation.}
 \item{show_labels}{Whether to place labels at the perimeter.}
 
 \item{label_col}{Column containing label values.}
+
+\item{label_size}{Text size for perimeter labels.}
 
 \item{label_padding}{Multiplier applied to the unit circle when placing labels.}
 

@@ -13,6 +13,7 @@ TrajSet_read(
   fps = NULL,
   normalize_xy = TRUE,
   dialect = NULL,
+  dialect_args = list(),
   mutate = NULL,
   keep = NULL,
   drop = NULL,
@@ -30,6 +31,7 @@ TrajSet_read(
   fps = NULL,
   normalize_xy = TRUE,
   dialect = NULL,
+  dialect_args = list(),
   mutate = NULL,
   keep = NULL,
   drop = NULL,
@@ -54,6 +56,9 @@ TrajSet_read(
 \item{normalize_xy}{TRUE to normalize (x,y) to unit circle when both provided}
 
 \item{dialect}{optional registered dialect name to pre-process raw input}
+
+\item{dialect_args}{named list of extra arguments forwarded to the dialect
+function (e.g. \code{list(bodypart = c("head","thorax"))})}
 
 \item{mutate}{list of transformations applied after reading (named functions or formulas)}
 

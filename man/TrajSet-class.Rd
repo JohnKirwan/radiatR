@@ -40,6 +40,10 @@ TrajSet(
 
 \item{x, y}{Optional cartesian columns; if provided, converted to unit circle and angle inferred}
 
+\item{rel_x, rel_y}{Optional column names for pre-transformed relative
+coordinates (arena-centred, unit-circle scaled).  Both must be supplied
+together or not at all.}
+
 \item{angle_unit}{Units of provided angle ("radians" or "degrees"); stored internally as radians}
 
 \item{weight}{Optional weight column name}

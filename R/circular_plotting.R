@@ -1478,7 +1478,6 @@ setMethod("gg_traj", "TrajSet",
 
 #' Create geom layers for Cartesian track coordinates
 #'
-#' @inheritParams ggplot2::geom_path
 #' @param data Data frame that will be plotted.
 #' @param x_col Name of the column mapped to the x aesthetic.
 #' @param y_col Name of the column mapped to the y aesthetic.
@@ -1628,10 +1627,6 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #' `TrajSet`. When a `TrajSet` is supplied, column mappings are inferred from
 #' the object and handed off to the plotting helpers.
 #'
-#' @inheritParams draw_tracks
-#' @inheritParams directedness_arrow
-#' @inheritParams add_ticks
-#' @inheritParams sparse_theme
 #' @param data Data frame or `TrajSet`.
 #' @param geom Geom specification passed to [draw_tracks()].
 #' @param group_col Optional column for grouping aesthetics.
@@ -1643,8 +1638,11 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   `c("red","blue","green")`). When `panel_by` is set the cycle restarts
 #'   independently within each panel. Mutually exclusive with `colour_col`.
 #' @param style Either `"classic"` (default) or `"minimal"`.
+#' @param x_col Name of the x-coordinate column.  Default \code{"rel_x"}.
+#' @param y_col Name of the y-coordinate column.  Default \code{"rel_y"}.
 #' @param show_labels Whether to place labels at the perimeter.
 #' @param label_col Column containing label values.
+#' @param label_size Text size for perimeter labels.
 #' @param label_padding Multiplier applied to the unit circle when placing labels.
 #' @param label_use_repel Use `ggrepel::geom_text_repel()` when available.
 #' @param show_arrow Whether to draw a mean resultant arrow from the centre.

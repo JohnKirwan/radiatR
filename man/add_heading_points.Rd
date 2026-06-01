@@ -15,12 +15,14 @@ add_heading_points(
 \arguments{
 \item{headings_df}{Data frame with a `heading` column (angles in radians).}
 
-\item{colour_col}{Optional name of a column in `headings_df` to map to the
-colour aesthetic. Ignored when `colour` is also supplied.}
+\item{colour_col}{Name of a column in `headings_df` to map to the colour
+aesthetic. When `NULL` (default), the value of
+`attr(headings_df, "colour_col")` is used if set — so heading markers
+automatically inherit the colour mapping from the associated trajectory
+plot when that attribute is present. Ignored when `colour` is supplied.}
 
-\item{colour}{Fixed colour. When `NULL` (default) and `colour_col` is set,
-colour is mapped from that column; when `NULL` and no `colour_col`, draws
-in `"black"`. Supplying any colour string always overrides `colour_col`.}
+\item{colour}{Fixed colour string. Overrides `colour_col` when supplied;
+when `NULL` and no `colour_col` resolves, defaults to `"black"`.}
 
 \item{size}{Point size passed to `geom_point`.}
 

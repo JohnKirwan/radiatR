@@ -359,6 +359,8 @@ TrajSet_read_format <- function(x, format, ...) {
 #' @param fps frames-per-second when time_type = "frames"
 #' @param normalize_xy TRUE to normalize (x,y) to unit circle when both provided
 #' @param dialect optional registered dialect name to pre-process raw input
+#' @param dialect_args named list of extra arguments forwarded to the dialect
+#'   function (e.g. \code{list(bodypart = c("head","thorax"))})
 #' @param mutate list of transformations applied after reading (named functions or formulas)
 #' @param keep only keep these columns (NULL = keep all)
 #' @param drop drop these columns after mapping
@@ -500,6 +502,8 @@ TrajSet_read <- function(x,
 #' @param fps frames-per-second when time_type = "frames"
 #' @param normalize_xy TRUE to normalize (x,y) to unit circle when both provided
 #' @param dialect optional registered dialect name to pre-process raw input
+#' @param dialect_args named list of extra arguments forwarded to the dialect
+#'   function (e.g. \code{list(bodypart = c("head","thorax"))})
 #' @param mutate list of transformations applied after reading (named functions or formulas)
 #' @param keep only keep these columns (NULL = keep all)
 #' @param drop drop these columns after mapping
@@ -728,8 +732,11 @@ TrajSet_read_dir <- function(dir, pattern = "\\.(csv|tsv|txt|parquet|feather)$",
 #'   column names in `file_tbl` to column names present in `manifest`. When
 #'   `NULL`, all columns aside from `file` are carried over with the same names.
 #' @param mapping Optional explicit column mapping passed to [TrajSet_read()].
-#' @param angle_unit, time_type, tz, fps, normalize_xy, dialect, keep, drop, ...
-#'   Additional parameters forwarded to [TrajSet_read()].
+#' @param angle_unit,time_type,tz,fps Passed to [TrajSet_read()].
+#' @param normalize_xy Logical; normalise x/y to unit circle. Default \code{TRUE}.
+#' @param dialect Optional dialect name; passed to [TrajSet_read()].
+#' @param keep,drop Column selection vectors passed to [TrajSet_read()].
+#' @param ... Additional arguments forwarded to [TrajSet_read()].
 #'
 #' @return A `TrajSet` with metadata columns replicated for each observation.
 #' @export

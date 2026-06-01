@@ -5,3 +5,9 @@
 ^LICENSE\.md$
 ^doc$
 ^Meta$
+^\.claude$
+^CLAUDE\.md$
+^data-raw$
+^docs$
+^milli_trials$
+^docs/superpowers$

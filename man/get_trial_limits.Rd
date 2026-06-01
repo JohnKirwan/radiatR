@@ -24,16 +24,16 @@ frames in the video.}
 
 \item{vid_num}{Index of the current video within `file_tbl`.}
 
-\item{midpoint}{Character flag indicating whether stimulus angles should be
+\item{midpoint}{Character flag indicating whether reference angles should be
 shifted to the midpoint (`"midpoint"`, default) or left as-is.}
 }
 \value{
-A tibble with one row per trial containing trial limits and stimulus
+A tibble with one row per trial containing trial limits and reference
   metadata.
 }
 \description{
 Uses paired landmark coordinates to determine the temporal bounds of each
-trial, the arena origin, and the stimulus heading. Additional metadata from
+trial, the arena origin, and the reference heading. Additional metadata from
 `file_tbl` is merged into the result. Accepts landmark and track data either
 as data frames or as `TrajSet` objects.
 }
