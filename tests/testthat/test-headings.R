@@ -428,3 +428,70 @@ test_that("ellipse_axis errors when theta column absent", {
     "not found"
   )
 })
+
+# ---- frame_select = "all" ----------------------------------------------------
+
+test_that("bodypart_axis frame_select='all' returns one row per frame", {
+  df <- data.frame(id = "t1", time = 1:5, x = seq(0, .4, .1), y = rep(0, 5),
+                   head_x = seq(0, .4, .1), head_y = rep(.1, 5),
+                   thorax_x = seq(0, .4, .1), thorax_y = rep(0, 5))
+  ts <- TrajSet_read(df, mapping = list(id="id",time="time",x="x",y="y"),
+                     keep = c("head_x","head_y","thorax_x","thorax_y"),
+                     normalize_xy = FALSE)
+  hd <- derive_headings(ts, rule = "bodypart_axis",
+                        anterior = "head", posterior = "thorax",
+                        frame_select = "all",
+                        coords = "absolute", angle_convention = "unit_circle")
+  expect_equal(nrow(hd), 5L)
+  expect_true(all(c("id","time","heading") %in% names(hd)))
+  expect_equal(hd$heading, rep(pi/2, 5), tolerance = 1e-9)
+})
+
+test_that("ellipse_axis frame_select='all' returns one row per frame", {
+  df <- data.frame(id = "t1", time = 1:4, x = 1:4, y = rep(0,4),
+                   theta = rep(pi/3, 4))
+  ts <- TrajSet_read(df, mapping = list(id="id",time="time",x="x",y="y"),
+                     normalize_xy = FALSE)
+  hd <- derive_headings(ts, rule = "ellipse_axis", frame_select = "all",
+                        coords = "absolute", angle_convention = "unit_circle")
+  expect_equal(nrow(hd), 4L)
+  expect_equal(hd$heading, rep(pi/3, 4), tolerance = 1e-9)
+})
+
+# ---- pose_to_headings --------------------------------------------------------
+
+test_that("pose_to_headings computes bodypart axis heading for all frames", {
+  df <- data.frame(id = "t1", frame = 1:4,
+                   head_x = c(0,.1,.2,.3), head_y = rep(.1, 4),
+                   thorax_x = c(0,.1,.2,.3), thorax_y = rep(0, 4))
+  hd <- pose_to_headings(df, anterior = "head", posterior = "thorax")
+  expect_equal(nrow(hd), 4L)
+  expect_equal(hd$heading, rep(pi/2, 4), tolerance = 1e-9)
+  expect_equal(attr(hd, "angle_convention"), "unit_circle")
+})
+
+test_that("pose_to_headings uses theta_col directly", {
+  df <- data.frame(trial = "A", t = 1:3, theta = c(0, pi/4, pi/2))
+  hd <- pose_to_headings(df, theta_col = "theta",
+                         id_col = "trial", time_col = "t")
+  expect_equal(hd$id, rep("A", 3))
+  expect_equal(hd$heading, c(0, pi/4, pi/2), tolerance = 1e-9)
+})
+
+test_that("pose_to_headings handles no id/time columns by defaulting", {
+  df <- data.frame(head_x = c(1,1), head_y = c(0,0),
+                   tail_x = c(0,0), tail_y = c(0,0))
+  hd <- pose_to_headings(df, anterior = "head", posterior = "tail")
+  expect_equal(hd$id, rep("1", 2))
+  expect_equal(hd$time, 1:2)
+})
+
+test_that("pose_to_headings clock convention flips axis correctly", {
+  df <- data.frame(head_x = 0, head_y = 1, tail_x = 0, tail_y = 0)
+  hd_uc <- pose_to_headings(df, anterior="head", posterior="tail",
+                             angle_convention="unit_circle")
+  hd_cl <- pose_to_headings(df, anterior="head", posterior="tail",
+                             angle_convention="clock")
+  expect_equal(hd_uc$heading, pi/2, tolerance=1e-9)  # pointing East
+  expect_equal(hd_cl$heading, 0,    tolerance=1e-9)  # pointing North = 0 in clock
+})
