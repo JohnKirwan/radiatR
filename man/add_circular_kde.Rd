@@ -61,7 +61,7 @@ multimodal data naturally.
 }
 \details{
 The \code{bw} parameter is a \emph{concentration} parameter (analogous to
-\eqn{\kappa} of the von Mises kernel) — larger values produce a sharper,
+\eqn{\kappa} of the von Mises kernel) -- larger values produce a sharper,
 data-following estimate; smaller values over-smooth towards uniform.
 \code{NULL} (default) selects bandwidth automatically via
 \code{\link[circular]{bw.nrd.circular}}.

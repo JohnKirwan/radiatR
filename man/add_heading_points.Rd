@@ -17,7 +17,7 @@ add_heading_points(
 
 \item{colour_col}{Name of a column in `headings_df` to map to the colour
 aesthetic. When `NULL` (default), the value of
-`attr(headings_df, "colour_col")` is used if set — so heading markers
+`attr(headings_df, "colour_col")` is used if set -- so heading markers
 automatically inherit the colour mapping from the associated trajectory
 plot when that attribute is present. Ignored when `colour` is supplied.}
 

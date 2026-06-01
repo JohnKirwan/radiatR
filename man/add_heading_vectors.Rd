@@ -17,7 +17,7 @@ and `y_inner`.}
 
 \item{colour_col}{Name of a column in `headings_df` to map to the colour
 aesthetic. When `NULL` (default), the value of
-`attr(headings_df, "colour_col")` is used if set — so vectors
+`attr(headings_df, "colour_col")` is used if set -- so vectors
 automatically inherit the colour mapping from the associated trajectory
 plot when that attribute is present. Ignored when `colour` is supplied.}
 

@@ -43,7 +43,7 @@ circ_summary(
 data.frame(id, n, t_start, t_end, mean_dir, resultant_R, kappa)
 
 A `data.frame` with columns `id`, `n`, `t_start`, `t_end`,
-  `mean_dir` (radians, 0 to 2π), `resultant_R` (0–1), and `kappa`
+  `mean_dir` (radians, 0 to 2pi), `resultant_R` (0--1), and `kappa`
   (von Mises concentration; `NA` when estimation fails).
 }
 \description{

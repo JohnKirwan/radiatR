@@ -22,7 +22,7 @@ Tidy data frame.  Omnibus result has columns \code{n_groups},
   Pairwise result additionally has \code{group1} and \code{group2}.
 }
 \description{
-Wraps \code{\link[circular]{watson.williams.test}} — the circular analogue
+Wraps \code{\link[circular]{watson.williams.test}} -- the circular analogue
 of the parametric \emph{F}-test for equal means.  Assumes von Mises-
 distributed data with equal concentrations across groups; if concentrations
 differ substantially or the distribution is non-von-Mises, consider a

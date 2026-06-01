@@ -19,7 +19,7 @@
 #'   (0 = North, clockwise).
 #'
 #' @return A `data.frame` with columns `id`, `n`, `t_start`, `t_end`,
-#'   `mean_dir` (radians, 0 to 2π), `resultant_R` (0–1), and `kappa`
+#'   `mean_dir` (radians, 0 to 2pi), `resultant_R` (0--1), and `kappa`
 #'   (von Mises concentration; `NA` when estimation fails).
 #'
 #' @examples
@@ -115,13 +115,13 @@ setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")
 #' to any circular arena experiment where spatial dwell time is of interest
 #' (water maze, open-field, Drosophila preference assay, etc.).
 #'
-#' The target quadrant (Q1) is centred on `target_angle`; Q2–Q4 follow
+#' The target quadrant (Q1) is centred on `target_angle`; Q2--Q4 follow
 #' counter-clockwise. Observations outside `max(ring_breaks)` are excluded from
 #' both counts and the proportion denominator.
 #'
 #' @param x A [`TrajSet`] object with x/y (or rel_x/rel_y) columns registered.
 #' @param target_angle Numeric. Radians. Direction of the target zone from the
-#'   arena centre. Q1 spans ±45° around this angle.
+#'   arena centre. Q1 spans +/-45\u00b0 around this angle.
 #' @param target_radius Numeric. Accepted for API symmetry with
 #'   [count_goal_entries()] but not used in zone assignment. Default `1`.
 #' @param ring_breaks Numeric vector. Annular ring boundaries, must start at
@@ -285,7 +285,7 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 }
 
 # ---------------------------------------------------------------------------
-# circ_summarise — tidy grouped circular summary
+# circ_summarise -- tidy grouped circular summary
 
 .circ_summarise_one <- function(angles, stats, angle_convention, coords) {
   angles <- angles[is.finite(angles)]
@@ -333,11 +333,11 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 #' @param data A data frame or grouped tibble.
 #' @param col Unquoted or quoted name of the column containing angles.
 #' @param units Units of the angle column: \code{"radians"} or
-#'   \code{"degrees"}. No default — must be specified explicitly. Values are
+#'   \code{"degrees"}. No default -- must be specified explicitly. Values are
 #'   converted to radians internally before computation; output is always
 #'   in radians (\code{mean_dir}) or degrees (\code{mean_dir_deg}).
 #'   A warning is issued when the value range appears inconsistent with the
-#'   declared units (e.g. values > 2π when \code{units = "radians"}).
+#'   declared units (e.g. values > 2pi when \code{units = "radians"}).
 #'   Suppress range warnings with
 #'   \code{options(radiatR.check_units = FALSE)}.
 #' @param .by Character vector of grouping column names. Overrides any
@@ -520,7 +520,7 @@ sector_summary <- function(hd, sectors = 8L, group_col = NULL,
     bk <- sort(unique(c(-pi, as.numeric(sectors), pi)))
   }
   mids   <- (head(bk, -1L) + tail(bk, -1L)) / 2
-  labels <- sprintf("%.0f°", round(mids * 180 / pi))
+  labels <- sprintf("%.0f\u00b0", round(mids * 180 / pi))
 
   .wrap <- function(a) { a <- a %% (2*pi); a[a > pi] <- a[a > pi] - 2*pi; a }
 
@@ -709,7 +709,7 @@ test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
 
 #' Test whether groups share the same mean direction (Watson-Williams)
 #'
-#' Wraps \code{\link[circular]{watson.williams.test}} — the circular analogue
+#' Wraps \code{\link[circular]{watson.williams.test}} -- the circular analogue
 #' of the parametric \emph{F}-test for equal means.  Assumes von Mises-
 #' distributed data with equal concentrations across groups; if concentrations
 #' differ substantially or the distribution is non-von-Mises, consider a
@@ -787,7 +787,7 @@ test_mean_directions <- function(hd, group_col, angle_col = "heading",
 #'   von Mises \eqn{\kappa} across groups (\code{equal.kappa.test}).  Returns
 #'   a chi-squared statistic with \eqn{k-1} degrees of freedom.}
 #'   \item{\code{parametric = FALSE}}{Wallraff's non-parametric test for equal
-#'   angular dispersions — no distributional assumption required.}
+#'   angular dispersions -- no distributional assumption required.}
 #' }
 #'
 #' @param hd Data frame with heading and group columns.

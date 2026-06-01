@@ -27,6 +27,6 @@ Two tests are available:
   von Mises \eqn{\kappa} across groups (\code{equal.kappa.test}).  Returns
   a chi-squared statistic with \eqn{k-1} degrees of freedom.}
   \item{\code{parametric = FALSE}}{Wallraff's non-parametric test for equal
-  angular dispersions — no distributional assumption required.}
+  angular dispersions -- no distributional assumption required.}
 }
 }
