@@ -8,7 +8,8 @@ test_uniformity(
   hd,
   group_col = NULL,
   angle_col = "heading",
-  test = c("rayleigh", "kuiper", "rao", "watson")
+  test = c("rayleigh", "kuiper", "rao", "watson"),
+  p_adjust = "none"
 )
 }
 \arguments{
@@ -21,10 +22,17 @@ as one group.}
 
 \item{test}{One of \code{"rayleigh"} (default), \code{"kuiper"},
 \code{"rao"}, or \code{"watson"}.}
+
+\item{p_adjust}{Multiple-comparison correction method passed to
+\code{\link[stats]{p.adjust}}.  Default \code{"none"}.  Applies only when
+\code{group_col} is supplied; a \code{p_value_adj} column is added to the
+result.  Recommended: \code{"BH"} (Benjamini-Hochberg) when testing many
+conditions.  Only meaningful for the Rayleigh test (exact p-values).}
 }
 \value{
 Tidy data frame with columns \code{group_col} (if supplied),
-  \code{statistic}, \code{p_value}, \code{n}, \code{test}.
+  \code{statistic}, \code{p_value}, \code{n}, \code{test}, and
+  \code{p_value_adj} (when \code{p_adjust != "none"}).
 }
 \description{
 Tests whether each group's headings are uniformly distributed (i.e. no
