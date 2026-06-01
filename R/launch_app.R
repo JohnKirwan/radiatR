@@ -14,18 +14,21 @@
 #'
 #' @param port Integer; TCP port to listen on.  \code{NULL} (default) lets
 #'   Shiny pick a free port automatically.
-#' @param launch.browser Logical; open the system browser automatically
-#'   (default \code{TRUE}).  Set to \code{FALSE} when running in a headless
-#'   environment.
+#' @param launch_browser Logical; open the system browser automatically
+#'   (default \code{TRUE}).  Set to \code{FALSE} when running headless.
 #' @return Called for its side-effect; returns the result of
 #'   \code{\link[shiny]{runApp}} invisibly.
 #' @export
-launch_app <- function(port = NULL, launch.browser = TRUE) {
+launch_app <- function(port = NULL, launch_browser = TRUE) {
   rlang::check_installed("shiny", reason = "to run the radiatR app")
-  rlang::check_installed("bslib",  reason = "to run the radiatR app")
+  rlang::check_installed("bslib", reason = "to run the radiatR app")
   app_dir <- system.file("app", package = "radiatR")
   if (!nzchar(app_dir))
     stop("radiatR app directory not found — ",
          "is the package installed correctly?")
-  shiny::runApp(app_dir, port = port, launch.browser = launch.browser)
+  shiny::runApp(
+    app_dir,
+    port           = port,
+    launch.browser = launch_browser
+  )
 }
