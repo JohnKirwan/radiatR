@@ -546,3 +546,86 @@ sector_summary <- function(hd, sectors = 8L, group_col = NULL,
   })
   do.call(rbind, rows)
 }
+
+# ---- vonmises_fit ------------------------------------------------------------
+
+#' Fit a von Mises distribution to per-group heading data
+#'
+#' Estimates the mean direction \eqn{\mu} and concentration \eqn{\kappa} of a
+#' von Mises distribution via maximum likelihood, together with asymptotic
+#' standard errors and a confidence interval on \eqn{\mu}.  Intended as a
+#' parametric companion to \code{\link{circ_dispersion}}: where
+#' \code{circ_dispersion} returns the empirical resultant length \emph{R} and
+#' circular SD, \code{vonmises_fit} returns the MLE \eqn{\hat{\kappa}} with
+#' its uncertainty.
+#'
+#' \eqn{\kappa = 0} corresponds to a uniform distribution (no preferred
+#' direction); larger values indicate increasing concentration.  The confidence
+#' interval on \eqn{\mu} uses a normal approximation and is unreliable for
+#' \eqn{\kappa < 0.5} or small samples.
+#'
+#' @param hd Data frame containing headings in radians.
+#' @param group_col Column(s) to group by.  \code{NULL} fits a single model to
+#'   all rows.
+#' @param angle_col Name of the heading column.  Default \code{"heading"}.
+#' @param conf Confidence level for the interval on \eqn{\mu}.
+#'   Default \code{0.95}.
+#' @return Data frame with columns \code{group_col} (if supplied), \code{mu}
+#'   (MLE mean direction, radians), \code{mu_deg} (degrees), \code{kappa}
+#'   (MLE concentration), \code{se_mu}, \code{se_kappa} (asymptotic standard
+#'   errors), \code{ci_lo} and \code{ci_hi} (\code{conf}-level interval on
+#'   \eqn{\mu}, radians), \code{n}.
+#' @export
+vonmises_fit <- function(hd, group_col = NULL, angle_col = "heading",
+                          conf = 0.95) {
+  stopifnot(is.data.frame(hd))
+  if (!angle_col %in% names(hd))
+    stop("vonmises_fit: column '", angle_col, "' not found")
+  stopifnot(conf > 0, conf < 1)
+
+  z <- stats::qnorm((1 + conf) / 2)
+
+  .one <- function(sub) {
+    a <- as.numeric(sub[[angle_col]])
+    a <- a[is.finite(a)]
+    n <- length(a)
+    na_row <- data.frame(
+      mu = NA_real_, mu_deg = NA_real_, kappa = NA_real_,
+      se_mu = NA_real_, se_kappa = NA_real_,
+      ci_lo = NA_real_, ci_hi = NA_real_, n = n
+    )
+    if (n < 2L) return(na_row)
+    fit <- tryCatch(
+      circular::mle.vonmises(
+        circular::circular(a, units = "radians", type = "angles")
+      ),
+      error = function(e) NULL
+    )
+    if (is.null(fit)) return(na_row)
+    mu    <- as.numeric(fit$mu)
+    kappa <- as.numeric(fit$kappa)
+    se_mu <- as.numeric(fit$se.mu)
+    se_k  <- as.numeric(fit$se.kappa)
+    data.frame(
+      mu       = mu,
+      mu_deg   = mu * 180 / pi,
+      kappa    = kappa,
+      se_mu    = se_mu,
+      se_kappa = se_k,
+      ci_lo    = mu - z * se_mu,
+      ci_hi    = mu + z * se_mu,
+      n        = n
+    )
+  }
+
+  if (is.null(group_col)) return(.one(hd))
+
+  groups <- unique(hd[[group_col]])
+  rows <- lapply(groups, function(g) {
+    r <- .one(hd[hd[[group_col]] == g, , drop = FALSE])
+    r[[group_col]] <- g
+    r[, c(group_col, "mu", "mu_deg", "kappa", "se_mu",
+          "se_kappa", "ci_lo", "ci_hi", "n")]
+  })
+  do.call(rbind, rows)
+}

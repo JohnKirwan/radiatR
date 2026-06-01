@@ -591,3 +591,50 @@ test_that("add_angle_rose contains polygon data with x/y columns", {
   layer <- add_angle_rose(hd, bins = 4)
   expect_true(all(c("x", "y", ".rose_grp") %in% names(layer$data)))
 })
+
+# ---- vonmises_fit ------------------------------------------------------------
+
+test_that("vonmises_fit returns high kappa for concentrated angles", {
+  hd <- data.frame(heading = rep(0, 40))
+  fit <- vonmises_fit(hd)
+  expect_gt(fit$kappa, 10)
+  expect_equal(fit$n, 40L)
+  expect_equal(fit$mu, 0, tolerance = 1e-3)
+})
+
+test_that("vonmises_fit returns low kappa for near-uniform angles", {
+  set.seed(1)
+  hd <- data.frame(heading = runif(200, -pi, pi))
+  fit <- vonmises_fit(hd)
+  expect_lt(fit$kappa, 0.5)
+})
+
+test_that("vonmises_fit ci_lo < mu < ci_hi", {
+  hd <- data.frame(heading = rnorm(50, mean = pi / 4, sd = 0.3))
+  fit <- vonmises_fit(hd)
+  expect_lt(fit$ci_lo, fit$mu)
+  expect_gt(fit$ci_hi, fit$mu)
+})
+
+test_that("vonmises_fit groups correctly", {
+  set.seed(42)
+  hd <- data.frame(
+    id      = rep(c("A", "B"), each = 50),
+    heading = c(rep(0, 50), rep(pi, 50))
+  )
+  fit <- vonmises_fit(hd, group_col = "id")
+  expect_equal(nrow(fit), 2L)
+  fit_a <- fit[fit$id == "A", ]
+  fit_b <- fit[fit$id == "B", ]
+  expect_gt(fit_a$kappa, 10)
+  expect_gt(fit_b$kappa, 10)
+  expect_equal(fit_a$mu, 0,  tolerance = 1e-3)
+  expect_equal(abs(fit_b$mu), pi, tolerance = 1e-3)
+})
+
+test_that("vonmises_fit returns NA row for n < 2", {
+  hd <- data.frame(heading = 0.5)
+  fit <- vonmises_fit(hd)
+  expect_equal(fit$n, 1L)
+  expect_true(is.na(fit$kappa))
+})
