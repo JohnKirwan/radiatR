@@ -373,6 +373,7 @@ TrajSet_read <- function(x,
                          time_type = c("auto","posix","seconds","frames"), tz = "UTC", fps = NULL,
                          normalize_xy = TRUE,
                          dialect = NULL,
+                         dialect_args = list(),
                          mutate = NULL,
                          keep = NULL, drop = NULL,
                          id_from_filename = TRUE,
@@ -429,8 +430,10 @@ TrajSet_read <- function(x,
   if (!is.null(dialect)) {
     if (!exists(dialect, envir = .loader_registry, inherits = FALSE)) stop("Unknown dialect '", dialect, "'")
     prep <- get(dialect, envir = .loader_registry, inherits = FALSE)
-    df <- prep(df %||% x)
+    df <- do.call(prep, c(list(x), dialect_args))
   }
+  # Extra columns emitted by a dialect are kept unless explicitly dropped.
+  dialect_extra <- if (!is.null(dialect)) names(df) else character(0)
 
   stopifnot(is.data.frame(df))
 
@@ -456,7 +459,7 @@ TrajSet_read <- function(x,
   ang_unit <- if (angle_unit == "auto" && !is.null(angle)) .guess_angle_unit(df[[angle]]) else angle_unit
 
   # cleanup names and select
-  keep_cols <- unique(c(id, time, angle, xcol, ycol, wcol, keep, "..source_file"))
+  keep_cols <- unique(c(id, time, angle, xcol, ycol, wcol, keep, dialect_extra, "..source_file"))
   keep_cols <- keep_cols[keep_cols %in% names(df)]
   if (!is.null(drop)) keep_cols <- setdiff(keep_cols, drop)
   df <- df[, keep_cols, drop = FALSE]
@@ -511,6 +514,7 @@ TrajSet_read <- function(x,
                          time_type = c("auto","posix","seconds","frames"), tz = "UTC", fps = NULL,
                          normalize_xy = TRUE,
                          dialect = NULL,
+                         dialect_args = list(),
                          mutate = NULL,
                          keep = NULL, drop = NULL,
                          id_from_filename = TRUE,
@@ -567,8 +571,10 @@ TrajSet_read <- function(x,
   if (!is.null(dialect)) {
     if (!exists(dialect, envir = .loader_registry, inherits = FALSE)) stop("Unknown dialect '", dialect, "'")
     prep <- get(dialect, envir = .loader_registry, inherits = FALSE)
-    df <- prep(df %||% x)
+    df <- do.call(prep, c(list(x), dialect_args))
   }
+  # Extra columns emitted by a dialect are kept unless explicitly dropped.
+  dialect_extra <- if (!is.null(dialect)) names(df) else character(0)
 
   stopifnot(is.data.frame(df))
 
@@ -594,7 +600,7 @@ TrajSet_read <- function(x,
   ang_unit <- if (angle_unit == "auto" && !is.null(angle)) .guess_angle_unit(df[[angle]]) else angle_unit
 
   # cleanup names and select
-  keep_cols <- unique(c(id, time, angle, xcol, ycol, wcol, keep, "..source_file"))
+  keep_cols <- unique(c(id, time, angle, xcol, ycol, wcol, keep, dialect_extra, "..source_file"))
   keep_cols <- keep_cols[keep_cols %in% names(df)]
   if (!is.null(drop)) keep_cols <- setdiff(keep_cols, drop)
   df <- df[, keep_cols, drop = FALSE]
@@ -877,45 +883,83 @@ register_loader_dialect("wide_prefix_xy", function(x, id_prefixes = NULL, time_c
 })
 
 # ---- built-in dialects -------------------------------------------------------
-# DeepLabCut (three-row multiheader csv) -> collapse to <bodypart>_<coord>
+# DeepLabCut: per-bodypart *_x / *_y columns (post-multiheader collapse or plain CSV).
+#
+# bodypart = NULL       -> centroid of ALL detected bodyparts (likelihood-weighted)
+# bodypart = "head"     -> single bodypart, original row-filter behaviour
+# bodypart = c("h","t") -> centroid of the named subset
+#
+# Per-bodypart <name>_x / <name>_y columns are always appended to the output so
+# downstream heading rules (e.g. bodypart_axis) can access individual points.
 register_loader_dialect("deeplabcut", function(x, bodypart = NULL, likelihood_min = NULL,
                                                 id_col = NULL, time_col = NULL, fps = NULL) {
   df <- if (is.character(x) && file.exists(x)) .read_any(x) else x
   stopifnot(is.data.frame(df))
   nms <- names(df)
-  # discover candidate bodyparts by suffix _x / _y
-  bpx <- sub("_x$", "", grep("_x$", nms, value = TRUE))
-  bpy <- sub("_y$", "", grep("_y$", nms, value = TRUE))
-  bps <- intersect(bpx, bpy)
-  if (is.null(bodypart)) {
-    if (!length(bps)) stop("deeplabcut: no *_x/*_y columns found")
-    bodypart <- bps[1]
-  } else if (!(bodypart %in% bps)) stop("deeplabcut: bodypart '", bodypart, "' not found; candidates: ", paste(bps, collapse=", "))
 
-  xc <- paste0(bodypart, "_x"); yc <- paste0(bodypart, "_y")
-  lc <- paste0(bodypart, "_likelihood")
+  # Discover bodypart names from <name>_x / <name>_y pairs
+  bpx     <- sub("_x$", "", grep("_x$", nms, value = TRUE))
+  bpy     <- sub("_y$", "", grep("_y$", nms, value = TRUE))
+  bps_all <- intersect(bpx, bpy)
+  if (!length(bps_all)) stop("deeplabcut: no *_x/*_y column pairs found")
 
-  # choose id and time
-  id <- id_col %||% .guess_col(nms, c("id","individual","animal","subject")) %||% "1"
+  sel <- if (is.null(bodypart)) bps_all else bodypart
+  bad <- setdiff(sel, bps_all)
+  if (length(bad))
+    stop("deeplabcut: bodypart(s) not found: ", paste(bad, collapse = ", "),
+         "; available: ", paste(bps_all, collapse = ", "))
+
+  id   <- id_col %||% .guess_col(nms, c("id","individual","animal","subject")) %||% "1"
   time <- time_col %||% .guess_col(nms, c("time","timestamp","t","frame","frames")) %||% "..row"
   if (time == "..row") df[[time]] <- seq_len(nrow(df))
 
-  # optionally filter on likelihood
-  if (!is.null(likelihood_min) && lc %in% nms) {
-    df <- df[df[[lc]] >= as.numeric(likelihood_min), , drop = FALSE]
+  if (length(sel) == 1L) {
+    # single bodypart: row-level likelihood filter, x/y from that bodypart
+    xc <- paste0(sel, "_x"); yc <- paste0(sel, "_y"); lc <- paste0(sel, "_likelihood")
+    if (!is.null(likelihood_min) && lc %in% nms)
+      df <- df[!is.na(df[[lc]]) & df[[lc]] >= as.numeric(likelihood_min), , drop = FALSE]
+    cx <- as.numeric(df[[xc]]); cy <- as.numeric(df[[yc]])
+  } else {
+    # multi-bodypart: per-row likelihood-weighted centroid
+    # bodyparts below likelihood_min contribute zero weight for that row
+    xs <- vapply(sel, function(bp) as.numeric(df[[paste0(bp, "_x")]]), numeric(nrow(df)))
+    ys <- vapply(sel, function(bp) as.numeric(df[[paste0(bp, "_y")]]), numeric(nrow(df)))
+    dim(xs) <- c(nrow(df), length(sel)); dim(ys) <- c(nrow(df), length(sel))
+    ws <- vapply(sel, function(bp) {
+      lc <- paste0(bp, "_likelihood")
+      w  <- if (lc %in% nms) as.numeric(df[[lc]]) else rep(1, nrow(df))
+      # NA likelihood with no threshold → include at equal weight;
+      # NA likelihood with a threshold → exclude (can't verify it passes)
+      if (is.null(likelihood_min)) w[is.na(w)] <- 1 else {
+        w[is.na(w)] <- 0; w[!is.na(w) & w < as.numeric(likelihood_min)] <- 0
+      }
+      w
+    }, numeric(nrow(df)))
+    dim(ws) <- c(nrow(df), length(sel))
+    wsum <- rowSums(ws)
+    cx <- ifelse(wsum > 0, rowSums(xs * ws) / wsum, NA_real_)
+    cy <- ifelse(wsum > 0, rowSums(ys * ws) / wsum, NA_real_)
   }
 
   out <- data.frame(
     id   = if (length(id) == 1L && id == "1") rep("1", nrow(df)) else df[[id]],
-    time = .coerce_time(df[[time]], time_type = if (!is.null(fps) && grepl("frame", time, ignore.case = TRUE)) "frames" else "auto", fps = fps),
-    x    = df[[xc]],
-    y    = df[[yc]],
+    time = .coerce_time(df[[time]],
+                        time_type = if (!is.null(fps) && grepl("frame", time, ignore.case = TRUE)) "frames" else "auto",
+                        fps = fps),
+    x = cx, y = cy,
     stringsAsFactors = FALSE
   )
+  # Always append per-bodypart columns for use with bodypart_axis heading rule
+  for (bp in sel) {
+    out[[paste0(bp, "_x")]] <- as.numeric(df[[paste0(bp, "_x")]])
+    out[[paste0(bp, "_y")]] <- as.numeric(df[[paste0(bp, "_y")]])
+  }
   out
 })
 
-# DeepLabCut (three-row multiheader csv) -> collapse to <bodypart>_<coord>
+# DeepLabCut three-row multiheader CSV: collapses scorer/bodypart/coord rows into
+# <bodypart>_<coord> columns, then delegates to the deeplabcut dialect.
+# Supports the same bodypart selection and multi-bodypart centroid logic.
 register_loader_dialect("deeplabcut_multiheader", function(path, bodypart = NULL, ...) {
   stopifnot(is.character(path) && file.exists(path))
   lines <- readLines(path, n = 3)
@@ -955,21 +999,69 @@ register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = N
   out
 })
 
-# EthoVision XT: typically columns like "Time","X Center","Y Center","Arena" etc.
-register_loader_dialect("ethovision", function(x, id_col = NULL, time_col = NULL) {
+# EthoVision XT: single- or multi-body-point exports.
+# Standard export: "X Center" / "Y Center" → x_center / y_center (prefix style).
+# Multiple Body Point Tracking export adds "X Nose", "Y Nose", "X Tail", "Y Tail"
+# (also prefix style) or "<Zone> point X" / "<Zone> point Y" (suffix style).
+# zone = NULL  → use the centre/primary position (backward-compatible default).
+# zone = "nose"               → position from that single zone.
+# zone = c("nose", "tail")    → equal-weight centroid of those zones.
+# All detected zone columns are always appended for use with bodypart_axis.
+register_loader_dialect("ethovision", function(x, id_col = NULL, time_col = NULL,
+                                               zone = NULL) {
   df <- if (is.character(x) && file.exists(x)) .read_any(x) else x
   stopifnot(is.data.frame(df))
   norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(v))
-  nms <- norm(names(df))
-  names(df) <- nms
-  id  <- id_col %||% .guess_col(nms, c("id","animal","subject","trial","track_id")) %||% "1"
-  time<- time_col %||% .guess_col(nms, c("time","time_s","position_t","t","frame")) %||% "..row"
-  if (time == "..row") df[[time]] <- seq_len(nrow(df))
-  xc  <- .guess_col(nms, c("x_center","position_x","x"))
-  yc  <- .guess_col(nms, c("y_center","position_y","y"))
+  nms  <- norm(names(df)); names(df) <- nms
+
+  # Detect zones from prefix style (x_<zone>, y_<zone>) and suffix style (<zone>_x, <zone>_y).
+  # Normalise prefix zones to suffix style so access is uniform.
+  zones_a <- intersect(sub("^x_", "", grep("^x_.+", nms, value = TRUE)),
+                       sub("^y_", "", grep("^y_.+", nms, value = TRUE)))
+  zones_b <- intersect(sub("_x$",  "", grep(".+_x$",  nms, value = TRUE)),
+                       sub("_y$",  "", grep(".+_y$",  nms, value = TRUE)))
+  for (z in setdiff(zones_a, zones_b)) {
+    df[[paste0(z, "_x")]] <- df[[paste0("x_", z)]]
+    df[[paste0(z, "_y")]] <- df[[paste0("y_", z)]]
+  }
+  nms      <- names(df)
+  zones_all <- setdiff(union(zones_a, zones_b), c("x", "y", ""))
+
+  id   <- id_col %||% .guess_col(nms, c("id","animal","subject","trial","track_id")) %||% "1"
+  time <- time_col %||% .guess_col(nms, c("time","time_s","position_t","t","frame")) %||% "..row"
+  if (time == "..row") { df[["..row"]] <- seq_len(nrow(df)); time <- "..row" }
+  xc   <- .guess_col(nms, c("x_center","x_centre","position_x","x"))
+  yc   <- .guess_col(nms, c("y_center","y_centre","position_y","y"))
   if (is.null(xc) || is.null(yc)) stop("ethovision: could not find x/y columns")
-  data.frame(id = if (id == "1") rep("1", nrow(df)) else df[[id]],
-             time = df[[time]], x = df[[xc]], y = df[[yc]], stringsAsFactors = FALSE)
+
+  if (!is.null(zone)) {
+    sel <- zone
+    bad <- setdiff(sel, zones_all)
+    if (length(bad))
+      stop("ethovision: zone(s) not found: ", paste(bad, collapse = ", "),
+           "; available: ", paste(zones_all, collapse = ", "))
+    if (length(sel) == 1L) {
+      cx <- as.numeric(df[[paste0(sel, "_x")]])
+      cy <- as.numeric(df[[paste0(sel, "_y")]])
+    } else {
+      xs   <- vapply(sel, function(z) as.numeric(df[[paste0(z, "_x")]]), numeric(nrow(df)))
+      ys   <- vapply(sel, function(z) as.numeric(df[[paste0(z, "_y")]]), numeric(nrow(df)))
+      dim(xs) <- c(nrow(df), length(sel)); dim(ys) <- c(nrow(df), length(sel))
+      wsum <- rowSums(!is.na(xs))
+      cx   <- ifelse(wsum > 0L, rowSums(xs, na.rm = TRUE) / wsum, NA_real_)
+      cy   <- ifelse(wsum > 0L, rowSums(ys, na.rm = TRUE) / wsum, NA_real_)
+    }
+  } else {
+    cx <- as.numeric(df[[xc]]); cy <- as.numeric(df[[yc]])
+  }
+
+  out <- data.frame(id   = if (id == "1") rep("1", nrow(df)) else df[[id]],
+                    time = df[[time]], x = cx, y = cy, stringsAsFactors = FALSE)
+  for (z in zones_all) {
+    out[[paste0(z, "_x")]] <- as.numeric(df[[paste0(z, "_x")]])
+    out[[paste0(z, "_y")]] <- as.numeric(df[[paste0(z, "_y")]])
+  }
+  out
 })
 
 # TrackMate (Fiji): columns like TRACK_ID/TRAJECTORY_ID, FRAME/POSITION_T, POSITION_X, POSITION_Y
@@ -1035,6 +1127,255 @@ register_loader_dialect("dtrack", function(x) {
   names(df) <- c("frame", "x", "y")
   df$id <- "1"
   df
+})
+
+# TRex (https://trex.run): per-individual CSV export
+# Each file typically covers one individual; the individual index is inferred
+# from the numeric suffix of the filename stem (e.g. "run_0.csv" → id "0").
+# Aggregated exports that include an id/individual column are also supported.
+# Typical columns (TRex uses capitalised names): FRAME / frame, X / x, Y / y.
+register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL, fps = NULL) {
+  stem <- if (is.character(x) && length(x) == 1L && file.exists(x))
+            tools::file_path_sans_ext(basename(x)) else NULL
+  df <- if (!is.null(stem)) .read_any(x) else x
+  stopifnot(is.data.frame(df))
+  norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(v))
+  nms  <- norm(names(df)); names(df) <- nms
+
+  id <- id_col %||% .guess_col(nms, c("id","individual","individual_id","fish","animal","subject"))
+  if (is.null(id)) {
+    m <- if (!is.null(stem)) regmatches(stem, regexpr("[0-9]+$", stem)) else character(0)
+    file_id <- if (length(m)) m else (stem %||% "1")
+    df[["..file_id"]] <- rep(file_id, nrow(df))
+    id <- "..file_id"
+  }
+  time <- time_col %||% .guess_col(nms, c("frame","frames","time","t","timestamp")) %||% "..row"
+  if (time == "..row") { df[["..row"]] <- seq_len(nrow(df)); time <- "..row" }
+  xc <- .guess_col(nms, c("x","pos_x","position_x","x_px","cx","center_x"))
+  yc <- .guess_col(nms, c("y","pos_y","position_y","y_px","cy","center_y"))
+  if (is.null(xc) || is.null(yc)) stop("trex: could not find x/y position columns")
+  data.frame(
+    id   = df[[id]],
+    time = .coerce_time(df[[time]],
+                        time_type = if (!is.null(fps) && grepl("frame", time, ignore.case = TRUE)) "frames" else "auto",
+                        fps = fps),
+    x    = as.numeric(df[[xc]]),
+    y    = as.numeric(df[[yc]]),
+    stringsAsFactors = FALSE
+  )
+})
+
+# ANY-maze (Stoelting): CSV export.  Standard columns: "Trial time", "X Centre",
+# "Y Centre".  Newer versions with nose/tail tracking add "Nose X Centre",
+# "Nose Y Centre", "Tail X Centre", "Tail Y Centre" (or _Center, American).
+# zone = NULL  → primary centre position (default, backward-compatible).
+# zone = "nose" / zone = c("nose","tail") → single-zone or equal-weight centroid.
+# skip_units_row strips the optional units row ANY-maze inserts after the header.
+register_loader_dialect("anymaze", function(x, id_col = NULL, time_col = NULL,
+                                            zone = NULL, skip_units_row = TRUE) {
+  df <- if (is.character(x) && length(x) == 1L && file.exists(x)) .read_any(x) else x
+  stopifnot(is.data.frame(df))
+  norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(trimws(v)))
+  nms  <- norm(names(df)); names(df) <- nms
+
+  # Detect multi-point zones from "<zone> X Centre" → <zone>_x_centre pattern,
+  # then normalise to plain <zone>_x / <zone>_y for uniform access.
+  pat_x <- grep("_x_centr[ei]$", nms, value = TRUE)
+  pat_y <- grep("_y_centr[ei]$", nms, value = TRUE)
+  zones_centre <- intersect(sub("_x_centr[ei]$", "", pat_x),
+                            sub("_y_centr[ei]$", "", pat_y))
+  for (z in zones_centre) {
+    xz <- grep(paste0("^", z, "_x_centr"), nms, value = TRUE)[1L]
+    yz <- grep(paste0("^", z, "_y_centr"), nms, value = TRUE)[1L]
+    df[[paste0(z, "_x")]] <- suppressWarnings(as.numeric(df[[xz]]))
+    df[[paste0(z, "_y")]] <- suppressWarnings(as.numeric(df[[yz]]))
+  }
+  nms <- names(df)
+  zones_plain <- intersect(sub("_x$", "", grep(".+_x$", nms, value = TRUE)),
+                           sub("_y$", "", grep(".+_y$", nms, value = TRUE)))
+  zones_all <- setdiff(union(zones_centre, zones_plain), c("x", "y", "..row"))
+
+  # Strip optional units row before any numeric operations
+  xc_peek <- .guess_col(nms, c("x_centre","x_center","x_pos","x_position","x"))
+  if (skip_units_row && !is.null(xc_peek) && nrow(df) > 0 &&
+      is.na(suppressWarnings(as.numeric(df[[xc_peek]][1L]))))
+    df <- df[-1L, , drop = FALSE]
+
+  id   <- id_col %||% .guess_col(nms, c("id","animal","subject","trial","track")) %||% "1"
+  time <- time_col %||% .guess_col(nms, c("trial_time","time_s","time","t")) %||% "..row"
+  if (time == "..row") { df[["..row"]] <- seq_len(nrow(df)); time <- "..row" }
+  xc <- .guess_col(nms, c("x_centre","x_center","x_pos","x_position","x"))
+  yc <- .guess_col(nms, c("y_centre","y_center","y_pos","y_position","y"))
+  if (is.null(xc) || is.null(yc)) stop("anymaze: could not find x/y position columns")
+
+  if (!is.null(zone)) {
+    sel <- zone
+    bad <- setdiff(sel, zones_all)
+    if (length(bad))
+      stop("anymaze: zone(s) not found: ", paste(bad, collapse = ", "),
+           "; available: ", paste(zones_all, collapse = ", "))
+    if (length(sel) == 1L) {
+      cx <- suppressWarnings(as.numeric(df[[paste0(sel, "_x")]]))
+      cy <- suppressWarnings(as.numeric(df[[paste0(sel, "_y")]]))
+    } else {
+      xs   <- vapply(sel, function(z) suppressWarnings(as.numeric(df[[paste0(z,"_x")]])), numeric(nrow(df)))
+      ys   <- vapply(sel, function(z) suppressWarnings(as.numeric(df[[paste0(z,"_y")]])), numeric(nrow(df)))
+      dim(xs) <- c(nrow(df), length(sel)); dim(ys) <- c(nrow(df), length(sel))
+      wsum <- rowSums(!is.na(xs))
+      cx   <- ifelse(wsum > 0L, rowSums(xs, na.rm = TRUE) / wsum, NA_real_)
+      cy   <- ifelse(wsum > 0L, rowSums(ys, na.rm = TRUE) / wsum, NA_real_)
+    }
+  } else {
+    cx <- suppressWarnings(as.numeric(df[[xc]]))
+    cy <- suppressWarnings(as.numeric(df[[yc]]))
+  }
+
+  out <- data.frame(
+    id   = if (id == "1") rep("1", nrow(df)) else df[[id]],
+    time = suppressWarnings(as.numeric(df[[time]])),
+    x = cx, y = cy,
+    stringsAsFactors = FALSE
+  )
+  for (z in zones_all) {
+    out[[paste0(z, "_x")]] <- suppressWarnings(as.numeric(df[[paste0(z, "_x")]]))
+    out[[paste0(z, "_y")]] <- suppressWarnings(as.numeric(df[[paste0(z, "_y")]]))
+  }
+  out
+})
+
+# SLEAP (https://sleap.ai): CSV analysis export.
+# Column naming: <node>.x, <node>.y, <node>.score (dot → underscore after norm).
+# bodypart = NULL  → centroid of all nodes, score-weighted.
+# bodypart = c("head","thorax") → centroid of named subset.
+# Per-node <name>_x / <name>_y columns always appended for bodypart_axis use.
+# score_min: minimum per-node score to include in centroid (analogous to likelihood_min).
+register_loader_dialect("sleap", function(x, bodypart = NULL, score_min = NULL,
+                                          id_col = NULL, time_col = NULL, fps = NULL) {
+  df <- if (is.character(x) && length(x) == 1L && file.exists(x)) .read_any(x) else x
+  stopifnot(is.data.frame(df))
+  norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(v))
+  nms  <- norm(names(df)); names(df) <- nms
+
+  # Detect nodes from <node>_x / <node>_y pairs; alias <node>_score → <node>_likelihood
+  bpx     <- sub("_x$", "", grep("_x$", nms, value = TRUE))
+  bpy     <- sub("_y$", "", grep("_y$", nms, value = TRUE))
+  bps_all <- intersect(bpx, bpy)
+  if (!length(bps_all)) stop("sleap: no *_x/*_y column pairs found")
+  for (bp in bps_all) {
+    sc <- paste0(bp, "_score")
+    lc <- paste0(bp, "_likelihood")
+    if (sc %in% nms && !lc %in% nms) df[[lc]] <- df[[sc]]
+  }
+  nms <- names(df)
+
+  sel <- if (is.null(bodypart)) bps_all else bodypart
+  bad <- setdiff(sel, bps_all)
+  if (length(bad))
+    stop("sleap: node(s) not found: ", paste(bad, collapse = ", "),
+         "; available: ", paste(bps_all, collapse = ", "))
+
+  id   <- id_col %||% .guess_col(nms, c("track","id","individual","animal","subject")) %||% "1"
+  time <- time_col %||% .guess_col(nms, c("frame_idx","frame","frames","time","t")) %||% "..row"
+  if (time == "..row") { df[["..row"]] <- seq_len(nrow(df)); time <- "..row" }
+
+  if (length(sel) == 1L) {
+    xc <- paste0(sel, "_x"); yc <- paste0(sel, "_y"); lc <- paste0(sel, "_likelihood")
+    if (!is.null(score_min) && lc %in% nms)
+      df <- df[!is.na(df[[lc]]) & df[[lc]] >= as.numeric(score_min), , drop = FALSE]
+    cx <- as.numeric(df[[xc]]); cy <- as.numeric(df[[yc]])
+  } else {
+    xs <- vapply(sel, function(bp) as.numeric(df[[paste0(bp, "_x")]]), numeric(nrow(df)))
+    ys <- vapply(sel, function(bp) as.numeric(df[[paste0(bp, "_y")]]), numeric(nrow(df)))
+    dim(xs) <- c(nrow(df), length(sel)); dim(ys) <- c(nrow(df), length(sel))
+    ws <- vapply(sel, function(bp) {
+      lc <- paste0(bp, "_likelihood")
+      w  <- if (lc %in% nms) as.numeric(df[[lc]]) else rep(1, nrow(df))
+      if (is.null(score_min)) w[is.na(w)] <- 1 else {
+        w[is.na(w)] <- 0; w[!is.na(w) & w < as.numeric(score_min)] <- 0
+      }
+      w
+    }, numeric(nrow(df)))
+    dim(ws) <- c(nrow(df), length(sel))
+    wsum <- rowSums(ws)
+    cx <- ifelse(wsum > 0, rowSums(xs * ws) / wsum, NA_real_)
+    cy <- ifelse(wsum > 0, rowSums(ys * ws) / wsum, NA_real_)
+  }
+
+  out <- data.frame(
+    id   = if (length(id) == 1L && id == "1") rep("1", nrow(df)) else df[[id]],
+    time = .coerce_time(df[[time]],
+                        time_type = if (!is.null(fps) && grepl("frame", time, ignore.case = TRUE)) "frames" else "auto",
+                        fps = fps),
+    x = cx, y = cy,
+    stringsAsFactors = FALSE
+  )
+  for (bp in sel) {
+    out[[paste0(bp, "_x")]] <- as.numeric(df[[paste0(bp, "_x")]])
+    out[[paste0(bp, "_y")]] <- as.numeric(df[[paste0(bp, "_y")]])
+  }
+  out
+})
+
+# Tracktor (https://github.com/jgraving/tracktor): tidy CSV with frame, x, y [, id]
+# Tracktor outputs one row per frame per individual; the id column (called
+# "id" or "identity") distinguishes individuals in multi-animal exports.
+register_loader_dialect("tracktor", function(x, id_col = NULL, time_col = NULL, fps = NULL) {
+  df <- if (is.character(x) && length(x) == 1L && file.exists(x)) .read_any(x) else x
+  stopifnot(is.data.frame(df))
+  norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(v))
+  nms  <- norm(names(df)); names(df) <- nms
+  id   <- id_col %||% .guess_col(nms, c("id","identity","individual","animal","subject","track_id")) %||% "1"
+  time <- time_col %||% .guess_col(nms, c("frame","frames","time","t","timestamp")) %||% "..row"
+  if (time == "..row") { df[["..row"]] <- seq_len(nrow(df)); time <- "..row" }
+  xc <- .guess_col(nms, c("x","pos_x","position_x","cx","x_pos","x_coord"))
+  yc <- .guess_col(nms, c("y","pos_y","position_y","cy","y_pos","y_coord"))
+  if (is.null(xc) || is.null(yc)) stop("tracktor: could not find x/y position columns")
+  data.frame(
+    id   = if (id == "1") rep("1", nrow(df)) else df[[id]],
+    time = .coerce_time(df[[time]],
+                        time_type = if (!is.null(fps) && grepl("frame", time, ignore.case = TRUE)) "frames" else "auto",
+                        fps = fps),
+    x    = as.numeric(df[[xc]]),
+    y    = as.numeric(df[[yc]]),
+    stringsAsFactors = FALSE
+  )
+})
+
+# Ctrax (http://ctrax.sourceforge.net): multi-animal MATLAB tracker.
+# Primary output is a .mat file whose 'trx' field is a 1×N struct array —
+# one element per tracked individual — with fields x, y, theta, a, b,
+# firstframe, nframes.  Requires the 'R.matlab' package.
+# ids: optional integer vector selecting a subset of individuals (1-indexed).
+register_loader_dialect("ctrax", function(x, ids = NULL) {
+  if (!.is_installed("R.matlab")) stop("Please install 'R.matlab' to read Ctrax .mat files")
+  if (!is.character(x) || !file.exists(x)) stop("ctrax: provide a path to a Ctrax .mat file")
+  mat <- R.matlab::readMat(x)
+  trx <- mat[["trx"]]
+  if (is.null(trx)) stop("ctrax: no 'trx' field found in .mat file")
+  d <- dim(trx)
+  if (length(d) < 3L) stop("ctrax: unexpected trx structure — expected a 3-D struct array from R.matlab")
+  n_ind <- d[3L]
+  fly_ids <- seq_len(n_ind)
+  if (!is.null(ids)) fly_ids <- intersect(fly_ids, as.integer(ids))
+  rows <- lapply(fly_ids, function(i) {
+    traj <- trx[, , i]
+    xs <- as.numeric(traj$x)
+    ys <- as.numeric(traj$y)
+    if (!length(xs) || !length(ys)) return(NULL)
+    ff <- if (!is.null(traj$firstframe)) as.integer(traj$firstframe[[1L]]) else 1L
+    frames <- seq(ff, by = 1L, length.out = length(xs))
+    data.frame(
+      id    = as.character(i),
+      time  = frames,
+      x     = xs,
+      y     = ys,
+      theta = if (!is.null(traj$theta)) as.numeric(traj$theta) else rep(NA_real_, length(xs)),
+      a     = if (!is.null(traj$a))     as.numeric(traj$a)     else rep(NA_real_, length(xs)),
+      b     = if (!is.null(traj$b))     as.numeric(traj$b)     else rep(NA_real_, length(xs)),
+      stringsAsFactors = FALSE
+    )
+  })
+  do.call(rbind, rows[!vapply(rows, is.null, logical(1L))])
 })
 
 # ---- built-in dialects: general (non-animal) ---------------------------------

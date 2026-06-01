@@ -1,96 +1,124 @@
 # radiatR
 
-radiatR is an R package that provides a toolkit for working with movement trajectories with circular support. It is designed to import, summarise, analyze, and visualise large numbers of movement tracks—especially suited for behavioural experiments involving movement from or around a central origin, such as radial mazes or arena-based trials.
-
-## Overview
-
-This package comprises tools to import, summarise, and visualise movement trajectories with circular support. The aim is to have a convenient package to plot and explore many trajectories of angular data with ease and flexibility.
+An R package for importing, analysing, and visualising animal movement trajectories recorded in circular arenas. It covers the full pipeline: loader framework → coordinate transformation → circular statistics → ggplot2 visualisation.
 
 ## Key Features
 
-- Import and normalize tracking data from multi-trial experiments
-- Extract circular trial boundaries and metadata from paired landmark/track files
-- Transform Cartesian coordinates into circular coordinates (centering/scaling on a per-trial basis)
-- Compute high-level circular statistics (mean direction, resultant length, concentration, etc.)
-- Flexible visualization of tracks and summary statistics with high-quality ggplot2 layers
-- Support for faceting and group overlays
+- **Flexible loader framework** — read data from 20+ tracking tools via registered dialects; extend with custom formats
+- **Pose-estimation support** — multi-bodypart centroid and body-axis heading from DeepLabCut, EthoVision multi-zone, ANY-maze nose/tail, Ctrax ellipse
+- **Heading rule registry** — derive per-trial headings by any of 15+ built-in rules or register your own
+- **Circular statistics** — mean direction, resultant length, concentration, and grouped summaries via the `circular` package
+- **ggplot2 visualisation** — `radiate()` renders unit-circle track plots with concentric guides, mean-direction arrows, tick marks, and faceting; composable with `add_*` layer helpers
 
-## Core Modules
+## Supported Tracking Tools
 
-**1. Circular Trials (`R/circular_trials.R`)**
-- Extract per-trial time bounds, arena origin, and stimulus angle from input data
-- Transform and standardize position data for all trials and combine across multiple files
-- Functions: `get_trial_limits`, `get_tracked_object_pos`, `get_all_object_pos`
+| Dialect | Tool |
+|---|---|
+| `dtrack` | dtrack |
+| `deeplabcut` / `deeplabcut_multiheader` | DeepLabCut (single point or multi-bodypart centroid) |
+| `idtrackerai_wide` | idtracker.ai |
+| `ethovision` | EthoVision XT (including multi-zone) |
+| `trackmate` | TrackMate (Fiji) |
+| `toxtrac` | ToxTrac |
+| `boris_xy` | BORIS |
+| `trex` | TRex |
+| `anymaze` | ANY-maze (including nose/tail zones) |
+| `tracktor` | Tracktor |
+| `ctrax` | Ctrax (`.mat` files; preserves `theta`, `a`, `b`) |
+| `motchallenge` | MOTChallenge / SORT / DeepSORT |
+| `geojson_linestring` | GeoJSON LineString |
+| `gpx` | GPX tracks |
+| `nmea_gprmc` | NMEA GPRMC |
+| `wide_prefix_xy` | Generic `x_<id>` / `y_<id>` wide format |
 
-**2. Circular Statistics (`R/circular_statistics.R`)**
-- Compute summary statistics for angular data (leveraging the `circular` package)
-- Provide group-wise or global summaries (means, concentration, resultant length, more)
-- Main function: `circ_summary`
+Register additional formats with `register_loader_dialect()` or the declarative `register_loader_format()`.
 
-**3. Circular Plotting (`R/circular_plotting.R`)**
-- Visualize trajectories and circular statistics using ggplot2
-- Add concentric guides, direction ticks, mean resultant arrows, and custom radial overlays
-- Main function: `radiate`
+## Heading Rules
+
+`derive_headings()` dispatches to any of the built-in rules or a registered custom rule:
+
+| Rule | Method |
+|---|---|
+| `crossing` | Angle at ring-crossing event (two radii) |
+| `distal` | Angle at frame of maximum radial distance |
+| `exit` | Velocity direction at ring crossing |
+| `net` | Start-to-end vector |
+| `velocity_mean` | Circular mean of per-frame velocity angles |
+| `vm_fit` | von Mises MLE over per-frame angles |
+| `ransac_straight` | RANSAC-fitted straight-segment direction |
+| `origin_mean` | Distance-weighted mean angle from origin |
+| `bodypart_axis` | Axis between two tracked keypoints (pose data) |
+| `ellipse_axis` | Pre-computed orientation angle column (e.g. Ctrax `theta`) |
+| … | `straight`, `window_net`, `goal_bias`, `pca_axis`, `maxspeed_window`, `entry`, `ring_tangent` |
+
+Register custom rules with `register_heading_rule()`.
 
 ## Typical Workflow
-
-1. **Import Data:** Use helper functions to load track and landmark files per trial or video.
-2. **Extract and Transform:** Call `get_trial_limits` and `get_tracked_object_pos` to extract, normalize, and convert positions to circular form.
-3. **Aggregate Across Files:** For large experiments, use `get_all_object_pos` to combine and standardize data from many sources.
-4. **Summarize:** Calculate circular summary statistics (e.g., per trial, per group) using `circ_summary`.
-5. **Visualize:** Create and customize high-quality circular plots of tracks and statistics using `radiate` and plot helpers from the package.
-
-## Dependencies
-
-radiatR depends on the following R packages (these will be installed automatically by R when you use the standard installation methods):
-
-- ggplot2
-- tibble
-- purrr
-- circular
-- rlang
-- methods
-- utils
-- stats
-
-### Optional and Suggested Packages
-- **ggrepel** (for improved label placement on plots; recommended but optional)
-- **testthat**, **knitr**, **rmarkdown** (for testing and documentation)
-- Additional suggested: arrow, data.table, jsonlite, readr, yaml, withr
-
-To use all features (e.g., non-overlapping labels), install ggrepel:
-
-```r
-install.packages("ggrepel")
-```
-
-## Installation
-
-### Install from Local Source
-If you have downloaded or cloned this repository, you can install the package in R with:
-
-```r
-# In the repository directory:
-devtools::install_local(path = ".")
-# or
-remotes::install_local(path = ".")
-```
-
-### Install from GitHub
-If you want to install the latest version directly from GitHub:
-
-```r
-remotes::install_github("JohnKirwan/radiatR")
-```
-
-## Example
 
 ```r
 library(radiatR)
 
-# generate a reproducible demo data set
-tracks <- simulate_tracks(n_trials = 3, n_points = 150, seed = 42)
+# 1. Load tracking data (example: DeepLabCut with head + thorax bodyparts)
+ts <- TrajSet_read(
+  "my_tracks.csv",
+  dialect      = "deeplabcut",
+  dialect_args = list(bodypart = c("head", "thorax"))
+)
 
-# draw the tracks with concentric guides
-radiate(tracks, x_col = "rel_x", y_col = "rel_y", group_col = "trial_id")
+# 2. Derive headings
+hd <- derive_headings(ts, rule = "crossing",
+                      circ0 = 0.3, circ1 = 0.6,
+                      coords = "absolute",
+                      angle_convention = "unit_circle")
+
+# 3. Circular summary per condition
+compute_circ_mean(hd, colour_col = "condition")
+
+# 4. Visualise
+radiate(ts,
+        group_col  = "trial_id",
+        colour_col = "condition",
+        panel_by   = "condition",
+        show_arrow = TRUE) +
+  add_heading_points(hd, colour_col = "condition")
 ```
+
+## Simulate Data
+
+`simulate_tracks()` generates synthetic arena trajectories for testing pipelines and teaching:
+
+```r
+# Three default conditions differing in concentration and tortuosity
+ts <- simulate_tracks(seed = 42, output = "trajset")
+radiate(ts, group_col = "trial_id", panel_by = "condition", show_arrow = TRUE)
+
+# Custom conditions table
+conds <- data.frame(
+  condition          = c("low", "high"),
+  n_trials           = 20L,
+  concentration_base = c(1.5, 8),
+  tortuosity_base    = c(0.12, 0.03)
+)
+ts2 <- simulate_tracks(conditions = conds, seed = 1, output = "trajset")
+```
+
+## Installation
+
+```r
+# From GitHub
+remotes::install_github("JohnKirwan/radiatR")
+
+# From local clone
+devtools::install_local(".")
+```
+
+## Optional Dependencies
+
+| Package | Used for |
+|---|---|
+| `ggrepel` | Non-overlapping track labels |
+| `readr` / `data.table` | Faster CSV reading |
+| `jsonlite` | GeoJSON and JSON dialect loaders |
+| `xml2` | GPX dialect loader |
+| `R.matlab` | Ctrax `.mat` file loader |
+| `arrow` | Parquet/Feather file support |

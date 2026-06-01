@@ -441,3 +441,108 @@ circ_summarise <- function(data,
   rownames(result) <- NULL
   tibble::as_tibble(result)
 }
+
+# ---- circ_dispersion ---------------------------------------------------------
+
+#' Per-group circular dispersion statistics for a dense heading series
+#'
+#' Computes circular mean direction, mean resultant length \emph{R}, circular
+#' standard deviation, and sample size for each group.  Designed for
+#' within-trial summaries from \code{\link{pose_to_headings}} or
+#' \code{derive_headings(\ldots, frame_select = "all")}, but accepts any data
+#' frame with an angle column.
+#'
+#' @param hd Data frame containing headings in radians.
+#' @param group_col Column(s) to group by (e.g. \code{"id"} for per-trial
+#'   summaries).  \code{NULL} treats the entire data frame as one group.
+#' @param angle_col Name of the heading column.  Default \code{"heading"}.
+#' @return Data frame with columns \code{group_col} (if supplied),
+#'   \code{mean_dir}, \code{resultant_R}, \code{circ_sd}, \code{n}.
+#'   Circular standard deviation is \eqn{\sqrt{-2 \log R}}.
+#' @export
+circ_dispersion <- function(hd, group_col = NULL, angle_col = "heading") {
+  stopifnot(is.data.frame(hd))
+  if (!angle_col %in% names(hd))
+    stop("circ_dispersion: column '", angle_col, "' not found")
+
+  .one <- function(sub) {
+    a <- as.numeric(sub[[angle_col]]); a <- a[is.finite(a)]
+    if (!length(a))
+      return(data.frame(mean_dir = NA_real_, resultant_R = NA_real_,
+                        circ_sd  = NA_real_, n = 0L))
+    S <- mean(sin(a)); C <- mean(cos(a))
+    R <- sqrt(S^2 + C^2)
+    data.frame(mean_dir    = atan2(S, C),
+               resultant_R = R,
+               circ_sd     = sqrt(-2 * log(max(R, .Machine$double.eps))),
+               n           = length(a))
+  }
+
+  if (is.null(group_col)) return(.one(hd))
+
+  groups <- unique(hd[[group_col]])
+  rows <- lapply(groups, function(g) {
+    r <- .one(hd[hd[[group_col]] == g, , drop = FALSE])
+    r[[group_col]] <- g
+    r[, c(group_col, "mean_dir", "resultant_R", "circ_sd", "n")]
+  })
+  do.call(rbind, rows)
+}
+
+# ---- sector_summary ----------------------------------------------------------
+
+#' Proportion of time spent in angular sectors
+#'
+#' Bins heading angles into sectors and returns count and proportion per sector,
+#' optionally grouped by trial or condition.  Useful for dwell-time analysis of
+#' dense per-frame heading series (e.g. gaze direction from a tethered animal).
+#'
+#' @param hd Data frame containing headings in radians.
+#' @param sectors Either a single integer (number of equal sectors spanning the
+#'   full circle, default \code{8}) or a numeric vector of break points in
+#'   radians.  Break points need not include \eqn{\pm\pi}; they are added
+#'   automatically.
+#' @param group_col Column(s) to group by.  \code{NULL} uses all rows.
+#' @param angle_col Name of the heading column.  Default \code{"heading"}.
+#' @return Data frame with columns \code{group_col} (if supplied),
+#'   \code{sector} (degree label), \code{mid_angle} (sector midpoint in
+#'   radians), \code{count}, \code{proportion}.
+#' @export
+sector_summary <- function(hd, sectors = 8L, group_col = NULL,
+                            angle_col = "heading") {
+  stopifnot(is.data.frame(hd))
+  if (!angle_col %in% names(hd))
+    stop("sector_summary: column '", angle_col, "' not found")
+
+  if (length(sectors) == 1L && is.numeric(sectors)) {
+    bk <- seq(-pi, pi, length.out = as.integer(sectors) + 1L)
+  } else {
+    bk <- sort(unique(c(-pi, as.numeric(sectors), pi)))
+  }
+  mids   <- (head(bk, -1L) + tail(bk, -1L)) / 2
+  labels <- sprintf("%.0f°", round(mids * 180 / pi))
+
+  .wrap <- function(a) { a <- a %% (2*pi); a[a > pi] <- a[a > pi] - 2*pi; a }
+
+  .one <- function(sub) {
+    a    <- .wrap(as.numeric(sub[[angle_col]][is.finite(sub[[angle_col]])]))
+    bins <- cut(a, breaks = bk, labels = labels, include.lowest = TRUE, right = FALSE)
+    bins <- factor(bins, levels = labels)
+    tbl  <- table(bins)
+    data.frame(sector     = labels,
+               mid_angle  = mids,
+               count      = as.integer(tbl),
+               proportion = as.numeric(tbl) / max(sum(tbl), 1L),
+               stringsAsFactors = FALSE)
+  }
+
+  if (is.null(group_col)) return(.one(hd))
+
+  groups <- unique(hd[[group_col]])
+  rows <- lapply(groups, function(g) {
+    r <- .one(hd[hd[[group_col]] == g, , drop = FALSE])
+    r[[group_col]] <- g
+    r[, c(group_col, "sector", "mid_angle", "count", "proportion")]
+  })
+  do.call(rbind, rows)
+}

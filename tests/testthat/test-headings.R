@@ -332,3 +332,99 @@ test_that("derive_headings does not set display_convention when coords='absolute
                         coords = "absolute", angle_convention = "unit_circle")
   expect_null(attr(hd, "display_convention"))
 })
+
+# ---- bodypart_axis heading rule ----------------------------------------------
+
+make_ts_with_bodyparts <- function() {
+  # head directly north of thorax at each frame (same x, head_y = thorax_y + 0.1)
+  df <- data.frame(
+    id       = "t1",
+    time     = 1:5,
+    x        = seq(0, 0.4, by = 0.1),
+    y        = rep(0, 5),
+    head_x   = seq(0, 0.4, by = 0.1),   # same x as thorax
+    head_y   = rep(0.1, 5),
+    thorax_x = seq(0, 0.4, by = 0.1),
+    thorax_y = rep(0, 5)
+  )
+  TrajSet_read(df, mapping = list(id = "id", time = "time", x = "x", y = "y"),
+               keep = c("head_x", "head_y", "thorax_x", "thorax_y"),
+               normalize_xy = FALSE)
+}
+
+test_that("bodypart_axis is registered", {
+  expect_true("bodypart_axis" %in% list_heading_rules())
+})
+
+test_that("bodypart_axis heading points from posterior to anterior", {
+  ts <- make_ts_with_bodyparts()
+  hd <- derive_headings(ts, rule = "bodypart_axis",
+                        anterior = "head", posterior = "thorax",
+                        coords = "absolute", angle_convention = "unit_circle")
+  expect_equal(nrow(hd), 1L)
+  # head_y - thorax_y = 0.1, head_x - thorax_x = 0.1 → atan2(0.1,0) = pi/2
+  expect_equal(hd$heading[1], pi / 2, tolerance = 1e-9)
+})
+
+test_that("bodypart_axis frame_select='last' uses final frame", {
+  df <- data.frame(id = "t1", time = 1:4, x = 1:4, y = rep(0,4),
+                   head_x = c(1,2,3,4), head_y = rep(1, 4),
+                   tail_x = c(1,2,3,4), tail_y = rep(0, 4))
+  ts <- TrajSet_read(df, mapping = list(id="id", time="time", x="x", y="y"),
+                     keep = c("head_x","head_y","tail_x","tail_y"),
+                     normalize_xy = FALSE)
+  hd <- derive_headings(ts, rule = "bodypart_axis",
+                        anterior = "head", posterior = "tail",
+                        frame_select = "last",
+                        coords = "absolute", angle_convention = "unit_circle")
+  expect_equal(hd$time[1], 4)
+})
+
+test_that("bodypart_axis errors when bodypart columns are absent", {
+  ts <- make_ts_with_bodyparts()
+  expect_error(
+    derive_headings(ts, rule = "bodypart_axis",
+                    anterior = "nose", posterior = "tail",
+                    coords = "absolute", angle_convention = "unit_circle"),
+    "not found"
+  )
+})
+
+# ---- ellipse_axis heading rule -----------------------------------------------
+
+test_that("ellipse_axis is registered", {
+  expect_true("ellipse_axis" %in% list_heading_rules())
+})
+
+test_that("ellipse_axis returns theta at distal frame", {
+  df <- data.frame(id = "t1", time = 1:5,
+                   x = c(0, .2, .4, .6, .8), y = rep(0, 5),
+                   theta = c(0, pi/6, pi/4, pi/3, pi/2))
+  ts <- TrajSet_read(df, mapping = list(id="id",time="time",x="x",y="y"),
+                     normalize_xy = FALSE)
+  hd <- derive_headings(ts, rule = "ellipse_axis",
+                        coords = "absolute", angle_convention = "unit_circle")
+  # frame 5 is most distal (x=0.8); theta there is pi/2
+  expect_equal(hd$heading[1], pi / 2, tolerance = 1e-9)
+})
+
+test_that("ellipse_axis frame_select='mean' gives circular mean of theta", {
+  df <- data.frame(id = "t1", time = 1:4, x = rep(0.5, 4), y = rep(0, 4),
+                   theta = c(0, 0, 0, 0))
+  ts <- TrajSet_read(df, mapping = list(id="id",time="time",x="x",y="y"),
+                     normalize_xy = FALSE)
+  hd <- derive_headings(ts, rule = "ellipse_axis", frame_select = "mean",
+                        coords = "absolute", angle_convention = "unit_circle")
+  expect_equal(hd$heading[1], 0, tolerance = 1e-9)
+})
+
+test_that("ellipse_axis errors when theta column absent", {
+  df <- data.frame(id = "t1", time = 1:3, x = 1:3, y = rep(0,3))
+  ts <- TrajSet_read(df, mapping = list(id="id",time="time",x="x",y="y"),
+                     normalize_xy = FALSE)
+  expect_error(
+    derive_headings(ts, rule = "ellipse_axis",
+                    coords = "absolute", angle_convention = "unit_circle"),
+    "not found"
+  )
+})

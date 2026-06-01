@@ -727,3 +727,165 @@ register_heading_rule <- function(name, fun, overwrite = FALSE) {
 #' List registered custom heading rules
 #' @export
 list_heading_rules <- function() sort(ls(envir = .heading_registry))
+
+# Heading from a rigid body axis defined by two tracked bodypart points.
+# Requires the TrajSet to carry <anterior>_x, <anterior>_y, <posterior>_x,
+# <posterior>_y columns — load data with dialect = "deeplabcut" and
+# bodypart = c("<anterior>", "<posterior>") to ensure they are present.
+#
+# frame_select controls which frame contributes the reported heading:
+#   "distal" (default) — axis angle at the frame of maximum radial distance
+#   "mean"             — circular mean of per-frame axis angles
+#   "last"             — axis angle at the final frame
+register_heading_rule("bodypart_axis", function(df, cols, anterior, posterior,
+                                                frame_select = c("distal", "mean", "last", "all")) {
+  if (missing(anterior) || missing(posterior))
+    stop("bodypart_axis: provide anterior and posterior bodypart name prefixes")
+  frame_select <- match.arg(frame_select)
+  id_col   <- cols$id   %||% "id"
+  time_col <- cols$time %||% "time"
+  xc       <- cols$x    %||% "x"
+  yc       <- cols$y    %||% "y"
+
+  axc <- paste0(anterior,  "_x");  ayc <- paste0(anterior,  "_y")
+  pxc <- paste0(posterior, "_x");  pyc <- paste0(posterior, "_y")
+  miss <- setdiff(c(axc, ayc, pxc, pyc), names(df))
+  if (length(miss))
+    stop("bodypart_axis: column(s) not found: ", paste(miss, collapse = ", "),
+         ". Load with dialect='deeplabcut', bodypart=c('", anterior, "','", posterior, "')")
+
+  ax <- as.numeric(df[[axc]]); ay <- as.numeric(df[[ayc]])
+  px <- as.numeric(df[[pxc]]); py <- as.numeric(df[[pyc]])
+  angles <- atan2(ay - py, ax - px)  # anterior → forward
+
+  if (frame_select == "all") {
+    return(data.frame(id = rep(df[[id_col]][1L], nrow(df)),
+                      time = df[[time_col]], heading = angles,
+                      stringsAsFactors = FALSE))
+  }
+  if (frame_select == "distal") {
+    r    <- sqrt(as.numeric(df[[xc]])^2 + as.numeric(df[[yc]])^2)
+    idx  <- which.max(r)
+    h    <- angles[idx]
+    tval <- df[[time_col]][idx]
+  } else if (frame_select == "mean") {
+    h    <- atan2(mean(sin(angles), na.rm = TRUE), mean(cos(angles), na.rm = TRUE))
+    tval <- df[[time_col]][ceiling(nrow(df) / 2L)]
+  } else {
+    h    <- angles[nrow(df)]
+    tval <- df[[time_col]][nrow(df)]
+  }
+
+  data.frame(id = df[[id_col]][1L], time = tval, heading = h,
+             stringsAsFactors = FALSE)
+})
+
+# Heading from a pre-computed orientation angle column (e.g. Ctrax theta).
+# Use when the tool has already fitted a body-axis angle per frame — no separate
+# anterior/posterior point columns are needed.
+# theta_col: name of the angle column in the TrajSet data (default "theta").
+# frame_select: same semantics as bodypart_axis.
+register_heading_rule("ellipse_axis", function(df, cols, theta_col = "theta",
+                                               frame_select = c("distal", "mean", "last", "all")) {
+  frame_select <- match.arg(frame_select)
+  if (!theta_col %in% names(df))
+    stop("ellipse_axis: column '", theta_col, "' not found. ",
+         "Load Ctrax .mat files with dialect='ctrax' to get theta.")
+  id_col   <- cols$id   %||% "id"
+  time_col <- cols$time %||% "time"
+  xc       <- cols$x    %||% "x"
+  yc       <- cols$y    %||% "y"
+
+  angles <- as.numeric(df[[theta_col]])
+
+  if (frame_select == "all") {
+    return(data.frame(id = rep(df[[id_col]][1L], nrow(df)),
+                      time = df[[time_col]], heading = angles,
+                      stringsAsFactors = FALSE))
+  }
+  if (frame_select == "distal") {
+    r    <- sqrt(as.numeric(df[[xc]])^2 + as.numeric(df[[yc]])^2)
+    idx  <- which.max(r)
+    h    <- angles[idx]
+    tval <- df[[time_col]][idx]
+  } else if (frame_select == "mean") {
+    h    <- atan2(mean(sin(angles), na.rm = TRUE), mean(cos(angles), na.rm = TRUE))
+    tval <- df[[time_col]][ceiling(nrow(df) / 2L)]
+  } else {
+    h    <- angles[nrow(df)]
+    tval <- df[[time_col]][nrow(df)]
+  }
+
+  data.frame(id = df[[id_col]][1L], time = tval, heading = h,
+             stringsAsFactors = FALSE)
+})
+
+# ---- pose_to_headings --------------------------------------------------------
+
+#' Derive per-frame headings from pose data without a TrajSet
+#'
+#' Computes a heading angle for every row in \code{df} from either two
+#' bodypart keypoint columns or a pre-computed orientation angle column.
+#' Intended for tethered or mostly stationary animals where the position
+#' trajectory is absent or uninformative and body pose is the primary signal,
+#' but also useful for extracting a dense heading time series from trajectory
+#' data.  The output is compatible with \code{\link{circ_dispersion}},
+#' \code{\link{sector_summary}}, \code{\link{add_heading_points}}, and
+#' \code{\link{add_angle_rose}}.
+#'
+#' @param df Data frame with at least id, time, and keypoint or angle columns.
+#' @param anterior Prefix of the anterior bodypart columns
+#'   (\code{<anterior>_x} and \code{<anterior>_y} must exist).
+#' @param posterior Prefix of the posterior bodypart columns.
+#' @param theta_col Name of a pre-computed orientation angle column (alternative
+#'   to \code{anterior}/\code{posterior}).
+#' @param id_col Column identifying trials or individuals.  Auto-detected from
+#'   common names; defaults to a single group \code{"1"} if absent.
+#' @param time_col Column of frame indices or timestamps.  Defaults to row
+#'   position if absent.
+#' @param angle_convention \code{"unit_circle"} (default) or \code{"clock"}.
+#' @return Data frame with columns \code{id}, \code{time}, \code{heading} (in
+#'   radians), with an \code{angle_convention} attribute for downstream
+#'   compatibility.
+#' @export
+pose_to_headings <- function(df, anterior = NULL, posterior = NULL,
+                              theta_col = NULL,
+                              id_col = NULL, time_col = NULL,
+                              angle_convention = c("unit_circle", "clock")) {
+  angle_convention <- match.arg(angle_convention)
+  stopifnot(is.data.frame(df))
+  nms <- names(df)
+
+  id <- id_col %||%
+    .guess_col(nms, c("id", "individual", "track", "subject", "animal")) %||%
+    "..pose_id"
+  if (id == "..pose_id") { df[["..pose_id"]] <- "1"; id <- "..pose_id" }
+
+  time <- time_col %||%
+    .guess_col(nms, c("time", "frame", "frame_idx", "t", "timestamp")) %||%
+    "..pose_time"
+  if (time == "..pose_time") { df[["..pose_time"]] <- seq_len(nrow(df)); time <- "..pose_time" }
+
+  if (!is.null(theta_col)) {
+    if (!theta_col %in% nms)
+      stop("pose_to_headings: column '", theta_col, "' not found")
+    angles <- as.numeric(df[[theta_col]])
+  } else if (!is.null(anterior) && !is.null(posterior)) {
+    axc <- paste0(anterior,  "_x"); ayc <- paste0(anterior,  "_y")
+    pxc <- paste0(posterior, "_x"); pyc <- paste0(posterior, "_y")
+    miss <- setdiff(c(axc, ayc, pxc, pyc), nms)
+    if (length(miss))
+      stop("pose_to_headings: column(s) not found: ", paste(miss, collapse = ", "))
+    angles <- atan2(as.numeric(df[[ayc]]) - as.numeric(df[[pyc]]),
+                   as.numeric(df[[axc]]) - as.numeric(df[[pxc]]))
+  } else {
+    stop("pose_to_headings: supply either anterior + posterior, or theta_col")
+  }
+
+  if (angle_convention == "clock") angles <- (pi / 2) - angles
+
+  out <- data.frame(id = df[[id]], time = df[[time]], heading = angles,
+                    stringsAsFactors = FALSE)
+  attr(out, "angle_convention") <- angle_convention
+  out
+}
