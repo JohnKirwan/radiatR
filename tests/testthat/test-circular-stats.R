@@ -514,3 +514,80 @@ test_that("circ_summarise quoted col name also works", {
   hd <- data.frame(angle = c(0, pi/2))
   expect_no_error(circ_summarise(hd, "angle", units = "radians"))
 })
+
+# ---- circ_dispersion ---------------------------------------------------------
+
+test_that("circ_dispersion returns correct mean and R for known angles", {
+  hd <- data.frame(heading = c(0, 0, 0))
+  res <- circ_dispersion(hd)
+  expect_equal(res$resultant_R, 1, tolerance = 1e-9)
+  expect_equal(res$mean_dir,    0, tolerance = 1e-9)
+  expect_equal(res$n,           3L)
+  expect_equal(res$circ_sd,     0, tolerance = 1e-9)
+})
+
+test_that("circ_dispersion R near 0 for uniform spread", {
+  hd <- data.frame(heading = c(0, pi/2, pi, 3*pi/2))
+  res <- circ_dispersion(hd)
+  expect_equal(res$resultant_R, 0, tolerance = 1e-9)
+})
+
+test_that("circ_dispersion groups correctly", {
+  hd <- data.frame(id = c("A","A","B","B"),
+                   heading = c(0, 0, pi/2, pi/2))
+  res <- circ_dispersion(hd, group_col = "id")
+  expect_equal(nrow(res), 2L)
+  a <- res[res$id == "A", ]; b <- res[res$id == "B", ]
+  expect_equal(a$resultant_R, 1, tolerance = 1e-9)
+  expect_equal(b$mean_dir, pi/2, tolerance = 1e-9)
+})
+
+# ---- sector_summary ----------------------------------------------------------
+
+test_that("sector_summary proportions sum to 1", {
+  hd <- data.frame(heading = seq(-pi, pi, length.out = 100))
+  ss <- sector_summary(hd, sectors = 8)
+  expect_equal(sum(ss$proportion), 1, tolerance = 1e-9)
+  expect_equal(nrow(ss), 8L)
+})
+
+test_that("sector_summary concentrates count in the correct sector", {
+  hd <- data.frame(heading = rep(0, 20))  # all pointing East
+  ss <- sector_summary(hd, sectors = 4)
+  east <- ss[which.max(ss$count), ]
+  expect_equal(east$mid_angle, 0, tolerance = pi/4 + 1e-9)
+  expect_equal(east$count, 20L)
+})
+
+test_that("sector_summary groups by id", {
+  hd <- data.frame(id = rep(c("A","B"), each = 10),
+                   heading = c(rep(0, 10), rep(pi, 10)))
+  ss <- sector_summary(hd, sectors = 4, group_col = "id")
+  expect_equal(nrow(ss), 8L)
+  # All of A's frames (heading=0) must land in exactly one sector
+  a_ss <- ss[ss$id == "A", ]
+  expect_equal(max(a_ss$count), 10L)
+  expect_equal(sum(a_ss$count), 10L)
+})
+
+test_that("sector_summary accepts explicit break points", {
+  hd <- data.frame(heading = c(-pi/2, 0, pi/2))
+  ss <- sector_summary(hd, sectors = c(-pi/2, 0, pi/2))
+  # breaks: -pi, -pi/2, 0, pi/2, pi → 4 sectors
+  expect_equal(nrow(ss), 4L)
+  expect_equal(sum(ss$count), 3L)
+})
+
+# ---- add_angle_rose ----------------------------------------------------------
+
+test_that("add_angle_rose returns a ggplot2 layer", {
+  hd <- data.frame(heading = seq(-pi, pi, length.out = 24))
+  layer <- add_angle_rose(hd)
+  expect_s3_class(layer, "LayerInstance")
+})
+
+test_that("add_angle_rose contains polygon data with x/y columns", {
+  hd <- data.frame(heading = rep(0, 20))
+  layer <- add_angle_rose(hd, bins = 4)
+  expect_true(all(c("x", "y", ".rose_grp") %in% names(layer$data)))
+})

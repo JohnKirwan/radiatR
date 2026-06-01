@@ -2142,3 +2142,78 @@ build_label_data <- function(data, label_col, x_col, y_col, colour_col = NULL, p
   }
   label_data
 }
+
+# ---- add_angle_rose ----------------------------------------------------------
+
+#' Add a rose diagram of heading angles to a radiate plot
+#'
+#' Draws angular frequency as filled wedge polygons in the Cartesian coordinate
+#' space used by \code{\link{radiate}}.  Each wedge spans one angular bin; its
+#' outer radius is proportional to the proportion (or count) of frames in that
+#' bin.  The layer can be faceted by passing the same column used in the parent
+#' \code{radiate(panel_by = ...)} call.
+#'
+#' @param hd Data frame of headings, e.g. from \code{\link{pose_to_headings}}
+#'   or \code{derive_headings(\ldots, frame_select = "all")}.
+#' @param bins Integer; number of equal angular sectors.  Default \code{12}.
+#' @param angle_col Column containing headings in radians.  Default
+#'   \code{"heading"}.
+#' @param group_col Column used for faceting; must match the \code{panel_by}
+#'   argument of the parent \code{radiate()} call.
+#' @param scale Maximum outer radius of the tallest wedge as a fraction of the
+#'   unit circle radius.  Default \code{0.4}.
+#' @param inner_r Inner radius of wedges.  Default \code{0}; set \code{> 0}
+#'   for a donut style.
+#' @param normalize \code{TRUE} (default) scales wedges by proportion;
+#'   \code{FALSE} uses raw counts.
+#' @param fill Wedge fill colour.  Default \code{"steelblue"}.
+#' @param colour Wedge border colour.  Default \code{NA} (no border).
+#' @param alpha Opacity.  Default \code{0.5}.
+#' @param arc_pts Points used to approximate each wedge arc.  Default \code{20L}.
+#' @return A \code{geom_polygon} layer that can be added to a \code{radiate()}
+#'   plot with \code{+}.
+#' @export
+add_angle_rose <- function(hd, bins = 12L, angle_col = "heading",
+                            group_col = NULL, scale = 0.4, inner_r = 0,
+                            normalize = TRUE, fill = "steelblue",
+                            colour = NA, alpha = 0.5, arc_pts = 20L) {
+  stopifnot(is.data.frame(hd), angle_col %in% names(hd))
+  ss    <- sector_summary(hd, sectors = bins, group_col = group_col,
+                          angle_col = angle_col)
+  y_col <- if (normalize) "proportion" else "count"
+  y_max <- max(ss[[y_col]], na.rm = TRUE)
+  if (y_max <= 0) y_max <- 1
+  hw    <- pi / bins   # half sector width in radians
+
+  .wedge <- function(mid, val, grp_label) {
+    r_out  <- inner_r + scale * val / y_max
+    thetas <- seq(mid - hw, mid + hw, length.out = arc_pts)
+    xs <- c(inner_r * cos(mid - hw), r_out * cos(thetas),
+            inner_r * cos(mid + hw), inner_r * cos(mid - hw))
+    ys <- c(inner_r * sin(mid - hw), r_out * sin(thetas),
+            inner_r * sin(mid + hw), inner_r * sin(mid - hw))
+    data.frame(x = xs, y = ys,
+               .rose_grp = paste0(grp_label, "_", round(mid, 4)),
+               stringsAsFactors = FALSE)
+  }
+
+  if (!is.null(group_col)) {
+    polys <- do.call(rbind, lapply(seq_len(nrow(ss)), function(i) {
+      w <- .wedge(ss$mid_angle[i], ss[[y_col]][i],
+                  as.character(ss[[group_col]][i]))
+      w[[group_col]] <- ss[[group_col]][i]
+      w
+    }))
+  } else {
+    polys <- do.call(rbind, lapply(seq_len(nrow(ss)), function(i) {
+      .wedge(ss$mid_angle[i], ss[[y_col]][i], as.character(i))
+    }))
+  }
+
+  ggplot2::geom_polygon(
+    data    = polys,
+    mapping = ggplot2::aes(x = x, y = y, group = .rose_grp),
+    fill = fill, colour = colour, alpha = alpha,
+    inherit.aes = FALSE
+  )
+}
