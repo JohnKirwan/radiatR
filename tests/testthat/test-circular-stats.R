@@ -638,3 +638,106 @@ test_that("vonmises_fit returns NA row for n < 2", {
   expect_equal(fit$n, 1L)
   expect_true(is.na(fit$kappa))
 })
+
+# ---- test_uniformity ---------------------------------------------------------
+
+test_that("test_uniformity returns low p for concentrated angles", {
+  hd <- data.frame(heading = rnorm(40, 0, 0.3))
+  res <- test_uniformity(hd)
+  expect_equal(res$test, "rayleigh")
+  expect_lt(res$p_value, 0.05)
+  expect_equal(res$n, 40L)
+})
+
+test_that("test_uniformity returns high p for uniform angles", {
+  set.seed(1)
+  hd <- data.frame(heading = runif(60, -pi, pi))
+  res <- test_uniformity(hd)
+  expect_gt(res$p_value, 0.05)
+})
+
+test_that("test_uniformity groups by condition column", {
+  set.seed(1)
+  hd <- data.frame(
+    grp     = rep(c("A","B"), each = 40),
+    heading = c(rnorm(40, 0, 0.2), runif(40, -pi, pi))
+  )
+  res <- test_uniformity(hd, group_col = "grp")
+  expect_equal(nrow(res), 2L)
+  a_p <- res$p_value[res$grp == "A"]
+  b_p <- res$p_value[res$grp == "B"]
+  expect_lt(a_p, 0.05)
+  expect_gt(b_p, 0.05)
+})
+
+# ---- test_mean_directions ----------------------------------------------------
+
+test_that("test_mean_directions detects different mean directions", {
+  set.seed(1)
+  hd <- data.frame(
+    cond    = rep(c("A","B"), each = 30),
+    heading = c(
+      as.numeric(circular::rvonmises(30, circular::circular(0),    kappa = 4)),
+      as.numeric(circular::rvonmises(30, circular::circular(pi/2), kappa = 4))
+    )
+  )
+  res <- test_mean_directions(hd, group_col = "cond")
+  expect_equal(res$n_groups, 2L)
+  expect_equal(res$test, "Watson-Williams")
+  expect_lt(res$p_value, 0.01)
+})
+
+test_that("test_mean_directions pairwise returns correct number of rows", {
+  set.seed(2)
+  hd <- data.frame(
+    cond    = rep(c("A","B","C"), each = 25),
+    heading = as.numeric(circular::rvonmises(
+      75, circular::circular(0), kappa = 2))
+  )
+  res <- test_mean_directions(hd, group_col = "cond", pairwise = TRUE)
+  # 3 groups -> C(3,2) = 3 pairs
+  expect_equal(nrow(res), 3L)
+  expect_true(all(c("group1","group2","p_value") %in% names(res)))
+})
+
+test_that("test_mean_directions same-direction groups give high p", {
+  set.seed(3)
+  hd <- data.frame(
+    cond    = rep(c("A","B"), each = 40),
+    heading = as.numeric(circular::rvonmises(
+      80, circular::circular(0), kappa = 3))
+  )
+  res <- test_mean_directions(hd, group_col = "cond")
+  expect_gt(res$p_value, 0.05)
+})
+
+# ---- test_concentration ------------------------------------------------------
+
+test_that("test_concentration returns a one-row data frame", {
+  set.seed(1)
+  hd <- data.frame(
+    cond    = rep(c("A","B"), each = 30),
+    heading = as.numeric(circular::rvonmises(
+      60, circular::circular(0), kappa = 2))
+  )
+  res_p <- test_concentration(hd, group_col = "cond")
+  expect_equal(nrow(res_p), 1L)
+  expect_equal(res_p$test, "equal.kappa")
+
+  res_np <- test_concentration(hd, group_col = "cond", parametric = FALSE)
+  expect_equal(nrow(res_np), 1L)
+  expect_equal(res_np$test, "wallraff")
+})
+
+test_that("test_concentration detects unequal concentrations", {
+  set.seed(1)
+  hd <- data.frame(
+    cond    = rep(c("low","high"), each = 50),
+    heading = c(
+      as.numeric(circular::rvonmises(50, circular::circular(0), kappa = 0.5)),
+      as.numeric(circular::rvonmises(50, circular::circular(0), kappa = 10))
+    )
+  )
+  res <- suppressWarnings(test_concentration(hd, group_col = "cond"))
+  expect_lt(res$p_value, 0.05)
+})
