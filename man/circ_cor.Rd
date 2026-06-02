@@ -37,14 +37,14 @@ continuous linear covariate (\code{x_type = "linear"}, default) or a
 second set of angles (\code{x_type = "circular"}).
 }
 \details{
-\strong{Circular-linear} (T-linear association, Mardia \& Jupp 2000):
-\deqn{r^2 = \frac{r_{cx}^2 + r_{cy}^2 - 2r_{cx}r_{cy}r_{xy}}{1 - r_{xy}^2}}
-where \eqn{r_{cx} = \text{cor}(\cos\theta, x)},
-\eqn{r_{cy} = \text{cor}(\sin\theta, x)},
-\eqn{r_{xy} = \text{cor}(\cos\theta, \sin\theta)}.
-\eqn{r \in [0, 1]}; the test statistic \eqn{n r^2 \sim \chi^2_2} under
-\eqn{H_0}.  Note: \eqn{r} is unsigned (association strength only, not
-direction).
+\strong{Circular-linear} (T-linear association, Mardia and Jupp 2000):
+\deqn{r^2 = (r_{cx}^2 + r_{cy}^2 - 2 r_{cx} r_{cy} r_{xy}) / (1 - r_{xy}^2)}
+where \eqn{r_{cx}}, \eqn{r_{cy}}, and \eqn{r_{xy}} are the Pearson
+correlations of \eqn{x} with \eqn{\cos\theta} and \eqn{\sin\theta}, and of
+\eqn{\cos\theta} with \eqn{\sin\theta}. \eqn{r} lies in \eqn{[0, 1]}; the
+test statistic \eqn{n r^2} is approximately chi-squared with 2 degrees of
+freedom under the null. Note: \eqn{r} is unsigned (association strength
+only, not direction).
 
 \strong{Circular-circular} (Fisher's \eqn{\rho}, via
 \code{\link[circular]{cor.circular}}): \eqn{r \in [-1, 1]}.

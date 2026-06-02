@@ -258,7 +258,9 @@ assign_cycle_colours <- function(data, id_col, n, panel_col = NULL,
     panels <- data[[panel_col]]
     out <- integer(length(ids))
     for (p in unique(panels)) {
-      rows        <- panels == p
+      # NA panel values form their own group; panels == NA would yield NA
+      # subscripts, so match them explicitly.
+      rows        <- if (is.na(p)) is.na(panels) else !is.na(panels) & panels == p
       unique_ids_p <- unique(ids[rows])
       out[rows]   <- ((match(ids[rows], unique_ids_p) - 1L) %% n_int) + 1L
     }

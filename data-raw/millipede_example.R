@@ -140,6 +140,6 @@ methods::validObject(cpunctatus)
 
 millipede_tracks <- tibble::as_tibble(cpunctatus@data)
 
-usethis::use_data(cpunctatus, overwrite = TRUE, compress = "gzip")
-usethis::use_data(millipede_tracks, overwrite = TRUE, compress = "gzip")
+usethis::use_data(cpunctatus, overwrite = TRUE, compress = "xz")
+usethis::use_data(millipede_tracks, overwrite = TRUE, compress = "xz")
 message("Built cpunctatus (TrajSet) and millipede_tracks (tibble)")
