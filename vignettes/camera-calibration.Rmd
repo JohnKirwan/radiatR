@@ -100,13 +100,13 @@ cam_cal_many(pts, K, distortion, F_mm)
 ```
 
 Supplying a `CalModel` lets you calibrate entire trajectory sets with a single call.
-The bundled *P. lividus* example data provides real pixel-space tracks recorded
-by a webcam mounted above a circular arena. We load the first trial and apply the
+The bundled millipede example data provides real pixel-space tracks recorded
+by a camera mounted above a circular arena. We load the first trial and apply the
 hypothetical calibration model defined above.
 
 ```{r trajset-example}
 track_dir <- system.file("extdata", "tracks", package = "radiatR")
-manifest_path <- system.file("extdata", "P_lividus_trials.csv", package = "radiatR")
+manifest_path <- system.file("extdata", "millipede_trials.csv", package = "radiatR")
 
 file_tbl <- import_tracks(track_dir)
 manifest <- import_info(manifest_path)

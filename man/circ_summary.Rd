@@ -52,9 +52,9 @@ length, concentration) from the step-angle column of a `TrajSet`.
 }
 \examples{
 \dontrun{
-data(plividus)
-circ_summary(plividus, by = "id")
-circ_summary(plividus, by = "global")
+data(cpunctatus)
+circ_summary(cpunctatus, by = "id")
+circ_summary(cpunctatus, by = "global")
 }
 
 }

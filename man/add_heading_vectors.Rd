@@ -33,7 +33,7 @@ A `geom_segment()` layer.
 Draws a segment from the inner-radius crossing position to the heading
 endpoint on the unit circle for each row of a headings data frame. This
 visualises the extrapolated vector used to derive the heading and mirrors
-the dotted-line display in the original P. lividus tracking workflow.
+the dotted-line display in the original millipede tracking workflow.
 }
 \details{
 Requires columns `heading`, `x_inner`, and `y_inner`, which are present

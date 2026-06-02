@@ -576,6 +576,9 @@ setMethod("c", signature(x="TrajSet"), function(x, ..., recursive = FALSE) {
   same_map <- vapply(xs, function(z) identical(z@cols, x@cols) && identical(z@angle_unit, x@angle_unit), logical(1))
   if (!all(same_map)) stop("All TrajSet objects must share identical column mapping")
   df <- do.call(rbind, lapply(xs, slot, "data"))
+  # TrajSet requires rows ordered by (id, time); inputs may be concatenated in
+  # any order, so sort the combined data before validation.
+  df <- df[order(df[[x@cols$id]], df[[x@cols$time]]), , drop = FALSE]
   histories <- lapply(xs, transform_history)
   meta <- x@meta
   meta$transform_history <- .combine_transform_histories(histories)

@@ -36,29 +36,29 @@ library(ggplot2)
 
 ## Import Pipeline
 
-The package ships five arc = 0° example tracks that demonstrate the full import workflow. Landmark files (`_point01.txt`) record two pixel-space reference points per trial (arena centre and reference point on the arena wall); track files (`_point02.txt`) contain the full xy trajectory.
+The package ships the full set of millipede example tracks that demonstrate the import workflow. Landmark files (`_point01.txt`) record two pixel-space reference points per trial (arena centre and target location on the arena wall); track files (`_point02.txt`) contain the full xy trajectory.
 
 ```{r load-demo}
 track_dir     <- system.file("extdata", "tracks", package = "radiatR")
-manifest_path <- system.file("extdata", "P_lividus_trials.csv", package = "radiatR")
+manifest_path <- system.file("extdata", "millipede_trials.csv", package = "radiatR")
 
 file_tbl  <- import_tracks(track_dir)
 manifest  <- import_info(manifest_path)
 file_tbl  <- load_tracks(file_tbl, manifest, track_dir)
 
-ts_demo <- get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir)
+ts_demo <- suppressWarnings(get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir))
 ts_demo
 ```
 
-`get_all_object_pos()` reads each landmark/track pair, normalises coordinates to a unit circle (arena radius = 1), and returns a `TrajSet`. Trial metadata (arena radius, reference position, frame limits) is in `ts_demo@meta$trial_limits`.
+`get_all_object_pos()` reads each landmark/track pair, normalises coordinates to a unit circle (arena radius = 1), and returns a `TrajSet`. Trial metadata (arena radius, target position, frame limits) is in `ts_demo@meta$trial_limits`.
 
-## Full *P. lividus* Dataset
+## Full Millipede Dataset
 
-The package also provides `plividus`, a pre-computed `TrajSet` containing all 401 trajectories from the experiment across six stimulus arc-angle conditions (0°, 15°, 30°, 45°, 60°, 150°). Loading it is instant.
+The package also provides `cpunctatus`, a pre-computed `TrajSet` of all 263 *Cylindroiulus punctatus* trajectories across the stimulus conditions (target half-widths of 5, 10, 15, 20, 30, 40, 50 degrees, plus a featureless control with `arc = 0`). Loading it is instant, and the per-trial target half-width is already attached as the `arc` column.
 
 ```{r load-full}
-data(plividus)
-plividus
+data(cpunctatus)
+cpunctatus
 ```
 
 ## Plotting Trajectories
@@ -66,7 +66,7 @@ plividus
 `radiate()` draws trajectories on a unit circle with concentric reference rings. Colouring by the `arc` factor shows how paths cluster by condition.
 
 ```{r plot-all}
-radiate(plividus,
+radiate(cpunctatus,
         group_col  = "trial_id",
         colour_col = "arc",
         show_labels = FALSE,
@@ -78,18 +78,16 @@ radiate(plividus,
 The **crossing method** — projecting the vector between two concentric-ring crossings to the unit circle — assigns one directional heading per trial. `derive_headings()` with `return_coords = TRUE` returns both the heading angle and the inner-ring crossing position.
 
 ```{r headings}
-hd <- derive_headings(plividus, rule = "crossing",
+hd <- derive_headings(cpunctatus, rule = "crossing",
                       circ0 = 0.2, circ1 = 0.4,
                       coords = "relative",
                       angle_convention = "clock",
                       return_coords = TRUE)
-# add arc grouping for faceting
-hd$arc <- factor(
-  as.integer(sub("G1D_(\\d+)_.*", "\\1", hd$id)),
-  levels = c(0, 15, 30, 45, 60, 150),
-  labels = c("0°", "15°", "30°", "45°", "60°", "150°")
-)
 names(hd)[names(hd) == "id"] <- "trial_id"
+# join the target half-width (arc) from the dataset for grouping/faceting
+arc_map <- unique(cpunctatus@data[, c("trial_id", "arc")])
+hd       <- merge(hd, arc_map, by = "trial_id")
+hd$arc   <- factor(hd$arc)
 attr(hd, "colour_col") <- "arc"
 head(hd[, c("trial_id", "arc", "heading", "x_inner", "y_inner")])
 ```
@@ -97,7 +95,7 @@ head(hd[, c("trial_id", "arc", "heading", "x_inner", "y_inner")])
 Overlaying the heading endpoints (one hollow circle per trial) and the grand mean direction on the combined trajectory plot gives a compact summary of the full dataset:
 
 ```{r headings-overlay}
-p_all <- radiate(plividus,
+p_all <- radiate(cpunctatus,
                  group_col   = "trial_id",
                  colour_col  = "arc",
                  show_labels = FALSE,
@@ -142,7 +140,7 @@ Layers compose with the standard `ggplot2` `+` operator, so a plot can be assemb
 **Trajectories:**
 
 ```{r build-1}
-p <- radiate(plividus,
+p <- radiate(cpunctatus,
              group_col   = "trial_id",
              colour_col  = "arc",
              show_labels = FALSE,
@@ -185,12 +183,12 @@ Faceting by arc angle shows each condition separately. Within each panel, `assig
 ```{r arc-panels-colours}
 # Pre-compute cycling colours: 10 colours, restarting within each arc panel.
 # Join to headings so heading layers can use the same column.
-plividus_cc        <- plividus
-plividus_cc@data   <- assign_cycle_colours(plividus@data,
+cpunctatus_cc        <- cpunctatus
+cpunctatus_cc@data   <- assign_cycle_colours(cpunctatus@data,
                                             id_col    = "trial_id",
                                             n         = 10,
                                             panel_col = "arc")
-colour_map <- unique(plividus_cc@data[, c("trial_id", "cycle_colour")])
+colour_map <- unique(cpunctatus_cc@data[, c("trial_id", "cycle_colour")])
 hd_cc      <- merge(hd, colour_map,
                     by      = "trial_id", all.x = TRUE)
 # merge() strips attributes — restore convention metadata from hd
@@ -201,7 +199,7 @@ attr(hd_cc, "colour_col")         <- "cycle_colour"
 ```
 
 ```{r arc-panels-simple, fig.width=8, fig.height=5}
-p <- radiate(plividus_cc,
+p <- radiate(cpunctatus_cc,
         group_col    = "trial_id",
         colour_col   = "cycle_colour",
         panel_by     = "arc",
@@ -261,7 +259,7 @@ add_circular_density(dens_df, colour_col = "arc", fill = "grey80", alpha = 0.35)
 The convenience wrapper `add_heading_density()` skips the intermediate step when no substitution is needed. The combined panel plot below uses it to shade a per-condition von Mises density alongside the heading vectors:
 
 ```{r density-overlay, fig.width=8, fig.height=5}
-radiate(plividus_cc,
+radiate(cpunctatus_cc,
         group_col    = "trial_id",
         colour_col   = "cycle_colour",
         panel_by     = "arc",
@@ -287,7 +285,7 @@ dens_boot <- compute_circular_density(hd, colour_col = "arc",
                                       boot_reps = 499L, boot_alpha = 0.05,
                                       n_theta = 300L)
 
-radiate(plividus,
+radiate(cpunctatus,
         group_col    = "trial_id",
         colour_cycle = 10,
         panel_by     = "arc",
@@ -340,7 +338,7 @@ farthest from the arena centre. It requires no ring parameters and never
 returns `NA` because every trial has a most-distal frame.
 
 ```{r hd-distal}
-hd_distal <- derive_headings(plividus, rule = "distal",
+hd_distal <- derive_headings(cpunctatus, rule = "distal",
                               coords = "relative",
                               angle_convention = "clock",
                               return_coords = TRUE)
@@ -353,7 +351,7 @@ names(hd_distal)[names(hd_distal) == "id"] <- "trial_id"
 ```
 
 Per-condition resultant lengths from `"distal"` are very close to those from
-`"crossing"`, consistent with *P. lividus* tracks being fairly direct:
+`"crossing"`, consistent with millipede tracks being fairly direct:
 
 ```{r hd-compare-R}
 sm_cross  <- compute_circ_mean(hd,       colour_col = "arc")[, c("arc", "resultant_R")]
@@ -367,19 +365,19 @@ Visualising the distal headings on the per-condition panel confirms that the
 spatial pattern is consistent with the crossing method:
 
 ```{r hd-distal-panel, fig.width=8, fig.height=5}
-plividus_cc_d        <- plividus
-plividus_cc_d@data   <- assign_cycle_colours(plividus@data,
+cpunctatus_cc_d        <- cpunctatus
+cpunctatus_cc_d@data   <- assign_cycle_colours(cpunctatus@data,
                                               id_col    = "trial_id",
                                               n         = 10,
                                               panel_col = "arc")
-colour_map_d <- unique(plividus_cc_d@data[, c("trial_id", "cycle_colour")])
+colour_map_d <- unique(cpunctatus_cc_d@data[, c("trial_id", "cycle_colour")])
 hd_distal_cc <- merge(hd_distal, colour_map_d, by = "trial_id", all.x = TRUE)
 attr(hd_distal_cc, "angle_convention")   <- attr(hd_distal, "angle_convention")
 attr(hd_distal_cc, "coords")             <- attr(hd_distal, "coords")
 attr(hd_distal_cc, "display_convention") <- attr(hd_distal, "display_convention")
 attr(hd_distal_cc, "colour_col")         <- "cycle_colour"
 
-radiate(plividus_cc_d,
+radiate(cpunctatus_cc_d,
         group_col   = "trial_id",
         colour_col  = "cycle_colour",
         panel_by    = "arc",
@@ -392,7 +390,7 @@ radiate(plividus_cc_d,
   add_heading_arrow(hd_distal_cc, colour_col = "arc", colour = "black")
 ```
 
-Because *P. lividus* tracks are nearly radial, the heading estimates agree
+Because millipede tracks are nearly radial, the heading estimates agree
 closely across methods. For more sinuous species (moths, pigeons) the choice
 of rule has a larger influence on the result.
 
@@ -404,7 +402,7 @@ possible estimate and is the natural match for GPS vanishing-bearing studies
 where only the release and final observed positions are available.
 
 ```{r hd-net}
-hd_net <- derive_headings(plividus, rule = "net",
+hd_net <- derive_headings(cpunctatus, rule = "net",
                            coords = "relative",
                            angle_convention = "clock")
 hd_net$arc <- factor(

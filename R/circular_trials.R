@@ -100,7 +100,8 @@ get_trial_limits <- function(landmarks, animal_track, file_tbl, vid_num,
     }
   }
 
-  if (identical(midpoint, "midpoint") && "type" %in% names(tl) && tl$type[1] == "Herm") {
+  if (identical(midpoint, "midpoint") && "type" %in% names(tl) &&
+      isTRUE(tl$type[1] == "Herm")) {
     ref_theta <- mapply(rad2clock, tl$ref_theta)
     ref_theta <- ref_theta - tl$arc * (pi / 360)
     ref_theta <- wrap_to_2pi(ref_theta)
@@ -259,6 +260,7 @@ get_tracked_object_pos <- function(
     .before = "frame"
   )
 
+  rel_ok <- all(c("rel_x", "rel_y") %in% names(combined))
   trajset <- TrajSet(
     combined,
     id = "trial_id",
@@ -266,6 +268,8 @@ get_tracked_object_pos <- function(
     angle = "rel_theta",
     x = "trans_x",
     y = "trans_y",
+    rel_x = if (rel_ok) "rel_x" else NULL,
+    rel_y = if (rel_ok) "rel_y" else NULL,
     angle_unit = "radians",
     normalize_xy = FALSE,
     meta = list(source = "get_tracked_object_pos")
