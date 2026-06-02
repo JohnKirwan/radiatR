@@ -134,6 +134,36 @@ remotes::install_github("JohnKirwan/radiatR")
 devtools::install_local(".")
 ```
 
+## The graphical app
+
+A browser-based interface covers the common workflow — upload a tracking
+file, choose a heading method, and view circular plots and summary
+statistics — with no R coding required. There are three ways to reach
+it:
+
+**1. Run locally** (works after installing the package):
+
+``` r
+
+radiatR::launch_app()
+```
+
+**2. Hosted on the web** — the bundled app deploys to a Shiny host
+without modification, giving a clickable link for collaborators who do
+not use R:
+
+``` r
+
+rsconnect::deployApp(system.file("app", package = "radiatR"))
+```
+
+**3. Static site (no server)** — a `shinylive` build runs the app
+entirely in the browser via WebAssembly. The GitHub Actions workflow in
+`.github/workflows/shinylive.yaml` publishes it to GitHub Pages
+alongside the documentation, at
+<https://johnkirwan.github.io/radiatR/app/>. Uploaded files never leave
+the user’s machine, which suits sensitive data.
+
 ## Optional Dependencies
 
 | Package                | Used for                         |

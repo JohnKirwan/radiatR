@@ -282,6 +282,18 @@
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_local</span><span class="op">(</span><span class="st">"."</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
+<h2 id="the-graphical-app">The graphical app<a class="anchor" aria-label="anchor" href="#the-graphical-app"></a>
+</h2>
+<p>A browser-based interface covers the common workflow — upload a tracking file, choose a heading method, and view circular plots and summary statistics — with no R coding required. There are three ways to reach it:</p>
+<p><strong>1. Run locally</strong> (works after installing the package):</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">radiatR</span><span class="fu">::</span><span class="fu"><a href="reference/launch_app.html">launch_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><strong>2. Hosted on the web</strong> — the bundled app deploys to a Shiny host without modification, giving a clickable link for collaborators who do not use R:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">rsconnect</span><span class="fu">::</span><span class="fu">deployApp</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"app"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><strong>3. Static site (no server)</strong> — a <code>shinylive</code> build runs the app entirely in the browser via WebAssembly. The GitHub Actions workflow in <code>.github/workflows/shinylive.yaml</code> publishes it to GitHub Pages alongside the documentation, at <a href="https://johnkirwan.github.io/radiatR/app/" class="uri">https://johnkirwan.github.io/radiatR/app/</a>. Uploaded files never leave the user’s machine, which suits sensitive data.</p>
+</div>
+<div class="section level2">
 <h2 id="optional-dependencies">Optional Dependencies<a class="anchor" aria-label="anchor" href="#optional-dependencies"></a>
 </h2>
 <table class="table">
