@@ -95,6 +95,6 @@ edit `NAMESPACE` or `man/*.Rd` by hand.
 
 ### Tests
 
-`tests/testthat/` has one file per module. `urchin_tracks.rda` (in
-`data/`) is the canonical fixture dataset used across multiple test
-files.
+`tests/testthat/` has one file per module. `cpunctatus.rda` /
+`cpunctatus_tracks.rda` (in `data/`) are the bundled example datasets (a
+*Cylindroiulus punctatus* millipede visual-orientation experiment).

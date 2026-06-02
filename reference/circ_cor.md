@@ -50,12 +50,13 @@ Tidy data frame with columns `group_col` (if supplied), `r`, `n`,
 
 ## Details
 
-**Circular-linear** (T-linear association, Mardia \\ Jupp 2000): \$\$r^2
-= \frac{r\_{cx}^2 + r\_{cy}^2 - 2r\_{cx}r\_{cy}r\_{xy}}{1 -
-r\_{xy}^2}\$\$ where \\r\_{cx} = \text{cor}(\cos\theta, x)\\, \\r\_{cy}
-= \text{cor}(\sin\theta, x)\\, \\r\_{xy} = \text{cor}(\cos\theta,
-\sin\theta)\\. \\r \in \[0, 1\]\\; the test statistic \\n r^2 \sim
-\chi^2_2\\ under \\H_0\\. Note: \\r\\ is unsigned (association strength
+**Circular-linear** (T-linear association, Mardia and Jupp 2000):
+\$\$r^2 = (r\_{cx}^2 + r\_{cy}^2 - 2 r\_{cx} r\_{cy} r\_{xy}) / (1 -
+r\_{xy}^2)\$\$ where \\r\_{cx}\\, \\r\_{cy}\\, and \\r\_{xy}\\ are the
+Pearson correlations of \\x\\ with \\\cos\theta\\ and \\\sin\theta\\,
+and of \\\cos\theta\\ with \\\sin\theta\\. \\r\\ lies in \\\[0, 1\]\\;
+the test statistic \\n r^2\\ is approximately chi-squared with 2 degrees
+of freedom under the null. Note: \\r\\ is unsigned (association strength
 only, not direction).
 
 **Circular-circular** (Fisher's \\\rho\\, via

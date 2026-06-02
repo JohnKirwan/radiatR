@@ -18,16 +18,17 @@ helpers cover three typical tasks:
     [`register_loader_dialect()`](https://johnkirwan.github.io/radiatR/reference/register_loader_dialect.md)
     for custom formats.
 
-This vignette walks through each step using the bundled *P. lividus*
+This vignette walks through each step using the bundled millipede
 example data and finishes with a user-defined loader for a custom
 format.
 
 ## Loading a Real Experiment
 
-The package ships five baseline trials from a *Paracentrotus lividus*
-visual acuity experiment. Tracks are stored as paired tab-separated text
-files: `_point01.txt` holds two landmark rows (arena centre + reference
-point); `_point02.txt` holds the full per-frame xy trajectory.
+The package ships the trials from a *Cylindroiulus punctatus*
+(millipede) visual orientation experiment. Tracks are stored as paired
+tab-separated text files: `_point01.txt` holds two landmark rows (arena
+centre + target location on the wall); `_point02.txt` holds the full
+per-frame xy trajectory.
 
 ### Step 1 — discover files
 
@@ -39,15 +40,16 @@ a tibble of basenames.
 
 track_dir <- system.file("extdata", "tracks", package = "radiatR")
 file_tbl  <- import_tracks(track_dir)
-file_tbl
-#> # A tibble: 5 × 3
-#>   basename                                 landmark                        track
-#>   <chr>                                    <chr>                           <chr>
-#> 1 G1D_0_obstacle/WIN_20210201_11_24_19_Pro G1D_0_obstacle/WIN_20210201_11… G1D_…
-#> 2 G1D_0_obstacle/WIN_20210201_11_32_56_Pro G1D_0_obstacle/WIN_20210201_11… G1D_…
-#> 3 G1D_0_obstacle/WIN_20210204_16_55_13_Pro G1D_0_obstacle/WIN_20210204_16… G1D_…
-#> 4 G1D_0_obstacle/WIN_20210204_17_12_38_Pro G1D_0_obstacle/WIN_20210204_17… G1D_…
-#> 5 G1D_0_obstacle/WIN_20210204_17_30_19_Pro G1D_0_obstacle/WIN_20210204_17… G1D_…
+head(file_tbl)
+#> # A tibble: 6 × 3
+#>   basename landmark          track            
+#>   <chr>    <chr>             <chr>            
+#> 1 10_1     10_1_point01.txt  10_1_point02.txt 
+#> 2 10_10    10_10_point01.txt 10_10_point02.txt
+#> 3 10_11    10_11_point01.txt 10_11_point02.txt
+#> 4 10_12    10_12_point01.txt 10_12_point02.txt
+#> 5 10_13    10_13_point01.txt 10_13_point02.txt
+#> 6 10_14    10_14_point01.txt 10_14_point02.txt
 ```
 
 ### Step 2 — read the manifest
@@ -58,21 +60,23 @@ condition column from multiple metadata fields.
 
 ``` r
 
-manifest_path <- system.file("extdata", "P_lividus_trials.csv", package = "radiatR")
+manifest_path <- system.file("extdata", "millipede_trials.csv", package = "radiatR")
 manifest <- import_info(manifest_path, cond_cols = c("type", "arc"))
-manifest
-#>   trial type arc id stim_loc       date     time obstacle
-#> 1     1 Herm   0  4      -32 01/02/2021 11:24:00  marbles
-#> 2     2 Herm   0  6      148 04/02/2021 16:55:00  marbles
-#> 3     3 Herm   0  9       49 01/02/2021 11:32:00  marbles
-#> 4     4 Herm   0 32      266 04/02/2021 17:12:00  marbles
-#> 5     5 Herm   0 20       75 04/02/2021 17:30:00  marbles
-#>                                       file   cond
-#> 1 G1D_0_obstacle/WIN_20210201_11_24_19_Pro Herm_0
-#> 2 G1D_0_obstacle/WIN_20210201_11_32_56_Pro Herm_0
-#> 3 G1D_0_obstacle/WIN_20210204_16_55_13_Pro Herm_0
-#> 4 G1D_0_obstacle/WIN_20210204_17_12_38_Pro Herm_0
-#> 5 G1D_0_obstacle/WIN_20210204_17_30_19_Pro Herm_0
+head(manifest)
+#>    file arc id stimulus_period recorded_radian recorded_degree    type obstacle
+#> 1 con_1   0  1               0       -1.473503       -84.42550 control     none
+#> 2 con_2   0  2               0        1.295963        74.25323 control     none
+#> 3 con_3   0  3               0       -0.314510       -18.02010 control     none
+#> 4 con_5   0  5               0       -2.070025      -118.60370 control     none
+#> 5 con_6   0  6               0       -2.907256      -166.57352 control     none
+#> 6 con_7   0  7               0       -1.601138       -91.73845 control     none
+#>        cond
+#> 1 control_0
+#> 2 control_0
+#> 3 control_0
+#> 4 control_0
+#> 5 control_0
+#> 6 control_0
 ```
 
 ### Step 3 — join metadata
@@ -85,15 +89,31 @@ path.
 ``` r
 
 file_tbl <- load_tracks(file_tbl, manifest, track_dir)
-file_tbl[, c("basename", "arc", "type", "obstacle", "id")]
-#> # A tibble: 5 × 5
-#>   basename                                   arc type  obstacle    id
-#>   <chr>                                    <int> <chr> <chr>    <int>
-#> 1 G1D_0_obstacle/WIN_20210201_11_24_19_Pro     0 Herm  marbles      4
-#> 2 G1D_0_obstacle/WIN_20210201_11_32_56_Pro     0 Herm  marbles      6
-#> 3 G1D_0_obstacle/WIN_20210204_16_55_13_Pro     0 Herm  marbles      9
-#> 4 G1D_0_obstacle/WIN_20210204_17_12_38_Pro     0 Herm  marbles     32
-#> 5 G1D_0_obstacle/WIN_20210204_17_30_19_Pro     0 Herm  marbles     20
+#> Warning in .augment_with_manifest(file_tbl, df, manifest_cols): Entries in
+#> `file_tbl` with no matching metadata: con_19
+#> Warning in .augment_with_manifest(file_tbl, df, manifest_cols): Rows in
+#> `manifest` with no corresponding track: con_101, con_102, con_104, con_105,
+#> con_108, con_109, con_110, con_112, con_116, con_117, con_119, con_120,
+#> con_121, 5_101, 5_102, 5_103, 5_104, 5_108, 5_110, 5_117, 5_118, 5_119, 5_121,
+#> 10_101, 10_102, 10_105, 10_107, 10_108, 10_109, 10_110, 10_111, 10_112, 10_113,
+#> 10_114, 10_116, 10_117, 10_119, 10_121, 15_101, 15_102, 15_104, 15_105, 15_107,
+#> 15_109, 15_110, 15_112, 15_116, 15_119, 15_120, 15_121, 20_101, 20_102, 20_103,
+#> 20_104, 20_105, 20_106, 20_107, 20_108, 20_109, 20_110, 20_112, 20_116, 20_117,
+#> 20_119, 20_121, 30_101, 30_102, 30_104, 30_105, 30_106, 30_107, 30_108, 30_109,
+#> 30_113, 30_114, 30_115, 30_116, 30_117, 30_119, 30_121, 40_101, 40_102, 40_103,
+#> 40_104, 40_105, 40_107, 40_108, 40_109, 40_110, 40_112, 40_118, 40_119, 40_121,
+#> 50_12, 50_34, 50_101, 50_104, 50_105, 50_107, 50_108, 50_109, 50_110, 50_112,
+#> 50_113, 50_119, 50_121
+head(file_tbl[, c("basename", "arc", "type", "obstacle", "id")])
+#> # A tibble: 6 × 5
+#>   basename   arc type     obstacle    id
+#>   <chr>    <int> <chr>    <chr>    <int>
+#> 1 10_1        10 stimulus none         1
+#> 2 10_10       10 stimulus none        10
+#> 3 10_11       10 stimulus none        11
+#> 4 10_12       10 stimulus none        12
+#> 5 10_13       10 stimulus none        13
+#> 6 10_14       10 stimulus none        14
 ```
 
 ### Step 4 — extract and normalise trajectories
@@ -105,20 +125,20 @@ coordinates.
 
 ``` r
 
-ts <- get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir)
+ts <- suppressWarnings(get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir))
 ts
-#> TrajSet: 5 trajectories, 2049 observations
-#> Columns: id='trial_id', time='frame', angle='rel_theta' (radians), x='trans_x', y='trans_y'
+#> TrajSet: 235 trajectories, 44331 observations
+#> Columns: id='trial_id', time='frame', angle='rel_theta' (radians), x='trans_x', y='trans_y', rel_x='rel_x', rel_y='rel_y'
 #> Transform steps: unit_circle_mapping 
 #> # A tibble: 6 × 15
-#>   trial_id       frame     x     y trans_x trans_y trans_rho abs_theta rel_theta
-#>   <chr>          <int> <dbl> <dbl>   <dbl>   <dbl>     <dbl>     <dbl>     <dbl>
-#> 1 G1D_0_obstacl…     1 1045.  559.   0.181 -0.0395     0.186      6.07      3.93
-#> 2 G1D_0_obstacl…     2 1045.  559.   0.181 -0.0395     0.186      6.07      3.93
-#> 3 G1D_0_obstacl…     3 1050.  560.   0.191 -0.0407     0.196      6.07      3.93
-#> 4 G1D_0_obstacl…     4 1050.  560.   0.191 -0.0407     0.196      6.07      3.93
-#> 5 G1D_0_obstacl…     5 1052.  560.   0.197 -0.0407     0.202      6.08      3.94
-#> 6 G1D_0_obstacl…     6 1053.  560.   0.199 -0.0407     0.203      6.08      3.94
+#>   trial_id frame     x     y trans_x  trans_y trans_rho abs_theta rel_theta
+#>   <chr>    <int> <dbl> <dbl>   <dbl>    <dbl>     <dbl>     <dbl>     <dbl>
+#> 1 10_1_1       1  456.  372. 0.00511  0         0.00511     0         6.21 
+#> 2 10_1_1       2  458.  370. 0.0128   0.00770   0.0149      0.541     0.464
+#> 3 10_1_1       3  456.  370. 0.00511  0.00770   0.00924     0.985     0.908
+#> 4 10_1_1       4  454.  370. 0        0.00770   0.00770     1.57      1.49 
+#> 5 10_1_1       5  456.  377. 0.00511 -0.0153    0.0162      5.03      4.96 
+#> 6 10_1_1       6  459.  382. 0.0154  -0.0307    0.0343      5.18      5.10 
 #> # ℹ 6 more variables: rel_x <dbl>, rel_y <dbl>, video <chr>, order <chr>,
 #> #   vid_ord <chr>, radius <dbl>
 ```
@@ -129,9 +149,9 @@ The bundled example data was tracked with **dtrack**
 (<https://bitbucket.org/jochensmolka/dtrack>), a desktop tracking tool
 for video recordings of freely-moving animals. The data are from:
 
-> Kirwan J.D., Li T., Ullrich-Lüter J., La Camera G., Nilsson D.-E.,
-> Arnone M.I. (2024). *The sea urchin Paracentrotus lividus orients to
-> visual stimuli.* bioRxiv. <https://doi.org/10.1101/2024.01.05.574409>
+> Kirwan J.D. & Nilsson D.-E. (2019). *A millipede compound eye
+> mediating low-resolution vision.* Vision Research 165, 36–44.
+> <https://doi.org/10.1016/j.visres.2019.09.003>
 
 dtrack exports tab-separated text files with columns `frame`, `x`, `y`,
 and a fourth confidence/flag column. Use
@@ -141,19 +161,18 @@ to load a single trajectory file directly:
 ``` r
 
 track_file <- system.file(
-  "extdata", "tracks", "G1D_0_obstacle",
-  "WIN_20210201_11_24_19_Pro_point02.txt",
+  "extdata", "tracks", "10_10_point02.txt",
   package = "radiatR"
 )
 ts_raw <- dtrack_read(track_file)
 head(ts_raw@data[, c("id", "frame", "x", "y")])
-#>                                  id frame      x      y
-#> 1 WIN_20210201_11_24_19_Pro_point02     1 1044.9 559.09
-#> 2 WIN_20210201_11_24_19_Pro_point02     2 1044.9 559.09
-#> 3 WIN_20210201_11_24_19_Pro_point02     3 1049.5 559.66
-#> 4 WIN_20210201_11_24_19_Pro_point02     4 1049.5 559.66
-#> 5 WIN_20210201_11_24_19_Pro_point02     5 1052.3 559.66
-#> 6 WIN_20210201_11_24_19_Pro_point02     6 1052.9 559.66
+#>              id frame      x      y
+#> 1 10_10_point02     1 469.83 379.47
+#> 2 10_10_point02     2 477.73 386.58
+#> 3 10_10_point02     3 479.31 388.95
+#> 4 10_10_point02     4 482.48 400.81
+#> 5 10_10_point02     5 484.85 406.34
+#> 6 10_10_point02     6 484.06 417.40
 ```
 
 The `_point01` / `_point02` role split used in the bundled data —

@@ -57,12 +57,12 @@ concentration), and \`n\` (number of valid headings in the group).
 
 ``` r
 if (FALSE) { # \dontrun{
-data(plividus)
+data(cpunctatus)
 # per-trial headings (default)
-circ_summary_headings(plividus, rule = "crossing", circ0 = 0.2, circ1 = 0.4)
+circ_summary_headings(cpunctatus, rule = "crossing", circ0 = 0.2, circ1 = 0.4)
 
 # per-condition summary (requires an "arc" column carried through)
-circ_summary_headings(plividus, rule = "crossing",
+circ_summary_headings(cpunctatus, rule = "crossing",
                       circ0 = 0.2, circ1 = 0.4,
                       group_by = "arc")
 } # }

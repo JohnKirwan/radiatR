@@ -56,6 +56,8 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/compute_circ_mean.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/compute_circular_density.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/count_goal_entries.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/cpunctatus.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/cpunctatus_tracks.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/degree_labs.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/derive_headings.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/directedness_arrow.html</loc></url>
@@ -81,7 +83,6 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/load_tracks.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/load_tracks2.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/optically_center.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/plividus.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/pose_to_headings.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/rad2clock.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/rad_shepherd.html</loc></url>
@@ -103,7 +104,6 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/test_mean_directions.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/test_uniformity.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/transform_history.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/urchin_tracks.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/vonmises_fit.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/wrappedcauchy_fit.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/write_calibration_points.html</loc></url>

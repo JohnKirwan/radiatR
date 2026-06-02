@@ -81,18 +81,18 @@ tracking exports from a wide variety of systems into
 <li>Extending the loader registry with
 <code><a href="../reference/register_loader_dialect.html">register_loader_dialect()</a></code> for custom formats.</li>
 </ol>
-<p>This vignette walks through each step using the bundled <em>P.
-lividus</em> example data and finishes with a user-defined loader for a
-custom format.</p>
+<p>This vignette walks through each step using the bundled millipede
+example data and finishes with a user-defined loader for a custom
+format.</p>
 </div>
 <div class="section level2">
 <h2 id="loading-a-real-experiment">Loading a Real Experiment<a class="anchor" aria-label="anchor" href="#loading-a-real-experiment"></a>
 </h2>
-<p>The package ships five baseline trials from a <em>Paracentrotus
-lividus</em> visual acuity experiment. Tracks are stored as paired
+<p>The package ships the trials from a <em>Cylindroiulus punctatus</em>
+(millipede) visual orientation experiment. Tracks are stored as paired
 tab-separated text files: <code>_point01.txt</code> holds two landmark
-rows (arena centre + reference point); <code>_point02.txt</code> holds
-the full per-frame xy trajectory.</p>
+rows (arena centre + target location on the wall);
+<code>_point02.txt</code> holds the full per-frame xy trajectory.</p>
 <div class="section level3">
 <h3 id="step-1-discover-files">Step 1 — discover files<a class="anchor" aria-label="anchor" href="#step-1-discover-files"></a>
 </h3>
@@ -102,15 +102,16 @@ a tibble of basenames.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">track_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"tracks"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span>
 <span><span class="va">file_tbl</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/import_tracks.html">import_tracks</a></span><span class="op">(</span><span class="va">track_dir</span><span class="op">)</span></span>
-<span><span class="va">file_tbl</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 3</span></span></span>
-<span><span class="co">#&gt;   basename                                 landmark                        track</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> G1D_0_obstacle/WIN_20210201_11_24_19_Pro G1D_0_obstacle/WIN_20210201_11… G1D_…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> G1D_0_obstacle/WIN_20210201_11_32_56_Pro G1D_0_obstacle/WIN_20210201_11… G1D_…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> G1D_0_obstacle/WIN_20210204_16_55_13_Pro G1D_0_obstacle/WIN_20210204_16… G1D_…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> G1D_0_obstacle/WIN_20210204_17_12_38_Pro G1D_0_obstacle/WIN_20210204_17… G1D_…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> G1D_0_obstacle/WIN_20210204_17_30_19_Pro G1D_0_obstacle/WIN_20210204_17… G1D_…</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">file_tbl</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 3</span></span></span>
+<span><span class="co">#&gt;   basename landmark          track            </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 10_1     10_1_point01.txt  10_1_point02.txt </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 10_10    10_10_point01.txt 10_10_point02.txt</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 10_11    10_11_point01.txt 10_11_point02.txt</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 10_12    10_12_point01.txt 10_12_point02.txt</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 10_13    10_13_point01.txt 10_13_point02.txt</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 10_14    10_14_point01.txt 10_14_point02.txt</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="step-2-read-the-manifest">Step 2 — read the manifest<a class="anchor" aria-label="anchor" href="#step-2-read-the-manifest"></a>
@@ -119,21 +120,23 @@ a tibble of basenames.</p>
 <code>cond_cols</code> to generate a compound condition column from
 multiple metadata fields.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">manifest_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"P_lividus_trials.csv"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">manifest_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"millipede_trials.csv"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span>
 <span><span class="va">manifest</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/import_info.html">import_info</a></span><span class="op">(</span><span class="va">manifest_path</span>, cond_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"type"</span>, <span class="st">"arc"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">manifest</span></span>
-<span><span class="co">#&gt;   trial type arc id stim_loc       date     time obstacle</span></span>
-<span><span class="co">#&gt; 1     1 Herm   0  4      -32 01/02/2021 11:24:00  marbles</span></span>
-<span><span class="co">#&gt; 2     2 Herm   0  6      148 04/02/2021 16:55:00  marbles</span></span>
-<span><span class="co">#&gt; 3     3 Herm   0  9       49 01/02/2021 11:32:00  marbles</span></span>
-<span><span class="co">#&gt; 4     4 Herm   0 32      266 04/02/2021 17:12:00  marbles</span></span>
-<span><span class="co">#&gt; 5     5 Herm   0 20       75 04/02/2021 17:30:00  marbles</span></span>
-<span><span class="co">#&gt;                                       file   cond</span></span>
-<span><span class="co">#&gt; 1 G1D_0_obstacle/WIN_20210201_11_24_19_Pro Herm_0</span></span>
-<span><span class="co">#&gt; 2 G1D_0_obstacle/WIN_20210201_11_32_56_Pro Herm_0</span></span>
-<span><span class="co">#&gt; 3 G1D_0_obstacle/WIN_20210204_16_55_13_Pro Herm_0</span></span>
-<span><span class="co">#&gt; 4 G1D_0_obstacle/WIN_20210204_17_12_38_Pro Herm_0</span></span>
-<span><span class="co">#&gt; 5 G1D_0_obstacle/WIN_20210204_17_30_19_Pro Herm_0</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">manifest</span><span class="op">)</span></span>
+<span><span class="co">#&gt;    file arc id stimulus_period recorded_radian recorded_degree    type obstacle</span></span>
+<span><span class="co">#&gt; 1 con_1   0  1               0       -1.473503       -84.42550 control     none</span></span>
+<span><span class="co">#&gt; 2 con_2   0  2               0        1.295963        74.25323 control     none</span></span>
+<span><span class="co">#&gt; 3 con_3   0  3               0       -0.314510       -18.02010 control     none</span></span>
+<span><span class="co">#&gt; 4 con_5   0  5               0       -2.070025      -118.60370 control     none</span></span>
+<span><span class="co">#&gt; 5 con_6   0  6               0       -2.907256      -166.57352 control     none</span></span>
+<span><span class="co">#&gt; 6 con_7   0  7               0       -1.601138       -91.73845 control     none</span></span>
+<span><span class="co">#&gt;        cond</span></span>
+<span><span class="co">#&gt; 1 control_0</span></span>
+<span><span class="co">#&gt; 2 control_0</span></span>
+<span><span class="co">#&gt; 3 control_0</span></span>
+<span><span class="co">#&gt; 4 control_0</span></span>
+<span><span class="co">#&gt; 5 control_0</span></span>
+<span><span class="co">#&gt; 6 control_0</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="step-3-join-metadata">Step 3 — join metadata<a class="anchor" aria-label="anchor" href="#step-3-join-metadata"></a>
@@ -144,15 +147,31 @@ resulting tibble carries arc, type, obstacle, and id alongside each file
 path.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">file_tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load_tracks.html">load_tracks</a></span><span class="op">(</span><span class="va">file_tbl</span>, <span class="va">manifest</span>, <span class="va">track_dir</span><span class="op">)</span></span>
-<span><span class="va">file_tbl</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"basename"</span>, <span class="st">"arc"</span>, <span class="st">"type"</span>, <span class="st">"obstacle"</span>, <span class="st">"id"</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 5</span></span></span>
-<span><span class="co">#&gt;   basename                                   arc type  obstacle    id</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> G1D_0_obstacle/WIN_20210201_11_24_19_Pro     0 Herm  marbles      4</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> G1D_0_obstacle/WIN_20210201_11_32_56_Pro     0 Herm  marbles      6</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> G1D_0_obstacle/WIN_20210204_16_55_13_Pro     0 Herm  marbles      9</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> G1D_0_obstacle/WIN_20210204_17_12_38_Pro     0 Herm  marbles     32</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> G1D_0_obstacle/WIN_20210204_17_30_19_Pro     0 Herm  marbles     20</span></span></code></pre></div>
+<span><span class="co">#&gt; Warning in .augment_with_manifest(file_tbl, df, manifest_cols): Entries in</span></span>
+<span><span class="co">#&gt; `file_tbl` with no matching metadata: con_19</span></span>
+<span><span class="co">#&gt; Warning in .augment_with_manifest(file_tbl, df, manifest_cols): Rows in</span></span>
+<span><span class="co">#&gt; `manifest` with no corresponding track: con_101, con_102, con_104, con_105,</span></span>
+<span><span class="co">#&gt; con_108, con_109, con_110, con_112, con_116, con_117, con_119, con_120,</span></span>
+<span><span class="co">#&gt; con_121, 5_101, 5_102, 5_103, 5_104, 5_108, 5_110, 5_117, 5_118, 5_119, 5_121,</span></span>
+<span><span class="co">#&gt; 10_101, 10_102, 10_105, 10_107, 10_108, 10_109, 10_110, 10_111, 10_112, 10_113,</span></span>
+<span><span class="co">#&gt; 10_114, 10_116, 10_117, 10_119, 10_121, 15_101, 15_102, 15_104, 15_105, 15_107,</span></span>
+<span><span class="co">#&gt; 15_109, 15_110, 15_112, 15_116, 15_119, 15_120, 15_121, 20_101, 20_102, 20_103,</span></span>
+<span><span class="co">#&gt; 20_104, 20_105, 20_106, 20_107, 20_108, 20_109, 20_110, 20_112, 20_116, 20_117,</span></span>
+<span><span class="co">#&gt; 20_119, 20_121, 30_101, 30_102, 30_104, 30_105, 30_106, 30_107, 30_108, 30_109,</span></span>
+<span><span class="co">#&gt; 30_113, 30_114, 30_115, 30_116, 30_117, 30_119, 30_121, 40_101, 40_102, 40_103,</span></span>
+<span><span class="co">#&gt; 40_104, 40_105, 40_107, 40_108, 40_109, 40_110, 40_112, 40_118, 40_119, 40_121,</span></span>
+<span><span class="co">#&gt; 50_12, 50_34, 50_101, 50_104, 50_105, 50_107, 50_108, 50_109, 50_110, 50_112,</span></span>
+<span><span class="co">#&gt; 50_113, 50_119, 50_121</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">file_tbl</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"basename"</span>, <span class="st">"arc"</span>, <span class="st">"type"</span>, <span class="st">"obstacle"</span>, <span class="st">"id"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 5</span></span></span>
+<span><span class="co">#&gt;   basename   arc type     obstacle    id</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 10_1        10 stimulus none         1</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 10_10       10 stimulus none        10</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 10_11       10 stimulus none        11</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 10_12       10 stimulus none        12</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 10_13       10 stimulus none        13</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 10_14       10 stimulus none        14</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="step-4-extract-and-normalise-trajectories">Step 4 — extract and normalise trajectories<a class="anchor" aria-label="anchor" href="#step-4-extract-and-normalise-trajectories"></a>
@@ -161,20 +180,20 @@ path.</p>
 landmark rows to establish the arena geometry, and returns a
 <code>TrajSet</code> with normalised unit-circle coordinates.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_all_object_pos.html">get_all_object_pos</a></span><span class="op">(</span>file_tbl <span class="op">=</span> <span class="va">file_tbl</span>, track_dir <span class="op">=</span> <span class="va">track_dir</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_all_object_pos.html">get_all_object_pos</a></span><span class="op">(</span>file_tbl <span class="op">=</span> <span class="va">file_tbl</span>, track_dir <span class="op">=</span> <span class="va">track_dir</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">ts</span></span>
-<span><span class="co">#&gt; TrajSet: 5 trajectories, 2049 observations</span></span>
-<span><span class="co">#&gt; Columns: id='trial_id', time='frame', angle='rel_theta' (radians), x='trans_x', y='trans_y'</span></span>
+<span><span class="co">#&gt; TrajSet: 235 trajectories, 44331 observations</span></span>
+<span><span class="co">#&gt; Columns: id='trial_id', time='frame', angle='rel_theta' (radians), x='trans_x', y='trans_y', rel_x='rel_x', rel_y='rel_y'</span></span>
 <span><span class="co">#&gt; Transform steps: unit_circle_mapping </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 15</span></span></span>
-<span><span class="co">#&gt;   trial_id       frame     x     y trans_x trans_y trans_rho abs_theta rel_theta</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> G1D_0_obstacl…     1 <span style="text-decoration: underline;">1</span>045.  559.   0.181 -<span style="color: #BB0000;">0.039</span><span style="color: #BB0000; text-decoration: underline;">5</span>     0.186      6.07      3.93</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> G1D_0_obstacl…     2 <span style="text-decoration: underline;">1</span>045.  559.   0.181 -<span style="color: #BB0000;">0.039</span><span style="color: #BB0000; text-decoration: underline;">5</span>     0.186      6.07      3.93</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> G1D_0_obstacl…     3 <span style="text-decoration: underline;">1</span>050.  560.   0.191 -<span style="color: #BB0000;">0.040</span><span style="color: #BB0000; text-decoration: underline;">7</span>     0.196      6.07      3.93</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> G1D_0_obstacl…     4 <span style="text-decoration: underline;">1</span>050.  560.   0.191 -<span style="color: #BB0000;">0.040</span><span style="color: #BB0000; text-decoration: underline;">7</span>     0.196      6.07      3.93</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> G1D_0_obstacl…     5 <span style="text-decoration: underline;">1</span>052.  560.   0.197 -<span style="color: #BB0000;">0.040</span><span style="color: #BB0000; text-decoration: underline;">7</span>     0.202      6.08      3.94</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> G1D_0_obstacl…     6 <span style="text-decoration: underline;">1</span>053.  560.   0.199 -<span style="color: #BB0000;">0.040</span><span style="color: #BB0000; text-decoration: underline;">7</span>     0.203      6.08      3.94</span></span>
+<span><span class="co">#&gt;   trial_id frame     x     y trans_x  trans_y trans_rho abs_theta rel_theta</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 10_1_1       1  456.  372. 0.005<span style="text-decoration: underline;">11</span>  0         0.005<span style="text-decoration: underline;">11</span>     0         6.21 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 10_1_1       2  458.  370. 0.012<span style="text-decoration: underline;">8</span>   0.007<span style="text-decoration: underline;">70</span>   0.014<span style="text-decoration: underline;">9</span>      0.541     0.464</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 10_1_1       3  456.  370. 0.005<span style="text-decoration: underline;">11</span>  0.007<span style="text-decoration: underline;">70</span>   0.009<span style="text-decoration: underline;">24</span>     0.985     0.908</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 10_1_1       4  454.  370. 0        0.007<span style="text-decoration: underline;">70</span>   0.007<span style="text-decoration: underline;">70</span>     1.57      1.49 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 10_1_1       5  456.  377. 0.005<span style="text-decoration: underline;">11</span> -<span style="color: #BB0000;">0.015</span><span style="color: #BB0000; text-decoration: underline;">3</span>    0.016<span style="text-decoration: underline;">2</span>      5.03      4.96 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 10_1_1       6  459.  382. 0.015<span style="text-decoration: underline;">4</span>  -<span style="color: #BB0000;">0.030</span><span style="color: #BB0000; text-decoration: underline;">7</span>    0.034<span style="text-decoration: underline;">3</span>      5.18      5.10 </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 6 more variables: rel_x &lt;dbl&gt;, rel_y &lt;dbl&gt;, video &lt;chr&gt;, order &lt;chr&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   vid_ord &lt;chr&gt;, radius &lt;dbl&gt;</span></span></span></code></pre></div>
 </div>
@@ -186,9 +205,8 @@ landmark rows to establish the arena geometry, and returns a
 tracking tool for video recordings of freely-moving animals. The data
 are from:</p>
 <blockquote>
-<p>Kirwan J.D., Li T., Ullrich-Lüter J., La Camera G., Nilsson D.-E.,
-Arnone M.I. (2024). <em>The sea urchin Paracentrotus lividus orients to
-visual stimuli.</em> bioRxiv. <a href="https://doi.org/10.1101/2024.01.05.574409" class="external-link uri">https://doi.org/10.1101/2024.01.05.574409</a></p>
+<p>Kirwan J.D. &amp; Nilsson D.-E. (2019). <em>A millipede compound eye
+mediating low-resolution vision.</em> Vision Research 165, 36–44. <a href="https://doi.org/10.1016/j.visres.2019.09.003" class="external-link uri">https://doi.org/10.1016/j.visres.2019.09.003</a></p>
 </blockquote>
 <p>dtrack exports tab-separated text files with columns
 <code>frame</code>, <code>x</code>, <code>y</code>, and a fourth
@@ -196,19 +214,18 @@ confidence/flag column. Use <code><a href="../reference/dtrack_read.html">dtrack
 trajectory file directly:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">track_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
-<span>  <span class="st">"extdata"</span>, <span class="st">"tracks"</span>, <span class="st">"G1D_0_obstacle"</span>,</span>
-<span>  <span class="st">"WIN_20210201_11_24_19_Pro_point02.txt"</span>,</span>
+<span>  <span class="st">"extdata"</span>, <span class="st">"tracks"</span>, <span class="st">"10_10_point02.txt"</span>,</span>
 <span>  package <span class="op">=</span> <span class="st">"radiatR"</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">ts_raw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dtrack_read.html">dtrack_read</a></span><span class="op">(</span><span class="va">track_file</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">ts_raw</span><span class="op">@</span><span class="va">data</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"frame"</span>, <span class="st">"x"</span>, <span class="st">"y"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                                  id frame      x      y</span></span>
-<span><span class="co">#&gt; 1 WIN_20210201_11_24_19_Pro_point02     1 1044.9 559.09</span></span>
-<span><span class="co">#&gt; 2 WIN_20210201_11_24_19_Pro_point02     2 1044.9 559.09</span></span>
-<span><span class="co">#&gt; 3 WIN_20210201_11_24_19_Pro_point02     3 1049.5 559.66</span></span>
-<span><span class="co">#&gt; 4 WIN_20210201_11_24_19_Pro_point02     4 1049.5 559.66</span></span>
-<span><span class="co">#&gt; 5 WIN_20210201_11_24_19_Pro_point02     5 1052.3 559.66</span></span>
-<span><span class="co">#&gt; 6 WIN_20210201_11_24_19_Pro_point02     6 1052.9 559.66</span></span></code></pre></div>
+<span><span class="co">#&gt;              id frame      x      y</span></span>
+<span><span class="co">#&gt; 1 10_10_point02     1 469.83 379.47</span></span>
+<span><span class="co">#&gt; 2 10_10_point02     2 477.73 386.58</span></span>
+<span><span class="co">#&gt; 3 10_10_point02     3 479.31 388.95</span></span>
+<span><span class="co">#&gt; 4 10_10_point02     4 482.48 400.81</span></span>
+<span><span class="co">#&gt; 5 10_10_point02     5 484.85 406.34</span></span>
+<span><span class="co">#&gt; 6 10_10_point02     6 484.06 417.40</span></span></code></pre></div>
 <p>The <code>_point01</code> / <code>_point02</code> role split used in
 the bundled data — landmarks in one file, trajectory in the other — is
 specific to this experiment and is not a general dtrack convention.</p>

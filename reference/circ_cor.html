@@ -97,14 +97,14 @@ second set of angles (<code>x_type = "circular"</code>).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p><strong>Circular-linear</strong> (T-linear association, Mardia \&amp; Jupp 2000):
-$$r^2 = \frac{r_{cx}^2 + r_{cy}^2 - 2r_{cx}r_{cy}r_{xy}}{1 - r_{xy}^2}$$
-where \(r_{cx} = \text{cor}(\cos\theta, x)\),
-\(r_{cy} = \text{cor}(\sin\theta, x)\),
-\(r_{xy} = \text{cor}(\cos\theta, \sin\theta)\).
-\(r \in [0, 1]\); the test statistic \(n r^2 \sim \chi^2_2\) under
-\(H_0\).  Note: \(r\) is unsigned (association strength only, not
-direction).</p>
+    <p><strong>Circular-linear</strong> (T-linear association, Mardia and Jupp 2000):
+$$r^2 = (r_{cx}^2 + r_{cy}^2 - 2 r_{cx} r_{cy} r_{xy}) / (1 - r_{xy}^2)$$
+where \(r_{cx}\), \(r_{cy}\), and \(r_{xy}\) are the Pearson
+correlations of \(x\) with \(\cos\theta\) and \(\sin\theta\), and of
+\(\cos\theta\) with \(\sin\theta\). \(r\) lies in \([0, 1]\); the
+test statistic \(n r^2\) is approximately chi-squared with 2 degrees of
+freedom under the null. Note: \(r\) is unsigned (association strength
+only, not direction).</p>
 <p><strong>Circular-circular</strong> (Fisher's \(\rho\), via
 <code><a href="https://rdrr.io/pkg/circular/man/cor.circular.html" class="external-link">cor.circular</a></code>): \(r \in [-1, 1]\).</p>
     </div>

@@ -64,8 +64,8 @@ A \`data.frame\` with columns \`id\`, \`n\`, \`t_start\`, \`t_end\`,
 
 ``` r
 if (FALSE) { # \dontrun{
-data(plividus)
-circ_summary(plividus, by = "id")
-circ_summary(plividus, by = "global")
+data(cpunctatus)
+circ_summary(cpunctatus, by = "id")
+circ_summary(cpunctatus, by = "global")
 } # }
 ```

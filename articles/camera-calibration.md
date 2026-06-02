@@ -151,19 +151,34 @@ cam_cal_many(pts, K, distortion, F_mm)
 ```
 
 Supplying a `CalModel` lets you calibrate entire trajectory sets with a
-single call. The bundled *P. lividus* example data provides real
-pixel-space tracks recorded by a webcam mounted above a circular arena.
+single call. The bundled millipede example data provides real
+pixel-space tracks recorded by a camera mounted above a circular arena.
 We load the first trial and apply the hypothetical calibration model
 defined above.
 
 ``` r
 
 track_dir <- system.file("extdata", "tracks", package = "radiatR")
-manifest_path <- system.file("extdata", "P_lividus_trials.csv", package = "radiatR")
+manifest_path <- system.file("extdata", "millipede_trials.csv", package = "radiatR")
 
 file_tbl <- import_tracks(track_dir)
 manifest <- import_info(manifest_path)
 file_tbl <- load_tracks(file_tbl, manifest, track_dir)
+#> Warning in .augment_with_manifest(file_tbl, df, manifest_cols): Entries in
+#> `file_tbl` with no matching metadata: con_19
+#> Warning in .augment_with_manifest(file_tbl, df, manifest_cols): Rows in
+#> `manifest` with no corresponding track: con_101, con_102, con_104, con_105,
+#> con_108, con_109, con_110, con_112, con_116, con_117, con_119, con_120,
+#> con_121, 5_101, 5_102, 5_103, 5_104, 5_108, 5_110, 5_117, 5_118, 5_119, 5_121,
+#> 10_101, 10_102, 10_105, 10_107, 10_108, 10_109, 10_110, 10_111, 10_112, 10_113,
+#> 10_114, 10_116, 10_117, 10_119, 10_121, 15_101, 15_102, 15_104, 15_105, 15_107,
+#> 15_109, 15_110, 15_112, 15_116, 15_119, 15_120, 15_121, 20_101, 20_102, 20_103,
+#> 20_104, 20_105, 20_106, 20_107, 20_108, 20_109, 20_110, 20_112, 20_116, 20_117,
+#> 20_119, 20_121, 30_101, 30_102, 30_104, 30_105, 30_106, 30_107, 30_108, 30_109,
+#> 30_113, 30_114, 30_115, 30_116, 30_117, 30_119, 30_121, 40_101, 40_102, 40_103,
+#> 40_104, 40_105, 40_107, 40_108, 40_109, 40_110, 40_112, 40_118, 40_119, 40_121,
+#> 50_12, 50_34, 50_101, 50_104, 50_105, 50_107, 50_108, 50_109, 50_110, 50_112,
+#> 50_113, 50_119, 50_121
 
 # Read the first track file in pixel space
 track_raw <- read.delim(
@@ -182,13 +197,13 @@ ts_px <- TrajSet(
 
 ts_mm <- calibrate_positions(ts_px, cal_model)
 head(ts_mm@data)
-#>   frame        x        y                                id   radius     angle
-#> 1     1 41.44048 22.21084 WIN_20210201_11_24_19_Pro_point02 1185.073 0.4920075
-#> 2     2 41.44048 22.21084 WIN_20210201_11_24_19_Pro_point02 1185.073 0.4920075
-#> 3     3 41.71374 22.28286 WIN_20210201_11_24_19_Pro_point02 1189.399 0.4906202
-#> 4     4 41.71374 22.28286 WIN_20210201_11_24_19_Pro_point02 1189.399 0.4906202
-#> 5     5 41.86786 22.30621 WIN_20210201_11_24_19_Pro_point02 1191.870 0.4895237
-#> 6     6 41.89993 22.31070 WIN_20210201_11_24_19_Pro_point02 1192.400 0.4892894
+#>   frame        x        y           id   radius     angle
+#> 1     1 14.24001 11.64882 10_1_point02 588.4075 0.6856412
+#> 2     2 14.31990 11.57890 10_1_point02 588.7537 0.6799556
+#> 3     3 14.21572 11.55460 10_1_point02 586.9042 0.6824999
+#> 4     4 14.14695 11.53865 10_1_point02 585.6785 0.6841978
+#> 5     5 14.28932 11.83800 10_1_point02 591.4184 0.6918499
+#> 6     6 14.48097 12.06383 10_1_point02 596.8850 0.6945896
 ```
 
 In a real workflow, replace the hypothetical `K`, `distortion`, and

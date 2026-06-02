@@ -288,14 +288,13 @@ Angle-convention conversions and geometric helpers.
 
 ## Datasets
 
-Bundled example data from a Paracentrotus lividus visual acuity
-experiment.
+Bundled example data from a Cylindroiulus punctatus (millipede) visual
+orientation experiment (Kirwan & Nilsson 2019).
 
-- [`plividus`](https://johnkirwan.github.io/radiatR/reference/plividus.md)
-  : \*Paracentrotus lividus\* visual acuity trajectory dataset
-- [`urchin_tracks`](https://johnkirwan.github.io/radiatR/reference/urchin_tracks.md)
-  : \*Paracentrotus lividus\* visual acuity trajectory tibble (urchin
-  tracks)
+- [`cpunctatus`](https://johnkirwan.github.io/radiatR/reference/cpunctatus.md)
+  : \*Cylindroiulus punctatus\* visual orientation trajectory dataset
+- [`cpunctatus_tracks`](https://johnkirwan.github.io/radiatR/reference/cpunctatus_tracks.md)
+  : \*Cylindroiulus punctatus\* trajectory tibble
 
 ## Miscellaneous
 
@@ -400,6 +399,10 @@ Any remaining exported topics.
   : Compute a circular density data frame from heading observations
 - [`count_goal_entries()`](https://johnkirwan.github.io/radiatR/reference/count_goal_entries.md)
   : Count entries into a goal zone for circular arena trajectories
+- [`cpunctatus`](https://johnkirwan.github.io/radiatR/reference/cpunctatus.md)
+  : \*Cylindroiulus punctatus\* visual orientation trajectory dataset
+- [`cpunctatus_tracks`](https://johnkirwan.github.io/radiatR/reference/cpunctatus_tracks.md)
+  : \*Cylindroiulus punctatus\* trajectory tibble
 - [`degree_labs()`](https://johnkirwan.github.io/radiatR/reference/degree_labs.md)
   : Label the four diagonal directions.
 - [`derive_headings()`](https://johnkirwan.github.io/radiatR/reference/derive_headings.md)
@@ -445,8 +448,6 @@ Any remaining exported topics.
   : Legacy helper to merge manifest metadata with a track table
 - [`load_tracks2()`](https://johnkirwan.github.io/radiatR/reference/load_tracks2.md)
   : Flexible metadata join for track tables
-- [`plividus`](https://johnkirwan.github.io/radiatR/reference/plividus.md)
-  : \*Paracentrotus lividus\* visual acuity trajectory dataset
 - [`pose_to_headings()`](https://johnkirwan.github.io/radiatR/reference/pose_to_headings.md)
   : Derive per-frame headings from pose data without a TrajSet
 - [`rad2clock()`](https://johnkirwan.github.io/radiatR/reference/rad2clock.md)
@@ -491,9 +492,6 @@ Any remaining exported topics.
   [`log_transform()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`set_transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   : Transform history helpers for TrajSet objects
-- [`urchin_tracks`](https://johnkirwan.github.io/radiatR/reference/urchin_tracks.md)
-  : \*Paracentrotus lividus\* visual acuity trajectory tibble (urchin
-  tracks)
 - [`vonmises_fit()`](https://johnkirwan.github.io/radiatR/reference/vonmises_fit.md)
   : Fit a von Mises distribution to per-group heading data
 - [`wrappedcauchy_fit()`](https://johnkirwan.github.io/radiatR/reference/wrappedcauchy_fit.md)
