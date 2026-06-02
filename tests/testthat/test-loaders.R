@@ -208,6 +208,56 @@ test_that("trex dialect accepts individual column", {
   expect_equal(length(unique(as.data.frame(ts)$id)), 2L)
 })
 
+test_that("trex dialect auto-detects centroid-variant columns", {
+  df <- data.frame(frame = 1:3,
+                   "X#wcentroid" = c(0, 0.5, 1),
+                   "Y#wcentroid" = c(0, 0, 0),
+                   check.names = FALSE)
+  ts <- TrajSet_read(df, dialect = "trex")
+  expect_equal(as.data.frame(ts)$x_raw[3], 1, tolerance = 1e-9)
+})
+
+test_that("trex dialect prefers plain X/Y over centroid variants", {
+  df <- data.frame(frame = 1:2,
+                   X = c(9, 9), "X#wcentroid" = c(1, 1),
+                   Y = c(0, 0), "Y#wcentroid" = c(0, 0),
+                   check.names = FALSE)
+  ts <- TrajSet_read(df, dialect = "trex")
+  expect_equal(as.data.frame(ts)$x_raw[1], 9, tolerance = 1e-9)
+})
+
+test_that("trex centroid argument forces a specific source", {
+  df <- data.frame(frame = 1:2,
+                   X = c(9, 9), "X#wcentroid" = c(1, 1),
+                   Y = c(0, 0), "Y#wcentroid" = c(0, 0),
+                   check.names = FALSE)
+  ts <- TrajSet_read(df, dialect = "trex",
+                     dialect_args = list(centroid = "wcentroid"))
+  expect_equal(as.data.frame(ts)$x_raw[1], 1, tolerance = 1e-9)
+})
+
+test_that("trex centroid argument errors when variant absent", {
+  df <- data.frame(frame = 1:2, X = c(1, 1), Y = c(0, 0))
+  expect_error(
+    TrajSet_read(df, dialect = "trex",
+                 dialect_args = list(centroid = "pcentroid")),
+    "pcentroid"
+  )
+})
+
+test_that("trex dialect strips TRex unit annotations in column headers", {
+  # genuine TRex export headers carry a trailing unit, e.g. "X#wcentroid (cm)"
+  df <- data.frame(
+    frame              = 1:3,
+    "X#wcentroid (cm)" = c(0, 0.5, 1),
+    "Y#wcentroid (cm)" = c(0, 0, 0),
+    check.names = FALSE
+  )
+  ts <- TrajSet_read(df, dialect = "trex")
+  expect_s4_class(ts, "TrajSet")
+  expect_equal(as.data.frame(ts)$x_raw[3], 1, tolerance = 1e-9)
+})
+
 # ---- tracktor dialect --------------------------------------------------------
 
 test_that("tracktor dialect reads identity and frame columns", {

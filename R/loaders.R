@@ -1140,13 +1140,22 @@ register_loader_dialect("dtrack", function(x) {
 # Each file typically covers one individual; the individual index is inferred
 # from the numeric suffix of the filename stem (e.g. "run_0.csv" -> id "0").
 # Aggregated exports that include an id/individual column are also supported.
-# Typical columns (TRex uses capitalised names): FRAME / frame, X / x, Y / y.
-register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL, fps = NULL) {
+# Position columns: TRex exports plain X / Y, or hashtag-tagged centroid
+# variants -- X#wcentroid (weighted, TRex's recommended best estimate),
+# X#centroid (geometric), and X#pcentroid (posture-based). These normalise to
+# x_wcentroid / x_centroid / x_pcentroid. By default the dialect prefers plain
+# X/Y, then wcentroid, then centroid, then pcentroid; set `centroid` to force
+# one source ("wcentroid", "centroid", or "pcentroid").
+register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL,
+                                          fps = NULL, centroid = NULL) {
   stem <- if (is.character(x) && length(x) == 1L && file.exists(x))
             tools::file_path_sans_ext(basename(x)) else NULL
   df <- if (!is.null(stem)) .read_any(x) else x
   stopifnot(is.data.frame(df))
-  norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(v))
+  # TRex annotates headers with a trailing unit in parentheses, e.g.
+  # "X#wcentroid (cm)" or "SPEED#wcentroid (cm/s)"; strip it before normalising.
+  strip_unit <- function(v) sub("\\s*\\([^)]*\\)\\s*$", "", v)
+  norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(strip_unit(v)))
   nms  <- norm(names(df)); names(df) <- nms
 
   id <- id_col %||% .guess_col(nms, c("id","individual","individual_id","fish","animal","subject"))
@@ -1158,8 +1167,21 @@ register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL, fps 
   }
   time <- time_col %||% .guess_col(nms, c("frame","frames","time","t","timestamp")) %||% "..row"
   if (time == "..row") { df[["..row"]] <- seq_len(nrow(df)); time <- "..row" }
-  xc <- .guess_col(nms, c("x","pos_x","position_x","x_px","cx","center_x"))
-  yc <- .guess_col(nms, c("y","pos_y","position_y","y_px","cy","center_y"))
+
+  if (!is.null(centroid)) {
+    centroid <- match.arg(centroid, c("wcentroid", "centroid", "pcentroid"))
+    xc <- .guess_col(nms, paste0("x_", centroid))
+    yc <- .guess_col(nms, paste0("y_", centroid))
+    if (is.null(xc) || is.null(yc))
+      stop("trex: centroid = '", centroid, "' requested but X#", centroid,
+           " / Y#", centroid, " columns not found")
+  } else {
+    # priority: plain X/Y, then weighted, geometric, posture centroid
+    xc <- .guess_col(nms, c("x","x_wcentroid","x_centroid","x_pcentroid",
+                            "pos_x","position_x","x_px","cx","center_x"))
+    yc <- .guess_col(nms, c("y","y_wcentroid","y_centroid","y_pcentroid",
+                            "pos_y","position_y","y_px","cy","center_y"))
+  }
   if (is.null(xc) || is.null(yc)) stop("trex: could not find x/y position columns")
   data.frame(
     id   = df[[id]],
