@@ -1152,7 +1152,10 @@ register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL,
             tools::file_path_sans_ext(basename(x)) else NULL
   df <- if (!is.null(stem)) .read_any(x) else x
   stopifnot(is.data.frame(df))
-  norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(v))
+  # TRex annotates headers with a trailing unit in parentheses, e.g.
+  # "X#wcentroid (cm)" or "SPEED#wcentroid (cm/s)"; strip it before normalising.
+  strip_unit <- function(v) sub("\\s*\\([^)]*\\)\\s*$", "", v)
+  norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(strip_unit(v)))
   nms  <- norm(names(df)); names(df) <- nms
 
   id <- id_col %||% .guess_col(nms, c("id","individual","individual_id","fish","animal","subject"))
