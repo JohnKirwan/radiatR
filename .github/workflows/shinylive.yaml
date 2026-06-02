@@ -1,0 +1,68 @@
+# Build the bundled Shiny app (inst/app) as a static shinylive site and
+# deploy it to GitHub Pages under /app, alongside the pkgdown documentation.
+#
+# radiatR is a pure-R package, so no emscripten toolchain is needed: rwasm
+# builds it (and assembles a webR package repository) from the local source,
+# and all compiled dependencies (circular, ggplot2, shiny, ...) are pulled
+# as prebuilt WASM binaries from https://repo.r-wasm.org.
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+name: shinylive.yaml
+
+permissions:
+  contents: write
+
+jobs:
+  shinylive:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - name: Install build tooling
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::shinylive
+            any::rwasm
+            any::pkgbuild
+
+      - name: Build radiatR + dependencies into a WASM package repo
+        run: |
+          dir.create("_build/repo", recursive = TRUE, showWarnings = FALSE)
+          # Build radiatR from local source and add it, with all of its
+          # dependencies, to a local webR-compatible repository.
+          rwasm::add_pkg(
+            packages = "radiatR",
+            local    = c(radiatR = "."),
+            repo_dir = "_build/repo"
+          )
+        shell: Rscript {0}
+
+      - name: Export the app as a static shinylive site
+        run: |
+          local_repo <- paste0("file://", normalizePath("_build/repo"))
+          # Resolve radiatR from the freshly built local repo, and every other
+          # package from the public WASM repo.
+          options(shinylive.webr_repos = c(local_repo, "https://repo.r-wasm.org"))
+          shinylive::export(appdir = "inst/app", destdir = "_site/app")
+        shell: Rscript {0}
+
+      - name: Deploy to gh-pages /app (preserving pkgdown content)
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: _site/app
+          target-folder: app
+          clean: true

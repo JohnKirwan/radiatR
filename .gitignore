@@ -9,3 +9,5 @@ vignettes/*.html
 /Meta/
 milli_trials/
 docs
+_build/
+_site/
