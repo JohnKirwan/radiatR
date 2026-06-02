@@ -202,6 +202,17 @@ test_that("assign_cycle_colours cycles indices 1:n across trajectories", {
   expect_equal(as.integer(out$cycle_colour), rep(1:4, 3))
 })
 
+test_that("assign_cycle_colours handles NA panel values without error", {
+  df <- data.frame(id = paste0("T", 1:6),
+                   panel = c("a", "a", NA, NA, "b", "b"))
+  out <- assign_cycle_colours(df, id_col = "id", n = 10L, panel_col = "panel")
+  expect_s3_class(out$cycle_colour, "factor")
+  expect_equal(nrow(out), 6L)
+  # NA-panel rows form their own group: T3, T4 -> indices 1, 2
+  na_rows <- as.integer(out$cycle_colour[is.na(df$panel)])
+  expect_equal(na_rows, c(1L, 2L))
+})
+
 test_that("assign_cycle_colours resets cycle within each panel", {
   df <- data.frame(id = paste0("T", 1:12),
                    panel = rep(c("A", "B"), each = 6))

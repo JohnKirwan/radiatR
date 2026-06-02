@@ -27,15 +27,15 @@ three typical tasks:
 3. Extending the loader registry with `register_loader_dialect()` for
    custom formats.
 
-This vignette walks through each step using the bundled *P. lividus* example
+This vignette walks through each step using the bundled millipede example
 data and finishes with a user-defined loader for a custom format.
 
 ## Loading a Real Experiment
 
-The package ships five baseline trials from a *Paracentrotus lividus* visual
-acuity experiment. Tracks are stored as paired tab-separated text files:
-`_point01.txt` holds two landmark rows (arena centre + reference point);
-`_point02.txt` holds the full per-frame xy trajectory.
+The package ships the trials from a *Cylindroiulus punctatus* (millipede)
+visual orientation experiment. Tracks are stored as paired tab-separated text
+files: `_point01.txt` holds two landmark rows (arena centre + target location
+on the wall); `_point02.txt` holds the full per-frame xy trajectory.
 
 ### Step 1 — discover files
 
@@ -45,7 +45,7 @@ and returns a tibble of basenames.
 ```{r import-tracks}
 track_dir <- system.file("extdata", "tracks", package = "radiatR")
 file_tbl  <- import_tracks(track_dir)
-file_tbl
+head(file_tbl)
 ```
 
 ### Step 2 — read the manifest
@@ -54,9 +54,9 @@ file_tbl
 a compound condition column from multiple metadata fields.
 
 ```{r import-info}
-manifest_path <- system.file("extdata", "P_lividus_trials.csv", package = "radiatR")
+manifest_path <- system.file("extdata", "millipede_trials.csv", package = "radiatR")
 manifest <- import_info(manifest_path, cond_cols = c("type", "arc"))
-manifest
+head(manifest)
 ```
 
 ### Step 3 — join metadata
@@ -67,7 +67,7 @@ each file path.
 
 ```{r load-tracks}
 file_tbl <- load_tracks(file_tbl, manifest, track_dir)
-file_tbl[, c("basename", "arc", "type", "obstacle", "id")]
+head(file_tbl[, c("basename", "arc", "type", "obstacle", "id")])
 ```
 
 ### Step 4 — extract and normalise trajectories
@@ -77,7 +77,7 @@ establish the arena geometry, and returns a `TrajSet` with normalised
 unit-circle coordinates.
 
 ```{r get-all}
-ts <- get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir)
+ts <- suppressWarnings(get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir))
 ts
 ```
 
@@ -87,9 +87,9 @@ The bundled example data was tracked with **dtrack**
 (<https://bitbucket.org/jochensmolka/dtrack>), a desktop tracking tool for
 video recordings of freely-moving animals. The data are from:
 
-> Kirwan J.D., Li T., Ullrich-Lüter J., La Camera G., Nilsson D.-E.,
-> Arnone M.I. (2024). *The sea urchin Paracentrotus lividus orients to visual
-> stimuli.* bioRxiv. <https://doi.org/10.1101/2024.01.05.574409>
+> Kirwan J.D. & Nilsson D.-E. (2019). *A millipede compound eye mediating
+> low-resolution vision.* Vision Research 165, 36–44.
+> <https://doi.org/10.1016/j.visres.2019.09.003>
 
 dtrack exports tab-separated text files with columns `frame`, `x`, `y`, and a
 fourth confidence/flag column. Use `dtrack_read()` to load a single trajectory
@@ -97,8 +97,7 @@ file directly:
 
 ```{r dtrack-single}
 track_file <- system.file(
-  "extdata", "tracks", "G1D_0_obstacle",
-  "WIN_20210201_11_24_19_Pro_point02.txt",
+  "extdata", "tracks", "10_10_point02.txt",
   package = "radiatR"
 )
 ts_raw <- dtrack_read(track_file)

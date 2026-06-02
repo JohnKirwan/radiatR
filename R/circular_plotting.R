@@ -258,7 +258,9 @@ assign_cycle_colours <- function(data, id_col, n, panel_col = NULL,
     panels <- data[[panel_col]]
     out <- integer(length(ids))
     for (p in unique(panels)) {
-      rows        <- panels == p
+      # NA panel values form their own group; panels == NA would yield NA
+      # subscripts, so match them explicitly.
+      rows        <- if (is.na(p)) is.na(panels) else !is.na(panels) & panels == p
       unique_ids_p <- unique(ids[rows])
       out[rows]   <- ((match(ids[rows], unique_ids_p) - 1L) %% n_int) + 1L
     }
@@ -1167,7 +1169,7 @@ add_heading_points <- function(headings_df, colour_col = NULL, colour = NULL,
 #' Draws a segment from the inner-radius crossing position to the heading
 #' endpoint on the unit circle for each row of a headings data frame. This
 #' visualises the extrapolated vector used to derive the heading and mirrors
-#' the dotted-line display in the original P. lividus tracking workflow.
+#' the dotted-line display in the original millipede tracking workflow.
 #'
 #' Requires columns `heading`, `x_inner`, and `y_inner`, which are present
 #' when [derive_headings()] is called with `rule = "crossing"` and

@@ -211,10 +211,11 @@ reference:
 
   - title: "Datasets"
     desc: >
-      Bundled example data from a Paracentrotus lividus visual acuity experiment.
+      Bundled example data from a Cylindroiulus punctatus (millipede) visual
+      orientation experiment (Kirwan & Nilsson 2019).
     contents:
-      - plividus
-      - urchin_tracks
+      - cpunctatus
+      - cpunctatus_tracks
 
   - title: "Miscellaneous"
     desc: Any remaining exported topics.
