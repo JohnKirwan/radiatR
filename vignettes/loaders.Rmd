@@ -146,6 +146,44 @@ When a tool's export is not directly supported, two escape hatches remain:
 convert to a tidy CSV and use `TrajSet_read()` with an explicit `mapping`,
 or register a custom dialect (see *Registering a Custom Dialect* below).
 
+## Bundled single-file examples
+
+The package ships small real exports from three tools so the dialects can be
+tried without any external data. Each loads with one `TrajSet_read()` call,
+pointing the `dialect` argument at the matching tool.
+
+**DeepLabCut** — a three-row scorer/bodypart/coord header; by default the
+position is the likelihood-weighted centroid of all bodyparts, and each
+bodypart's coordinates are retained for use with the `bodypart_axis` rule.
+
+```{r dlc-example}
+dlc_path <- system.file("extdata", "dlc_CollectedData_Pranav.csv",
+                        package = "radiatR")
+ts_dlc <- TrajSet_read(dlc_path, dialect = "deeplabcut_multiheader")
+ts_dlc
+```
+
+**SLEAP** — an analysis CSV with `<node>.x` / `.y` / `.score` columns,
+`track` as the individual and `frame_idx` as time.
+
+```{r sleap-example}
+sleap_path <- system.file("extdata", "sleap_example.csv", package = "radiatR")
+ts_sleap <- TrajSet_read(sleap_path, dialect = "sleap")
+ts_sleap
+```
+
+**Tracktor** — a tidy `frame` / `pos_x` / `pos_y` CSV (one individual here).
+
+```{r tracktor-example}
+tracktor_path <- system.file("extdata", "tracktor_example.csv",
+                            package = "radiatR")
+ts_tracktor <- TrajSet_read(tracktor_path, dialect = "tracktor")
+ts_tracktor
+```
+
+The bundled dtrack example is larger and is shown in full in the
+*Loading a Real Experiment* section above.
+
 ## Reading Tabular Trajectories
 
 For data already in a data frame or CSV, `TrajSet_read()` is the central

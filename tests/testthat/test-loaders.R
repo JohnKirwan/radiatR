@@ -270,6 +270,20 @@ test_that("tracktor dialect reads identity and frame columns", {
   expect_equal(length(unique(as.data.frame(ts)$id)), 2L)
 })
 
+test_that("tracktor dialect reads the bundled real Tracktor export", {
+  path <- system.file("extdata", "tracktor_example.csv", package = "radiatR")
+  skip_if(nchar(path) == 0L, "tracktor_example.csv not found in extdata")
+  ts <- suppressMessages(suppressWarnings(
+    TrajSet_read(path, dialect = "tracktor")
+  ))
+  d <- as.data.frame(ts)
+  expect_s4_class(ts, "TrajSet")
+  expect_gt(nrow(d), 100L)               # ~547 frames
+  expect_true(all(c("x", "y") %in% names(d)))
+  # pos_x / pos_y mapped to x/y; first frame near (1528, 330) in pixels
+  expect_equal(d$x_raw[1], 1528.27, tolerance = 1e-1)
+})
+
 # ---- sleap dialect -----------------------------------------------------------
 
 test_that("sleap dialect detects nodes and computes score-weighted centroid", {
