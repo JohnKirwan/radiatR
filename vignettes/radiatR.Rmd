@@ -54,7 +54,7 @@ ts_demo
 
 ## Full Millipede Dataset
 
-The package also provides `cpunctatus`, a pre-computed `TrajSet` of all 263 *Cylindroiulus punctatus* trajectories across the stimulus conditions (target half-widths of 5, 10, 15, 20, 30, 40, 50 degrees, plus a featureless control with `arc = 0`). Loading it is instant, and the per-trial target half-width is already attached as the `arc` column.
+The package also provides `cpunctatus`, a pre-computed `TrajSet` of all 235 *Cylindroiulus punctatus* trajectories across the stimulus conditions (target half-widths of 5, 10, 15, 20, 30, 40, 50 degrees, plus a featureless control with `arc = 0`). Loading it is instant, and the per-trial target half-width is already attached as the `arc` column.
 
 ```{r load-full}
 data(cpunctatus)
@@ -181,15 +181,10 @@ Three strategies control how trajectories are coloured.
 Faceting by arc angle shows each condition separately. Within each panel, `assign_cycle_colours()` distinguishes individual trajectories by cycling through 10 colours, resetting at each panel boundary. Calling it explicitly on both the track data and the headings data frame (joining by trial id) means heading markers inherit the exact per-trajectory colour — not a single per-condition colour — when `colour_col` is used for both.
 
 ```{r arc-panels-colours}
-# A handful of trials lack a manifest entry (arc = NA); drop them so the
-# per-condition facets show only the labelled stimulus conditions.
-cpunctatus_lab      <- cpunctatus
-cpunctatus_lab@data <- cpunctatus@data[!is.na(cpunctatus@data$arc), ]
-
 # Pre-compute cycling colours: 10 colours, restarting within each arc panel.
 # Join to headings so heading layers can use the same column.
-cpunctatus_cc        <- cpunctatus_lab
-cpunctatus_cc@data   <- assign_cycle_colours(cpunctatus_lab@data,
+cpunctatus_cc        <- cpunctatus
+cpunctatus_cc@data   <- assign_cycle_colours(cpunctatus@data,
                                             id_col    = "trial_id",
                                             n         = 10,
                                             panel_col = "arc")

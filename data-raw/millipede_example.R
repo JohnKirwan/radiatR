@@ -20,6 +20,12 @@
 # Source manifest: supplementary file mmc2.xlsx, columns trial_name,
 #   individual, target_halfwidth, stimulus_period, radian, degree.
 #
+# NOTE: the bundled tracks are a SUBSET of the full experiment. The published
+#   study analysed many more trials (see Kirwan & Nilsson 2019); only the
+#   tracks available in milli_trials/ are packaged here. Object naming uses the
+#   species epithet throughout: cpunctatus (TrajSet) and cpunctatus_tracks
+#   (tibble), for Cylindroiulus punctatus.
+#
 # This script regenerates inst/extdata/millipede_trials.csv, the bundled
 # track files in inst/extdata/tracks/, and the data/*.rda datasets from the
 # raw extract in milli_trials/. Run from the package root.
@@ -134,12 +140,37 @@ meta_cols$arc <- factor(meta_cols$arc,
                         ordered = TRUE)
 d <- cpunctatus@data
 d <- merge(d, meta_cols, by = "trial_id", all.x = TRUE, sort = FALSE)
+
+# Rescue control trials that are absent from the manifest: a "con" trial is a
+# featureless control, i.e. a target half-width (angular subtense) of 0 deg.
+# Recover its animal id from the filename (con_<id>). All other trials without
+# a manifest entry are excluded from the published analysis -> drop them.
+is_con <- is.na(d$arc) & grepl("^con", d$video)
+d$arc[is_con]        <- factor("0", levels = levels(d$arc), ordered = TRUE)
+d$type[is_con]       <- "control"
+d$individual[is_con] <- sub("^con_?", "", d$video[is_con])
+d <- d[!is.na(d$arc), , drop = FALSE]
+
 d <- d[order(d$trial_id, d$frame), , drop = FALSE]
 cpunctatus@data <- tibble::as_tibble(d)
 methods::validObject(cpunctatus)
 
-millipede_tracks <- tibble::as_tibble(cpunctatus@data)
+cpunctatus_tracks <- tibble::as_tibble(cpunctatus@data)
 
 usethis::use_data(cpunctatus, overwrite = TRUE, compress = "xz")
-usethis::use_data(millipede_tracks, overwrite = TRUE, compress = "xz")
-message("Built cpunctatus (TrajSet) and millipede_tracks (tibble)")
+usethis::use_data(cpunctatus_tracks, overwrite = TRUE, compress = "xz")
+message("Built cpunctatus (TrajSet, ",
+        length(unique(cpunctatus@data$trial_id)), " trials) and ",
+        "cpunctatus_tracks (tibble)")
+
+# ---- 5. prune bundled tracks to the curated trial set -----------------------
+# Keep only the track files for trials that survived curation (manifest match
+# or rescued control), so inst/extdata/tracks/ matches the dataset.
+kept <- unique(cpunctatus@data$video)
+keep_files <- as.vector(outer(kept, c("_point01.txt", "_point02.txt"), paste0))
+all_files  <- list.files(ext_dir, pattern = "_point0[12]\\.txt$")
+drop_files <- setdiff(all_files, keep_files)
+if (length(drop_files)) {
+  file.remove(file.path(ext_dir, drop_files))
+  message("Pruned ", length(drop_files), " track files from excluded trials")
+}

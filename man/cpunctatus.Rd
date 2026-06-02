@@ -5,7 +5,7 @@
 \alias{cpunctatus}
 \title{*Cylindroiulus punctatus* visual orientation trajectory dataset}
 \format{
-A [`TrajSet`] object (50,885 observations) whose data columns include:
+A [`TrajSet`] object (44,331 observations) whose data columns include:
   \describe{
     \item{trial_id}{Character. Unique trial identifier.}
     \item{frame}{Integer. Video frame number.}
@@ -14,33 +14,37 @@ A [`TrajSet`] object (50,885 observations) whose data columns include:
     \item{rel_theta}{Numeric. Bearing relative to the target direction.}
     \item{rel_x, rel_y}{Numeric. Target-relative unit-circle coordinates.}
     \item{arc}{Ordered factor. Target half-width in degrees
-      (`0` < `5` < `10` < `15` < `20` < `30` < `40` < `50`; 0 = control);
-      `NA` for trials without a manifest entry.}
+      (`0` < `5` < `10` < `15` < `20` < `30` < `40` < `50`; 0 = control).}
     \item{type}{Character. `"control"` or `"stimulus"`.}
     \item{individual}{Character. Animal identifier.}
   }
 }
 \source{
 Behavioural experiment from Kirwan & Nilsson (2019); raw tracks
-  produced with dtrack and normalised with \pkg{radiatR}.
+  produced with dtrack and normalised with \pkg{radiatR}. A subset of the
+  published dataset.
 }
 \usage{
 cpunctatus
 }
 \description{
-Pre-processed `TrajSet` of 263 millipede trajectories from a visual-acuity
+Pre-processed `TrajSet` of 235 millipede trajectories from a visual-acuity
 experiment. *Cylindroiulus punctatus* individuals were placed at the centre
 of a cylindrical arena under bright, downwelling light, with a dark target
 of varying angular half-width on the arena wall, and their path tracked to
 test whether they oriented toward the target (object taxis). Eight stimulus
-conditions were tested: target half-widths of 5, 10, 15, 20, 30, 40, and
-50 degrees, plus a featureless control (`arc = 0`). Some trials lack a
-manifest entry and so have `arc = NA`.
+conditions are represented: target half-widths of 5, 10, 15, 20, 30, 40, and
+50 degrees, plus a featureless control (`arc = 0`, an angular subtense of
+zero).
 }
 \details{
+These tracks are a **subset** of the full experiment; see Kirwan & Nilsson
+(2019) for the complete dataset and trial counts.
+
 Coordinates are normalised to the unit circle (arena radius = 1) and rotated
 so the target lies in a common reference direction; `rel_theta`, `rel_x`,
-and `rel_y` give the target-relative heading and position.
+and `rel_y` give the target-relative heading and position. The animal
+identifier is retained in the `individual` column.
 
 The raw dtrack landmark/track text files for every trial are shipped in
 `inst/extdata/tracks/`, and the trial manifest in
