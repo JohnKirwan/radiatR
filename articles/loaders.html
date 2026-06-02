@@ -321,11 +321,88 @@ an explicit <code>mapping</code>, or register a custom dialect (see
 <em>Registering a Custom Dialect</em> below).</p>
 </div>
 <div class="section level2">
+<h2 id="bundled-single-file-examples">Bundled single-file examples<a class="anchor" aria-label="anchor" href="#bundled-single-file-examples"></a>
+</h2>
+<p>The package ships small real exports from three tools so the dialects
+can be tried without any external data. Each loads with one
+<code><a href="../reference/TrajSet_read.html">TrajSet_read()</a></code> call, pointing the <code>dialect</code>
+argument at the matching tool.</p>
+<p><strong>DeepLabCut</strong> — a three-row scorer/bodypart/coord
+header; by default the position is the likelihood-weighted centroid of
+all bodyparts, and each bodypart’s coordinates are retained for use with
+the <code>bodypart_axis</code> rule.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dlc_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"dlc_CollectedData_Pranav.csv"</span>,</span>
+<span>                        package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span>
+<span><span class="va">ts_dlc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/TrajSet_read.html">TrajSet_read</a></span><span class="op">(</span><span class="va">dlc_path</span>, dialect <span class="op">=</span> <span class="st">"deeplabcut_multiheader"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; New names:</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> `Pranav` -&gt; `Pranav...2`</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> `Pranav` -&gt; `Pranav...3`</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> `Pranav` -&gt; `Pranav...4`</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> `Pranav` -&gt; `Pranav...5`</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> `Pranav` -&gt; `Pranav...6`</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> `Pranav` -&gt; `Pranav...7`</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> `Pranav` -&gt; `Pranav...8`</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> `Pranav` -&gt; `Pranav...9`</span></span>
+<span><span class="va">ts_dlc</span></span>
+<span><span class="co">#&gt; TrajSet: 1 trajectories, 116 observations</span></span>
+<span><span class="co">#&gt; Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'</span></span>
+<span><span class="co">#&gt;   id time         x         y snout_x snout_y leftear_x leftear_y rightear_x</span></span>
+<span><span class="co">#&gt; 1  1    1 0.1713185 0.9852157  21.521 265.428    33.819   265.941     19.984</span></span>
+<span><span class="co">#&gt; 2  1    2 0.1261041 0.9920170  10.248 288.487    19.984   297.198     12.298</span></span>
+<span><span class="co">#&gt; 3  1    3 0.1410944 0.9899961  24.596 354.075    38.431   354.075     23.058</span></span>
+<span><span class="co">#&gt; 4  1    4 0.2247796 0.9744096  73.787 374.572    78.911   366.373     57.390</span></span>
+<span><span class="co">#&gt; 5  1    5 0.2005174 0.9796901  38.431 333.066    50.729   341.777     39.968</span></span>
+<span><span class="co">#&gt; 6  1    6 0.1613250 0.9869013  23.571 327.430    30.745   339.215     28.183</span></span>
+<span><span class="co">#&gt;   rightear_y tailbase_x tailbase_y    x_raw    y_raw rho    angle</span></span>
+<span><span class="co">#&gt; 1    250.056     87.110    152.698 40.60850 233.5307   1 1.398629</span></span>
+<span><span class="co">#&gt; 2    281.313     95.821    221.361 34.58775 272.0897   1 1.444356</span></span>
+<span><span class="co">#&gt; 3    337.166     99.408    256.205 46.37325 325.3802   1 1.429230</span></span>
+<span><span class="co">#&gt; 4    361.761    106.581    270.040 79.16725 343.1865   1 1.344079</span></span>
+<span><span class="co">#&gt; 5    323.331    131.177    273.627 65.07625 317.9502   1 1.368910</span></span>
+<span><span class="co">#&gt; 6    321.793    131.177    318.719 53.41900 326.7892   1 1.408763</span></span></code></pre></div>
+<p><strong>SLEAP</strong> — an analysis CSV with
+<code>&lt;node&gt;.x</code> / <code>.y</code> / <code>.score</code>
+columns, <code>track</code> as the individual and <code>frame_idx</code>
+as time.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sleap_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sleap_example.csv"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span>
+<span><span class="va">ts_sleap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/TrajSet_read.html">TrajSet_read</a></span><span class="op">(</span><span class="va">sleap_path</span>, dialect <span class="op">=</span> <span class="st">"sleap"</span><span class="op">)</span></span>
+<span><span class="va">ts_sleap</span></span>
+<span><span class="co">#&gt; TrajSet: 1 trajectories, 1 observations</span></span>
+<span><span class="co">#&gt; Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'</span></span>
+<span><span class="co">#&gt;     id time         x         y      a_x      a_y      b_x      b_y    x_raw</span></span>
+<span><span class="co">#&gt; 1 &lt;NA&gt;    0 0.7780386 0.6282165 205.9301 187.8896 278.6352 203.3659 242.2826</span></span>
+<span><span class="co">#&gt;      y_raw rho     angle</span></span>
+<span><span class="co">#&gt; 1 195.6278   1 0.6792588</span></span></code></pre></div>
+<p><strong>Tracktor</strong> — a tidy <code>frame</code> /
+<code>pos_x</code> / <code>pos_y</code> CSV (one individual here).</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tracktor_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"tracktor_example.csv"</span>,</span>
+<span>                            package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span>
+<span><span class="va">ts_tracktor</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/TrajSet_read.html">TrajSet_read</a></span><span class="op">(</span><span class="va">tracktor_path</span>, dialect <span class="op">=</span> <span class="st">"tracktor"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; New names:</span></span>
+<span><span class="co">#&gt; New names:</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> `` -&gt; `...1`</span></span>
+<span><span class="va">ts_tracktor</span></span>
+<span><span class="co">#&gt; TrajSet: 1 trajectories, 547 observations</span></span>
+<span><span class="co">#&gt; Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'</span></span>
+<span><span class="co">#&gt;   id time         x         y    x_raw    y_raw rho     angle</span></span>
+<span><span class="co">#&gt; 1  1    3 0.9774197 0.2113071 1528.267 330.3940   1 0.2129121</span></span>
+<span><span class="co">#&gt; 2  1    4 0.9773659 0.2115559 1528.014 330.7465   1 0.2131666</span></span>
+<span><span class="co">#&gt; 3  1    5 0.9772680 0.2120079 1527.535 331.3825   1 0.2136291</span></span>
+<span><span class="co">#&gt; 4  1    6 0.9772460 0.2121091 1527.485 331.5372   1 0.2137326</span></span>
+<span><span class="co">#&gt; 5  1    7 0.9772475 0.2121024 1527.366 331.5003   1 0.2137258</span></span>
+<span><span class="co">#&gt; 6  1    8 0.9772470 0.2121043 1527.536 331.5405   1 0.2137277</span></span></code></pre></div>
+<p>The bundled dtrack example is larger and is shown in full in the
+<em>Loading a Real Experiment</em> section above.</p>
+</div>
+<div class="section level2">
 <h2 id="reading-tabular-trajectories">Reading Tabular Trajectories<a class="anchor" aria-label="anchor" href="#reading-tabular-trajectories"></a>
 </h2>
 <p>For data already in a data frame or CSV, <code><a href="../reference/TrajSet_read.html">TrajSet_read()</a></code>
 is the central entry point.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">example_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  id   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>,</span>
 <span>  time <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">3</span><span class="op">)</span>, times <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>,</span>
@@ -347,7 +424,7 @@ is the central entry point.</p>
 <p>To batch a directory of CSV files, <code><a href="../reference/TrajSet_read_dir.html">TrajSet_read_dir()</a></code>
 calls <code><a href="../reference/TrajSet_read.html">TrajSet_read()</a></code> for each match and row-binds the
 result.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">csv_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">csv_dir</span><span class="op">)</span></span>
 <span></span>
@@ -368,7 +445,7 @@ result.</p>
 <code><a href="../reference/import_info.html">import_info()</a></code> works on any manifest CSV, and
 <code><a href="../reference/import_tracks.html">import_tracks()</a></code> works on any directory following the
 <code>_point01</code> / <code>_point02</code> naming convention.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">manifest_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".csv"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/writeLines.html" class="external-link">writeLines</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"file,type, arc"</span>, <span class="st">"trial01.csv, baseline,90"</span>, <span class="st">"trial02.csv,stimulus,135"</span><span class="op">)</span>,</span>
@@ -389,7 +466,7 @@ and either <code>angle</code> or <code>(x, y)</code>.</p>
 <p>Below we define a loader for a hypothetical JSON file where each
 track is stored under an ID key with arrays of <code>timestamp</code>,
 <code>px</code>, and <code>py</code>.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fake_json</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".json"</span><span class="op">)</span></span>
 <span><span class="fu">jsonlite</span><span class="fu">::</span><span class="fu"><a href="https://jeroen.r-universe.dev/jsonlite/reference/read_json.html" class="external-link">write_json</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -421,7 +498,7 @@ get a tidy data frame, then pass it to <code><a href="../reference/TrajSet_read.
 standard tabular formats that R’s CSV/TSV readers handle natively,
 <code>TrajSet_read(path, dialect = "name")</code> works directly—but
 non-tabular formats such as JSON require this two-step approach.)</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ts_json</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/TrajSet_read.html">TrajSet_read</a></span><span class="op">(</span><span class="fu">json_tracks_fn</span><span class="op">(</span><span class="va">fake_json</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">ts_json</span></span>
 <span><span class="co">#&gt; TrajSet: 2 trajectories, 6 observations</span></span>

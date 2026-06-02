@@ -200,6 +200,93 @@ remain: convert to a tidy CSV and use
 with an explicit `mapping`, or register a custom dialect (see
 *Registering a Custom Dialect* below).
 
+## Bundled single-file examples
+
+The package ships small real exports from three tools so the dialects
+can be tried without any external data. Each loads with one
+[`TrajSet_read()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read.md)
+call, pointing the `dialect` argument at the matching tool.
+
+**DeepLabCut** — a three-row scorer/bodypart/coord header; by default
+the position is the likelihood-weighted centroid of all bodyparts, and
+each bodypart’s coordinates are retained for use with the
+`bodypart_axis` rule.
+
+``` r
+
+dlc_path <- system.file("extdata", "dlc_CollectedData_Pranav.csv",
+                        package = "radiatR")
+ts_dlc <- TrajSet_read(dlc_path, dialect = "deeplabcut_multiheader")
+#> New names:
+#> • `Pranav` -> `Pranav...2`
+#> • `Pranav` -> `Pranav...3`
+#> • `Pranav` -> `Pranav...4`
+#> • `Pranav` -> `Pranav...5`
+#> • `Pranav` -> `Pranav...6`
+#> • `Pranav` -> `Pranav...7`
+#> • `Pranav` -> `Pranav...8`
+#> • `Pranav` -> `Pranav...9`
+ts_dlc
+#> TrajSet: 1 trajectories, 116 observations
+#> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'
+#>   id time         x         y snout_x snout_y leftear_x leftear_y rightear_x
+#> 1  1    1 0.1713185 0.9852157  21.521 265.428    33.819   265.941     19.984
+#> 2  1    2 0.1261041 0.9920170  10.248 288.487    19.984   297.198     12.298
+#> 3  1    3 0.1410944 0.9899961  24.596 354.075    38.431   354.075     23.058
+#> 4  1    4 0.2247796 0.9744096  73.787 374.572    78.911   366.373     57.390
+#> 5  1    5 0.2005174 0.9796901  38.431 333.066    50.729   341.777     39.968
+#> 6  1    6 0.1613250 0.9869013  23.571 327.430    30.745   339.215     28.183
+#>   rightear_y tailbase_x tailbase_y    x_raw    y_raw rho    angle
+#> 1    250.056     87.110    152.698 40.60850 233.5307   1 1.398629
+#> 2    281.313     95.821    221.361 34.58775 272.0897   1 1.444356
+#> 3    337.166     99.408    256.205 46.37325 325.3802   1 1.429230
+#> 4    361.761    106.581    270.040 79.16725 343.1865   1 1.344079
+#> 5    323.331    131.177    273.627 65.07625 317.9502   1 1.368910
+#> 6    321.793    131.177    318.719 53.41900 326.7892   1 1.408763
+```
+
+**SLEAP** — an analysis CSV with `<node>.x` / `.y` / `.score` columns,
+`track` as the individual and `frame_idx` as time.
+
+``` r
+
+sleap_path <- system.file("extdata", "sleap_example.csv", package = "radiatR")
+ts_sleap <- TrajSet_read(sleap_path, dialect = "sleap")
+ts_sleap
+#> TrajSet: 1 trajectories, 1 observations
+#> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'
+#>     id time         x         y      a_x      a_y      b_x      b_y    x_raw
+#> 1 <NA>    0 0.7780386 0.6282165 205.9301 187.8896 278.6352 203.3659 242.2826
+#>      y_raw rho     angle
+#> 1 195.6278   1 0.6792588
+```
+
+**Tracktor** — a tidy `frame` / `pos_x` / `pos_y` CSV (one individual
+here).
+
+``` r
+
+tracktor_path <- system.file("extdata", "tracktor_example.csv",
+                            package = "radiatR")
+ts_tracktor <- TrajSet_read(tracktor_path, dialect = "tracktor")
+#> New names:
+#> New names:
+#> • `` -> `...1`
+ts_tracktor
+#> TrajSet: 1 trajectories, 547 observations
+#> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'
+#>   id time         x         y    x_raw    y_raw rho     angle
+#> 1  1    3 0.9774197 0.2113071 1528.267 330.3940   1 0.2129121
+#> 2  1    4 0.9773659 0.2115559 1528.014 330.7465   1 0.2131666
+#> 3  1    5 0.9772680 0.2120079 1527.535 331.3825   1 0.2136291
+#> 4  1    6 0.9772460 0.2121091 1527.485 331.5372   1 0.2137326
+#> 5  1    7 0.9772475 0.2121024 1527.366 331.5003   1 0.2137258
+#> 6  1    8 0.9772470 0.2121043 1527.536 331.5405   1 0.2137277
+```
+
+The bundled dtrack example is larger and is shown in full in the
+*Loading a Real Experiment* section above.
+
 ## Reading Tabular Trajectories
 
 For data already in a data frame or CSV,
