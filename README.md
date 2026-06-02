@@ -21,7 +21,7 @@ An R package for importing, analysing, and visualising animal movement trajector
 | `trackmate` | TrackMate (Fiji) |
 | `toxtrac` | ToxTrac |
 | `boris_xy` | BORIS |
-| `trex` | TRex |
+| `trex` | TRex (positional CSV; plain `X`/`Y` or `#wcentroid`/`#centroid`/`#pcentroid` variants) |
 | `anymaze` | ANY-maze (including nose/tail zones) |
 | `tracktor` | Tracktor |
 | `ctrax` | Ctrax (`.mat` files; preserves `theta`, `a`, `b`) |
