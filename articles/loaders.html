@@ -214,6 +214,113 @@ the bundled data — landmarks in one file, trajectory in the other — is
 specific to this experiment and is not a general dtrack convention.</p>
 </div>
 <div class="section level2">
+<h2 id="tracking-tool-format-support">Tracking-tool format support<a class="anchor" aria-label="anchor" href="#tracking-tool-format-support"></a>
+</h2>
+<p><code>radiatR</code> reads tabular (CSV/TSV) exports from many
+tracking tools through named <em>dialects</em>. Each dialect maps a
+tool’s column conventions onto the <code>TrajSet</code> model of one
+position per individual per frame. Pass the dialect name to
+<code>TrajSet_read(path, dialect = "name")</code>; tool-specific options
+go through <code>dialect_args</code>.</p>
+<p>The table below summarises what is and is not currently handled. Two
+limitations are general:</p>
+<ul>
+<li>
+<strong>Tabular text only.</strong> Dialects read CSV/TSV (and,
+where the optional packages are installed, JSON/XML/Parquet). Native
+binary formats — such as NumPy <code>.npz</code> or MATLAB
+<code>.mat</code> — are not read except where noted (<code>ctrax</code>
+reads <code>.mat</code> via the <code>R.matlab</code> package).</li>
+<li>
+<strong>Position, not posture.</strong> <code>radiatR</code> models
+a single position per individual per frame. Per-frame <em>posture</em>
+data (variable-length midline or outline polylines) is outside this
+model. Where a tool tracks discrete body keypoints, those can be loaded
+as extra columns and turned into a body-axis heading with the
+<code>bodypart_axis</code> rule or <code><a href="../reference/pose_to_headings.html">pose_to_headings()</a></code>;
+dense posture polylines are not ingested.</li>
+</ul>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>Dialect</th>
+<th>Handled</th>
+<th>Not handled</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>trex</code></td>
+<td>Positional CSV: plain <code>X</code>/<code>Y</code>, the
+<code>#wcentroid</code> / <code>#centroid</code> /
+<code>#pcentroid</code> centroid variants, and TRex’s <code>(cm)</code>
+/ <code>(px)</code> unit annotations in headers. Per-individual
+<code>_fishN</code> files (id from filename) and aggregated files with
+an id column.</td>
+<td>Native <code>.npz</code> export; posture export
+(<code>midline_points</code>, <code>outline_points</code>).</td>
+</tr>
+<tr class="even">
+<td>
+<code>deeplabcut</code> / <code>deeplabcut_multiheader</code>
+</td>
+<td>Multi-bodypart CSV; single bodypart, or a likelihood-weighted
+centroid of several; three-row scorer/bodypart/coord header. Bodypart
+columns are preserved for <code>bodypart_axis</code>.</td>
+<td>Native HDF5 (<code>.h5</code>) export.</td>
+</tr>
+<tr class="odd">
+<td><code>sleap</code></td>
+<td>Analysis CSV: <code>&lt;node&gt;.x</code> / <code>.y</code> /
+<code>.score</code>; multi-node centroid; <code>track</code> and
+<code>frame_idx</code>.</td>
+<td>Native <code>.slp</code> / HDF5 export.</td>
+</tr>
+<tr class="even">
+<td><code>ethovision</code></td>
+<td>Centre position, and multi-zone exports (nose, tail, etc.); zone
+centroid or single-zone selection.</td>
+<td>Native <code>.xlsx</code> (export to CSV first).</td>
+</tr>
+<tr class="odd">
+<td><code>anymaze</code></td>
+<td>Centre position, optional nose/tail zones, units row.</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td><code>trackmate</code></td>
+<td>
+<code>TRACK_ID</code> / <code>FRAME</code> / <code>POSITION_X</code>
+/ <code>POSITION_Y</code> CSV.</td>
+<td>Native TrackMate <code>.xml</code>.</td>
+</tr>
+<tr class="odd">
+<td><code>ctrax</code></td>
+<td>
+<code>.mat</code> file with the <code>trx</code> struct (centroid +
+ellipse <code>theta</code>/<code>a</code>/<code>b</code>); needs
+<code>R.matlab</code>.</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td>
+<code>idtrackerai_wide</code>, <code>toxtrac</code>,
+<code>boris_xy</code>, <code>tracktor</code>, <code>dtrack</code>
+</td>
+<td>Their standard CSV/TSV column layouts.</td>
+<td>Tool-specific binary or session formats.</td>
+</tr>
+</tbody>
+</table>
+<p>When a tool’s export is not directly supported, two escape hatches
+remain: convert to a tidy CSV and use <code><a href="../reference/TrajSet_read.html">TrajSet_read()</a></code> with
+an explicit <code>mapping</code>, or register a custom dialect (see
+<em>Registering a Custom Dialect</em> below).</p>
+</div>
+<div class="section level2">
 <h2 id="reading-tabular-trajectories">Reading Tabular Trajectories<a class="anchor" aria-label="anchor" href="#reading-tabular-trajectories"></a>
 </h2>
 <p>For data already in a data frame or CSV, <code><a href="../reference/TrajSet_read.html">TrajSet_read()</a></code>

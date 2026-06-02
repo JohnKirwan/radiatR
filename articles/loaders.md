@@ -160,6 +160,46 @@ The `_point01` / `_point02` role split used in the bundled data —
 landmarks in one file, trajectory in the other — is specific to this
 experiment and is not a general dtrack convention.
 
+## Tracking-tool format support
+
+`radiatR` reads tabular (CSV/TSV) exports from many tracking tools
+through named *dialects*. Each dialect maps a tool’s column conventions
+onto the `TrajSet` model of one position per individual per frame. Pass
+the dialect name to `TrajSet_read(path, dialect = "name")`;
+tool-specific options go through `dialect_args`.
+
+The table below summarises what is and is not currently handled. Two
+limitations are general:
+
+- **Tabular text only.** Dialects read CSV/TSV (and, where the optional
+  packages are installed, JSON/XML/Parquet). Native binary formats —
+  such as NumPy `.npz` or MATLAB `.mat` — are not read except where
+  noted (`ctrax` reads `.mat` via the `R.matlab` package).
+- **Position, not posture.** `radiatR` models a single position per
+  individual per frame. Per-frame *posture* data (variable-length
+  midline or outline polylines) is outside this model. Where a tool
+  tracks discrete body keypoints, those can be loaded as extra columns
+  and turned into a body-axis heading with the `bodypart_axis` rule or
+  [`pose_to_headings()`](https://johnkirwan.github.io/radiatR/reference/pose_to_headings.md);
+  dense posture polylines are not ingested.
+
+| Dialect | Handled | Not handled |
+|----|----|----|
+| `trex` | Positional CSV: plain `X`/`Y`, the `#wcentroid` / `#centroid` / `#pcentroid` centroid variants, and TRex’s `(cm)` / `(px)` unit annotations in headers. Per-individual `_fishN` files (id from filename) and aggregated files with an id column. | Native `.npz` export; posture export (`midline_points`, `outline_points`). |
+| `deeplabcut` / `deeplabcut_multiheader` | Multi-bodypart CSV; single bodypart, or a likelihood-weighted centroid of several; three-row scorer/bodypart/coord header. Bodypart columns are preserved for `bodypart_axis`. | Native HDF5 (`.h5`) export. |
+| `sleap` | Analysis CSV: `<node>.x` / `.y` / `.score`; multi-node centroid; `track` and `frame_idx`. | Native `.slp` / HDF5 export. |
+| `ethovision` | Centre position, and multi-zone exports (nose, tail, etc.); zone centroid or single-zone selection. | Native `.xlsx` (export to CSV first). |
+| `anymaze` | Centre position, optional nose/tail zones, units row. | — |
+| `trackmate` | `TRACK_ID` / `FRAME` / `POSITION_X` / `POSITION_Y` CSV. | Native TrackMate `.xml`. |
+| `ctrax` | `.mat` file with the `trx` struct (centroid + ellipse `theta`/`a`/`b`); needs `R.matlab`. | — |
+| `idtrackerai_wide`, `toxtrac`, `boris_xy`, `tracktor`, `dtrack` | Their standard CSV/TSV column layouts. | Tool-specific binary or session formats. |
+
+When a tool’s export is not directly supported, two escape hatches
+remain: convert to a tidy CSV and use
+[`TrajSet_read()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read.md)
+with an explicit `mapping`, or register a custom dialect (see
+*Registering a Custom Dialect* below).
+
 ## Reading Tabular Trajectories
 
 For data already in a data frame or CSV,
