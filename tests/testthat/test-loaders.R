@@ -284,6 +284,36 @@ test_that("tracktor dialect reads the bundled real Tracktor export", {
   expect_equal(d$x_raw[1], 1528.27, tolerance = 1e-1)
 })
 
+test_that("tracktor dialect ignores a leading pandas index column", {
+  # pandas df.to_csv() writes the row index as an unnamed first column (read as
+  # "X"), which must not be mistaken for the x position column.
+  df <- data.frame(
+    X     = 0:3,                       # pandas-style 0-based index
+    frame = 0:3,
+    pos_x = c(100, 110, 120, 130),
+    pos_y = c(50, 51, 52, 53)
+  )
+  ts <- suppressMessages(suppressWarnings(
+    TrajSet_read(df, dialect = "tracktor")
+  ))
+  d <- as.data.frame(ts)
+  expect_equal(d$x_raw, c(100, 110, 120, 130))
+  expect_equal(d$y_raw, c(50, 51, 52, 53))
+})
+
+test_that("tracktor dialect keeps a genuine x column when there is no index", {
+  df <- data.frame(
+    frame = 0:3,
+    x     = c(100, 110, 120, 130),
+    y     = c(50, 51, 52, 53)
+  )
+  ts <- suppressMessages(suppressWarnings(
+    TrajSet_read(df, dialect = "tracktor")
+  ))
+  d <- as.data.frame(ts)
+  expect_equal(d$x_raw, c(100, 110, 120, 130))
+})
+
 # ---- sleap dialect -----------------------------------------------------------
 
 test_that("sleap dialect detects nodes and computes score-weighted centroid", {

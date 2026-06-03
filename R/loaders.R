@@ -219,6 +219,28 @@ list_loader_dialects <- function() sort(ls(envir = .loader_registry))
   if (length(hit)) hit[1] else NULL
 }
 
+# Drop a leading pandas-style row-index column.
+# pandas `df.to_csv()` writes the DataFrame index as an unnamed first column,
+# which R's CSV readers name "X" (or "" / "Unnamed: 0"). Left in place it is
+# mistaken for an "x" position column by .guess_col. We only remove it when it
+# is genuinely an index: the first column, an unnamed/auto-named header, and a
+# consecutive integer run starting at 0 or 1.
+.drop_index_col <- function(df) {
+  if (!is.data.frame(df) || ncol(df) == 0L) return(df)
+  nm1 <- names(df)[1L]
+  looks_unnamed <- is.null(nm1) || is.na(nm1) ||
+    grepl("^(x|v1|unnamed[._ ]*0?)$", tolower(trimws(nm1 %||% "")))
+  if (!looks_unnamed) return(df)
+  col <- df[[1L]]
+  v <- suppressWarnings(as.numeric(col))
+  if (anyNA(v) || length(v) < 2L) return(df)
+  if (any(v != floor(v))) return(df)
+  start <- v[1L]
+  if (!(start %in% c(0, 1)) || !all(v == seq.int(start, length.out = length(v))))
+    return(df)
+  df[, -1L, drop = FALSE]
+}
+
 # Heuristic angle unit detection
 # returns "degrees" if most values are > 2*pi or abs(values) > 2*pi by margin
 .guess_angle_unit <- function(x) {
@@ -1351,6 +1373,7 @@ register_loader_dialect("sleap", function(x, bodypart = NULL, score_min = NULL,
 register_loader_dialect("tracktor", function(x, id_col = NULL, time_col = NULL, fps = NULL) {
   df <- if (is.character(x) && length(x) == 1L && file.exists(x)) .read_any(x) else x
   stopifnot(is.data.frame(df))
+  df   <- .drop_index_col(df)
   norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(v))
   nms  <- norm(names(df)); names(df) <- nms
   id   <- id_col %||% .guess_col(nms, c("id","identity","individual","animal","subject","track_id")) %||% "1"
