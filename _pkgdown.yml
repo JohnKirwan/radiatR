@@ -23,6 +23,10 @@ navbar:
           href: articles/radiatR.html
         - text: "Loaders"
           href: articles/loaders.html
+        - text: "Circular statistics & distribution overlays"
+          href: articles/circular-statistics.html
+        - text: "Camera calibration"
+          href: articles/camera-calibration.html
         - text: "Simulating trajectories"
           href: articles/simulate.html
 
