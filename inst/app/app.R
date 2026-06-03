@@ -561,7 +561,9 @@ server <- function(input, output, session) {
         group_col    = id_col,
         colour_col   = gc,
         panel_by     = gc,
-        colour_cycle = 20,
+        # colour_cycle and colour_col are mutually exclusive; only cycle
+        # colours when no condition column is driving the colour scale.
+        colour_cycle = if (is.null(gc)) 20 else NULL,
         show_arrow   = TRUE,
         show_labels  = FALSE
       ) + add_heading_points(rv$hd, size = 2.5, alpha = 0.8)
@@ -623,6 +625,7 @@ server <- function(input, output, session) {
         rv$ts,
         group_col  = rv$ts@cols$id,
         colour_col = gc, panel_by = gc,
+        colour_cycle = if (is.null(gc)) 20 else NULL,
         show_arrow = TRUE, show_labels = FALSE
       ) + add_heading_points(rv$hd, size = 2.5, alpha = 0.8)
       ggsave(file, p, width = 7, height = 7, dpi = 180)
