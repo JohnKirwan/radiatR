@@ -22,6 +22,8 @@ Applies camera intrinsics and distortion removal to convert pixel coordinates to
 }
 \seealso{
 Other calibration:
-\code{\link{CalModel-class}}
+\code{\link{CalModel-class}},
+\code{\link[=cal_model]{cal_model()}},
+\code{\link[=read_calibration]{read_calibration()}}
 }
 \concept{calibration}

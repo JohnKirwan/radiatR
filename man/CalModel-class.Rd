@@ -21,6 +21,8 @@ Camera calibration model for trajectory correction
 \code{\link{calibrate_positions}}
 
 Other calibration:
-\code{\link[=calibrate_positions]{calibrate_positions()}}
+\code{\link[=cal_model]{cal_model()}},
+\code{\link[=calibrate_positions]{calibrate_positions()}},
+\code{\link[=read_calibration]{read_calibration()}}
 }
 \concept{calibration}
