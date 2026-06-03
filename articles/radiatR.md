@@ -785,14 +785,10 @@ hd_distal <- derive_headings(cpunctatus, rule = "distal",
                               coords = "relative",
                               angle_convention = "clock",
                               return_coords = TRUE)
-hd_distal$arc <- factor(
-  as.integer(sub("G1D_(\\d+)_.*", "\\1", hd_distal$id)),
-  levels = c(0, 15, 30, 45, 60, 150),
-  labels = c("0°", "15°", "30°", "45°", "60°", "150°")
-)
-#> Warning in factor(as.integer(sub("G1D_(\\d+)_.*", "\\1", hd_distal$id)), : NAs
-#> introduced by coercion
 names(hd_distal)[names(hd_distal) == "id"] <- "trial_id"
+# join the target half-width (arc) from the dataset, as for the crossing rule
+hd_distal     <- merge(hd_distal, arc_map, by = "trial_id")
+hd_distal$arc <- factor(hd_distal$arc)
 ```
 
 Per-condition resultant lengths from `"distal"` are very close to those
@@ -804,11 +800,20 @@ sm_cross  <- compute_circ_mean(hd,       colour_col = "arc")[, c("arc", "resulta
 #> `angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.
 #> `coords` not found in headings_df attributes; defaulting to 'absolute'.
 sm_distal <- compute_circ_mean(hd_distal, colour_col = "arc")[, c("arc", "resultant_R")]
+#> `angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.
+#> `coords` not found in headings_df attributes; defaulting to 'absolute'.
 names(sm_cross)[2]  <- "crossing"
 names(sm_distal)[2] <- "distal"
 merge(sm_cross, sm_distal, by = "arc")
-#> [1] arc      crossing distal  
-#> <0 rows> (or 0-length row.names)
+#>   arc   crossing     distal
+#> 1   0 0.07723939 0.06921890
+#> 2  10 0.28083874 0.24670964
+#> 3  15 0.19793492 0.11727841
+#> 4  20 0.09652689 0.08269638
+#> 5  30 0.05781662 0.18338351
+#> 6  40 0.63455690 0.69675709
+#> 7   5 0.15615485 0.18281318
+#> 8  50 0.46069491 0.53460350
 ```
 
 Visualising the distal headings on the per-condition panel confirms that
@@ -839,6 +844,8 @@ radiate(cpunctatus_cc_d,
                        stat = "bootstrap_ci", boot_reps = 999L) +
   add_heading_points(hd_distal_cc, size = 4) +
   add_heading_arrow(hd_distal_cc, colour_col = "arc", colour = "black")
+#> `angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.
+#> `coords` not found in headings_df attributes; defaulting to 'absolute'.
 ```
 
 ![](radiatR_files/figure-html/hd-distal-panel-1.png)
@@ -860,21 +867,26 @@ positions are available.
 hd_net <- derive_headings(cpunctatus, rule = "net",
                            coords = "relative",
                            angle_convention = "clock")
-hd_net$arc <- factor(
-  as.integer(sub("G1D_(\\d+)_.*", "\\1", hd_net$id)),
-  levels = c(0, 15, 30, 45, 60, 150),
-  labels = c("0°", "15°", "30°", "45°", "60°", "150°")
-)
-#> Warning in factor(as.integer(sub("G1D_(\\d+)_.*", "\\1", hd_net$id)), levels =
-#> c(0, : NAs introduced by coercion
 names(hd_net)[names(hd_net) == "id"] <- "trial_id"
+# join the target half-width (arc) from the dataset, as for the crossing rule
+hd_net     <- merge(hd_net, arc_map, by = "trial_id")
+hd_net$arc <- factor(hd_net$arc)
 
 sm_net <- compute_circ_mean(hd_net, colour_col = "arc")[, c("arc", "resultant_R")]
+#> `angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.
+#> `coords` not found in headings_df attributes; defaulting to 'absolute'.
 names(sm_net)[2] <- "net"
 Reduce(function(a, b) merge(a, b, by = "arc"),
        list(sm_cross, sm_distal, sm_net))
-#> [1] arc      crossing distal   net     
-#> <0 rows> (or 0-length row.names)
+#>   arc   crossing     distal       net
+#> 1   0 0.07723939 0.06921890 0.1411372
+#> 2  10 0.28083874 0.24670964 0.2802480
+#> 3  15 0.19793492 0.11727841 0.1467194
+#> 4  20 0.09652689 0.08269638 0.1175823
+#> 5  30 0.05781662 0.18338351 0.1498569
+#> 6  40 0.63455690 0.69675709 0.6952073
+#> 7   5 0.15615485 0.18281318 0.1608150
+#> 8  50 0.46069491 0.53460350 0.5538799
 ```
 
 For these tracks the three methods give very similar resultant lengths.

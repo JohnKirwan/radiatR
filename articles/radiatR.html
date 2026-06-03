@@ -36,9 +36,12 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-vignettes">
 <li><a class="dropdown-item" href="../articles/radiatR.html">Main workflow</a></li>
     <li><a class="dropdown-item" href="../articles/loaders.html">Loaders</a></li>
+    <li><a class="dropdown-item" href="../articles/circular-statistics.html">Circular statistics &amp; distribution overlays</a></li>
+    <li><a class="dropdown-item" href="../articles/camera-calibration.html">Camera calibration</a></li>
     <li><a class="dropdown-item" href="../articles/simulate.html">Simulating trajectories</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -831,14 +834,10 @@ every trial has a most-distal frame.</p>
 <span>                              coords <span class="op">=</span> <span class="st">"relative"</span>,</span>
 <span>                              angle_convention <span class="op">=</span> <span class="st">"clock"</span>,</span>
 <span>                              return_coords <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="va">hd_distal</span><span class="op">$</span><span class="va">arc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">sub</a></span><span class="op">(</span><span class="st">"G1D_(\\d+)_.*"</span>, <span class="st">"\\1"</span>, <span class="va">hd_distal</span><span class="op">$</span><span class="va">id</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">15</span>, <span class="fl">30</span>, <span class="fl">45</span>, <span class="fl">60</span>, <span class="fl">150</span><span class="op">)</span>,</span>
-<span>  labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"0°"</span>, <span class="st">"15°"</span>, <span class="st">"30°"</span>, <span class="st">"45°"</span>, <span class="st">"60°"</span>, <span class="st">"150°"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning in factor(as.integer(sub("G1D_(\\d+)_.*", "\\1", hd_distal$id)), : NAs</span></span>
-<span><span class="co">#&gt; introduced by coercion</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">hd_distal</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">hd_distal</span><span class="op">)</span> <span class="op">==</span> <span class="st">"id"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"trial_id"</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">hd_distal</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">hd_distal</span><span class="op">)</span> <span class="op">==</span> <span class="st">"id"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"trial_id"</span></span>
+<span><span class="co"># join the target half-width (arc) from the dataset, as for the crossing rule</span></span>
+<span><span class="va">hd_distal</span>     <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/merge.html" class="external-link">merge</a></span><span class="op">(</span><span class="va">hd_distal</span>, <span class="va">arc_map</span>, by <span class="op">=</span> <span class="st">"trial_id"</span><span class="op">)</span></span>
+<span><span class="va">hd_distal</span><span class="op">$</span><span class="va">arc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">hd_distal</span><span class="op">$</span><span class="va">arc</span><span class="op">)</span></span></code></pre></div>
 <p>Per-condition resultant lengths from <code>"distal"</code> are very
 close to those from <code>"crossing"</code>, consistent with millipede
 tracks being fairly direct:</p>
@@ -847,11 +846,20 @@ tracks being fairly direct:</p>
 <span><span class="co">#&gt; `angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.</span></span>
 <span><span class="co">#&gt; `coords` not found in headings_df attributes; defaulting to 'absolute'.</span></span>
 <span><span class="va">sm_distal</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_circ_mean.html">compute_circ_mean</a></span><span class="op">(</span><span class="va">hd_distal</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"arc"</span>, <span class="st">"resultant_R"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt; `angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.</span></span>
+<span><span class="co">#&gt; `coords` not found in headings_df attributes; defaulting to 'absolute'.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">sm_cross</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>  <span class="op">&lt;-</span> <span class="st">"crossing"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">sm_distal</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"distal"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/merge.html" class="external-link">merge</a></span><span class="op">(</span><span class="va">sm_cross</span>, <span class="va">sm_distal</span>, by <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] arc      crossing distal  </span></span>
-<span><span class="co">#&gt; &lt;0 rows&gt; (or 0-length row.names)</span></span></code></pre></div>
+<span><span class="co">#&gt;   arc   crossing     distal</span></span>
+<span><span class="co">#&gt; 1   0 0.07723939 0.06921890</span></span>
+<span><span class="co">#&gt; 2  10 0.28083874 0.24670964</span></span>
+<span><span class="co">#&gt; 3  15 0.19793492 0.11727841</span></span>
+<span><span class="co">#&gt; 4  20 0.09652689 0.08269638</span></span>
+<span><span class="co">#&gt; 5  30 0.05781662 0.18338351</span></span>
+<span><span class="co">#&gt; 6  40 0.63455690 0.69675709</span></span>
+<span><span class="co">#&gt; 7   5 0.15615485 0.18281318</span></span>
+<span><span class="co">#&gt; 8  50 0.46069491 0.53460350</span></span></code></pre></div>
 <p>Visualising the distal headings on the per-condition panel confirms
 that the spatial pattern is consistent with the crossing method:</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
@@ -877,7 +885,9 @@ that the spatial pattern is consistent with the crossing method:</p>
 <span>  <span class="fu"><a href="../reference/add_heading_interval.html">add_heading_interval</a></span><span class="op">(</span><span class="va">hd_distal_cc</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, colour <span class="op">=</span> <span class="st">"black"</span>,</span>
 <span>                       stat <span class="op">=</span> <span class="st">"bootstrap_ci"</span>, boot_reps <span class="op">=</span> <span class="fl">999L</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="../reference/add_heading_points.html">add_heading_points</a></span><span class="op">(</span><span class="va">hd_distal_cc</span>, size <span class="op">=</span> <span class="fl">4</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="../reference/add_heading_arrow.html">add_heading_arrow</a></span><span class="op">(</span><span class="va">hd_distal_cc</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, colour <span class="op">=</span> <span class="st">"black"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="../reference/add_heading_arrow.html">add_heading_arrow</a></span><span class="op">(</span><span class="va">hd_distal_cc</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, colour <span class="op">=</span> <span class="st">"black"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; `angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.</span></span>
+<span><span class="co">#&gt; `coords` not found in headings_df attributes; defaulting to 'absolute'.</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/hd-distal-panel-1.png" class="r-plt" alt="" width="768"></p>
 <p>Because millipede tracks are nearly radial, the heading estimates
 agree closely across methods. For more sinuous species (moths, pigeons)
@@ -895,21 +905,26 @@ positions are available.</p>
 <code class="sourceCode R"><span><span class="va">hd_net</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/derive_headings.html">derive_headings</a></span><span class="op">(</span><span class="va">cpunctatus</span>, rule <span class="op">=</span> <span class="st">"net"</span>,</span>
 <span>                           coords <span class="op">=</span> <span class="st">"relative"</span>,</span>
 <span>                           angle_convention <span class="op">=</span> <span class="st">"clock"</span><span class="op">)</span></span>
-<span><span class="va">hd_net</span><span class="op">$</span><span class="va">arc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">sub</a></span><span class="op">(</span><span class="st">"G1D_(\\d+)_.*"</span>, <span class="st">"\\1"</span>, <span class="va">hd_net</span><span class="op">$</span><span class="va">id</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">15</span>, <span class="fl">30</span>, <span class="fl">45</span>, <span class="fl">60</span>, <span class="fl">150</span><span class="op">)</span>,</span>
-<span>  labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"0°"</span>, <span class="st">"15°"</span>, <span class="st">"30°"</span>, <span class="st">"45°"</span>, <span class="st">"60°"</span>, <span class="st">"150°"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning in factor(as.integer(sub("G1D_(\\d+)_.*", "\\1", hd_net$id)), levels =</span></span>
-<span><span class="co">#&gt; c(0, : NAs introduced by coercion</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">hd_net</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">hd_net</span><span class="op">)</span> <span class="op">==</span> <span class="st">"id"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"trial_id"</span></span>
+<span><span class="co"># join the target half-width (arc) from the dataset, as for the crossing rule</span></span>
+<span><span class="va">hd_net</span>     <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/merge.html" class="external-link">merge</a></span><span class="op">(</span><span class="va">hd_net</span>, <span class="va">arc_map</span>, by <span class="op">=</span> <span class="st">"trial_id"</span><span class="op">)</span></span>
+<span><span class="va">hd_net</span><span class="op">$</span><span class="va">arc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">hd_net</span><span class="op">$</span><span class="va">arc</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">sm_net</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_circ_mean.html">compute_circ_mean</a></span><span class="op">(</span><span class="va">hd_net</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"arc"</span>, <span class="st">"resultant_R"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt; `angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.</span></span>
+<span><span class="co">#&gt; `coords` not found in headings_df attributes; defaulting to 'absolute'.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">sm_net</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"net"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/funprog.html" class="external-link">Reduce</a></span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">a</span>, <span class="va">b</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/merge.html" class="external-link">merge</a></span><span class="op">(</span><span class="va">a</span>, <span class="va">b</span>, by <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span>,</span>
 <span>       <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">sm_cross</span>, <span class="va">sm_distal</span>, <span class="va">sm_net</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] arc      crossing distal   net     </span></span>
-<span><span class="co">#&gt; &lt;0 rows&gt; (or 0-length row.names)</span></span></code></pre></div>
+<span><span class="co">#&gt;   arc   crossing     distal       net</span></span>
+<span><span class="co">#&gt; 1   0 0.07723939 0.06921890 0.1411372</span></span>
+<span><span class="co">#&gt; 2  10 0.28083874 0.24670964 0.2802480</span></span>
+<span><span class="co">#&gt; 3  15 0.19793492 0.11727841 0.1467194</span></span>
+<span><span class="co">#&gt; 4  20 0.09652689 0.08269638 0.1175823</span></span>
+<span><span class="co">#&gt; 5  30 0.05781662 0.18338351 0.1498569</span></span>
+<span><span class="co">#&gt; 6  40 0.63455690 0.69675709 0.6952073</span></span>
+<span><span class="co">#&gt; 7   5 0.15615485 0.18281318 0.1608150</span></span>
+<span><span class="co">#&gt; 8  50 0.46069491 0.53460350 0.5538799</span></span></code></pre></div>
 <p>For these tracks the three methods give very similar resultant
 lengths. Larger differences would be expected for species with complex
 search behaviour before committing to a direction.</p>
