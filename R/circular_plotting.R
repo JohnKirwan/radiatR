@@ -1647,6 +1647,9 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #' @param label_size Text size for perimeter labels.
 #' @param label_padding Multiplier applied to the unit circle when placing labels.
 #' @param label_use_repel Use `ggrepel::geom_text_repel()` when available.
+#' @param show_tracks Whether to draw the trajectory paths. Default `TRUE`.
+#'   Set to `FALSE` to render the arena and any overlays (arrow, circle, ticks)
+#'   without the track geometry.
 #' @param show_arrow Whether to draw a mean resultant arrow from the centre.
 #' @param arrow_angle_col Column containing angles (radians) to summarise for the arrow.
 #' @param arrow_colour Arrow colour.
@@ -1703,6 +1706,7 @@ function(
   label_size = 3,
   label_padding = 1.08,
   label_use_repel = TRUE,
+  show_tracks = TRUE,
   show_arrow = NULL,
   arrow_angle_col = NULL,
   arrow_colour = "black",
@@ -1796,14 +1800,16 @@ function(
     layer_mapping <- do.call(ggplot2::aes, mapping_list)
   }
 
-  g <- g + draw_tracks(
-    data = data,
-    x_col = x_col,
-    y_col = y_col,
-    geom = geom,
-    mapping = layer_mapping,
-    ...
-  )
+  if (show_tracks) {
+    g <- g + draw_tracks(
+      data = data,
+      x_col = x_col,
+      y_col = y_col,
+      geom = geom,
+      mapping = layer_mapping,
+      ...
+    )
+  }
 
   if (style == "minimal") {
     g <- g + spartan_theme()

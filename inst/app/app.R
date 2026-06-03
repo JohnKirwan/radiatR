@@ -103,6 +103,38 @@ example_ts <- function() {
   e$cpunctatus
 }
 
+# A compact inline on/off toggle for a results-plot layer. Wraps a standard
+# Shiny checkbox (so it registers as input[[id]]) and styles it as a switch.
+.layer_switch <- function(id, label, value) {
+  div(
+    class = "form-switch small",
+    checkboxInput(id, label, value = value, width = "auto")
+  )
+}
+
+# A finite scalar from a possibly-NULL/NA numeric input, else a default.
+num_or <- function(v, default) {
+  if (is.null(v) || length(v) != 1L || is.na(v) || !is.finite(v)) default else v
+}
+
+# Resolve a download format to a graphics device for ggsave(). Vector formats
+# prefer svglite/cairo so the output is editable in vector tools; PNG uses the
+# default raster device.
+.plot_device <- function(fmt) {
+  switch(fmt,
+    png = "png",
+    pdf = grDevices::cairo_pdf,
+    svg = if (requireNamespace("svglite", quietly = TRUE)) {
+      svglite::svglite
+    } else if (isTRUE(capabilities("cairo"))) {
+      grDevices::svg
+    } else {
+      stop("SVG output needs the 'svglite' package or cairo support in R.")
+    },
+    stop("Unknown plot format: ", fmt)
+  )
+}
+
 derive_hd <- function(ts, method, circ0, circ1) {
   args <- list(
     x                = ts,
@@ -442,15 +474,33 @@ server <- function(input, output, session) {
     } else {
       tagList(
         layout_columns(
-          col_widths = c(7, 5),
+          col_widths = c(8, 4),
           card(
             card_header("Tracks and headings"),
             card_body(
               padding = 0,
-              plotOutput("track_plot", height = "380px")
+              uiOutput("track_plot_ui")
             )
           ),
           tagList(
+            card(
+              card_header("Display"),
+              card_body(
+                .layer_switch("show_tracks", "Trajectories", TRUE),
+                .layer_switch("show_points", "Heading points", TRUE),
+                .layer_switch("show_arrow",  "Directedness arrow", TRUE),
+                .layer_switch("show_ci",     "Mean-direction CI", FALSE),
+                tags$hr(class = "my-2"),
+                sliderInput(
+                  "preview_px", "Preview size (px)",
+                  min = 240, max = 900, value = 460, step = 20
+                ),
+                tags$span(
+                  class = "text-muted small",
+                  "On-screen only; export size is set under Download."
+                )
+              )
+            ),
             card(
               card_header("Summary"),
               card_body(tableOutput("summary_tbl"))
@@ -458,8 +508,26 @@ server <- function(input, output, session) {
             card(
               card_header("Download"),
               card_body(
+                layout_columns(
+                  col_widths = c(6, 6),
+                  numericInput("plot_w", "Width (in)", value = 7,
+                               min = 1, max = 30, step = 0.5),
+                  numericInput("plot_h", "Height (in)", value = 7,
+                               min = 1, max = 30, step = 0.5)
+                ),
+                selectInput(
+                  "plot_fmt", "Format",
+                  choices = c("PDF (vector)"  = "pdf",
+                              "SVG (vector)"  = "svg",
+                              "PNG (raster)"  = "png")
+                ),
+                conditionalPanel(
+                  "input.plot_fmt == 'png'",
+                  numericInput("plot_dpi", "Resolution (dpi)", value = 300,
+                               min = 72, max = 600, step = 1)
+                ),
                 downloadButton(
-                  "dl_plot", "Plot (PNG)",
+                  "dl_plot", "Download plot",
                   class = "btn-sm btn-outline-primary w-100 mb-2"
                 ),
                 downloadButton(
@@ -550,32 +618,66 @@ server <- function(input, output, session) {
   })
 
   # ---- step 3 outputs --------------------------------------------------------
-  output$track_plot <- renderPlot({
-    req(rv$ts, rv$hd)
+
+  # Treat an as-yet-unrendered toggle (NULL) as its declared default.
+  tog <- function(v, default) if (is.null(v)) default else isTRUE(v)
+
+  # Build the results plot honouring the layer toggles. Shared by the
+  # on-screen plot and the PNG download so they always match.
+  build_results_plot <- function() {
     id_col <- rv$ts@cols$id
     gc <- if (!is.null(input$cond_col) && nzchar(input$cond_col))
       input$cond_col else NULL
-    p <- tryCatch({
-      radiate(
-        rv$ts,
-        group_col    = id_col,
-        colour_col   = gc,
-        panel_by     = gc,
-        # colour_cycle and colour_col are mutually exclusive; only cycle
-        # colours when no condition column is driving the colour scale.
-        colour_cycle = if (is.null(gc)) 20 else NULL,
-        show_arrow   = TRUE,
-        show_labels  = FALSE
-      ) + add_heading_points(rv$hd, size = 2.5, alpha = 0.8)
-    }, error = function(e) {
-      message("track_plot render failed: ", conditionMessage(e))
-      ggplot() +
-        annotate(
-          "text", x = 0, y = 0,
-          label = "Plot unavailable", colour = "grey50"
-        ) +
-        theme_void()
-    })
+
+    p <- radiate(
+      rv$ts,
+      group_col    = id_col,
+      colour_col   = gc,
+      panel_by     = gc,
+      # colour_cycle and colour_col are mutually exclusive; only cycle
+      # colours when no condition column is driving the colour scale.
+      colour_cycle = if (is.null(gc)) 20 else NULL,
+      show_tracks  = tog(input$show_tracks, TRUE),
+      show_arrow   = tog(input$show_arrow,  TRUE),
+      show_labels  = FALSE
+    )
+    if (tog(input$show_points, TRUE)) {
+      p <- p + add_heading_points(rv$hd, size = 2.5, alpha = 0.8)
+    }
+    if (tog(input$show_ci, FALSE)) {
+      p <- p + add_heading_interval(
+        rv$hd, colour_col = gc, stat = "bootstrap_ci"
+      )
+    }
+    p
+  }
+
+  # Preview canvas height tracks the chosen export aspect ratio so the on-screen
+  # plot reflects the width/height the user will download. The Preview size
+  # slider scales the canvas without affecting the exported file. Width fills
+  # the card.
+  output$track_plot_ui <- renderUI({
+    w    <- num_or(input$plot_w, 7)
+    h    <- num_or(input$plot_h, 7)
+    base <- num_or(input$preview_px, 460)
+    px   <- max(160, min(1000, round(base * (h / w))))
+    plotOutput("track_plot", height = paste0(px, "px"))
+  })
+
+  output$track_plot <- renderPlot({
+    req(rv$ts, rv$hd)
+    p <- tryCatch(
+      build_results_plot(),
+      error = function(e) {
+        message("track_plot render failed: ", conditionMessage(e))
+        ggplot() +
+          annotate(
+            "text", x = 0, y = 0,
+            label = "Plot unavailable", colour = "grey50"
+          ) +
+          theme_void()
+      }
+    )
     print(p)
   }, res = 120)
 
@@ -617,19 +719,21 @@ server <- function(input, output, session) {
   }, striped = TRUE, hover = TRUE, align = "c")
 
   output$dl_plot <- downloadHandler(
-    filename = function() paste0("radiatR_plot_", Sys.Date(), ".png"),
-    content  = function(file) {
+    filename = function() {
+      fmt <- if (is.null(input$plot_fmt)) "pdf" else input$plot_fmt
+      paste0("radiatR_plot_", Sys.Date(), ".", fmt)
+    },
+    content = function(file) {
       req(rv$ts, rv$hd)
-      gc <- if (!is.null(input$cond_col) && nzchar(input$cond_col))
-        input$cond_col else NULL
-      p <- radiate(
-        rv$ts,
-        group_col  = rv$ts@cols$id,
-        colour_col = gc, panel_by = gc,
-        colour_cycle = if (is.null(gc)) 20 else NULL,
-        show_arrow = TRUE, show_labels = FALSE
-      ) + add_heading_points(rv$hd, size = 2.5, alpha = 0.8)
-      ggsave(file, p, width = 7, height = 7, dpi = 180)
+      fmt <- if (is.null(input$plot_fmt)) "pdf" else input$plot_fmt
+      ggsave(
+        file, build_results_plot(),
+        device = .plot_device(fmt),
+        width  = num_or(input$plot_w, 7),
+        height = num_or(input$plot_h, 7),
+        units  = "in",
+        dpi    = num_or(input$plot_dpi, 300)
+      )
     }
   )
 
