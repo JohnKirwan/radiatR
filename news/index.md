@@ -2,6 +2,40 @@
 
 ## radiatR (development version)
 
+### Bug fixes
+
+- The
+  [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  mean-direction (directedness) arrow now respects the clock display
+  convention. In clock-display plots the trajectories are rotated 90
+  degrees (East to North) but the arrow was left in unit-circle
+  coordinates, so it pointed ~90 degrees away from the tracks and
+  heading markers it summarises. The arrow is now rotated with the rest
+  of the plot.
+- [`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html) on a
+  `TrajSet` now works for users of the installed package. It had been
+  defined as an S4 method on the base S3 generic, which is only
+  reachable from within the package’s own namespace, so user code got
+  “cannot coerce class TrajSet to a data.frame”. It is now a registered
+  S3 method.
+
+### Shiny app
+
+- The upload step now offers a one-click **“Load the example millipede
+  dataset”** so the app can be tried end to end without supplying a
+  tracking file. It loads the bundled `cpunctatus` example and jumps
+  straight to the configure step.
+- Fixed the results step crashing or producing an empty summary when the
+  tracking data’s trial-ID column was not literally named `id`. The
+  condition join and per-trial summary now key off the headings frame’s
+  own `id` column.
+- Fixed the results plot showing “Plot unavailable” whenever a condition
+  column was detected: it set
+  [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)’s
+  mutually exclusive `colour_col` and `colour_cycle` at once. Colours
+  now cycle only when no condition drives the colour scale, and
+  plot-render failures are logged rather than swallowed.
+
 ### Camera calibration
 
 - Refocused the calibration layer on *importing* calibrations from

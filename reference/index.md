@@ -346,6 +346,8 @@ Any remaining exported topics.
   : Overlay a fitted von Mises density curve on a radiate plot
 - [`add_wrappedcauchy_density()`](https://johnkirwan.github.io/radiatR/reference/add_wrappedcauchy_density.md)
   : Overlay a fitted wrapped Cauchy density curve on a radiate plot
+- [`as.data.frame(`*`<TrajSet>`*`)`](https://johnkirwan.github.io/radiatR/reference/as.data.frame.TrajSet.md)
+  : Coerce a TrajSet to a data frame
 - [`assign_cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.md)
   : Assign cycling colour indices to trajectories
 - [`cal_model()`](https://johnkirwan.github.io/radiatR/reference/cal_model.md)
