@@ -11,7 +11,12 @@
 * The Results step now has on/off toggles for the trajectories, heading points,
   directedness arrow, and a mean-direction confidence-interval arc (95%
   bootstrap CI, off by default). The toggles drive both the on-screen plot and
-  the PNG download.
+  the plot download.
+* The toggles moved to a "Display" card in the right-hand column, giving the
+  plot panel the full width of its column.
+* Plot downloads can now be exported as **PDF** or **SVG** (editable vector
+  formats) as well as PNG, with editable width/height (inches) and, for PNG, a
+  resolution control. The on-screen preview tracks the chosen aspect ratio.
 
 ## Bug fixes
 

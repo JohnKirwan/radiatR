@@ -112,6 +112,29 @@ example_ts <- function() {
   )
 }
 
+# A finite scalar from a possibly-NULL/NA numeric input, else a default.
+num_or <- function(v, default) {
+  if (is.null(v) || length(v) != 1L || is.na(v) || !is.finite(v)) default else v
+}
+
+# Resolve a download format to a graphics device for ggsave(). Vector formats
+# prefer svglite/cairo so the output is editable in vector tools; PNG uses the
+# default raster device.
+.plot_device <- function(fmt) {
+  switch(fmt,
+    png = "png",
+    pdf = grDevices::cairo_pdf,
+    svg = if (requireNamespace("svglite", quietly = TRUE)) {
+      svglite::svglite
+    } else if (isTRUE(capabilities("cairo"))) {
+      grDevices::svg
+    } else {
+      stop("SVG output needs the 'svglite' package or cairo support in R.")
+    },
+    stop("Unknown plot format: ", fmt)
+  )
+}
+
 derive_hd <- function(ts, method, circ0, circ1) {
   args <- list(
     x                = ts,
@@ -451,24 +474,24 @@ server <- function(input, output, session) {
     } else {
       tagList(
         layout_columns(
-          col_widths = c(7, 5),
+          col_widths = c(8, 4),
           card(
             card_header("Tracks and headings"),
             card_body(
-              div(
-                class = "d-flex flex-wrap gap-3 px-2 pt-1 pb-2",
+              padding = 0,
+              uiOutput("track_plot_ui")
+            )
+          ),
+          tagList(
+            card(
+              card_header("Display"),
+              card_body(
                 .layer_switch("show_tracks", "Trajectories", TRUE),
                 .layer_switch("show_points", "Heading points", TRUE),
                 .layer_switch("show_arrow",  "Directedness arrow", TRUE),
                 .layer_switch("show_ci",     "Mean-direction CI", FALSE)
-              ),
-              div(
-                class = "px-0",
-                plotOutput("track_plot", height = "360px")
               )
-            )
-          ),
-          tagList(
+            ),
             card(
               card_header("Summary"),
               card_body(tableOutput("summary_tbl"))
@@ -476,8 +499,26 @@ server <- function(input, output, session) {
             card(
               card_header("Download"),
               card_body(
+                layout_columns(
+                  col_widths = c(6, 6),
+                  numericInput("plot_w", "Width (in)", value = 7,
+                               min = 1, max = 30, step = 0.5),
+                  numericInput("plot_h", "Height (in)", value = 7,
+                               min = 1, max = 30, step = 0.5)
+                ),
+                selectInput(
+                  "plot_fmt", "Format",
+                  choices = c("PDF (vector)"  = "pdf",
+                              "SVG (vector)"  = "svg",
+                              "PNG (raster)"  = "png")
+                ),
+                conditionalPanel(
+                  "input.plot_fmt == 'png'",
+                  numericInput("plot_dpi", "Resolution (dpi)", value = 300,
+                               min = 72, max = 600, step = 1)
+                ),
                 downloadButton(
-                  "dl_plot", "Plot (PNG)",
+                  "dl_plot", "Download plot",
                   class = "btn-sm btn-outline-primary w-100 mb-2"
                 ),
                 downloadButton(
@@ -602,6 +643,15 @@ server <- function(input, output, session) {
     p
   }
 
+  # Preview canvas height tracks the chosen export aspect ratio so the on-screen
+  # plot reflects the width/height the user will download. Width fills the card.
+  output$track_plot_ui <- renderUI({
+    w  <- num_or(input$plot_w, 7)
+    h  <- num_or(input$plot_h, 7)
+    px <- max(220, min(820, round(460 * (h / w))))
+    plotOutput("track_plot", height = paste0(px, "px"))
+  })
+
   output$track_plot <- renderPlot({
     req(rv$ts, rv$hd)
     p <- tryCatch(
@@ -657,10 +707,21 @@ server <- function(input, output, session) {
   }, striped = TRUE, hover = TRUE, align = "c")
 
   output$dl_plot <- downloadHandler(
-    filename = function() paste0("radiatR_plot_", Sys.Date(), ".png"),
-    content  = function(file) {
+    filename = function() {
+      fmt <- if (is.null(input$plot_fmt)) "pdf" else input$plot_fmt
+      paste0("radiatR_plot_", Sys.Date(), ".", fmt)
+    },
+    content = function(file) {
       req(rv$ts, rv$hd)
-      ggsave(file, build_results_plot(), width = 7, height = 7, dpi = 180)
+      fmt <- if (is.null(input$plot_fmt)) "pdf" else input$plot_fmt
+      ggsave(
+        file, build_results_plot(),
+        device = .plot_device(fmt),
+        width  = num_or(input$plot_w, 7),
+        height = num_or(input$plot_h, 7),
+        units  = "in",
+        dpi    = num_or(input$plot_dpi, 300)
+      )
     }
   )
 
