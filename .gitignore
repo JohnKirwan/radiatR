@@ -7,7 +7,6 @@ vignettes/*_files/
 vignettes/*.html
 /doc/
 /Meta/
-milli_trials/
 docs
 _build/
 _site/
