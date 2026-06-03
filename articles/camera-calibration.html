@@ -300,6 +300,44 @@ far from the optical axis, you can relax these parameters:</p>
 checking your coefficients or tightening the stopping criteria.</p>
 </div>
 <div class="section level2">
+<h2 id="validating-the-solver">Validating the solver<a class="anchor" aria-label="anchor" href="#validating-the-solver"></a>
+</h2>
+<p>Because radiatR calibrates from corner <em>coordinates</em> rather
+than images, the solver can be checked against a fully synthetic scene
+with known ground truth. The package ships such a fixture:
+<code>calibration_corners.csv</code> is a noiseless projection of a
+planar checkerboard through a known pinhole camera in five poses, and
+<code>calibration_truth.csv</code> records the intrinsics it was built
+from. This is the basis of the package’s calibration round-trip
+test.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">corners</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_calibration_points.html">read_calibration_points</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"calibration_corners.csv"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">truth</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"calibration_truth.csv"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">calib</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calibration_from_points.html">calibration_from_points</a></span><span class="op">(</span></span>
+<span>  board_dims  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">truth</span><span class="op">$</span><span class="va">board_rows</span>, <span class="va">truth</span><span class="op">$</span><span class="va">board_cols</span><span class="op">)</span>,</span>
+<span>  square_size <span class="op">=</span> <span class="va">truth</span><span class="op">$</span><span class="va">square_size</span>,</span>
+<span>  image_points <span class="op">=</span> <span class="va">corners</span>,</span>
+<span>  quiet <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">calib</span><span class="op">$</span><span class="va">intrinsics</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="co">#&gt;      [,1] [,2] [,3]</span></span>
+<span><span class="co">#&gt; [1,]  800    0  320</span></span>
+<span><span class="co">#&gt; [2,]    0  820  240</span></span>
+<span><span class="co">#&gt; [3,]    0    0    1</span></span></code></pre></div>
+<p>The recovered focal lengths (800, 820) and principal point (320, 240)
+match the ground truth to within numerical precision, and the mean
+reprojection error is effectively zero (2.77^{-11} px). With real corner
+detections the reprojection error will be on the order of the detector’s
+pixel noise; it is the primary diagnostic of calibration quality
+reported in <code>calib$reprojection</code>.</p>
+</div>
+<div class="section level2">
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
 <ul>
