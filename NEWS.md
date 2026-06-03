@@ -2,6 +2,11 @@
 
 ## Bug fixes
 
+* The `radiate()` mean-direction (directedness) arrow now respects the clock
+  display convention. In clock-display plots the trajectories are rotated 90
+  degrees (East to North) but the arrow was left in unit-circle coordinates, so
+  it pointed ~90 degrees away from the tracks and heading markers it summarises.
+  The arrow is now rotated with the rest of the plot.
 * `as.data.frame()` on a `TrajSet` now works for users of the installed
   package. It had been defined as an S4 method on the base S3 generic, which is
   only reachable from within the package's own namespace, so user code got
