@@ -16,93 +16,147 @@ knitr::opts_chunk$set(
 library(radiatR)
 ```
 
-This vignette walks through the end-to-end camera calibration utilities available in **radiatR**. The goal is to show how to turn raw pixel coordinates into a metric representation that removes lens distortion and accounts for camera intrinsics, matching the pinhole model implemented in packages such as MATLAB's *Computer Vision Toolbox*.
+Tracks recorded from an overhead camera live in *pixel* coordinates that are
+distorted by the lens and offset from the arena centre. To analyse movement in a
+true metric (or at least undistorted) frame you need the camera's calibration:
+its intrinsic matrix and distortion coefficients.
 
-## Required calibration parameters
+**radiatR does not estimate calibrations itself.** Estimating intrinsics from a
+checkerboard sequence is a solved problem with mature, well-tested
+implementations — MATLAB's *Computer Vision Toolbox*, OpenCV's
+`calibrateCamera`, and others. radiatR's job is to *import* the coefficients
+those tools produce and *apply* them to your tracks. This vignette covers that
+import-and-correct workflow.
 
-The calibration helpers expect three key ingredients:
+## The model radiatR applies
 
-1. **Intrinsic matrix (`K`)** – a 3 × 3 matrix in the usual form
-   $\left[\begin{smallmatrix}f_x & 0 & c_x \ 0 & f_y & c_y \ 0 & 0 & 1\end{smallmatrix}\right]$ where `c_x` / `c_y` are the principal point in pixels and `f_x` / `f_y` are the focal lengths, also in pixels.
-2. **Distortion coefficients (`k`)** – passed as either a numeric vector, a named vector (e.g., `c(k1 = ..., k2 = ..., p1 = ..., p2 = ...)`), or a list with `radial` / `tangential` entries. Missing coefficients are assumed to be zero.
-3. **Metric focal length (`F`)** – the physical focal length (or scaling factor) in millimetres. Supply a scalar for isotropic scaling or a length-2 vector to differentiate between axes.
+radiatR uses the pinhole + Brown-Conrady model shared by MATLAB and OpenCV:
 
-You can bundle these into a [`CalModel`](../reference/CalModel-class.html) object for repeated use with trajectory sets.
+- **Focal lengths** `fx`, `fy` and **principal point** `cx`, `cy`, in pixels.
+- **Radial distortion** `k1`, `k2`, `k3` and **tangential distortion** `p1`,
+  `p2`.
+
+These are stored in a [`CalModel`](../reference/CalModel-class.html) object,
+which `calibrate_positions()` applies to a `TrajSet`.
+
+A subtlety worth flagging up front: internally radiatR keeps the intrinsic
+matrix in MATLAB's *transposed* convention — focal lengths on the diagonal,
+principal point in the **bottom row** (`K[3, 1:2]`), not the right-hand column.
+You never have to assemble that matrix by hand: `cal_model()` and
+`read_calibration()` own it for you.
+
+## Building a model from known coefficients
+
+If you already have the numbers — from a calibration report, a paper, or a
+colleague — `cal_model()` assembles the `CalModel` directly:
 
 ```{r cal-model}
-K <- matrix(c(800,   0, 640,
-                0, 800, 360,
-                0,   0,   1),
-            nrow = 3, byrow = TRUE)
-distortion <- c(k1 = -0.28, k2 = 0.05, p1 = 1e-3, p2 = -5e-4)
-F_mm <- 20
-
-cal_model <- new("CalModel", K = K, k = distortion, F = rep(F_mm, 2))
-cal_model
+model <- cal_model(
+  fx = 800, fy = 800,   # focal lengths (px)
+  cx = 640, cy = 360,   # principal point (px)
+  k1 = -0.28, k2 = 0.05,
+  p1 = 1e-3,  p2 = -5e-4
+)
+model
 ```
 
+### What `F` controls
 
-## Checkerboard control points
+The `F` argument sets the units of the corrected output. When `F` is left as
+`NULL` (the default) it is set to `c(fx, fy)`, which means the output stays in
+**undistorted pixels** — distortion and the principal-point offset are removed,
+but the scale is unchanged. To obtain a metric result instead, pass the physical
+focal length in millimetres:
 
-When calibrating from a checkerboard sequence you often need the world coordinates for the inner corners. The helper `checkerboard_points()` mirrors MATLAB's `generateCheckerboardPoints` so you can generate them directly in **radiatR**.
-
-```{r checkerboard}
-cb_pts <- checkerboard_points(c(9, 7), square_size = 5)
-head(cb_pts)
+```{r cal-model-mm}
+model_mm <- cal_model(fx = 800, fy = 800, cx = 640, cy = 360,
+                      k1 = -0.28, k2 = 0.05, F = 20)
 ```
 
-Use the `square_size` argument to match your physical square width (in millimetres, centimetres, etc.) and pass `as_tibble = FALSE` if you prefer a simple matrix of x/y coordinates.
+## Importing a calibration file
 
-## Calibrating single points
+In practice you will export the calibration from another tool and read it with
+`read_calibration()`, which auto-detects the format from the file extension:
 
-Use `cam_cal_pt()` when you need to correct a single pixel coordinate, for example when transforming landmarks exported from a digitising tool.
+```{r read-calibration, eval = FALSE}
+# MATLAB Computer Vision Toolbox (.mat)
+model <- read_calibration("camera_params.mat")
 
-```{r single-point}
-raw_pt <- c(x = 650, y = 380)
-cam_cal_pt(raw_pt["x"], raw_pt["y"], K, distortion, F_mm)
+# OpenCV FileStorage (.yml / .yaml / .json)
+model <- read_calibration("opencv_calib.yml")
+
+# Plain CSV (wide or parameter/value)
+model <- read_calibration("calib.csv")
 ```
 
-Internally the function:
+### MATLAB
 
-1. Recentres the point by subtracting the principal point (`optically_center()`),
-2. Normalises by the focal lengths (`focalize()`),
-3. Removes radial and tangential distortion via a fixed-point iteration (`radial_distort()`),
-4. Converts the undistorted coordinates into millimetres (`scaled_xy2mm()`).
+Save the relevant fields of a `cameraParameters` / `cameraIntrinsics` object to
+a `.mat` file. radiatR recognises both the pre-R2022b `IntrinsicMatrix` (already
+in the transposed convention) and the newer standard `K`, alongside
+`RadialDistortion` and `TangentialDistortion`. Reading `.mat` files needs the
+**R.matlab** package.
 
-Both the iteration count and convergence tolerance are configurable via the `max_iterations` and `tolerance` arguments.
-
-## Interactive collection
-
-For small calibration sets you can grab corners manually. `calibration_session()` opens a graphics device per frame and records clicks in row-major order, then solves a planar calibration:
-
-```{r interactive, eval = FALSE}
-frames <- list('frame1.png', 'frame2.png')
-calib <- calibration_session(frames, pattern = 'chessboard', board_dims = c(9, 7), square_size = 5)
-calib$intrinsics
+```matlab
+% in MATLAB, after calibrating
+params = cameraParams;
+IntrinsicMatrix     = params.IntrinsicMatrix;
+RadialDistortion    = params.RadialDistortion;
+TangentialDistortion = params.TangentialDistortion;
+save('camera_params.mat', 'IntrinsicMatrix', ...
+     'RadialDistortion', 'TangentialDistortion');
 ```
 
-The helper works with chessboard, ChArUco, or AprilTag grids—simply provide `board_dims`/`square_size` matching the pattern. The output contains the `CalModel`, per-frame extrinsics, and reprojection errors so you can inspect the fit.
+MATLAB reports the principal point in **1-based** pixels. `read_calibration()`
+subtracts one by default (`principal_base = 1`) so it lines up with the 0-based
+coordinates produced by most tracking tools. Override `principal_base` if your
+tracker uses a different convention.
 
-## Batch calibration
+### OpenCV
 
-For tables or matrices of points, `cam_cal_many()` processes everything in one pass.
+`cv::FileStorage` writes a `camera_matrix` and `distortion_coefficients` (in the
+order `k1, k2, p1, p2, k3`). radiatR reads both the YAML and JSON variants and
+tolerates the non-standard `%YAML:1.0` header and `!!opencv-matrix` tags. YAML
+needs the **yaml** package; JSON needs **jsonlite**. OpenCV principal points are
+already 0-based, so no shift is applied by default.
 
-```{r batch-cal}
+### Plain CSV
+
+For coefficients typed out by hand, a CSV works in either layout — wide:
+
+```
+fx,fy,cx,cy,k1,k2,k3,p1,p2
+800,800,640,360,-0.28,0.05,0,0.001,-0.0005
+```
+
+or long (`parameter,value` rows). Missing coefficients default to zero. CSV
+principal points are treated as 0-based.
+
+## Correcting points
+
+For a single landmark, `cam_cal_pt()` applies the model to one pixel coordinate;
+`cam_cal_many()` does the same for a table of points in one pass:
+
+```{r points}
 pts <- matrix(
   c(640, 360,
     700, 420,
     580, 320),
-  ncol = 2,
-  byrow = TRUE,
+  ncol = 2, byrow = TRUE,
   dimnames = list(NULL, c("x", "y"))
 )
-cam_cal_many(pts, K, distortion, F_mm)
+cam_cal_many(pts, model@K, model@k, model@F)
 ```
 
-Supplying a `CalModel` lets you calibrate entire trajectory sets with a single call.
-The bundled millipede example data provides real pixel-space tracks recorded
-by a camera mounted above a circular arena. We load the first trial and apply the
-hypothetical calibration model defined above.
+The point at the principal point `(640, 360)` maps to the origin; others are
+recentred, undistorted, and scaled by `F`.
+
+## Correcting a whole TrajSet
+
+The usual entry point is `calibrate_positions()`, which corrects every track in
+a `TrajSet`, rewrites its `x`/`y` columns in place, and re-derives `angle` from
+the corrected geometry. The bundled millipede example provides real pixel-space
+tracks from a camera above a circular arena.
 
 ```{r trajset-example}
 track_dir <- system.file("extdata", "tracks", package = "radiatR")
@@ -127,81 +181,36 @@ ts_px <- TrajSet(
   normalize_xy = FALSE
 )
 
-ts_mm <- calibrate_positions(ts_px, cal_model)
+ts_mm <- calibrate_positions(ts_px, model)
 head(ts_mm@data)
 ```
 
-In a real workflow, replace the hypothetical `K`, `distortion`, and `F_mm`
-values with parameters estimated from a checkerboard calibration sequence
-captured with the same camera and lens.
-
-## Persisting correspondences
-
-You can stash the clicked points for later reuse. The helpers below write a CSV and rebuild the calibration without reopening the graphics device.
-
-```{r persist-points, eval = FALSE}
-points_tbl <- calibration_points_tibble(calib$image_points)
-write_calibration_points(calib$image_points, "calibration-points.csv")
-replay <- calibration_from_points(board_dims = c(9, 7), square_size = 5,
-                                  image_points = points_tbl, quiet = TRUE)
-replay$intrinsics
-```
-
-```{r apply-transform, eval = FALSE}
-ts_px_cal <- calib$transform(ts_px)
-head(as.data.frame(ts_px_cal))
-```
-
-`calibrate_positions()` updates the `x`/`y` columns in-place and re-computes `angle` so that the values reflect the corrected metric geometry.
+In a real workflow, replace the illustrative `model` above with one imported via
+`read_calibration()` from a calibration captured with the same camera and lens.
 
 ## Convergence diagnostics
 
-The undistortion step uses a fixed-point solver similar to the `undistortPoints` routine in OpenCV. The defaults (`max_iterations = 5`, `tolerance = 1e-9`) are usually sufficient. If the distortion model is extreme or the points are far from the optical axis, you can relax these parameters:
+Removing distortion requires inverting the distortion model, which `radiatR`
+does with a fixed-point solver (as OpenCV's `undistortPoints` does). The defaults
+(`max_iterations = 5`, `tolerance = 1e-9`) are usually ample. For extreme
+distortion or points far from the optical axis you can relax them:
 
 ```{r convergence, eval = FALSE}
-cam_cal_pt(650, 380, K, distortion, F_mm, max_iterations = 10, tolerance = 1e-12)
+cam_cal_pt(650, 380, model@K, model@k, model@F,
+           max_iterations = 10, tolerance = 1e-12)
 ```
 
-If convergence fails, the function returns the last iterate; consider checking your coefficients or tightening the stopping criteria.
-
-## Validating the solver
-
-Because radiatR calibrates from corner *coordinates* rather than images, the
-solver can be checked against a fully synthetic scene with known ground truth.
-The package ships such a fixture: `calibration_corners.csv` is a noiseless
-projection of a planar checkerboard through a known pinhole camera in five
-poses, and `calibration_truth.csv` records the intrinsics it was built from.
-This is the basis of the package's calibration round-trip test.
-
-```{r fixture}
-corners <- read_calibration_points(
-  system.file("extdata", "calibration_corners.csv", package = "radiatR")
-)
-truth <- read.csv(
-  system.file("extdata", "calibration_truth.csv", package = "radiatR")
-)
-
-calib <- calibration_from_points(
-  board_dims  = c(truth$board_rows, truth$board_cols),
-  square_size = truth$square_size,
-  image_points = corners,
-  quiet = TRUE
-)
-
-round(calib$intrinsics, 3)
-```
-
-The recovered focal lengths (`r truth$fx`, `r truth$fy`) and principal point
-(`r truth$cx`, `r truth$cy`) match the ground truth to within numerical
-precision, and the mean reprojection error is effectively zero
-(`r signif(mean(calib$reprojection$error), 3)` px). With real corner detections
-the reprojection error will be on the order of the detector's pixel noise; it is
-the primary diagnostic of calibration quality reported in `calib$reprojection`.
+If convergence fails the function returns the last iterate; check your
+coefficients or tighten the stopping criteria.
 
 ## Summary
 
-- Use `cam_cal_pt()` / `cam_cal_many()` for one-off points and tables.
-- Wrap parameters in a `CalModel` to correct every trajectory in a `TrajSet` via `calibrate_positions()`.
-- Distortion coefficients can be radial-only or include tangential terms; unnamed coefficients fall back to a sensible ordering.
-
-These helpers should provide a drop-in path for applying calibration results from common toolboxes and maintainers of large tracking datasets.
+- radiatR imports calibrations; it does not estimate them. Calibrate in MATLAB,
+  OpenCV, or another tool, then bring the coefficients in.
+- `read_calibration()` reads MATLAB `.mat`, OpenCV YAML/JSON, and plain CSV;
+  `cal_model()` builds a model from coefficients you already hold.
+- Apply the resulting `CalModel` to single points (`cam_cal_pt()`), tables
+  (`cam_cal_many()`), or whole trajectory sets (`calibrate_positions()`).
+- Mind the conventions: principal-point pixel base (1-based MATLAB vs 0-based
+  OpenCV) and the `F` scale factor (undistorted pixels by default, metric if you
+  pass a physical focal length).

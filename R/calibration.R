@@ -135,76 +135,6 @@ radial_distort <- function(xy, k, max_iterations = 5, tolerance = 1e-9) {
   )
 }
 
-#' Generate world coordinates for checkerboard corners
-#'
-#' Helper mirroring MATLAB's `generateCheckerboardPoints`, returning the
-#' coordinates of inner checkerboard corners in world units.
-#'
-#' @param board_dims Integer vector of length 2 giving the number of squares in
-#'   the checkerboard along the vertical (rows) and horizontal (columns)
-#'   directions. Must be >= 2 in each dimension.
-#' @param square_size Numeric scalar or length-2 vector giving the spacing
-#'   between adjacent corners in world units. When length-1, the same spacing is
-#'   used in both directions.
-#' @param origin Length-2 numeric vector specifying the world coordinate to
-#'   assign to the corner at row 0, column 0. Defaults to `c(0, 0)`.
-#' @param order Traversal order for the returned points. `"row_major"`
-#'   increments the row index fastest (matching MATLAB), while `"col_major"`
-#'   increments the column index fastest.
-#' @param as_tibble Logical; if `TRUE` (default), return a tibble with columns
-#'   `corner`, `row`, `col`, `x`, and `y`. If `FALSE`, return a numeric matrix of
-#'   x/y coordinates.
-#' @importFrom tibble tibble
-#' @return Tibble or matrix describing the checkerboard corner coordinates in
-#'   world units.
-#' @export
-checkerboard_points <- function(board_dims, square_size = 1, origin = c(0, 0),
-                                order = c("row_major", "col_major"),
-                                as_tibble = TRUE) {
-  if (missing(board_dims) || length(board_dims) != 2) {
-    stop("`board_dims` must be an integer vector of length 2 (rows, cols of squares).")
-  }
-  if (any(board_dims < 2)) {
-    stop("`board_dims` must have at least two squares in each direction.")
-  }
-  if (length(square_size) == 1) {
-    square_size <- rep(square_size, 2)
-  }
-  if (length(square_size) != 2) {
-    stop("`square_size` must be a scalar or length-2 vector.")
-  }
-  order <- match.arg(order)
-  rows <- as.integer(board_dims[1] - 1)
-  cols <- as.integer(board_dims[2] - 1)
-
-  row_idx <- seq_len(rows) - 1L
-  col_idx <- seq_len(cols) - 1L
-
-  if (order == "row_major") {
-    grid <- expand.grid(row = row_idx, col = col_idx)
-  } else {
-    grid <- expand.grid(col = col_idx, row = row_idx)
-    grid <- grid[, c("row", "col")]
-  }
-
-  x <- origin[1] + grid$col * square_size[2]
-  y <- origin[2] + grid$row * square_size[1]
-
-  if (!as.logical(as_tibble)) {
-    mat <- cbind(x, y)
-    dimnames(mat) <- NULL
-    return(mat)
-  }
-
-  tibble::tibble(
-    corner = seq_len(nrow(grid)),
-    row = grid$row,
-    col = grid$col,
-    x = x,
-    y = y
-  )
-}
-
 #' Convert the given point from pixels to millimeters
 #'
 #' @param xy point (normalised coordinate after division by the focal lengths)
@@ -227,20 +157,6 @@ scaled_xy2mm <- function(xy, f, F) {
   } else {
     sweep(xy_pix, 2, pixel_size, "*")
   }
-}
-
-#' Switch axes of the given intrinsic camera matrix
-#'
-#' @param K intrinsic camera matrix
-#' @keywords internal
-#' @return modified intrinsic camera matrix
-calibration_switch_axes <- function(K) {
-  temp_matrix <- K
-  temp_matrix[1, 1] <- K[2, 2]
-  temp_matrix[2, 2] <- K[1, 1]
-  temp_matrix[3, 1] <- K[3, 2]
-  temp_matrix[3, 2] <- K[3, 1]
-  temp_matrix
 }
 
 #' Calibrate the camera on the given xy coordinate

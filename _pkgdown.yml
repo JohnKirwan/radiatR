@@ -187,19 +187,14 @@ reference:
 
   - title: "Calibration"
     desc: >
-      Map pixel coordinates to real-world positions using a planar
-      camera calibration model (Zhang's method).
+      Import camera intrinsics and distortion coefficients from MATLAB,
+      OpenCV, or a plain CSV, then apply them to undistort pixel tracks.
+      radiatR does not estimate calibrations itself.
     contents:
-      - calibration_session
-      - calibration_from_points
-      - checkerboard_points
-      - calibration_points_tibble
-      - calibration_points_from_tibble
-      - write_calibration_points
-      - read_calibration_points
+      - read_calibration
+      - cal_model
       - cam_cal_pt
       - cam_cal_many
-      - calibration_switch_axes
       - CalModel-class
 
   - title: "Coordinate utilities"

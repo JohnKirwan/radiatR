@@ -28,23 +28,7 @@ test_that("cam_cal_many matches repeated cam_cal_pt", {
   batch <- cam_cal_many(points, K, k, F)
   expect_equal(batch, single)
 })
-test_that("checkerboard_points matches MATLAB ordering", {
-  pts <- checkerboard_points(c(7, 9), square_size = c(2, 3), origin = c(1, 5))
-  expect_equal(nrow(pts), (7 - 1) * (9 - 1))
-  expect_equal(pts$row[1], 0L)
-  expect_equal(pts$col[1], 0L)
-  expect_equal(pts$x[1], 1)
-  expect_equal(pts$y[1], 5)
-  last <- tail(pts, 1)
-  expect_equal(last$row, 5L)
-  expect_equal(last$col, 7L)
-  expect_equal(last$x, 1 + 7 * 3)
-  expect_equal(last$y, 5 + 5 * 2)
-  mat <- checkerboard_points(c(4, 6), square_size = 10, as_tibble = FALSE)
-  expect_equal(dim(mat), c((4 - 1) * (6 - 1), 2))
-  expect_equal(mat[1, ], c(0, 0))
-  expect_equal(mat[nrow(mat), ], c(4 * 10, 2 * 10))
-})
+
 test_that("calibrate_positions records calibration transform", {
   K <- diag(c(1, 1, 1))
   model <- new("CalModel", K = K, k = c(0, 0), F = c(1, 1))
@@ -66,153 +50,195 @@ test_that("calibrate_positions records calibration transform", {
   expect_s4_class(calibrated@meta$calibration_model, "CalModel")
 })
 
-test_that("calibration point helpers persist data", {
-  board_dims  <- c(3, 4)
-  square_size <- 1
-  template    <- checkerboard_points(board_dims, square_size)
-  world       <- as.matrix(template[, c("x", "y")])
-  # Simple data for persistence-only helpers (not used for calibration)
-  pts_simple  <- list(world + 0.1, world + 0.2)
+# ---- cal_model() builder -----------------------------------------------------
 
-  tbl_simple <- calibration_points_tibble(pts_simple)
-  expect_s3_class(tbl_simple, "data.frame")
-  # column names are stripped on round-trip; test numeric values only
-  expect_equal(calibration_points_from_tibble(tbl_simple), pts_simple,
-               ignore_attr = TRUE)
+test_that("cal_model assembles the transposed-K convention", {
+  m <- cal_model(fx = 800, fy = 810, cx = 640, cy = 360,
+                 k1 = -0.2, k2 = 0.05, p1 = 0.001, p2 = -0.002, k3 = 0.01)
 
+  expect_s4_class(m, "CalModel")
+  # focal lengths on the diagonal, principal point in the bottom row
+  expect_equal(m@K[1, 1], 800)
+  expect_equal(m@K[2, 2], 810)
+  expect_equal(m@K[3, 1], 640)
+  expect_equal(m@K[3, 2], 360)
+  expect_equal(m@K[3, 3], 1)
+  # distortion stored as a named radial-then-tangential vector
+  expect_equal(unname(m@k[c("k1", "k2", "k3", "p1", "p2")]),
+               c(-0.2, 0.05, 0.01, 0.001, -0.002))
+})
+
+test_that("cal_model defaults F to the focal lengths (undistorted pixels)", {
+  m <- cal_model(fx = 800, fy = 810, cx = 640, cy = 360)
+  expect_equal(m@F, c(800, 810))
+
+  # with no distortion and F = focal lengths, output is undistorted pixels
+  # measured from the principal point: the principal point maps to the origin
+  expect_equal(cam_cal_pt(640, 360, m@K, m@k, m@F), c(0, 0))
+  # and a pixel offset is preserved unchanged
+  expect_equal(cam_cal_pt(700, 400, m@K, m@k, m@F), c(60, 40))
+})
+
+test_that("cal_model accepts a scalar or custom F", {
+  expect_equal(cal_model(800, 810, 640, 360, F = 5)@F, c(5, 5))
+  expect_equal(cal_model(800, 810, 640, 360, F = c(5, 6))@F, c(5, 6))
+})
+
+test_that("cal_model rejects non-scalar or non-finite intrinsics", {
+  expect_error(cal_model(fx = c(1, 2), fy = 1, cx = 0, cy = 0), "fx")
+  expect_error(cal_model(fx = NA_real_, fy = 1, cx = 0, cy = 0), "fx")
+  expect_error(cal_model(fx = 1, fy = 1, cx = 0, cy = 0, F = c(1, 2, 3)), "F")
+})
+
+# ---- read_calibration(): MATLAB ----------------------------------------------
+
+test_that("read_calibration parses a MATLAB IntrinsicMatrix (transposed)", {
+  # MATLAB cameraParameters.IntrinsicMatrix: [fx 0 0; s fy 0; cx cy 1]
+  mat <- list(
+    IntrinsicMatrix = matrix(c(800, 0, 0,
+                               0, 810, 0,
+                               641, 361, 1), 3, 3, byrow = TRUE),
+    RadialDistortion = c(-0.2, 0.05, 0.01),
+    TangentialDistortion = c(0.001, -0.002)
+  )
+  params <- radiatR:::.parse_matlab_calib(mat)
+  expect_equal(params$fx, 800)
+  expect_equal(params$fy, 810)
+  expect_equal(params$cx, 641)
+  expect_equal(params$cy, 361)
+  expect_equal(params$k1, -0.2)
+  expect_equal(params$k3, 0.01)
+  expect_equal(params$p1, 0.001)
+  expect_equal(params$default_base, 1)
+})
+
+test_that("read_calibration parses a MATLAB standard K (R2022b+)", {
+  mat <- list(
+    K = matrix(c(800, 0, 641,
+                 0, 810, 361,
+                 0, 0, 1), 3, 3, byrow = TRUE),
+    RadialDistortion = c(-0.2, 0.05)
+  )
+  params <- radiatR:::.parse_matlab_calib(mat)
+  expect_equal(params$fx, 800)
+  expect_equal(params$cx, 641)
+  expect_equal(params$cy, 361)
+  expect_equal(params$k3, 0)
+})
+
+test_that("read_calibration applies the 1-based MATLAB principal_base default", {
+  skip_if_not_installed("R.matlab")
+  tmp <- tempfile(fileext = ".mat")
+  R.matlab::writeMat(tmp,
+    IntrinsicMatrix = matrix(c(800, 0, 0,
+                               0, 810, 0,
+                               641, 361, 1), 3, 3, byrow = TRUE),
+    RadialDistortion = c(-0.2, 0.05),
+    TangentialDistortion = c(0, 0))
+  m <- read_calibration(tmp, source = "matlab")
+  # default base of 1 shifts the 1-based principal point to 0-based
+  expect_equal(m@K[3, 1], 640)
+  expect_equal(m@K[3, 2], 360)
+})
+
+# ---- read_calibration(): OpenCV ----------------------------------------------
+
+test_that("read_calibration parses OpenCV JSON", {
+  skip_if_not_installed("jsonlite")
+  tmp <- tempfile(fileext = ".json")
+  writeLines(jsonlite::toJSON(list(
+    camera_matrix = list(rows = 3, cols = 3, dt = "d",
+      data = c(800, 0, 640, 0, 810, 360, 0, 0, 1)),
+    distortion_coefficients = list(rows = 5, cols = 1, dt = "d",
+      data = c(-0.2, 0.05, 0.001, -0.002, 0.01))
+  ), auto_unbox = TRUE), tmp)
+
+  m <- read_calibration(tmp, source = "opencv")
+  expect_equal(m@K[1, 1], 800)
+  expect_equal(m@K[2, 2], 810)
+  expect_equal(m@K[3, 1], 640)   # 0-based default, no shift
+  expect_equal(m@K[3, 2], 360)
+  expect_equal(unname(m@k["k1"]), -0.2)
+  expect_equal(unname(m@k["p1"]), 0.001)
+  expect_equal(unname(m@k["k3"]), 0.01)
+})
+
+test_that("read_calibration parses OpenCV YAML with non-standard tags", {
+  skip_if_not_installed("yaml")
+  tmp <- tempfile(fileext = ".yml")
+  writeLines(c(
+    "%YAML:1.0",
+    "---",
+    "camera_matrix: !!opencv-matrix",
+    "   rows: 3",
+    "   cols: 3",
+    "   dt: d",
+    "   data: [ 800., 0., 640., 0., 810., 360., 0., 0., 1. ]",
+    "distortion_coefficients: !!opencv-matrix",
+    "   rows: 5",
+    "   cols: 1",
+    "   dt: d",
+    "   data: [ -0.2, 0.05, 0.001, -0.002, 0.01 ]"
+  ), tmp)
+
+  m <- read_calibration(tmp, source = "opencv")
+  expect_equal(m@K[1, 1], 800)
+  expect_equal(m@K[3, 1], 640)
+  expect_equal(unname(m@k["p2"]), -0.002)
+})
+
+# ---- read_calibration(): CSV -------------------------------------------------
+
+test_that("read_calibration parses a wide CSV", {
   tmp <- tempfile(fileext = ".csv")
-  write_calibration_points(pts_simple, tmp)
-  expect_true(file.exists(tmp))
-  expect_equal(read_calibration_points(tmp), pts_simple, ignore_attr = TRUE)
+  utils::write.csv(data.frame(
+    fx = 800, fy = 810, cx = 640, cy = 360,
+    k1 = -0.2, k2 = 0.05, k3 = 0.01, p1 = 0.001, p2 = -0.002
+  ), tmp, row.names = FALSE)
+
+  m <- read_calibration(tmp, source = "csv")
+  expect_equal(m@K[1, 1], 800)
+  expect_equal(m@K[3, 2], 360)
+  expect_equal(unname(m@k["k2"]), 0.05)
 })
 
-test_that("calibration_from_points errors on fewer than 3 views", {
-  board_dims  <- c(3, 4)
-  square_size <- 1
-  template    <- checkerboard_points(board_dims, square_size)
-  world       <- as.matrix(template[, c("x", "y")])
-  tbl2 <- calibration_points_tibble(list(world + 0.1, world + 0.2))
-  expect_error(
-    calibration_from_points(board_dims, square_size, tbl2, quiet = TRUE),
-    "at least 3 views"
+test_that("read_calibration parses a long parameter/value CSV", {
+  tmp <- tempfile(fileext = ".csv")
+  utils::write.csv(data.frame(
+    parameter = c("fx", "fy", "cx", "cy", "k1"),
+    value = c(800, 810, 640, 360, -0.2)
+  ), tmp, row.names = FALSE)
+
+  m <- read_calibration(tmp, source = "csv")
+  expect_equal(m@K[2, 2], 810)
+  expect_equal(unname(m@k["k1"]), -0.2)
+  expect_equal(unname(m@k["k3"]), 0)
+})
+
+test_that("read_calibration auto-detects the source from the extension", {
+  tmp <- tempfile(fileext = ".csv")
+  utils::write.csv(data.frame(fx = 1, fy = 1, cx = 0, cy = 0),
+                   tmp, row.names = FALSE)
+  expect_s4_class(read_calibration(tmp), "CalModel")
+})
+
+test_that("read_calibration errors clearly on a missing file or unknown type", {
+  expect_error(read_calibration("does-not-exist.csv"), "not found")
+  tmp <- tempfile(fileext = ".bogus")
+  file.create(tmp)
+  expect_error(read_calibration(tmp), "infer calibration source")
+})
+
+test_that("an imported model round-trips through calibrate_positions", {
+  m <- cal_model(fx = 800, fy = 800, cx = 640, cy = 360)
+  df <- data.frame(
+    id = c("A", "A"), time = c(0, 1),
+    x = c(640, 740), y = c(360, 360), angle = c(0, 0)
   )
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                angle = "angle", angle_unit = "radians", normalize_xy = FALSE)
+  calibrated <- calibrate_positions(ts, m)
+  # principal point maps to origin; a +100px offset stays +100 (no distortion)
+  expect_equal(calibrated@data$x, c(0, 100))
+  expect_equal(calibrated@data$y, c(0, 0))
 })
-
-test_that("calibration point helpers run calibration with 3 perspective views", {
-  board_dims  <- c(3, 4)
-  square_size <- 1
-  template    <- checkerboard_points(board_dims, square_size)
-  world       <- as.matrix(template[, c("x", "y")])
-
-  # Helper: pinhole projection.  K uses small focal length matching world
-  # coordinate scale so Zhang's B matrix is well-conditioned.
-  .proj <- function(pts, K, R, tvec) {
-    n  <- nrow(pts)
-    P3 <- cbind(pts, 0)
-    q  <- K %*% (R %*% t(P3) + matrix(tvec, 3, n))
-    t(q[1:2, ] / q[3, ])
-  }
-  rx <- function(a)
-    matrix(c(1,0,0, 0,cos(a),-sin(a), 0,sin(a),cos(a)), 3, byrow = TRUE)
-  ry <- function(a)
-    matrix(c(cos(a),0,sin(a), 0,1,0, -sin(a),0,cos(a)), 3, byrow = TRUE)
-
-  K_syn <- matrix(c(10,0,1.5, 0,10,2, 0,0,1), 3, byrow = TRUE)
-  img_pts <- list(
-    .proj(world, K_syn, rx( 0.25),              c(-0.5, -0.5, 5)),
-    .proj(world, K_syn, ry( 0.30),              c( 0.0,  0.0, 4)),
-    .proj(world, K_syn, rx(-0.20) %*% ry(0.25), c( 0.5,  0.5, 5))
-  )
-  tbl3 <- calibration_points_tibble(img_pts)
-
-  calib <- calibration_from_points(board_dims, square_size, tbl3, quiet = TRUE)
-  expect_s4_class(calib$model, "CalModel")
-  expect_equal(length(calib$image_points), 3L)
-  expect_s3_class(calib$points, "data.frame")
-
-  sess <- calibration_session(
-    board_dims   = board_dims,
-    square_size  = square_size,
-    pattern      = "chessboard",
-    load_points  = tbl3,
-    quiet        = TRUE
-  )
-  expect_equal(sess$image_points, img_pts)
-
-  tmp2 <- tempfile(fileext = ".csv")
-  calibration_session(
-    board_dims  = board_dims,
-    square_size = square_size,
-    pattern     = "chessboard",
-    load_points = tbl3,
-    quiet       = TRUE,
-    save_points = tmp2
-  )
-  expect_true(file.exists(tmp2))
-  expect_equal(read_calibration_points(tmp2), img_pts)
-})
-
-# ---- ground-truth recovery (bundled synthetic fixture) -----------------------
-# The fixture is a noiseless projection of a planar checkerboard through known
-# intrinsics, generated by data-raw/calibration_fixture.R. These tests assert
-# that the Zhang's-method solver recovers the intrinsics it was built from --
-# the sanity check the consistency tests above do not provide.
-
-test_that("calibration recovers known intrinsics from the bundled fixture", {
-  corners_path <- system.file("extdata", "calibration_corners.csv",
-                              package = "radiatR")
-  truth_path   <- system.file("extdata", "calibration_truth.csv",
-                              package = "radiatR")
-  skip_if(nchar(corners_path) == 0L || nchar(truth_path) == 0L,
-          "calibration fixture not found in extdata")
-
-  truth      <- utils::read.csv(truth_path)
-  board_dims <- c(truth$board_rows, truth$board_cols)
-  img_pts    <- read_calibration_points(corners_path)
-
-  calib <- calibration_from_points(board_dims, truth$square_size, img_pts,
-                                   quiet = TRUE)
-  K <- calib$intrinsics
-
-  # noiseless data -> recovery to (near) machine precision
-  expect_equal(K[1, 1], truth$fx,   tolerance = 1e-5)  # fx
-  expect_equal(K[2, 2], truth$fy,   tolerance = 1e-5)  # fy
-  expect_equal(K[1, 3], truth$cx,   tolerance = 1e-5)  # cx
-  expect_equal(K[2, 3], truth$cy,   tolerance = 1e-5)  # cy
-  expect_equal(K[1, 2], truth$skew, tolerance = 1e-5)  # skew
-
-  # reprojection error is essentially zero for exact projections
-  expect_lt(mean(calib$reprojection$error), 1e-6)
-})
-
-test_that("calibration is robust to pixel noise on the fixture corners", {
-  corners_path <- system.file("extdata", "calibration_corners.csv",
-                              package = "radiatR")
-  truth_path   <- system.file("extdata", "calibration_truth.csv",
-                              package = "radiatR")
-  skip_if(nchar(corners_path) == 0L || nchar(truth_path) == 0L,
-          "calibration fixture not found in extdata")
-
-  truth      <- utils::read.csv(truth_path)
-  board_dims <- c(truth$board_rows, truth$board_cols)
-  corners    <- utils::read.csv(corners_path)
-
-  set.seed(42)
-  sigma <- 0.3   # pixels of detection noise
-  corners$x <- corners$x + stats::rnorm(nrow(corners), 0, sigma)
-  corners$y <- corners$y + stats::rnorm(nrow(corners), 0, sigma)
-
-  calib <- calibration_from_points(board_dims, truth$square_size, corners,
-                                   quiet = TRUE)
-  K <- calib$intrinsics
-
-  # focal lengths and principal point recovered within a few pixels
-  expect_equal(K[1, 1], truth$fx, tolerance = 5)
-  expect_equal(K[2, 2], truth$fy, tolerance = 5)
-  expect_equal(K[1, 3], truth$cx, tolerance = 5)
-  expect_equal(K[2, 3], truth$cy, tolerance = 5)
-
-  # mean reprojection error stays on the order of the injected noise
-  expect_lt(mean(calib$reprojection$error), 1)
-})
-
