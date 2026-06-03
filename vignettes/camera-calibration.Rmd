@@ -164,6 +164,40 @@ cam_cal_pt(650, 380, K, distortion, F_mm, max_iterations = 10, tolerance = 1e-12
 
 If convergence fails, the function returns the last iterate; consider checking your coefficients or tightening the stopping criteria.
 
+## Validating the solver
+
+Because radiatR calibrates from corner *coordinates* rather than images, the
+solver can be checked against a fully synthetic scene with known ground truth.
+The package ships such a fixture: `calibration_corners.csv` is a noiseless
+projection of a planar checkerboard through a known pinhole camera in five
+poses, and `calibration_truth.csv` records the intrinsics it was built from.
+This is the basis of the package's calibration round-trip test.
+
+```{r fixture}
+corners <- read_calibration_points(
+  system.file("extdata", "calibration_corners.csv", package = "radiatR")
+)
+truth <- read.csv(
+  system.file("extdata", "calibration_truth.csv", package = "radiatR")
+)
+
+calib <- calibration_from_points(
+  board_dims  = c(truth$board_rows, truth$board_cols),
+  square_size = truth$square_size,
+  image_points = corners,
+  quiet = TRUE
+)
+
+round(calib$intrinsics, 3)
+```
+
+The recovered focal lengths (`r truth$fx`, `r truth$fy`) and principal point
+(`r truth$cx`, `r truth$cy`) match the ground truth to within numerical
+precision, and the mean reprojection error is effectively zero
+(`r signif(mean(calib$reprojection$error), 3)` px). With real corner detections
+the reprojection error will be on the order of the detector's pixel noise; it is
+the primary diagnostic of calibration quality reported in `calib$reprojection`.
+
 ## Summary
 
 - Use `cam_cal_pt()` / `cam_cal_many()` for one-off points and tables.
