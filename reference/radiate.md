@@ -39,6 +39,7 @@ radiate(
   label_size = 3,
   label_padding = 1.08,
   label_use_repel = TRUE,
+  show_tracks = TRUE,
   show_arrow = NULL,
   arrow_angle_col = NULL,
   arrow_colour = "black",
@@ -162,6 +163,12 @@ radiate(
 - label_use_repel:
 
   Use \`ggrepel::geom_text_repel()\` when available.
+
+- show_tracks:
+
+  Whether to draw the trajectory paths. Default \`TRUE\`. Set to
+  \`FALSE\` to render the arena and any overlays (arrow, circle, ticks)
+  without the track geometry.
 
 - show_arrow:
 
