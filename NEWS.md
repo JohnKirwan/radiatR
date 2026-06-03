@@ -1,5 +1,13 @@
 # radiatR (development version)
 
+## Bug fixes
+
+* `as.data.frame()` on a `TrajSet` now works for users of the installed
+  package. It had been defined as an S4 method on the base S3 generic, which is
+  only reachable from within the package's own namespace, so user code got
+  "cannot coerce class TrajSet to a data.frame". It is now a registered S3
+  method.
+
 ## Shiny app
 
 * The upload step now offers a one-click **"Load the example millipede
@@ -9,6 +17,10 @@
 * Fixed the results step crashing or producing an empty summary when the
   tracking data's trial-ID column was not literally named `id`. The condition
   join and per-trial summary now key off the headings frame's own `id` column.
+* Fixed the results plot showing "Plot unavailable" whenever a condition column
+  was detected: it set `radiate()`'s mutually exclusive `colour_col` and
+  `colour_cycle` at once. Colours now cycle only when no condition drives the
+  colour scale, and plot-render failures are logged rather than swallowed.
 
 ## Camera calibration
 
