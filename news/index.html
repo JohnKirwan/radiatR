@@ -42,6 +42,14 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="radiatr-development-version">radiatR (development version)<a class="anchor" aria-label="anchor" href="#radiatr-development-version"></a></h2>
+<div class="section level3">
+<h3 id="camera-calibration-development-version">Camera calibration<a class="anchor" aria-label="anchor" href="#camera-calibration-development-version"></a></h3>
+<ul><li>Refocused the calibration layer on <em>importing</em> calibrations from established tools rather than estimating them. <code><a href="../reference/read_calibration.html">read_calibration()</a></code> reads camera intrinsics and Brown-Conrady distortion coefficients from the <strong>MATLAB Computer Vision Toolbox</strong> (<code>.mat</code>), <strong>OpenCV</strong> <code>FileStorage</code> (YAML/JSON), or a plain <strong>CSV</strong>, and <code><a href="../reference/cal_model.html">cal_model()</a></code> builds a <code>CalModel</code> from coefficients you already hold. Both handle radiatR’s transposed intrinsic-matrix convention and the 1-based (MATLAB) vs 0-based (OpenCV) principal-point difference for you.</li>
+<li>Removed the in-package calibration <em>estimator</em> and its interactive point-capture tools (<code>calibration_session()</code>, <code>calibration_from_points()</code>, <code>checkerboard_points()</code>, the <code>calibration_points_*</code> / <code>*_calibration_points</code> helpers, and <code>calibration_switch_axes()</code>). Estimating intrinsics from checkerboard images is better served by the mature toolboxes above; the bundled <code>calibration_corners.csv</code> / <code>calibration_truth.csv</code> fixtures are gone with it. <code><a href="../reference/cam_cal_pt.html">cam_cal_pt()</a></code>, <code><a href="../reference/cam_cal_many.html">cam_cal_many()</a></code>, and <code><a href="../reference/calibrate_positions.html">calibrate_positions()</a></code> are unchanged.</li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="radiatr-020">radiatR 0.2.0<a class="anchor" aria-label="anchor" href="#radiatr-020"></a></h2>
 <p>A large feature release that broadens <em>radiatR</em> from a focused plotting toolkit into an end-to-end pipeline for circular-arena tracking: many more data sources, a full circular-statistics layer, richer distribution overlays, and a no-code graphical interface.</p>
 <div class="section level3">

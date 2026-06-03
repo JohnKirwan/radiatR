@@ -1,5 +1,33 @@
 # Changelog
 
+## radiatR (development version)
+
+### Camera calibration
+
+- Refocused the calibration layer on *importing* calibrations from
+  established tools rather than estimating them.
+  [`read_calibration()`](https://johnkirwan.github.io/radiatR/reference/read_calibration.md)
+  reads camera intrinsics and Brown-Conrady distortion coefficients from
+  the **MATLAB Computer Vision Toolbox** (`.mat`), **OpenCV**
+  `FileStorage` (YAML/JSON), or a plain **CSV**, and
+  [`cal_model()`](https://johnkirwan.github.io/radiatR/reference/cal_model.md)
+  builds a `CalModel` from coefficients you already hold. Both handle
+  radiatR’s transposed intrinsic-matrix convention and the 1-based
+  (MATLAB) vs 0-based (OpenCV) principal-point difference for you.
+- Removed the in-package calibration *estimator* and its interactive
+  point-capture tools (`calibration_session()`,
+  `calibration_from_points()`, `checkerboard_points()`, the
+  `calibration_points_*` / `*_calibration_points` helpers, and
+  `calibration_switch_axes()`). Estimating intrinsics from checkerboard
+  images is better served by the mature toolboxes above; the bundled
+  `calibration_corners.csv` / `calibration_truth.csv` fixtures are gone
+  with it.
+  [`cam_cal_pt()`](https://johnkirwan.github.io/radiatR/reference/cam_cal_pt.md),
+  [`cam_cal_many()`](https://johnkirwan.github.io/radiatR/reference/cam_cal_many.md),
+  and
+  [`calibrate_positions()`](https://johnkirwan.github.io/radiatR/reference/calibrate_positions.md)
+  are unchanged.
+
 ## radiatR 0.2.0
 
 A large feature release that broadens *radiatR* from a focused plotting

@@ -23,4 +23,6 @@ Camera calibration model for trajectory correction
 [`calibrate_positions`](https://johnkirwan.github.io/radiatR/reference/calibrate_positions.md)
 
 Other calibration:
-[`calibrate_positions()`](https://johnkirwan.github.io/radiatR/reference/calibrate_positions.md)
+[`cal_model()`](https://johnkirwan.github.io/radiatR/reference/cal_model.md),
+[`calibrate_positions()`](https://johnkirwan.github.io/radiatR/reference/calibrate_positions.md),
+[`read_calibration()`](https://johnkirwan.github.io/radiatR/reference/read_calibration.md)

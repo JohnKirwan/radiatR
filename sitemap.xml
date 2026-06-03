@@ -38,15 +38,10 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/add_wrappedcauchy_density.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/build_unit_circle_mapping.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/cal_model.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/calibrate_positions.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/calibration_from_points.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/calibration_points_from_tibble.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/calibration_points_tibble.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/calibration_session.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/calibration_switch_axes.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/cam_cal_many.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/cam_cal_pt.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/checkerboard_points.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/circ_cor.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/circ_dispersion.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/circ_mean_segments.html</loc></url>
@@ -92,7 +87,7 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/radial_distort.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/radiatR-package.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/radiate.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/read_calibration_points.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/read_calibration.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/register_heading_rule.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/register_loader_dialect.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/register_loader_format.html</loc></url>
@@ -108,7 +103,6 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/transform_history.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/vonmises_fit.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/wrappedcauchy_fit.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/write_calibration_points.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/zone_dwell.html</loc></url>
 </urlset>
 

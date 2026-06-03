@@ -666,7 +666,7 @@
       </dl></div><div class="section level2">
       <h2 id="calibration">Calibration<a class="anchor" aria-label="anchor" href="#calibration"></a></h2>
 
-      <div class="section-desc"><p>Map pixel coordinates to real-world positions using a planar camera calibration model (Zhang’s method).</p></div>
+      <div class="section-desc"><p>Import camera intrinsics and distortion coefficients from MATLAB, OpenCV, or a plain CSV, then apply them to undistort pixel tracks. radiatR does not estimate calibrations itself.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -675,52 +675,17 @@
 
       <dl><dt>
 
-          <code><a href="calibration_session.html">calibration_session()</a></code>
+          <code><a href="read_calibration.html">read_calibration()</a></code>
 
         </dt>
-        <dd>Interactive planar camera calibration from a graphics device</dd>
+        <dd>Import a camera calibration from an external toolbox</dd>
 
         <dt>
 
-          <code><a href="calibration_from_points.html">calibration_from_points()</a></code>
+          <code><a href="cal_model.html">cal_model()</a></code>
 
         </dt>
-        <dd>Compute a calibration from saved calibration points</dd>
-
-        <dt>
-
-          <code><a href="checkerboard_points.html">checkerboard_points()</a></code>
-
-        </dt>
-        <dd>Generate world coordinates for checkerboard corners</dd>
-
-        <dt>
-
-          <code><a href="calibration_points_tibble.html">calibration_points_tibble()</a></code>
-
-        </dt>
-        <dd>Convert calibration point matrices to a tibble</dd>
-
-        <dt>
-
-          <code><a href="calibration_points_from_tibble.html">calibration_points_from_tibble()</a></code>
-
-        </dt>
-        <dd>Reconstruct calibration point matrices from a tibble</dd>
-
-        <dt>
-
-          <code><a href="write_calibration_points.html">write_calibration_points()</a></code>
-
-        </dt>
-        <dd>Write calibration points to CSV</dd>
-
-        <dt>
-
-          <code><a href="read_calibration_points.html">read_calibration_points()</a></code>
-
-        </dt>
-        <dd>Read calibration point CSV</dd>
+        <dd>Build a camera calibration model from intrinsic coefficients</dd>
 
         <dt>
 
@@ -735,13 +700,6 @@
 
         </dt>
         <dd>Calibrate the camera on the given set of points</dd>
-
-        <dt>
-
-          <code><a href="calibration_switch_axes.html">calibration_switch_axes()</a></code>
-
-        </dt>
-        <dd>Switch axes of the given intrinsic camera matrix</dd>
 
         <dt>
 
@@ -1017,38 +975,17 @@
 
         <dt>
 
+          <code><a href="cal_model.html">cal_model()</a></code>
+
+        </dt>
+        <dd>Build a camera calibration model from intrinsic coefficients</dd>
+
+        <dt>
+
           <code><a href="calibrate_positions.html">calibrate_positions()</a></code>
 
         </dt>
         <dd>Calibrate TrajSet positions using a camera model</dd>
-
-        <dt>
-
-          <code><a href="calibration_from_points.html">calibration_from_points()</a></code>
-
-        </dt>
-        <dd>Compute a calibration from saved calibration points</dd>
-
-        <dt>
-
-          <code><a href="calibration_points_from_tibble.html">calibration_points_from_tibble()</a></code>
-
-        </dt>
-        <dd>Reconstruct calibration point matrices from a tibble</dd>
-
-        <dt>
-
-          <code><a href="calibration_points_tibble.html">calibration_points_tibble()</a></code>
-
-        </dt>
-        <dd>Convert calibration point matrices to a tibble</dd>
-
-        <dt>
-
-          <code><a href="calibration_session.html">calibration_session()</a></code>
-
-        </dt>
-        <dd>Interactive planar camera calibration from a graphics device</dd>
 
         <dt>
 
@@ -1063,13 +1000,6 @@
 
         </dt>
         <dd>Calibrate the camera on the given xy coordinate</dd>
-
-        <dt>
-
-          <code><a href="checkerboard_points.html">checkerboard_points()</a></code>
-
-        </dt>
-        <dd>Generate world coordinates for checkerboard corners</dd>
 
         <dt>
 
@@ -1360,10 +1290,10 @@
 
         <dt>
 
-          <code><a href="read_calibration_points.html">read_calibration_points()</a></code>
+          <code><a href="read_calibration.html">read_calibration()</a></code>
 
         </dt>
-        <dd>Read calibration point CSV</dd>
+        <dd>Import a camera calibration from an external toolbox</dd>
 
         <dt>
 
@@ -1462,13 +1392,6 @@
 
         </dt>
         <dd>Fit a wrapped Cauchy distribution to per-group heading data</dd>
-
-        <dt>
-
-          <code><a href="write_calibration_points.html">write_calibration_points()</a></code>
-
-        </dt>
-        <dd>Write calibration points to CSV</dd>
 
         <dt>
 

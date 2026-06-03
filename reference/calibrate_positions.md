@@ -29,4 +29,6 @@ TrajSet with updated \`x\`/\`y\` and angles in metric space
 ## See also
 
 Other calibration:
-[`CalModel-class`](https://johnkirwan.github.io/radiatR/reference/CalModel-class.md)
+[`CalModel-class`](https://johnkirwan.github.io/radiatR/reference/CalModel-class.md),
+[`cal_model()`](https://johnkirwan.github.io/radiatR/reference/cal_model.md),
+[`read_calibration()`](https://johnkirwan.github.io/radiatR/reference/read_calibration.md)

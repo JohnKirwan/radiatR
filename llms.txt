@@ -420,29 +420,18 @@ Zone dwell-time, quadrant lines, and goal-entry counting.
 
 ## Calibration
 
-Map pixel coordinates to real-world positions using a planar camera
-calibration model (Zhang’s method).
+Import camera intrinsics and distortion coefficients from MATLAB,
+OpenCV, or a plain CSV, then apply them to undistort pixel tracks.
+radiatR does not estimate calibrations itself.
 
-- [`calibration_session()`](https://johnkirwan.github.io/radiatR/reference/calibration_session.md)
-  : Interactive planar camera calibration from a graphics device
-- [`calibration_from_points()`](https://johnkirwan.github.io/radiatR/reference/calibration_from_points.md)
-  : Compute a calibration from saved calibration points
-- [`checkerboard_points()`](https://johnkirwan.github.io/radiatR/reference/checkerboard_points.md)
-  : Generate world coordinates for checkerboard corners
-- [`calibration_points_tibble()`](https://johnkirwan.github.io/radiatR/reference/calibration_points_tibble.md)
-  : Convert calibration point matrices to a tibble
-- [`calibration_points_from_tibble()`](https://johnkirwan.github.io/radiatR/reference/calibration_points_from_tibble.md)
-  : Reconstruct calibration point matrices from a tibble
-- [`write_calibration_points()`](https://johnkirwan.github.io/radiatR/reference/write_calibration_points.md)
-  : Write calibration points to CSV
-- [`read_calibration_points()`](https://johnkirwan.github.io/radiatR/reference/read_calibration_points.md)
-  : Read calibration point CSV
+- [`read_calibration()`](https://johnkirwan.github.io/radiatR/reference/read_calibration.md)
+  : Import a camera calibration from an external toolbox
+- [`cal_model()`](https://johnkirwan.github.io/radiatR/reference/cal_model.md)
+  : Build a camera calibration model from intrinsic coefficients
 - [`cam_cal_pt()`](https://johnkirwan.github.io/radiatR/reference/cam_cal_pt.md)
   : Calibrate the camera on the given xy coordinate
 - [`cam_cal_many()`](https://johnkirwan.github.io/radiatR/reference/cam_cal_many.md)
   : Calibrate the camera on the given set of points
-- [`calibration_switch_axes()`](https://johnkirwan.github.io/radiatR/reference/calibration_switch_axes.md)
-  : Switch axes of the given intrinsic camera matrix
 - [`CalModel-class`](https://johnkirwan.github.io/radiatR/reference/CalModel-class.md)
   : Camera calibration model for trajectory correction
 
@@ -536,22 +525,14 @@ Any remaining exported topics.
   : Overlay a fitted wrapped Cauchy density curve on a radiate plot
 - [`assign_cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.md)
   : Assign cycling colour indices to trajectories
+- [`cal_model()`](https://johnkirwan.github.io/radiatR/reference/cal_model.md)
+  : Build a camera calibration model from intrinsic coefficients
 - [`calibrate_positions()`](https://johnkirwan.github.io/radiatR/reference/calibrate_positions.md)
   : Calibrate TrajSet positions using a camera model
-- [`calibration_from_points()`](https://johnkirwan.github.io/radiatR/reference/calibration_from_points.md)
-  : Compute a calibration from saved calibration points
-- [`calibration_points_from_tibble()`](https://johnkirwan.github.io/radiatR/reference/calibration_points_from_tibble.md)
-  : Reconstruct calibration point matrices from a tibble
-- [`calibration_points_tibble()`](https://johnkirwan.github.io/radiatR/reference/calibration_points_tibble.md)
-  : Convert calibration point matrices to a tibble
-- [`calibration_session()`](https://johnkirwan.github.io/radiatR/reference/calibration_session.md)
-  : Interactive planar camera calibration from a graphics device
 - [`cam_cal_many()`](https://johnkirwan.github.io/radiatR/reference/cam_cal_many.md)
   : Calibrate the camera on the given set of points
 - [`cam_cal_pt()`](https://johnkirwan.github.io/radiatR/reference/cam_cal_pt.md)
   : Calibrate the camera on the given xy coordinate
-- [`checkerboard_points()`](https://johnkirwan.github.io/radiatR/reference/checkerboard_points.md)
-  : Generate world coordinates for checkerboard corners
 - [`circ_cor()`](https://johnkirwan.github.io/radiatR/reference/circ_cor.md)
   : Circular correlation between headings and a covariate
 - [`circ_dispersion()`](https://johnkirwan.github.io/radiatR/reference/circ_dispersion.md)
@@ -637,8 +618,8 @@ Any remaining exported topics.
   : Remove radial/tangential distortion from a point on the image plane.
 - [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   : Make ggplot object of tracks radiating from circle centre.
-- [`read_calibration_points()`](https://johnkirwan.github.io/radiatR/reference/read_calibration_points.md)
-  : Read calibration point CSV
+- [`read_calibration()`](https://johnkirwan.github.io/radiatR/reference/read_calibration.md)
+  : Import a camera calibration from an external toolbox
 - [`register_heading_rule()`](https://johnkirwan.github.io/radiatR/reference/register_heading_rule.md)
   : Register a custom heading derivation rule
 - [`register_loader_dialect()`](https://johnkirwan.github.io/radiatR/reference/register_loader_dialect.md)
@@ -673,8 +654,6 @@ Any remaining exported topics.
   : Fit a von Mises distribution to per-group heading data
 - [`wrappedcauchy_fit()`](https://johnkirwan.github.io/radiatR/reference/wrappedcauchy_fit.md)
   : Fit a wrapped Cauchy distribution to per-group heading data
-- [`write_calibration_points()`](https://johnkirwan.github.io/radiatR/reference/write_calibration_points.md)
-  : Write calibration points to CSV
 - [`zone_dwell()`](https://johnkirwan.github.io/radiatR/reference/zone_dwell.md)
   : Dwell-time proportions across quadrant x ring zones
 

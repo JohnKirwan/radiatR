@@ -70,151 +70,179 @@
 
     
     
-<p>This vignette walks through the end-to-end camera calibration
-utilities available in <strong>radiatR</strong>. The goal is to show how
-to turn raw pixel coordinates into a metric representation that removes
-lens distortion and accounts for camera intrinsics, matching the pinhole
-model implemented in packages such as MATLAB’s <em>Computer Vision
-Toolbox</em>.</p>
+<p>Tracks recorded from an overhead camera live in <em>pixel</em>
+coordinates that are distorted by the lens and offset from the arena
+centre. To analyse movement in a true metric (or at least undistorted)
+frame you need the camera’s calibration: its intrinsic matrix and
+distortion coefficients.</p>
+<p><strong>radiatR does not estimate calibrations itself.</strong>
+Estimating intrinsics from a checkerboard sequence is a solved problem
+with mature, well-tested implementations — MATLAB’s <em>Computer Vision
+Toolbox</em>, OpenCV’s <code>calibrateCamera</code>, and others.
+radiatR’s job is to <em>import</em> the coefficients those tools produce
+and <em>apply</em> them to your tracks. This vignette covers that
+import-and-correct workflow.</p>
 <div class="section level2">
-<h2 id="required-calibration-parameters">Required calibration parameters<a class="anchor" aria-label="anchor" href="#required-calibration-parameters"></a>
+<h2 id="the-model-radiatr-applies">The model radiatR applies<a class="anchor" aria-label="anchor" href="#the-model-radiatr-applies"></a>
 </h2>
-<p>The calibration helpers expect three key ingredients:</p>
-<ol style="list-style-type: decimal">
+<p>radiatR uses the pinhole + Brown-Conrady model shared by MATLAB and
+OpenCV:</p>
+<ul>
 <li>
-<strong>Intrinsic matrix (<code>K</code>)</strong> – a 3 × 3 matrix
-in the usual form
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">[</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mi>f</mi><mi>x</mi></msub></mtd><mtd columnalign="center" style="text-align: center"><mn>0</mn></mtd><mtd columnalign="center" style="text-align: center"><msub><mi>c</mi><mi>x</mi></msub><mspace width="0.222em"></mspace><mn>0</mn></mtd><mtd columnalign="center" style="text-align: center"><msub><mi>f</mi><mi>y</mi></msub></mtd><mtd columnalign="center" style="text-align: center"><msub><mi>c</mi><mi>y</mi></msub><mspace width="0.222em"></mspace><mn>0</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>0</mn></mtd><mtd columnalign="center" style="text-align: center"><mn>1</mn></mtd></mtr></mtable><mo stretchy="true" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">\left[\begin{smallmatrix}f_x &amp; 0 &amp; c_x \ 0 &amp; f_y &amp; c_y \ 0 &amp; 0 &amp; 1\end{smallmatrix}\right]</annotation></semantics></math>
-where <code>c_x</code> / <code>c_y</code> are the principal point in
-pixels and <code>f_x</code> / <code>f_y</code> are the focal lengths,
-also in pixels.</li>
+<strong>Focal lengths</strong> <code>fx</code>, <code>fy</code> and
+<strong>principal point</strong> <code>cx</code>, <code>cy</code>, in
+pixels.</li>
 <li>
-<strong>Distortion coefficients (<code>k</code>)</strong> – passed
-as either a numeric vector, a named vector (e.g.,
-<code>c(k1 = ..., k2 = ..., p1 = ..., p2 = ...)</code>), or a list with
-<code>radial</code> / <code>tangential</code> entries. Missing
-coefficients are assumed to be zero.</li>
-<li>
-<strong>Metric focal length (<code>F</code>)</strong> – the physical
-focal length (or scaling factor) in millimetres. Supply a scalar for
-isotropic scaling or a length-2 vector to differentiate between
-axes.</li>
-</ol>
-<p>You can bundle these into a <a href="../reference/CalModel-class.html"><code>CalModel</code></a> object
-for repeated use with trajectory sets.</p>
+<strong>Radial distortion</strong> <code>k1</code>, <code>k2</code>,
+<code>k3</code> and <strong>tangential distortion</strong>
+<code>p1</code>, <code>p2</code>.</li>
+</ul>
+<p>These are stored in a <a href="../reference/CalModel-class.html"><code>CalModel</code></a>
+object, which <code><a href="../reference/calibrate_positions.html">calibrate_positions()</a></code> applies to a
+<code>TrajSet</code>.</p>
+<p>A subtlety worth flagging up front: internally radiatR keeps the
+intrinsic matrix in MATLAB’s <em>transposed</em> convention — focal
+lengths on the diagonal, principal point in the <strong>bottom
+row</strong> (<code>K[3, 1:2]</code>), not the right-hand column. You
+never have to assemble that matrix by hand: <code><a href="../reference/cal_model.html">cal_model()</a></code> and
+<code><a href="../reference/read_calibration.html">read_calibration()</a></code> own it for you.</p>
+</div>
+<div class="section level2">
+<h2 id="building-a-model-from-known-coefficients">Building a model from known coefficients<a class="anchor" aria-label="anchor" href="#building-a-model-from-known-coefficients"></a>
+</h2>
+<p>If you already have the numbers — from a calibration report, a paper,
+or a colleague — <code><a href="../reference/cal_model.html">cal_model()</a></code> assembles the
+<code>CalModel</code> directly:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">K</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">800</span>,   <span class="fl">0</span>, <span class="fl">640</span>,</span>
-<span>                <span class="fl">0</span>, <span class="fl">800</span>, <span class="fl">360</span>,</span>
-<span>                <span class="fl">0</span>,   <span class="fl">0</span>,   <span class="fl">1</span><span class="op">)</span>,</span>
-<span>            nrow <span class="op">=</span> <span class="fl">3</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="va">distortion</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>k1 <span class="op">=</span> <span class="op">-</span><span class="fl">0.28</span>, k2 <span class="op">=</span> <span class="fl">0.05</span>, p1 <span class="op">=</span> <span class="fl">1e-3</span>, p2 <span class="op">=</span> <span class="op">-</span><span class="fl">5e-4</span><span class="op">)</span></span>
-<span><span class="va">F_mm</span> <span class="op">&lt;-</span> <span class="fl">20</span></span>
-<span></span>
-<span><span class="va">cal_model</span> <span class="op">&lt;-</span> <span class="fu">new</span><span class="op">(</span><span class="st">"CalModel"</span>, K <span class="op">=</span> <span class="va">K</span>, k <span class="op">=</span> <span class="va">distortion</span>, F <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="va">F_mm</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">cal_model</span></span>
+<code class="sourceCode R"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cal_model.html">cal_model</a></span><span class="op">(</span></span>
+<span>  fx <span class="op">=</span> <span class="fl">800</span>, fy <span class="op">=</span> <span class="fl">800</span>,   <span class="co"># focal lengths (px)</span></span>
+<span>  cx <span class="op">=</span> <span class="fl">640</span>, cy <span class="op">=</span> <span class="fl">360</span>,   <span class="co"># principal point (px)</span></span>
+<span>  k1 <span class="op">=</span> <span class="op">-</span><span class="fl">0.28</span>, k2 <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  p1 <span class="op">=</span> <span class="fl">1e-3</span>,  p2 <span class="op">=</span> <span class="op">-</span><span class="fl">5e-4</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">model</span></span>
 <span><span class="co">#&gt; An object of class "CalModel"</span></span>
 <span><span class="co">#&gt; Slot "K":</span></span>
 <span><span class="co">#&gt;      [,1] [,2] [,3]</span></span>
-<span><span class="co">#&gt; [1,]  800    0  640</span></span>
-<span><span class="co">#&gt; [2,]    0  800  360</span></span>
-<span><span class="co">#&gt; [3,]    0    0    1</span></span>
+<span><span class="co">#&gt; [1,]  800    0    0</span></span>
+<span><span class="co">#&gt; [2,]    0  800    0</span></span>
+<span><span class="co">#&gt; [3,]  640  360    1</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot "k":</span></span>
-<span><span class="co">#&gt;      k1      k2      p1      p2 </span></span>
-<span><span class="co">#&gt; -0.2800  0.0500  0.0010 -0.0005 </span></span>
+<span><span class="co">#&gt;      k1      k2      k3      p1      p2 </span></span>
+<span><span class="co">#&gt; -0.2800  0.0500  0.0000  0.0010 -0.0005 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Slot "F":</span></span>
-<span><span class="co">#&gt; [1] 20 20</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="checkerboard-control-points">Checkerboard control points<a class="anchor" aria-label="anchor" href="#checkerboard-control-points"></a>
-</h2>
-<p>When calibrating from a checkerboard sequence you often need the
-world coordinates for the inner corners. The helper
-<code><a href="../reference/checkerboard_points.html">checkerboard_points()</a></code> mirrors MATLAB’s
-<code>generateCheckerboardPoints</code> so you can generate them
-directly in <strong>radiatR</strong>.</p>
+<span><span class="co">#&gt; [1] 800 800</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="what-f-controls">What <code>F</code> controls<a class="anchor" aria-label="anchor" href="#what-f-controls"></a>
+</h3>
+<p>The <code>F</code> argument sets the units of the corrected output.
+When <code>F</code> is left as <code>NULL</code> (the default) it is set
+to <code>c(fx, fy)</code>, which means the output stays in
+<strong>undistorted pixels</strong> — distortion and the principal-point
+offset are removed, but the scale is unchanged. To obtain a metric
+result instead, pass the physical focal length in millimetres:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">cb_pts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/checkerboard_points.html">checkerboard_points</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">9</span>, <span class="fl">7</span><span class="op">)</span>, square_size <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">cb_pts</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 5</span></span></span>
-<span><span class="co">#&gt;   corner   row   col     x     y</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>      1     0     0     0     0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>      2     1     0     0     5</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>      3     2     0     0    10</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>      4     3     0     0    15</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>      5     4     0     0    20</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>      6     5     0     0    25</span></span></code></pre></div>
-<p>Use the <code>square_size</code> argument to match your physical
-square width (in millimetres, centimetres, etc.) and pass
-<code>as_tibble = FALSE</code> if you prefer a simple matrix of x/y
-coordinates.</p>
+<code class="sourceCode R"><span><span class="va">model_mm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cal_model.html">cal_model</a></span><span class="op">(</span>fx <span class="op">=</span> <span class="fl">800</span>, fy <span class="op">=</span> <span class="fl">800</span>, cx <span class="op">=</span> <span class="fl">640</span>, cy <span class="op">=</span> <span class="fl">360</span>,</span>
+<span>                      k1 <span class="op">=</span> <span class="op">-</span><span class="fl">0.28</span>, k2 <span class="op">=</span> <span class="fl">0.05</span>, F <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
-<h2 id="calibrating-single-points">Calibrating single points<a class="anchor" aria-label="anchor" href="#calibrating-single-points"></a>
+<h2 id="importing-a-calibration-file">Importing a calibration file<a class="anchor" aria-label="anchor" href="#importing-a-calibration-file"></a>
 </h2>
-<p>Use <code><a href="../reference/cam_cal_pt.html">cam_cal_pt()</a></code> when you need to correct a single pixel
-coordinate, for example when transforming landmarks exported from a
-digitising tool.</p>
+<p>In practice you will export the calibration from another tool and
+read it with <code><a href="../reference/read_calibration.html">read_calibration()</a></code>, which auto-detects the
+format from the file extension:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">raw_pt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fl">650</span>, y <span class="op">=</span> <span class="fl">380</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/cam_cal_pt.html">cam_cal_pt</a></span><span class="op">(</span><span class="va">raw_pt</span><span class="op">[</span><span class="st">"x"</span><span class="op">]</span>, <span class="va">raw_pt</span><span class="op">[</span><span class="st">"y"</span><span class="op">]</span>, <span class="va">K</span>, <span class="va">distortion</span>, <span class="va">F_mm</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 25.38876 14.87574</span></span></code></pre></div>
-<p>Internally the function:</p>
-<ol style="list-style-type: decimal">
-<li>Recentres the point by subtracting the principal point
-(<code><a href="../reference/optically_center.html">optically_center()</a></code>),</li>
-<li>Normalises by the focal lengths (<code><a href="../reference/focalize.html">focalize()</a></code>),</li>
-<li>Removes radial and tangential distortion via a fixed-point iteration
-(<code><a href="../reference/radial_distort.html">radial_distort()</a></code>),</li>
-<li>Converts the undistorted coordinates into millimetres
-(<code><a href="../reference/scaled_xy2mm.html">scaled_xy2mm()</a></code>).</li>
-</ol>
-<p>Both the iteration count and convergence tolerance are configurable
-via the <code>max_iterations</code> and <code>tolerance</code>
-arguments.</p>
+<code class="sourceCode R"><span><span class="co"># MATLAB Computer Vision Toolbox (.mat)</span></span>
+<span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_calibration.html">read_calibration</a></span><span class="op">(</span><span class="st">"camera_params.mat"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># OpenCV FileStorage (.yml / .yaml / .json)</span></span>
+<span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_calibration.html">read_calibration</a></span><span class="op">(</span><span class="st">"opencv_calib.yml"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Plain CSV (wide or parameter/value)</span></span>
+<span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_calibration.html">read_calibration</a></span><span class="op">(</span><span class="st">"calib.csv"</span><span class="op">)</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="matlab">MATLAB<a class="anchor" aria-label="anchor" href="#matlab"></a>
+</h3>
+<p>Save the relevant fields of a <code>cameraParameters</code> /
+<code>cameraIntrinsics</code> object to a <code>.mat</code> file.
+radiatR recognises both the pre-R2022b <code>IntrinsicMatrix</code>
+(already in the transposed convention) and the newer standard
+<code>K</code>, alongside <code>RadialDistortion</code> and
+<code>TangentialDistortion</code>. Reading <code>.mat</code> files needs
+the <strong>R.matlab</strong> package.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode matlab"><code class="sourceCode matlab"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co">% in MATLAB, after calibrating</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="va">params</span> <span class="op">=</span> <span class="va">cameraParams</span><span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="va">IntrinsicMatrix</span>     <span class="op">=</span> <span class="va">params</span>.<span class="va">IntrinsicMatrix</span><span class="op">;</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="va">RadialDistortion</span>    <span class="op">=</span> <span class="va">params</span>.<span class="va">RadialDistortion</span><span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="va">TangentialDistortion</span> <span class="op">=</span> <span class="va">params</span>.<span class="va">TangentialDistortion</span><span class="op">;</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="va">save</span>(<span class="ss">'camera_params.mat'</span><span class="op">,</span> <span class="ss">'IntrinsicMatrix'</span><span class="op">,</span> <span class="op">...</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>     <span class="ss">'RadialDistortion'</span><span class="op">,</span> <span class="ss">'TangentialDistortion'</span>)<span class="op">;</span></span></code></pre></div>
+<p>MATLAB reports the principal point in <strong>1-based</strong>
+pixels. <code><a href="../reference/read_calibration.html">read_calibration()</a></code> subtracts one by default
+(<code>principal_base = 1</code>) so it lines up with the 0-based
+coordinates produced by most tracking tools. Override
+<code>principal_base</code> if your tracker uses a different
+convention.</p>
+</div>
+<div class="section level3">
+<h3 id="opencv">OpenCV<a class="anchor" aria-label="anchor" href="#opencv"></a>
+</h3>
+<p><code>cv::FileStorage</code> writes a <code>camera_matrix</code> and
+<code>distortion_coefficients</code> (in the order
+<code>k1, k2, p1, p2, k3</code>). radiatR reads both the YAML and JSON
+variants and tolerates the non-standard <code>%YAML:1.0</code> header
+and <code>!!opencv-matrix</code> tags. YAML needs the
+<strong>yaml</strong> package; JSON needs <strong>jsonlite</strong>.
+OpenCV principal points are already 0-based, so no shift is applied by
+default.</p>
+</div>
+<div class="section level3">
+<h3 id="plain-csv">Plain CSV<a class="anchor" aria-label="anchor" href="#plain-csv"></a>
+</h3>
+<p>For coefficients typed out by hand, a CSV works in either layout —
+wide:</p>
+<pre><code>fx,fy,cx,cy,k1,k2,k3,p1,p2
+800,800,640,360,-0.28,0.05,0,0.001,-0.0005</code></pre>
+<p>or long (<code>parameter,value</code> rows). Missing coefficients
+default to zero. CSV principal points are treated as 0-based.</p>
+</div>
 </div>
 <div class="section level2">
-<h2 id="interactive-collection">Interactive collection<a class="anchor" aria-label="anchor" href="#interactive-collection"></a>
+<h2 id="correcting-points">Correcting points<a class="anchor" aria-label="anchor" href="#correcting-points"></a>
 </h2>
-<p>For small calibration sets you can grab corners manually.
-<code><a href="../reference/calibration_session.html">calibration_session()</a></code> opens a graphics device per frame and
-records clicks in row-major order, then solves a planar calibration:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">frames</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">'frame1.png'</span>, <span class="st">'frame2.png'</span><span class="op">)</span></span>
-<span><span class="va">calib</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calibration_session.html">calibration_session</a></span><span class="op">(</span><span class="va">frames</span>, pattern <span class="op">=</span> <span class="st">'chessboard'</span>, board_dims <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">9</span>, <span class="fl">7</span><span class="op">)</span>, square_size <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
-<span><span class="va">calib</span><span class="op">$</span><span class="va">intrinsics</span></span></code></pre></div>
-<p>The helper works with chessboard, ChArUco, or AprilTag grids—simply
-provide <code>board_dims</code>/<code>square_size</code> matching the
-pattern. The output contains the <code>CalModel</code>, per-frame
-extrinsics, and reprojection errors so you can inspect the fit.</p>
-</div>
-<div class="section level2">
-<h2 id="batch-calibration">Batch calibration<a class="anchor" aria-label="anchor" href="#batch-calibration"></a>
-</h2>
-<p>For tables or matrices of points, <code><a href="../reference/cam_cal_many.html">cam_cal_many()</a></code>
-processes everything in one pass.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<p>For a single landmark, <code><a href="../reference/cam_cal_pt.html">cam_cal_pt()</a></code> applies the model to
+one pixel coordinate; <code><a href="../reference/cam_cal_many.html">cam_cal_many()</a></code> does the same for a
+table of points in one pass:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">640</span>, <span class="fl">360</span>,</span>
 <span>    <span class="fl">700</span>, <span class="fl">420</span>,</span>
 <span>    <span class="fl">580</span>, <span class="fl">320</span><span class="op">)</span>,</span>
-<span>  ncol <span class="op">=</span> <span class="fl">2</span>,</span>
-<span>  byrow <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  ncol <span class="op">=</span> <span class="fl">2</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x"</span>, <span class="st">"y"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/cam_cal_many.html">cam_cal_many</a></span><span class="op">(</span><span class="va">pts</span>, <span class="va">K</span>, <span class="va">distortion</span>, <span class="va">F_mm</span><span class="op">)</span></span>
-<span><span class="co">#&gt;          [,1]     [,2]</span></span>
-<span><span class="co">#&gt; [1,] 24.52197 13.82316</span></span>
-<span><span class="co">#&gt; [2,] 27.91428 16.79090</span></span>
-<span><span class="co">#&gt; [3,] 20.00529 11.05509</span></span></code></pre></div>
-<p>Supplying a <code>CalModel</code> lets you calibrate entire
-trajectory sets with a single call. The bundled millipede example data
-provides real pixel-space tracks recorded by a camera mounted above a
-circular arena. We load the first trial and apply the hypothetical
-calibration model defined above.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<span><span class="fu"><a href="../reference/cam_cal_many.html">cam_cal_many</a></span><span class="op">(</span><span class="va">pts</span>, <span class="va">model</span><span class="op">@</span><span class="va">K</span>, <span class="va">model</span><span class="op">@</span><span class="va">k</span>, <span class="va">model</span><span class="op">@</span><span class="va">F</span><span class="op">)</span></span>
+<span><span class="co">#&gt;           [,1]      [,2]</span></span>
+<span><span class="co">#&gt; [1,]   0.00000   0.00000</span></span>
+<span><span class="co">#&gt; [2,]  60.19038  60.17675</span></span>
+<span><span class="co">#&gt; [3,] -60.13549 -40.09905</span></span></code></pre></div>
+<p>The point at the principal point <code>(640, 360)</code> maps to the
+origin; others are recentred, undistorted, and scaled by
+<code>F</code>.</p>
+</div>
+<div class="section level2">
+<h2 id="correcting-a-whole-trajset">Correcting a whole TrajSet<a class="anchor" aria-label="anchor" href="#correcting-a-whole-trajset"></a>
+</h2>
+<p>The usual entry point is <code><a href="../reference/calibrate_positions.html">calibrate_positions()</a></code>, which
+corrects every track in a <code>TrajSet</code>, rewrites its
+<code>x</code>/<code>y</code> columns in place, and re-derives
+<code>angle</code> from the corrected geometry. The bundled millipede
+example provides real pixel-space tracks from a camera above a circular
+arena.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">track_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"tracks"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span>
 <span><span class="va">manifest_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"millipede_trials.csv"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span>
 <span></span>
@@ -252,106 +280,51 @@ calibration model defined above.</p>
 <span>  normalize_xy <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">ts_mm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calibrate_positions.html">calibrate_positions</a></span><span class="op">(</span><span class="va">ts_px</span>, <span class="va">cal_model</span><span class="op">)</span></span>
+<span><span class="va">ts_mm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calibrate_positions.html">calibrate_positions</a></span><span class="op">(</span><span class="va">ts_px</span>, <span class="va">model</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">ts_mm</span><span class="op">@</span><span class="va">data</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   frame        x        y           id   radius     angle</span></span>
-<span><span class="co">#&gt; 1     1 14.24001 11.64882 10_1_point02 588.4075 0.6856412</span></span>
-<span><span class="co">#&gt; 2     2 14.31990 11.57890 10_1_point02 588.7537 0.6799556</span></span>
-<span><span class="co">#&gt; 3     3 14.21572 11.55460 10_1_point02 586.9042 0.6824999</span></span>
-<span><span class="co">#&gt; 4     4 14.14695 11.53865 10_1_point02 585.6785 0.6841978</span></span>
-<span><span class="co">#&gt; 5     5 14.28932 11.83800 10_1_point02 591.4184 0.6918499</span></span>
-<span><span class="co">#&gt; 6     6 14.48097 12.06383 10_1_point02 596.8850 0.6945896</span></span></code></pre></div>
-<p>In a real workflow, replace the hypothetical <code>K</code>,
-<code>distortion</code>, and <code>F_mm</code> values with parameters
-estimated from a checkerboard calibration sequence captured with the
-same camera and lens.</p>
-</div>
-<div class="section level2">
-<h2 id="persisting-correspondences">Persisting correspondences<a class="anchor" aria-label="anchor" href="#persisting-correspondences"></a>
-</h2>
-<p>You can stash the clicked points for later reuse. The helpers below
-write a CSV and rebuild the calibration without reopening the graphics
-device.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">points_tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calibration_points_tibble.html">calibration_points_tibble</a></span><span class="op">(</span><span class="va">calib</span><span class="op">$</span><span class="va">image_points</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/write_calibration_points.html">write_calibration_points</a></span><span class="op">(</span><span class="va">calib</span><span class="op">$</span><span class="va">image_points</span>, <span class="st">"calibration-points.csv"</span><span class="op">)</span></span>
-<span><span class="va">replay</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calibration_from_points.html">calibration_from_points</a></span><span class="op">(</span>board_dims <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">9</span>, <span class="fl">7</span><span class="op">)</span>, square_size <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>                                  image_points <span class="op">=</span> <span class="va">points_tbl</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="va">replay</span><span class="op">$</span><span class="va">intrinsics</span></span></code></pre></div>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ts_px_cal</span> <span class="op">&lt;-</span> <span class="va">calib</span><span class="op">$</span><span class="fu">transform</span><span class="op">(</span><span class="va">ts_px</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">ts_px_cal</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="../reference/calibrate_positions.html">calibrate_positions()</a></code> updates the
-<code>x</code>/<code>y</code> columns in-place and re-computes
-<code>angle</code> so that the values reflect the corrected metric
-geometry.</p>
+<span><span class="co">#&gt;   frame         x        y           id   radius    angle</span></span>
+<span><span class="co">#&gt; 1     1 -187.1821 12.50332 10_1_point02 588.4075 3.074894</span></span>
+<span><span class="co">#&gt; 2     2 -184.6893 10.08415 10_1_point02 588.7537 3.087046</span></span>
+<span><span class="co">#&gt; 3     3 -187.1788 10.08701 10_1_point02 586.9042 3.087755</span></span>
+<span><span class="co">#&gt; 4     4 -188.8331 10.08893 10_1_point02 585.6785 3.088216</span></span>
+<span><span class="co">#&gt; 5     5 -187.1917 17.31612 10_1_point02 591.4184 3.049350</span></span>
+<span><span class="co">#&gt; 6     6 -183.8896 22.11961 10_1_point02 596.8850 3.021880</span></span></code></pre></div>
+<p>In a real workflow, replace the illustrative <code>model</code> above
+with one imported via <code><a href="../reference/read_calibration.html">read_calibration()</a></code> from a calibration
+captured with the same camera and lens.</p>
 </div>
 <div class="section level2">
 <h2 id="convergence-diagnostics">Convergence diagnostics<a class="anchor" aria-label="anchor" href="#convergence-diagnostics"></a>
 </h2>
-<p>The undistortion step uses a fixed-point solver similar to the
-<code>undistortPoints</code> routine in OpenCV. The defaults
+<p>Removing distortion requires inverting the distortion model, which
+<code>radiatR</code> does with a fixed-point solver (as OpenCV’s
+<code>undistortPoints</code> does). The defaults
 (<code>max_iterations = 5</code>, <code>tolerance = 1e-9</code>) are
-usually sufficient. If the distortion model is extreme or the points are
-far from the optical axis, you can relax these parameters:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/cam_cal_pt.html">cam_cal_pt</a></span><span class="op">(</span><span class="fl">650</span>, <span class="fl">380</span>, <span class="va">K</span>, <span class="va">distortion</span>, <span class="va">F_mm</span>, max_iterations <span class="op">=</span> <span class="fl">10</span>, tolerance <span class="op">=</span> <span class="fl">1e-12</span><span class="op">)</span></span></code></pre></div>
-<p>If convergence fails, the function returns the last iterate; consider
-checking your coefficients or tightening the stopping criteria.</p>
-</div>
-<div class="section level2">
-<h2 id="validating-the-solver">Validating the solver<a class="anchor" aria-label="anchor" href="#validating-the-solver"></a>
-</h2>
-<p>Because radiatR calibrates from corner <em>coordinates</em> rather
-than images, the solver can be checked against a fully synthetic scene
-with known ground truth. The package ships such a fixture:
-<code>calibration_corners.csv</code> is a noiseless projection of a
-planar checkerboard through a known pinhole camera in five poses, and
-<code>calibration_truth.csv</code> records the intrinsics it was built
-from. This is the basis of the package’s calibration round-trip
-test.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">corners</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_calibration_points.html">read_calibration_points</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"calibration_corners.csv"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span><span class="va">truth</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"calibration_truth.csv"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">calib</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calibration_from_points.html">calibration_from_points</a></span><span class="op">(</span></span>
-<span>  board_dims  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">truth</span><span class="op">$</span><span class="va">board_rows</span>, <span class="va">truth</span><span class="op">$</span><span class="va">board_cols</span><span class="op">)</span>,</span>
-<span>  square_size <span class="op">=</span> <span class="va">truth</span><span class="op">$</span><span class="va">square_size</span>,</span>
-<span>  image_points <span class="op">=</span> <span class="va">corners</span>,</span>
-<span>  quiet <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">calib</span><span class="op">$</span><span class="va">intrinsics</span>, <span class="fl">3</span><span class="op">)</span></span>
-<span><span class="co">#&gt;      [,1] [,2] [,3]</span></span>
-<span><span class="co">#&gt; [1,]  800    0  320</span></span>
-<span><span class="co">#&gt; [2,]    0  820  240</span></span>
-<span><span class="co">#&gt; [3,]    0    0    1</span></span></code></pre></div>
-<p>The recovered focal lengths (800, 820) and principal point (320, 240)
-match the ground truth to within numerical precision, and the mean
-reprojection error is effectively zero (2.77^{-11} px). With real corner
-detections the reprojection error will be on the order of the detector’s
-pixel noise; it is the primary diagnostic of calibration quality
-reported in <code>calib$reprojection</code>.</p>
+usually ample. For extreme distortion or points far from the optical
+axis you can relax them:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/cam_cal_pt.html">cam_cal_pt</a></span><span class="op">(</span><span class="fl">650</span>, <span class="fl">380</span>, <span class="va">model</span><span class="op">@</span><span class="va">K</span>, <span class="va">model</span><span class="op">@</span><span class="va">k</span>, <span class="va">model</span><span class="op">@</span><span class="va">F</span>,</span>
+<span>           max_iterations <span class="op">=</span> <span class="fl">10</span>, tolerance <span class="op">=</span> <span class="fl">1e-12</span><span class="op">)</span></span></code></pre></div>
+<p>If convergence fails the function returns the last iterate; check
+your coefficients or tighten the stopping criteria.</p>
 </div>
 <div class="section level2">
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
 <ul>
-<li>Use <code><a href="../reference/cam_cal_pt.html">cam_cal_pt()</a></code> / <code><a href="../reference/cam_cal_many.html">cam_cal_many()</a></code> for
-one-off points and tables.</li>
-<li>Wrap parameters in a <code>CalModel</code> to correct every
-trajectory in a <code>TrajSet</code> via
-<code><a href="../reference/calibrate_positions.html">calibrate_positions()</a></code>.</li>
-<li>Distortion coefficients can be radial-only or include tangential
-terms; unnamed coefficients fall back to a sensible ordering.</li>
+<li>radiatR imports calibrations; it does not estimate them. Calibrate
+in MATLAB, OpenCV, or another tool, then bring the coefficients in.</li>
+<li>
+<code><a href="../reference/read_calibration.html">read_calibration()</a></code> reads MATLAB <code>.mat</code>,
+OpenCV YAML/JSON, and plain CSV; <code><a href="../reference/cal_model.html">cal_model()</a></code> builds a model
+from coefficients you already hold.</li>
+<li>Apply the resulting <code>CalModel</code> to single points
+(<code><a href="../reference/cam_cal_pt.html">cam_cal_pt()</a></code>), tables (<code><a href="../reference/cam_cal_many.html">cam_cal_many()</a></code>), or
+whole trajectory sets (<code><a href="../reference/calibrate_positions.html">calibrate_positions()</a></code>).</li>
+<li>Mind the conventions: principal-point pixel base (1-based MATLAB vs
+0-based OpenCV) and the <code>F</code> scale factor (undistorted pixels
+by default, metric if you pass a physical focal length).</li>
 </ul>
-<p>These helpers should provide a drop-in path for applying calibration
-results from common toolboxes and maintainers of large tracking
-datasets.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
