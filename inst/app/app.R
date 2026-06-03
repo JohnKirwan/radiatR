@@ -489,7 +489,16 @@ server <- function(input, output, session) {
                 .layer_switch("show_tracks", "Trajectories", TRUE),
                 .layer_switch("show_points", "Heading points", TRUE),
                 .layer_switch("show_arrow",  "Directedness arrow", TRUE),
-                .layer_switch("show_ci",     "Mean-direction CI", FALSE)
+                .layer_switch("show_ci",     "Mean-direction CI", FALSE),
+                tags$hr(class = "my-2"),
+                sliderInput(
+                  "preview_px", "Preview size (px)",
+                  min = 240, max = 900, value = 460, step = 20
+                ),
+                tags$span(
+                  class = "text-muted small",
+                  "On-screen only; export size is set under Download."
+                )
               )
             ),
             card(
@@ -644,11 +653,14 @@ server <- function(input, output, session) {
   }
 
   # Preview canvas height tracks the chosen export aspect ratio so the on-screen
-  # plot reflects the width/height the user will download. Width fills the card.
+  # plot reflects the width/height the user will download. The Preview size
+  # slider scales the canvas without affecting the exported file. Width fills
+  # the card.
   output$track_plot_ui <- renderUI({
-    w  <- num_or(input$plot_w, 7)
-    h  <- num_or(input$plot_h, 7)
-    px <- max(220, min(820, round(460 * (h / w))))
+    w    <- num_or(input$plot_w, 7)
+    h    <- num_or(input$plot_h, 7)
+    base <- num_or(input$preview_px, 460)
+    px   <- max(160, min(1000, round(base * (h / w))))
     plotOutput("track_plot", height = paste0(px, "px"))
   })
 

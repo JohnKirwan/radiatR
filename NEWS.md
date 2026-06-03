@@ -17,6 +17,8 @@
 * Plot downloads can now be exported as **PDF** or **SVG** (editable vector
   formats) as well as PNG, with editable width/height (inches) and, for PNG, a
   resolution control. The on-screen preview tracks the chosen aspect ratio.
+* A "Preview size" slider scales the on-screen plot canvas without affecting the
+  exported file dimensions.
 
 ## Bug fixes
 
