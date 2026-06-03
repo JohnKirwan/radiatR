@@ -1,5 +1,15 @@
 # radiatR (development version)
 
+## Shiny app
+
+* The upload step now offers a one-click **"Load the example millipede
+  dataset"** so the app can be tried end to end without supplying a tracking
+  file. It loads the bundled `cpunctatus` example and jumps straight to the
+  configure step.
+* Fixed the results step crashing or producing an empty summary when the
+  tracking data's trial-ID column was not literally named `id`. The condition
+  join and per-trial summary now key off the headings frame's own `id` column.
+
 ## Camera calibration
 
 * Refocused the calibration layer on *importing* calibrations from established

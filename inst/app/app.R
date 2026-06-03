@@ -95,6 +95,14 @@ load_ts <- function(path, dialect) {
   TrajSet_read(path, dialect = dialect)
 }
 
+# The bundled Cylindroiulus punctatus millipede example, as a TrajSet, so
+# users can try the app without supplying their own tracking file.
+example_ts <- function() {
+  e <- new.env()
+  utils::data("cpunctatus", package = "radiatR", envir = e)
+  e$cpunctatus
+}
+
 derive_hd <- function(ts, method, circ0, circ1) {
   args <- list(
     x                = ts,
@@ -240,6 +248,12 @@ server <- function(input, output, session) {
   # Step 1 → 2: load TrajSet and detect condition column
   observeEvent(input$go2, {
     if (is.null(rv$path)) {
+      # An example dataset may already be loaded without a file path.
+      if (!is.null(rv$ts)) {
+        rv$step  <- 2L
+        rv$error <- NULL
+        return()
+      }
       rv$error <- "Please upload a file first."
       return()
     }
@@ -289,7 +303,10 @@ server <- function(input, output, session) {
         id_col   <- rv$ts@cols$id
         df       <- as.data.frame(rv$ts)
         cond_map <- unique(df[, c(id_col, gc), drop = FALSE])
-        hd       <- merge(hd, cond_map, by = id_col, all.x = TRUE)
+        # derive_headings() names its trial column "id"; join it to the
+        # TrajSet's own id column (which may be named anything, e.g. trial_id).
+        hd       <- merge(hd, cond_map, by.x = "id", by.y = id_col,
+                          all.x = TRUE)
       }
       rv$hd    <- hd
       rv$step  <- 3L
@@ -305,6 +322,25 @@ server <- function(input, output, session) {
     rv$ts       <- NULL
     rv$cond_col <- NULL
     rv$hd       <- NULL
+    rv$error    <- NULL
+  })
+
+  # ---- example dataset -------------------------------------------------------
+  observeEvent(input$load_example, {
+    ts <- tryCatch(
+      example_ts(),
+      error = function(e) NULL
+    )
+    if (is.null(ts)) {
+      rv$error <- "Could not load the bundled example dataset."
+      return()
+    }
+    rv$ts       <- ts
+    rv$path     <- NULL
+    rv$dialect  <- NULL
+    rv$cond_col <- detect_cond_col(ts)
+    rv$hd       <- NULL
+    rv$step     <- 2L
     rv$error    <- NULL
   })
 
@@ -327,6 +363,15 @@ server <- function(input, output, session) {
           accept      = c(".csv", ".txt", ".tsv", ".mat"),
           buttonLabel = "Browse…",
           placeholder = "No file selected"
+        ),
+        div(
+          class = "text-muted small mb-2",
+          "Don't have a file handy? ",
+          actionLink(
+            "load_example",
+            "Load the example millipede dataset"
+          ),
+          " (Cylindroiulus punctatus, 235 trials)."
         ),
         uiOutput("format_box"),
         uiOutput("preview_section"),
@@ -533,10 +578,10 @@ server <- function(input, output, session) {
 
   output$summary_tbl <- renderTable({
     req(rv$ts, rv$hd)
-    id_col <- rv$ts@cols$id
     gc <- if (!is.null(input$cond_col) && nzchar(input$cond_col))
       input$cond_col else NULL
-    by_col <- if (!is.null(gc)) gc else id_col
+    # rv$hd is a headings frame whose trial column is always "id".
+    by_col <- if (!is.null(gc)) gc else "id"
 
     tryCatch({
       cm <- circ_summarise(
