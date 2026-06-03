@@ -342,12 +342,10 @@ hd_distal <- derive_headings(cpunctatus, rule = "distal",
                               coords = "relative",
                               angle_convention = "clock",
                               return_coords = TRUE)
-hd_distal$arc <- factor(
-  as.integer(sub("G1D_(\\d+)_.*", "\\1", hd_distal$id)),
-  levels = c(0, 15, 30, 45, 60, 150),
-  labels = c("0°", "15°", "30°", "45°", "60°", "150°")
-)
 names(hd_distal)[names(hd_distal) == "id"] <- "trial_id"
+# join the target half-width (arc) from the dataset, as for the crossing rule
+hd_distal     <- merge(hd_distal, arc_map, by = "trial_id")
+hd_distal$arc <- factor(hd_distal$arc)
 ```
 
 Per-condition resultant lengths from `"distal"` are very close to those from
@@ -405,12 +403,10 @@ where only the release and final observed positions are available.
 hd_net <- derive_headings(cpunctatus, rule = "net",
                            coords = "relative",
                            angle_convention = "clock")
-hd_net$arc <- factor(
-  as.integer(sub("G1D_(\\d+)_.*", "\\1", hd_net$id)),
-  levels = c(0, 15, 30, 45, 60, 150),
-  labels = c("0°", "15°", "30°", "45°", "60°", "150°")
-)
 names(hd_net)[names(hd_net) == "id"] <- "trial_id"
+# join the target half-width (arc) from the dataset, as for the crossing rule
+hd_net     <- merge(hd_net, arc_map, by = "trial_id")
+hd_net$arc <- factor(hd_net$arc)
 
 sm_net <- compute_circ_mean(hd_net, colour_col = "arc")[, c("arc", "resultant_R")]
 names(sm_net)[2] <- "net"
