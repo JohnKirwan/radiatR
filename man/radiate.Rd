@@ -37,6 +37,7 @@ radiate(data, ...)
   label_size = 3,
   label_padding = 1.08,
   label_use_repel = TRUE,
+  show_tracks = TRUE,
   show_arrow = NULL,
   arrow_angle_col = NULL,
   arrow_colour = "black",
@@ -116,6 +117,10 @@ text and the in-panel `"inside"` annotation.}
 \item{label_padding}{Multiplier applied to the unit circle when placing labels.}
 
 \item{label_use_repel}{Use `ggrepel::geom_text_repel()` when available.}
+
+\item{show_tracks}{Whether to draw the trajectory paths. Default `TRUE`.
+Set to `FALSE` to render the arena and any overlays (arrow, circle, ticks)
+without the track geometry.}
 
 \item{show_arrow}{Whether to draw a mean resultant arrow from the centre.}
 

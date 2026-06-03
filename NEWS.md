@@ -1,5 +1,18 @@
 # radiatR (development version)
 
+## Plotting
+
+* `radiate()` gains a `show_tracks` argument (default `TRUE`) to draw the arena
+  and overlays without the trajectory paths, symmetric with `show_arrow` and
+  `show_labels`.
+
+## Shiny app
+
+* The Results step now has on/off toggles for the trajectories, heading points,
+  directedness arrow, and a mean-direction confidence-interval arc (95%
+  bootstrap CI, off by default). The toggles drive both the on-screen plot and
+  the PNG download.
+
 ## Bug fixes
 
 * The `radiate()` mean-direction (directedness) arrow now respects the clock

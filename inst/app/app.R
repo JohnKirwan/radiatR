@@ -103,6 +103,15 @@ example_ts <- function() {
   e$cpunctatus
 }
 
+# A compact inline on/off toggle for a results-plot layer. Wraps a standard
+# Shiny checkbox (so it registers as input[[id]]) and styles it as a switch.
+.layer_switch <- function(id, label, value) {
+  div(
+    class = "form-switch small",
+    checkboxInput(id, label, value = value, width = "auto")
+  )
+}
+
 derive_hd <- function(ts, method, circ0, circ1) {
   args <- list(
     x                = ts,
@@ -446,8 +455,17 @@ server <- function(input, output, session) {
           card(
             card_header("Tracks and headings"),
             card_body(
-              padding = 0,
-              plotOutput("track_plot", height = "380px")
+              div(
+                class = "d-flex flex-wrap gap-3 px-2 pt-1 pb-2",
+                .layer_switch("show_tracks", "Trajectories", TRUE),
+                .layer_switch("show_points", "Heading points", TRUE),
+                .layer_switch("show_arrow",  "Directedness arrow", TRUE),
+                .layer_switch("show_ci",     "Mean-direction CI", FALSE)
+              ),
+              div(
+                class = "px-0",
+                plotOutput("track_plot", height = "360px")
+              )
             )
           ),
           tagList(
@@ -550,32 +568,54 @@ server <- function(input, output, session) {
   })
 
   # ---- step 3 outputs --------------------------------------------------------
-  output$track_plot <- renderPlot({
-    req(rv$ts, rv$hd)
+
+  # Treat an as-yet-unrendered toggle (NULL) as its declared default.
+  tog <- function(v, default) if (is.null(v)) default else isTRUE(v)
+
+  # Build the results plot honouring the layer toggles. Shared by the
+  # on-screen plot and the PNG download so they always match.
+  build_results_plot <- function() {
     id_col <- rv$ts@cols$id
     gc <- if (!is.null(input$cond_col) && nzchar(input$cond_col))
       input$cond_col else NULL
-    p <- tryCatch({
-      radiate(
-        rv$ts,
-        group_col    = id_col,
-        colour_col   = gc,
-        panel_by     = gc,
-        # colour_cycle and colour_col are mutually exclusive; only cycle
-        # colours when no condition column is driving the colour scale.
-        colour_cycle = if (is.null(gc)) 20 else NULL,
-        show_arrow   = TRUE,
-        show_labels  = FALSE
-      ) + add_heading_points(rv$hd, size = 2.5, alpha = 0.8)
-    }, error = function(e) {
-      message("track_plot render failed: ", conditionMessage(e))
-      ggplot() +
-        annotate(
-          "text", x = 0, y = 0,
-          label = "Plot unavailable", colour = "grey50"
-        ) +
-        theme_void()
-    })
+
+    p <- radiate(
+      rv$ts,
+      group_col    = id_col,
+      colour_col   = gc,
+      panel_by     = gc,
+      # colour_cycle and colour_col are mutually exclusive; only cycle
+      # colours when no condition column is driving the colour scale.
+      colour_cycle = if (is.null(gc)) 20 else NULL,
+      show_tracks  = tog(input$show_tracks, TRUE),
+      show_arrow   = tog(input$show_arrow,  TRUE),
+      show_labels  = FALSE
+    )
+    if (tog(input$show_points, TRUE)) {
+      p <- p + add_heading_points(rv$hd, size = 2.5, alpha = 0.8)
+    }
+    if (tog(input$show_ci, FALSE)) {
+      p <- p + add_heading_interval(
+        rv$hd, colour_col = gc, stat = "bootstrap_ci"
+      )
+    }
+    p
+  }
+
+  output$track_plot <- renderPlot({
+    req(rv$ts, rv$hd)
+    p <- tryCatch(
+      build_results_plot(),
+      error = function(e) {
+        message("track_plot render failed: ", conditionMessage(e))
+        ggplot() +
+          annotate(
+            "text", x = 0, y = 0,
+            label = "Plot unavailable", colour = "grey50"
+          ) +
+          theme_void()
+      }
+    )
     print(p)
   }, res = 120)
 
@@ -620,16 +660,7 @@ server <- function(input, output, session) {
     filename = function() paste0("radiatR_plot_", Sys.Date(), ".png"),
     content  = function(file) {
       req(rv$ts, rv$hd)
-      gc <- if (!is.null(input$cond_col) && nzchar(input$cond_col))
-        input$cond_col else NULL
-      p <- radiate(
-        rv$ts,
-        group_col  = rv$ts@cols$id,
-        colour_col = gc, panel_by = gc,
-        colour_cycle = if (is.null(gc)) 20 else NULL,
-        show_arrow = TRUE, show_labels = FALSE
-      ) + add_heading_points(rv$hd, size = 2.5, alpha = 0.8)
-      ggsave(file, p, width = 7, height = 7, dpi = 180)
+      ggsave(file, build_results_plot(), width = 7, height = 7, dpi = 180)
     }
   )
 
