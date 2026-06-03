@@ -1757,8 +1757,10 @@ function(
     x_col <- ts@cols$x
     if (!is.null(ts@cols$y) && identical(y_col, "rel_y")) y_col <- ts@cols$y
   }
-  if (col_from_meta && identical(ts@meta$display_convention, "clock") &&
-      all(c(x_col, y_col) %in% names(data))) {
+  is_clock_display <- col_from_meta &&
+    identical(ts@meta$display_convention, "clock") &&
+    all(c(x_col, y_col) %in% names(data))
+  if (is_clock_display) {
     disp <- .to_clock_display(data[[x_col]], data[[y_col]])
     data[[".disp_x"]] <- disp$x
     data[[".disp_y"]] <- disp$y
@@ -1912,6 +1914,16 @@ function(
         }, arrow_rows, pby_vals))
       } else {
         arrow_df <- .circ_mean_seg(trial_df$.mean)
+      }
+
+      # Match the arrow to the displayed tracks: when the plot is rotated into
+      # the clock convention, the mean-direction endpoint (computed in
+      # unit-circle coordinates from the angle column) must be rotated too,
+      # otherwise the arrow points ~90 degrees off the trajectories.
+      if (is_clock_display && !is.null(arrow_df) && nrow(arrow_df) > 0L) {
+        disp <- .to_clock_display(arrow_df$xend, arrow_df$yend)
+        arrow_df$xend <- disp$x
+        arrow_df$yend <- disp$y
       }
 
       if (!is.null(arrow_df) && nrow(arrow_df) > 0L) {

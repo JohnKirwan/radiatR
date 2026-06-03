@@ -1369,3 +1369,61 @@ test_that("add_critical_v_line returns NULL when boundary exceeds unit circle", 
   hd <- data.frame(heading = rnorm(3, 0, 0.5))  # n = 3
   expect_null(add_critical_v_line(hd, mu0 = 0, alpha = 1e-6))
 })
+
+# ---- directedness arrow respects the clock display convention ----------------
+# Regression: in clock-display mode the tracks are rotated 90 degrees (East ->
+# North) but the mean-direction arrow was left in unit-circle coordinates, so
+# it pointed ~90 degrees off the trajectories it was meant to summarise.
+
+.arrow_seg <- function(g) {
+  for (ly in g$layers) {
+    d <- ly$data
+    if (is.data.frame(d) && all(c("x", "y", "xend", "yend") %in% names(d)) &&
+        nrow(d) == 1L && d$x[1] == 0 && d$y[1] == 0) {
+      return(d)
+    }
+  }
+  NULL
+}
+
+.arrow_fixture <- function(clock) {
+  df <- data.frame(
+    id      = rep(c("A", "B"), each = 3),
+    time    = rep(1:3, 2),
+    trans_x = c(0, 0.5, 1, 0, 0.5, 1),
+    trans_y = c(0, 0, 0, 0, 0, 0),
+    rel_x   = c(0, 0.5, 1, 0, 0.5, 1),
+    rel_y   = c(0, 0, 0, 0, 0, 0),
+    angle   = rep(0, 6)            # heading due East (unit circle 0)
+  )
+  ts <- TrajSet(df, id = "id", time = "time", x = "trans_x", y = "trans_y",
+                rel_x = "rel_x", rel_y = "rel_y", angle = "angle",
+                angle_unit = "radians", normalize_xy = FALSE)
+  if (clock) {
+    ts@meta$display_convention <- "clock"
+    ts@meta$plot_x_col <- "rel_x"
+    ts@meta$plot_y_col <- "rel_y"
+  }
+  ts
+}
+
+test_that("mean arrow stays in unit-circle frame when not in clock display", {
+  g <- radiate(.arrow_fixture(clock = FALSE), group_col = "id",
+               show_arrow = TRUE, show_labels = FALSE)
+  a <- .arrow_seg(g)
+  expect_false(is.null(a))
+  # East heading -> arrow points East (+x), no rotation
+  expect_gt(a$xend, 0.9)
+  expect_lt(abs(a$yend), 1e-6)
+})
+
+test_that("mean arrow is rotated with the tracks in clock display", {
+  g <- radiate(.arrow_fixture(clock = TRUE), group_col = "id",
+               show_arrow = TRUE, show_labels = FALSE)
+  a <- .arrow_seg(g)
+  expect_false(is.null(a))
+  # clock display rotates East -> North, so the arrow must point up (+y),
+  # matching the rotated trajectories rather than pointing East.
+  expect_gt(a$yend, 0.9)
+  expect_lt(abs(a$xend), 1e-6)
+})

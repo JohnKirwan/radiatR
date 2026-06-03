@@ -546,7 +546,24 @@ setMethod("circ_summary", "TrajSet", function(x, w = NULL) {
 })
 
 ## ---- coercions ---------------------------------------------------------------
-setMethod("as.data.frame", "TrajSet", function(x, row.names = NULL, optional = FALSE, ...) x@data)
+
+#' Coerce a TrajSet to a data frame
+#'
+#' Returns the long-form trajectory table held in the TrajSet's `data` slot.
+#'
+#' Registered as an S3 method so that `as.data.frame(ts)` dispatches correctly
+#' from any caller. (A bare S4 method on the base S3 generic is only reached
+#' from within the package's own namespace, not from user code using the
+#' installed package.)
+#'
+#' @param x A [TrajSet-class] object.
+#' @param row.names,optional Accepted for S3 generic consistency; ignored.
+#' @param ... Ignored.
+#' @return A data frame: the TrajSet's `data` slot.
+#' @exportS3Method base::as.data.frame
+as.data.frame.TrajSet <- function(x, row.names = NULL, optional = FALSE, ...) {
+  x@data
+}
 
 setAs("data.frame", "TrajSet", function(from) {
   guess <- function(nms, candidates) {
