@@ -1,5 +1,9 @@
 # radiatR
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/JohnKirwan/radiatR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/JohnKirwan/radiatR/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 An R package for importing, analysing, and visualising animal movement trajectories recorded in circular arenas. It covers the full pipeline: loader framework → coordinate transformation → circular statistics → ggplot2 visualisation.
 
 ## Key Features
