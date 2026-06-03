@@ -54,7 +54,9 @@ Suggests:
     pkgload,
     png,
     jpeg,
-    svglite
+    svglite,
+    shinytest2,
+    chromote
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Collate: 
