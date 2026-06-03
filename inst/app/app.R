@@ -568,6 +568,7 @@ server <- function(input, output, session) {
         show_labels  = FALSE
       ) + add_heading_points(rv$hd, size = 2.5, alpha = 0.8)
     }, error = function(e) {
+      message("track_plot render failed: ", conditionMessage(e))
       ggplot() +
         annotate(
           "text", x = 0, y = 0,
