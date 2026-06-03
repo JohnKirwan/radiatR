@@ -33,10 +33,12 @@ jobs:
       - name: Install build tooling
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          # rwasm is not on CRAN; it is published on the r-wasm r-universe and
+          # GitHub. Install it from source (pak resolves its dependencies,
+          # including pkgbuild). shinylive is on CRAN.
           packages: |
             any::shinylive
-            any::rwasm
-            any::pkgbuild
+            github::r-wasm/rwasm
 
       - name: Build radiatR + dependencies into a WASM package repo
         run: |
