@@ -1396,6 +1396,22 @@ RADIAL_THEMES <- c("void", "minimal", "classic", "bw", "grey", "gray",
 # theme has a dark panel; everything else gets near-black ink.
 .theme_ink <- function(name) if (identical(name, "dark")) "grey85" else "black"
 
+# Grid-like styling (colour, linewidth) for the radial guide overlays
+# (quadrant lines and guide rings), pulled from the chosen theme's own
+# `panel.grid` element so they match whatever grid that theme draws. Themes
+# that draw no grid (void, classic) fall back to a subtle grey.
+.theme_grid_style <- function(name) {
+  el <- ggplot2::calc_element("panel.grid", radial_theme(name))
+  if (inherits(el, "element_line") &&
+      !is.null(el$colour) && !is.na(el$colour)) {
+    lw <- if (!is.null(el$linewidth) && !is.na(el$linewidth)) el$linewidth
+          else 0.5
+    list(colour = el$colour, linewidth = lw)
+  } else {
+    list(colour = "grey60", linewidth = 0.5)
+  }
+}
+
 # ---- trajectory plotting -----------------------------------------------------
 
 #' Plot trajectories from a TrajSet (overlay or faceted)
@@ -1639,6 +1655,12 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #' @param theme Plot appearance, named for the ggplot2 base themes: one of
 #'   `"void"` (default), `"minimal"`, `"classic"`, `"bw"`, `"grey"`, `"light"`,
 #'   `"dark"`, or `"linedraw"`. See [radial_theme()].
+#' @param quadrants Logical; draw the two dashed lines through the origin that
+#'   demarcate the quadrants. Default `FALSE`. Their colour and width follow the
+#'   chosen `theme`'s grid lines (see [radial_theme()]).
+#' @param rings Logical; draw concentric guide rings (the radial analogue of a
+#'   grid). Default `FALSE`. Their colour and width follow the chosen `theme`'s
+#'   grid lines.
 #' @param x_col Name of the x-coordinate column.  Default \code{"rel_x"}.
 #' @param y_col Name of the y-coordinate column.  Default \code{"rel_y"}.
 #' @param show_labels Whether to place labels at the perimeter.
@@ -1705,6 +1727,8 @@ function(
   xlab = NULL, ylab = NULL, axes = NULL,
   theme = c("void", "minimal", "classic", "bw", "grey", "gray",
             "light", "dark", "linedraw"),
+  quadrants = FALSE,
+  rings = FALSE,
   show_labels = NULL,
   label_col = NULL,
   label_size = 3,
@@ -1809,7 +1833,13 @@ function(
   }
 
   g <- g + radial_theme(theme)
-  g <- g + add_quadrant_lines()
+  grid_style <- .theme_grid_style(theme)
+  if (rings)
+    g <- g + add_multiple_circles(circle_color = grid_style$colour,
+                                  circle_size  = grid_style$linewidth)
+  if (quadrants)
+    g <- g + add_quadrant_lines(colour    = grid_style$colour,
+                                linewidth = grid_style$linewidth)
   g <- g + add_circ(circle_color = ink, circle_size = 1.2)
   if (ticks)   g <- g + add_ticks(colour = ink)
   if (degrees) g <- g + degree_labs(display = display, colour = ink)
@@ -2032,16 +2062,23 @@ radiate.headings_frame <- function(
   title     = NULL,
   theme     = c("void", "minimal", "classic", "bw", "grey", "gray",
                 "light", "dark", "linedraw"),
+  quadrants = FALSE,
+  rings     = FALSE,
   ...) {
 
   theme <- match.arg(theme)
   ink   <- .theme_ink(theme)
+  grid_style <- .theme_grid_style(theme)
 
   g <- ggplot2::ggplot() + ggplot2::coord_fixed() + radial_theme(theme)
 
-  g <- g +
-    add_quadrant_lines() +
-    add_circ(circle_color = ink, circle_size = 1.2)
+  if (rings)
+    g <- g + add_multiple_circles(circle_color = grid_style$colour,
+                                  circle_size  = grid_style$linewidth)
+  if (quadrants)
+    g <- g + add_quadrant_lines(colour    = grid_style$colour,
+                                linewidth = grid_style$linewidth)
+  g <- g + add_circ(circle_color = ink, circle_size = 1.2)
 
   if (ticks)   g <- g + add_ticks(colour = ink)
   if (degrees) g <- g + degree_labs(colour = ink)
