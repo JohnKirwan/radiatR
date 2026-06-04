@@ -42,6 +42,7 @@ radiate(data, ...)
   arrow_angle_col = NULL,
   arrow_colour = "black",
   arrow_size = 2,
+  display = circ_display(),
   ...
 )
 
@@ -129,6 +130,11 @@ without the track geometry.}
 \item{arrow_colour}{Arrow colour.}
 
 \item{arrow_size}{Arrow linewidth.}
+
+\item{display}{A [`circ_display`] object controlling how angles are rendered.
+Default `circ_display()` puts North at top with clockwise-positive degrees.
+Use `circ_display(zero = 0)` when the reference direction lies at East in
+unit-circle coordinates (e.g. the `cpunctatus` dataset).}
 
 \item{col}{Name of the angle column in \code{data}. Defaults to the
 \code{heading_col} attribute when \code{data} is a

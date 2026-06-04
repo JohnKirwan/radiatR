@@ -136,11 +136,7 @@ num_or <- function(v, default) {
 }
 
 derive_hd <- function(ts, method, circ0, circ1) {
-  args <- list(
-    x                = ts,
-    coords           = "absolute",
-    angle_convention = "unit_circle"
-  )
+  args <- list(x = ts, coords = "absolute")
   if (method == "crossing") {
     args$rule  <- "crossing"
     args$circ0 <- circ0
@@ -629,17 +625,38 @@ server <- function(input, output, session) {
     gc <- if (!is.null(input$cond_col) && nzchar(input$cond_col))
       input$cond_col else NULL
 
+    # Drive the directedness arrow from the chosen heading method (rv$hd), so it
+    # summarises the SAME angles as the heading points, CI bar, and summary
+    # table. radiate's default arrow instead summarises the per-frame position
+    # angle (ts@cols$angle), which has no relation to the selected rule. We
+    # broadcast each trial's heading (circular mean across its rows) onto every
+    # frame of that trial; radiate then takes the per-trial mean (a no-op here)
+    # and the per-panel resultant, matching circ_summarise's R and direction.
+    ts_arrow <- rv$ts
+    hd_map   <- stats::aggregate(
+      rv$hd[["heading"]],
+      by  = list(id = rv$hd[["id"]]),
+      FUN = function(a) {
+        a <- a[is.finite(a)]
+        if (!length(a)) NA_real_ else atan2(mean(sin(a)), mean(cos(a)))
+      }
+    )
+    d <- ts_arrow@data
+    d[[".arrow_heading"]] <- hd_map$x[match(d[[id_col]], hd_map$id)]
+    ts_arrow@data <- d
+
     p <- radiate(
-      rv$ts,
-      group_col    = id_col,
-      colour_col   = gc,
-      panel_by     = gc,
+      ts_arrow,
+      group_col       = id_col,
+      colour_col      = gc,
+      panel_by        = gc,
       # colour_cycle and colour_col are mutually exclusive; only cycle
       # colours when no condition column is driving the colour scale.
-      colour_cycle = if (is.null(gc)) 20 else NULL,
-      show_tracks  = tog(input$show_tracks, TRUE),
-      show_arrow   = tog(input$show_arrow,  TRUE),
-      show_labels  = FALSE
+      colour_cycle    = if (is.null(gc)) 20 else NULL,
+      show_tracks     = tog(input$show_tracks, TRUE),
+      show_arrow      = tog(input$show_arrow,  TRUE),
+      arrow_angle_col = ".arrow_heading",
+      show_labels     = FALSE
     )
     if (tog(input$show_points, TRUE)) {
       p <- p + add_heading_points(rv$hd, size = 2.5, alpha = 0.8)

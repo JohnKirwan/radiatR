@@ -1,6 +1,53 @@
 # Circular plotting utilities for radiatR trajectories
 #
 
+# ---- display convention helpers ----------------------------------------------
+
+#' Circular display convention specification
+#'
+#' Describes how unit-circle radian angles are rendered in plots and tables.
+#' Pass to any display function as the `display` argument.
+#'
+#' @param zero UC angle (radians) that maps to display 0. Default `pi/2`
+#'   (geographic North at top — standard compass/clock layout). Use `0` to
+#'   put a stimulus that lies at East (positive rel_x) at the top.
+#' @param clockwise Logical. `TRUE` (default) for clockwise-positive angles.
+#' @param units `"degrees"` (default) or `"radians"` for table outputs and
+#'   degree label annotations.
+#' @return A `circ_display` list.
+#' @export
+circ_display <- function(zero = pi / 2,
+                         clockwise = TRUE,
+                         units = c("degrees", "radians")) {
+  units <- match.arg(units)
+  structure(list(zero = zero, clockwise = clockwise, units = units),
+            class = "circ_display")
+}
+
+# Internal: rotate UC Cartesian point(s) (x, y) into display canvas space.
+# zero=pi/2 CW (default) is identity — North is already up in standard ggplot.
+# zero=0 CW reproduces the former .to_clock_display() for stimulus-at-East data.
+.uc_to_display_coords <- function(x, y, display = circ_display()) {
+  angle <- pi / 2 - display$zero
+  cos_a <- cos(angle); sin_a <- sin(angle)
+  x_rot <- cos_a * x - sin_a * y
+  y_rot <- sin_a * x + cos_a * y
+  if (!display$clockwise) x_rot <- -x_rot
+  list(x = x_rot, y = y_rot)
+}
+
+# Internal: convert UC angle theta to display value.
+# CW with zero=pi/2 → clock degrees (0=North, 90=East).
+# CCW with zero=0   → UC degrees.
+.uc_angle_to_display <- function(theta, display = circ_display()) {
+  val <- if (display$clockwise) {
+    (display$zero - theta) %% (2 * pi)
+  } else {
+    (theta - display$zero) %% (2 * pi)
+  }
+  if (display$units == "degrees") val * 180 / pi else val
+}
+
 # ---- annotation layers -------------------------------------------------------
 
 #' Create tick marks at the cardinal directions.
@@ -131,6 +178,8 @@ add_quadrant_lines <- function(colour = "grey60", linewidth = 0.5, linetype = "d
 #' Provides a list of annotation layers that mark 45, 135, 225, and 315 degrees on a
 #' unit circle.
 #'
+#' @param display A [`circ_display`] object. Controls whether labels are shown
+#'   in degrees or radians. Default `circ_display()`.
 #' @return A list of ggplot2 annotation layers.
 #'
 #' @examples
@@ -139,13 +188,20 @@ add_quadrant_lines <- function(colour = "grey60", linewidth = 0.5, linetype = "d
 #'   coord_fixed() +
 #'   degree_labs()
 #' @export
-degree_labs <- function() {
-  list(
-    ggplot2::annotate("text", x =  .85, y =  .85, label = paste0("45", "\U00B0")),
-    ggplot2::annotate("text", x =  .85, y = -.85, label = paste0("135", "\U00B0")),
-    ggplot2::annotate("text", x = -.85, y = -.85, label = paste0("225", "\U00B0")),
-    ggplot2::annotate("text", x = -.85, y =  .85, label = paste0("315", "\U00B0"))
-  )
+degree_labs <- function(display = circ_display()) {
+  diag_r      <- 0.85
+  pos         <- list(c(diag_r,  diag_r), c(diag_r, -diag_r),
+                      c(-diag_r, -diag_r), c(-diag_r,  diag_r))
+  disp_angles <- c(45, 135, 225, 315)
+  if (display$units == "radians") {
+    labels <- vapply(disp_angles * pi / 180,
+                     function(a) paste0(round(a, 3), " rad"),
+                     character(1))
+  } else {
+    labels <- paste0(disp_angles, "\U00B0")
+  }
+  mapply(function(p, lab) ggplot2::annotate("text", x = p[1], y = p[2], label = lab),
+         pos, labels, SIMPLIFY = FALSE)
 }
 
 #' Make mean resultant length arrow
@@ -510,6 +566,8 @@ add_circular_density <- function(density_df,
       stop("`density_df` is missing column '", col, "'.")
   }
 
+  disp_opts <- attr(density_df, "display", exact = TRUE) %||% circ_display()
+
   # Normalise density within each group and compute Cartesian coordinates.
   # CI bounds use the same max_d so the band is on the same scale as the curve.
   groups    <- if (use_colour) split(density_df, density_df[[colour_col]]) else list(density_df)
@@ -520,8 +578,9 @@ add_circular_density <- function(density_df,
     scl   <- if (max_d > 0) scale / max_d else 0
     r     <- 1 + scl * dens
     d$.r  <- r
-    d$.x  <- r * cos(theta)
-    d$.y  <- r * sin(theta)
+    xy    <- .uc_to_display_coords(r * cos(theta), r * sin(theta), disp_opts)
+    d$.x  <- xy$x
+    d$.y  <- xy$y
     d$.theta_raw <- theta
     if (has_ci) {
       d$.r_lower <- 1 + scl * d$density_lower
@@ -539,9 +598,11 @@ add_circular_density <- function(density_df,
     ci_parts <- lapply(grp_ids, function(gid) {
       d  <- if (use_colour) dens_df[dens_df[[colour_col]] == gid, ] else dens_df
       th <- d$.theta_raw
+      upper_xy <- .uc_to_display_coords(d$.r_upper * cos(th), d$.r_upper * sin(th), disp_opts)
+      lower_xy <- .uc_to_display_coords(d$.r_lower * cos(th), d$.r_lower * sin(th), disp_opts)
       out <- data.frame(
-        x = c(d$.r_upper * cos(th),       rev(d$.r_lower * cos(th))),
-        y = c(d$.r_upper * sin(th),       rev(d$.r_lower * sin(th)))
+        x = c(upper_xy$x, rev(lower_xy$x)),
+        y = c(upper_xy$y, rev(lower_xy$y))
       )
       if (use_colour) out[[colour_col]] <- gid
       out
@@ -559,8 +620,8 @@ add_circular_density <- function(density_df,
     poly_parts <- lapply(grp_ids, function(gid) {
       d  <- if (use_colour) dens_df[dens_df[[colour_col]] == gid, ] else dens_df
       th <- d$.theta_raw
-      out <- data.frame(x = c(d$.x, cos(rev(th))),
-                        y = c(d$.y, sin(rev(th))))
+      inner_xy <- .uc_to_display_coords(cos(rev(th)), sin(rev(th)), disp_opts)
+      out <- data.frame(x = c(d$.x, inner_xy$x), y = c(d$.y, inner_xy$y))
       if (use_colour) out[[colour_col]] <- gid
       out
     })
@@ -702,12 +763,6 @@ add_heading_density <- function(headings_df,
 #' @param heading_col Name of the heading column (radians). Default `"heading"`.
 #' @param colour_col Optional grouping column. When set, one row is returned per
 #'   group and the column is preserved in the output.
-#' @param angle_convention Angle convention of the heading column: `"unit_circle"`
-#'   (default, 0 = East CCW) or `"clock"` (0 = North CW). If `NULL`, read from
-#'   `attr(headings_df, "angle_convention")`.
-#' @param coords Coordinate system used when `angle_convention = "clock"`:
-#'   `"relative"` or `"absolute"`. If `NULL`, read from
-#'   `attr(headings_df, "coords")`.
 #' @param stat Statistic: `"bootstrap_ci"` (default) or `"sd"`.
 #' @param boot_reps Integer. Bootstrap replicates for `stat = "bootstrap_ci"`.
 #'   Default `1000L`. Ignored when `stat = "sd"`.
@@ -722,35 +777,20 @@ add_heading_density <- function(headings_df,
 #' @importFrom circular circular mean.circular sd.circular mle.vonmises.bootstrap.ci
 #' @export
 compute_circ_interval <- function(headings_df,
-                                  heading_col      = "heading",
-                                  colour_col       = NULL,
-                                  angle_convention = NULL,
-                                  coords           = NULL,
-                                  stat             = c("bootstrap_ci", "sd"),
-                                  boot_reps        = 1000L,
-                                  boot_alpha       = 0.05) {
+                                  heading_col = "heading",
+                                  colour_col  = NULL,
+                                  stat        = c("bootstrap_ci", "sd"),
+                                  boot_reps   = 1000L,
+                                  boot_alpha  = 0.05) {
   stat <- match.arg(stat)
   if (!heading_col %in% names(headings_df))
     stop("`heading_col` '", heading_col, "' not found in headings_df.")
-
-  if (is.null(angle_convention)) {
-    angle_convention <- attr(headings_df, "angle_convention")
-    if (is.null(angle_convention)) angle_convention <- "unit_circle"
-  }
-  angle_convention <- match.arg(angle_convention, c("clock", "unit_circle"))
-
-  if (is.null(coords)) {
-    coords <- attr(headings_df, "coords")
-    if (is.null(coords)) coords <- "absolute"
-  }
-  coords <- match.arg(coords, c("relative", "absolute"))
 
   use_colour <- !is.null(colour_col) && colour_col %in% names(headings_df)
   groups     <- if (use_colour) split(headings_df, headings_df[[colour_col]]) else list(headings_df)
 
   out_list <- lapply(seq_along(groups), function(i) {
     angles <- groups[[i]][[heading_col]]
-    angles <- if (angle_convention == "clock") .clock_to_uc(angles, coords) else angles
     row    <- .compute_one_interval(angles, stat, boot_reps, boot_alpha)
     if (use_colour) row[[colour_col]] <- names(groups)[[i]]
     row
@@ -760,7 +800,6 @@ compute_circ_interval <- function(headings_df,
   if (use_colour && is.factor(headings_df[[colour_col]]))
     out[[colour_col]] <- factor(out[[colour_col]],
                                 levels = levels(headings_df[[colour_col]]))
-  attr(out, "display_convention") <- attr(headings_df, "display_convention")
   out
 }
 
@@ -814,7 +853,7 @@ add_circ_interval <- function(interval_df,
   has_group_col <- !is.null(colour_col) && colour_col %in% names(interval_df)
   map_colour    <- has_group_col && is.null(colour)
   has_wraps     <- "wraps" %in% names(interval_df)
-  use_clock     <- identical(attr(interval_df, "display_convention"), "clock")
+  disp_opts     <- attr(interval_df, "display", exact = TRUE) %||% circ_display()
 
   valid_rows <- which(!is.na(interval_df$lower) & !is.na(interval_df$upper))
 
@@ -838,14 +877,10 @@ add_circ_interval <- function(interval_df,
     }
     cos_vals <- radius * cos(theta_seq)
     sin_vals <- radius * sin(theta_seq)
-    if (use_clock) {
-      disp     <- .to_clock_display(cos_vals, sin_vals)
-      cos_vals <- disp$x
-      sin_vals <- disp$y
-    }
+    xy       <- .uc_to_display_coords(cos_vals, sin_vals, disp_opts)
     d <- data.frame(
-      .x        = cos_vals,
-      .y        = sin_vals,
+      .x        = xy$x,
+      .y        = xy$y,
       .group_id = i
     )
     if (has_group_col) d[[colour_col]] <- interval_df[[colour_col]][i]
@@ -872,6 +907,8 @@ add_circ_interval <- function(interval_df,
 #'
 #' @inheritParams compute_circ_interval
 #' @inheritParams add_circ_interval
+#' @param display A [`circ_display`] object. When `NULL` (default), read from
+#'   `attr(headings_df, "display")`, falling back to `circ_display()`.
 #'
 #' @return A `geom_path()` layer.
 #'
@@ -881,25 +918,25 @@ add_circ_interval <- function(interval_df,
 #' @importFrom rlang .data sym
 #' @export
 add_heading_interval <- function(headings_df,
-                                 heading_col      = "heading",
-                                 colour_col       = NULL,
-                                 angle_convention = NULL,
-                                 coords           = NULL,
-                                 stat             = c("bootstrap_ci", "sd"),
-                                 boot_reps        = 1000L,
-                                 boot_alpha       = 0.05,
-                                 radius           = 1.05,
-                                 linewidth        = 1.5,
-                                 colour           = NULL,
-                                 linetype         = "solid",
-                                 n_theta          = 500L) {
+                                 heading_col = "heading",
+                                 colour_col  = NULL,
+                                 display     = NULL,
+                                 stat        = c("bootstrap_ci", "sd"),
+                                 boot_reps   = 1000L,
+                                 boot_alpha  = 0.05,
+                                 radius      = 1.05,
+                                 linewidth   = 1.5,
+                                 colour      = NULL,
+                                 linetype    = "solid",
+                                 n_theta     = 500L) {
+  if (is.null(display))
+    display <- attr(headings_df, "display", exact = TRUE) %||% circ_display()
   stat <- match.arg(stat)
   iv   <- compute_circ_interval(headings_df, heading_col = heading_col,
                                 colour_col = colour_col,
-                                angle_convention = angle_convention,
-                                coords = coords,
                                 stat = stat,
                                 boot_reps = boot_reps, boot_alpha = boot_alpha)
+  attr(iv, "display") <- display
   add_circ_interval(iv, colour_col = colour_col,
                     radius = radius, linewidth = linewidth,
                     colour = colour, linetype = linetype, n_theta = n_theta)
@@ -922,14 +959,6 @@ add_heading_interval <- function(headings_df,
 #'   `"heading"`.
 #' @param colour_col Optional. Name of a column to group by. One row is
 #'   returned per group. The same column maps to colour in [add_circ_mean()].
-#' @param angle_convention Convention for angles in `heading_col`: `"clock"`
-#'   (0 = North, clockwise) or `"unit_circle"` (0 = East, CCW). If `NULL`
-#'   (default), read from `attr(headings_df, "angle_convention")`; defaults to
-#'   `"unit_circle"` with a message if the attribute is also absent.
-#' @param coords Coordinate system: `"relative"` or `"absolute"`. If `NULL`
-#'   (default), read from `attr(headings_df, "coords")`; defaults to
-#'   `"absolute"` with a message if absent.
-#'
 #' @return A data frame with columns `mean_dir` (unit-circle radians, 0 to
 #'   2pi), `resultant_R` (0--1), and `colour_col` when supplied. Both are `NA`
 #'   when a group contains fewer than 2 finite angles.
@@ -938,30 +967,10 @@ add_heading_interval <- function(headings_df,
 #' @importFrom circular circular mean.circular rho.circular
 #' @export
 compute_circ_mean <- function(headings_df,
-                              heading_col      = "heading",
-                              colour_col       = NULL,
-                              angle_convention = NULL,
-                              coords           = NULL) {
+                              heading_col = "heading",
+                              colour_col  = NULL) {
   if (!heading_col %in% names(headings_df))
     stop("`heading_col` '", heading_col, "' not found in headings_df.")
-
-  if (is.null(angle_convention)) {
-    angle_convention <- attr(headings_df, "angle_convention")
-    if (is.null(angle_convention)) {
-      message("`angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.")
-      angle_convention <- "unit_circle"
-    }
-  }
-  angle_convention <- match.arg(angle_convention, c("clock", "unit_circle"))
-
-  if (is.null(coords)) {
-    coords <- attr(headings_df, "coords")
-    if (is.null(coords)) {
-      message("`coords` not found in headings_df attributes; defaulting to 'absolute'.")
-      coords <- "absolute"
-    }
-  }
-  coords <- match.arg(coords, c("relative", "absolute"))
 
   use_colour <- !is.null(colour_col) && colour_col %in% names(headings_df)
   groups     <- if (use_colour) split(headings_df, headings_df[[colour_col]]) else list(headings_df)
@@ -974,10 +983,9 @@ compute_circ_mean <- function(headings_df,
       row <- data.frame(mean_dir = NA_real_, resultant_R = NA_real_,
                         stringsAsFactors = FALSE)
     } else {
-      uc_angles <- if (angle_convention == "clock") .clock_to_uc(angles, coords) else angles
-      circ_obj  <- circular::circular(uc_angles, units = "radians", modulo = "2pi")
-      mean_dir  <- .wrap_to_2pi(as.numeric(circular::mean.circular(circ_obj, na.rm = TRUE)))
-      R         <- as.numeric(circular::rho.circular(circ_obj, na.rm = TRUE))
+      circ_obj <- circular::circular(angles, units = "radians", modulo = "2pi")
+      mean_dir <- .wrap_to_2pi(as.numeric(circular::mean.circular(circ_obj, na.rm = TRUE)))
+      R        <- as.numeric(circular::rho.circular(circ_obj, na.rm = TRUE))
       row <- data.frame(mean_dir = mean_dir, resultant_R = R, stringsAsFactors = FALSE)
     }
 
@@ -988,7 +996,6 @@ compute_circ_mean <- function(headings_df,
   out <- do.call(rbind, out_list)
   if (use_colour && is.factor(headings_df[[colour_col]]))
     out[[colour_col]] <- factor(out[[colour_col]], levels = levels(headings_df[[colour_col]]))
-  attr(out, "display_convention") <- attr(headings_df, "display_convention")
   out
 }
 
@@ -1047,13 +1054,12 @@ add_circ_mean <- function(summary_df,
 
   summary_df$.x <- 0
   summary_df$.y <- 0
-  if (identical(attr(summary_df, "display_convention"), "clock")) {
-    summary_df$.xend <- -summary_df$resultant_R * sin(summary_df$mean_dir)
-    summary_df$.yend <-  summary_df$resultant_R * cos(summary_df$mean_dir)
-  } else {
-    summary_df$.xend <- summary_df$resultant_R * cos(summary_df$mean_dir)
-    summary_df$.yend <- summary_df$resultant_R * sin(summary_df$mean_dir)
-  }
+  disp <- attr(summary_df, "display", exact = TRUE) %||% circ_display()
+  xy   <- .uc_to_display_coords(summary_df$resultant_R * cos(summary_df$mean_dir),
+                                 summary_df$resultant_R * sin(summary_df$mean_dir),
+                                 disp)
+  summary_df$.xend <- xy$x
+  summary_df$.yend <- xy$y
 
   seg_map <- ggplot2::aes(x = .data$.x, y = .data$.y,
                           xend = .data$.xend, yend = .data$.yend)
@@ -1080,6 +1086,8 @@ add_circ_mean <- function(summary_df,
 #'
 #' @inheritParams compute_circ_mean
 #' @inheritParams add_circ_mean
+#' @param display A [`circ_display`] object. When `NULL` (default), read from
+#'   `attr(headings_df, "display")`, falling back to `circ_display()`.
 #'
 #' @return A `geom_segment()` layer.
 #'
@@ -1090,17 +1098,18 @@ add_circ_mean <- function(summary_df,
 #' @importFrom grid arrow unit
 #' @export
 add_heading_arrow <- function(headings_df,
-                              heading_col      = "heading",
-                              colour_col       = NULL,
-                              angle_convention = NULL,
-                              coords           = NULL,
-                              linewidth        = 1,
-                              colour           = NULL,
-                              arrow_length_cm  = 0.2,
+                              heading_col     = "heading",
+                              colour_col      = NULL,
+                              display         = NULL,
+                              linewidth       = 1,
+                              colour          = NULL,
+                              arrow_length_cm = 0.2,
                               ...) {
+  if (is.null(display))
+    display <- attr(headings_df, "display", exact = TRUE) %||% circ_display()
   sm <- compute_circ_mean(headings_df, heading_col = heading_col,
-                          colour_col = colour_col,
-                          angle_convention = angle_convention, coords = coords)
+                          colour_col = colour_col)
+  attr(sm, "display") <- display
   add_circ_mean(sm, colour_col = colour_col,
                 linewidth = linewidth, colour = colour,
                 arrow_length_cm = arrow_length_cm, ...)
@@ -1140,22 +1149,20 @@ add_heading_arrow <- function(headings_df,
 #' ggplot() + coord_fixed() + add_heading_points(hd)
 #' ggplot() + coord_fixed() + add_heading_points(hd, colour = "steelblue")
 add_heading_points <- function(headings_df, colour_col = NULL, colour = NULL,
-                              size = 2, alpha = 1) {
-  if (!("heading" %in% names(headings_df))) {
+                               size = 2, alpha = 1) {
+  if (!("heading" %in% names(headings_df)))
     stop("`headings_df` must contain a `heading` column (radians).")
-  }
   if (is.null(colour_col)) colour_col <- attr(headings_df, "colour_col")
-  if (identical(attr(headings_df, "display_convention"), "clock")) {
-    disp <- .to_clock_display(cos(headings_df$heading), sin(headings_df$heading))
-    headings_df[[".x_head"]] <- disp$x
-    headings_df[[".y_head"]] <- disp$y
-  } else {
-    headings_df[[".x_head"]] <- cos(headings_df$heading)
-    headings_df[[".y_head"]] <- sin(headings_df$heading)
-  }
+  disp <- attr(headings_df, "display", exact = TRUE) %||% circ_display()
+
+  xy <- .uc_to_display_coords(cos(headings_df$heading),
+                               sin(headings_df$heading), disp)
+  headings_df[[".x_head"]] <- xy$x
+  headings_df[[".y_head"]] <- xy$y
 
   mapping <- ggplot2::aes(x = .data[[".x_head"]], y = .data[[".y_head"]])
-  use_fixed_colour <- !is.null(colour) || is.null(colour_col) || !colour_col %in% names(headings_df)
+  use_fixed_colour <- !is.null(colour) || is.null(colour_col) ||
+                      !colour_col %in% names(headings_df)
   if (!use_fixed_colour) mapping[["colour"]] <- rlang::sym(colour_col)
 
   args <- list(data = headings_df, mapping = mapping,
@@ -1211,20 +1218,16 @@ add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
     ))
   }
 
-  headings_df[[".x_head"]] <- cos(headings_df$heading)
-  headings_df[[".y_head"]] <- sin(headings_df$heading)
+  disp <- attr(headings_df, "display", exact = TRUE) %||% circ_display()
 
-  if (identical(attr(headings_df, "display_convention"), "clock")) {
-    disp_end   <- .to_clock_display(headings_df[[".x_head"]], headings_df[[".y_head"]])
-    disp_start <- .to_clock_display(headings_df$x_inner,     headings_df$y_inner)
-    headings_df[[".x_head"]]  <- disp_end$x
-    headings_df[[".y_head"]]  <- disp_end$y
-    headings_df[[".x_inner"]] <- disp_start$x
-    headings_df[[".y_inner"]] <- disp_start$y
-  } else {
-    headings_df[[".x_inner"]] <- headings_df$x_inner
-    headings_df[[".y_inner"]] <- headings_df$y_inner
-  }
+  end_xy   <- .uc_to_display_coords(cos(headings_df$heading),
+                                     sin(headings_df$heading), disp)
+  start_xy <- .uc_to_display_coords(headings_df$x_inner,
+                                     headings_df$y_inner, disp)
+  headings_df[[".x_head"]]  <- end_xy$x
+  headings_df[[".y_head"]]  <- end_xy$y
+  headings_df[[".x_inner"]] <- start_xy$x
+  headings_df[[".y_inner"]] <- start_xy$y
 
   mapping <- ggplot2::aes(
     x    = .data[[".x_inner"]],
@@ -1299,15 +1302,11 @@ add_stacked_headings <- function(data,
                            direction = direction, base_r = base_r,
                            shade = shade, shape = shape)
 
-  if (identical(attr(data, "display_convention"), "clock")) {
-    disp <- .to_clock_display(data$stack_r * cos(data[[col]]),
-                               data$stack_r * sin(data[[col]]))
-    data[[".x_stk"]] <- disp$x
-    data[[".y_stk"]] <- disp$y
-  } else {
-    data[[".x_stk"]] <- data$stack_r * cos(data[[col]])
-    data[[".y_stk"]] <- data$stack_r * sin(data[[col]])
-  }
+  disp_opts <- attr(data, "display", exact = TRUE) %||% circ_display()
+  xy <- .uc_to_display_coords(data$stack_r * cos(data[[col]]),
+                               data$stack_r * sin(data[[col]]), disp_opts)
+  data[[".x_stk"]] <- xy$x
+  data[[".y_stk"]] <- xy$y
 
   mapping <- ggplot2::aes(x = .data[[".x_stk"]], y = .data[[".y_stk"]])
 
@@ -1668,6 +1667,10 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   circle at y = -1.25).
 #' @param strip_label_size Font size for strip labels. Applies to both strip
 #'   text and the in-panel `"inside"` annotation.
+#' @param display A [`circ_display`] object controlling how angles are rendered.
+#'   Default `circ_display()` puts North at top with clockwise-positive degrees.
+#'   Use `circ_display(zero = 0)` when the reference direction lies at East in
+#'   unit-circle coordinates (e.g. the `cpunctatus` dataset).
 #' @param ticks,degrees,legend,title,xlab,ylab,axes Additional styling options.
 #' @param ... Additional arguments forwarded to [draw_tracks()].
 #' @return A `ggplot2` object.
@@ -1711,6 +1714,7 @@ function(
   arrow_angle_col = NULL,
   arrow_colour = "black",
   arrow_size = 2,
+  display = circ_display(),
   ...){
   if (is.null(ticks)) {ticks = TRUE}
   if (is.null(degrees)) {degrees = TRUE}
@@ -1751,26 +1755,19 @@ function(
   }
 
   data <- ts@data
-  col_from_meta <- FALSE
   if (!is.null(ts@meta$plot_x_col) && identical(x_col, "rel_x")) {
     x_col <- ts@meta$plot_x_col
-    col_from_meta <- TRUE
     if (!is.null(ts@meta$plot_y_col) && identical(y_col, "rel_y"))
       y_col <- ts@meta$plot_y_col
   } else if (!is.null(ts@cols$x) && identical(x_col, "rel_x")) {
     x_col <- ts@cols$x
     if (!is.null(ts@cols$y) && identical(y_col, "rel_y")) y_col <- ts@cols$y
   }
-  is_clock_display <- col_from_meta &&
-    identical(ts@meta$display_convention, "clock") &&
-    all(c(x_col, y_col) %in% names(data))
-  if (is_clock_display) {
-    disp <- .to_clock_display(data[[x_col]], data[[y_col]])
-    data[[".disp_x"]] <- disp$x
-    data[[".disp_y"]] <- disp$y
-    x_col <- ".disp_x"
-    y_col <- ".disp_y"
-  }
+  xy_disp <- .uc_to_display_coords(data[[x_col]], data[[y_col]], display)
+  data[[".disp_x"]] <- xy_disp$x
+  data[[".disp_y"]] <- xy_disp$y
+  x_col <- ".disp_x"
+  y_col <- ".disp_y"
   if (is.null(group_col)) group_col <- ts@cols$id
   if (is.null(arrow_angle_col)) arrow_angle_col <- ts@cols$angle
 
@@ -1815,14 +1812,14 @@ function(
     g <- g + spartan_theme()
     g <- g + add_quadrant_lines()
     g <- g + add_circ(circle_color = "grey60", circle_size = 1)
-    if (degrees) g <- g + degree_labs()
+    if (degrees) g <- g + degree_labs(display = display)
     if (ticks) g <- g + add_ticks()
   } else {
     g <- g + sparse_theme()
     g <- g + add_quadrant_lines()
     g <- g + add_circ(circle_color = "black", circle_size = 1.5)
     g <- g + add_ticks()
-    if (degrees) g <- g + degree_labs()
+    if (degrees) g <- g + degree_labs(display = display)
   }
 
   label_col <- resolve_label_column(data, label_col, group_col)
@@ -1922,14 +1919,10 @@ function(
         arrow_df <- .circ_mean_seg(trial_df$.mean)
       }
 
-      # Match the arrow to the displayed tracks: when the plot is rotated into
-      # the clock convention, the mean-direction endpoint (computed in
-      # unit-circle coordinates from the angle column) must be rotated too,
-      # otherwise the arrow points ~90 degrees off the trajectories.
-      if (is_clock_display && !is.null(arrow_df) && nrow(arrow_df) > 0L) {
-        disp <- .to_clock_display(arrow_df$xend, arrow_df$yend)
-        arrow_df$xend <- disp$x
-        arrow_df$yend <- disp$y
+      if (!is.null(arrow_df) && nrow(arrow_df) > 0L) {
+        xy_a <- .uc_to_display_coords(arrow_df$xend, arrow_df$yend, display)
+        arrow_df$xend <- xy_a$x
+        arrow_df$yend <- xy_a$y
       }
 
       if (!is.null(arrow_df) && nrow(arrow_df) > 0L) {

@@ -75,17 +75,6 @@
   out
 }
 
-.kappa_from_Rbar <- function(R) {
-  out <- R
-  low  <- R < 0.53
-  mid  <- R >= 0.53 & R < 0.85
-  high <- R >= 0.85
-  out[low]  <- 2*R[low] + R[low]^3 + (5*R[low]^5)/6
-  out[mid]  <- -0.4 + 1.39*R[mid] + 0.43/(1 - R[mid])
-  out[high] <- 1/(R[high]^3 - 4*R[high]^2 + 3*R[high])
-  out
-}
-
 # linear interpolation of crossing point along segment P0->P1 for a given radius r*
 .segment_cross <- function(x0, y0, x1, y1, rstar) {
   r0 <- sqrt(x0^2 + y0^2); r1 <- sqrt(x1^2 + y1^2)
@@ -107,12 +96,8 @@
 #' @param coords Character. Which Cartesian columns to use: `"absolute"` (default,
 #'   uses `x`/`y` from `TrajSet@@cols`) or `"relative"` (uses `rel_x`/`rel_y`;
 #'   errors if not registered).
-#' @param angle_convention Character. Output angle convention: `"clock"` (default;
-#'   0 = North/top, clockwise) or `"unit_circle"` (0 = East, counterclockwise).
-#'   The returned data frame carries `attr(result, "angle_convention")` and
-#'   `attr(result, "coords")` for downstream auto-detection by
-#'   [circ_summary_headings()] and [circ_mean_segments()].
-#' @return data.frame with columns id, time (approx), heading (radians). For some rules there may be multiple headings per id.
+#' @return data.frame with columns id, time (approx), heading (radians, unit-circle
+#'   convention). For some rules there may be multiple headings per id.
 #' @export
 setGeneric(
   "derive_headings",
@@ -120,8 +105,7 @@ setGeneric(
     x,
     rule = c("crossing","distal","straight","origin_mean","net","velocity_mean","window_net","goal_bias","pca_axis","ransac_straight","maxspeed_window","vm_fit","exit","entry","ring_tangent"),
     ...,
-    coords = c("absolute", "relative"),
-    angle_convention = c("clock", "unit_circle")
+    coords = c("absolute", "relative")
   ) standardGeneric("derive_headings")
 )
 
@@ -437,11 +421,9 @@ setMethod("derive_headings", "TrajSet", function(
     ...,
     first_only = FALSE,
     carry = NULL,
-    coords = c("absolute", "relative"),
-    angle_convention = c("clock", "unit_circle")) {
+    coords = c("absolute", "relative")) {
 
-  coords           <- match.arg(coords)
-  angle_convention <- match.arg(angle_convention)
+  coords <- match.arg(coords)
 
   id <- x@cols$id; tc <- x@cols$time
 
@@ -551,16 +533,10 @@ setMethod("derive_headings", "TrajSet", function(
     )
   }
 
-  if (angle_convention == "clock") {
-    res$heading <- .uc_to_clock(res$heading, coords)
-  }
-
   rownames(res) <- NULL
   if (!is.null(carry)) res <- .carry_nearest(res, d, idc = id, tc = tc, cols = carry)
 
-  attr(res, "angle_convention") <- angle_convention
-  attr(res, "coords")           <- coords
-  if (coords == "relative") attr(res, "display_convention") <- "clock"
+  attr(res, "coords") <- coords
   res
 })
 
@@ -581,14 +557,10 @@ setMethod("derive_headings", "TrajSet", function(
 #'   [derive_headings()] (e.g. `"arc"`) is valid.
 #' @param ... Additional arguments forwarded to [derive_headings()], such as
 #'   `circ0`, `circ1`, `return_coords`, or `coords`.
-#' @param angle_convention Character. Output convention for `mean_dir`:
-#'   `"clock"` (default; 0 = North, clockwise) or `"unit_circle"` (0 = East,
-#'   counterclockwise). The returned summary carries the same
-#'   `angle_convention` attribute for downstream use by [circ_mean_segments()].
 #'
 #' @return A `data.frame` with grouping columns followed by `mean_dir`
-#'   (radians, 0 to 2π), `resultant_R` (0–1), `kappa` (von Mises
-#'   concentration), and `n` (number of valid headings in the group).
+#'   (radians, unit-circle convention, 0 to 2π), `resultant_R` (0–1), `kappa`
+#'   (von Mises concentration), and `n` (number of valid headings in the group).
 #'
 #' @examples
 #' \dontrun{
@@ -604,21 +576,17 @@ setMethod("derive_headings", "TrajSet", function(
 #'
 #' @export
 circ_summary_headings <- function(x, rule = c("crossing","distal","straight","origin_mean","net","velocity_mean"),
-                                  group_by = "id", ...,
-                                  angle_convention = c("clock", "unit_circle")) {
-  rule             <- match.arg(rule)
-  angle_convention <- match.arg(angle_convention)
+                                  group_by = "id", ...) {
+  rule <- match.arg(rule)
 
-  hd <- derive_headings(x, rule = rule, ..., angle_convention = angle_convention)
+  hd <- derive_headings(x, rule = rule, ...)
   coords <- attr(hd, "coords") %||% "absolute"
 
   if (nrow(hd) == 0L || all(is.na(hd$heading))) {
     return(data.frame(mean_dir = NA_real_, resultant_R = NA_real_, kappa = NA_real_, n = 0L))
   }
 
-  # Convert back to UC for circular mean computation
-  uc_heading <- if (angle_convention == "clock") .clock_to_uc(hd$heading, coords) else hd$heading
-  hd$.uc_heading <- uc_heading
+  hd$.uc_heading <- hd$heading   # always UC radians
 
   # group keys
   if (is.null(group_by)) {
@@ -645,8 +613,7 @@ circ_summary_headings <- function(x, rule = c("crossing","distal","straight","or
     mu  <- circular::mean.circular(tc, na.rm = TRUE)
     R   <- circular::rho.circular(tc,  na.rm = TRUE)
     kap <- .est_kappa_safe(tc, fallback = .kappa_from_Rbar(as.numeric(R)))
-    uc_mu  <- .wrap_to_2pi(as.numeric(mu))
-    out_mu <- if (angle_convention == "clock") .uc_to_clock(uc_mu, coords) else uc_mu
+    out_mu <- .wrap_to_2pi(as.numeric(mu))
     data.frame(.grp = g, mean_dir = out_mu, resultant_R = as.numeric(R),
                kappa = as.numeric(kap), n = length(th))
   })
@@ -665,52 +632,12 @@ circ_summary_headings <- function(x, rule = c("crossing","distal","straight","or
     res <- cbind(parts, res[, setdiff(names(res), ".grp"), drop = FALSE])
   }
   rownames(res) <- NULL
-  attr(res, "angle_convention") <- angle_convention
-  attr(res, "coords")           <- coords
   res
 }
 
 # ---- plotting helpers: mean direction arrows ---------------------------------
 #' Build a data frame of arrow segments representing mean direction vectors
 #' Length equals resultant_R; angle equals mean_dir
-#' @param stats_df output of circ_summary() or circ_summary_headings()
-#' @param x0,y0 arrow origin (defaults 0,0)
-#' @param scale multiply resultant_R by this factor when drawing
-#' @return data.frame with x,y,xend,yend and any grouping columns kept
-#' @export
-circ_mean_segments <- function(stats_df, x0 = 0, y0 = 0, scale = 1) {
-  .Deprecated("compute_circ_mean",
-              msg = paste0("circ_mean_segments() is deprecated. ",
-                           "Use compute_circ_mean() + add_circ_mean() instead."))
-  stopifnot(all(c("mean_dir","resultant_R") %in% names(stats_df)))
-  convention <- attr(stats_df, "angle_convention") %||% "unit_circle"
-  uc_dir <- if (convention == "clock") rad_unclock(stats_df$mean_dir) else stats_df$mean_dir
-  xend <- x0 + scale * stats_df$resultant_R * cos(uc_dir)
-  yend <- y0 + scale * stats_df$resultant_R * sin(uc_dir)
-  cbind(stats_df, x = x0, y = y0, xend = xend, yend = yend)
-}
-
-#' Add mean direction arrows to a ggplot polar plot
-#' @param p ggplot built from gg_traj(...) or your own polar builder
-#' @param segments_df data from circ_mean_segments()
-#' @param color arrow color
-#' @param linewidth segment linewidth
-#' @param arrow_spec ggplot2::arrow(...) for arrow heads
-#' @param inherit_aes whether to inherit aes (usually FALSE)
-#' @export
-gg_add_circ_mean <- function(p, segments_df, color = "black", linewidth = 0.8,
-                             arrow_spec = ggplot2::arrow(length = grid::unit(0.02, "npc")),
-                             inherit_aes = FALSE) {
-  .Deprecated("add_heading_arrow",
-              msg = paste0("gg_add_circ_mean() is deprecated. ",
-                           "Use p + add_heading_arrow(headings_df) instead."))
-  p + ggplot2::geom_segment(data = segments_df,
-                           ggplot2::aes(x = .data$x, y = .data$y, xend = .data$xend, yend = .data$yend),
-                           color = color, linewidth = linewidth,
-                           arrow = arrow_spec,
-                           inherit.aes = inherit_aes)
-}
-
 # ---- user-defined rule registry ----------------------------------------------
 .heading_registry <- new.env(parent = emptyenv())
 

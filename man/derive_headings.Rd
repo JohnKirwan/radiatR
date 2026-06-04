@@ -11,8 +11,7 @@ derive_headings(
     "window_net", "goal_bias", "pca_axis", "ransac_straight", "maxspeed_window",
     "vm_fit", "exit", "entry", "ring_tangent"),
   ...,
-  coords = c("absolute", "relative"),
-  angle_convention = c("clock", "unit_circle")
+  coords = c("absolute", "relative")
 )
 
 \S4method{derive_headings}{TrajSet}(
@@ -23,8 +22,7 @@ derive_headings(
   ...,
   first_only = FALSE,
   carry = NULL,
-  coords = c("absolute", "relative"),
-  angle_convention = c("clock", "unit_circle")
+  coords = c("absolute", "relative")
 )
 }
 \arguments{
@@ -38,18 +36,13 @@ derive_headings(
 uses `x`/`y` from `TrajSet@cols`) or `"relative"` (uses `rel_x`/`rel_y`;
 errors if not registered).}
 
-\item{angle_convention}{Character. Output angle convention: `"clock"` (default;
-0 = North/top, clockwise) or `"unit_circle"` (0 = East, counterclockwise).
-The returned data frame carries `attr(result, "angle_convention")` and
-`attr(result, "coords")` for downstream auto-detection by
-[circ_summary_headings()] and [circ_mean_segments()].}
-
 \item{first_only}{logical; if TRUE, return only the first matching heading per trajectory}
 
 \item{carry}{optional character vector of columns from the source data to append via nearest time}
 }
 \value{
-data.frame with columns id, time (approx), heading (radians). For some rules there may be multiple headings per id.
+data.frame with columns id, time (approx), heading (radians, unit-circle
+  convention). For some rules there may be multiple headings per id.
 }
 \description{
 Derive heading angle(s) from trajectories using specified rule

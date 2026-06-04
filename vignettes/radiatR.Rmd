@@ -70,7 +70,8 @@ radiate(cpunctatus,
         group_col  = "trial_id",
         colour_col = "arc",
         show_labels = FALSE,
-        show_arrow  = FALSE)
+        show_arrow  = FALSE,
+        display    = circ_display(zero = 0))
 ```
 
 ## Heading Overlays
@@ -80,8 +81,6 @@ The **crossing method** — projecting the vector between two concentric-ring cr
 ```{r headings}
 hd <- derive_headings(cpunctatus, rule = "crossing",
                       circ0 = 0.2, circ1 = 0.4,
-                      coords = "relative",
-                      angle_convention = "clock",
                       return_coords = TRUE)
 names(hd)[names(hd) == "id"] <- "trial_id"
 # join the target half-width (arc) from the dataset for grouping/faceting
@@ -89,6 +88,7 @@ arc_map <- unique(cpunctatus@data[, c("trial_id", "arc")])
 hd       <- merge(hd, arc_map, by = "trial_id")
 hd$arc   <- factor(hd$arc)
 attr(hd, "colour_col") <- "arc"
+attr(hd, "display")    <- circ_display(zero = 0)
 head(hd[, c("trial_id", "arc", "heading", "x_inner", "y_inner")])
 ```
 
@@ -99,7 +99,8 @@ p_all <- radiate(cpunctatus,
                  group_col   = "trial_id",
                  colour_col  = "arc",
                  show_labels = FALSE,
-                 show_arrow  = FALSE) +
+                 show_arrow  = FALSE,
+                 display     = circ_display(zero = 0)) +
   add_heading_points(hd, colour_col = "arc", size = 1, alpha = 0.6)
 
 p_all + add_heading_arrow(hd)
@@ -107,8 +108,8 @@ p_all + add_heading_arrow(hd)
 
 ```{r summ-display, include=FALSE}
 summ_hd <- compute_circ_mean(hd)
-# Convert UC mean_dir back to relative-clock degrees for the narrative:
-# .clock_to_uc(theta, "relative") = (-theta) %% 2pi, so inverse = (-uc) %% 2pi
+# Convert UC mean_dir to display degrees: circ_display(zero=0, clockwise=TRUE)
+# => display_deg = (-uc_angle %% 2pi) * 180/pi
 summ_hd_deg <- round(((-summ_hd$mean_dir) %% (2 * pi)) * 180 / pi, 1)
 summ_hd_R   <- round(summ_hd$resultant_R, 2)
 ```
@@ -144,7 +145,8 @@ p <- radiate(cpunctatus,
              group_col   = "trial_id",
              colour_col  = "arc",
              show_labels = FALSE,
-             show_arrow  = FALSE)
+             show_arrow  = FALSE,
+             display     = circ_display(zero = 0))
 p
 ```
 
@@ -191,11 +193,8 @@ cpunctatus_cc@data   <- assign_cycle_colours(cpunctatus@data,
 colour_map <- unique(cpunctatus_cc@data[, c("trial_id", "cycle_colour")])
 hd_cc      <- merge(hd, colour_map,
                     by      = "trial_id", all.x = TRUE)
-# merge() strips attributes — restore convention metadata from hd
-attr(hd_cc, "angle_convention")   <- attr(hd, "angle_convention")
-attr(hd_cc, "coords")             <- attr(hd, "coords")
-attr(hd_cc, "display_convention") <- attr(hd, "display_convention")
-attr(hd_cc, "colour_col")         <- "cycle_colour"
+attr(hd_cc, "display")    <- attr(hd, "display", exact = TRUE)
+attr(hd_cc, "colour_col") <- "cycle_colour"
 ```
 
 ```{r arc-panels-simple, fig.width=8, fig.height=5}
@@ -205,7 +204,8 @@ p <- radiate(cpunctatus_cc,
         panel_by     = "arc",
         ncol         = 3,
         show_labels  = FALSE,
-        show_arrow   = FALSE)
+        show_arrow   = FALSE,
+        display      = circ_display(zero = 0))
 p
 ```
 
@@ -265,7 +265,8 @@ radiate(cpunctatus_cc,
         panel_by     = "arc",
         ncol         = 3,
         show_labels  = FALSE,
-        show_arrow   = FALSE) +
+        show_arrow   = FALSE,
+        display      = circ_display(zero = 0)) +
   add_heading_density(hd_cc, colour_col = "arc",
                       method = "vonmises", scale = 0.4,
                       fill = "grey80", alpha = 0.35) +
@@ -291,7 +292,8 @@ radiate(cpunctatus,
         panel_by     = "arc",
         ncol         = 3,
         show_labels  = FALSE,
-        show_arrow   = FALSE) +
+        show_arrow   = FALSE,
+        display      = circ_display(zero = 0)) +
   add_circular_density(dens_boot, colour_col = "arc",
                        scale = 0.4, fill = "grey80", alpha = 0.35,
                        ci_fill = "grey60", ci_alpha = 0.35) +
@@ -339,13 +341,12 @@ returns `NA` because every trial has a most-distal frame.
 
 ```{r hd-distal}
 hd_distal <- derive_headings(cpunctatus, rule = "distal",
-                              coords = "relative",
-                              angle_convention = "clock",
                               return_coords = TRUE)
 names(hd_distal)[names(hd_distal) == "id"] <- "trial_id"
 # join the target half-width (arc) from the dataset, as for the crossing rule
 hd_distal     <- merge(hd_distal, arc_map, by = "trial_id")
 hd_distal$arc <- factor(hd_distal$arc)
+attr(hd_distal, "display") <- circ_display(zero = 0)
 ```
 
 Per-condition resultant lengths from `"distal"` are very close to those from
@@ -370,10 +371,8 @@ cpunctatus_cc_d@data   <- assign_cycle_colours(cpunctatus@data,
                                               panel_col = "arc")
 colour_map_d <- unique(cpunctatus_cc_d@data[, c("trial_id", "cycle_colour")])
 hd_distal_cc <- merge(hd_distal, colour_map_d, by = "trial_id", all.x = TRUE)
-attr(hd_distal_cc, "angle_convention")   <- attr(hd_distal, "angle_convention")
-attr(hd_distal_cc, "coords")             <- attr(hd_distal, "coords")
-attr(hd_distal_cc, "display_convention") <- attr(hd_distal, "display_convention")
-attr(hd_distal_cc, "colour_col")         <- "cycle_colour"
+attr(hd_distal_cc, "display")    <- attr(hd_distal, "display", exact = TRUE)
+attr(hd_distal_cc, "colour_col") <- "cycle_colour"
 
 radiate(cpunctatus_cc_d,
         group_col   = "trial_id",
@@ -381,7 +380,8 @@ radiate(cpunctatus_cc_d,
         panel_by    = "arc",
         ncol        = 3,
         show_labels = FALSE,
-        show_arrow  = FALSE) +
+        show_arrow  = FALSE,
+        display     = circ_display(zero = 0)) +
   add_heading_interval(hd_distal_cc, colour_col = "arc", colour = "black",
                        stat = "bootstrap_ci", boot_reps = 999L) +
   add_heading_points(hd_distal_cc, size = 4) +
@@ -400,9 +400,7 @@ possible estimate and is the natural match for GPS vanishing-bearing studies
 where only the release and final observed positions are available.
 
 ```{r hd-net}
-hd_net <- derive_headings(cpunctatus, rule = "net",
-                           coords = "relative",
-                           angle_convention = "clock")
+hd_net <- derive_headings(cpunctatus, rule = "net")
 names(hd_net)[names(hd_net) == "id"] <- "trial_id"
 # join the target half-width (arc) from the dataset, as for the crossing rule
 hd_net     <- merge(hd_net, arc_map, by = "trial_id")

@@ -8,8 +8,7 @@ add_heading_arrow(
   headings_df,
   heading_col = "heading",
   colour_col = NULL,
-  angle_convention = NULL,
-  coords = NULL,
+  display = NULL,
   linewidth = 1,
   colour = NULL,
   arrow_length_cm = 0.2,
@@ -27,14 +26,8 @@ add_heading_arrow(
 \item{colour_col}{Optional. Name of a column to group by. One row is
 returned per group. The same column maps to colour in [add_circ_mean()].}
 
-\item{angle_convention}{Convention for angles in `heading_col`: `"clock"`
-(0 = North, clockwise) or `"unit_circle"` (0 = East, CCW). If `NULL`
-(default), read from `attr(headings_df, "angle_convention")`; defaults to
-`"unit_circle"` with a message if the attribute is also absent.}
-
-\item{coords}{Coordinate system: `"relative"` or `"absolute"`. If `NULL`
-(default), read from `attr(headings_df, "coords")`; defaults to
-`"absolute"` with a message if absent.}
+\item{display}{A [`circ_display`] object. When `NULL` (default), read from
+`attr(headings_df, "display")`, falling back to `circ_display()`.}
 
 \item{linewidth}{Line width of the arrow segment. Default `1`.}
 

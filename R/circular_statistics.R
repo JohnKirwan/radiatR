@@ -14,12 +14,9 @@
 #'   (default), all steps are weighted equally.
 #' @param by Character. `"id"` (default) returns one row per trial;
 #'   `"global"` pools all observations into a single summary row.
-#' @param angle_convention Character. Output convention for `mean_dir`:
-#'   `"unit_circle"` (default; 0 = East, counterclockwise) or `"clock"`
-#'   (0 = North, clockwise).
-#'
 #' @return A `data.frame` with columns `id`, `n`, `t_start`, `t_end`,
-#'   `mean_dir` (radians, 0 to 2pi), `resultant_R` (0--1), and `kappa`
+#'   `mean_dir` (radians, unit-circle convention, 0 to 2pi), `resultant_R`
+#'   (0--1), and `kappa`
 #'   (von Mises concentration; `NA` when estimation fails).
 #'
 #' @examples
@@ -31,8 +28,7 @@
 #'
 #' @export
 #' @importFrom circular mean.circular rho.circular circular
-setGeneric("circ_summary", function(x, w = NULL, by = c("id","global"),
-                                    angle_convention = c("unit_circle","clock"))
+setGeneric("circ_summary", function(x, w = NULL, by = c("id","global"))
   standardGeneric("circ_summary"))
 
 .est_kappa_safe <- function(tc, fallback = NA_real_, ...) {
@@ -49,10 +45,8 @@ setGeneric("circ_summary", function(x, w = NULL, by = c("id","global"),
 
 #' @rdname circ_summary
 #' @export
-setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global"),
-                                              angle_convention = c("unit_circle","clock")) {
-  by               <- match.arg(by)
-  angle_convention <- match.arg(angle_convention)
+setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")) {
+  by <- match.arg(by)
   id <- x@cols$id; tm <- x@cols$time; th <- x@cols$angle
   wcol <- if (is.null(w)) x@cols$weight else w
   d <- x@data
@@ -91,9 +85,8 @@ setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")
       R <- NA_real_
     }
 
-    kap <- .est_kappa_safe(tc, fallback = NA_real_, w = wts_valid)
-    uc_mu  <- .wrap_to_2pi(as.numeric(mu))
-    out_mu <- if (angle_convention == "clock") (pi/2 - uc_mu) %% (2*pi) else uc_mu
+    kap    <- .est_kappa_safe(tc, fallback = NA_real_, w = wts_valid)
+    out_mu <- .wrap_to_2pi(as.numeric(mu))
     data.frame(
       id          = if (by == "id") k else "global",
       n           = sum(!is.na(theta)),
@@ -287,26 +280,17 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 # ---------------------------------------------------------------------------
 # circ_summarise -- tidy grouped circular summary
 
-.circ_summarise_one <- function(angles, stats, angle_convention, coords) {
+.circ_summarise_one <- function(angles, stats, display) {
   angles <- angles[is.finite(angles)]
   n      <- length(angles)
-  uc_angles <- if (angle_convention == "clock") .clock_to_uc(angles, coords) else angles
 
   if (n == 0L) {
-    uc_mu <- NA_real_
-    R     <- NA_real_
-    kap   <- NA_real_
+    uc_mu <- NA_real_; R <- NA_real_; kap <- NA_real_
   } else {
-    tc    <- circular::circular(uc_angles, units = "radians", modulo = "2pi")
+    tc    <- circular::circular(angles, units = "radians", modulo = "2pi")
     uc_mu <- .wrap_to_2pi(as.numeric(circular::mean.circular(tc)))
     R     <- as.numeric(circular::rho.circular(tc))
     kap   <- if (n >= 3L) .est_kappa_safe(tc) else NA_real_
-  }
-
-  out_mu <- if (!is.na(uc_mu) && angle_convention == "clock") {
-    if (coords == "relative") (-uc_mu) %% (2 * pi) else rad2clock(uc_mu)
-  } else {
-    uc_mu
   }
 
   row <- vector("list", length(stats))
@@ -314,8 +298,8 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
   for (s in stats) {
     row[[s]] <- switch(s,
       n            = as.integer(n),
-      mean_dir     = out_mu,
-      mean_dir_deg = if (is.na(out_mu)) NA_real_ else out_mu * 180 / pi,
+      mean_dir     = uc_mu,
+      mean_dir_deg = if (is.na(uc_mu)) NA_real_ else .uc_angle_to_display(uc_mu, display),
       resultant_R  = R,
       kappa        = kap
     )
@@ -346,12 +330,10 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 #'   determines column order in the output. Valid values: \code{"n"},
 #'   \code{"mean_dir"}, \code{"mean_dir_deg"}, \code{"resultant_R"},
 #'   \code{"kappa"}. Default: all five.
-#' @param angle_convention \code{"unit_circle"} (0 = East, CCW) or
-#'   \code{"clock"} (0 = North, CW). When \code{NULL}, read from
-#'   \code{attr(data, "angle_convention")}; defaults to \code{"unit_circle"}.
-#' @param coords \code{"relative"} or \code{"absolute"}. Only used when
-#'   \code{angle_convention = "clock"}. When \code{NULL}, read from
-#'   \code{attr(data, "coords")}; defaults to \code{"absolute"}.
+#' @param display A [`circ_display`] object. When supplied, `mean_dir_deg` is
+#'   converted using the display convention (clockwise, `zero` offset). When
+#'   `NULL` (default), `mean_dir_deg` is the raw degree equivalent of the
+#'   unit-circle radian angle.
 #'
 #' @return An ungrouped \code{tibble} with group columns first followed by
 #'   requested stat columns in the order given in \code{stats}.
@@ -370,11 +352,10 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 circ_summarise <- function(data,
                            col,
                            units,
-                           .by              = NULL,
-                           stats            = c("n", "mean_dir", "mean_dir_deg",
-                                               "resultant_R", "kappa"),
-                           angle_convention = NULL,
-                           coords           = NULL) {
+                           .by     = NULL,
+                           stats   = c("n", "mean_dir", "mean_dir_deg",
+                                       "resultant_R", "kappa"),
+                           display = circ_display()) {
   col_name <- rlang::as_string(rlang::ensym(col))
   if (!col_name %in% names(data))
     stop(sprintf("`col` column '%s' not found in data.", col_name))
@@ -390,15 +371,6 @@ circ_summarise <- function(data,
     stop(sprintf("Unknown stats: '%s'. Valid values are: %s.",
                  paste(unknown, collapse = "', '"),
                  paste(valid_stats, collapse = ", ")))
-
-  if (is.null(angle_convention))
-    angle_convention <- if (!is.null(attr(data, "angle_convention")))
-      attr(data, "angle_convention") else "unit_circle"
-  angle_convention <- match.arg(angle_convention, c("unit_circle", "clock"))
-
-  if (is.null(coords))
-    coords <- if (!is.null(attr(data, "coords"))) attr(data, "coords") else "absolute"
-  coords <- match.arg(coords, c("relative", "absolute"))
 
   .check_angle_units(data[[col_name]], units, col_name)
   if (units == "degrees") data[[col_name]] <- data[[col_name]] * pi / 180
@@ -418,7 +390,7 @@ circ_summarise <- function(data,
   data_df <- as.data.frame(data)
 
   if (length(group_vars) == 0L) {
-    srow <- .circ_summarise_one(data_df[[col_name]], stats, angle_convention, coords)
+    srow <- .circ_summarise_one(data_df[[col_name]], stats, display)
     return(tibble::as_tibble(as.data.frame(srow, stringsAsFactors = FALSE)))
   }
 
@@ -431,7 +403,7 @@ circ_summarise <- function(data,
 
   result_rows <- lapply(names(idx_list), function(k) {
     ii   <- idx_list[[k]]
-    srow <- .circ_summarise_one(data_df[[col_name]][ii], stats, angle_convention, coords)
+    srow <- .circ_summarise_one(data_df[[col_name]][ii], stats, display)
     krow <- data_df[ii[1L], group_vars, drop = FALSE]
     rownames(krow) <- NULL
     cbind(krow, as.data.frame(srow, stringsAsFactors = FALSE))

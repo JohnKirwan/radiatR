@@ -1,3 +1,60 @@
+# ---- circ_display and transform helpers -------------------------------------
+
+test_that("circ_display() returns a list with correct defaults", {
+  d <- circ_display()
+  expect_equal(d$zero,      pi / 2)
+  expect_true(d$clockwise)
+  expect_equal(d$units, "degrees")
+  expect_s3_class(d, "circ_display")
+})
+
+test_that("circ_display() accepts custom args", {
+  d <- circ_display(zero = 0, clockwise = FALSE, units = "radians")
+  expect_equal(d$zero, 0)
+  expect_false(d$clockwise)
+  expect_equal(d$units, "radians")
+})
+
+test_that(".uc_to_display_coords: default (zero=pi/2, CW) is identity", {
+  r <- .uc_to_display_coords(1, 0, circ_display())
+  expect_equal(r$x, 1, tolerance = 1e-9)
+  expect_equal(r$y, 0, tolerance = 1e-9)
+  r2 <- .uc_to_display_coords(0, 1, circ_display())
+  expect_equal(r2$x, 0, tolerance = 1e-9)
+  expect_equal(r2$y, 1, tolerance = 1e-9)
+})
+
+test_that(".uc_to_display_coords: zero=0 rotates East to top (90 CCW)", {
+  d <- circ_display(zero = 0)
+  r <- .uc_to_display_coords(1, 0, d)
+  expect_equal(r$x, 0, tolerance = 1e-9)
+  expect_equal(r$y, 1, tolerance = 1e-9)
+  r2 <- .uc_to_display_coords(0, -1, d)
+  expect_equal(r2$x, 1, tolerance = 1e-9)
+  expect_equal(r2$y, 0, tolerance = 1e-9)
+})
+
+test_that(".uc_angle_to_display: default clock degrees", {
+  d <- circ_display()
+  expect_equal(.uc_angle_to_display(pi / 2, d), 0,   tolerance = 1e-9)
+  expect_equal(.uc_angle_to_display(0,      d), 90,  tolerance = 1e-9)
+  expect_equal(.uc_angle_to_display(3 * pi / 2, d), 180, tolerance = 1e-9)
+})
+
+test_that(".uc_angle_to_display: zero=0 clockwise degrees", {
+  d <- circ_display(zero = 0)
+  expect_equal(.uc_angle_to_display(0, d), 0, tolerance = 1e-9)
+  expect_equal(.uc_angle_to_display(3 * pi / 2, d), 90, tolerance = 1e-9)
+})
+
+test_that(".uc_angle_to_display: radians units", {
+  d <- circ_display(units = "radians")
+  expect_equal(.uc_angle_to_display(pi / 2, d), 0, tolerance = 1e-9)
+  expect_equal(.uc_angle_to_display(0, d), pi / 2, tolerance = 1e-9)
+})
+
+# ---- heading layers ----------------------------------------------------------
+
 test_that("add_heading_points returns a geom_point layer", {
   hd <- data.frame(id = "A", time = 1, heading = pi / 4)
   layer <- add_heading_points(hd)
@@ -31,36 +88,6 @@ test_that("add_heading_points and add_heading_vectors can be added to ggplot", {
   expect_s3_class(p, "ggplot")
   # should build without error
   expect_silent(ggplot_build(p))
-})
-
-# ---- circ_mean_segments: arrow endpoint arithmetic --------------------------
-
-test_that("circ_mean_segments tip is at R*cos(mean_dir), R*sin(mean_dir)", {
-  stats_df <- data.frame(mean_dir = pi / 3, resultant_R = 0.7)
-  seg <- suppressWarnings(circ_mean_segments(stats_df))
-
-  expect_equal(seg$x,    0,                          tolerance = 1e-10)
-  expect_equal(seg$y,    0,                          tolerance = 1e-10)
-  expect_equal(seg$xend, 0.7 * cos(pi / 3),          tolerance = 1e-10)
-  expect_equal(seg$yend, 0.7 * sin(pi / 3),          tolerance = 1e-10)
-})
-
-test_that("circ_mean_segments scale parameter multiplies arrow length", {
-  stats_df <- data.frame(mean_dir = pi / 4, resultant_R = 0.5)
-  seg2 <- suppressWarnings(circ_mean_segments(stats_df, scale = 2))
-
-  expect_equal(seg2$xend, 2 * 0.5 * cos(pi / 4), tolerance = 1e-10)
-  expect_equal(seg2$yend, 2 * 0.5 * sin(pi / 4), tolerance = 1e-10)
-})
-
-test_that("circ_mean_segments custom origin shifts arrow base", {
-  stats_df <- data.frame(mean_dir = 0, resultant_R = 1)
-  seg <- suppressWarnings(circ_mean_segments(stats_df, x0 = 0.5, y0 = 0.5))
-
-  expect_equal(seg$x,    0.5, tolerance = 1e-10)
-  expect_equal(seg$y,    0.5, tolerance = 1e-10)
-  expect_equal(seg$xend, 1.5, tolerance = 1e-10)  # 0.5 + 1*cos(0)
-  expect_equal(seg$yend, 0.5, tolerance = 1e-10)  # 0.5 + 1*sin(0)
 })
 
 # ---- directedness_arrow: tip position ---------------------------------------
@@ -103,6 +130,46 @@ test_that("directedness_arrow tip for three asymmetric angles matches analytic r
   expect_equal(tip$yend, (2 / 3) * sin(pi / 2), tolerance = 1e-6)
 })
 
+test_that("radiate arrow length equals rho of per-trial headings via arrow_angle_col", {
+  # The Shiny app drives the directedness arrow off the chosen heading method by
+  # broadcasting each trial's heading onto every frame and passing the column as
+  # `arrow_angle_col`. radiate takes the per-trial mean (a no-op for a constant
+  # column) then the resultant, so the arrow length must equal rho.circular of
+  # those per-trial headings -- matching the summary table's R. Guards the arrow
+  # against silently diverging from the headings it is supposed to summarise.
+  library(ggplot2)
+  sim <- simulate_tracks(conditions = data.frame(n_trials = 8L),
+                         n_points = 15, seed = 11, output = "trajset")
+  idc <- sim@cols$id
+  d   <- sim@data
+  ids <- unique(d[[idc]])
+  set.seed(1)
+  headings <- stats::runif(length(ids), -pi, pi)   # known per-trial headings
+  names(headings) <- as.character(ids)
+  d[[".h"]] <- headings[as.character(d[[idc]])]
+  sim@data  <- d
+
+  p <- radiate(sim, x_col = "rel_x", y_col = "rel_y",
+               group_col = idc, show_arrow = TRUE,
+               arrow_angle_col = ".h", show_labels = FALSE)
+  built <- ggplot_build(p)
+
+  # The arrow is the only geom_segment whose base sits at the origin.
+  seg <- NULL
+  for (dd in built$data) {
+    if (all(c("x", "y", "xend", "yend") %in% names(dd))) {
+      base0 <- dd[abs(dd$x) < 1e-9 & abs(dd$y) < 1e-9, , drop = FALSE]
+      if (nrow(base0) == 1L) { seg <- base0; break }
+    }
+  }
+  expect_false(is.null(seg))
+
+  arrow_len <- sqrt(seg$xend^2 + seg$yend^2)
+  R <- as.numeric(circular::rho.circular(
+    circular::circular(headings, units = "radians", type = "angles")))
+  expect_equal(arrow_len, R, tolerance = 1e-6)
+})
+
 # ---- add_heading_points / vectors endpoint arithmetic -----------------------
 
 test_that("add_heading_points places markers at (cos(h), sin(h))", {
@@ -127,16 +194,41 @@ test_that("add_heading_vectors segments run from (x_inner,y_inner) to (cos(h),si
   expect_equal(seg$yend, sin(pi / 4),   tolerance = 1e-6)
 })
 
-test_that("add_heading_points with display_convention='clock' rotates marker 90 CCW", {
+test_that("add_heading_points: default display puts UC North at top", {
   library(ggplot2)
-  hd <- data.frame(heading = 0)          # heading 0 = East in UC
-  attr(hd, "display_convention") <- "clock"
-  p     <- ggplot() + add_heading_points(hd)
-  built <- ggplot_build(p)
-  pts   <- built$data[[1]]
-  # East (1,0) rotated 90 CCW -> North (0,1)
+  hd  <- data.frame(heading = pi / 2)   # UC North
+  pts <- ggplot_build(ggplot() + add_heading_points(hd))$data[[1]]
+  # default circ_display(zero=pi/2): identity transform -> UC North (0,1) stays (0,1)
   expect_equal(pts$x, 0, tolerance = 1e-6)
   expect_equal(pts$y, 1, tolerance = 1e-6)
+})
+
+test_that("add_heading_points: display zero=0 puts UC East at top", {
+  library(ggplot2)
+  hd <- data.frame(heading = 0)  # UC East = toward stimulus
+  attr(hd, "display") <- circ_display(zero = 0)
+  pts <- ggplot_build(ggplot() + add_heading_points(hd))$data[[1]]
+  expect_equal(pts$x, 0, tolerance = 1e-6)
+  expect_equal(pts$y, 1, tolerance = 1e-6)
+})
+
+test_that("add_heading_vectors: default display, endpoint at (cos(h), sin(h))", {
+  library(ggplot2)
+  hd  <- data.frame(heading = pi / 4, x_inner = 0, y_inner = 0)
+  seg <- ggplot_build(ggplot() + add_heading_vectors(hd))$data[[1]]
+  # zero=pi/2 -> identity -> endpoint = (cos(pi/4), sin(pi/4))
+  expect_equal(seg$xend, cos(pi / 4), tolerance = 1e-6)
+  expect_equal(seg$yend, sin(pi / 4), tolerance = 1e-6)
+})
+
+test_that("add_heading_vectors: display zero=0 rotates endpoint", {
+  library(ggplot2)
+  hd  <- data.frame(heading = 0, x_inner = 0, y_inner = 0)
+  attr(hd, "display") <- circ_display(zero = 0)
+  seg <- ggplot_build(ggplot() + add_heading_vectors(hd))$data[[1]]
+  # UC East (1,0) after 90 CCW -> (0,1)
+  expect_equal(seg$xend, 0, tolerance = 1e-6)
+  expect_equal(seg$yend, 1, tolerance = 1e-6)
 })
 
 test_that("plotting helpers return ggplot layers", {
@@ -149,6 +241,11 @@ test_that("plotting helpers return ggplot layers", {
 
   labs <- degree_labs()
   expect_length(labs, 4)
+  expect_true(any(grepl("45", sapply(labs, function(l) l$aes_params$label))))
+
+  labs_rad <- degree_labs(display = circ_display(units = "radians"))
+  labels_r <- sapply(labs_rad, function(l) l$aes_params$label)
+  expect_true(any(grepl("rad", labels_r)))
 
   arrow <- suppressWarnings(directedness_arrow(data.frame(theta = c(0, pi/2, pi)), theta))
   expect_s3_class(arrow, "LayerInstance")
@@ -604,31 +701,6 @@ test_that("add_heading_points and add_heading_vectors accept fixed colour parame
   expect_true(all(built_pts$data[[1]]$colour == "steelblue"))
 })
 
-# ---- circ_mean_segments clock convention auto-detect -------------------------
-
-test_that("circ_mean_segments with clock attr draws arrow pointing North for mean_dir=0", {
-  stats_df <- data.frame(mean_dir = 0, resultant_R = 1)
-  attr(stats_df, "angle_convention") <- "clock"
-  seg <- suppressWarnings(circ_mean_segments(stats_df))
-  expect_equal(seg$xend, 0, tolerance = 1e-10)
-  expect_equal(seg$yend, 1, tolerance = 1e-10)
-})
-
-test_that("circ_mean_segments with clock attr draws arrow pointing East for mean_dir=pi/2", {
-  stats_df <- data.frame(mean_dir = pi / 2, resultant_R = 1)
-  attr(stats_df, "angle_convention") <- "clock"
-  seg <- suppressWarnings(circ_mean_segments(stats_df))
-  expect_equal(seg$xend, 1, tolerance = 1e-10)
-  expect_equal(seg$yend, 0, tolerance = 1e-10)
-})
-
-test_that("circ_mean_segments without clock attr is unchanged", {
-  stats_df <- data.frame(mean_dir = pi / 3, resultant_R = 0.7)
-  seg <- suppressWarnings(circ_mean_segments(stats_df))
-  expect_equal(seg$xend, 0.7 * cos(pi / 3), tolerance = 1e-10)
-  expect_equal(seg$yend, 0.7 * sin(pi / 3), tolerance = 1e-10)
-})
-
 # ---- compute_circ_interval ---------------------------------------------------
 
 test_that("compute_circ_interval stat='sd' arc width equals 2 * circular SD", {
@@ -700,19 +772,6 @@ test_that("compute_circ_interval colour_col returns one row per group", {
   expect_equal(sort(iv$grp), c("A", "B"))
 })
 
-test_that("compute_circ_interval propagates display_convention='clock'", {
-  hd <- data.frame(heading = c(0, pi / 4, pi / 2, pi))
-  attr(hd, "display_convention") <- "clock"
-  result <- compute_circ_interval(hd, stat = "sd")
-  expect_equal(attr(result, "display_convention"), "clock")
-})
-
-test_that("compute_circ_interval leaves display_convention NULL when absent", {
-  hd <- data.frame(heading = c(0, pi / 4, pi / 2, pi))
-  result <- compute_circ_interval(hd, stat = "sd")
-  expect_null(attr(result, "display_convention"))
-})
-
 # ---- add_circ_interval -------------------------------------------------------
 
 test_that("add_circ_interval returns a geom_path LayerInstance", {
@@ -777,30 +836,6 @@ test_that("add_circ_interval wraps correctly when wraps column is absent", {
   expect_true(any(pts$x < -1.0))
 })
 
-test_that("add_circ_interval with display_convention='clock' rotates arc 90 CCW", {
-  library(ggplot2)
-  # Degenerate arc at theta=0 (East in UC): all points at (radius, 0)
-  # After clock rotation: all points at (0, radius) (North)
-  iv <- data.frame(lower = 0, upper = 0)
-  attr(iv, "display_convention") <- "clock"
-  built <- ggplot_build(ggplot() + add_circ_interval(iv, radius = 1.0, n_theta = 3))
-  pts   <- built$data[[1]]
-  expect_equal(pts$x, rep(0,   3), tolerance = 1e-6)
-  expect_equal(pts$y, rep(1.0, 3), tolerance = 1e-6)
-})
-
-test_that("add_circ_interval with display_convention='clock' and wraps=TRUE rotates arc correctly", {
-  library(ggplot2)
-  # Arc from UC West to UC East via South (wrapping arc). Centre point at UC South (pi) -> clock East
-  iv <- data.frame(lower = pi - 0.01, upper = -(pi - 0.01), wraps = TRUE)
-  attr(iv, "display_convention") <- "clock"
-  built <- ggplot_build(ggplot() + add_circ_interval(iv, radius = 1.0, n_theta = 3))
-  pts <- built$data[[1]]
-  # midpoint of theta_seq is pi (UC South = (−1,0)) -> clock rotation -> (0,−1) (clock South)
-  mid_idx <- 2  # middle point of 3
-  expect_equal(pts$x[mid_idx], 0,  tolerance = 1e-2)
-  expect_equal(pts$y[mid_idx], -1, tolerance = 1e-2)
-})
 
 # ---- add_heading_interval ----------------------------------------------------
 
@@ -843,51 +878,31 @@ test_that("add_heading_interval can be added to a radiate plot without error", {
 
 # ---- compute_circ_mean -------------------------------------------------------
 
-test_that("compute_circ_mean UC input returns correct mean_dir and R", {
+test_that("compute_circ_mean returns correct mean_dir and R for UC angles", {
   hd <- data.frame(heading = c(0, 0, 0, 0, 0))
-  result <- compute_circ_mean(hd, angle_convention = "unit_circle", coords = "absolute")
+  result <- compute_circ_mean(hd)
   expect_equal(result$mean_dir,    0, tolerance = 1e-10)
   expect_equal(result$resultant_R, 1, tolerance = 1e-10)
-})
-
-test_that("compute_circ_mean clock+absolute maps 0 to UC pi/2", {
-  hd <- data.frame(heading = c(0, 0, 0, 0, 0))
-  result <- compute_circ_mean(hd, angle_convention = "clock", coords = "absolute")
-  expect_equal(result$mean_dir, pi / 2, tolerance = 1e-10)
-})
-
-test_that("compute_circ_mean clock+relative maps 0 to UC 0", {
-  hd <- data.frame(heading = c(0, 0, 0, 0, 0))
-  result <- compute_circ_mean(hd, angle_convention = "clock", coords = "relative")
-  expect_equal(result$mean_dir, 0, tolerance = 1e-10)
-})
-
-test_that("compute_circ_mean clock+relative and clock+absolute differ for nonzero angle", {
-  hd <- data.frame(heading = rep(pi / 4, 5))
-  r_rel <- compute_circ_mean(hd, angle_convention = "clock", coords = "relative")
-  r_abs <- compute_circ_mean(hd, angle_convention = "clock", coords = "absolute")
-  expect_false(isTRUE(all.equal(r_rel$mean_dir, r_abs$mean_dir)))
 })
 
 test_that("compute_circ_mean grouped output has one row per group", {
   hd <- data.frame(heading = c(0, 0, pi, pi),
                    grp     = c("A", "A", "B", "B"))
-  result <- compute_circ_mean(hd, colour_col = "grp",
-                              angle_convention = "unit_circle", coords = "absolute")
+  result <- compute_circ_mean(hd, colour_col = "grp")
   expect_equal(nrow(result), 2L)
   expect_true("grp" %in% names(result))
 })
 
 test_that("compute_circ_mean returns NA for fewer than 2 finite angles", {
   hd <- data.frame(heading = c(0.5))
-  result <- compute_circ_mean(hd, angle_convention = "unit_circle", coords = "absolute")
+  result <- compute_circ_mean(hd)
   expect_true(is.na(result$mean_dir))
   expect_true(is.na(result$resultant_R))
 })
 
 test_that("compute_circ_mean handles all-NA input without error", {
   hd <- data.frame(heading = c(NA_real_, NA_real_, NA_real_))
-  result <- compute_circ_mean(hd, angle_convention = "unit_circle", coords = "absolute")
+  result <- compute_circ_mean(hd)
   expect_equal(nrow(result), 1L)
   expect_true(is.na(result$mean_dir))
 })
@@ -895,35 +910,29 @@ test_that("compute_circ_mean handles all-NA input without error", {
 test_that("compute_circ_mean preserves factor levels on colour_col", {
   hd <- data.frame(heading = c(0.1, 0.2, 0.3, 0.4),
                    grp     = factor(c("B", "A", "B", "A"), levels = c("A", "B", "C")))
-  result <- compute_circ_mean(hd, colour_col = "grp",
-                              angle_convention = "unit_circle", coords = "absolute")
+  result <- compute_circ_mean(hd, colour_col = "grp")
   expect_equal(levels(result$grp), c("A", "B", "C"))
 })
 
-test_that("compute_circ_mean reads convention from headings_df attributes", {
-  hd <- data.frame(heading = c(0.1, 0.2, 0.3, 0.2, 0.1))
-  attr(hd, "angle_convention") <- "clock"
-  attr(hd, "coords")           <- "absolute"
-  result_attr     <- compute_circ_mean(hd)
-  result_explicit <- compute_circ_mean(hd, angle_convention = "clock", coords = "absolute")
-  expect_equal(result_attr$mean_dir,    result_explicit$mean_dir,    tolerance = 1e-12)
-  expect_equal(result_attr$resultant_R, result_explicit$resultant_R, tolerance = 1e-12)
-})
-
-test_that("compute_circ_mean propagates display_convention='clock'", {
-  hd <- data.frame(heading = c(0, pi / 2, pi))
-  attr(hd, "display_convention") <- "clock"
-  result <- suppressMessages(compute_circ_mean(hd))
-  expect_equal(attr(result, "display_convention"), "clock")
-})
-
-test_that("compute_circ_mean leaves display_convention NULL when absent", {
-  hd <- data.frame(heading = c(0, pi / 2, pi))
-  result <- suppressMessages(compute_circ_mean(hd))
-  expect_null(attr(result, "display_convention"))
-})
-
 # ---- add_circ_mean -----------------------------------------------------------
+
+test_that("add_circ_mean: default display points UC North to top", {
+  library(ggplot2)
+  sm <- data.frame(mean_dir = pi / 2, resultant_R = 1)
+  seg <- ggplot_build(ggplot() + add_circ_mean(sm))$data[[1]]
+  # UC North (0,1) with zero=pi/2: identity -> (0,1)
+  expect_equal(seg$xend, 0, tolerance = 1e-6)
+  expect_equal(seg$yend, 1, tolerance = 1e-6)
+})
+
+test_that("add_circ_mean: display zero=0 puts UC East at top", {
+  library(ggplot2)
+  sm <- data.frame(mean_dir = 0, resultant_R = 1)
+  attr(sm, "display") <- circ_display(zero = 0)
+  seg <- ggplot_build(ggplot() + add_circ_mean(sm))$data[[1]]
+  expect_equal(seg$xend, 0, tolerance = 1e-6)
+  expect_equal(seg$yend, 1, tolerance = 1e-6)
+})
 
 test_that("add_circ_mean returns a LayerInstance", {
   sm <- data.frame(mean_dir = 0, resultant_R = 0.8)
@@ -960,31 +969,19 @@ test_that("add_circ_mean drops NA rows when some but not all rows are NA", {
   expect_false(any(is.na(built$data[[1]]$xend)))
 })
 
-test_that("add_circ_mean with display_convention='clock' rotates arrow 90 CCW", {
-  library(ggplot2)
-  # mean_dir=0 (East in UC), R=0.8
-  # Clock display: endpoint = (-R*sin(0), R*cos(0)) = (0, 0.8) -> North
-  sm <- data.frame(mean_dir = 0, resultant_R = 0.8)
-  attr(sm, "display_convention") <- "clock"
-  built <- ggplot_build(ggplot() + add_circ_mean(sm))
-  seg   <- built$data[[1]]
-  expect_equal(seg$xend, 0,   tolerance = 1e-6)
-  expect_equal(seg$yend, 0.8, tolerance = 1e-6)
-})
 
 # ---- add_heading_arrow -------------------------------------------------------
 
 test_that("add_heading_arrow returns a LayerInstance", {
   hd <- data.frame(heading = c(0.1, 0.2, 0.3, 0.4, 0.5))
-  expect_s3_class(add_heading_arrow(hd, angle_convention = "unit_circle"), "LayerInstance")
+  expect_s3_class(add_heading_arrow(hd), "LayerInstance")
 })
 
 test_that("add_heading_arrow matches two-step compute_circ_mean + add_circ_mean", {
   library(ggplot2)
   hd     <- data.frame(heading = c(0.1, 0.2, 0.15, 0.12, 0.18))
-  p_wrap <- ggplot() + coord_fixed() +
-    add_heading_arrow(hd, angle_convention = "unit_circle")
-  sm     <- compute_circ_mean(hd, angle_convention = "unit_circle")
+  p_wrap <- ggplot() + coord_fixed() + add_heading_arrow(hd)
+  sm     <- compute_circ_mean(hd)
   p_step <- ggplot() + coord_fixed() + add_circ_mean(sm)
   bw <- ggplot_build(p_wrap)
   bs <- ggplot_build(p_step)
@@ -1039,86 +1036,41 @@ test_that(".to_clock_display maps (0,-1) to (1,0)", {
   expect_equal(r$y, 0)
 })
 
-test_that("add_heading_vectors with display_convention='clock' rotates both endpoints 90 CCW", {
+
+# ---- radiate() display param ------------------------------------------------
+
+test_that("radiate applies display transform to track coordinates", {
   library(ggplot2)
-  # heading=0 (East), inner crossing at (0.5, 0)
-  hd <- data.frame(heading = 0, x_inner = 0.5, y_inner = 0)
-  attr(hd, "display_convention") <- "clock"
-  p     <- ggplot() + add_heading_vectors(hd)
+  # A single track heading East (x increases) in UC.
+  # With default circ_display (zero=pi/2, identity), the track stays East.
+  df <- data.frame(trial_id = "A", frame = 1:3,
+                   x = c(0, 0.5, 1), y = c(0, 0, 0))
+  ts <- TrajSet(df, id = "trial_id", time = "frame", x = "x", y = "y",
+                normalize_xy = FALSE)
+  p     <- radiate(ts, group_col = "trial_id", show_labels = FALSE,
+                   show_arrow = FALSE)
   built <- ggplot_build(p)
-  seg   <- built$data[[1]]
-  # start (0.5, 0) rotated -> (0, 0.5)
-  # end   (1,   0) rotated -> (0, 1)
-  expect_equal(seg$x,    0,   tolerance = 1e-6)
-  expect_equal(seg$y,    0.5, tolerance = 1e-6)
-  expect_equal(seg$xend, 0,   tolerance = 1e-6)
-  expect_equal(seg$yend, 1,   tolerance = 1e-6)
+  path_layer <- Filter(function(d) "x" %in% names(d) && "y" %in% names(d),
+                       built$data)[[1]]
+  expect_equal(path_layer$x[path_layer$x > 0.4][1], 0.5, tolerance = 1e-3)
 })
 
-# ---- radiate() clock display convention -------------------------------------
-
-test_that("radiate uses meta plot_x_col/plot_y_col and rotates when display_convention='clock'", {
+test_that("radiate with display zero=0 rotates East track to North on canvas", {
   library(ggplot2)
-  # A TrajSet with trans_x going East but rel_x going North (toward stimulus).
-  # With display_convention='clock', rel coords rotate: disp_x=-rel_y=0, disp_y=rel_x
-  df <- data.frame(
-    id = "A", frame = 1:3,
-    trans_x   = c(0, 0.3, 0.6),   # absolute (East-going; would be wrong if used)
-    trans_y   = c(0, 0,   0),
-    rel_x     = c(0, 0.3, 0.6),   # relative toward stimulus (East in UC)
-    rel_y     = c(0, 0,   0),
-    rel_theta = rep(0, 3)
-  )
-  ts <- TrajSet(df, id = "id", time = "frame", x = "trans_x", y = "trans_y",
-                rel_x = "rel_x", rel_y = "rel_y",
-                angle = "rel_theta", angle_unit = "radians", normalize_xy = FALSE)
-  ts@meta$display_convention <- "clock"
-  ts@meta$plot_x_col         <- "rel_x"
-  ts@meta$plot_y_col         <- "rel_y"
-
-  p <- radiate(ts, show_arrow = FALSE, show_labels = FALSE)
-  # After rotation: disp_x = -rel_y = 0, disp_y = rel_x = 0, 0.3, 0.6
-  expect_true(".disp_x" %in% names(p$data))
-  expect_equal(p$data$.disp_x, rep(0, 3),        tolerance = 1e-6)
-  expect_equal(p$data$.disp_y, c(0, 0.3, 0.6),   tolerance = 1e-6)
-})
-
-test_that("radiate does not rotate when x_col supplied explicitly (not from meta)", {
-  library(ggplot2)
-  # TrajSet has clock convention but caller passes x_col explicitly (non-default value).
-  # col_from_meta stays FALSE, so rotation must not fire.
-  df <- data.frame(
-    id = "A", frame = 1:3,
-    my_x  = c(0, 0.3, 0.6),
-    my_y  = c(0, 0,   0),
-    rel_x = c(0, 0.3, 0.6),
-    rel_y = c(0, 0,   0),
-    rel_theta = rep(0, 3)
-  )
-  ts <- TrajSet(df, id = "id", time = "frame", x = "my_x", y = "my_y",
-                angle = "rel_theta", angle_unit = "radians", normalize_xy = FALSE)
-  ts@meta$display_convention <- "clock"
-  ts@meta$plot_x_col         <- "rel_x"
-  ts@meta$plot_y_col         <- "rel_y"
-
-  # Supply x_col explicitly — different from the default "rel_x", so col_from_meta = FALSE
-  p <- radiate(ts, x_col = "my_x", y_col = "my_y",
-               show_arrow = FALSE, show_labels = FALSE)
-  expect_false(".disp_x" %in% names(p$data))
-})
-
-test_that("radiate without clock meta uses @cols$x as before", {
-  library(ggplot2)
-  df <- data.frame(
-    id = "A", frame = 1:3,
-    trans_x = c(0, 0.3, 0.6), trans_y = rep(0, 3),
-    rel_theta = rep(0, 3)
-  )
-  ts <- TrajSet(df, id = "id", time = "frame", x = "trans_x", y = "trans_y",
-                angle = "rel_theta", angle_unit = "radians", normalize_xy = FALSE)
-  # No meta keys set -> should fall through to @cols$x = "trans_x"
-  p <- radiate(ts, show_arrow = FALSE, show_labels = FALSE)
-  expect_false(".disp_x" %in% names(p$data))
+  df <- data.frame(trial_id = "A", frame = 1:2,
+                   x = c(0, 1), y = c(0, 0))  # eastward track
+  ts <- TrajSet(df, id = "trial_id", time = "frame", x = "x", y = "y",
+                normalize_xy = FALSE)
+  d  <- circ_display(zero = 0)
+  p  <- radiate(ts, group_col = "trial_id", show_labels = FALSE,
+                show_arrow = FALSE, display = d)
+  built <- ggplot_build(p)
+  path_layer <- Filter(function(g) "x" %in% names(g) && "y" %in% names(g),
+                       built$data)[[1]]
+  # East (1,0) rotated 90 CCW -> should appear at x~0, y~1
+  last <- path_layer[nrow(path_layer), ]
+  expect_equal(last$x, 0, tolerance = 1e-3)
+  expect_equal(last$y, 1, tolerance = 1e-3)
 })
 
 # ---- add_vonmises_density ----------------------------------------------------
@@ -1400,30 +1352,29 @@ test_that("add_critical_v_line returns NULL when boundary exceeds unit circle", 
                 rel_x = "rel_x", rel_y = "rel_y", angle = "angle",
                 angle_unit = "radians", normalize_xy = FALSE)
   if (clock) {
-    ts@meta$display_convention <- "clock"
     ts@meta$plot_x_col <- "rel_x"
     ts@meta$plot_y_col <- "rel_y"
   }
   ts
 }
 
-test_that("mean arrow stays in unit-circle frame when not in clock display", {
+test_that("mean arrow stays in unit-circle frame with default display", {
   g <- radiate(.arrow_fixture(clock = FALSE), group_col = "id",
                show_arrow = TRUE, show_labels = FALSE)
   a <- .arrow_seg(g)
   expect_false(is.null(a))
-  # East heading -> arrow points East (+x), no rotation
+  # East heading -> default display (zero=pi/2, identity) -> arrow points East (+x)
   expect_gt(a$xend, 0.9)
   expect_lt(abs(a$yend), 1e-6)
 })
 
-test_that("mean arrow is rotated with the tracks in clock display", {
+test_that("mean arrow rotates with display zero=0 (stimulus at top)", {
   g <- radiate(.arrow_fixture(clock = TRUE), group_col = "id",
-               show_arrow = TRUE, show_labels = FALSE)
+               show_arrow = TRUE, show_labels = FALSE,
+               display = circ_display(zero = 0))
   a <- .arrow_seg(g)
   expect_false(is.null(a))
-  # clock display rotates East -> North, so the arrow must point up (+y),
-  # matching the rotated trajectories rather than pointing East.
+  # East heading (angle=0) with zero=0 -> 90 CCW rotation -> arrow points North (+y)
   expect_gt(a$yend, 0.9)
   expect_lt(abs(a$xend), 1e-6)
 })
