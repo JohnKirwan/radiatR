@@ -71,3 +71,24 @@ test_that("show_tracks toggles the trajectory layer", {
   expect_s3_class(g_off, "ggplot")
   expect_silent(ggplot2::ggplot_build(g_off))
 })
+
+test_that("quadrant lines are off by default and added by quadrants = TRUE", {
+  ts <- simulate_tracks(conditions = data.frame(n_trials = 3L),
+                        n_points = 20, seed = 5, output = "trajset")
+  # The quadrant lines are the only geom_segment layer with exactly two rows
+  # (the horizontal and vertical diameters). Ticks have eight; the arrow is
+  # disabled here.
+  has_quadrants <- function(g) {
+    any(vapply(g$layers, function(l) {
+      d <- l$data
+      inherits(l$geom, "GeomSegment") && is.data.frame(d) && nrow(d) == 2L &&
+        all(c("x", "y", "xend", "yend") %in% names(d))
+    }, logical(1)))
+  }
+  g_off <- radiate(ts, group_col = "trial_id", show_arrow = FALSE,
+                   show_labels = FALSE)
+  g_on  <- radiate(ts, group_col = "trial_id", show_arrow = FALSE,
+                   show_labels = FALSE, quadrants = TRUE)
+  expect_false(has_quadrants(g_off))
+  expect_true(has_quadrants(g_on))
+})

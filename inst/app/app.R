@@ -511,6 +511,7 @@ server <- function(input, output, session) {
               .layer_switch("show_vectors", "Heading vectors",    FALSE),
               .layer_switch("show_rayleigh", "Rayleigh circle",    FALSE),
               .layer_switch("show_vtest",   "V-test line",        FALSE),
+              .layer_switch("show_quadrants", "Quadrant lines",   FALSE),
               tags$hr(class = "my-2"),
               sliderInput(
                 "preview_px", "Preview size (px)",
@@ -687,6 +688,7 @@ server <- function(input, output, session) {
       arrow_angle_col = ".arrow_heading",
       show_labels     = FALSE,
       theme           = plot_theme,
+      quadrants       = tog(input$show_quadrants, FALSE),
       display         = disp
     )
 

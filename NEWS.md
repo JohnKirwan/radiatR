@@ -10,6 +10,9 @@
 
 ## Plotting
 
+* **Breaking:** the quadrant lines (two dashed lines through the origin) are no
+  longer drawn by default. `radiate()` gains a `quadrants` argument (default
+  `FALSE`) to opt back in.
 * **Breaking:** the `radiate()` `style` argument (`"classic"`/`"minimal"`) is
   replaced by `theme`, named for the ggplot2 base themes: `"void"` (default),
   `"minimal"`, `"classic"`, `"bw"`, `"grey"`, `"light"`, `"dark"`, and
@@ -30,6 +33,7 @@
 * The Results step's Display panel gains a **Theme** dropdown (Void, Minimal,
   Classic, Black & white, Grey, Light, Dark, Line draw) that restyles the
   on-screen plot and the download.
+* The Results Display panel gains a **Quadrant lines** toggle (off by default).
 * The Results step now has on/off toggles for the trajectories, heading points,
   directedness arrow, and a mean-direction confidence-interval arc (95%
   bootstrap CI, off by default). The toggles drive both the on-screen plot and

@@ -33,6 +33,7 @@ radiate(data, ...)
   axes = NULL,
   theme = c("void", "minimal", "classic", "bw", "grey", "gray", "light", "dark",
     "linedraw"),
+  quadrants = FALSE,
   show_labels = NULL,
   label_col = NULL,
   label_size = 3,
@@ -63,6 +64,7 @@ radiate(data, ...)
   title = NULL,
   theme = c("void", "minimal", "classic", "bw", "grey", "gray", "light", "dark",
     "linedraw"),
+  quadrants = FALSE,
   ...
 )
 }
@@ -112,6 +114,9 @@ text and the in-panel `"inside"` annotation.}
 \item{theme}{Plot appearance, named for the ggplot2 base themes: one of
 `"void"` (default), `"minimal"`, `"classic"`, `"bw"`, `"grey"`, `"light"`,
 `"dark"`, or `"linedraw"`. See [radial_theme()].}
+
+\item{quadrants}{Logical; draw the two dashed lines through the origin that
+demarcate the quadrants. Default `FALSE`.}
 
 \item{show_labels}{Whether to place labels at the perimeter.}
 

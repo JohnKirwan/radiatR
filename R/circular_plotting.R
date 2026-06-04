@@ -1639,6 +1639,8 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #' @param theme Plot appearance, named for the ggplot2 base themes: one of
 #'   `"void"` (default), `"minimal"`, `"classic"`, `"bw"`, `"grey"`, `"light"`,
 #'   `"dark"`, or `"linedraw"`. See [radial_theme()].
+#' @param quadrants Logical; draw the two dashed lines through the origin that
+#'   demarcate the quadrants. Default `FALSE`.
 #' @param x_col Name of the x-coordinate column.  Default \code{"rel_x"}.
 #' @param y_col Name of the y-coordinate column.  Default \code{"rel_y"}.
 #' @param show_labels Whether to place labels at the perimeter.
@@ -1705,6 +1707,7 @@ function(
   xlab = NULL, ylab = NULL, axes = NULL,
   theme = c("void", "minimal", "classic", "bw", "grey", "gray",
             "light", "dark", "linedraw"),
+  quadrants = FALSE,
   show_labels = NULL,
   label_col = NULL,
   label_size = 3,
@@ -1809,7 +1812,7 @@ function(
   }
 
   g <- g + radial_theme(theme)
-  g <- g + add_quadrant_lines()
+  if (quadrants) g <- g + add_quadrant_lines()
   g <- g + add_circ(circle_color = ink, circle_size = 1.2)
   if (ticks)   g <- g + add_ticks(colour = ink)
   if (degrees) g <- g + degree_labs(display = display, colour = ink)
@@ -2032,6 +2035,7 @@ radiate.headings_frame <- function(
   title     = NULL,
   theme     = c("void", "minimal", "classic", "bw", "grey", "gray",
                 "light", "dark", "linedraw"),
+  quadrants = FALSE,
   ...) {
 
   theme <- match.arg(theme)
@@ -2039,9 +2043,8 @@ radiate.headings_frame <- function(
 
   g <- ggplot2::ggplot() + ggplot2::coord_fixed() + radial_theme(theme)
 
-  g <- g +
-    add_quadrant_lines() +
-    add_circ(circle_color = ink, circle_size = 1.2)
+  if (quadrants) g <- g + add_quadrant_lines()
+  g <- g + add_circ(circle_color = ink, circle_size = 1.2)
 
   if (ticks)   g <- g + add_ticks(colour = ink)
   if (degrees) g <- g + degree_labs(colour = ink)
