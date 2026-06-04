@@ -728,18 +728,19 @@ server <- function(input, output, session) {
         )
     }
 
-    # V-test reference line: the expected direction (display top = UC East in
-    # the relative coordinate frame). Always (0, 0) → (0, 1) in display coords.
-    # ggplot2 replicates data-less geoms across all facets automatically.
+    # V-test decision boundary against the expected direction (display top =
+    # UC East in the relative coordinate frame, i.e. mu0 = pi/2 in the plot's
+    # display coordinates). The V test privileges one direction, so its boundary
+    # is a straight line PERPENDICULAR to mu0 at distance c = z_alpha / sqrt(2n)
+    # from the centre (clipped to the unit circle), not a radius. One boundary
+    # per panel when faceting; a single pooled boundary otherwise.
     if (tog(input$show_vtest, FALSE)) {
-      p <- p + ggplot2::geom_segment(
-        data        = data.frame(x = 0, y = 0, xend = 0, yend = 1),
-        mapping     = ggplot2::aes(x = x, y = y, xend = xend, yend = yend),
-        colour      = "steelblue",
-        linewidth   = 0.8,
-        linetype    = "dashed",
-        inherit.aes = FALSE
+      v_layers <- add_critical_v_line(
+        rv$hd, mu0 = pi / 2, angle_col = "heading",
+        group_col = gc, per_group = !is.null(gc),
+        colour = "steelblue", linewidth = 0.8
       )
+      if (!is.null(v_layers)) p <- p + v_layers
     }
 
     p
