@@ -4,7 +4,10 @@
 \alias{add_ticks}
 \title{Create tick marks at the cardinal directions.}
 \usage{
-add_ticks()
+add_ticks(colour = "black")
+}
+\arguments{
+\item{colour}{Tick colour. Default `"black"`.}
 }
 \value{
 A `geom_segment()` layer.

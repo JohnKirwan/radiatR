@@ -2,12 +2,24 @@
 
 ## Plotting
 
+* **Breaking:** the `radiate()` `style` argument (`"classic"`/`"minimal"`) is
+  replaced by `theme`, named for the ggplot2 base themes: `"void"` (default),
+  `"minimal"`, `"classic"`, `"bw"`, `"grey"`, `"light"`, `"dark"`, and
+  `"linedraw"`. Each gives the matching `ggplot2::theme_*()` appearance (panel
+  background, grid, border). The exported `sparse_theme()` and `spartan_theme()`
+  are removed in favour of the new `radial_theme(name)`.
+* Overlay elements (unit circle, ticks, degree labels) now adapt to the theme:
+  they use light "ink" on the dark theme so they stay legible. `add_ticks()` and
+  `degree_labs()` gain a `colour` argument.
 * `radiate()` gains a `show_tracks` argument (default `TRUE`) to draw the arena
   and overlays without the trajectory paths, symmetric with `show_arrow` and
   `show_labels`.
 
 ## Shiny app
 
+* The Results step's Display panel gains a **Theme** dropdown (Void, Minimal,
+  Classic, Black & white, Grey, Light, Dark, Line draw) that restyles the
+  on-screen plot and the download.
 * The Results step now has on/off toggles for the trajectories, heading points,
   directedness arrow, and a mean-direction confidence-interval arc (95%
   bootstrap CI, off by default). The toggles drive both the on-screen plot and

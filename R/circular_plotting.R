@@ -55,6 +55,8 @@ circ_display <- function(zero = pi / 2,
 #' Generates a `geom_segment()` layer containing small tick marks at north,
 #' south, east, and west. The layer can be added to any ggplot.
 #'
+#' @param colour Tick colour. Default `"black"`.
+#'
 #' @return A `geom_segment()` layer.
 #'
 #' @examples
@@ -63,7 +65,7 @@ circ_display <- function(zero = pi / 2,
 #'   coord_fixed() +
 #'   add_ticks()
 #' @export
-add_ticks <- function() {
+add_ticks <- function(colour = "black") {
   tick_df <- data.frame(
     x = c(0, .66, .95, .66, 0, -.66, -.95, -.66),
     y = c(.95, .66, 0, -.66, -.95, -.66, 0, .66),
@@ -79,6 +81,7 @@ add_ticks <- function() {
       xend = .data$xend,
       yend = .data$yend
     ),
+    colour      = colour,
     inherit.aes = FALSE
   )
 }
@@ -180,6 +183,7 @@ add_quadrant_lines <- function(colour = "grey60", linewidth = 0.5, linetype = "d
 #'
 #' @param display A [`circ_display`] object. Controls whether labels are shown
 #'   in degrees or radians. Default `circ_display()`.
+#' @param colour Label colour. Default `"black"`.
 #' @return A list of ggplot2 annotation layers.
 #'
 #' @examples
@@ -188,7 +192,7 @@ add_quadrant_lines <- function(colour = "grey60", linewidth = 0.5, linetype = "d
 #'   coord_fixed() +
 #'   degree_labs()
 #' @export
-degree_labs <- function(display = circ_display()) {
+degree_labs <- function(display = circ_display(), colour = "black") {
   diag_r      <- 0.85
   pos         <- list(c(diag_r,  diag_r), c(diag_r, -diag_r),
                       c(-diag_r, -diag_r), c(-diag_r,  diag_r))
@@ -200,7 +204,8 @@ degree_labs <- function(display = circ_display()) {
   } else {
     labels <- paste0(disp_angles, "\U00B0")
   }
-  mapply(function(p, lab) ggplot2::annotate("text", x = p[1], y = p[2], label = lab),
+  mapply(function(p, lab) ggplot2::annotate("text", x = p[1], y = p[2],
+                                            label = lab, colour = colour),
          pos, labels, SIMPLIFY = FALSE)
 }
 
@@ -1342,61 +1347,54 @@ add_stacked_headings <- function(data,
 
 # ---- themes ------------------------------------------------------------------
 
-#' Sparse overlay theme for radial plots.
+#' Themes for radial track plots, named for the ggplot2 base themes.
 #'
-#' Removes axes, grid lines, and strip decorations to keep attention on the
-#' radial geometry. Useful when adding concentric guides and track overlays.
+#' Applies one of the standard ggplot2 themes as the look of a `radiate()`
+#' plot, so the panel background, grid lines, and border match the familiar
+#' `ggplot2::theme_*()` appearance. The Cartesian axis text and ticks are not
+#' meaningful on a unit-circle plot and are removed by `radiate()` itself, so
+#' this wrapper keeps only the panel-level styling that distinguishes the
+#' themes from one another.
 #'
-#' @param base_theme Base theme to start from. Defaults to
-#'   [ggplot2::theme_classic()].
+#' @param name One of `"void"`, `"minimal"`, `"classic"`, `"bw"`, `"grey"`
+#'   (or `"gray"`), `"light"`, `"dark"`, `"linedraw"` -- corresponding to the
+#'   matching `ggplot2::theme_*()`. Default `"void"`.
+#' @param base_size Base font size, passed to the underlying theme. Default
+#'   `11`.
 #'
 #' @return A ggplot2 theme object.
 #'
-#' @importFrom ggplot2 theme theme_classic element_blank element_rect element_text
-#' @importFrom grid unit
+#' @examples
+#' library(ggplot2)
+#' ggplot() + coord_fixed() + add_circ() + radial_theme("bw")
+#'
+#' @importFrom ggplot2 theme_void theme_minimal theme_classic theme_bw
+#' @importFrom ggplot2 theme_grey theme_light theme_dark theme_linedraw
 #' @export
-sparse_theme <- function(base_theme = ggplot2::theme_classic()) {
-  base_theme +
-    ggplot2::theme(
-      axis.title        = ggplot2::element_blank(),
-      axis.text         = ggplot2::element_blank(),
-      axis.ticks        = ggplot2::element_blank(),
-      axis.line         = ggplot2::element_blank(),
-      panel.spacing     = grid::unit(0.5, "cm"),
-      plot.title        = ggplot2::element_text(size = 14, hjust = 0.5),
-      strip.background  = ggplot2::element_blank(),
-      strip.text        = ggplot2::element_blank(),
-      panel.background  = ggplot2::element_rect(fill = "transparent"),
-      plot.background   = ggplot2::element_rect(fill = "transparent", color = NA),
-      panel.grid.major  = ggplot2::element_blank(),
-      panel.grid.minor  = ggplot2::element_blank(),
-      legend.background = ggplot2::element_rect(fill = "transparent", color = NA),
-      legend.box.background = ggplot2::element_rect(fill = "transparent", color = NA)
-    )
+radial_theme <- function(name = "void", base_size = 11) {
+  name <- match.arg(name, RADIAL_THEMES)
+  switch(name,
+    void     = ggplot2::theme_void(base_size = base_size),
+    minimal  = ggplot2::theme_minimal(base_size = base_size),
+    classic  = ggplot2::theme_classic(base_size = base_size),
+    bw       = ggplot2::theme_bw(base_size = base_size),
+    grey     = ,
+    gray     = ggplot2::theme_grey(base_size = base_size),
+    light    = ggplot2::theme_light(base_size = base_size),
+    dark     = ggplot2::theme_dark(base_size = base_size),
+    linedraw = ggplot2::theme_linedraw(base_size = base_size)
+  )
 }
 
-#' Minimalist theme for radial track plots.
-#'
-#' Wrapper around [ggplot2::theme_grey()] that strips panel adornments to
-#' emphasise the radial geometry used by the package.
-#'
-#' @param ... Additional arguments passed to [ggplot2::theme_grey()].
-#'
-#' @return A ggplot2 theme object.
-#'
-#' @importFrom ggplot2 theme element_blank element_rect %+replace%
-#' @export
-spartan_theme <- function(...) {
-  ggplot2::theme_grey(...) %+replace%
-    ggplot2::theme(
-      strip.background = ggplot2::element_blank(),
-      strip.text       = ggplot2::element_blank(),
-      panel.background = ggplot2::element_rect(fill = "transparent"),
-      plot.background  = ggplot2::element_rect(fill = "transparent", color = NA),
-      panel.grid.major = ggplot2::element_blank(),
-      panel.grid.minor = ggplot2::element_blank()
-    )
-}
+# Accepted radial theme names (ggplot2 theme_* family). "gray" is an alias of
+# "grey"; it is accepted as input but not offered as a separate choice.
+RADIAL_THEMES <- c("void", "minimal", "classic", "bw", "grey", "gray",
+                   "light", "dark", "linedraw")
+
+# Foreground ("ink") colour for overlay elements (unit circle, ticks, degree
+# labels) so they stay legible against the chosen theme's panel. Only the dark
+# theme has a dark panel; everything else gets near-black ink.
+.theme_ink <- function(name) if (identical(name, "dark")) "grey85" else "black"
 
 # ---- trajectory plotting -----------------------------------------------------
 
@@ -1638,7 +1636,9 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   every `n` trajectories) or a character vector of colour values (e.g.
 #'   `c("red","blue","green")`). When `panel_by` is set the cycle restarts
 #'   independently within each panel. Mutually exclusive with `colour_col`.
-#' @param style Either `"classic"` (default) or `"minimal"`.
+#' @param theme Plot appearance, named for the ggplot2 base themes: one of
+#'   `"void"` (default), `"minimal"`, `"classic"`, `"bw"`, `"grey"`, `"light"`,
+#'   `"dark"`, or `"linedraw"`. See [radial_theme()].
 #' @param x_col Name of the x-coordinate column.  Default \code{"rel_x"}.
 #' @param y_col Name of the y-coordinate column.  Default \code{"rel_y"}.
 #' @param show_labels Whether to place labels at the perimeter.
@@ -1703,7 +1703,8 @@ function(
   ticks = NULL,
   degrees = NULL, legend = NULL, title = NULL,
   xlab = NULL, ylab = NULL, axes = NULL,
-  style = c("classic", "minimal"),
+  theme = c("void", "minimal", "classic", "bw", "grey", "gray",
+            "light", "dark", "linedraw"),
   show_labels = NULL,
   label_col = NULL,
   label_size = 3,
@@ -1720,9 +1721,10 @@ function(
   if (is.null(degrees)) {degrees = TRUE}
   if (is.null(legend)) {legend = FALSE}
   if (is.null(axes)) {axes = FALSE}
-  style <- match.arg(style)
+  theme <- match.arg(theme)
+  ink   <- .theme_ink(theme)
   if (is.null(show_labels)) {
-    show_labels <- identical(style, "classic")
+    show_labels <- TRUE
   }
 
   # Coerce non-TrajSet inputs to TrajSet to keep a single canonical path
@@ -1787,8 +1789,6 @@ function(
                        mapping = ggplot2::aes(x = !!x_sym, y = !!y_sym)) +
     ggplot2::coord_fixed()
 
-  g <- g + spartan_theme()
-
   layer_mapping <- NULL
   if (!is.null(group_col) || !is.null(colour_col)) {
     mapping_list <- list()
@@ -1808,19 +1808,11 @@ function(
     )
   }
 
-  if (style == "minimal") {
-    g <- g + spartan_theme()
-    g <- g + add_quadrant_lines()
-    g <- g + add_circ(circle_color = "grey60", circle_size = 1)
-    if (degrees) g <- g + degree_labs(display = display)
-    if (ticks) g <- g + add_ticks()
-  } else {
-    g <- g + sparse_theme()
-    g <- g + add_quadrant_lines()
-    g <- g + add_circ(circle_color = "black", circle_size = 1.5)
-    g <- g + add_ticks()
-    if (degrees) g <- g + degree_labs(display = display)
-  }
+  g <- g + radial_theme(theme)
+  g <- g + add_quadrant_lines()
+  g <- g + add_circ(circle_color = ink, circle_size = 1.2)
+  if (ticks)   g <- g + add_ticks(colour = ink)
+  if (degrees) g <- g + degree_labs(display = display, colour = ink)
 
   label_col <- resolve_label_column(data, label_col, group_col)
   if (show_labels && !is.null(label_col)) {
@@ -1853,7 +1845,7 @@ function(
   }
 
   if (is.null(show_arrow)) {
-    show_arrow <- identical(style, "classic")
+    show_arrow <- TRUE
   }
   if (show_arrow) {
     angle_col <- resolve_angle_column(data)
@@ -1966,6 +1958,14 @@ function(
       g <- g + ggplot2::theme(
         strip.text = ggplot2::element_text(size = strip_label_size)
       )
+    } else {
+      # Hide the facet strip when labels are suppressed (strip_labels = FALSE)
+      # or drawn manually inside the panel (strip_position = "inside"). The
+      # base ggplot2 theme would otherwise show its default strip.
+      g <- g + ggplot2::theme(
+        strip.text       = ggplot2::element_blank(),
+        strip.background = ggplot2::element_blank()
+      )
     }
 
     if (show_strip && strip_position == "inside") {
@@ -2030,24 +2030,21 @@ radiate.headings_frame <- function(
   ticks     = TRUE,
   degrees   = TRUE,
   title     = NULL,
-  style     = c("classic", "minimal"),
+  theme     = c("void", "minimal", "classic", "bw", "grey", "gray",
+                "light", "dark", "linedraw"),
   ...) {
 
-  style <- match.arg(style)
+  theme <- match.arg(theme)
+  ink   <- .theme_ink(theme)
 
-  if (style == "minimal") {
-    g <- ggplot2::ggplot() + ggplot2::coord_fixed() + spartan_theme()
-  } else {
-    g <- ggplot2::ggplot() + ggplot2::coord_fixed() + sparse_theme()
-  }
+  g <- ggplot2::ggplot() + ggplot2::coord_fixed() + radial_theme(theme)
 
   g <- g +
     add_quadrant_lines() +
-    add_circ(circle_color = if (style == "minimal") "grey60" else "black",
-             circle_size  = if (style == "minimal") 1        else 1.5)
+    add_circ(circle_color = ink, circle_size = 1.2)
 
-  if (ticks)   g <- g + add_ticks()
-  if (degrees) g <- g + degree_labs()
+  if (ticks)   g <- g + add_ticks(colour = ink)
+  if (degrees) g <- g + degree_labs(colour = ink)
 
   g <- g + add_stacked_headings(
     data, col = col, step = step, tol = tol, direction = direction,

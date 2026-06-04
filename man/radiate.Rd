@@ -31,7 +31,8 @@ radiate(data, ...)
   xlab = NULL,
   ylab = NULL,
   axes = NULL,
-  style = c("classic", "minimal"),
+  theme = c("void", "minimal", "classic", "bw", "grey", "gray", "light", "dark",
+    "linedraw"),
   show_labels = NULL,
   label_col = NULL,
   label_size = 3,
@@ -60,7 +61,8 @@ radiate(data, ...)
   ticks = TRUE,
   degrees = TRUE,
   title = NULL,
-  style = c("classic", "minimal"),
+  theme = c("void", "minimal", "classic", "bw", "grey", "gray", "light", "dark",
+    "linedraw"),
   ...
 )
 }
@@ -107,7 +109,9 @@ text and the in-panel `"inside"` annotation.}
 
 \item{ticks, degrees, legend, title, xlab, ylab, axes}{Additional styling options.}
 
-\item{style}{Either `"classic"` (default) or `"minimal"`.}
+\item{theme}{Plot appearance, named for the ggplot2 base themes: one of
+`"void"` (default), `"minimal"`, `"classic"`, `"bw"`, `"grey"`, `"light"`,
+`"dark"`, or `"linedraw"`. See [radial_theme()].}
 
 \item{show_labels}{Whether to place labels at the perimeter.}
 
