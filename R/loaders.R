@@ -291,7 +291,8 @@ list_loader_dialects <- function() sort(ls(envir = .loader_registry))
     return(data.table::fread(path, sep = sep, showProgress = FALSE, ...))
   }
   if (.is_installed("arrow") && ext %in% c("parquet","feather")) {
-    return(arrow::read_table(path, ...))
+    if (ext == "parquet") return(arrow::read_parquet(path, ...))
+    return(arrow::read_feather(path, ...))
   }
   # base fallback
   if (ext == "tsv") return(utils::read.table(path, header = TRUE, sep = "\t", stringsAsFactors = FALSE, ...))
