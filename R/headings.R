@@ -120,8 +120,7 @@ setGeneric(
     x,
     rule = c("crossing","distal","straight","origin_mean","net","velocity_mean","window_net","goal_bias","pca_axis","ransac_straight","maxspeed_window","vm_fit","exit","entry","ring_tangent"),
     ...,
-    coords = c("absolute", "relative"),
-    angle_convention = c("clock", "unit_circle")
+    coords = c("absolute", "relative")
   ) standardGeneric("derive_headings")
 )
 
@@ -437,11 +436,9 @@ setMethod("derive_headings", "TrajSet", function(
     ...,
     first_only = FALSE,
     carry = NULL,
-    coords = c("absolute", "relative"),
-    angle_convention = c("clock", "unit_circle")) {
+    coords = c("absolute", "relative")) {
 
-  coords           <- match.arg(coords)
-  angle_convention <- match.arg(angle_convention)
+  coords <- match.arg(coords)
 
   id <- x@cols$id; tc <- x@cols$time
 
@@ -551,21 +548,10 @@ setMethod("derive_headings", "TrajSet", function(
     )
   }
 
-  if (angle_convention == "clock") {
-    res$heading <- .uc_to_clock(res$heading, coords)
-  }
-
   rownames(res) <- NULL
   if (!is.null(carry)) res <- .carry_nearest(res, d, idc = id, tc = tc, cols = carry)
 
-  attr(res, "angle_convention") <- angle_convention
-  attr(res, "coords")           <- coords
-  if (coords == "relative") {
-    attr(res, "display_convention") <- "clock"
-  } else if (identical(x@meta$display_convention, "clock") &&
-             !is.null(x@meta$plot_x_col)) {
-    attr(res, "display_convention") <- "clock"
-  }
+  attr(res, "coords") <- coords
   res
 })
 
@@ -614,16 +600,14 @@ circ_summary_headings <- function(x, rule = c("crossing","distal","straight","or
   rule             <- match.arg(rule)
   angle_convention <- match.arg(angle_convention)
 
-  hd <- derive_headings(x, rule = rule, ..., angle_convention = angle_convention)
+  hd <- derive_headings(x, rule = rule, ...)
   coords <- attr(hd, "coords") %||% "absolute"
 
   if (nrow(hd) == 0L || all(is.na(hd$heading))) {
     return(data.frame(mean_dir = NA_real_, resultant_R = NA_real_, kappa = NA_real_, n = 0L))
   }
 
-  # Convert back to UC for circular mean computation
-  uc_heading <- if (angle_convention == "clock") .clock_to_uc(hd$heading, coords) else hd$heading
-  hd$.uc_heading <- uc_heading
+  hd$.uc_heading <- hd$heading   # always UC radians
 
   # group keys
   if (is.null(group_by)) {

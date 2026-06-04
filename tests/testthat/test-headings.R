@@ -8,8 +8,7 @@ test_that("derive_headings crossing rule returns heading angle", {
                    x = r * cos(theta), y = r * sin(theta))
   ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
                 normalize_xy = FALSE)
-  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
-                        angle_convention = "unit_circle")
+  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4)
   expect_equal(nrow(hd), 1)
   expect_named(hd, c("id", "time", "heading"))
   expect_equal(hd$heading, theta %% (2 * pi), tolerance = 1e-6)
@@ -61,8 +60,7 @@ test_that("crossing rule recovers correct heading for each of N trajectories", {
   # Four cardinal directions; each should produce the correct angle after wrapping.
   angles <- c(0, pi / 2, pi, 3 * pi / 2)
   ts  <- make_multi_crossing_ts(angles)
-  hd  <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
-                         angle_convention = "unit_circle")
+  hd  <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4)
 
   expect_equal(nrow(hd), 4)
   # align by id order so comparison is deterministic
@@ -140,7 +138,7 @@ test_that("derive_headings computes simple net direction", {
     y = c(0, 1, 1)
   )
   ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y", angle = "time", angle_unit = "radians")
-  headings <- derive_headings(ts, rule = "net", angle_convention = "unit_circle")
+  headings <- derive_headings(ts, rule = "net")
   expect_equal(nrow(headings), 1)
   expect_equal(headings$heading, atan2(1, 1), tolerance = 1e-8)
 })
@@ -190,7 +188,7 @@ test_that("custom heading rules can be registered and listed", {
 
   df <- data.frame(id = "A", time = 0:1, x = c(0, 1), y = c(0, 0))
   ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y", angle = "time", angle_unit = "radians")
-  res <- derive_headings(ts, rule = "zero_heading", angle_convention = "unit_circle")
+  res <- derive_headings(ts, rule = "zero_heading")
   expect_equal(res$heading, 0)
   expect_true("zero_heading" %in% list_heading_rules())
 })
@@ -213,14 +211,14 @@ make_ts_with_rel <- function() {
 test_that("derive_headings coords='absolute' uses x/y columns", {
   ts <- make_ts_with_rel()
   hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
-                        coords = "absolute", angle_convention = "unit_circle")
+                        coords = "absolute")
   expect_equal(hd$heading, 0, tolerance = 1e-6)  # East
 })
 
 test_that("derive_headings coords='relative' uses rel_x/rel_y columns", {
   ts <- make_ts_with_rel()
   hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
-                        coords = "relative", angle_convention = "unit_circle")
+                        coords = "relative")
   expect_equal(hd$heading, pi / 2, tolerance = 1e-6)  # North
 })
 
@@ -236,56 +234,6 @@ test_that("derive_headings errors when coords='relative' but rel_x/rel_y not reg
   )
 })
 
-# ---- angle_convention tests --------------------------------------------------
-
-test_that("derive_headings clock convention converts absolute heading correctly", {
-  # Straight East trajectory => UC heading 0. Absolute clock: (pi/2 - 0) = pi/2 = 90°
-  df <- data.frame(id = "A", time = 1:10,
-                   x = seq(0, 0.8, length.out = 10), y = rep(0, 10))
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
-                normalize_xy = FALSE)
-  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
-                        angle_convention = "clock")
-  expect_equal(hd$heading, pi / 2, tolerance = 1e-6)
-})
-
-test_that("derive_headings clock convention converts relative heading correctly", {
-  df <- data.frame(
-    id = "A", time = 1:10,
-    x = rep(0, 10), y = seq(0, 0.8, length.out = 10),
-    rx = seq(0, 0.8, length.out = 10), ry = rep(0, 10) # rel East = toward stimulus
-  )
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
-                rel_x = "rx", rel_y = "ry", normalize_xy = FALSE)
-  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
-                        coords = "relative", angle_convention = "clock")
-  # rel UC heading = 0 (toward stimulus). Relative clock = (-0) %% 2pi = 0.
-  expect_equal(hd$heading, 0, tolerance = 1e-6)
-})
-
-test_that("derive_headings attaches angle_convention and coords attrs", {
-  df <- data.frame(id = "A", time = 1:10,
-                   x = seq(0, 0.8, length.out = 10), y = rep(0, 10))
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
-                normalize_xy = FALSE)
-  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
-                        angle_convention = "clock")
-  expect_equal(attr(hd, "angle_convention"), "clock")
-  expect_equal(attr(hd, "coords"), "absolute")
-})
-
-test_that("derive_headings with angle_convention='unit_circle' matches raw atan2", {
-  theta <- pi / 4
-  n <- 20
-  r <- seq(0, 0.8, length.out = n)
-  df <- data.frame(id = "A", time = seq_len(n),
-                   x = r * cos(theta), y = r * sin(theta))
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
-                normalize_xy = FALSE)
-  hd_uc <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
-                            angle_convention = "unit_circle")
-  expect_equal(hd_uc$heading, theta %% (2 * pi), tolerance = 1e-10)
-})
 
 # ---- circ_summary_headings angle_convention tests ----------------------------
 
@@ -317,21 +265,6 @@ test_that("circ_summary_headings clock vs unit_circle give different mean_dir fo
   expect_equal(summ_clock$mean_dir, 0,      tolerance = 1e-6)
 })
 
-# ---- display_convention attribute --------------------------------------------
-
-test_that("derive_headings sets display_convention='clock' when coords='relative'", {
-  ts <- make_ts_with_rel()
-  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
-                        coords = "relative", angle_convention = "unit_circle")
-  expect_equal(attr(hd, "display_convention"), "clock")
-})
-
-test_that("derive_headings does not set display_convention when coords='absolute'", {
-  ts <- make_ts_with_rel()
-  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
-                        coords = "absolute", angle_convention = "unit_circle")
-  expect_null(attr(hd, "display_convention"))
-})
 
 # ---- bodypart_axis heading rule ----------------------------------------------
 
@@ -360,7 +293,7 @@ test_that("bodypart_axis heading points from posterior to anterior", {
   ts <- make_ts_with_bodyparts()
   hd <- derive_headings(ts, rule = "bodypart_axis",
                         anterior = "head", posterior = "thorax",
-                        coords = "absolute", angle_convention = "unit_circle")
+                        coords = "absolute")
   expect_equal(nrow(hd), 1L)
   # head_y - thorax_y = 0.1, head_x - thorax_x = 0.1 → atan2(0.1,0) = pi/2
   expect_equal(hd$heading[1], pi / 2, tolerance = 1e-9)
@@ -376,7 +309,7 @@ test_that("bodypart_axis frame_select='last' uses final frame", {
   hd <- derive_headings(ts, rule = "bodypart_axis",
                         anterior = "head", posterior = "tail",
                         frame_select = "last",
-                        coords = "absolute", angle_convention = "unit_circle")
+                        coords = "absolute")
   expect_equal(hd$time[1], 4)
 })
 
@@ -385,7 +318,7 @@ test_that("bodypart_axis errors when bodypart columns are absent", {
   expect_error(
     derive_headings(ts, rule = "bodypart_axis",
                     anterior = "nose", posterior = "tail",
-                    coords = "absolute", angle_convention = "unit_circle"),
+                    coords = "absolute"),
     "not found"
   )
 })
@@ -403,7 +336,7 @@ test_that("ellipse_axis returns theta at distal frame", {
   ts <- TrajSet_read(df, mapping = list(id="id",time="time",x="x",y="y"),
                      normalize_xy = FALSE)
   hd <- derive_headings(ts, rule = "ellipse_axis",
-                        coords = "absolute", angle_convention = "unit_circle")
+                        coords = "absolute")
   # frame 5 is most distal (x=0.8); theta there is pi/2
   expect_equal(hd$heading[1], pi / 2, tolerance = 1e-9)
 })
@@ -414,7 +347,7 @@ test_that("ellipse_axis frame_select='mean' gives circular mean of theta", {
   ts <- TrajSet_read(df, mapping = list(id="id",time="time",x="x",y="y"),
                      normalize_xy = FALSE)
   hd <- derive_headings(ts, rule = "ellipse_axis", frame_select = "mean",
-                        coords = "absolute", angle_convention = "unit_circle")
+                        coords = "absolute")
   expect_equal(hd$heading[1], 0, tolerance = 1e-9)
 })
 
@@ -424,7 +357,7 @@ test_that("ellipse_axis errors when theta column absent", {
                      normalize_xy = FALSE)
   expect_error(
     derive_headings(ts, rule = "ellipse_axis",
-                    coords = "absolute", angle_convention = "unit_circle"),
+                    coords = "absolute"),
     "not found"
   )
 })
@@ -441,7 +374,7 @@ test_that("bodypart_axis frame_select='all' returns one row per frame", {
   hd <- derive_headings(ts, rule = "bodypart_axis",
                         anterior = "head", posterior = "thorax",
                         frame_select = "all",
-                        coords = "absolute", angle_convention = "unit_circle")
+                        coords = "absolute")
   expect_equal(nrow(hd), 5L)
   expect_true(all(c("id","time","heading") %in% names(hd)))
   expect_equal(hd$heading, rep(pi/2, 5), tolerance = 1e-9)
@@ -453,7 +386,7 @@ test_that("ellipse_axis frame_select='all' returns one row per frame", {
   ts <- TrajSet_read(df, mapping = list(id="id",time="time",x="x",y="y"),
                      normalize_xy = FALSE)
   hd <- derive_headings(ts, rule = "ellipse_axis", frame_select = "all",
-                        coords = "absolute", angle_convention = "unit_circle")
+                        coords = "absolute")
   expect_equal(nrow(hd), 4L)
   expect_equal(hd$heading, rep(pi/3, 4), tolerance = 1e-9)
 })
