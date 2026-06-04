@@ -10,8 +10,7 @@ circ_summarise(
   units,
   .by = NULL,
   stats = c("n", "mean_dir", "mean_dir_deg", "resultant_R", "kappa"),
-  angle_convention = NULL,
-  coords = NULL
+  display = circ_display()
 )
 }
 \arguments{

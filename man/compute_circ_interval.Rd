@@ -8,8 +8,6 @@ compute_circ_interval(
   headings_df,
   heading_col = "heading",
   colour_col = NULL,
-  angle_convention = NULL,
-  coords = NULL,
   stat = c("bootstrap_ci", "sd"),
   boot_reps = 1000L,
   boot_alpha = 0.05
@@ -22,14 +20,6 @@ compute_circ_interval(
 
 \item{colour_col}{Optional grouping column. When set, one row is returned per
 group and the column is preserved in the output.}
-
-\item{angle_convention}{Angle convention of the heading column: `"unit_circle"`
-(default, 0 = East CCW) or `"clock"` (0 = North CW). If `NULL`, read from
-`attr(headings_df, "angle_convention")`.}
-
-\item{coords}{Coordinate system used when `angle_convention = "clock"`:
-`"relative"` or `"absolute"`. If `NULL`, read from
-`attr(headings_df, "coords")`.}
 
 \item{stat}{Statistic: `"bootstrap_ci"` (default) or `"sd"`.}
 

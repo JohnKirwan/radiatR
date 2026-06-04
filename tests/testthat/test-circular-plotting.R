@@ -90,36 +90,6 @@ test_that("add_heading_points and add_heading_vectors can be added to ggplot", {
   expect_silent(ggplot_build(p))
 })
 
-# ---- circ_mean_segments: arrow endpoint arithmetic --------------------------
-
-test_that("circ_mean_segments tip is at R*cos(mean_dir), R*sin(mean_dir)", {
-  stats_df <- data.frame(mean_dir = pi / 3, resultant_R = 0.7)
-  seg <- suppressWarnings(circ_mean_segments(stats_df))
-
-  expect_equal(seg$x,    0,                          tolerance = 1e-10)
-  expect_equal(seg$y,    0,                          tolerance = 1e-10)
-  expect_equal(seg$xend, 0.7 * cos(pi / 3),          tolerance = 1e-10)
-  expect_equal(seg$yend, 0.7 * sin(pi / 3),          tolerance = 1e-10)
-})
-
-test_that("circ_mean_segments scale parameter multiplies arrow length", {
-  stats_df <- data.frame(mean_dir = pi / 4, resultant_R = 0.5)
-  seg2 <- suppressWarnings(circ_mean_segments(stats_df, scale = 2))
-
-  expect_equal(seg2$xend, 2 * 0.5 * cos(pi / 4), tolerance = 1e-10)
-  expect_equal(seg2$yend, 2 * 0.5 * sin(pi / 4), tolerance = 1e-10)
-})
-
-test_that("circ_mean_segments custom origin shifts arrow base", {
-  stats_df <- data.frame(mean_dir = 0, resultant_R = 1)
-  seg <- suppressWarnings(circ_mean_segments(stats_df, x0 = 0.5, y0 = 0.5))
-
-  expect_equal(seg$x,    0.5, tolerance = 1e-10)
-  expect_equal(seg$y,    0.5, tolerance = 1e-10)
-  expect_equal(seg$xend, 1.5, tolerance = 1e-10)  # 0.5 + 1*cos(0)
-  expect_equal(seg$yend, 0.5, tolerance = 1e-10)  # 0.5 + 1*sin(0)
-})
-
 # ---- directedness_arrow: tip position ---------------------------------------
 
 test_that("directedness_arrow tip is at rho*(cos(mean), sin(mean))", {
@@ -729,31 +699,6 @@ test_that("add_heading_points and add_heading_vectors accept fixed colour parame
   expect_s3_class(p_vec, "ggplot")
   built_pts <- ggplot_build(p_pts)
   expect_true(all(built_pts$data[[1]]$colour == "steelblue"))
-})
-
-# ---- circ_mean_segments clock convention auto-detect -------------------------
-
-test_that("circ_mean_segments with clock attr draws arrow pointing North for mean_dir=0", {
-  stats_df <- data.frame(mean_dir = 0, resultant_R = 1)
-  attr(stats_df, "angle_convention") <- "clock"
-  seg <- suppressWarnings(circ_mean_segments(stats_df))
-  expect_equal(seg$xend, 0, tolerance = 1e-10)
-  expect_equal(seg$yend, 1, tolerance = 1e-10)
-})
-
-test_that("circ_mean_segments with clock attr draws arrow pointing East for mean_dir=pi/2", {
-  stats_df <- data.frame(mean_dir = pi / 2, resultant_R = 1)
-  attr(stats_df, "angle_convention") <- "clock"
-  seg <- suppressWarnings(circ_mean_segments(stats_df))
-  expect_equal(seg$xend, 1, tolerance = 1e-10)
-  expect_equal(seg$yend, 0, tolerance = 1e-10)
-})
-
-test_that("circ_mean_segments without clock attr is unchanged", {
-  stats_df <- data.frame(mean_dir = pi / 3, resultant_R = 0.7)
-  seg <- suppressWarnings(circ_mean_segments(stats_df))
-  expect_equal(seg$xend, 0.7 * cos(pi / 3), tolerance = 1e-10)
-  expect_equal(seg$yend, 0.7 * sin(pi / 3), tolerance = 1e-10)
 })
 
 # ---- compute_circ_interval ---------------------------------------------------

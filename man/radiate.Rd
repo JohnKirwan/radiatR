@@ -42,6 +42,7 @@ radiate(data, ...)
   arrow_angle_col = NULL,
   arrow_colour = "black",
   arrow_size = 2,
+  display = circ_display(),
   ...
 )
 

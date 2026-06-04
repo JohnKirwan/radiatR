@@ -4,7 +4,7 @@
 \alias{degree_labs}
 \title{Label the four diagonal directions.}
 \usage{
-degree_labs()
+degree_labs(display = circ_display())
 }
 \value{
 A list of ggplot2 annotation layers.

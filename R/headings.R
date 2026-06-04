@@ -75,17 +75,6 @@
   out
 }
 
-.kappa_from_Rbar <- function(R) {
-  out <- R
-  low  <- R < 0.53
-  mid  <- R >= 0.53 & R < 0.85
-  high <- R >= 0.85
-  out[low]  <- 2*R[low] + R[low]^3 + (5*R[low]^5)/6
-  out[mid]  <- -0.4 + 1.39*R[mid] + 0.43/(1 - R[mid])
-  out[high] <- 1/(R[high]^3 - 4*R[high]^2 + 3*R[high])
-  out
-}
-
 # linear interpolation of crossing point along segment P0->P1 for a given radius r*
 .segment_cross <- function(x0, y0, x1, y1, rstar) {
   r0 <- sqrt(x0^2 + y0^2); r1 <- sqrt(x1^2 + y1^2)
@@ -657,44 +646,6 @@ circ_summary_headings <- function(x, rule = c("crossing","distal","straight","or
 # ---- plotting helpers: mean direction arrows ---------------------------------
 #' Build a data frame of arrow segments representing mean direction vectors
 #' Length equals resultant_R; angle equals mean_dir
-#' @param stats_df output of circ_summary() or circ_summary_headings()
-#' @param x0,y0 arrow origin (defaults 0,0)
-#' @param scale multiply resultant_R by this factor when drawing
-#' @return data.frame with x,y,xend,yend and any grouping columns kept
-#' @export
-circ_mean_segments <- function(stats_df, x0 = 0, y0 = 0, scale = 1) {
-  .Deprecated("compute_circ_mean",
-              msg = paste0("circ_mean_segments() is deprecated. ",
-                           "Use compute_circ_mean() + add_circ_mean() instead."))
-  stopifnot(all(c("mean_dir","resultant_R") %in% names(stats_df)))
-  convention <- attr(stats_df, "angle_convention") %||% "unit_circle"
-  uc_dir <- if (convention == "clock") rad_unclock(stats_df$mean_dir) else stats_df$mean_dir
-  xend <- x0 + scale * stats_df$resultant_R * cos(uc_dir)
-  yend <- y0 + scale * stats_df$resultant_R * sin(uc_dir)
-  cbind(stats_df, x = x0, y = y0, xend = xend, yend = yend)
-}
-
-#' Add mean direction arrows to a ggplot polar plot
-#' @param p ggplot built from gg_traj(...) or your own polar builder
-#' @param segments_df data from circ_mean_segments()
-#' @param color arrow color
-#' @param linewidth segment linewidth
-#' @param arrow_spec ggplot2::arrow(...) for arrow heads
-#' @param inherit_aes whether to inherit aes (usually FALSE)
-#' @export
-gg_add_circ_mean <- function(p, segments_df, color = "black", linewidth = 0.8,
-                             arrow_spec = ggplot2::arrow(length = grid::unit(0.02, "npc")),
-                             inherit_aes = FALSE) {
-  .Deprecated("add_heading_arrow",
-              msg = paste0("gg_add_circ_mean() is deprecated. ",
-                           "Use p + add_heading_arrow(headings_df) instead."))
-  p + ggplot2::geom_segment(data = segments_df,
-                           ggplot2::aes(x = .data$x, y = .data$y, xend = .data$xend, yend = .data$yend),
-                           color = color, linewidth = linewidth,
-                           arrow = arrow_spec,
-                           inherit.aes = inherit_aes)
-}
-
 # ---- user-defined rule registry ----------------------------------------------
 .heading_registry <- new.env(parent = emptyenv())
 
