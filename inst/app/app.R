@@ -136,7 +136,11 @@ num_or <- function(v, default) {
 }
 
 derive_hd <- function(ts, method, circ0, circ1) {
-  args <- list(x = ts, coords = "absolute")
+  # Use relative coords when available so headings are in the same frame as
+  # the rel_x/rel_y display (stimulus fixed at East). Fall back to absolute
+  # for datasets without a normalised relative coordinate system.
+  has_rel <- !is.null(ts@cols$rel_x) && !is.null(ts@cols$rel_y)
+  args <- list(x = ts, coords = if (has_rel) "relative" else "absolute")
   if (method == "crossing") {
     args$rule  <- "crossing"
     args$circ0 <- circ0
@@ -625,6 +629,11 @@ server <- function(input, output, session) {
     gc <- if (!is.null(input$cond_col) && nzchar(input$cond_col))
       input$cond_col else NULL
 
+    # Display convention: reference direction (East in UC / rel coords) at top,
+    # clockwise-positive. This matches the old clock display and keeps tracks,
+    # heading overlays, and the arrow all in the same orientation.
+    disp <- circ_display(zero = 0)
+
     # Drive the directedness arrow from the chosen heading method (rv$hd), so it
     # summarises the SAME angles as the heading points, CI bar, and summary
     # table. radiate's default arrow instead summarises the per-frame position
@@ -656,14 +665,20 @@ server <- function(input, output, session) {
       show_tracks     = tog(input$show_tracks, TRUE),
       show_arrow      = tog(input$show_arrow,  TRUE),
       arrow_angle_col = ".arrow_heading",
-      show_labels     = FALSE
+      show_labels     = FALSE,
+      display         = disp
     )
+
+    # Propagate display to the headings df so overlay functions rotate to match.
+    hd_disp <- rv$hd
+    attr(hd_disp, "display") <- disp
+
     if (tog(input$show_points, TRUE)) {
-      p <- p + add_heading_points(rv$hd, size = 2.5, alpha = 0.8)
+      p <- p + add_heading_points(hd_disp, size = 2.5, alpha = 0.8)
     }
     if (tog(input$show_ci, FALSE)) {
       p <- p + add_heading_interval(
-        rv$hd, colour_col = gc, stat = "bootstrap_ci"
+        hd_disp, colour_col = gc, stat = "bootstrap_ci"
       )
     }
     p
@@ -708,9 +723,10 @@ server <- function(input, output, session) {
     tryCatch({
       cm <- circ_summarise(
         rv$hd, "heading",
-        units = "radians",
-        .by   = by_col,
-        stats = c("n", "mean_dir_deg", "resultant_R")
+        units   = "radians",
+        .by     = by_col,
+        stats   = c("n", "mean_dir_deg", "resultant_R"),
+        display = circ_display(zero = 0)
       )
       # Rayleigh test p-value per group
       groups <- unique(rv$hd[[by_col]])
