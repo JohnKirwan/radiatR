@@ -224,59 +224,41 @@ test_that("add_heading_vectors segments run from (x_inner,y_inner) to (cos(h),si
   expect_equal(seg$yend, sin(pi / 4),   tolerance = 1e-6)
 })
 
-test_that("add_heading_points with display_convention='clock' rotates marker 90 CCW", {
+test_that("add_heading_points: default display puts UC North at top", {
   library(ggplot2)
-  hd <- data.frame(heading = 0)          # heading 0 = East in UC
-  attr(hd, "display_convention") <- "clock"
-  p     <- ggplot() + add_heading_points(hd)
-  built <- ggplot_build(p)
-  pts   <- built$data[[1]]
-  # East (1,0) rotated 90 CCW -> North (0,1)
+  hd  <- data.frame(heading = pi / 2)   # UC North
+  pts <- ggplot_build(ggplot() + add_heading_points(hd))$data[[1]]
+  # default circ_display(zero=pi/2): identity transform -> UC North (0,1) stays (0,1)
   expect_equal(pts$x, 0, tolerance = 1e-6)
   expect_equal(pts$y, 1, tolerance = 1e-6)
 })
 
-test_that("add_heading_points: clock angle_convention converts before display", {
+test_that("add_heading_points: display zero=0 puts UC East at top", {
   library(ggplot2)
-  # heading=0 in clock/relative convention = toward stimulus = UC East = display North
-  hd <- data.frame(heading = 0)
-  attr(hd, "angle_convention")   <- "clock"
-  attr(hd, "coords")             <- "relative"
-  attr(hd, "display_convention") <- "clock"
-  p     <- ggplot() + add_heading_points(hd)
-  pts   <- ggplot_build(p)$data[[1]]
-  expect_equal(pts$x, 0, tolerance = 1e-6)  # North = top
+  hd <- data.frame(heading = 0)  # UC East = toward stimulus
+  attr(hd, "display") <- circ_display(zero = 0)
+  pts <- ggplot_build(ggplot() + add_heading_points(hd))$data[[1]]
+  expect_equal(pts$x, 0, tolerance = 1e-6)
   expect_equal(pts$y, 1, tolerance = 1e-6)
-
-  # heading=pi/2 in clock/relative = 90 CW from stimulus = UC South = display East (right)
-  hd2 <- data.frame(heading = pi / 2)
-  attr(hd2, "angle_convention")   <- "clock"
-  attr(hd2, "coords")             <- "relative"
-  attr(hd2, "display_convention") <- "clock"
-  pts2 <- ggplot_build(ggplot() + add_heading_points(hd2))$data[[1]]
-  expect_equal(pts2$x,  1, tolerance = 1e-6)  # East = right
-  expect_equal(pts2$y,  0, tolerance = 1e-6)
 })
 
-test_that("add_heading_vectors: clock angle_convention converts endpoint before display", {
+test_that("add_heading_vectors: default display, endpoint at (cos(h), sin(h))", {
   library(ggplot2)
-  # heading=0 clock/relative = toward stimulus = display North (top)
-  hd <- data.frame(heading = 0, x_inner = 0, y_inner = 0)
-  attr(hd, "angle_convention")   <- "clock"
-  attr(hd, "coords")             <- "relative"
-  attr(hd, "display_convention") <- "clock"
+  hd  <- data.frame(heading = pi / 4, x_inner = 0, y_inner = 0)
   seg <- ggplot_build(ggplot() + add_heading_vectors(hd))$data[[1]]
+  # zero=pi/2 -> identity -> endpoint = (cos(pi/4), sin(pi/4))
+  expect_equal(seg$xend, cos(pi / 4), tolerance = 1e-6)
+  expect_equal(seg$yend, sin(pi / 4), tolerance = 1e-6)
+})
+
+test_that("add_heading_vectors: display zero=0 rotates endpoint", {
+  library(ggplot2)
+  hd  <- data.frame(heading = 0, x_inner = 0, y_inner = 0)
+  attr(hd, "display") <- circ_display(zero = 0)
+  seg <- ggplot_build(ggplot() + add_heading_vectors(hd))$data[[1]]
+  # UC East (1,0) after 90 CCW -> (0,1)
   expect_equal(seg$xend, 0, tolerance = 1e-6)
   expect_equal(seg$yend, 1, tolerance = 1e-6)
-
-  # heading=pi/2 clock = 90 CW from stimulus = display East (right)
-  hd2 <- data.frame(heading = pi / 2, x_inner = 0, y_inner = 0)
-  attr(hd2, "angle_convention")   <- "clock"
-  attr(hd2, "coords")             <- "relative"
-  attr(hd2, "display_convention") <- "clock"
-  seg2 <- ggplot_build(ggplot() + add_heading_vectors(hd2))$data[[1]]
-  expect_equal(seg2$xend,  1, tolerance = 1e-6)
-  expect_equal(seg2$yend,  0, tolerance = 1e-6)
 })
 
 test_that("plotting helpers return ggplot layers", {
@@ -1121,21 +1103,6 @@ test_that(".to_clock_display maps (0,-1) to (1,0)", {
   expect_equal(r$y, 0)
 })
 
-test_that("add_heading_vectors with display_convention='clock' rotates both endpoints 90 CCW", {
-  library(ggplot2)
-  # heading=0 (East), inner crossing at (0.5, 0)
-  hd <- data.frame(heading = 0, x_inner = 0.5, y_inner = 0)
-  attr(hd, "display_convention") <- "clock"
-  p     <- ggplot() + add_heading_vectors(hd)
-  built <- ggplot_build(p)
-  seg   <- built$data[[1]]
-  # start (0.5, 0) rotated -> (0, 0.5)
-  # end   (1,   0) rotated -> (0, 1)
-  expect_equal(seg$x,    0,   tolerance = 1e-6)
-  expect_equal(seg$y,    0.5, tolerance = 1e-6)
-  expect_equal(seg$xend, 0,   tolerance = 1e-6)
-  expect_equal(seg$yend, 1,   tolerance = 1e-6)
-})
 
 # ---- radiate() clock display convention -------------------------------------
 

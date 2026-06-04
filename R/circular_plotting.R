@@ -1128,25 +1128,20 @@ add_heading_arrow <- function(headings_df,
 #' ggplot() + coord_fixed() + add_heading_points(hd)
 #' ggplot() + coord_fixed() + add_heading_points(hd, colour = "steelblue")
 add_heading_points <- function(headings_df, colour_col = NULL, colour = NULL,
-                              size = 2, alpha = 1) {
-  if (!("heading" %in% names(headings_df))) {
+                               size = 2, alpha = 1) {
+  if (!("heading" %in% names(headings_df)))
     stop("`headings_df` must contain a `heading` column (radians).")
-  }
   if (is.null(colour_col)) colour_col <- attr(headings_df, "colour_col")
-  angle_conv  <- attr(headings_df, "angle_convention") %||% "unit_circle"
-  coords_attr <- attr(headings_df, "coords") %||% "absolute"
-  uc_headings <- if (angle_conv == "clock") .clock_to_uc(headings_df$heading, coords_attr) else headings_df$heading
-  if (identical(attr(headings_df, "display_convention"), "clock")) {
-    disp <- .to_clock_display(cos(uc_headings), sin(uc_headings))
-    headings_df[[".x_head"]] <- disp$x
-    headings_df[[".y_head"]] <- disp$y
-  } else {
-    headings_df[[".x_head"]] <- cos(uc_headings)
-    headings_df[[".y_head"]] <- sin(uc_headings)
-  }
+  disp <- attr(headings_df, "display", exact = TRUE) %||% circ_display()
+
+  xy <- .uc_to_display_coords(cos(headings_df$heading),
+                               sin(headings_df$heading), disp)
+  headings_df[[".x_head"]] <- xy$x
+  headings_df[[".y_head"]] <- xy$y
 
   mapping <- ggplot2::aes(x = .data[[".x_head"]], y = .data[[".y_head"]])
-  use_fixed_colour <- !is.null(colour) || is.null(colour_col) || !colour_col %in% names(headings_df)
+  use_fixed_colour <- !is.null(colour) || is.null(colour_col) ||
+                      !colour_col %in% names(headings_df)
   if (!use_fixed_colour) mapping[["colour"]] <- rlang::sym(colour_col)
 
   args <- list(data = headings_df, mapping = mapping,
@@ -1202,23 +1197,16 @@ add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
     ))
   }
 
-  angle_conv  <- attr(headings_df, "angle_convention") %||% "unit_circle"
-  coords_attr <- attr(headings_df, "coords") %||% "absolute"
-  uc_headings <- if (angle_conv == "clock") .clock_to_uc(headings_df$heading, coords_attr) else headings_df$heading
-  headings_df[[".x_head"]] <- cos(uc_headings)
-  headings_df[[".y_head"]] <- sin(uc_headings)
+  disp <- attr(headings_df, "display", exact = TRUE) %||% circ_display()
 
-  if (identical(attr(headings_df, "display_convention"), "clock")) {
-    disp_end   <- .to_clock_display(headings_df[[".x_head"]], headings_df[[".y_head"]])
-    disp_start <- .to_clock_display(headings_df$x_inner,     headings_df$y_inner)
-    headings_df[[".x_head"]]  <- disp_end$x
-    headings_df[[".y_head"]]  <- disp_end$y
-    headings_df[[".x_inner"]] <- disp_start$x
-    headings_df[[".y_inner"]] <- disp_start$y
-  } else {
-    headings_df[[".x_inner"]] <- headings_df$x_inner
-    headings_df[[".y_inner"]] <- headings_df$y_inner
-  }
+  end_xy   <- .uc_to_display_coords(cos(headings_df$heading),
+                                     sin(headings_df$heading), disp)
+  start_xy <- .uc_to_display_coords(headings_df$x_inner,
+                                     headings_df$y_inner, disp)
+  headings_df[[".x_head"]]  <- end_xy$x
+  headings_df[[".y_head"]]  <- end_xy$y
+  headings_df[[".x_inner"]] <- start_xy$x
+  headings_df[[".y_inner"]] <- start_xy$y
 
   mapping <- ggplot2::aes(
     x    = .data[[".x_inner"]],
@@ -1293,15 +1281,11 @@ add_stacked_headings <- function(data,
                            direction = direction, base_r = base_r,
                            shade = shade, shape = shape)
 
-  if (identical(attr(data, "display_convention"), "clock")) {
-    disp <- .to_clock_display(data$stack_r * cos(data[[col]]),
-                               data$stack_r * sin(data[[col]]))
-    data[[".x_stk"]] <- disp$x
-    data[[".y_stk"]] <- disp$y
-  } else {
-    data[[".x_stk"]] <- data$stack_r * cos(data[[col]])
-    data[[".y_stk"]] <- data$stack_r * sin(data[[col]])
-  }
+  disp_opts <- attr(data, "display", exact = TRUE) %||% circ_display()
+  xy <- .uc_to_display_coords(data$stack_r * cos(data[[col]]),
+                               data$stack_r * sin(data[[col]]), disp_opts)
+  data[[".x_stk"]] <- xy$x
+  data[[".y_stk"]] <- xy$y
 
   mapping <- ggplot2::aes(x = .data[[".x_stk"]], y = .data[[".y_stk"]])
 
