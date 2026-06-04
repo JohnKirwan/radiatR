@@ -4,6 +4,9 @@
 
 * New `path_straightness(x, y)` and `straightness_index(ts)` compute the path
   straightness index (net displacement / path length, 0–1) per trajectory.
+* New `path_tortuosity(x, y)` and `tortuosity_ratio(ts)` compute the classic
+  tortuosity ratio (path length / net displacement, ≥ 1), the reciprocal of the
+  straightness index. Not yet surfaced in the Shiny app.
 
 ## Plotting
 

@@ -18,9 +18,8 @@ A single straightness value in `[0, 1]`, or `NA_real_` when fewer
 The straightness index is the net (start-to-end) displacement divided by the
 total path length travelled. It ranges from 0 (a maximally convoluted path
 that returns to its starting point) to 1 (a perfectly straight path), and is
-the reciprocal of the tortuosity ratio (path length / net displacement).
-Unlike that ratio it is bounded and does not blow up when the net
-displacement is small.
+the reciprocal of the tortuosity ratio ([path_tortuosity()]). Unlike that
+ratio it is bounded and does not blow up when the net displacement is small.
 }
 \details{
 The index is scale-invariant: multiplying all coordinates by a constant
@@ -32,5 +31,5 @@ path_straightness(x = c(0, 1, 2), y = c(0, 0, 0))   # straight -> 1
 path_straightness(x = c(0, 1, 0), y = c(0, 1, 0))   # returns to start -> 0
 }
 \seealso{
-[straightness_index()] for a whole `TrajSet`.
+[straightness_index()] for a whole `TrajSet`; [path_tortuosity()].
 }
