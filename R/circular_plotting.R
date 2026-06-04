@@ -1697,6 +1697,7 @@ function(
   arrow_angle_col = NULL,
   arrow_colour = "black",
   arrow_size = 2,
+  display = circ_display(),
   ...){
   if (is.null(ticks)) {ticks = TRUE}
   if (is.null(degrees)) {degrees = TRUE}
@@ -1737,26 +1738,19 @@ function(
   }
 
   data <- ts@data
-  col_from_meta <- FALSE
   if (!is.null(ts@meta$plot_x_col) && identical(x_col, "rel_x")) {
     x_col <- ts@meta$plot_x_col
-    col_from_meta <- TRUE
     if (!is.null(ts@meta$plot_y_col) && identical(y_col, "rel_y"))
       y_col <- ts@meta$plot_y_col
   } else if (!is.null(ts@cols$x) && identical(x_col, "rel_x")) {
     x_col <- ts@cols$x
     if (!is.null(ts@cols$y) && identical(y_col, "rel_y")) y_col <- ts@cols$y
   }
-  is_clock_display <- col_from_meta &&
-    identical(ts@meta$display_convention, "clock") &&
-    all(c(x_col, y_col) %in% names(data))
-  if (is_clock_display) {
-    disp <- .to_clock_display(data[[x_col]], data[[y_col]])
-    data[[".disp_x"]] <- disp$x
-    data[[".disp_y"]] <- disp$y
-    x_col <- ".disp_x"
-    y_col <- ".disp_y"
-  }
+  xy_disp <- .uc_to_display_coords(data[[x_col]], data[[y_col]], display)
+  data[[".disp_x"]] <- xy_disp$x
+  data[[".disp_y"]] <- xy_disp$y
+  x_col <- ".disp_x"
+  y_col <- ".disp_y"
   if (is.null(group_col)) group_col <- ts@cols$id
   if (is.null(arrow_angle_col)) arrow_angle_col <- ts@cols$angle
 
@@ -1908,14 +1902,10 @@ function(
         arrow_df <- .circ_mean_seg(trial_df$.mean)
       }
 
-      # Match the arrow to the displayed tracks: when the plot is rotated into
-      # the clock convention, the mean-direction endpoint (computed in
-      # unit-circle coordinates from the angle column) must be rotated too,
-      # otherwise the arrow points ~90 degrees off the trajectories.
-      if (is_clock_display && !is.null(arrow_df) && nrow(arrow_df) > 0L) {
-        disp <- .to_clock_display(arrow_df$xend, arrow_df$yend)
-        arrow_df$xend <- disp$x
-        arrow_df$yend <- disp$y
+      if (!is.null(arrow_df) && nrow(arrow_df) > 0L) {
+        xy_a <- .uc_to_display_coords(arrow_df$xend, arrow_df$yend, display)
+        arrow_df$xend <- xy_a$x
+        arrow_df$yend <- xy_a$y
       }
 
       if (!is.null(arrow_df) && nrow(arrow_df) > 0L) {

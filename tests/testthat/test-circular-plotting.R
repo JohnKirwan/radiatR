@@ -1087,70 +1087,40 @@ test_that(".to_clock_display maps (0,-1) to (1,0)", {
 })
 
 
-# ---- radiate() clock display convention -------------------------------------
+# ---- radiate() display param ------------------------------------------------
 
-test_that("radiate uses meta plot_x_col/plot_y_col and rotates when display_convention='clock'", {
+test_that("radiate applies display transform to track coordinates", {
   library(ggplot2)
-  # A TrajSet with trans_x going East but rel_x going North (toward stimulus).
-  # With display_convention='clock', rel coords rotate: disp_x=-rel_y=0, disp_y=rel_x
-  df <- data.frame(
-    id = "A", frame = 1:3,
-    trans_x   = c(0, 0.3, 0.6),   # absolute (East-going; would be wrong if used)
-    trans_y   = c(0, 0,   0),
-    rel_x     = c(0, 0.3, 0.6),   # relative toward stimulus (East in UC)
-    rel_y     = c(0, 0,   0),
-    rel_theta = rep(0, 3)
-  )
-  ts <- TrajSet(df, id = "id", time = "frame", x = "trans_x", y = "trans_y",
-                rel_x = "rel_x", rel_y = "rel_y",
-                angle = "rel_theta", angle_unit = "radians", normalize_xy = FALSE)
-  ts@meta$display_convention <- "clock"
-  ts@meta$plot_x_col         <- "rel_x"
-  ts@meta$plot_y_col         <- "rel_y"
-
-  p <- radiate(ts, show_arrow = FALSE, show_labels = FALSE)
-  # After rotation: disp_x = -rel_y = 0, disp_y = rel_x = 0, 0.3, 0.6
-  expect_true(".disp_x" %in% names(p$data))
-  expect_equal(p$data$.disp_x, rep(0, 3),        tolerance = 1e-6)
-  expect_equal(p$data$.disp_y, c(0, 0.3, 0.6),   tolerance = 1e-6)
+  # A single track heading East (x increases) in UC.
+  # With default circ_display (zero=pi/2, identity), the track stays East.
+  df <- data.frame(trial_id = "A", frame = 1:3,
+                   x = c(0, 0.5, 1), y = c(0, 0, 0))
+  ts <- TrajSet(df, id = "trial_id", time = "frame", x = "x", y = "y",
+                normalize_xy = FALSE)
+  p     <- radiate(ts, group_col = "trial_id", show_labels = FALSE,
+                   show_arrow = FALSE)
+  built <- ggplot_build(p)
+  path_layer <- Filter(function(d) "x" %in% names(d) && "y" %in% names(d),
+                       built$data)[[1]]
+  expect_equal(path_layer$x[path_layer$x > 0.4][1], 0.5, tolerance = 1e-3)
 })
 
-test_that("radiate does not rotate when x_col supplied explicitly (not from meta)", {
+test_that("radiate with display zero=0 rotates East track to North on canvas", {
   library(ggplot2)
-  # TrajSet has clock convention but caller passes x_col explicitly (non-default value).
-  # col_from_meta stays FALSE, so rotation must not fire.
-  df <- data.frame(
-    id = "A", frame = 1:3,
-    my_x  = c(0, 0.3, 0.6),
-    my_y  = c(0, 0,   0),
-    rel_x = c(0, 0.3, 0.6),
-    rel_y = c(0, 0,   0),
-    rel_theta = rep(0, 3)
-  )
-  ts <- TrajSet(df, id = "id", time = "frame", x = "my_x", y = "my_y",
-                angle = "rel_theta", angle_unit = "radians", normalize_xy = FALSE)
-  ts@meta$display_convention <- "clock"
-  ts@meta$plot_x_col         <- "rel_x"
-  ts@meta$plot_y_col         <- "rel_y"
-
-  # Supply x_col explicitly — different from the default "rel_x", so col_from_meta = FALSE
-  p <- radiate(ts, x_col = "my_x", y_col = "my_y",
-               show_arrow = FALSE, show_labels = FALSE)
-  expect_false(".disp_x" %in% names(p$data))
-})
-
-test_that("radiate without clock meta uses @cols$x as before", {
-  library(ggplot2)
-  df <- data.frame(
-    id = "A", frame = 1:3,
-    trans_x = c(0, 0.3, 0.6), trans_y = rep(0, 3),
-    rel_theta = rep(0, 3)
-  )
-  ts <- TrajSet(df, id = "id", time = "frame", x = "trans_x", y = "trans_y",
-                angle = "rel_theta", angle_unit = "radians", normalize_xy = FALSE)
-  # No meta keys set -> should fall through to @cols$x = "trans_x"
-  p <- radiate(ts, show_arrow = FALSE, show_labels = FALSE)
-  expect_false(".disp_x" %in% names(p$data))
+  df <- data.frame(trial_id = "A", frame = 1:2,
+                   x = c(0, 1), y = c(0, 0))  # eastward track
+  ts <- TrajSet(df, id = "trial_id", time = "frame", x = "x", y = "y",
+                normalize_xy = FALSE)
+  d  <- circ_display(zero = 0)
+  p  <- radiate(ts, group_col = "trial_id", show_labels = FALSE,
+                show_arrow = FALSE, display = d)
+  built <- ggplot_build(p)
+  path_layer <- Filter(function(g) "x" %in% names(g) && "y" %in% names(g),
+                       built$data)[[1]]
+  # East (1,0) rotated 90 CCW -> should appear at x~0, y~1
+  last <- path_layer[nrow(path_layer), ]
+  expect_equal(last$x, 0, tolerance = 1e-3)
+  expect_equal(last$y, 1, tolerance = 1e-3)
 })
 
 # ---- add_vonmises_density ----------------------------------------------------
@@ -1439,23 +1409,23 @@ test_that("add_critical_v_line returns NULL when boundary exceeds unit circle", 
   ts
 }
 
-test_that("mean arrow stays in unit-circle frame when not in clock display", {
+test_that("mean arrow stays in unit-circle frame with default display", {
   g <- radiate(.arrow_fixture(clock = FALSE), group_col = "id",
                show_arrow = TRUE, show_labels = FALSE)
   a <- .arrow_seg(g)
   expect_false(is.null(a))
-  # East heading -> arrow points East (+x), no rotation
+  # East heading -> default display (zero=pi/2, identity) -> arrow points East (+x)
   expect_gt(a$xend, 0.9)
   expect_lt(abs(a$yend), 1e-6)
 })
 
-test_that("mean arrow is rotated with the tracks in clock display", {
+test_that("mean arrow rotates with display zero=0 (stimulus at top)", {
   g <- radiate(.arrow_fixture(clock = TRUE), group_col = "id",
-               show_arrow = TRUE, show_labels = FALSE)
+               show_arrow = TRUE, show_labels = FALSE,
+               display = circ_display(zero = 0))
   a <- .arrow_seg(g)
   expect_false(is.null(a))
-  # clock display rotates East -> North, so the arrow must point up (+y),
-  # matching the rotated trajectories rather than pointing East.
+  # East heading (angle=0) with zero=0 -> 90 CCW rotation -> arrow points North (+y)
   expect_gt(a$yend, 0.9)
   expect_lt(abs(a$xend), 1e-6)
 })
