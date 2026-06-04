@@ -749,12 +749,6 @@ add_heading_density <- function(headings_df,
 #' @param heading_col Name of the heading column (radians). Default `"heading"`.
 #' @param colour_col Optional grouping column. When set, one row is returned per
 #'   group and the column is preserved in the output.
-#' @param angle_convention Angle convention of the heading column: `"unit_circle"`
-#'   (default, 0 = East CCW) or `"clock"` (0 = North CW). If `NULL`, read from
-#'   `attr(headings_df, "angle_convention")`.
-#' @param coords Coordinate system used when `angle_convention = "clock"`:
-#'   `"relative"` or `"absolute"`. If `NULL`, read from
-#'   `attr(headings_df, "coords")`.
 #' @param stat Statistic: `"bootstrap_ci"` (default) or `"sd"`.
 #' @param boot_reps Integer. Bootstrap replicates for `stat = "bootstrap_ci"`.
 #'   Default `1000L`. Ignored when `stat = "sd"`.
@@ -769,35 +763,20 @@ add_heading_density <- function(headings_df,
 #' @importFrom circular circular mean.circular sd.circular mle.vonmises.bootstrap.ci
 #' @export
 compute_circ_interval <- function(headings_df,
-                                  heading_col      = "heading",
-                                  colour_col       = NULL,
-                                  angle_convention = NULL,
-                                  coords           = NULL,
-                                  stat             = c("bootstrap_ci", "sd"),
-                                  boot_reps        = 1000L,
-                                  boot_alpha       = 0.05) {
+                                  heading_col = "heading",
+                                  colour_col  = NULL,
+                                  stat        = c("bootstrap_ci", "sd"),
+                                  boot_reps   = 1000L,
+                                  boot_alpha  = 0.05) {
   stat <- match.arg(stat)
   if (!heading_col %in% names(headings_df))
     stop("`heading_col` '", heading_col, "' not found in headings_df.")
-
-  if (is.null(angle_convention)) {
-    angle_convention <- attr(headings_df, "angle_convention")
-    if (is.null(angle_convention)) angle_convention <- "unit_circle"
-  }
-  angle_convention <- match.arg(angle_convention, c("clock", "unit_circle"))
-
-  if (is.null(coords)) {
-    coords <- attr(headings_df, "coords")
-    if (is.null(coords)) coords <- "absolute"
-  }
-  coords <- match.arg(coords, c("relative", "absolute"))
 
   use_colour <- !is.null(colour_col) && colour_col %in% names(headings_df)
   groups     <- if (use_colour) split(headings_df, headings_df[[colour_col]]) else list(headings_df)
 
   out_list <- lapply(seq_along(groups), function(i) {
     angles <- groups[[i]][[heading_col]]
-    angles <- if (angle_convention == "clock") .clock_to_uc(angles, coords) else angles
     row    <- .compute_one_interval(angles, stat, boot_reps, boot_alpha)
     if (use_colour) row[[colour_col]] <- names(groups)[[i]]
     row
@@ -807,7 +786,6 @@ compute_circ_interval <- function(headings_df,
   if (use_colour && is.factor(headings_df[[colour_col]]))
     out[[colour_col]] <- factor(out[[colour_col]],
                                 levels = levels(headings_df[[colour_col]]))
-  attr(out, "display_convention") <- attr(headings_df, "display_convention")
   out
 }
 
@@ -928,23 +906,19 @@ add_circ_interval <- function(interval_df,
 #' @importFrom rlang .data sym
 #' @export
 add_heading_interval <- function(headings_df,
-                                 heading_col      = "heading",
-                                 colour_col       = NULL,
-                                 angle_convention = NULL,
-                                 coords           = NULL,
-                                 stat             = c("bootstrap_ci", "sd"),
-                                 boot_reps        = 1000L,
-                                 boot_alpha       = 0.05,
-                                 radius           = 1.05,
-                                 linewidth        = 1.5,
-                                 colour           = NULL,
-                                 linetype         = "solid",
-                                 n_theta          = 500L) {
+                                 heading_col = "heading",
+                                 colour_col  = NULL,
+                                 stat        = c("bootstrap_ci", "sd"),
+                                 boot_reps   = 1000L,
+                                 boot_alpha  = 0.05,
+                                 radius      = 1.05,
+                                 linewidth   = 1.5,
+                                 colour      = NULL,
+                                 linetype    = "solid",
+                                 n_theta     = 500L) {
   stat <- match.arg(stat)
   iv   <- compute_circ_interval(headings_df, heading_col = heading_col,
                                 colour_col = colour_col,
-                                angle_convention = angle_convention,
-                                coords = coords,
                                 stat = stat,
                                 boot_reps = boot_reps, boot_alpha = boot_alpha)
   add_circ_interval(iv, colour_col = colour_col,
@@ -969,14 +943,6 @@ add_heading_interval <- function(headings_df,
 #'   `"heading"`.
 #' @param colour_col Optional. Name of a column to group by. One row is
 #'   returned per group. The same column maps to colour in [add_circ_mean()].
-#' @param angle_convention Convention for angles in `heading_col`: `"clock"`
-#'   (0 = North, clockwise) or `"unit_circle"` (0 = East, CCW). If `NULL`
-#'   (default), read from `attr(headings_df, "angle_convention")`; defaults to
-#'   `"unit_circle"` with a message if the attribute is also absent.
-#' @param coords Coordinate system: `"relative"` or `"absolute"`. If `NULL`
-#'   (default), read from `attr(headings_df, "coords")`; defaults to
-#'   `"absolute"` with a message if absent.
-#'
 #' @return A data frame with columns `mean_dir` (unit-circle radians, 0 to
 #'   2pi), `resultant_R` (0--1), and `colour_col` when supplied. Both are `NA`
 #'   when a group contains fewer than 2 finite angles.
@@ -985,30 +951,10 @@ add_heading_interval <- function(headings_df,
 #' @importFrom circular circular mean.circular rho.circular
 #' @export
 compute_circ_mean <- function(headings_df,
-                              heading_col      = "heading",
-                              colour_col       = NULL,
-                              angle_convention = NULL,
-                              coords           = NULL) {
+                              heading_col = "heading",
+                              colour_col  = NULL) {
   if (!heading_col %in% names(headings_df))
     stop("`heading_col` '", heading_col, "' not found in headings_df.")
-
-  if (is.null(angle_convention)) {
-    angle_convention <- attr(headings_df, "angle_convention")
-    if (is.null(angle_convention)) {
-      message("`angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.")
-      angle_convention <- "unit_circle"
-    }
-  }
-  angle_convention <- match.arg(angle_convention, c("clock", "unit_circle"))
-
-  if (is.null(coords)) {
-    coords <- attr(headings_df, "coords")
-    if (is.null(coords)) {
-      message("`coords` not found in headings_df attributes; defaulting to 'absolute'.")
-      coords <- "absolute"
-    }
-  }
-  coords <- match.arg(coords, c("relative", "absolute"))
 
   use_colour <- !is.null(colour_col) && colour_col %in% names(headings_df)
   groups     <- if (use_colour) split(headings_df, headings_df[[colour_col]]) else list(headings_df)
@@ -1021,10 +967,9 @@ compute_circ_mean <- function(headings_df,
       row <- data.frame(mean_dir = NA_real_, resultant_R = NA_real_,
                         stringsAsFactors = FALSE)
     } else {
-      uc_angles <- if (angle_convention == "clock") .clock_to_uc(angles, coords) else angles
-      circ_obj  <- circular::circular(uc_angles, units = "radians", modulo = "2pi")
-      mean_dir  <- .wrap_to_2pi(as.numeric(circular::mean.circular(circ_obj, na.rm = TRUE)))
-      R         <- as.numeric(circular::rho.circular(circ_obj, na.rm = TRUE))
+      circ_obj <- circular::circular(angles, units = "radians", modulo = "2pi")
+      mean_dir <- .wrap_to_2pi(as.numeric(circular::mean.circular(circ_obj, na.rm = TRUE)))
+      R        <- as.numeric(circular::rho.circular(circ_obj, na.rm = TRUE))
       row <- data.frame(mean_dir = mean_dir, resultant_R = R, stringsAsFactors = FALSE)
     }
 
@@ -1035,7 +980,6 @@ compute_circ_mean <- function(headings_df,
   out <- do.call(rbind, out_list)
   if (use_colour && is.factor(headings_df[[colour_col]]))
     out[[colour_col]] <- factor(out[[colour_col]], levels = levels(headings_df[[colour_col]]))
-  attr(out, "display_convention") <- attr(headings_df, "display_convention")
   out
 }
 
@@ -1137,17 +1081,14 @@ add_circ_mean <- function(summary_df,
 #' @importFrom grid arrow unit
 #' @export
 add_heading_arrow <- function(headings_df,
-                              heading_col      = "heading",
-                              colour_col       = NULL,
-                              angle_convention = NULL,
-                              coords           = NULL,
-                              linewidth        = 1,
-                              colour           = NULL,
-                              arrow_length_cm  = 0.2,
+                              heading_col     = "heading",
+                              colour_col      = NULL,
+                              linewidth       = 1,
+                              colour          = NULL,
+                              arrow_length_cm = 0.2,
                               ...) {
   sm <- compute_circ_mean(headings_df, heading_col = heading_col,
-                          colour_col = colour_col,
-                          angle_convention = angle_convention, coords = coords)
+                          colour_col = colour_col)
   add_circ_mean(sm, colour_col = colour_col,
                 linewidth = linewidth, colour = colour,
                 arrow_length_cm = arrow_length_cm, ...)
