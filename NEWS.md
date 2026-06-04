@@ -1,5 +1,10 @@
 # radiatR (development version)
 
+## Track metrics
+
+* New `path_straightness(x, y)` and `straightness_index(ts)` compute the path
+  straightness index (net displacement / path length, 0–1) per trajectory.
+
 ## Plotting
 
 * **Breaking:** the `radiate()` `style` argument (`"classic"`/`"minimal"`) is
@@ -17,6 +22,8 @@
 
 ## Shiny app
 
+* The Results summary table gains a **Straightness** column: the mean path
+  straightness index across each group's trials.
 * The Results step's Display panel gains a **Theme** dropdown (Void, Minimal,
   Classic, Black & white, Grey, Light, Dark, Line draw) that restyles the
   on-screen plot and the download.

@@ -820,6 +820,24 @@ server <- function(input, output, session) {
       )
       cm <- merge(cm, p_df, by = by_col, sort = FALSE)
 
+      # Mean path straightness per group: net displacement / path length per
+      # trial (0 = convoluted, 1 = straight), averaged over the group's trials.
+      # Join via a character-keyed lookup to avoid factor/character merge
+      # mismatches on the (possibly ordered-factor) condition column.
+      st  <- straightness_index(rv$ts)
+      idc <- rv$ts@cols$id
+      if (!is.null(gc)) {
+        cond_map <- unique(as.data.frame(rv$ts)[, c(idc, gc), drop = FALSE])
+        st  <- merge(st, cond_map, by = idc)
+        agg <- tapply(st$straightness, as.character(st[[gc]]),
+                      function(v) mean(v, na.rm = TRUE))
+      } else {
+        # No condition column: each group is a single trial.
+        agg <- stats::setNames(st$straightness, as.character(st[[idc]]))
+      }
+      cm[["Straightness"]] <-
+        round(as.numeric(agg[as.character(cm[[by_col]])]), 3)
+
       names(cm)[names(cm) == by_col]         <- "Group"
       names(cm)[names(cm) == "mean_dir_deg"] <- "Direction (°)"
       names(cm)[names(cm) == "resultant_R"]  <- "R"
