@@ -136,7 +136,11 @@ num_or <- function(v, default) {
 }
 
 derive_hd <- function(ts, method, circ0, circ1) {
-  args <- list(x = ts, coords = "absolute")
+  # Use relative coords when available so headings are in the same frame as
+  # the rel_x/rel_y display (stimulus fixed at East). Fall back to absolute
+  # for datasets without a normalised relative coordinate system.
+  has_rel <- !is.null(ts@cols$rel_x) && !is.null(ts@cols$rel_y)
+  args <- list(x = ts, coords = if (has_rel) "relative" else "absolute")
   if (method == "crossing") {
     args$rule  <- "crossing"
     args$circ0 <- circ0
