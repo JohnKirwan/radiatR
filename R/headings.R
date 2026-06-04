@@ -595,10 +595,8 @@ setMethod("derive_headings", "TrajSet", function(
 #'
 #' @export
 circ_summary_headings <- function(x, rule = c("crossing","distal","straight","origin_mean","net","velocity_mean"),
-                                  group_by = "id", ...,
-                                  angle_convention = c("clock", "unit_circle")) {
-  rule             <- match.arg(rule)
-  angle_convention <- match.arg(angle_convention)
+                                  group_by = "id", ...) {
+  rule <- match.arg(rule)
 
   hd <- derive_headings(x, rule = rule, ...)
   coords <- attr(hd, "coords") %||% "absolute"
@@ -634,8 +632,7 @@ circ_summary_headings <- function(x, rule = c("crossing","distal","straight","or
     mu  <- circular::mean.circular(tc, na.rm = TRUE)
     R   <- circular::rho.circular(tc,  na.rm = TRUE)
     kap <- .est_kappa_safe(tc, fallback = .kappa_from_Rbar(as.numeric(R)))
-    uc_mu  <- .wrap_to_2pi(as.numeric(mu))
-    out_mu <- if (angle_convention == "clock") .uc_to_clock(uc_mu, coords) else uc_mu
+    out_mu <- .wrap_to_2pi(as.numeric(mu))
     data.frame(.grp = g, mean_dir = out_mu, resultant_R = as.numeric(R),
                kappa = as.numeric(kap), n = length(th))
   })
@@ -654,8 +651,6 @@ circ_summary_headings <- function(x, rule = c("crossing","distal","straight","or
     res <- cbind(parts, res[, setdiff(names(res), ".grp"), drop = FALSE])
   }
   rownames(res) <- NULL
-  attr(res, "angle_convention") <- angle_convention
-  attr(res, "coords")           <- coords
   res
 }
 

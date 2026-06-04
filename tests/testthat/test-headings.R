@@ -97,8 +97,7 @@ test_that("circ_summary_headings mean_dir and resultant_R are analytically corre
 
   summ <- circ_summary_headings(ts, rule = "crossing",
                                 circ0 = 0.2, circ1 = 0.4,
-                                group_by = NULL,
-                                angle_convention = "unit_circle")
+                                group_by = NULL)
 
   expect_equal(summ$resultant_R,              2 / 3, tolerance = 1e-6)
   expect_equal(summ$mean_dir %% (2 * pi), pi / 2,   tolerance = 1e-6)
@@ -110,8 +109,7 @@ test_that("circ_summary_headings gives resultant_R = 1 when all headings are ide
 
   summ <- circ_summary_headings(ts, rule = "crossing",
                                 circ0 = 0.2, circ1 = 0.4,
-                                group_by = NULL,
-                                angle_convention = "unit_circle")
+                                group_by = NULL)
 
   expect_equal(summ$resultant_R,             1,       tolerance = 1e-6)
   expect_equal(summ$mean_dir %% (2 * pi), pi / 3,    tolerance = 1e-6)
@@ -124,8 +122,7 @@ test_that("circ_summary_headings gives resultant_R near 0 for uniformly spread h
 
   summ <- circ_summary_headings(ts, rule = "crossing",
                                 circ0 = 0.2, circ1 = 0.4,
-                                group_by = NULL,
-                                angle_convention = "unit_circle")
+                                group_by = NULL)
 
   expect_equal(summ$resultant_R, 0, tolerance = 1e-6)
 })
@@ -235,35 +232,6 @@ test_that("derive_headings errors when coords='relative' but rel_x/rel_y not reg
 })
 
 
-# ---- circ_summary_headings angle_convention tests ----------------------------
-
-test_that("circ_summary_headings respects angle_convention='clock'", {
-  # Four trajectories all heading North (UC pi/2).
-  # Absolute clock: (pi/2 - pi/2) %% 2pi = 0
-  angles <- rep(pi / 2, 4)
-  ts <- make_multi_crossing_ts(angles)
-  summ <- circ_summary_headings(ts, rule = "crossing",
-                                circ0 = 0.2, circ1 = 0.4,
-                                group_by = NULL,
-                                angle_convention = "clock")
-  expect_equal(summ$mean_dir, 0, tolerance = 1e-6)
-  expect_equal(attr(summ, "angle_convention"), "clock")
-})
-
-test_that("circ_summary_headings clock vs unit_circle give different mean_dir for non-North headings", {
-  angles <- rep(pi / 2, 4)
-  ts <- make_multi_crossing_ts(angles)
-  summ_clock <- circ_summary_headings(ts, rule = "crossing",
-                                      circ0 = 0.2, circ1 = 0.4,
-                                      group_by = NULL,
-                                      angle_convention = "clock")
-  summ_uc    <- circ_summary_headings(ts, rule = "crossing",
-                                      circ0 = 0.2, circ1 = 0.4,
-                                      group_by = NULL,
-                                      angle_convention = "unit_circle")
-  expect_equal(summ_uc$mean_dir,    pi / 2, tolerance = 1e-6)
-  expect_equal(summ_clock$mean_dir, 0,      tolerance = 1e-6)
-})
 
 
 # ---- bodypart_axis heading rule ----------------------------------------------
