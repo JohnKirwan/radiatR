@@ -132,10 +132,13 @@ rsconnect::deployApp(system.file("app", package = "radiatR"))
 ```
 
 **3. Static site (no server)** — a `shinylive` build runs the app entirely
-in the browser via WebAssembly. The GitHub Actions workflow in
+in the browser via WebAssembly, so uploaded files never leave the user's
+machine (which suits sensitive data). The GitHub Actions workflow in
 `.github/workflows/shinylive.yaml` publishes it to GitHub Pages alongside
-the documentation, at <https://johnkirwan.github.io/radiatR/app/>. Uploaded
-files never leave the user's machine, which suits sensitive data.
+the documentation, at <https://johnkirwan.github.io/radiatR/app/>. The build
+runs on each **published GitHub Release**: it compiles radiatR into a webR
+WebAssembly image (attached to the release), then exports and deploys the
+app. Publish or re-publish a release to refresh the hosted app.
 
 ## Optional Dependencies
 

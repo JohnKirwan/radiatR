@@ -1,34 +1,57 @@
-# Build the bundled Shiny app (inst/app) as a static shinylive site and
-# deploy it to GitHub Pages under /app, alongside the pkgdown documentation.
+# Build the bundled Shiny app (inst/app) as a static shinylive site and deploy
+# it to GitHub Pages under /app, alongside the pkgdown documentation.
 #
-# radiatR is a pure-R package, so no emscripten toolchain is needed: rwasm
-# builds it (and assembles a webR package repository) from the local source,
-# and all compiled dependencies (circular, ggplot2, shiny, ...) are pulled
-# as prebuilt WASM binaries from https://repo.r-wasm.org.
+# Why this is release-driven, not push-driven:
+#
+# shinylive resolves the WebAssembly binary for a package from that package's
+# *installed* DESCRIPTION metadata. For a package installed from GitHub it
+# downloads a `library.data` / `library.js.metadata` filesystem image attached
+# to the GitHub Release whose tag matches the install ref. radiatR is not on
+# CRAN's WASM mirror (repo.r-wasm.org), so it must ship its own image.
+#
+# So this workflow runs only on a published release, in two jobs:
+#   1. `wasm-assets` builds radiatR (and any `Config/Needs/wasm` deps) into a
+#      webR filesystem image inside the official webR/Emscripten container and
+#      attaches it to the release. (r-wasm/actions maintained reusable workflow.)
+#   2. `deploy-app` installs radiatR from the release tag — so its DESCRIPTION
+#      carries the GitHub remote metadata shinylive needs — exports the app
+#      (shinylive auto-downloads the image from step 1), and publishes it.
+#
+# To refresh the hosted app, publish (or re-publish) a GitHub Release.
 on:
-  push:
-    branches: [main, master]
-  workflow_dispatch:
+  release:
+    types: [published]
 
 name: shinylive.yaml
 
-permissions:
-  contents: write
-
 jobs:
-  shinylive:
+  # Build radiatR's WebAssembly filesystem image and attach it to the release.
+  wasm-assets:
+    uses: r-wasm/actions/.github/workflows/release-file-system-image.yml@v1
+    permissions:
+      # For publishing artifact files to the release
+      contents: write
+      # To download GitHub Packages within action
+      repository-projects: read
+
+  # Export the app as a static shinylive site and deploy it to gh-pages /app.
+  deploy-app:
+    needs: wasm-assets
     runs-on: ubuntu-latest
     concurrency:
       group: pages
       cancel-in-progress: false
+    permissions:
+      contents: write
     env:
-      # The project .Rprofile sources renv/activate.R, which switches R to the
-      # renv project library. setup-r-dependencies installs its toolchain
-      # (including pak itself) with pak::lockfile_install(); installing pak into
-      # the active renv library fails because pak cannot overwrite its own
-      # running copy ("Unable to move package ... to .../pak"). Disable the renv
-      # autoloader so CI installs into the normal runner library instead.
+      # The project .Rprofile sources renv/activate.R, switching R to the renv
+      # project library. setup-r-dependencies installs its toolchain (pak
+      # included) with pak::lockfile_install(); installing pak into the active
+      # renv library aborts because pak cannot overwrite its own running copy.
+      # Disable the renv autoloader so CI installs into the normal library.
       RENV_CONFIG_AUTOLOADER_ENABLED: false
+      # Needed for shinylive to query the GitHub release assets API.
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,35 +61,19 @@ jobs:
         with:
           use-public-rspm: true
 
-      - name: Install build tooling
+      # Install shinylive plus radiatR FROM the release tag. Installing from
+      # GitHub (not local source) gives radiatR the RemoteType/RemoteRef
+      # DESCRIPTION fields that shinylive uses to locate the release's WASM
+      # image; the ref must match the release tag built in `wasm-assets`.
+      - name: Install shinylive and radiatR (from the release tag)
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          # rwasm is not on CRAN; it is published on the r-wasm r-universe and
-          # GitHub. Install it from source (pak resolves its dependencies,
-          # including pkgbuild). shinylive is on CRAN.
           packages: |
             any::shinylive
-            github::r-wasm/rwasm
-
-      - name: Build radiatR + dependencies into a WASM package repo
-        run: |
-          dir.create("_build/repo", recursive = TRUE, showWarnings = FALSE)
-          # Build radiatR from local source and add it, with all of its
-          # dependencies, to a local webR-compatible repository.
-          rwasm::add_pkg(
-            packages = "radiatR",
-            local    = c(radiatR = "."),
-            repo_dir = "_build/repo"
-          )
-        shell: Rscript {0}
+            github::JohnKirwan/radiatR@${{ github.event.release.tag_name }}
 
       - name: Export the app as a static shinylive site
-        run: |
-          local_repo <- paste0("file://", normalizePath("_build/repo"))
-          # Resolve radiatR from the freshly built local repo, and every other
-          # package from the public WASM repo.
-          options(shinylive.webr_repos = c(local_repo, "https://repo.r-wasm.org"))
-          shinylive::export(appdir = "inst/app", destdir = "_site/app")
+        run: shinylive::export(appdir = "inst/app", destdir = "_site/app")
         shell: Rscript {0}
 
       - name: Deploy to gh-pages /app (preserving pkgdown content)
