@@ -27,7 +27,7 @@ name: shinylive.yaml
 jobs:
   # Build radiatR's WebAssembly filesystem image and attach it to the release.
   wasm-assets:
-    uses: r-wasm/actions/.github/workflows/release-file-system-image.yml@v1
+    uses: r-wasm/actions/.github/workflows/release-file-system-image.yml@v3
     permissions:
       # For publishing artifact files to the release
       contents: write
