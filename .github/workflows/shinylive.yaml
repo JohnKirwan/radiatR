@@ -21,6 +21,14 @@ jobs:
     concurrency:
       group: pages
       cancel-in-progress: false
+    env:
+      # The project .Rprofile sources renv/activate.R, which switches R to the
+      # renv project library. setup-r-dependencies installs its toolchain
+      # (including pak itself) with pak::lockfile_install(); installing pak into
+      # the active renv library fails because pak cannot overwrite its own
+      # running copy ("Unable to move package ... to .../pak"). Disable the renv
+      # autoloader so CI installs into the normal runner library instead.
+      RENV_CONFIG_AUTOLOADER_ENABLED: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
