@@ -50,19 +50,6 @@ test_that("shepherding functions wrap angles into valid ranges", {
 
 })
 
-test_that("circ_summary angle_convention='clock' converts mean_dir output", {
-  # x=0, y>0 gives atan2(y,x) = pi/2 for all points (North in unit-circle)
-  df <- data.frame(id = "A", time = 1:4,
-                   x = c(0, 0, 0, 0), y = c(0.2, 0.4, 0.6, 0.8))
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
-                normalize_xy = FALSE)
-  summ_clock <- circ_summary(ts, angle_convention = "clock")
-  # Absolute clock: (pi/2 - pi/2) %% 2pi = 0
-  expect_equal(summ_clock$mean_dir, 0, tolerance = 1e-6)
-  # Default (unit_circle) unchanged
-  summ_uc <- circ_summary(ts)
-  expect_equal(summ_uc$mean_dir, pi / 2, tolerance = 1e-6)
-})
 
 # ---- zone_dwell ---------------------------------------------------------------
 
@@ -288,7 +275,7 @@ test_that("circ_summarise grand summary matches circular package values", {
 
   expect_equal(result$n,           3L,       tolerance = 1e-8)
   expect_equal(result$mean_dir,    exp_mean, tolerance = 1e-8)
-  expect_equal(result$mean_dir_deg, exp_mean * 180 / pi, tolerance = 1e-8)
+  expect_equal(result$mean_dir_deg, (pi/2 - exp_mean) %% (2*pi) * 180/pi, tolerance = 1e-8)
   expect_equal(result$resultant_R, exp_R,    tolerance = 1e-8)
 })
 
@@ -406,53 +393,24 @@ test_that("circ_summarise stats ordering applies within grouped output too", {
   expect_equal(names(result), c("arc", "resultant_R", "n"))
 })
 
-test_that("circ_summarise clock+relative: all-zero angles give mean_dir=0, R=1", {
-  # Clock 0 (toward stimulus, relative) -> UC 0 via (-0) %% 2pi = 0
-  # mean of UC 0 is UC 0 -> back to clock: (-0) %% 2pi = 0
-  hd     <- data.frame(heading = c(0, 0, 0))
-  result <- circ_summarise(hd, heading, units = "radians",
-                            angle_convention = "clock", coords = "relative")
-  expect_equal(result$mean_dir,    0,          tolerance = 1e-6)
-  expect_equal(result$resultant_R, 1,          tolerance = 1e-6)
-  expect_equal(result$mean_dir_deg, 0,         tolerance = 1e-6)
+test_that("circ_summarise mean_dir_deg uses clock degrees by default", {
+  hd <- data.frame(heading = rep(pi / 2, 4))  # UC North = clock 0
+  out <- circ_summarise(hd, heading, units = "radians")
+  expect_equal(out$mean_dir_deg, 0, tolerance = 1e-6)
 })
 
-test_that("circ_summarise clock+relative: mean_dir is in clock convention", {
-  # Clock 90 deg = pi/2 rad -> UC: (-pi/2) %% 2pi = 3pi/2 = 270 deg
-  # mean of c(3pi/2, 3pi/2) in UC = 3pi/2 -> back to clock: (-3pi/2) %% 2pi = pi/2
-  hd     <- data.frame(heading = c(pi/2, pi/2))
-  result <- circ_summarise(hd, heading, units = "radians",
-                            angle_convention = "clock", coords = "relative")
-  expect_equal(result$mean_dir, pi/2, tolerance = 1e-6)
+test_that("circ_summarise mean_dir_deg respects custom display", {
+  hd <- data.frame(heading = rep(0, 4))  # UC East
+  d  <- circ_display(zero = 0)           # East = display 0
+  out <- circ_summarise(hd, heading, units = "radians", display = d)
+  expect_equal(out$mean_dir_deg, 0, tolerance = 1e-6)
 })
 
-test_that("circ_summarise reads angle_convention from data frame attributes", {
-  hd <- data.frame(heading = c(pi/6, pi/4, pi/3))
-  attr(hd, "angle_convention") <- "clock"
-  attr(hd, "coords")           <- "relative"
-  result_attr     <- circ_summarise(hd, heading, units = "radians")
-  result_explicit <- circ_summarise(hd, heading, units = "radians",
-                                     angle_convention = "clock",
-                                     coords = "relative")
-  expect_equal(result_attr$mean_dir, result_explicit$mean_dir, tolerance = 1e-8)
-  expect_equal(result_attr$resultant_R, result_explicit$resultant_R, tolerance = 1e-8)
-})
-
-test_that("circ_summarise explicit angle_convention overrides attribute", {
-  hd <- data.frame(heading = c(pi/6, pi/4, pi/3))
-  attr(hd, "angle_convention") <- "clock"
-  attr(hd, "coords") <- "relative"
-
-  r_explicit_uc    <- circ_summarise(hd, heading, units = "radians", angle_convention = "unit_circle")
-  r_from_attr      <- circ_summarise(hd, heading, units = "radians")
-  r_explicit_clock <- circ_summarise(hd, heading, units = "radians",
-                                      angle_convention = "clock", coords = "relative")
-
-  # Attribute-based call must match explicit clock call
-  expect_equal(r_from_attr$mean_dir, r_explicit_clock$mean_dir, tolerance = 1e-8)
-  # Explicit UC override runs without error and produces a finite result
-  # (clock+relative and UC are numerically equivalent by the negation identity)
-  expect_true(is.finite(r_explicit_uc$mean_dir))
+test_that("circ_summarise display units=radians returns mean_dir_deg in radians", {
+  hd <- data.frame(heading = rep(0, 4))   # UC East = clock pi/2
+  out <- circ_summarise(hd, heading, units = "radians",
+                         display = circ_display(units = "radians"))
+  expect_equal(out$mean_dir_deg, pi / 2, tolerance = 1e-6)
 })
 
 # ---- circ_summarise edge cases ------------------------------------------------
