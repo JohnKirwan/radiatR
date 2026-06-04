@@ -142,9 +142,10 @@ derive_hd <- function(ts, method, circ0, circ1) {
   has_rel <- !is.null(ts@cols$rel_x) && !is.null(ts@cols$rel_y)
   args <- list(x = ts, coords = if (has_rel) "relative" else "absolute")
   if (method == "crossing") {
-    args$rule  <- "crossing"
-    args$circ0 <- circ0
-    args$circ1 <- circ1
+    args$rule          <- "crossing"
+    args$circ0         <- circ0
+    args$circ1         <- circ1
+    args$return_coords <- TRUE
   } else {
     args$rule <- method
   }
@@ -458,7 +459,7 @@ server <- function(input, output, session) {
             col_widths = c(6, 6),
             sliderInput(
               "circ0", "Inner ring",
-              min = 0, max = 0.9, value = 0.3, step = 0.05
+              min = 0.05, max = 0.9, value = 0.3, step = 0.05
             ),
             sliderInput(
               "circ1", "Outer ring",
@@ -486,10 +487,13 @@ server <- function(input, output, session) {
             card(
               card_header("Display"),
               card_body(
-                .layer_switch("show_tracks", "Trajectories", TRUE),
-                .layer_switch("show_points", "Heading points", TRUE),
-                .layer_switch("show_arrow",  "Directedness arrow", TRUE),
-                .layer_switch("show_ci",     "Mean-direction CI", FALSE),
+                .layer_switch("show_tracks",   "Trajectories",       TRUE),
+                .layer_switch("show_points",  "Heading points",     TRUE),
+                .layer_switch("show_arrow",   "Directedness arrow", TRUE),
+                .layer_switch("show_ci",      "Mean-direction CI",  FALSE),
+                .layer_switch("show_vectors", "Heading vectors",    FALSE),
+                .layer_switch("show_rayleigh","Rayleigh circle",    FALSE),
+                .layer_switch("show_vtest",   "V-test line",        FALSE),
                 tags$hr(class = "my-2"),
                 sliderInput(
                   "preview_px", "Preview size (px)",
@@ -681,6 +685,63 @@ server <- function(input, output, session) {
         hd_disp, colour_col = gc, stat = "bootstrap_ci"
       )
     }
+
+    # Heading vectors: inner-crossing → circle boundary (crossing rule only).
+    if (tog(input$show_vectors, FALSE) &&
+        all(c("x_inner", "y_inner") %in% names(hd_disp))) {
+      p <- p + add_heading_vectors(hd_disp)
+    }
+
+    # Rayleigh critical circle at alpha = 0.05 (asymptotic approximation
+    # R_crit = sqrt(-log(alpha)/n)). Computed per group when faceted.
+    if (tog(input$show_rayleigh, FALSE)) {
+      alpha    <- 0.05
+      theta_sq <- seq(0, 2 * pi, length.out = 200L)
+      if (is.null(gc)) {
+        n      <- sum(is.finite(rv$hd$heading))
+        r_crit <- sqrt(-log(alpha) / n)
+        ray_df <- data.frame(.x = r_crit * cos(theta_sq),
+                             .y = r_crit * sin(theta_sq))
+      } else {
+        grps  <- if (is.factor(rv$hd[[gc]])) levels(rv$hd[[gc]])
+                 else unique(rv$hd[[gc]])
+        parts <- lapply(grps, function(g) {
+          n <- sum(is.finite(rv$hd$heading[rv$hd[[gc]] == g]))
+          if (n < 2L) return(NULL)
+          r_crit <- sqrt(-log(alpha) / n)
+          d <- data.frame(.x = r_crit * cos(theta_sq),
+                          .y = r_crit * sin(theta_sq))
+          d[[gc]] <- if (is.factor(rv$hd[[gc]]))
+            factor(g, levels = levels(rv$hd[[gc]])) else g
+          d
+        })
+        ray_df <- do.call(rbind, Filter(Negate(is.null), parts))
+      }
+      if (!is.null(ray_df) && nrow(ray_df) > 0L)
+        p <- p + ggplot2::geom_path(
+          data        = ray_df,
+          mapping     = ggplot2::aes(x = .data$.x, y = .data$.y),
+          colour      = "firebrick",
+          linewidth   = 0.7,
+          linetype    = "dashed",
+          inherit.aes = FALSE
+        )
+    }
+
+    # V-test reference line: the expected direction (display top = UC East in
+    # the relative coordinate frame). Always (0, 0) → (0, 1) in display coords.
+    # ggplot2 replicates data-less geoms across all facets automatically.
+    if (tog(input$show_vtest, FALSE)) {
+      p <- p + ggplot2::geom_segment(
+        data        = data.frame(x = 0, y = 0, xend = 0, yend = 1),
+        mapping     = ggplot2::aes(x = x, y = y, xend = xend, yend = yend),
+        colour      = "steelblue",
+        linewidth   = 0.8,
+        linetype    = "dashed",
+        inherit.aes = FALSE
+      )
+    }
+
     p
   }
 
