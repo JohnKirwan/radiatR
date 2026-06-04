@@ -58,8 +58,7 @@ optionally grouped by one or more metadata columns.</p>
 <span>  <span class="va">x</span>,</span>
 <span>  rule <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"crossing"</span>, <span class="st">"distal"</span>, <span class="st">"straight"</span>, <span class="st">"origin_mean"</span>, <span class="st">"net"</span>, <span class="st">"velocity_mean"</span><span class="op">)</span>,</span>
 <span>  group_by <span class="op">=</span> <span class="st">"id"</span>,</span>
-<span>  <span class="va">...</span>,</span>
-<span>  angle_convention <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"clock"</span>, <span class="st">"unit_circle"</span><span class="op">)</span></span>
+<span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -88,19 +87,12 @@ for a single global summary row. Any column carried through by
 <dd><p>Additional arguments forwarded to [derive_headings()], such as
 `circ0`, `circ1`, `return_coords`, or `coords`.</p></dd>
 
-
-<dt id="arg-angle-convention">angle_convention<a class="anchor" aria-label="anchor" href="#arg-angle-convention"></a></dt>
-<dd><p>Character. Output convention for `mean_dir`:
-`"clock"` (default; 0 = North, clockwise) or `"unit_circle"` (0 = East,
-counterclockwise). The returned summary carries the same
-`angle_convention` attribute for downstream use by [circ_mean_segments()].</p></dd>
-
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A `data.frame` with grouping columns followed by `mean_dir`
-  (radians, 0 to 2π), `resultant_R` (0–1), `kappa` (von Mises
-  concentration), and `n` (number of valid headings in the group).</p>
+  (radians, unit-circle convention, 0 to 2π), `resultant_R` (0–1), `kappa`
+  (von Mises concentration), and `n` (number of valid headings in the group).</p>
     </div>
 
     <div class="section level2">

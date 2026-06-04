@@ -10,13 +10,7 @@ regardless of the input convention, making it suitable for direct use in
 ## Usage
 
 ``` r
-compute_circ_mean(
-  headings_df,
-  heading_col = "heading",
-  colour_col = NULL,
-  angle_convention = NULL,
-  coords = NULL
-)
+compute_circ_mean(headings_df, heading_col = "heading", colour_col = NULL)
 ```
 
 ## Arguments
@@ -35,20 +29,6 @@ compute_circ_mean(
 
   Optional. Name of a column to group by. One row is returned per group.
   The same column maps to colour in \[add_circ_mean()\].
-
-- angle_convention:
-
-  Convention for angles in \`heading_col\`: \`"clock"\` (0 = North,
-  clockwise) or \`"unit_circle"\` (0 = East, CCW). If \`NULL\`
-  (default), read from \`attr(headings_df, "angle_convention")\`;
-  defaults to \`"unit_circle"\` with a message if the attribute is also
-  absent.
-
-- coords:
-
-  Coordinate system: \`"relative"\` or \`"absolute"\`. If \`NULL\`
-  (default), read from \`attr(headings_df, "coords")\`; defaults to
-  \`"absolute"\` with a message if absent.
 
 ## Value
 

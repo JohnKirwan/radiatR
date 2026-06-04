@@ -6,8 +6,15 @@ degrees on a unit circle.
 ## Usage
 
 ``` r
-degree_labs()
+degree_labs(display = circ_display())
 ```
+
+## Arguments
+
+- display:
+
+  A \[\`circ_display\`\] object. Controls whether labels are shown in
+  degrees or radians. Default \`circ_display()\`.
 
 ## Value
 

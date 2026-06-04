@@ -122,7 +122,8 @@ radiate(cpunctatus,
         group_col  = "trial_id",
         colour_col = "arc",
         show_labels = FALSE,
-        show_arrow  = FALSE)
+        show_arrow  = FALSE,
+        display    = circ_display(zero = 0))
 ```
 
 ![](radiatR_files/figure-html/plot-all-1.png)
@@ -140,8 +141,6 @@ inner-ring crossing position.
 
 hd <- derive_headings(cpunctatus, rule = "crossing",
                       circ0 = 0.2, circ1 = 0.4,
-                      coords = "relative",
-                      angle_convention = "clock",
                       return_coords = TRUE)
 names(hd)[names(hd) == "id"] <- "trial_id"
 # join the target half-width (arc) from the dataset for grouping/faceting
@@ -149,14 +148,15 @@ arc_map <- unique(cpunctatus@data[, c("trial_id", "arc")])
 hd       <- merge(hd, arc_map, by = "trial_id")
 hd$arc   <- factor(hd$arc)
 attr(hd, "colour_col") <- "arc"
+attr(hd, "display")    <- circ_display(zero = 0)
 head(hd[, c("trial_id", "arc", "heading", "x_inner", "y_inner")])
 #>   trial_id arc   heading     x_inner     y_inner
-#> 1   10_1_1  10 5.8780666  0.19183909 -0.05591203
-#> 2  10_10_1  10 3.4283044  0.02644823 -0.19731429
-#> 3  10_11_1  10 0.3474011  0.18450674  0.07663923
-#> 4  10_12_1  10 4.1794923 -0.17614320  0.09470812
-#> 5  10_13_1  10 5.5416100 -0.08095050  0.18284344
-#> 6  10_14_1  10 1.3611096 -0.09114321 -0.17791172
+#> 1   10_1_1  10 0.4819203  0.19556350 -0.04102813
+#> 2  10_10_1  10 6.0509861 -0.03715972  0.19558015
+#> 3  10_11_1  10 1.2000610 -0.07231344  0.18624466
+#> 4  10_12_1  10 2.1808564 -0.18291981  0.08084798
+#> 5  10_13_1  10 5.4614739  0.18223038  0.08232129
+#> 6  10_14_1  10 1.7854935  0.09025066  0.17836615
 ```
 
 Overlaying the heading endpoints (one hollow circle per trial) and the
@@ -169,21 +169,21 @@ p_all <- radiate(cpunctatus,
                  group_col   = "trial_id",
                  colour_col  = "arc",
                  show_labels = FALSE,
-                 show_arrow  = FALSE) +
+                 show_arrow  = FALSE,
+                 display     = circ_display(zero = 0)) +
   add_heading_points(hd, colour_col = "arc", size = 1, alpha = 0.6)
 
 p_all + add_heading_arrow(hd)
-#> `angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.
-#> `coords` not found in headings_df attributes; defaulting to 'absolute'.
 #> Warning: Removed 25 rows containing missing values or values outside the scale range
 #> (`geom_point()`).
 ```
 
 ![](radiatR_files/figure-html/headings-overlay-1.png)
 
-The grand mean arrow points at 22.4° relative to the reference direction
-(clock convention; 0° = toward reference) with *R* = 0.13, reflecting
-the overall reference-relative tendency across all conditions.
+The grand mean arrow points at 289.8° relative to the reference
+direction (clock convention; 0° = toward reference) with *R* = 0.08,
+reflecting the overall reference-relative tendency across all
+conditions.
 
 ## Circular Interval Arc
 
@@ -223,7 +223,8 @@ p <- radiate(cpunctatus,
              group_col   = "trial_id",
              colour_col  = "arc",
              show_labels = FALSE,
-             show_arrow  = FALSE)
+             show_arrow  = FALSE,
+             display     = circ_display(zero = 0))
 p
 ```
 
@@ -246,8 +247,6 @@ p
 ``` r
 
 p <- p + add_heading_arrow(hd)
-#> `angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.
-#> `coords` not found in headings_df attributes; defaulting to 'absolute'.
 p
 #> Warning: Removed 25 rows containing missing values or values outside the scale range
 #> (`geom_point()`).
@@ -301,11 +300,8 @@ cpunctatus_cc@data   <- assign_cycle_colours(cpunctatus@data,
 colour_map <- unique(cpunctatus_cc@data[, c("trial_id", "cycle_colour")])
 hd_cc      <- merge(hd, colour_map,
                     by      = "trial_id", all.x = TRUE)
-# merge() strips attributes — restore convention metadata from hd
-attr(hd_cc, "angle_convention")   <- attr(hd, "angle_convention")
-attr(hd_cc, "coords")             <- attr(hd, "coords")
-attr(hd_cc, "display_convention") <- attr(hd, "display_convention")
-attr(hd_cc, "colour_col")         <- "cycle_colour"
+attr(hd_cc, "display")    <- attr(hd, "display", exact = TRUE)
+attr(hd_cc, "colour_col") <- "cycle_colour"
 ```
 
 ``` r
@@ -316,7 +312,8 @@ p <- radiate(cpunctatus_cc,
         panel_by     = "arc",
         ncol         = 3,
         show_labels  = FALSE,
-        show_arrow   = FALSE)
+        show_arrow   = FALSE,
+        display      = circ_display(zero = 0))
 p
 ```
 
@@ -362,8 +359,6 @@ p
 ``` r
 
 p <- p + add_heading_arrow(hd_cc, colour_col = "arc", colour = "black")
-#> `angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.
-#> `coords` not found in headings_df attributes; defaulting to 'absolute'.
 p
 #> Warning: Removed 25 rows containing missing values or values outside the scale range
 #> (`geom_segment()`).
@@ -422,14 +417,13 @@ radiate(cpunctatus_cc,
         panel_by     = "arc",
         ncol         = 3,
         show_labels  = FALSE,
-        show_arrow   = FALSE) +
+        show_arrow   = FALSE,
+        display      = circ_display(zero = 0)) +
   add_heading_density(hd_cc, colour_col = "arc",
                       method = "vonmises", scale = 0.4,
                       fill = "grey80", alpha = 0.35) +
   add_heading_vectors(hd_cc) +
   add_heading_arrow(hd_cc, colour_col = "arc", colour = "black")
-#> `angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.
-#> `coords` not found in headings_df attributes; defaulting to 'absolute'.
 #> Warning: Removed 25 rows containing missing values or values outside the scale range
 #> (`geom_segment()`).
 ```
@@ -466,13 +460,12 @@ radiate(cpunctatus,
         panel_by     = "arc",
         ncol         = 3,
         show_labels  = FALSE,
-        show_arrow   = FALSE) +
+        show_arrow   = FALSE,
+        display      = circ_display(zero = 0)) +
   add_circular_density(dens_boot, colour_col = "arc",
                        scale = 0.4, fill = "grey80", alpha = 0.35,
                        ci_fill = "grey60", ci_alpha = 0.35) +
   add_heading_arrow(hd, colour_col = "arc", colour = "black")
-#> `angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.
-#> `coords` not found in headings_df attributes; defaulting to 'absolute'.
 ```
 
 ![](radiatR_files/figure-html/bootstrap-ci-1.png)
@@ -494,17 +487,15 @@ returns the per-condition statistics behind the arrows above:
 ``` r
 
 compute_circ_mean(hd, colour_col = "arc")[, c("arc", "mean_dir", "resultant_R")]
-#> `angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.
-#> `coords` not found in headings_df attributes; defaulting to 'absolute'.
-#>   arc  mean_dir resultant_R
-#> 1   0 3.9737245  0.07723939
-#> 2   5 5.9137932  0.15615485
-#> 3  10 4.3318052  0.28083874
-#> 4  15 6.2827942  0.19793492
-#> 5  20 3.3811981  0.09652689
-#> 6  30 0.1860118  0.05781662
-#> 7  40 6.1979902  0.63455690
-#> 8  50 0.2637565  0.46069491
+#>   arc mean_dir resultant_R
+#> 1   0 2.370302  0.22038448
+#> 2   5 5.445923  0.03152853
+#> 3  10 1.352548  0.26676323
+#> 4  15 6.138757  0.26959287
+#> 5  20 3.954391  0.09003068
+#> 6  30 0.723867  0.17875428
+#> 7  40 3.273545  0.13024377
+#> 8  50 1.232955  0.09500930
 ```
 
 For within-trial path consistency (tortuosity),
@@ -782,13 +773,12 @@ returns `NA` because every trial has a most-distal frame.
 ``` r
 
 hd_distal <- derive_headings(cpunctatus, rule = "distal",
-                              coords = "relative",
-                              angle_convention = "clock",
                               return_coords = TRUE)
 names(hd_distal)[names(hd_distal) == "id"] <- "trial_id"
 # join the target half-width (arc) from the dataset, as for the crossing rule
 hd_distal     <- merge(hd_distal, arc_map, by = "trial_id")
 hd_distal$arc <- factor(hd_distal$arc)
+attr(hd_distal, "display") <- circ_display(zero = 0)
 ```
 
 Per-condition resultant lengths from `"distal"` are very close to those
@@ -797,23 +787,19 @@ from `"crossing"`, consistent with millipede tracks being fairly direct:
 ``` r
 
 sm_cross  <- compute_circ_mean(hd,       colour_col = "arc")[, c("arc", "resultant_R")]
-#> `angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.
-#> `coords` not found in headings_df attributes; defaulting to 'absolute'.
 sm_distal <- compute_circ_mean(hd_distal, colour_col = "arc")[, c("arc", "resultant_R")]
-#> `angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.
-#> `coords` not found in headings_df attributes; defaulting to 'absolute'.
 names(sm_cross)[2]  <- "crossing"
 names(sm_distal)[2] <- "distal"
 merge(sm_cross, sm_distal, by = "arc")
 #>   arc   crossing     distal
-#> 1   0 0.07723939 0.06921890
-#> 2  10 0.28083874 0.24670964
-#> 3  15 0.19793492 0.11727841
-#> 4  20 0.09652689 0.08269638
-#> 5  30 0.05781662 0.18338351
-#> 6  40 0.63455690 0.69675709
-#> 7   5 0.15615485 0.18281318
-#> 8  50 0.46069491 0.53460350
+#> 1   0 0.22038448 0.23531457
+#> 2  10 0.26676323 0.07055967
+#> 3  15 0.26959287 0.24477975
+#> 4  20 0.09003068 0.07326231
+#> 5  30 0.17875428 0.12936762
+#> 6  40 0.13024377 0.06536414
+#> 7   5 0.03152853 0.07181952
+#> 8  50 0.09500930 0.15790182
 ```
 
 Visualising the distal headings on the per-condition panel confirms that
@@ -828,10 +814,8 @@ cpunctatus_cc_d@data   <- assign_cycle_colours(cpunctatus@data,
                                               panel_col = "arc")
 colour_map_d <- unique(cpunctatus_cc_d@data[, c("trial_id", "cycle_colour")])
 hd_distal_cc <- merge(hd_distal, colour_map_d, by = "trial_id", all.x = TRUE)
-attr(hd_distal_cc, "angle_convention")   <- attr(hd_distal, "angle_convention")
-attr(hd_distal_cc, "coords")             <- attr(hd_distal, "coords")
-attr(hd_distal_cc, "display_convention") <- attr(hd_distal, "display_convention")
-attr(hd_distal_cc, "colour_col")         <- "cycle_colour"
+attr(hd_distal_cc, "display")    <- attr(hd_distal, "display", exact = TRUE)
+attr(hd_distal_cc, "colour_col") <- "cycle_colour"
 
 radiate(cpunctatus_cc_d,
         group_col   = "trial_id",
@@ -839,13 +823,12 @@ radiate(cpunctatus_cc_d,
         panel_by    = "arc",
         ncol        = 3,
         show_labels = FALSE,
-        show_arrow  = FALSE) +
+        show_arrow  = FALSE,
+        display     = circ_display(zero = 0)) +
   add_heading_interval(hd_distal_cc, colour_col = "arc", colour = "black",
                        stat = "bootstrap_ci", boot_reps = 999L) +
   add_heading_points(hd_distal_cc, size = 4) +
   add_heading_arrow(hd_distal_cc, colour_col = "arc", colour = "black")
-#> `angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.
-#> `coords` not found in headings_df attributes; defaulting to 'absolute'.
 ```
 
 ![](radiatR_files/figure-html/hd-distal-panel-1.png)
@@ -864,29 +847,25 @@ positions are available.
 
 ``` r
 
-hd_net <- derive_headings(cpunctatus, rule = "net",
-                           coords = "relative",
-                           angle_convention = "clock")
+hd_net <- derive_headings(cpunctatus, rule = "net")
 names(hd_net)[names(hd_net) == "id"] <- "trial_id"
 # join the target half-width (arc) from the dataset, as for the crossing rule
 hd_net     <- merge(hd_net, arc_map, by = "trial_id")
 hd_net$arc <- factor(hd_net$arc)
 
 sm_net <- compute_circ_mean(hd_net, colour_col = "arc")[, c("arc", "resultant_R")]
-#> `angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.
-#> `coords` not found in headings_df attributes; defaulting to 'absolute'.
 names(sm_net)[2] <- "net"
 Reduce(function(a, b) merge(a, b, by = "arc"),
        list(sm_cross, sm_distal, sm_net))
-#>   arc   crossing     distal       net
-#> 1   0 0.07723939 0.06921890 0.1411372
-#> 2  10 0.28083874 0.24670964 0.2802480
-#> 3  15 0.19793492 0.11727841 0.1467194
-#> 4  20 0.09652689 0.08269638 0.1175823
-#> 5  30 0.05781662 0.18338351 0.1498569
-#> 6  40 0.63455690 0.69675709 0.6952073
-#> 7   5 0.15615485 0.18281318 0.1608150
-#> 8  50 0.46069491 0.53460350 0.5538799
+#>   arc   crossing     distal        net
+#> 1   0 0.22038448 0.23531457 0.22962978
+#> 2  10 0.26676323 0.07055967 0.05152922
+#> 3  15 0.26959287 0.24477975 0.23894631
+#> 4  20 0.09003068 0.07326231 0.02827464
+#> 5  30 0.17875428 0.12936762 0.11498421
+#> 6  40 0.13024377 0.06536414 0.06850022
+#> 7   5 0.03152853 0.07181952 0.05236747
+#> 8  50 0.09500930 0.15790182 0.15353222
 ```
 
 For these tracks the three methods give very similar resultant lengths.

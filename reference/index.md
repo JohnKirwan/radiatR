@@ -206,11 +206,6 @@ Per-trial heading markers, vectors, and mean-direction arrows.
   : Add a critical resultant-length circle to a radiate plot
 - [`add_critical_v_line()`](https://johnkirwan.github.io/radiatR/reference/add_critical_v_line.md)
   : Add a V-test significance boundary to a radiate plot
-- [`gg_add_circ_mean()`](https://johnkirwan.github.io/radiatR/reference/gg_add_circ_mean.md)
-  : Add mean direction arrows to a ggplot polar plot
-- [`circ_mean_segments()`](https://johnkirwan.github.io/radiatR/reference/circ_mean_segments.md)
-  : Build a data frame of arrow segments representing mean direction
-  vectors Length equals resultant_R; angle equals mean_dir
 
 ## Visualisation – distribution overlays
 
@@ -262,10 +257,6 @@ radiatR does not estimate calibrations itself.
 
 Angle-convention conversions and geometric helpers.
 
-- [`rad2clock()`](https://johnkirwan.github.io/radiatR/reference/rad2clock.md)
-  : Convert unit-circle angles to clock orientation
-- [`rad_unclock()`](https://johnkirwan.github.io/radiatR/reference/rad_unclock.md)
-  : Convert clock-oriented angles back to unit-circle orientation
 - [`rad_shepherd()`](https://johnkirwan.github.io/radiatR/reference/rad_shepherd.md)
   : Wrap angles to the interval (-pi, pi\]
 - [`line_circle_intercept()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept.md)
@@ -362,9 +353,8 @@ Any remaining exported topics.
   : Circular correlation between headings and a covariate
 - [`circ_dispersion()`](https://johnkirwan.github.io/radiatR/reference/circ_dispersion.md)
   : Per-group circular dispersion statistics for a dense heading series
-- [`circ_mean_segments()`](https://johnkirwan.github.io/radiatR/reference/circ_mean_segments.md)
-  : Build a data frame of arrow segments representing mean direction
-  vectors Length equals resultant_R; angle equals mean_dir
+- [`circ_display()`](https://johnkirwan.github.io/radiatR/reference/circ_display.md)
+  : Circular display convention specification
 - [`circ_summarise()`](https://johnkirwan.github.io/radiatR/reference/circ_summarise.md)
   : Tidy circular summary of a grouped data frame
 - [`circ_summary()`](https://johnkirwan.github.io/radiatR/reference/circ_summary.md)
@@ -392,6 +382,9 @@ Any remaining exported topics.
   : Derive heading angle(s) from trajectories using specified rule
 - [`directedness_arrow()`](https://johnkirwan.github.io/radiatR/reference/directedness_arrow.md)
   : Make mean resultant length arrow
+- [`.heading_registry`](https://johnkirwan.github.io/radiatR/reference/dot-heading_registry.md)
+  : Build a data frame of arrow segments representing mean direction
+  vectors Length equals resultant_R; angle equals mean_dir
 - [`draw_tracks()`](https://johnkirwan.github.io/radiatR/reference/draw_tracks.md)
   : Create geom layers for Cartesian track coordinates
 - [`dtrack_read()`](https://johnkirwan.github.io/radiatR/reference/dtrack_read.md)
@@ -402,8 +395,6 @@ Any remaining exported topics.
   : Derive trial-level track positions in polar coordinates.
 - [`get_trial_limits()`](https://johnkirwan.github.io/radiatR/reference/get_trial_limits.md)
   : Summarise per-trial metadata for a single video.
-- [`gg_add_circ_mean()`](https://johnkirwan.github.io/radiatR/reference/gg_add_circ_mean.md)
-  : Add mean direction arrows to a ggplot polar plot
 - [`gg_traj()`](https://johnkirwan.github.io/radiatR/reference/gg_traj.md)
   : Plot trajectories from a TrajSet (overlay or faceted)
 - [`headings_frame()`](https://johnkirwan.github.io/radiatR/reference/headings_frame.md)
@@ -433,12 +424,8 @@ Any remaining exported topics.
   : Flexible metadata join for track tables
 - [`pose_to_headings()`](https://johnkirwan.github.io/radiatR/reference/pose_to_headings.md)
   : Derive per-frame headings from pose data without a TrajSet
-- [`rad2clock()`](https://johnkirwan.github.io/radiatR/reference/rad2clock.md)
-  : Convert unit-circle angles to clock orientation
 - [`rad_shepherd()`](https://johnkirwan.github.io/radiatR/reference/rad_shepherd.md)
   : Wrap angles to the interval (-pi, pi\]
-- [`rad_unclock()`](https://johnkirwan.github.io/radiatR/reference/rad_unclock.md)
-  : Convert clock-oriented angles back to unit-circle orientation
 - [`radial_distort()`](https://johnkirwan.github.io/radiatR/reference/radial_distort.md)
   : Remove radial/tangential distortion from a point on the image plane.
 - [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)

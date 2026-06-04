@@ -142,12 +142,12 @@ the same construction used in the main vignette.</p>
 <span><span class="va">hd</span> <span class="op">&lt;-</span> <span class="va">hd</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/is.finite.html" class="external-link">is.finite</a></span><span class="op">(</span><span class="va">hd</span><span class="op">$</span><span class="va">heading</span><span class="op">)</span>, , drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">hd</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"trial_id"</span>, <span class="st">"arc"</span>, <span class="st">"heading"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   trial_id arc   heading</span></span>
-<span><span class="co">#&gt; 1   10_1_1  10 5.8780666</span></span>
-<span><span class="co">#&gt; 2  10_10_1  10 3.4283044</span></span>
-<span><span class="co">#&gt; 3  10_11_1  10 0.3474011</span></span>
-<span><span class="co">#&gt; 4  10_12_1  10 4.1794923</span></span>
-<span><span class="co">#&gt; 5  10_13_1  10 5.5416100</span></span>
-<span><span class="co">#&gt; 6  10_14_1  10 1.3611096</span></span></code></pre></div>
+<span><span class="co">#&gt; 1   10_1_1  10 0.4051187</span></span>
+<span><span class="co">#&gt; 2  10_10_1  10 2.8548809</span></span>
+<span><span class="co">#&gt; 3  10_11_1  10 5.9357842</span></span>
+<span><span class="co">#&gt; 4  10_12_1  10 2.1036930</span></span>
+<span><span class="co">#&gt; 5  10_13_1  10 0.7415753</span></span>
+<span><span class="co">#&gt; 6  10_14_1  10 4.9220757</span></span></code></pre></div>
 <p>The <code>heading</code> column is in radians, reference-relative (0
 = toward the target). Everything below operates on that column.</p>
 </div>
@@ -160,14 +160,14 @@ length <em>R</em>, and circular standard deviation. Grouping by
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/circ_dispersion.html">circ_dispersion</a></span><span class="op">(</span><span class="va">hd</span>, group_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   arc      mean_dir resultant_R   circ_sd  n</span></span>
-<span><span class="co">#&gt; 1  10 -1.9513801009  0.28083874 1.5937218 35</span></span>
-<span><span class="co">#&gt; 2  15 -0.0003910935  0.19793492 1.7998983 27</span></span>
-<span><span class="co">#&gt; 3  20 -2.9019871675  0.09652689 2.1623754 24</span></span>
-<span><span class="co">#&gt; 4  30  0.1860117919  0.05781662 2.3876679 34</span></span>
-<span><span class="co">#&gt; 5  40 -0.0851951450  0.63455690 0.9537592 19</span></span>
-<span><span class="co">#&gt; 6   5 -0.3693921424  0.15615485 1.9271259 30</span></span>
-<span><span class="co">#&gt; 7  50  0.2637564723  0.46069491 1.2450054 24</span></span>
-<span><span class="co">#&gt; 8   0 -2.3094608512  0.07723939 2.2631154 33</span></span></code></pre></div>
+<span><span class="co">#&gt; 1  10  1.9513801009  0.28083874 1.5937218 35</span></span>
+<span><span class="co">#&gt; 2  15  0.0003910935  0.19793492 1.7998983 27</span></span>
+<span><span class="co">#&gt; 3  20  2.9019871675  0.09652689 2.1623754 24</span></span>
+<span><span class="co">#&gt; 4  30 -0.1860117919  0.05781662 2.3876679 34</span></span>
+<span><span class="co">#&gt; 5  40  0.0851951450  0.63455690 0.9537592 19</span></span>
+<span><span class="co">#&gt; 6   5  0.3693921424  0.15615485 1.9271259 30</span></span>
+<span><span class="co">#&gt; 7  50 -0.2637564723  0.46069491 1.2450054 24</span></span>
+<span><span class="co">#&gt; 8   0  2.3094608512  0.07723939 2.2631154 33</span></span></code></pre></div>
 <p><em>R</em> runs from 0 (uniformly scattered) to 1 (all headings
 identical); the circular SD moves the opposite way. For dense per-frame
 heading series — gaze direction from a tethered animal, say —
@@ -176,14 +176,14 @@ proportions per sector:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/sector_summary.html">sector_summary</a></span><span class="op">(</span><span class="va">hd</span>, sectors <span class="op">=</span> <span class="fl">8L</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        sector  mid_angle count proportion</span></span>
-<span><span class="co">#&gt; 1 -158degrees -2.7488936    24 0.10619469</span></span>
-<span><span class="co">#&gt; 2 -112degrees -1.9634954    37 0.16371681</span></span>
-<span><span class="co">#&gt; 3  -68degrees -1.1780972    12 0.05309735</span></span>
-<span><span class="co">#&gt; 4  -22degrees -0.3926991    50 0.22123894</span></span>
-<span><span class="co">#&gt; 5   22degrees  0.3926991    40 0.17699115</span></span>
-<span><span class="co">#&gt; 6   68degrees  1.1780972    19 0.08407080</span></span>
-<span><span class="co">#&gt; 7  112degrees  1.9634954    18 0.07964602</span></span>
-<span><span class="co">#&gt; 8  158degrees  2.7488936    26 0.11504425</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 -158degrees -2.7488936    26 0.11504425</span></span>
+<span><span class="co">#&gt; 2 -112degrees -1.9634954    18 0.07964602</span></span>
+<span><span class="co">#&gt; 3  -68degrees -1.1780972    19 0.08407080</span></span>
+<span><span class="co">#&gt; 4  -22degrees -0.3926991    40 0.17699115</span></span>
+<span><span class="co">#&gt; 5   22degrees  0.3926991    50 0.22123894</span></span>
+<span><span class="co">#&gt; 6   68degrees  1.1780972    12 0.05309735</span></span>
+<span><span class="co">#&gt; 7  112degrees  1.9634954    37 0.16371681</span></span>
+<span><span class="co">#&gt; 8  158degrees  2.7488936    24 0.10619469</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="parametric-fits">Parametric fits<a class="anchor" aria-label="anchor" href="#parametric-fits"></a>
@@ -197,15 +197,15 @@ interval on
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/vonmises_fit.html">vonmises_fit</a></span><span class="op">(</span><span class="va">hd</span>, group_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"arc"</span>, <span class="st">"mu_deg"</span>, <span class="st">"kappa"</span>, <span class="st">"n"</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="co">#&gt;   arc        mu_deg     kappa  n</span></span>
-<span><span class="co">#&gt; 1  10 -111.80584401 0.5852832 35</span></span>
-<span><span class="co">#&gt; 2  15   -0.02240801 0.4038778 27</span></span>
-<span><span class="co">#&gt; 3  20 -166.27161690 0.1939602 24</span></span>
-<span><span class="co">#&gt; 4  30   10.65769061 0.1158271 34</span></span>
-<span><span class="co">#&gt; 5  40   -4.88132224 1.6586879 19</span></span>
-<span><span class="co">#&gt; 6   5  -21.16461074 0.3161948 30</span></span>
-<span><span class="co">#&gt; 7  50   15.11213268 1.0364612 24</span></span>
-<span><span class="co">#&gt; 8   0 -132.32235972 0.1549419 33</span></span></code></pre></div>
+<span><span class="co">#&gt;   arc       mu_deg     kappa  n</span></span>
+<span><span class="co">#&gt; 1  10 111.80584401 0.5852832 35</span></span>
+<span><span class="co">#&gt; 2  15   0.02240801 0.4038778 27</span></span>
+<span><span class="co">#&gt; 3  20 166.27161690 0.1939602 24</span></span>
+<span><span class="co">#&gt; 4  30 -10.65769061 0.1158271 34</span></span>
+<span><span class="co">#&gt; 5  40   4.88132224 1.6586879 19</span></span>
+<span><span class="co">#&gt; 6   5  21.16461074 0.3161948 30</span></span>
+<span><span class="co">#&gt; 7  50 -15.11213268 1.0364612 24</span></span>
+<span><span class="co">#&gt; 8   0 132.32235972 0.1549419 33</span></span></code></pre></div>
 <p><code><a href="../reference/wrappedcauchy_fit.html">wrappedcauchy_fit()</a></code> is the heavier-tailed alternative —
 more robust when the data have outliers or weak directionality. Its
 concentration
@@ -215,14 +215,14 @@ is bounded to
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/wrappedcauchy_fit.html">wrappedcauchy_fit</a></span><span class="op">(</span><span class="va">hd</span>, group_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"arc"</span>, <span class="st">"mu_deg"</span>, <span class="st">"rho"</span>, <span class="st">"n"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt;   arc     mu_deg        rho  n</span></span>
-<span><span class="co">#&gt; 1  10 240.033510 0.28228485 35</span></span>
-<span><span class="co">#&gt; 2  15 354.147727 0.29760542 27</span></span>
-<span><span class="co">#&gt; 3  20 202.034515 0.11478156 24</span></span>
-<span><span class="co">#&gt; 4  30  10.919674 0.07904604 34</span></span>
-<span><span class="co">#&gt; 5  40 355.610286 0.75074167 19</span></span>
-<span><span class="co">#&gt; 6   5 333.705784 0.14012202 30</span></span>
-<span><span class="co">#&gt; 7  50   9.081076 0.69560495 24</span></span>
-<span><span class="co">#&gt; 8   0 225.424784 0.08656156 33</span></span></code></pre></div>
+<span><span class="co">#&gt; 1  10 119.966490 0.28228485 35</span></span>
+<span><span class="co">#&gt; 2  15   5.852273 0.29760542 27</span></span>
+<span><span class="co">#&gt; 3  20 157.965485 0.11478156 24</span></span>
+<span><span class="co">#&gt; 4  30 349.080326 0.07904604 34</span></span>
+<span><span class="co">#&gt; 5  40   4.389714 0.75074167 19</span></span>
+<span><span class="co">#&gt; 6   5  26.294216 0.14012202 30</span></span>
+<span><span class="co">#&gt; 7  50 350.918924 0.69560495 24</span></span>
+<span><span class="co">#&gt; 8   0 134.575216 0.08656156 33</span></span></code></pre></div>
 <p>Both return a row per group, so a quick <code><a href="https://rdrr.io/r/base/merge.html" class="external-link">merge()</a></code> puts the
 two concentration estimates side by side for comparison.</p>
 </div>

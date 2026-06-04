@@ -11,8 +11,7 @@ circ_summary_headings(
   x,
   rule = c("crossing", "distal", "straight", "origin_mean", "net", "velocity_mean"),
   group_by = "id",
-  ...,
-  angle_convention = c("clock", "unit_circle")
+  ...
 )
 ```
 
@@ -40,18 +39,12 @@ circ_summary_headings(
   Additional arguments forwarded to \[derive_headings()\], such as
   \`circ0\`, \`circ1\`, \`return_coords\`, or \`coords\`.
 
-- angle_convention:
-
-  Character. Output convention for \`mean_dir\`: \`"clock"\` (default; 0
-  = North, clockwise) or \`"unit_circle"\` (0 = East, counterclockwise).
-  The returned summary carries the same \`angle_convention\` attribute
-  for downstream use by \[circ_mean_segments()\].
-
 ## Value
 
 A \`data.frame\` with grouping columns followed by \`mean_dir\`
-(radians, 0 to 2π), \`resultant_R\` (0–1), \`kappa\` (von Mises
-concentration), and \`n\` (number of valid headings in the group).
+(radians, unit-circle convention, 0 to 2π), \`resultant_R\` (0–1),
+\`kappa\` (von Mises concentration), and \`n\` (number of valid headings
+in the group).
 
 ## Examples
 

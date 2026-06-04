@@ -14,8 +14,7 @@ circ_summarise(
   units,
   .by = NULL,
   stats = c("n", "mean_dir", "mean_dir_deg", "resultant_R", "kappa"),
-  angle_convention = NULL,
-  coords = NULL
+  display = circ_display()
 )
 ```
 
@@ -51,17 +50,12 @@ circ_summarise(
   `"mean_dir"`, `"mean_dir_deg"`, `"resultant_R"`, `"kappa"`. Default:
   all five.
 
-- angle_convention:
+- display:
 
-  `"unit_circle"` (0 = East, CCW) or `"clock"` (0 = North, CW). When
-  `NULL`, read from `attr(data, "angle_convention")`; defaults to
-  `"unit_circle"`.
-
-- coords:
-
-  `"relative"` or `"absolute"`. Only used when
-  `angle_convention = "clock"`. When `NULL`, read from
-  `attr(data, "coords")`; defaults to `"absolute"`.
+  A \[\`circ_display\`\] object. When supplied, \`mean_dir_deg\` is
+  converted using the display convention (clockwise, \`zero\` offset).
+  When \`NULL\` (default), \`mean_dir_deg\` is the raw degree equivalent
+  of the unit-circle radian angle.
 
 ## Value
 
@@ -81,8 +75,8 @@ circ_summarise(hd, heading, units = "radians", .by = "arc")
 #> # A tibble: 2 × 6
 #>   arc       n mean_dir mean_dir_deg resultant_R kappa
 #>   <chr> <int>    <dbl>        <dbl>       <dbl> <dbl>
-#> 1 a         2    0.393         22.5       0.924    NA
-#> 2 b         1    1.57          90         1        NA
+#> 1 a         2    0.393         67.5       0.924    NA
+#> 2 b         1    1.57           0         1        NA
 circ_summarise(hd, heading, units = "radians", .by = "arc",
                stats = c("n", "mean_dir"))
 #> # A tibble: 2 × 3

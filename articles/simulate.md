@@ -349,8 +349,6 @@ hd <- merge(hd, cond_map, by = "trial_id")
 
 compute_circ_mean(hd, colour_col = "condition")[,
   c("condition", "mean_dir", "resultant_R")]
-#> `angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.
-#> `coords` not found in headings_df attributes; defaulting to 'absolute'.
 #>      condition   mean_dir resultant_R
 #> 1 concentrated 0.05580664   0.9028539
 #> 2      diffuse 0.29537110   0.7004167
@@ -369,8 +367,6 @@ p <- radiate(sim_analysis$trajset,
              show_arrow   = FALSE) +
   add_heading_points(hd, colour_col = "condition", size = 2, alpha = 0.7) +
   add_heading_arrow(hd, colour_col = "condition", colour = "black")
-#> `angle_convention` not found in headings_df attributes; defaulting to 'unit_circle'.
-#> `coords` not found in headings_df attributes; defaulting to 'absolute'.
 p
 ```
 
