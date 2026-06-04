@@ -762,11 +762,13 @@ server <- function(input, output, session) {
     p <- tryCatch(
       build_results_plot(),
       error = function(e) {
-        message("track_plot render failed: ", conditionMessage(e))
+        msg <- conditionMessage(e)
+        message("track_plot render failed: ", msg)
         ggplot() +
           annotate(
             "text", x = 0, y = 0,
-            label = "Plot unavailable", colour = "grey50"
+            label = paste0("Plot error:\n", msg),
+            colour = "grey40", size = 3.5
           ) +
           theme_void()
       }
