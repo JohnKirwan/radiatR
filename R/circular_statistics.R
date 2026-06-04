@@ -14,12 +14,9 @@
 #'   (default), all steps are weighted equally.
 #' @param by Character. `"id"` (default) returns one row per trial;
 #'   `"global"` pools all observations into a single summary row.
-#' @param angle_convention Character. Output convention for `mean_dir`:
-#'   `"unit_circle"` (default; 0 = East, counterclockwise) or `"clock"`
-#'   (0 = North, clockwise).
-#'
 #' @return A `data.frame` with columns `id`, `n`, `t_start`, `t_end`,
-#'   `mean_dir` (radians, 0 to 2pi), `resultant_R` (0--1), and `kappa`
+#'   `mean_dir` (radians, unit-circle convention, 0 to 2pi), `resultant_R`
+#'   (0--1), and `kappa`
 #'   (von Mises concentration; `NA` when estimation fails).
 #'
 #' @examples
@@ -333,12 +330,10 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 #'   determines column order in the output. Valid values: \code{"n"},
 #'   \code{"mean_dir"}, \code{"mean_dir_deg"}, \code{"resultant_R"},
 #'   \code{"kappa"}. Default: all five.
-#' @param angle_convention \code{"unit_circle"} (0 = East, CCW) or
-#'   \code{"clock"} (0 = North, CW). When \code{NULL}, read from
-#'   \code{attr(data, "angle_convention")}; defaults to \code{"unit_circle"}.
-#' @param coords \code{"relative"} or \code{"absolute"}. Only used when
-#'   \code{angle_convention = "clock"}. When \code{NULL}, read from
-#'   \code{attr(data, "coords")}; defaults to \code{"absolute"}.
+#' @param display A [`circ_display`] object. When supplied, `mean_dir_deg` is
+#'   converted using the display convention (clockwise, `zero` offset). When
+#'   `NULL` (default), `mean_dir_deg` is the raw degree equivalent of the
+#'   unit-circle radian angle.
 #'
 #' @return An ungrouped \code{tibble} with group columns first followed by
 #'   requested stat columns in the order given in \code{stats}.

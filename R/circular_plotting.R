@@ -178,6 +178,8 @@ add_quadrant_lines <- function(colour = "grey60", linewidth = 0.5, linetype = "d
 #' Provides a list of annotation layers that mark 45, 135, 225, and 315 degrees on a
 #' unit circle.
 #'
+#' @param display A [`circ_display`] object. Controls whether labels are shown
+#'   in degrees or radians. Default `circ_display()`.
 #' @return A list of ggplot2 annotation layers.
 #'
 #' @examples
@@ -905,6 +907,8 @@ add_circ_interval <- function(interval_df,
 #'
 #' @inheritParams compute_circ_interval
 #' @inheritParams add_circ_interval
+#' @param display A [`circ_display`] object. When `NULL` (default), read from
+#'   `attr(headings_df, "display")`, falling back to `circ_display()`.
 #'
 #' @return A `geom_path()` layer.
 #'
@@ -1082,6 +1086,8 @@ add_circ_mean <- function(summary_df,
 #'
 #' @inheritParams compute_circ_mean
 #' @inheritParams add_circ_mean
+#' @param display A [`circ_display`] object. When `NULL` (default), read from
+#'   `attr(headings_df, "display")`, falling back to `circ_display()`.
 #'
 #' @return A `geom_segment()` layer.
 #'
@@ -1661,6 +1667,10 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   circle at y = -1.25).
 #' @param strip_label_size Font size for strip labels. Applies to both strip
 #'   text and the in-panel `"inside"` annotation.
+#' @param display A [`circ_display`] object controlling how angles are rendered.
+#'   Default `circ_display()` puts North at top with clockwise-positive degrees.
+#'   Use `circ_display(zero = 0)` when the reference direction lies at East in
+#'   unit-circle coordinates (e.g. the `cpunctatus` dataset).
 #' @param ticks,degrees,legend,title,xlab,ylab,axes Additional styling options.
 #' @param ... Additional arguments forwarded to [draw_tracks()].
 #' @return A `ggplot2` object.

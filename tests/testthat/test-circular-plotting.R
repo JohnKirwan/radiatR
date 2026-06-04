@@ -139,7 +139,7 @@ test_that("radiate arrow length equals rho of per-trial headings via arrow_angle
   # against silently diverging from the headings it is supposed to summarise.
   library(ggplot2)
   sim <- simulate_tracks(conditions = data.frame(n_trials = 8L),
-                         n_points = 15, seed = 11)
+                         n_points = 15, seed = 11, output = "trajset")
   idc <- sim@cols$id
   d   <- sim@data
   ids <- unique(d[[idc]])

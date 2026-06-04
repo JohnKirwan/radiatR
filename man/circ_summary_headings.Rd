@@ -25,16 +25,11 @@ for a single global summary row. Any column carried through by
 
 \item{...}{Additional arguments forwarded to [derive_headings()], such as
 `circ0`, `circ1`, `return_coords`, or `coords`.}
-
-\item{angle_convention}{Character. Output convention for `mean_dir`:
-`"clock"` (default; 0 = North, clockwise) or `"unit_circle"` (0 = East,
-counterclockwise). The returned summary carries the same
-`angle_convention` attribute for downstream use by [circ_mean_segments()].}
 }
 \value{
 A `data.frame` with grouping columns followed by `mean_dir`
-  (radians, 0 to 2π), `resultant_R` (0–1), `kappa` (von Mises
-  concentration), and `n` (number of valid headings in the group).
+  (radians, unit-circle convention, 0 to 2π), `resultant_R` (0–1), `kappa`
+  (von Mises concentration), and `n` (number of valid headings in the group).
 }
 \description{
 Derives one heading per trial via `derive_headings()`, then computes

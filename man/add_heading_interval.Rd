@@ -27,6 +27,9 @@ add_heading_interval(
 \item{colour_col}{Optional grouping column. When set, one row is returned per
 group and the column is preserved in the output.}
 
+\item{display}{A [`circ_display`] object. When `NULL` (default), read from
+`attr(headings_df, "display")`, falling back to `circ_display()`.}
+
 \item{stat}{Statistic: `"bootstrap_ci"` (default) or `"sd"`.}
 
 \item{boot_reps}{Integer. Bootstrap replicates for `stat = "bootstrap_ci"`.

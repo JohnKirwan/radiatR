@@ -6,6 +6,10 @@
 \usage{
 degree_labs(display = circ_display())
 }
+\arguments{
+\item{display}{A [`circ_display`] object. Controls whether labels are shown
+in degrees or radians. Default `circ_display()`.}
+}
 \value{
 A list of ggplot2 annotation layers.
 }

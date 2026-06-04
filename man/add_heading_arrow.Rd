@@ -26,6 +26,9 @@ add_heading_arrow(
 \item{colour_col}{Optional. Name of a column to group by. One row is
 returned per group. The same column maps to colour in [add_circ_mean()].}
 
+\item{display}{A [`circ_display`] object. When `NULL` (default), read from
+`attr(headings_df, "display")`, falling back to `circ_display()`.}
+
 \item{linewidth}{Line width of the arrow segment. Default `1`.}
 
 \item{colour}{Fixed colour. When `NULL` (default) and `colour_col` is set,

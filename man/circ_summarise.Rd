@@ -35,13 +35,10 @@ determines column order in the output. Valid values: \code{"n"},
 \code{"mean_dir"}, \code{"mean_dir_deg"}, \code{"resultant_R"},
 \code{"kappa"}. Default: all five.}
 
-\item{angle_convention}{\code{"unit_circle"} (0 = East, CCW) or
-\code{"clock"} (0 = North, CW). When \code{NULL}, read from
-\code{attr(data, "angle_convention")}; defaults to \code{"unit_circle"}.}
-
-\item{coords}{\code{"relative"} or \code{"absolute"}. Only used when
-\code{angle_convention = "clock"}. When \code{NULL}, read from
-\code{attr(data, "coords")}; defaults to \code{"absolute"}.}
+\item{display}{A [`circ_display`] object. When supplied, `mean_dir_deg` is
+converted using the display convention (clockwise, `zero` offset). When
+`NULL` (default), `mean_dir_deg` is the raw degree equivalent of the
+unit-circle radian angle.}
 }
 \value{
 An ungrouped \code{tibble} with group columns first followed by
