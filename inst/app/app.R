@@ -491,6 +491,19 @@ server <- function(input, output, session) {
             open = c("Display", "Summary"),
             accordion_panel(
               "Display",
+              selectInput(
+                "plot_theme", "Theme",
+                choices = c("Void"          = "void",
+                            "Minimal"       = "minimal",
+                            "Classic"       = "classic",
+                            "Black & white" = "bw",
+                            "Grey"          = "grey",
+                            "Light"         = "light",
+                            "Dark"          = "dark",
+                            "Line draw"     = "linedraw"),
+                selected = "void"
+              ),
+              tags$hr(class = "my-2"),
               .layer_switch("show_tracks",   "Trajectories",       TRUE),
               .layer_switch("show_points",  "Heading points",     TRUE),
               .layer_switch("show_arrow",   "Directedness arrow", TRUE),
@@ -659,6 +672,8 @@ server <- function(input, output, session) {
     d[[".arrow_heading"]] <- hd_map$x[match(d[[id_col]], hd_map$id)]
     ts_arrow@data <- d
 
+    plot_theme <- if (is.null(input$plot_theme)) "void" else input$plot_theme
+
     p <- radiate(
       ts_arrow,
       group_col       = id_col,
@@ -671,6 +686,7 @@ server <- function(input, output, session) {
       show_arrow      = tog(input$show_arrow,  TRUE),
       arrow_angle_col = ".arrow_heading",
       show_labels     = FALSE,
+      theme           = plot_theme,
       display         = disp
     )
 
