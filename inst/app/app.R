@@ -483,61 +483,62 @@ server <- function(input, output, session) {
               uiOutput("track_plot_ui")
             )
           ),
-          tagList(
-            card(
-              card_header("Display"),
-              card_body(
-                .layer_switch("show_tracks",   "Trajectories",       TRUE),
-                .layer_switch("show_points",  "Heading points",     TRUE),
-                .layer_switch("show_arrow",   "Directedness arrow", TRUE),
-                .layer_switch("show_ci",      "Mean-direction CI",  FALSE),
-                .layer_switch("show_vectors", "Heading vectors",    FALSE),
-                .layer_switch("show_rayleigh","Rayleigh circle",    FALSE),
-                .layer_switch("show_vtest",   "V-test line",        FALSE),
-                tags$hr(class = "my-2"),
-                sliderInput(
-                  "preview_px", "Preview size (px)",
-                  min = 240, max = 900, value = 460, step = 20
-                ),
-                tags$span(
-                  class = "text-muted small",
-                  "On-screen only; export size is set under Download."
-                )
+          accordion(
+            id = "results_options",
+            # Collapsible option groups so the right column can hold more
+            # controls without crowding the plot. Display + Summary start open;
+            # Download starts collapsed. multiple = TRUE lets several stay open.
+            open = c("Display", "Summary"),
+            accordion_panel(
+              "Display",
+              .layer_switch("show_tracks",   "Trajectories",       TRUE),
+              .layer_switch("show_points",  "Heading points",     TRUE),
+              .layer_switch("show_arrow",   "Directedness arrow", TRUE),
+              .layer_switch("show_ci",      "Mean-direction CI",  FALSE),
+              .layer_switch("show_vectors", "Heading vectors",    FALSE),
+              .layer_switch("show_rayleigh", "Rayleigh circle",    FALSE),
+              .layer_switch("show_vtest",   "V-test line",        FALSE),
+              tags$hr(class = "my-2"),
+              sliderInput(
+                "preview_px", "Preview size (px)",
+                min = 240, max = 900, value = 460, step = 20
+              ),
+              tags$span(
+                class = "text-muted small",
+                "On-screen only; export size is set under Download."
               )
             ),
-            card(
-              card_header("Summary"),
-              card_body(tableOutput("summary_tbl"))
+            accordion_panel(
+              "Summary",
+              tableOutput("summary_tbl")
             ),
-            card(
-              card_header("Download"),
-              card_body(
-                layout_columns(
-                  col_widths = c(6, 6),
-                  numericInput("plot_w", "Width (in)", value = 7,
-                               min = 1, max = 30, step = 0.5),
-                  numericInput("plot_h", "Height (in)", value = 7,
-                               min = 1, max = 30, step = 0.5)
-                ),
-                selectInput(
-                  "plot_fmt", "Format",
-                  choices = c("PDF (vector)"  = "pdf",
-                              "SVG (vector)"  = "svg",
-                              "PNG (raster)"  = "png")
-                ),
-                conditionalPanel(
-                  "input.plot_fmt == 'png'",
-                  numericInput("plot_dpi", "Resolution (dpi)", value = 300,
-                               min = 72, max = 600, step = 1)
-                ),
-                downloadButton(
-                  "dl_plot", "Download plot",
-                  class = "btn-sm btn-outline-primary w-100 mb-2"
-                ),
-                downloadButton(
-                  "dl_csv", "Headings (CSV)",
-                  class = "btn-sm btn-outline-secondary w-100"
-                )
+            accordion_panel(
+              "Download",
+              layout_columns(
+                col_widths = c(6, 6),
+                numericInput("plot_w", "Width (in)", value = 7,
+                             min = 1, max = 30, step = 0.5),
+                numericInput("plot_h", "Height (in)", value = 7,
+                             min = 1, max = 30, step = 0.5)
+              ),
+              selectInput(
+                "plot_fmt", "Format",
+                choices = c("PDF (vector)"  = "pdf",
+                            "SVG (vector)"  = "svg",
+                            "PNG (raster)"  = "png")
+              ),
+              conditionalPanel(
+                "input.plot_fmt == 'png'",
+                numericInput("plot_dpi", "Resolution (dpi)", value = 300,
+                             min = 72, max = 600, step = 1)
+              ),
+              downloadButton(
+                "dl_plot", "Download plot",
+                class = "btn-sm btn-outline-primary w-100 mb-2"
+              ),
+              downloadButton(
+                "dl_csv", "Headings (CSV)",
+                class = "btn-sm btn-outline-secondary w-100"
               )
             )
           )
