@@ -92,3 +92,49 @@ test_that("quadrant lines are off by default and added by quadrants = TRUE", {
   expect_false(has_quadrants(g_off))
   expect_true(has_quadrants(g_on))
 })
+
+test_that("quadrant lines inherit the theme's grid colour, with a fallback", {
+  ts <- simulate_tracks(conditions = data.frame(n_trials = 3L),
+                        n_points = 20, seed = 6, output = "trajset")
+  quad_colour <- function(g) {
+    for (l in g$layers) {
+      d <- l$data
+      if (inherits(l$geom, "GeomSegment") && is.data.frame(d) && nrow(d) == 2L)
+        return(l$aes_params$colour)
+    }
+    NA_character_
+  }
+  grid_colour <- function(name)
+    ggplot2::calc_element("panel.grid", radial_theme(name))$colour
+
+  g_min <- radiate(ts, group_col = "trial_id", show_arrow = FALSE,
+                   show_labels = FALSE, quadrants = TRUE, theme = "minimal")
+  expect_equal(quad_colour(g_min), grid_colour("minimal"))
+
+  # void draws no grid -> fall back to a subtle grey
+  g_void <- radiate(ts, group_col = "trial_id", show_arrow = FALSE,
+                    show_labels = FALSE, quadrants = TRUE, theme = "void")
+  expect_equal(quad_colour(g_void), "grey60")
+})
+
+test_that("guide rings are off by default and added by rings = TRUE", {
+  ts <- simulate_tracks(conditions = data.frame(n_trials = 3L),
+                        n_points = 20, seed = 7, output = "trajset")
+  # Guide rings are annotate('path') circles (1000 points each) strictly inside
+  # the unit boundary (radius < 1); the boundary circle has radius 1, tracks
+  # have far fewer points.
+  n_inner_rings <- function(g) {
+    sum(vapply(g$layers, function(l) {
+      d <- l$data
+      inherits(l$geom, "GeomPath") && is.data.frame(d) &&
+        all(c("x", "y") %in% names(d)) && nrow(d) >= 999L &&
+        max(sqrt(d$x^2 + d$y^2)) < 0.99
+    }, logical(1)))
+  }
+  g_off <- radiate(ts, group_col = "trial_id", show_arrow = FALSE,
+                   show_labels = FALSE, show_tracks = FALSE)
+  g_on  <- radiate(ts, group_col = "trial_id", show_arrow = FALSE,
+                   show_labels = FALSE, show_tracks = FALSE, rings = TRUE)
+  expect_equal(n_inner_rings(g_off), 0L)
+  expect_equal(n_inner_rings(g_on), 3L)   # radii 0.25, 0.5, 0.75
+})

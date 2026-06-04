@@ -512,6 +512,7 @@ server <- function(input, output, session) {
               .layer_switch("show_rayleigh", "Rayleigh circle",    FALSE),
               .layer_switch("show_vtest",   "V-test line",        FALSE),
               .layer_switch("show_quadrants", "Quadrant lines",   FALSE),
+              .layer_switch("show_rings",   "Guide rings",        FALSE),
               tags$hr(class = "my-2"),
               sliderInput(
                 "preview_px", "Preview size (px)",
@@ -689,6 +690,7 @@ server <- function(input, output, session) {
       show_labels     = FALSE,
       theme           = plot_theme,
       quadrants       = tog(input$show_quadrants, FALSE),
+      rings           = tog(input$show_rings, FALSE),
       display         = disp
     )
 
