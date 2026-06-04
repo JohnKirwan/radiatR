@@ -1352,7 +1352,6 @@ test_that("add_critical_v_line returns NULL when boundary exceeds unit circle", 
                 rel_x = "rel_x", rel_y = "rel_y", angle = "angle",
                 angle_unit = "radians", normalize_xy = FALSE)
   if (clock) {
-    ts@meta$display_convention <- "clock"
     ts@meta$plot_x_col <- "rel_x"
     ts@meta$plot_y_col <- "rel_y"
   }
