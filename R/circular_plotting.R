@@ -557,6 +557,8 @@ add_circular_density <- function(density_df,
       stop("`density_df` is missing column '", col, "'.")
   }
 
+  disp_opts <- attr(density_df, "display", exact = TRUE) %||% circ_display()
+
   # Normalise density within each group and compute Cartesian coordinates.
   # CI bounds use the same max_d so the band is on the same scale as the curve.
   groups    <- if (use_colour) split(density_df, density_df[[colour_col]]) else list(density_df)
@@ -567,8 +569,9 @@ add_circular_density <- function(density_df,
     scl   <- if (max_d > 0) scale / max_d else 0
     r     <- 1 + scl * dens
     d$.r  <- r
-    d$.x  <- r * cos(theta)
-    d$.y  <- r * sin(theta)
+    xy    <- .uc_to_display_coords(r * cos(theta), r * sin(theta), disp_opts)
+    d$.x  <- xy$x
+    d$.y  <- xy$y
     d$.theta_raw <- theta
     if (has_ci) {
       d$.r_lower <- 1 + scl * d$density_lower
@@ -586,9 +589,11 @@ add_circular_density <- function(density_df,
     ci_parts <- lapply(grp_ids, function(gid) {
       d  <- if (use_colour) dens_df[dens_df[[colour_col]] == gid, ] else dens_df
       th <- d$.theta_raw
+      upper_xy <- .uc_to_display_coords(d$.r_upper * cos(th), d$.r_upper * sin(th), disp_opts)
+      lower_xy <- .uc_to_display_coords(d$.r_lower * cos(th), d$.r_lower * sin(th), disp_opts)
       out <- data.frame(
-        x = c(d$.r_upper * cos(th),       rev(d$.r_lower * cos(th))),
-        y = c(d$.r_upper * sin(th),       rev(d$.r_lower * sin(th)))
+        x = c(upper_xy$x, rev(lower_xy$x)),
+        y = c(upper_xy$y, rev(lower_xy$y))
       )
       if (use_colour) out[[colour_col]] <- gid
       out
@@ -606,8 +611,8 @@ add_circular_density <- function(density_df,
     poly_parts <- lapply(grp_ids, function(gid) {
       d  <- if (use_colour) dens_df[dens_df[[colour_col]] == gid, ] else dens_df
       th <- d$.theta_raw
-      out <- data.frame(x = c(d$.x, cos(rev(th))),
-                        y = c(d$.y, sin(rev(th))))
+      inner_xy <- .uc_to_display_coords(cos(rev(th)), sin(rev(th)), disp_opts)
+      out <- data.frame(x = c(d$.x, inner_xy$x), y = c(d$.y, inner_xy$y))
       if (use_colour) out[[colour_col]] <- gid
       out
     })
@@ -839,7 +844,7 @@ add_circ_interval <- function(interval_df,
   has_group_col <- !is.null(colour_col) && colour_col %in% names(interval_df)
   map_colour    <- has_group_col && is.null(colour)
   has_wraps     <- "wraps" %in% names(interval_df)
-  use_clock     <- identical(attr(interval_df, "display_convention"), "clock")
+  disp_opts     <- attr(interval_df, "display", exact = TRUE) %||% circ_display()
 
   valid_rows <- which(!is.na(interval_df$lower) & !is.na(interval_df$upper))
 
@@ -863,14 +868,10 @@ add_circ_interval <- function(interval_df,
     }
     cos_vals <- radius * cos(theta_seq)
     sin_vals <- radius * sin(theta_seq)
-    if (use_clock) {
-      disp     <- .to_clock_display(cos_vals, sin_vals)
-      cos_vals <- disp$x
-      sin_vals <- disp$y
-    }
+    xy       <- .uc_to_display_coords(cos_vals, sin_vals, disp_opts)
     d <- data.frame(
-      .x        = cos_vals,
-      .y        = sin_vals,
+      .x        = xy$x,
+      .y        = xy$y,
       .group_id = i
     )
     if (has_group_col) d[[colour_col]] <- interval_df[[colour_col]][i]
@@ -908,6 +909,7 @@ add_circ_interval <- function(interval_df,
 add_heading_interval <- function(headings_df,
                                  heading_col = "heading",
                                  colour_col  = NULL,
+                                 display     = NULL,
                                  stat        = c("bootstrap_ci", "sd"),
                                  boot_reps   = 1000L,
                                  boot_alpha  = 0.05,
@@ -916,11 +918,14 @@ add_heading_interval <- function(headings_df,
                                  colour      = NULL,
                                  linetype    = "solid",
                                  n_theta     = 500L) {
+  if (is.null(display))
+    display <- attr(headings_df, "display", exact = TRUE) %||% circ_display()
   stat <- match.arg(stat)
   iv   <- compute_circ_interval(headings_df, heading_col = heading_col,
                                 colour_col = colour_col,
                                 stat = stat,
                                 boot_reps = boot_reps, boot_alpha = boot_alpha)
+  attr(iv, "display") <- display
   add_circ_interval(iv, colour_col = colour_col,
                     radius = radius, linewidth = linewidth,
                     colour = colour, linetype = linetype, n_theta = n_theta)

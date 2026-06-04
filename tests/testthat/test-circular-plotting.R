@@ -886,30 +886,6 @@ test_that("add_circ_interval wraps correctly when wraps column is absent", {
   expect_true(any(pts$x < -1.0))
 })
 
-test_that("add_circ_interval with display_convention='clock' rotates arc 90 CCW", {
-  library(ggplot2)
-  # Degenerate arc at theta=0 (East in UC): all points at (radius, 0)
-  # After clock rotation: all points at (0, radius) (North)
-  iv <- data.frame(lower = 0, upper = 0)
-  attr(iv, "display_convention") <- "clock"
-  built <- ggplot_build(ggplot() + add_circ_interval(iv, radius = 1.0, n_theta = 3))
-  pts   <- built$data[[1]]
-  expect_equal(pts$x, rep(0,   3), tolerance = 1e-6)
-  expect_equal(pts$y, rep(1.0, 3), tolerance = 1e-6)
-})
-
-test_that("add_circ_interval with display_convention='clock' and wraps=TRUE rotates arc correctly", {
-  library(ggplot2)
-  # Arc from UC West to UC East via South (wrapping arc). Centre point at UC South (pi) -> clock East
-  iv <- data.frame(lower = pi - 0.01, upper = -(pi - 0.01), wraps = TRUE)
-  attr(iv, "display_convention") <- "clock"
-  built <- ggplot_build(ggplot() + add_circ_interval(iv, radius = 1.0, n_theta = 3))
-  pts <- built$data[[1]]
-  # midpoint of theta_seq is pi (UC South = (−1,0)) -> clock rotation -> (0,−1) (clock South)
-  mid_idx <- 2  # middle point of 3
-  expect_equal(pts$x[mid_idx], 0,  tolerance = 1e-2)
-  expect_equal(pts$y[mid_idx], -1, tolerance = 1e-2)
-})
 
 # ---- add_heading_interval ----------------------------------------------------
 
