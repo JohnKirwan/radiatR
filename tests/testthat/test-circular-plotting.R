@@ -271,6 +271,11 @@ test_that("plotting helpers return ggplot layers", {
 
   labs <- degree_labs()
   expect_length(labs, 4)
+  expect_true(any(grepl("45", sapply(labs, function(l) l$aes_params$label))))
+
+  labs_rad <- degree_labs(display = circ_display(units = "radians"))
+  labels_r <- sapply(labs_rad, function(l) l$aes_params$label)
+  expect_true(any(grepl("rad", labels_r)))
 
   arrow <- suppressWarnings(directedness_arrow(data.frame(theta = c(0, pi/2, pi)), theta))
   expect_s3_class(arrow, "LayerInstance")

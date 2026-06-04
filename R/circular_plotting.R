@@ -186,13 +186,20 @@ add_quadrant_lines <- function(colour = "grey60", linewidth = 0.5, linetype = "d
 #'   coord_fixed() +
 #'   degree_labs()
 #' @export
-degree_labs <- function() {
-  list(
-    ggplot2::annotate("text", x =  .85, y =  .85, label = paste0("45", "\U00B0")),
-    ggplot2::annotate("text", x =  .85, y = -.85, label = paste0("135", "\U00B0")),
-    ggplot2::annotate("text", x = -.85, y = -.85, label = paste0("225", "\U00B0")),
-    ggplot2::annotate("text", x = -.85, y =  .85, label = paste0("315", "\U00B0"))
-  )
+degree_labs <- function(display = circ_display()) {
+  diag_r      <- 0.85
+  pos         <- list(c(diag_r,  diag_r), c(diag_r, -diag_r),
+                      c(-diag_r, -diag_r), c(-diag_r,  diag_r))
+  disp_angles <- c(45, 135, 225, 315)
+  if (display$units == "radians") {
+    labels <- vapply(disp_angles * pi / 180,
+                     function(a) paste0(round(a, 3), " rad"),
+                     character(1))
+  } else {
+    labels <- paste0(disp_angles, "\U00B0")
+  }
+  mapply(function(p, lab) ggplot2::annotate("text", x = p[1], y = p[2], label = lab),
+         pos, labels, SIMPLIFY = FALSE)
 }
 
 #' Make mean resultant length arrow
@@ -1795,14 +1802,14 @@ function(
     g <- g + spartan_theme()
     g <- g + add_quadrant_lines()
     g <- g + add_circ(circle_color = "grey60", circle_size = 1)
-    if (degrees) g <- g + degree_labs()
+    if (degrees) g <- g + degree_labs(display = display)
     if (ticks) g <- g + add_ticks()
   } else {
     g <- g + sparse_theme()
     g <- g + add_quadrant_lines()
     g <- g + add_circ(circle_color = "black", circle_size = 1.5)
     g <- g + add_ticks()
-    if (degrees) g <- g + degree_labs()
+    if (degrees) g <- g + degree_labs(display = display)
   }
 
   label_col <- resolve_label_column(data, label_col, group_col)
