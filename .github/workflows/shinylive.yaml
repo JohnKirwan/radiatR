@@ -26,13 +26,41 @@ name: shinylive.yaml
 
 jobs:
   # Build radiatR's WebAssembly filesystem image and attach it to the release.
+  #
+  # We run the official webR/Emscripten container directly rather than using
+  # r-wasm/actions' reusable workflow: that workflow's `docker run` does not
+  # forward env vars, and the project .Rprofile activates renv inside the
+  # mounted workspace, which switches .libPaths() to an empty project library
+  # and hides the container's preinstalled rwasm ("no package called 'rwasm'").
+  # Setting RENV_CONFIG_AUTOLOADER_ENABLED=false on the container makes the renv
+  # autoloader stand down so rwasm stays on the library path.
   wasm-assets:
-    uses: r-wasm/actions/.github/workflows/release-file-system-image.yml@v3
+    runs-on: ubuntu-latest
     permissions:
-      # For publishing artifact files to the release
+      # For publishing the image to the release
       contents: write
-      # To download GitHub Packages within action
-      repository-projects: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build radiatR WebAssembly filesystem image
+        run: |
+          docker run --rm \
+            -e RENV_CONFIG_AUTOLOADER_ENABLED=false \
+            -e GITHUB_PAT="${{ secrets.GITHUB_TOKEN }}" \
+            -v "$(pwd):/github/workspace" \
+            --workdir /github/workspace \
+            ghcr.io/r-wasm/webr:main \
+            Rscript -e 'rwasm::add_pkg(".", repo_dir = "_repo"); rwasm::make_vfs_library(out_dir = "_image", repo_dir = "_repo", compress = FALSE)'
+
+      - name: Upload the image to the release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: "_image/*"
+          tag: ${{ github.ref }}
+          file_glob: true
+          overwrite: true
 
   # Export the app as a static shinylive site and deploy it to gh-pages /app.
   deploy-app:
