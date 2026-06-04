@@ -93,6 +93,14 @@ test_that("the app exports a vector plot download", {
   app$click("go3")
   app$wait_for_idle(timeout = 30 * 1000)
 
+  # The Download controls live in an accordion panel that is collapsed by
+  # default (to keep the option column compact). Expand every collapsed panel
+  # so the download link is interactable before triggering it.
+  app$run_js(
+    "document.querySelectorAll('.accordion-button.collapsed').forEach(function(b){ b.click(); });"
+  )
+  app$wait_for_idle(timeout = 30 * 1000)
+
   # Format affects only the download, not any rendered output, so don't wait
   # for an output update. PDF is the default; set it explicitly for clarity.
   app$set_inputs(plot_fmt = "pdf", wait_ = FALSE)
