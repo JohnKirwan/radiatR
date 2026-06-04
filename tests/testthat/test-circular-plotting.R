@@ -1,3 +1,60 @@
+# ---- circ_display and transform helpers -------------------------------------
+
+test_that("circ_display() returns a list with correct defaults", {
+  d <- circ_display()
+  expect_equal(d$zero,      pi / 2)
+  expect_true(d$clockwise)
+  expect_equal(d$units, "degrees")
+  expect_s3_class(d, "circ_display")
+})
+
+test_that("circ_display() accepts custom args", {
+  d <- circ_display(zero = 0, clockwise = FALSE, units = "radians")
+  expect_equal(d$zero, 0)
+  expect_false(d$clockwise)
+  expect_equal(d$units, "radians")
+})
+
+test_that(".uc_to_display_coords: default (zero=pi/2, CW) is identity", {
+  r <- .uc_to_display_coords(1, 0, circ_display())
+  expect_equal(r$x, 1, tolerance = 1e-9)
+  expect_equal(r$y, 0, tolerance = 1e-9)
+  r2 <- .uc_to_display_coords(0, 1, circ_display())
+  expect_equal(r2$x, 0, tolerance = 1e-9)
+  expect_equal(r2$y, 1, tolerance = 1e-9)
+})
+
+test_that(".uc_to_display_coords: zero=0 rotates East to top (90 CCW)", {
+  d <- circ_display(zero = 0)
+  r <- .uc_to_display_coords(1, 0, d)
+  expect_equal(r$x, 0, tolerance = 1e-9)
+  expect_equal(r$y, 1, tolerance = 1e-9)
+  r2 <- .uc_to_display_coords(0, -1, d)
+  expect_equal(r2$x, 1, tolerance = 1e-9)
+  expect_equal(r2$y, 0, tolerance = 1e-9)
+})
+
+test_that(".uc_angle_to_display: default clock degrees", {
+  d <- circ_display()
+  expect_equal(.uc_angle_to_display(pi / 2, d), 0,   tolerance = 1e-9)
+  expect_equal(.uc_angle_to_display(0,      d), 90,  tolerance = 1e-9)
+  expect_equal(.uc_angle_to_display(3 * pi / 2, d), 180, tolerance = 1e-9)
+})
+
+test_that(".uc_angle_to_display: zero=0 clockwise degrees", {
+  d <- circ_display(zero = 0)
+  expect_equal(.uc_angle_to_display(0, d), 0, tolerance = 1e-9)
+  expect_equal(.uc_angle_to_display(3 * pi / 2, d), 90, tolerance = 1e-9)
+})
+
+test_that(".uc_angle_to_display: radians units", {
+  d <- circ_display(units = "radians")
+  expect_equal(.uc_angle_to_display(pi / 2, d), 0, tolerance = 1e-9)
+  expect_equal(.uc_angle_to_display(0, d), pi / 2, tolerance = 1e-9)
+})
+
+# ---- heading layers ----------------------------------------------------------
+
 test_that("add_heading_points returns a geom_point layer", {
   hd <- data.frame(id = "A", time = 1, heading = pi / 4)
   layer <- add_heading_points(hd)

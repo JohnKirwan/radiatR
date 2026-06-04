@@ -1,6 +1,53 @@
 # Circular plotting utilities for radiatR trajectories
 #
 
+# ---- display convention helpers ----------------------------------------------
+
+#' Circular display convention specification
+#'
+#' Describes how unit-circle radian angles are rendered in plots and tables.
+#' Pass to any display function as the `display` argument.
+#'
+#' @param zero UC angle (radians) that maps to display 0. Default `pi/2`
+#'   (geographic North at top — standard compass/clock layout). Use `0` to
+#'   put a stimulus that lies at East (positive rel_x) at the top.
+#' @param clockwise Logical. `TRUE` (default) for clockwise-positive angles.
+#' @param units `"degrees"` (default) or `"radians"` for table outputs and
+#'   degree label annotations.
+#' @return A `circ_display` list.
+#' @export
+circ_display <- function(zero = pi / 2,
+                         clockwise = TRUE,
+                         units = c("degrees", "radians")) {
+  units <- match.arg(units)
+  structure(list(zero = zero, clockwise = clockwise, units = units),
+            class = "circ_display")
+}
+
+# Internal: rotate UC Cartesian point(s) (x, y) into display canvas space.
+# zero=pi/2 CW (default) is identity — North is already up in standard ggplot.
+# zero=0 CW reproduces the former .to_clock_display() for stimulus-at-East data.
+.uc_to_display_coords <- function(x, y, display = circ_display()) {
+  angle <- pi / 2 - display$zero
+  cos_a <- cos(angle); sin_a <- sin(angle)
+  x_rot <- cos_a * x - sin_a * y
+  y_rot <- sin_a * x + cos_a * y
+  if (!display$clockwise) x_rot <- -x_rot
+  list(x = x_rot, y = y_rot)
+}
+
+# Internal: convert UC angle theta to display value.
+# CW with zero=pi/2 → clock degrees (0=North, 90=East).
+# CCW with zero=0   → UC degrees.
+.uc_angle_to_display <- function(theta, display = circ_display()) {
+  val <- if (display$clockwise) {
+    (display$zero - theta) %% (2 * pi)
+  } else {
+    (theta - display$zero) %% (2 * pi)
+  }
+  if (display$units == "degrees") val * 180 / pi else val
+}
+
 # ---- annotation layers -------------------------------------------------------
 
 #' Create tick marks at the cardinal directions.
