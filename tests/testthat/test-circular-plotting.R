@@ -103,6 +103,46 @@ test_that("directedness_arrow tip for three asymmetric angles matches analytic r
   expect_equal(tip$yend, (2 / 3) * sin(pi / 2), tolerance = 1e-6)
 })
 
+test_that("radiate arrow length equals rho of per-trial headings via arrow_angle_col", {
+  # The Shiny app drives the directedness arrow off the chosen heading method by
+  # broadcasting each trial's heading onto every frame and passing the column as
+  # `arrow_angle_col`. radiate takes the per-trial mean (a no-op for a constant
+  # column) then the resultant, so the arrow length must equal rho.circular of
+  # those per-trial headings -- matching the summary table's R. Guards the arrow
+  # against silently diverging from the headings it is supposed to summarise.
+  library(ggplot2)
+  sim <- simulate_tracks(conditions = data.frame(n_trials = 8L),
+                         n_points = 15, seed = 11)
+  idc <- sim@cols$id
+  d   <- sim@data
+  ids <- unique(d[[idc]])
+  set.seed(1)
+  headings <- stats::runif(length(ids), -pi, pi)   # known per-trial headings
+  names(headings) <- as.character(ids)
+  d[[".h"]] <- headings[as.character(d[[idc]])]
+  sim@data  <- d
+
+  p <- radiate(sim, x_col = "rel_x", y_col = "rel_y",
+               group_col = idc, show_arrow = TRUE,
+               arrow_angle_col = ".h", show_labels = FALSE)
+  built <- ggplot_build(p)
+
+  # The arrow is the only geom_segment whose base sits at the origin.
+  seg <- NULL
+  for (dd in built$data) {
+    if (all(c("x", "y", "xend", "yend") %in% names(dd))) {
+      base0 <- dd[abs(dd$x) < 1e-9 & abs(dd$y) < 1e-9, , drop = FALSE]
+      if (nrow(base0) == 1L) { seg <- base0; break }
+    }
+  }
+  expect_false(is.null(seg))
+
+  arrow_len <- sqrt(seg$xend^2 + seg$yend^2)
+  R <- as.numeric(circular::rho.circular(
+    circular::circular(headings, units = "radians", type = "angles")))
+  expect_equal(arrow_len, R, tolerance = 1e-6)
+})
+
 # ---- add_heading_points / vectors endpoint arithmetic -----------------------
 
 test_that("add_heading_points places markers at (cos(h), sin(h))", {
@@ -137,6 +177,49 @@ test_that("add_heading_points with display_convention='clock' rotates marker 90 
   # East (1,0) rotated 90 CCW -> North (0,1)
   expect_equal(pts$x, 0, tolerance = 1e-6)
   expect_equal(pts$y, 1, tolerance = 1e-6)
+})
+
+test_that("add_heading_points: clock angle_convention converts before display", {
+  library(ggplot2)
+  # heading=0 in clock/relative convention = toward stimulus = UC East = display North
+  hd <- data.frame(heading = 0)
+  attr(hd, "angle_convention")   <- "clock"
+  attr(hd, "coords")             <- "relative"
+  attr(hd, "display_convention") <- "clock"
+  p     <- ggplot() + add_heading_points(hd)
+  pts   <- ggplot_build(p)$data[[1]]
+  expect_equal(pts$x, 0, tolerance = 1e-6)  # North = top
+  expect_equal(pts$y, 1, tolerance = 1e-6)
+
+  # heading=pi/2 in clock/relative = 90 CW from stimulus = UC South = display East (right)
+  hd2 <- data.frame(heading = pi / 2)
+  attr(hd2, "angle_convention")   <- "clock"
+  attr(hd2, "coords")             <- "relative"
+  attr(hd2, "display_convention") <- "clock"
+  pts2 <- ggplot_build(ggplot() + add_heading_points(hd2))$data[[1]]
+  expect_equal(pts2$x,  1, tolerance = 1e-6)  # East = right
+  expect_equal(pts2$y,  0, tolerance = 1e-6)
+})
+
+test_that("add_heading_vectors: clock angle_convention converts endpoint before display", {
+  library(ggplot2)
+  # heading=0 clock/relative = toward stimulus = display North (top)
+  hd <- data.frame(heading = 0, x_inner = 0, y_inner = 0)
+  attr(hd, "angle_convention")   <- "clock"
+  attr(hd, "coords")             <- "relative"
+  attr(hd, "display_convention") <- "clock"
+  seg <- ggplot_build(ggplot() + add_heading_vectors(hd))$data[[1]]
+  expect_equal(seg$xend, 0, tolerance = 1e-6)
+  expect_equal(seg$yend, 1, tolerance = 1e-6)
+
+  # heading=pi/2 clock = 90 CW from stimulus = display East (right)
+  hd2 <- data.frame(heading = pi / 2, x_inner = 0, y_inner = 0)
+  attr(hd2, "angle_convention")   <- "clock"
+  attr(hd2, "coords")             <- "relative"
+  attr(hd2, "display_convention") <- "clock"
+  seg2 <- ggplot_build(ggplot() + add_heading_vectors(hd2))$data[[1]]
+  expect_equal(seg2$xend,  1, tolerance = 1e-6)
+  expect_equal(seg2$yend,  0, tolerance = 1e-6)
 })
 
 test_that("plotting helpers return ggplot layers", {

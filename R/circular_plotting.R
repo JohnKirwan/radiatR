@@ -1145,13 +1145,16 @@ add_heading_points <- function(headings_df, colour_col = NULL, colour = NULL,
     stop("`headings_df` must contain a `heading` column (radians).")
   }
   if (is.null(colour_col)) colour_col <- attr(headings_df, "colour_col")
+  angle_conv  <- attr(headings_df, "angle_convention") %||% "unit_circle"
+  coords_attr <- attr(headings_df, "coords") %||% "absolute"
+  uc_headings <- if (angle_conv == "clock") .clock_to_uc(headings_df$heading, coords_attr) else headings_df$heading
   if (identical(attr(headings_df, "display_convention"), "clock")) {
-    disp <- .to_clock_display(cos(headings_df$heading), sin(headings_df$heading))
+    disp <- .to_clock_display(cos(uc_headings), sin(uc_headings))
     headings_df[[".x_head"]] <- disp$x
     headings_df[[".y_head"]] <- disp$y
   } else {
-    headings_df[[".x_head"]] <- cos(headings_df$heading)
-    headings_df[[".y_head"]] <- sin(headings_df$heading)
+    headings_df[[".x_head"]] <- cos(uc_headings)
+    headings_df[[".y_head"]] <- sin(uc_headings)
   }
 
   mapping <- ggplot2::aes(x = .data[[".x_head"]], y = .data[[".y_head"]])
@@ -1211,8 +1214,11 @@ add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
     ))
   }
 
-  headings_df[[".x_head"]] <- cos(headings_df$heading)
-  headings_df[[".y_head"]] <- sin(headings_df$heading)
+  angle_conv  <- attr(headings_df, "angle_convention") %||% "unit_circle"
+  coords_attr <- attr(headings_df, "coords") %||% "absolute"
+  uc_headings <- if (angle_conv == "clock") .clock_to_uc(headings_df$heading, coords_attr) else headings_df$heading
+  headings_df[[".x_head"]] <- cos(uc_headings)
+  headings_df[[".y_head"]] <- sin(uc_headings)
 
   if (identical(attr(headings_df, "display_convention"), "clock")) {
     disp_end   <- .to_clock_display(headings_df[[".x_head"]], headings_df[[".y_head"]])
