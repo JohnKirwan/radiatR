@@ -162,8 +162,6 @@ reference:
       - add_circ_interval
       - add_critical_r
       - add_critical_v_line
-      - gg_add_circ_mean
-      - circ_mean_segments
 
   - title: "Visualisation -- distribution overlays"
     desc: >
@@ -201,8 +199,6 @@ reference:
     desc: >
       Angle-convention conversions and geometric helpers.
     contents:
-      - rad2clock
-      - rad_unclock
       - rad_shepherd
       - line_circle_intercept
       - line_circle_intercept_df
