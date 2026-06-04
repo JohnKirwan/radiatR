@@ -990,6 +990,24 @@ test_that("compute_circ_mean preserves factor levels on colour_col", {
 
 # ---- add_circ_mean -----------------------------------------------------------
 
+test_that("add_circ_mean: default display points UC North to top", {
+  library(ggplot2)
+  sm <- data.frame(mean_dir = pi / 2, resultant_R = 1)
+  seg <- ggplot_build(ggplot() + add_circ_mean(sm))$data[[1]]
+  # UC North (0,1) with zero=pi/2: identity -> (0,1)
+  expect_equal(seg$xend, 0, tolerance = 1e-6)
+  expect_equal(seg$yend, 1, tolerance = 1e-6)
+})
+
+test_that("add_circ_mean: display zero=0 puts UC East at top", {
+  library(ggplot2)
+  sm <- data.frame(mean_dir = 0, resultant_R = 1)
+  attr(sm, "display") <- circ_display(zero = 0)
+  seg <- ggplot_build(ggplot() + add_circ_mean(sm))$data[[1]]
+  expect_equal(seg$xend, 0, tolerance = 1e-6)
+  expect_equal(seg$yend, 1, tolerance = 1e-6)
+})
+
 test_that("add_circ_mean returns a LayerInstance", {
   sm <- data.frame(mean_dir = 0, resultant_R = 0.8)
   expect_s3_class(add_circ_mean(sm), "LayerInstance")
@@ -1025,17 +1043,6 @@ test_that("add_circ_mean drops NA rows when some but not all rows are NA", {
   expect_false(any(is.na(built$data[[1]]$xend)))
 })
 
-test_that("add_circ_mean with display_convention='clock' rotates arrow 90 CCW", {
-  library(ggplot2)
-  # mean_dir=0 (East in UC), R=0.8
-  # Clock display: endpoint = (-R*sin(0), R*cos(0)) = (0, 0.8) -> North
-  sm <- data.frame(mean_dir = 0, resultant_R = 0.8)
-  attr(sm, "display_convention") <- "clock"
-  built <- ggplot_build(ggplot() + add_circ_mean(sm))
-  seg   <- built$data[[1]]
-  expect_equal(seg$xend, 0,   tolerance = 1e-6)
-  expect_equal(seg$yend, 0.8, tolerance = 1e-6)
-})
 
 # ---- add_heading_arrow -------------------------------------------------------
 
