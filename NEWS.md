@@ -38,6 +38,15 @@
 
 ## Shiny app
 
+* The Configure step's heading-method picker is now a dropdown exposing all of
+  the package's parameter-free heading rules (plus ring `crossing`), with a
+  one-line description of the selected rule shown beneath it.
+* A new **None (no headings)** option plots the tracks and path metrics only:
+  the plot gains a straightness caption, the summary table reduces to Group and
+  Straightness, and all circular-statistics overlays are suppressed.
+* In None mode the data download exports the per-trial path-metrics table
+  ("Metrics (CSV)") instead of headings. The data-download button is also
+  restyled so it no longer appears greyed out.
 * The Results summary table gains a **Straightness** column: the mean path
   straightness index across each group's trials.
 * The Results step's Display panel gains a **Theme** dropdown (Void, Minimal,
