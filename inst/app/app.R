@@ -117,6 +117,73 @@ num_or <- function(v, default) {
   if (is.null(v) || length(v) != 1L || is.na(v) || !is.finite(v)) default else v
 }
 
+# Short human-readable labels for each heading method, keyed by the selectInput
+# value. Mirrors the dropdown choice names; used to name the chosen method in the
+# Results tab.
+method_labels <- c(
+  none            = "None (no headings)",
+  distal          = "Direction at furthest point",
+  net             = "Net displacement direction",
+  crossing        = "Exit direction (ring crossing)",
+  straight        = "Longest straight segment",
+  window_net      = "Smoothed (windowed) net direction",
+  origin_mean     = "Mean direction from centre",
+  velocity_mean   = "Mean velocity direction",
+  maxspeed_window = "Direction at peak speed",
+  vm_fit          = "Von Mises fit of step directions",
+  pca_axis        = "Principal axis (PCA)",
+  ransac_straight = "Robust straight-line fit (RANSAC)",
+  goal_bias       = "Goal-biased direction"
+)
+
+# Plot subtitle naming the heading method actually used (from rv$method, set at
+# derive time), so the Results tab and downloads always say which method drove it.
+method_subtitle <- function(method) {
+  if (is.null(method)) return(NULL)
+  lab <- method_labels[[method]]
+  if (is.null(lab)) lab <- method
+  paste0("Heading method: ", lab)
+}
+
+# Per-rule one-line descriptions for the Configure-step help line, keyed by the
+# selectInput value. "none" is an app-level sentinel (skip headings), not a
+# derive_headings() rule.
+method_help_text <- c(
+  none            = "Plot the tracks and path metrics only - no headings or circular statistics.",
+  distal          = "Heading when the animal was furthest from the centre. No setup needed.",
+  net             = "Straight-line direction from start to end. Simple and always applicable.",
+  crossing        = "Heading as the animal crosses a detection ring. Set the ring radii below.",
+  straight        = "Direction of the longest near-straight run in the path.",
+  window_net      = "Net direction over a sliding window, smoothing local wobble.",
+  origin_mean     = "Mean of the directions from the centre to each point.",
+  velocity_mean   = "Mean of the step (velocity) directions along the path.",
+  maxspeed_window = "Direction over the window of the animal's fastest movement.",
+  vm_fit          = "Von Mises fit to the step directions (peak of the fitted distribution).",
+  pca_axis        = "Principal (long) axis of the visited positions.",
+  ransac_straight = "Robust straight-line fit that ignores outlying points (RANSAC).",
+  goal_bias       = "Net step direction weighted toward outward (away-from-centre) movement."
+)
+
+# One-line path-metrics caption for the no-headings ("none") mode. Reads the
+# same straightness_index() table the summary uses so numbers match. Extend by
+# appending more "name: value" clauses as metrics are added.
+straightness_caption <- function(ts, gc = NULL) {
+  st  <- straightness_index(ts)
+  idc <- ts@cols$id
+  if (is.null(gc)) {
+    m <- mean(st$straightness, na.rm = TRUE)
+    if (!is.finite(m)) return("")
+    sprintf("Mean straightness: %.2f", m)
+  } else {
+    cond_map <- unique(as.data.frame(ts)[, c(idc, gc), drop = FALSE])
+    st  <- merge(st, cond_map, by = idc)
+    agg <- tapply(st$straightness, as.character(st[[gc]]),
+                  function(v) mean(v, na.rm = TRUE))
+    parts <- sprintf("%s: %.2f", names(agg), as.numeric(agg))
+    paste0("Straightness - ", paste(parts, collapse = ", "))
+  }
+}
+
 # Resolve a download format to a graphics device for ggsave(). Vector formats
 # prefer svglite/cairo so the output is editable in vector tools; PNG uses the
 # default raster device.
@@ -235,6 +302,7 @@ server <- function(input, output, session) {
     ts       = NULL,
     cond_col = NULL,
     hd       = NULL,
+    method   = NULL,
     error    = NULL
   )
 
@@ -312,10 +380,25 @@ server <- function(input, output, session) {
     }
   })
 
+  # One-line description of the selected heading method, shown under the dropdown.
+  output$method_help <- renderUI({
+    m <- if (is.null(input$method)) "distal" else input$method
+    txt <- method_help_text[[m]]
+    if (is.null(txt)) txt <- ""
+    tags$p(class = "text-muted small", txt)
+  })
+
   # Step 2 → 3: derive headings, join condition if present
   observeEvent(input$go3, {
     req(rv$ts)
     method <- if (is.null(input$method)) "distal" else input$method
+    if (identical(method, "none")) {
+      rv$hd     <- NULL
+      rv$method <- method
+      rv$step   <- 3L
+      rv$error  <- NULL
+      return()
+    }
     c0     <- if (is.null(input$circ0))  0.3 else input$circ0
     c1     <- if (is.null(input$circ1))  0.6 else input$circ1
     hd <- tryCatch(
@@ -341,9 +424,10 @@ server <- function(input, output, session) {
         hd       <- merge(hd, cond_map, by.x = "id", by.y = id_col,
                           all.x = TRUE)
       }
-      rv$hd    <- hd
-      rv$step  <- 3L
-      rv$error <- NULL
+      rv$hd     <- hd
+      rv$method <- method
+      rv$step   <- 3L
+      rv$error  <- NULL
     }
   })
 
@@ -415,40 +499,26 @@ server <- function(input, output, session) {
     } else if (rv$step == 2L) {
       tagList(
         h5("How should headings be measured?"),
-        radioButtons(
+        selectInput(
           "method", NULL,
-          choiceValues = c("distal", "net", "crossing"),
-          choiceNames  = list(
-            tagList(
-              tags$b("Direction at furthest point"),
-              tags$br(),
-              tags$span(
-                class = "text-muted small",
-                "Heading when the animal was furthest from the",
-                " centre. Recommended — no setup needed."
-              )
-            ),
-            tagList(
-              tags$b("Net displacement direction"),
-              tags$br(),
-              tags$span(
-                class = "text-muted small",
-                "Straight-line direction from start to end.",
-                " Simple and always applicable."
-              )
-            ),
-            tagList(
-              tags$b("Exit direction (ring crossing)"),
-              tags$br(),
-              tags$span(
-                class = "text-muted small",
-                "Heading as the animal crosses a detection ring.",
-                " Set the ring radii below."
-              )
-            )
+          choices = c(
+            "None (no headings)"                = "none",
+            "Direction at furthest point"       = "distal",
+            "Net displacement direction"        = "net",
+            "Exit direction (ring crossing)"    = "crossing",
+            "Longest straight segment"          = "straight",
+            "Smoothed (windowed) net direction" = "window_net",
+            "Mean direction from centre"        = "origin_mean",
+            "Mean velocity direction"           = "velocity_mean",
+            "Direction at peak speed"           = "maxspeed_window",
+            "Von Mises fit of step directions"  = "vm_fit",
+            "Principal axis (PCA)"              = "pca_axis",
+            "Robust straight-line fit (RANSAC)" = "ransac_straight",
+            "Goal-biased direction"             = "goal_bias"
           ),
           selected = "distal"
         ),
+        uiOutput("method_help"),
         conditionalPanel(
           "input.method == 'crossing'",
           tags$hr(),
@@ -558,10 +628,7 @@ server <- function(input, output, session) {
                 "dl_plot", "Download plot",
                 class = "btn-sm btn-outline-primary w-100 mb-2"
               ),
-              downloadButton(
-                "dl_csv", "Headings (CSV)",
-                class = "btn-sm btn-outline-secondary w-100"
-              )
+              uiOutput("dl_csv_ui")
             )
           )
         )
@@ -660,6 +727,32 @@ server <- function(input, output, session) {
     # clockwise-positive. This matches the old clock display and keeps tracks,
     # heading overlays, and the arrow all in the same orientation.
     disp <- circ_display(zero = 0)
+
+    # None mode: no headings. Draw tracks + theme only, then a path-metrics
+    # caption. Skip the arrow broadcast and every heading overlay below.
+    if (is.null(rv$hd)) {
+      plot_theme <- if (is.null(input$plot_theme)) "void" else input$plot_theme
+      p <- radiate(
+        rv$ts,
+        group_col    = id_col,
+        colour_col   = gc,
+        panel_by     = gc,
+        colour_cycle = if (is.null(gc)) 20 else NULL,
+        show_tracks  = tog(input$show_tracks, TRUE),
+        show_arrow   = FALSE,
+        show_labels  = FALSE,
+        theme        = plot_theme,
+        angle_labels = if (is.null(input$angle_labels)) "degrees"
+                       else input$angle_labels,
+        quadrants    = tog(input$show_quadrants, FALSE),
+        rings        = tog(input$show_rings, FALSE),
+        display      = disp
+      )
+      cap <- straightness_caption(rv$ts, gc)
+      if (nzchar(cap)) p <- p + ggplot2::labs(caption = cap)
+      p <- p + ggplot2::labs(subtitle = method_subtitle(rv$method))
+      return(p)
+    }
 
     # Drive the directedness arrow from the chosen heading method (rv$hd), so it
     # summarises the SAME angles as the heading points, CI bar, and summary
@@ -773,7 +866,7 @@ server <- function(input, output, session) {
       if (!is.null(v_layers)) p <- p + v_layers
     }
 
-    p
+    p + ggplot2::labs(subtitle = method_subtitle(rv$method))
   }
 
   # Preview canvas height tracks the chosen export aspect ratio so the on-screen
@@ -789,7 +882,7 @@ server <- function(input, output, session) {
   })
 
   output$track_plot <- renderPlot({
-    req(rv$ts, rv$hd)
+    req(rv$ts)
     p <- tryCatch(
       build_results_plot(),
       error = function(e) {
@@ -808,9 +901,28 @@ server <- function(input, output, session) {
   }, res = 120)
 
   output$summary_tbl <- renderTable({
-    req(rv$ts, rv$hd)
+    req(rv$ts)
     gc <- if (!is.null(input$cond_col) && nzchar(input$cond_col))
       input$cond_col else NULL
+
+    # None mode: no headings -> show Group + Straightness only.
+    if (is.null(rv$hd)) {
+      st  <- straightness_index(rv$ts)
+      idc <- rv$ts@cols$id
+      if (!is.null(gc)) {
+        cond_map <- unique(as.data.frame(rv$ts)[, c(idc, gc), drop = FALSE])
+        st  <- merge(st, cond_map, by = idc)
+        agg <- tapply(st$straightness, as.character(st[[gc]]),
+                      function(v) mean(v, na.rm = TRUE))
+        return(data.frame(Group = names(agg),
+                          Straightness = round(as.numeric(agg), 3),
+                          stringsAsFactors = FALSE))
+      }
+      return(data.frame(Group = as.character(st[[idc]]),
+                        Straightness = round(st$straightness, 3),
+                        stringsAsFactors = FALSE))
+    }
+
     # rv$hd is a headings frame whose trial column is always "id".
     by_col <- if (!is.null(gc)) gc else "id"
 
@@ -869,7 +981,7 @@ server <- function(input, output, session) {
       paste0("radiatR_plot_", Sys.Date(), ".", fmt)
     },
     content = function(file) {
-      req(rv$ts, rv$hd)
+      req(rv$ts)
       fmt <- if (is.null(input$plot_fmt)) "pdf" else input$plot_fmt
       ggsave(
         file, build_results_plot(),
@@ -882,13 +994,22 @@ server <- function(input, output, session) {
     }
   )
 
+  # Data-download button: relabel for None mode and use a clearer (non-ghosted)
+  # outline-primary style matching the plot-download button.
+  output$dl_csv_ui <- renderUI({
+    lab <- if (is.null(rv$hd)) "Metrics (CSV)" else "Headings (CSV)"
+    downloadButton("dl_csv", lab, class = "btn-sm btn-outline-primary w-100")
+  })
+
   output$dl_csv <- downloadHandler(
     filename = function() {
-      paste0("radiatR_headings_", Sys.Date(), ".csv")
+      stem <- if (is.null(rv$hd)) "radiatR_metrics_" else "radiatR_headings_"
+      paste0(stem, Sys.Date(), ".csv")
     },
     content = function(file) {
-      req(rv$hd)
-      utils::write.csv(rv$hd, file, row.names = FALSE)
+      req(rv$ts)
+      dat <- if (is.null(rv$hd)) straightness_index(rv$ts) else rv$hd
+      utils::write.csv(dat, file, row.names = FALSE)
     }
   )
 }
