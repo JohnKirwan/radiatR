@@ -117,6 +117,34 @@ num_or <- function(v, default) {
   if (is.null(v) || length(v) != 1L || is.na(v) || !is.finite(v)) default else v
 }
 
+# Short human-readable labels for each heading method, keyed by the selectInput
+# value. Mirrors the dropdown choice names; used to name the chosen method in the
+# Results tab.
+method_labels <- c(
+  none            = "None (no headings)",
+  distal          = "Direction at furthest point",
+  net             = "Net displacement direction",
+  crossing        = "Exit direction (ring crossing)",
+  straight        = "Longest straight segment",
+  window_net      = "Smoothed (windowed) net direction",
+  origin_mean     = "Mean direction from centre",
+  velocity_mean   = "Mean velocity direction",
+  maxspeed_window = "Direction at peak speed",
+  vm_fit          = "Von Mises fit of step directions",
+  pca_axis        = "Principal axis (PCA)",
+  ransac_straight = "Robust straight-line fit (RANSAC)",
+  goal_bias       = "Goal-biased direction"
+)
+
+# Plot subtitle naming the heading method actually used (from rv$method, set at
+# derive time), so the Results tab and downloads always say which method drove it.
+method_subtitle <- function(method) {
+  if (is.null(method)) return(NULL)
+  lab <- method_labels[[method]]
+  if (is.null(lab)) lab <- method
+  paste0("Heading method: ", lab)
+}
+
 # Per-rule one-line descriptions for the Configure-step help line, keyed by the
 # selectInput value. "none" is an app-level sentinel (skip headings), not a
 # derive_headings() rule.
@@ -274,6 +302,7 @@ server <- function(input, output, session) {
     ts       = NULL,
     cond_col = NULL,
     hd       = NULL,
+    method   = NULL,
     error    = NULL
   )
 
@@ -364,9 +393,10 @@ server <- function(input, output, session) {
     req(rv$ts)
     method <- if (is.null(input$method)) "distal" else input$method
     if (identical(method, "none")) {
-      rv$hd    <- NULL
-      rv$step  <- 3L
-      rv$error <- NULL
+      rv$hd     <- NULL
+      rv$method <- method
+      rv$step   <- 3L
+      rv$error  <- NULL
       return()
     }
     c0     <- if (is.null(input$circ0))  0.3 else input$circ0
@@ -394,9 +424,10 @@ server <- function(input, output, session) {
         hd       <- merge(hd, cond_map, by.x = "id", by.y = id_col,
                           all.x = TRUE)
       }
-      rv$hd    <- hd
-      rv$step  <- 3L
-      rv$error <- NULL
+      rv$hd     <- hd
+      rv$method <- method
+      rv$step   <- 3L
+      rv$error  <- NULL
     }
   })
 
@@ -719,6 +750,7 @@ server <- function(input, output, session) {
       )
       cap <- straightness_caption(rv$ts, gc)
       if (nzchar(cap)) p <- p + ggplot2::labs(caption = cap)
+      p <- p + ggplot2::labs(subtitle = method_subtitle(rv$method))
       return(p)
     }
 
@@ -834,7 +866,7 @@ server <- function(input, output, session) {
       if (!is.null(v_layers)) p <- p + v_layers
     }
 
-    p
+    p + ggplot2::labs(subtitle = method_subtitle(rv$method))
   }
 
   # Preview canvas height tracks the chosen export aspect ratio so the on-screen
