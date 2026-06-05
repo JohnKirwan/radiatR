@@ -10,6 +10,11 @@
 
 ## Plotting
 
+* `radiate()` gains an `angle_labels` argument: `"degrees"` (default, e.g.
+  `45°`), `"none"`, or `"radians"` (now rendered as π fractions, e.g. `π/4`,
+  rather than decimals). `degree_labs()` gains a matching `units` argument.
+  `degrees = FALSE` remains as a back-compatible alias for `angle_labels =
+  "none"`.
 * **Breaking:** the quadrant lines (two dashed lines through the origin) are no
   longer drawn by default. `radiate()` gains a `quadrants` argument (default
   `FALSE`) to opt back in.
@@ -38,6 +43,8 @@
 * The Results step's Display panel gains a **Theme** dropdown (Void, Minimal,
   Classic, Black & white, Grey, Light, Dark, Line draw) that restyles the
   on-screen plot and the download.
+* The Results Display panel gains an **Angle labels** dropdown (Degrees / None /
+  Radians).
 * The Results Display panel gains **Quadrant lines** and **Guide rings** toggles
   (both off by default); both follow the selected theme's grid styling.
 * The Results step now has on/off toggles for the trajectories, heading points,

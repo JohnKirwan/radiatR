@@ -181,9 +181,11 @@ add_quadrant_lines <- function(colour = "grey60", linewidth = 0.5, linetype = "d
 #' Provides a list of annotation layers that mark 45, 135, 225, and 315 degrees on a
 #' unit circle.
 #'
-#' @param display A [`circ_display`] object. Controls whether labels are shown
-#'   in degrees or radians. Default `circ_display()`.
+#' @param display A [`circ_display`] object. Default `circ_display()`. Supplies
+#'   the label units when `units` is `NULL`.
 #' @param colour Label colour. Default `"black"`.
+#' @param units `"degrees"` (e.g. `45°`) or `"radians"` (e.g. `π/4`). When
+#'   `NULL` (default) the units are taken from `display`.
 #' @return A list of ggplot2 annotation layers.
 #'
 #' @examples
@@ -192,21 +194,46 @@ add_quadrant_lines <- function(colour = "grey60", linewidth = 0.5, linetype = "d
 #'   coord_fixed() +
 #'   degree_labs()
 #' @export
-degree_labs <- function(display = circ_display(), colour = "black") {
+degree_labs <- function(display = circ_display(), colour = "black",
+                        units = NULL) {
+  if (is.null(units)) units <- display$units
+  units <- match.arg(units, c("degrees", "radians"))
   diag_r      <- 0.85
   pos         <- list(c(diag_r,  diag_r), c(diag_r, -diag_r),
                       c(-diag_r, -diag_r), c(-diag_r,  diag_r))
   disp_angles <- c(45, 135, 225, 315)
-  if (display$units == "radians") {
-    labels <- vapply(disp_angles * pi / 180,
-                     function(a) paste0(round(a, 3), " rad"),
-                     character(1))
+  labels <- if (units == "radians") {
+    vapply(disp_angles, .format_pi_deg, character(1))
   } else {
-    labels <- paste0(disp_angles, "\U00B0")
+    paste0(disp_angles, "\U00B0")
   }
   mapply(function(p, lab) ggplot2::annotate("text", x = p[1], y = p[2],
                                             label = lab, colour = colour),
          pos, labels, SIMPLIFY = FALSE)
+}
+
+# Greatest common divisor, for reducing pi-fraction labels.
+.gcd <- function(a, b) {
+  a <- abs(a); b <- abs(b)
+  while (b != 0) {
+    t <- b
+    b <- a %% b
+    a <- t
+  }
+  a
+}
+
+# Format an angle given in degrees as a reduced fraction of pi using the Greek
+# pi glyph, e.g. 45 -> "pi/4", 135 -> "3pi/4", 90 -> "pi/2", 180 -> "pi",
+# 0 -> "0".
+.format_pi_deg <- function(deg) {
+  if (deg == 0) return("0")
+  g   <- .gcd(deg, 180L)
+  num <- deg / g
+  den <- 180L / g
+  pi_sym  <- "\u03C0"   # Greek small letter pi (ASCII-safe)
+  numpart <- if (num == 1) pi_sym else paste0(num, pi_sym)
+  if (den == 1) numpart else paste0(numpart, "/", den)
 }
 
 #' Make mean resultant length arrow
@@ -1694,6 +1721,10 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   Use `circ_display(zero = 0)` when the reference direction lies at East in
 #'   unit-circle coordinates (e.g. the `cpunctatus` dataset).
 #' @param ticks,degrees,legend,title,xlab,ylab,axes Additional styling options.
+#'   `degrees` is retained for back-compatibility; `degrees = FALSE` is
+#'   equivalent to `angle_labels = "none"`.
+#' @param angle_labels One of `"degrees"` (default; e.g. `45°`), `"none"`, or
+#'   `"radians"` (e.g. `π/4`) -- the diagonal angle labels around the circle.
 #' @param ... Additional arguments forwarded to [draw_tracks()].
 #' @return A `ggplot2` object.
 #' @examples
@@ -1725,6 +1756,7 @@ function(
   ticks = NULL,
   degrees = NULL, legend = NULL, title = NULL,
   xlab = NULL, ylab = NULL, axes = NULL,
+  angle_labels = c("degrees", "none", "radians"),
   theme = c("void", "minimal", "classic", "bw", "grey", "gray",
             "light", "dark", "linedraw"),
   quadrants = FALSE,
@@ -1742,9 +1774,11 @@ function(
   display = circ_display(),
   ...){
   if (is.null(ticks)) {ticks = TRUE}
-  if (is.null(degrees)) {degrees = TRUE}
   if (is.null(legend)) {legend = FALSE}
   if (is.null(axes)) {axes = FALSE}
+  angle_labels <- match.arg(angle_labels)
+  # Back-compat: an explicit `degrees = FALSE` hides the angle labels.
+  if (isFALSE(degrees)) angle_labels <- "none"
   theme <- match.arg(theme)
   ink   <- .theme_ink(theme)
   if (is.null(show_labels)) {
@@ -1841,8 +1875,9 @@ function(
     g <- g + add_quadrant_lines(colour    = grid_style$colour,
                                 linewidth = grid_style$linewidth)
   g <- g + add_circ(circle_color = ink, circle_size = 1.2)
-  if (ticks)   g <- g + add_ticks(colour = ink)
-  if (degrees) g <- g + degree_labs(display = display, colour = ink)
+  if (ticks) g <- g + add_ticks(colour = ink)
+  if (angle_labels != "none")
+    g <- g + degree_labs(display = display, units = angle_labels, colour = ink)
 
   label_col <- resolve_label_column(data, label_col, group_col)
   if (show_labels && !is.null(label_col)) {
@@ -2059,6 +2094,7 @@ radiate.headings_frame <- function(
   ncol      = NULL,
   ticks     = TRUE,
   degrees   = TRUE,
+  angle_labels = c("degrees", "none", "radians"),
   title     = NULL,
   theme     = c("void", "minimal", "classic", "bw", "grey", "gray",
                 "light", "dark", "linedraw"),
@@ -2069,6 +2105,8 @@ radiate.headings_frame <- function(
   theme <- match.arg(theme)
   ink   <- .theme_ink(theme)
   grid_style <- .theme_grid_style(theme)
+  angle_labels <- match.arg(angle_labels)
+  if (isFALSE(degrees)) angle_labels <- "none"
 
   g <- ggplot2::ggplot() + ggplot2::coord_fixed() + radial_theme(theme)
 
@@ -2080,8 +2118,9 @@ radiate.headings_frame <- function(
                                 linewidth = grid_style$linewidth)
   g <- g + add_circ(circle_color = ink, circle_size = 1.2)
 
-  if (ticks)   g <- g + add_ticks(colour = ink)
-  if (degrees) g <- g + degree_labs(colour = ink)
+  if (ticks) g <- g + add_ticks(colour = ink)
+  if (angle_labels != "none")
+    g <- g + degree_labs(units = angle_labels, colour = ink)
 
   g <- g + add_stacked_headings(
     data, col = col, step = step, tol = tol, direction = direction,

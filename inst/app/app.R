@@ -503,6 +503,13 @@ server <- function(input, output, session) {
                             "Line draw"     = "linedraw"),
                 selected = "void"
               ),
+              selectInput(
+                "angle_labels", "Angle labels",
+                choices = c("Degrees (45°)" = "degrees",
+                            "None"          = "none",
+                            "Radians (π/4)" = "radians"),
+                selected = "degrees"
+              ),
               tags$hr(class = "my-2"),
               .layer_switch("show_tracks",   "Trajectories",       TRUE),
               .layer_switch("show_points",  "Heading points",     TRUE),
@@ -689,6 +696,8 @@ server <- function(input, output, session) {
       arrow_angle_col = ".arrow_heading",
       show_labels     = FALSE,
       theme           = plot_theme,
+      angle_labels    = if (is.null(input$angle_labels)) "degrees"
+                        else input$angle_labels,
       quadrants       = tog(input$show_quadrants, FALSE),
       rings           = tog(input$show_rings, FALSE),
       display         = disp

@@ -245,7 +245,7 @@ test_that("plotting helpers return ggplot layers", {
 
   labs_rad <- degree_labs(display = circ_display(units = "radians"))
   labels_r <- sapply(labs_rad, function(l) l$aes_params$label)
-  expect_true(any(grepl("rad", labels_r)))
+  expect_true(any(grepl("π", labels_r)))   # pi fractions, e.g. "pi/4"
 
   arrow <- suppressWarnings(directedness_arrow(data.frame(theta = c(0, pi/2, pi)), theta))
   expect_s3_class(arrow, "LayerInstance")
