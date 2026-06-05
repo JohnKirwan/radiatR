@@ -65,6 +65,31 @@ test_that("only crossing draws heading vectors (segments), never an origin ray",
                base_segs + 1L)
 })
 
+test_that("crossing heading vector spans the two rings, not the rim", {
+  d <- demo_tracks()
+  circ0 <- 0.3; circ1 <- 0.6
+  p <- build_method_preview(d, "crossing", circ0, circ1)
+
+  seg <- NULL
+  for (l in p$layers) {
+    dd <- l$data
+    if (inherits(l$geom, "GeomSegment") && is.data.frame(dd) &&
+        all(c("x_in", "y_in", "x_out", "y_out") %in% names(dd))) {
+      seg <- dd
+      break
+    }
+  }
+  expect_false(is.null(seg))
+
+  r_in  <- sqrt(seg$x_in^2  + seg$y_in^2)
+  r_out <- sqrt(seg$x_out^2 + seg$y_out^2)
+  # Outer endpoint sits exactly on the outer ring (placed there by construction),
+  # never extrapolated to the unit boundary as the old origin-to-rim vector was.
+  expect_true(all(abs(r_out - circ1) < 1e-6))
+  # Inner endpoint sits at the inner ring crossing, near circ0 and far from rim.
+  expect_true(all(r_in < circ0 + 0.1))
+})
+
 test_that("none mode draws no heading points", {
   d <- demo_tracks()
   has_points <- function(p)
