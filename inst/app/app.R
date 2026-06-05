@@ -597,10 +597,7 @@ server <- function(input, output, session) {
                 "dl_plot", "Download plot",
                 class = "btn-sm btn-outline-primary w-100 mb-2"
               ),
-              downloadButton(
-                "dl_csv", "Headings (CSV)",
-                class = "btn-sm btn-outline-secondary w-100"
-              )
+              uiOutput("dl_csv_ui")
             )
           )
         )
@@ -965,13 +962,22 @@ server <- function(input, output, session) {
     }
   )
 
+  # Data-download button: relabel for None mode and use a clearer (non-ghosted)
+  # outline-primary style matching the plot-download button.
+  output$dl_csv_ui <- renderUI({
+    lab <- if (is.null(rv$hd)) "Metrics (CSV)" else "Headings (CSV)"
+    downloadButton("dl_csv", lab, class = "btn-sm btn-outline-primary w-100")
+  })
+
   output$dl_csv <- downloadHandler(
     filename = function() {
-      paste0("radiatR_headings_", Sys.Date(), ".csv")
+      stem <- if (is.null(rv$hd)) "radiatR_metrics_" else "radiatR_headings_"
+      paste0(stem, Sys.Date(), ".csv")
     },
     content = function(file) {
-      req(rv$hd)
-      utils::write.csv(rv$hd, file, row.names = FALSE)
+      req(rv$ts)
+      dat <- if (is.null(rv$hd)) straightness_index(rv$ts) else rv$hd
+      utils::write.csv(dat, file, row.names = FALSE)
     }
   )
 }
