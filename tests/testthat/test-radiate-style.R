@@ -138,3 +138,32 @@ test_that("guide rings are off by default and added by rings = TRUE", {
   expect_equal(n_inner_rings(g_off), 0L)
   expect_equal(n_inner_rings(g_on), 3L)   # radii 0.25, 0.5, 0.75
 })
+
+test_that("degree_labs formats degrees with a symbol and radians as pi fractions", {
+  dlabs <- vapply(degree_labs(units = "degrees"),
+                  function(l) l$aes_params$label, character(1))
+  rlabs <- vapply(degree_labs(units = "radians"),
+                  function(l) l$aes_params$label, character(1))
+  expect_setequal(dlabs, c("45°", "135°", "225°", "315°"))
+  expect_setequal(rlabs, c("π/4", "3π/4", "5π/4", "7π/4"))
+})
+
+test_that("radiate angle_labels switches between degrees, none and radians", {
+  ts <- simulate_tracks(conditions = data.frame(n_trials = 3L),
+                        n_points = 20, seed = 8, output = "trajset")
+  # Collect the text of the angle-label layers (GeomText, no faceting/title so
+  # the only text layers are the degree labels).
+  label_texts <- function(g) {
+    unlist(lapply(g$layers, function(l) {
+      if (inherits(l$geom, "GeomText")) l$aes_params$label else NULL
+    }))
+  }
+  base <- function(...) radiate(ts, group_col = "trial_id", show_arrow = FALSE,
+                                show_labels = FALSE, show_tracks = FALSE, ...)
+
+  expect_true(any(grepl("°", label_texts(base(angle_labels = "degrees")))))
+  expect_true(any(grepl("π", label_texts(base(angle_labels = "radians")))))
+  expect_length(label_texts(base(angle_labels = "none")), 0L)
+  # Back-compat: degrees = FALSE hides the labels.
+  expect_length(label_texts(base(degrees = FALSE)), 0L)
+})

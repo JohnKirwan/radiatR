@@ -31,6 +31,7 @@ radiate(data, ...)
   xlab = NULL,
   ylab = NULL,
   axes = NULL,
+  angle_labels = c("degrees", "none", "radians"),
   theme = c("void", "minimal", "classic", "bw", "grey", "gray", "light", "dark",
     "linedraw"),
   quadrants = FALSE,
@@ -62,6 +63,7 @@ radiate(data, ...)
   ncol = NULL,
   ticks = TRUE,
   degrees = TRUE,
+  angle_labels = c("degrees", "none", "radians"),
   title = NULL,
   theme = c("void", "minimal", "classic", "bw", "grey", "gray", "light", "dark",
     "linedraw"),
@@ -111,7 +113,12 @@ circle at y = -1.25).}
 \item{strip_label_size}{Font size for strip labels. Applies to both strip
 text and the in-panel `"inside"` annotation.}
 
-\item{ticks, degrees, legend, title, xlab, ylab, axes}{Additional styling options.}
+\item{ticks, degrees, legend, title, xlab, ylab, axes}{Additional styling options.
+`degrees` is retained for back-compatibility; `degrees = FALSE` is
+equivalent to `angle_labels = "none"`.}
+
+\item{angle_labels}{One of `"degrees"` (default; e.g. `45°`), `"none"`, or
+`"radians"` (e.g. `π/4`) -- the diagonal angle labels around the circle.}
 
 \item{theme}{Plot appearance, named for the ggplot2 base themes: one of
 `"void"` (default), `"minimal"`, `"classic"`, `"bw"`, `"grey"`, `"light"`,
