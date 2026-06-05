@@ -700,6 +700,31 @@ server <- function(input, output, session) {
     # heading overlays, and the arrow all in the same orientation.
     disp <- circ_display(zero = 0)
 
+    # None mode: no headings. Draw tracks + theme only, then a path-metrics
+    # caption. Skip the arrow broadcast and every heading overlay below.
+    if (is.null(rv$hd)) {
+      plot_theme <- if (is.null(input$plot_theme)) "void" else input$plot_theme
+      p <- radiate(
+        rv$ts,
+        group_col    = id_col,
+        colour_col   = gc,
+        panel_by     = gc,
+        colour_cycle = if (is.null(gc)) 20 else NULL,
+        show_tracks  = tog(input$show_tracks, TRUE),
+        show_arrow   = FALSE,
+        show_labels  = FALSE,
+        theme        = plot_theme,
+        angle_labels = if (is.null(input$angle_labels)) "degrees"
+                       else input$angle_labels,
+        quadrants    = tog(input$show_quadrants, FALSE),
+        rings        = tog(input$show_rings, FALSE),
+        display      = disp
+      )
+      cap <- straightness_caption(rv$ts, gc)
+      if (nzchar(cap)) p <- p + ggplot2::labs(caption = cap)
+      return(p)
+    }
+
     # Drive the directedness arrow from the chosen heading method (rv$hd), so it
     # summarises the SAME angles as the heading points, CI bar, and summary
     # table. radiate's default arrow instead summarises the per-frame position
@@ -828,7 +853,7 @@ server <- function(input, output, session) {
   })
 
   output$track_plot <- renderPlot({
-    req(rv$ts, rv$hd)
+    req(rv$ts)
     p <- tryCatch(
       build_results_plot(),
       error = function(e) {
@@ -908,7 +933,7 @@ server <- function(input, output, session) {
       paste0("radiatR_plot_", Sys.Date(), ".", fmt)
     },
     content = function(file) {
-      req(rv$ts, rv$hd)
+      req(rv$ts)
       fmt <- if (is.null(input$plot_fmt)) "pdf" else input$plot_fmt
       ggsave(
         file, build_results_plot(),
