@@ -10,3 +10,6 @@ vignettes/*.html
 docs
 _build/
 _site/
+
+# R graphics device default output
+Rplots.pdf
