@@ -117,6 +117,45 @@ num_or <- function(v, default) {
   if (is.null(v) || length(v) != 1L || is.na(v) || !is.finite(v)) default else v
 }
 
+# Per-rule one-line descriptions for the Configure-step help line, keyed by the
+# selectInput value. "none" is an app-level sentinel (skip headings), not a
+# derive_headings() rule.
+method_help_text <- c(
+  none            = "Plot the tracks and path metrics only - no headings or circular statistics.",
+  distal          = "Heading when the animal was furthest from the centre. No setup needed.",
+  net             = "Straight-line direction from start to end. Simple and always applicable.",
+  crossing        = "Heading as the animal crosses a detection ring. Set the ring radii below.",
+  straight        = "Direction of the longest near-straight run in the path.",
+  window_net      = "Net direction over a sliding window, smoothing local wobble.",
+  origin_mean     = "Mean of the directions from the centre to each point.",
+  velocity_mean   = "Mean of the step (velocity) directions along the path.",
+  maxspeed_window = "Direction over the window of the animal's fastest movement.",
+  vm_fit          = "Von Mises fit to the step directions (peak of the fitted distribution).",
+  pca_axis        = "Principal (long) axis of the visited positions.",
+  ransac_straight = "Robust straight-line fit that ignores outlying points (RANSAC).",
+  goal_bias       = "Net step direction weighted toward outward (away-from-centre) movement."
+)
+
+# One-line path-metrics caption for the no-headings ("none") mode. Reads the
+# same straightness_index() table the summary uses so numbers match. Extend by
+# appending more "name: value" clauses as metrics are added.
+straightness_caption <- function(ts, gc = NULL) {
+  st  <- straightness_index(ts)
+  idc <- ts@cols$id
+  if (is.null(gc)) {
+    m <- mean(st$straightness, na.rm = TRUE)
+    if (!is.finite(m)) return("")
+    sprintf("Mean straightness: %.2f", m)
+  } else {
+    cond_map <- unique(as.data.frame(ts)[, c(idc, gc), drop = FALSE])
+    st  <- merge(st, cond_map, by = idc)
+    agg <- tapply(st$straightness, as.character(st[[gc]]),
+                  function(v) mean(v, na.rm = TRUE))
+    parts <- sprintf("%s: %.2f", names(agg), as.numeric(agg))
+    paste0("Straightness - ", paste(parts, collapse = ", "))
+  }
+}
+
 # Resolve a download format to a graphics device for ggsave(). Vector formats
 # prefer svglite/cairo so the output is editable in vector tools; PNG uses the
 # default raster device.
@@ -312,10 +351,24 @@ server <- function(input, output, session) {
     }
   })
 
+  # One-line description of the selected heading method, shown under the dropdown.
+  output$method_help <- renderUI({
+    m <- if (is.null(input$method)) "distal" else input$method
+    txt <- method_help_text[[m]]
+    if (is.null(txt)) txt <- ""
+    tags$p(class = "text-muted small", txt)
+  })
+
   # Step 2 → 3: derive headings, join condition if present
   observeEvent(input$go3, {
     req(rv$ts)
     method <- if (is.null(input$method)) "distal" else input$method
+    if (identical(method, "none")) {
+      rv$hd    <- NULL
+      rv$step  <- 3L
+      rv$error <- NULL
+      return()
+    }
     c0     <- if (is.null(input$circ0))  0.3 else input$circ0
     c1     <- if (is.null(input$circ1))  0.6 else input$circ1
     hd <- tryCatch(
@@ -415,40 +468,26 @@ server <- function(input, output, session) {
     } else if (rv$step == 2L) {
       tagList(
         h5("How should headings be measured?"),
-        radioButtons(
+        selectInput(
           "method", NULL,
-          choiceValues = c("distal", "net", "crossing"),
-          choiceNames  = list(
-            tagList(
-              tags$b("Direction at furthest point"),
-              tags$br(),
-              tags$span(
-                class = "text-muted small",
-                "Heading when the animal was furthest from the",
-                " centre. Recommended — no setup needed."
-              )
-            ),
-            tagList(
-              tags$b("Net displacement direction"),
-              tags$br(),
-              tags$span(
-                class = "text-muted small",
-                "Straight-line direction from start to end.",
-                " Simple and always applicable."
-              )
-            ),
-            tagList(
-              tags$b("Exit direction (ring crossing)"),
-              tags$br(),
-              tags$span(
-                class = "text-muted small",
-                "Heading as the animal crosses a detection ring.",
-                " Set the ring radii below."
-              )
-            )
+          choices = c(
+            "None (no headings)"                = "none",
+            "Direction at furthest point"       = "distal",
+            "Net displacement direction"        = "net",
+            "Exit direction (ring crossing)"    = "crossing",
+            "Longest straight segment"          = "straight",
+            "Smoothed (windowed) net direction" = "window_net",
+            "Mean direction from centre"        = "origin_mean",
+            "Mean velocity direction"           = "velocity_mean",
+            "Direction at peak speed"           = "maxspeed_window",
+            "Von Mises fit of step directions"  = "vm_fit",
+            "Principal axis (PCA)"              = "pca_axis",
+            "Robust straight-line fit (RANSAC)" = "ransac_straight",
+            "Goal-biased direction"             = "goal_bias"
           ),
           selected = "distal"
         ),
+        uiOutput("method_help"),
         conditionalPanel(
           "input.method == 'crossing'",
           tags$hr(),
