@@ -7,6 +7,9 @@ library(bslib)
 library(ggplot2)
 library(radiatR)
 
+# Configure-step preview helpers (demo_tracks(), build_method_preview()).
+source("preview.R", local = FALSE)
+
 # ---- dialect registry --------------------------------------------------------
 
 DIALECT_CHOICES <- c(
@@ -388,6 +391,21 @@ server <- function(input, output, session) {
     tags$p(class = "text-muted small", txt)
   })
 
+  # Live illustrative preview of the selected method on fixed demo tracks.
+  output$method_preview <- renderPlot({
+    method <- if (is.null(input$method)) "distal" else input$method
+    tryCatch(
+      build_method_preview(
+        demo_tracks(), method,
+        num_or(input$circ0, 0.3), num_or(input$circ1, 0.6)
+      ),
+      error = function(e) {
+        message("method_preview render failed: ", conditionMessage(e))
+        build_method_preview(demo_tracks(), "none")
+      }
+    )
+  }, res = 110)
+
   # Step 2 → 3: derive headings, join condition if present
   observeEvent(input$go3, {
     req(rv$ts)
@@ -498,47 +516,61 @@ server <- function(input, output, session) {
     # ---- Step 2: configure ----
     } else if (rv$step == 2L) {
       tagList(
-        h5("How should headings be measured?"),
-        selectInput(
-          "method", NULL,
-          choices = c(
-            "None (no headings)"                = "none",
-            "Direction at furthest point"       = "distal",
-            "Net displacement direction"        = "net",
-            "Exit direction (ring crossing)"    = "crossing",
-            "Longest straight segment"          = "straight",
-            "Smoothed (windowed) net direction" = "window_net",
-            "Mean direction from centre"        = "origin_mean",
-            "Mean velocity direction"           = "velocity_mean",
-            "Direction at peak speed"           = "maxspeed_window",
-            "Von Mises fit of step directions"  = "vm_fit",
-            "Principal axis (PCA)"              = "pca_axis",
-            "Robust straight-line fit (RANSAC)" = "ransac_straight",
-            "Goal-biased direction"             = "goal_bias"
-          ),
-          selected = "distal"
-        ),
-        uiOutput("method_help"),
-        conditionalPanel(
-          "input.method == 'crossing'",
-          tags$hr(),
-          p(class = "text-muted small",
-            "Radii as fractions of the arena radius",
-            " (0 = centre, 1 = edge)."),
-          layout_columns(
-            col_widths = c(6, 6),
-            sliderInput(
-              "circ0", "Inner ring",
-              min = 0.05, max = 0.9, value = 0.3, step = 0.05
+        layout_columns(
+          col_widths = c(5, 7),
+          # ---- left: controls ----
+          tagList(
+            h5("How should headings be measured?"),
+            selectInput(
+              "method", NULL,
+              choices = c(
+                "None (no headings)"                = "none",
+                "Direction at furthest point"       = "distal",
+                "Net displacement direction"        = "net",
+                "Exit direction (ring crossing)"    = "crossing",
+                "Longest straight segment"          = "straight",
+                "Smoothed (windowed) net direction" = "window_net",
+                "Mean direction from centre"        = "origin_mean",
+                "Mean velocity direction"           = "velocity_mean",
+                "Direction at peak speed"           = "maxspeed_window",
+                "Von Mises fit of step directions"  = "vm_fit",
+                "Principal axis (PCA)"              = "pca_axis",
+                "Robust straight-line fit (RANSAC)" = "ransac_straight",
+                "Goal-biased direction"             = "goal_bias"
+              ),
+              selected = "distal"
             ),
-            sliderInput(
-              "circ1", "Outer ring",
-              min = 0.1, max = 1.0, value = 0.6, step = 0.05
+            uiOutput("method_help"),
+            conditionalPanel(
+              "input.method == 'crossing'",
+              tags$hr(),
+              p(class = "text-muted small",
+                "Radii as fractions of the arena radius",
+                " (0 = centre, 1 = edge)."),
+              layout_columns(
+                col_widths = c(6, 6),
+                sliderInput(
+                  "circ0", "Inner ring",
+                  min = 0.05, max = 0.9, value = 0.3, step = 0.05
+                ),
+                sliderInput(
+                  "circ1", "Outer ring",
+                  min = 0.1, max = 1.0, value = 0.6, step = 0.05
+                )
+              )
+            ),
+            uiOutput("cond_ui"),
+            err_box
+          ),
+          # ---- right: live method preview ----
+          card(
+            card_header("How this method finds the heading"),
+            card_body(
+              padding = 0,
+              plotOutput("method_preview", height = "360px")
             )
           )
-        ),
-        uiOutput("cond_ui"),
-        err_box
+        )
       )
 
     # ---- Step 3: results ----
