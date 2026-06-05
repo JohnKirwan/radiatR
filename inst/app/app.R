@@ -872,9 +872,28 @@ server <- function(input, output, session) {
   }, res = 120)
 
   output$summary_tbl <- renderTable({
-    req(rv$ts, rv$hd)
+    req(rv$ts)
     gc <- if (!is.null(input$cond_col) && nzchar(input$cond_col))
       input$cond_col else NULL
+
+    # None mode: no headings -> show Group + Straightness only.
+    if (is.null(rv$hd)) {
+      st  <- straightness_index(rv$ts)
+      idc <- rv$ts@cols$id
+      if (!is.null(gc)) {
+        cond_map <- unique(as.data.frame(rv$ts)[, c(idc, gc), drop = FALSE])
+        st  <- merge(st, cond_map, by = idc)
+        agg <- tapply(st$straightness, as.character(st[[gc]]),
+                      function(v) mean(v, na.rm = TRUE))
+        return(data.frame(Group = names(agg),
+                          Straightness = round(as.numeric(agg), 3),
+                          stringsAsFactors = FALSE))
+      }
+      return(data.frame(Group = as.character(st[[idc]]),
+                        Straightness = round(st$straightness, 3),
+                        stringsAsFactors = FALSE))
+    }
+
     # rv$hd is a headings frame whose trial column is always "id".
     by_col <- if (!is.null(gc)) gc else "id"
 
