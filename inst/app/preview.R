@@ -49,13 +49,14 @@ demo_tracks <- function() {
 
 # Build the illustrative preview plot for a heading method on the demo tracks.
 # Non-crossing methods mark their derived heading as a single boundary point.
-# Ring crossing instead draws its two detection rings, a dot on each interpolated
-# ring crossing (inner c0, outer c1), and the dashed chord between them -- the
-# actual construction, stopping at the outer ring rather than extrapolating to
-# the rim. Tracks-only for "none". The preview always uses the identity
-# circ_display(), so unit-circle coordinates map straight to the panel.
-# (Trajectory-derived heading vectors for non-crossing methods are deferred
-# bespoke work; no vector is drawn from the origin.)
+# Ring crossing additionally draws its two detection rings and a dot on each
+# interpolated ring crossing (inner c0, outer c1), with the dashed heading vector
+# running through both crossings out to the unit-circle periphery. Heading
+# markers and the crossing vector take each trajectory's colour. Tracks-only for
+# "none". The preview always uses the identity circ_display(), so unit-circle
+# coordinates map straight to the panel. (Trajectory-derived heading vectors for
+# non-crossing methods are deferred bespoke work; no vector is drawn from the
+# origin.)
 build_method_preview <- function(ts, method, circ0 = 0.3, circ1 = 0.6,
                                  display = circ_display()) {
   idc <- ts@cols$id
@@ -95,24 +96,34 @@ build_method_preview <- function(ts, method, circ0 = 0.3, circ1 = 0.6,
   hd <- hd[is.finite(hd$heading), , drop = FALSE]
   attr(hd, "display") <- display
 
+  # Colour the heading markers (and the crossing vector) to match each track.
+  # radiate(colour_cycle = n) colours tracks by a factor of per-id cycle indices
+  # (levels 1..n) under ggplot2's default hue scale; reproduce that index per
+  # heading row so the overlay shares the same colour scale as the trajectories.
+  ids_order <- unique(ts@data[[idc]])
+  hd$.cycle_colour <- factor(match(hd$id, ids_order), levels = seq_len(n))
+  attr(hd, "colour_col") <- ".cycle_colour"
+
   p <- base
 
-  # Crossing is special: draw the two detection rings and the heading vector as
-  # the dotted chord between the two interpolated ring crossings (inner c0 ->
-  # outer c1), with a dot on each. c1 is the point on the outer ring along the
-  # heading ray from c0 (heading is defined as the c0->c1 direction, so this
-  # places it exactly on circ1). No rim point is drawn: the vector stops at the
-  # outer ring rather than extrapolating to the boundary.
+  # Crossing is special: draw the two detection rings, a dot on each interpolated
+  # ring crossing (inner c0, outer c1), and the dashed heading vector running
+  # through both crossings out to the unit-circle periphery. c1 and the rim point
+  # both lie on the heading ray from c0 (heading is defined as the c0->c1
+  # direction), so we place them exactly on circ1 and on radius 1.
   if (identical(method, "crossing")) {
     u_x <- cos(hd$heading); u_y <- sin(hd$heading)
     x0  <- hd$x_inner;      y0  <- hd$y_inner
-    b    <- x0 * u_x + y0 * u_y
-    disc <- pmax(b^2 - (x0^2 + y0^2 - circ1^2), 0)
-    tt   <- -b + sqrt(disc)                 # forward ray-circle intersection
+    b   <- x0 * u_x + y0 * u_y
+    r2  <- x0^2 + y0^2
+    t_out <- -b + sqrt(pmax(b^2 - (r2 - circ1^2), 0))  # outer ring crossing c1
+    t_rim <- -b + sqrt(pmax(b^2 - (r2 - 1),       0))  # unit-circle periphery
     seg  <- data.frame(x_in = x0, y_in = y0,
-                       x_out = x0 + tt * u_x, y_out = y0 + tt * u_y)
-    pts  <- data.frame(px = c(seg$x_in, seg$x_out),
-                       py = c(seg$y_in, seg$y_out))
+                       x_out = x0 + t_rim * u_x, y_out = y0 + t_rim * u_y,
+                       .cycle_colour = hd$.cycle_colour)
+    dots <- data.frame(px = c(x0, x0 + t_out * u_x),
+                       py = c(y0, y0 + t_out * u_y),
+                       .cycle_colour = rep(hd$.cycle_colour, 2L))
 
     return(
       p +
@@ -121,14 +132,17 @@ build_method_preview <- function(ts, method, circ0 = 0.3, circ1 = 0.6,
         ggplot2::geom_segment(
           data    = seg,
           mapping = ggplot2::aes(x = .data$x_in,   y = .data$y_in,
-                                 xend = .data$x_out, yend = .data$y_out),
+                                 xend = .data$x_out, yend = .data$y_out,
+                                 colour = .data[[".cycle_colour"]]),
           linetype = "dotted", inherit.aes = FALSE
         ) +
         ggplot2::geom_point(
-          data    = pts,
-          mapping = ggplot2::aes(x = .data$px, y = .data$py),
+          data    = dots,
+          mapping = ggplot2::aes(x = .data$px, y = .data$py,
+                                 colour = .data[[".cycle_colour"]]),
           size = 2, inherit.aes = FALSE
         ) +
+        add_heading_points(hd, size = 3) +
         ggplot2::labs(subtitle = lab)
     )
   }

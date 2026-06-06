@@ -65,7 +65,7 @@ test_that("only crossing draws heading vectors (segments), never an origin ray",
                base_segs + 1L)
 })
 
-test_that("crossing heading vector spans the two rings, not the rim", {
+test_that("crossing vector runs from inner crossing to the unit-circle rim", {
   d <- demo_tracks()
   circ0 <- 0.3; circ1 <- 0.6
   p <- build_method_preview(d, "crossing", circ0, circ1)
@@ -83,11 +83,49 @@ test_that("crossing heading vector spans the two rings, not the rim", {
 
   r_in  <- sqrt(seg$x_in^2  + seg$y_in^2)
   r_out <- sqrt(seg$x_out^2 + seg$y_out^2)
-  # Outer endpoint sits exactly on the outer ring (placed there by construction),
-  # never extrapolated to the unit boundary as the old origin-to-rim vector was.
-  expect_true(all(abs(r_out - circ1) < 1e-6))
+  # Vector extends through the crossings out to the unit-circle periphery.
+  expect_true(all(abs(r_out - 1) < 1e-6))
   # Inner endpoint sits at the inner ring crossing, near circ0 and far from rim.
   expect_true(all(r_in < circ0 + 0.1))
+})
+
+test_that("crossing marks dots on both detection rings", {
+  d <- demo_tracks()
+  circ0 <- 0.3; circ1 <- 0.6
+  p <- build_method_preview(d, "crossing", circ0, circ1)
+
+  dots <- NULL
+  for (l in p$layers) {
+    dd <- l$data
+    if (inherits(l$geom, "GeomPoint") && is.data.frame(dd) &&
+        all(c("px", "py") %in% names(dd))) {
+      dots <- dd
+      break
+    }
+  }
+  expect_false(is.null(dots))
+
+  r <- sqrt(dots$px^2 + dots$py^2)
+  expect_true(any(abs(r - circ1) < 1e-6))  # a dot exactly on the outer ring
+  expect_true(any(r < circ0 + 0.1))        # a dot at the inner ring crossing
+})
+
+test_that("heading markers and crossing vector are coloured per trajectory", {
+  d <- demo_tracks()
+  has_colour <- function(l) "colour" %in% names(l$mapping)
+
+  # A non-crossing method colours its heading point per track.
+  pd <- build_method_preview(d, "distal", 0.3, 0.6)
+  pt <- Find(function(l) inherits(l$geom, "GeomPoint"), pd$layers)
+  expect_false(is.null(pt))
+  expect_true(has_colour(pt))
+
+  # Crossing colours its dashed chord per track.
+  pc <- build_method_preview(d, "crossing", 0.3, 0.6)
+  segl <- Find(function(l) inherits(l$geom, "GeomSegment") &&
+                 is.data.frame(l$data) && "x_in" %in% names(l$data), pc$layers)
+  expect_false(is.null(segl))
+  expect_true(has_colour(segl))
 })
 
 test_that("none mode draws no heading points", {

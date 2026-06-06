@@ -42,8 +42,10 @@
   the controls that draws a few example tracks and re-renders to show how the
   selected heading rule derives its heading, updating as the method or ring
   radii change. For ring `crossing` it draws the two detection rings, a dot on
-  each interpolated ring crossing, and the dashed chord between them; other
-  methods mark just the derived heading point.
+  each interpolated ring crossing, and the dashed heading vector running through
+  both crossings to the unit-circle periphery; other methods mark just the
+  derived heading point. Heading markers and the crossing vector take each
+  trajectory's colour.
 * The Configure step's heading-method picker is now a dropdown exposing all of
   the package's parameter-free heading rules (plus ring `crossing`), with a
   one-line description of the selected rule shown beneath it.
