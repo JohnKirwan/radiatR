@@ -1,12 +1,14 @@
-# preview.R is a shiny-free helper sourced by the app; source it directly. Under
-# R CMD check the package is installed, so inst/app/preview.R lands at
-# system.file("app", ...); under devtools::test() the source tree is used and the
-# relative path resolves. Try the installed location first, then the source tree.
-preview_path <- system.file("app", "preview.R", package = "radiatR")
-if (!nzchar(preview_path) || !file.exists(preview_path)) {
-  preview_path <- testthat::test_path("..", "..", "inst", "app", "preview.R")
+# preview.R and preview_constructions.R are shiny-free helpers sourced by the app;
+# source them directly. Under R CMD check the package is installed, so the files
+# land at system.file("app", ...); under devtools::test() the source tree is used
+# and the relative path resolves. Try the installed location first, then source.
+for (.f in c("preview.R", "preview_constructions.R")) {
+  .p <- system.file("app", .f, package = "radiatR")
+  if (!nzchar(.p) || !file.exists(.p)) {
+    .p <- testthat::test_path("..", "..", "inst", "app", .f)
+  }
+  source(.p, local = TRUE)
 }
-source(preview_path, local = TRUE)
 
 test_that("demo_tracks returns a cached TrajSet subset of cpunctatus", {
   d <- demo_tracks()
