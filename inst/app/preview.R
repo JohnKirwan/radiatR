@@ -5,24 +5,6 @@
 # Session cache for the demo TrajSet so it is built at most once.
 .preview_env <- new.env(parent = emptyenv())
 
-# method_labels is normally provided by app.R; define a fallback so preview.R is
-# self-contained when sourced on its own (e.g. in tests).
-if (!exists("method_labels", inherits = TRUE)) {
-  method_labels <- c(
-    none = "None (no headings)", distal = "Direction at furthest point",
-    net = "Net displacement direction", crossing = "Exit direction (ring crossing)",
-    straight = "Longest straight segment",
-    window_net = "Smoothed (windowed) net direction",
-    origin_mean = "Mean direction from centre",
-    velocity_mean = "Mean velocity direction",
-    maxspeed_window = "Direction at peak speed",
-    vm_fit = "Von Mises fit of step directions",
-    pca_axis = "Principal axis (PCA)",
-    ransac_straight = "Robust straight-line fit (RANSAC)",
-    goal_bias = "Goal-biased direction"
-  )
-}
-
 # A small, fixed subset of the bundled cpunctatus example: a handful of trials
 # spanning the straightness range, so the preview shows low-, mid-, and
 # high-sinuosity real tracks. Cached after first call.
@@ -66,7 +48,9 @@ build_method_preview <- function(ts, method, circ0 = 0.3, circ1 = 0.6,
                   show_tracks = TRUE, theme = "minimal", colour_cycle = n,
                   display = display)
 
-  lab <- method_labels[[method]]
+  # method_labels is provided by app.R; fall back to the raw method name when this
+  # helper is sourced standalone (e.g. in tests).
+  lab <- if (exists("method_labels", inherits = TRUE)) method_labels[[method]] else NULL
   if (is.null(lab)) lab <- method
 
   if (identical(method, "none")) {

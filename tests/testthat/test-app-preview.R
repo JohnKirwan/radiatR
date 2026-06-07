@@ -1,6 +1,12 @@
-# preview.R is a shiny-free helper sourced by the app; source it directly.
-source(testthat::test_path("..", "..", "inst", "app", "preview.R"),
-       local = TRUE)
+# preview.R is a shiny-free helper sourced by the app; source it directly. Under
+# R CMD check the package is installed, so inst/app/preview.R lands at
+# system.file("app", ...); under devtools::test() the source tree is used and the
+# relative path resolves. Try the installed location first, then the source tree.
+preview_path <- system.file("app", "preview.R", package = "radiatR")
+if (!nzchar(preview_path) || !file.exists(preview_path)) {
+  preview_path <- testthat::test_path("..", "..", "inst", "app", "preview.R")
+}
+source(preview_path, local = TRUE)
 
 test_that("demo_tracks returns a cached TrajSet subset of cpunctatus", {
   d <- demo_tracks()
@@ -57,7 +63,7 @@ test_that("only crossing draws heading vectors (segments), never an origin ray",
   # The base plot already carries a tick segment layer, so compare relative
   # counts. Non-crossing methods add no segment (the origin ray was removed) and
   # so match each other; crossing adds exactly one extra layer for its dashed
-  # inner->boundary heading vectors.
+  # inner-crossing->rim heading vector.
   base_segs <- n_segments(build_method_preview(d, "distal", 0.3, 0.6))
   expect_equal(n_segments(build_method_preview(d, "net",  0.3, 0.6)), base_segs)
   expect_equal(n_segments(build_method_preview(d, "none", 0.3, 0.6)), base_segs)
