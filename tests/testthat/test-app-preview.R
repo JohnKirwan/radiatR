@@ -141,8 +141,26 @@ test_that("crossing marks dots on both detection rings", {
   expect_false(is.null(dots))
 
   r <- sqrt(dots$px^2 + dots$py^2)
-  expect_true(any(abs(r - circ1) < 1e-6))  # a dot exactly on the outer ring
-  expect_true(any(r < circ0 + 0.1))        # a dot at the inner ring crossing
+  # The outer dot is the interpolated outer crossing, so it sits near (not
+  # exactly on) circ1; the inner dot sits near the inner ring crossing.
+  expect_true(any(abs(r - circ1) < 0.05))
+  expect_true(any(r < circ0 + 0.1))
+})
+
+test_that("crossing heading marker coincides with the vector's rim endpoint", {
+  d <- demo_tracks()
+  p <- build_method_preview(d, "crossing", 0.3, 0.6)
+
+  seg <- Find(function(l) inherits(l$geom, "GeomSegment") && is.data.frame(l$data) &&
+                all(c("x_out", "y_out") %in% names(l$data)), p$layers)
+  hp  <- Find(function(l) inherits(l$geom, "GeomPoint") && is.data.frame(l$data) &&
+                all(c(".x_head", ".y_head") %in% names(l$data)), p$layers)
+  expect_false(is.null(seg))
+  expect_false(is.null(hp))
+
+  # the dashed vector's rim endpoint is exactly the heading marker for each track
+  expect_equal(sort(seg$x_out), sort(hp$.x_head), tolerance = 1e-9)
+  expect_equal(sort(seg$y_out), sort(hp$.y_head), tolerance = 1e-9)
 })
 
 test_that("heading markers and crossing vector are coloured per trajectory", {
