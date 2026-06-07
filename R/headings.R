@@ -223,10 +223,16 @@ setGeneric(
 
 # ---- net rule ----------------------------------------------------------------
 # Heading = angle from first to last point (net displacement)
-.set_headings_net_one <- function(d, id, tc, xc, yc) {
+.set_headings_net_one <- function(d, id, tc, xc, yc, return_coords = FALSE) {
   s <- 1L; e <- nrow(d)
   heading <- atan2(d[[yc]][e] - d[[yc]][s], d[[xc]][e] - d[[xc]][s])
-  data.frame(id = d[[id]][s], time = stats::median(d[[tc]], na.rm = TRUE), heading = .wrap_to_2pi(heading))
+  row <- data.frame(id = d[[id]][s], time = stats::median(d[[tc]], na.rm = TRUE),
+                    heading = .wrap_to_2pi(heading))
+  if (return_coords) {
+    row$x_start <- d[[xc]][s]; row$y_start <- d[[yc]][s]
+    row$x_end   <- d[[xc]][e]; row$y_end   <- d[[yc]][e]
+  }
+  row
 }
 
 # ---- window_net rule ---------------------------------------------------------
@@ -500,7 +506,11 @@ setMethod("derive_headings", "TrajSet", function(
         r_power <- dots$r_power %||% 0
         do.call(rbind, lapply(sp, function(ii) .set_headings_origin_mean_one(d[ii, , drop = FALSE], id, tc, xc, yc, r_power = r_power)))
       },
-      net = do.call(rbind, lapply(sp, function(ii) .set_headings_net_one(d[ii, , drop = FALSE], id, tc, xc, yc))),
+      net = {
+        return_coords <- dots$return_coords %||% FALSE
+        do.call(rbind, lapply(sp, function(ii) .set_headings_net_one(d[ii, , drop = FALSE], id, tc, xc, yc,
+                                                                     return_coords = return_coords)))
+      },
       velocity_mean = {
         weight_by <- dots$weight_by %||% "step_length"
         do.call(rbind, lapply(sp, function(ii) .set_headings_velocity_mean_one(d[ii, , drop = FALSE], id, tc, xc, yc, weight_by = weight_by)))
