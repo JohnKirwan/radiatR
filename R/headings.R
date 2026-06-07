@@ -92,12 +92,20 @@
 #'
 #' @param x TrajSet
 #' @param rule one of "crossing", "distal", "straight"
-#' @param ... rule-specific parameters
+#' @param ... rule-specific parameters, including `return_coords` (see below)
 #' @param coords Character. Which Cartesian columns to use: `"absolute"` (default,
 #'   uses `x`/`y` from `TrajSet@@cols`) or `"relative"` (uses `rel_x`/`rel_y`;
 #'   errors if not registered).
+#' @param return_coords Logical (passed via `...`, default `FALSE`). When `TRUE`,
+#'   attaches the construction coordinates each rule used to derive the heading,
+#'   in the chosen `coords` frame: `crossing` adds `x_inner`/`y_inner`; `distal`
+#'   adds `x_distal`/`y_distal`; `net` adds `x_start`/`y_start`/`x_end`/`y_end`;
+#'   `straight` adds `x_seg0`/`y_seg0`/`x_seg1`/`y_seg1` (the run endpoints);
+#'   `pca_axis` adds `x_centroid`/`y_centroid`/`axis_x`/`axis_y` (a unit axis
+#'   vector). Other rules ignore it.
 #' @return data.frame with columns id, time (approx), heading (radians, unit-circle
-#'   convention). For some rules there may be multiple headings per id.
+#'   convention), plus the rule-specific construction columns above when
+#'   `return_coords = TRUE`. For some rules there may be multiple headings per id.
 #' @export
 setGeneric(
   "derive_headings",
