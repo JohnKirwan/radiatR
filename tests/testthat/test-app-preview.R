@@ -1,12 +1,14 @@
-# preview.R is a shiny-free helper sourced by the app; source it directly. Under
-# R CMD check the package is installed, so inst/app/preview.R lands at
-# system.file("app", ...); under devtools::test() the source tree is used and the
-# relative path resolves. Try the installed location first, then the source tree.
-preview_path <- system.file("app", "preview.R", package = "radiatR")
-if (!nzchar(preview_path) || !file.exists(preview_path)) {
-  preview_path <- testthat::test_path("..", "..", "inst", "app", "preview.R")
+# preview.R and preview_constructions.R are shiny-free helpers sourced by the app;
+# source them directly. Under R CMD check the package is installed, so the files
+# land at system.file("app", ...); under devtools::test() the source tree is used
+# and the relative path resolves. Try the installed location first, then source.
+for (.f in c("preview.R", "preview_constructions.R")) {
+  .p <- system.file("app", .f, package = "radiatR")
+  if (!nzchar(.p) || !file.exists(.p)) {
+    .p <- testthat::test_path("..", "..", "inst", "app", .f)
+  }
+  source(.p, local = TRUE)
 }
-source(preview_path, local = TRUE)
 
 test_that("demo_tracks returns a cached TrajSet subset of cpunctatus", {
   d <- demo_tracks()
@@ -25,6 +27,50 @@ test_that("demo_tracks returns a cached TrajSet subset of cpunctatus", {
 
   # cached: identical object on second call
   expect_identical(demo_tracks(), d)
+})
+
+# Identify a method's own construction layers (distinct from base ticks, the
+# crossing geometry, and the heading-point layer).
+constr_point <- function(p) {
+  Find(function(l) inherits(l$geom, "GeomPoint") && is.data.frame(l$data) &&
+         all(c("px", "py") %in% names(l$data)), p$layers)
+}
+constr_segment <- function(p) {
+  Find(function(l) inherits(l$geom, "GeomSegment") && is.data.frame(l$data) &&
+         all(c("x0", "y0", "x1", "y1") %in% names(l$data)), p$layers)
+}
+
+test_that("distal draws a furthest-point marker", {
+  d <- demo_tracks()
+  expect_false(is.null(constr_point(build_method_preview(d, "distal", 0.3, 0.6))))
+})
+
+test_that("net, straight and pca_axis each draw a construction segment", {
+  d <- demo_tracks()
+  for (m in c("net", "straight", "pca_axis")) {
+    expect_false(is.null(constr_segment(build_method_preview(d, m, 0.3, 0.6))),
+                 info = m)
+  }
+})
+
+test_that("a construction-less in-dropdown method shows only its heading point", {
+  d <- demo_tracks()
+  p <- build_method_preview(d, "vm_fit", 0.3, 0.6)
+  expect_null(constr_point(p))
+  expect_null(constr_segment(p))
+  # but the common heading point is still drawn
+  expect_true(any(vapply(p$layers, function(l) inherits(l$geom, "GeomPoint"),
+                         logical(1))))
+})
+
+test_that("pca_axis construction segment is clipped to the unit circle", {
+  d <- demo_tracks()
+  seg <- constr_segment(build_method_preview(d, "pca_axis", 0.3, 0.6))
+  expect_false(is.null(seg))
+  r0 <- sqrt(seg$x0^2 + seg$y0^2)
+  r1 <- sqrt(seg$x1^2 + seg$y1^2)
+  expect_true(all(abs(r0 - 1) < 1e-6))
+  expect_true(all(abs(r1 - 1) < 1e-6))
 })
 
 test_that("build_method_preview builds a ggplot for every exposed method", {
@@ -52,23 +98,6 @@ test_that("crossing draws two rings that other methods do not", {
   }
   expect_equal(n_inner_rings(build_method_preview(d, "crossing", 0.3, 0.6)), 2L)
   expect_equal(n_inner_rings(build_method_preview(d, "distal",   0.3, 0.6)), 0L)
-})
-
-test_that("only crossing draws heading vectors (segments), never an origin ray", {
-  d <- demo_tracks()
-  n_segments <- function(p) {
-    sum(vapply(p$layers, function(l) inherits(l$geom, "GeomSegment"),
-               logical(1)))
-  }
-  # The base plot already carries a tick segment layer, so compare relative
-  # counts. Non-crossing methods add no segment (the origin ray was removed) and
-  # so match each other; crossing adds exactly one extra layer for its dashed
-  # inner-crossing->rim heading vector.
-  base_segs <- n_segments(build_method_preview(d, "distal", 0.3, 0.6))
-  expect_equal(n_segments(build_method_preview(d, "net",  0.3, 0.6)), base_segs)
-  expect_equal(n_segments(build_method_preview(d, "none", 0.3, 0.6)), base_segs)
-  expect_equal(n_segments(build_method_preview(d, "crossing", 0.3, 0.6)),
-               base_segs + 1L)
 })
 
 test_that("crossing vector runs from inner crossing to the unit-circle rim", {

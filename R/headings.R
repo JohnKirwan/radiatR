@@ -92,12 +92,21 @@
 #'
 #' @param x TrajSet
 #' @param rule one of "crossing", "distal", "straight"
-#' @param ... rule-specific parameters
+#' @param ... rule-specific parameters, including `return_coords` (see below)
 #' @param coords Character. Which Cartesian columns to use: `"absolute"` (default,
 #'   uses `x`/`y` from `TrajSet@@cols`) or `"relative"` (uses `rel_x`/`rel_y`;
 #'   errors if not registered).
+#' @details
+#' Passing `return_coords = TRUE` (via `...`, default `FALSE`) attaches the
+#' construction coordinates each rule used to derive the heading, in the chosen
+#' `coords` frame: `crossing` adds `x_inner`/`y_inner`; `distal` adds
+#' `x_distal`/`y_distal`; `net` adds `x_start`/`y_start`/`x_end`/`y_end`;
+#' `straight` adds `x_seg0`/`y_seg0`/`x_seg1`/`y_seg1` (the run endpoints);
+#' `pca_axis` adds `x_centroid`/`y_centroid`/`axis_x`/`axis_y` (a unit axis
+#' vector). Other rules ignore it.
 #' @return data.frame with columns id, time (approx), heading (radians, unit-circle
-#'   convention). For some rules there may be multiple headings per id.
+#'   convention), plus the rule-specific construction columns above when
+#'   `return_coords = TRUE`. For some rules there may be multiple headings per id.
 #' @export
 setGeneric(
   "derive_headings",
@@ -169,18 +178,33 @@ setGeneric(
 
 # ---- distal rule ------------------------------------------------------------- -------------------------------------------------------------
 # Heading = angle of the most distal point (max radius from origin)
-.set_headings_distal_one <- function(d, id, tc, xc, yc) {
+.set_headings_distal_one <- function(d, id, tc, xc, yc, return_coords = FALSE) {
   r <- sqrt(d[[xc]]^2 + d[[yc]]^2)
   m <- which.max(r)
-  data.frame(id = d[[id]][m], time = d[[tc]][m], heading = .wrap_to_2pi(atan2(d[[yc]][m], d[[xc]][m])))
+  row <- data.frame(id = d[[id]][m], time = d[[tc]][m],
+                    heading = .wrap_to_2pi(atan2(d[[yc]][m], d[[xc]][m])))
+  if (return_coords) {
+    row$x_distal <- d[[xc]][m]
+    row$y_distal <- d[[yc]][m]
+  }
+  row
 }
 
 # ---- straight rule -----------------------------------------------------------
 # Heading = angle of the longest contiguous segment where turning angle <= tol
 # turning angle between steps i-1->i and i->i+1 via atan2(cross, dot)
-.set_headings_straight_one <- function(d, id, tc, xc, yc, tol = pi/18, min_len = 5L) {
+.set_headings_straight_one <- function(d, id, tc, xc, yc, tol = pi/18, min_len = 5L,
+                                       return_coords = FALSE) {
+  na_row <- function() {
+    row <- data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_)
+    if (return_coords) {
+      row$x_seg0 <- NA_real_; row$y_seg0 <- NA_real_
+      row$x_seg1 <- NA_real_; row$y_seg1 <- NA_real_
+    }
+    row
+  }
   n <- nrow(d)
-  if (n < min_len + 1L) return(data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_))
+  if (n < min_len + 1L) return(na_row())
   vx <- diff(d[[xc]]); vy <- diff(d[[yc]])
   # angles between successive displacement vectors
   cross <- vx[-1]*vy[-length(vy)] - vy[-1]*vx[-length(vx)]
@@ -192,16 +216,23 @@ setGeneric(
   ends <- cumsum(r$lengths)
   starts <- ends - r$lengths + 1L
   idx_ok <- which(r$values)
-  if (!length(idx_ok)) return(data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_))
+  if (!length(idx_ok)) return(na_row())
   # choose longest run meeting min_len-1 turning checks => segment length >= min_len
   lens <- r$lengths[idx_ok]
   ok_idx <- which.max(lens)
-  if (lens[ok_idx] < (min_len - 1L)) return(data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_))
+  if (lens[ok_idx] < (min_len - 1L)) return(na_row())
   s_turn <- starts[idx_ok[ok_idx]]; e_turn <- ends[idx_ok[ok_idx]]
   s <- s_turn     # start step index
   e <- e_turn + 1 # end step index (because turn array shorter by 1)
   heading <- atan2(d[[yc]][s+1] - d[[yc]][s], d[[xc]][s+1] - d[[xc]][s])
-  data.frame(id = d[[id]][s], time = d[[tc]][floor((s+e)/2)], heading = .wrap_to_2pi(heading))
+  row <- data.frame(id = d[[id]][s], time = d[[tc]][floor((s+e)/2)],
+                    heading = .wrap_to_2pi(heading))
+  if (return_coords) {
+    last_pt <- e_turn + 2L          # last point of the straight run
+    row$x_seg0 <- d[[xc]][s];        row$y_seg0 <- d[[yc]][s]
+    row$x_seg1 <- d[[xc]][last_pt];  row$y_seg1 <- d[[yc]][last_pt]
+  }
+  row
 }
 
 # ---- origin_mean rule --------------------------------------------------------
@@ -217,10 +248,16 @@ setGeneric(
 
 # ---- net rule ----------------------------------------------------------------
 # Heading = angle from first to last point (net displacement)
-.set_headings_net_one <- function(d, id, tc, xc, yc) {
+.set_headings_net_one <- function(d, id, tc, xc, yc, return_coords = FALSE) {
   s <- 1L; e <- nrow(d)
   heading <- atan2(d[[yc]][e] - d[[yc]][s], d[[xc]][e] - d[[xc]][s])
-  data.frame(id = d[[id]][s], time = stats::median(d[[tc]], na.rm = TRUE), heading = .wrap_to_2pi(heading))
+  row <- data.frame(id = d[[id]][s], time = stats::median(d[[tc]], na.rm = TRUE),
+                    heading = .wrap_to_2pi(heading))
+  if (return_coords) {
+    row$x_start <- d[[xc]][s]; row$y_start <- d[[yc]][s]
+    row$x_end   <- d[[xc]][e]; row$y_end   <- d[[yc]][e]
+  }
+  row
 }
 
 # ---- window_net rule ---------------------------------------------------------
@@ -255,24 +292,39 @@ setGeneric(
 
 # ---- pca_axis rule -----------------------------------------------------------
 # Heading of first principal axis of positions or velocities; sign aligned with net displacement
-.set_headings_pca_axis_one <- function(d, id, tc, xc, yc, source = c("position","velocity")) {
+.set_headings_pca_axis_one <- function(d, id, tc, xc, yc, source = c("position","velocity"),
+                                       return_coords = FALSE) {
   source <- match.arg(source)
+  na_row <- function() {
+    row <- data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_)
+    if (return_coords) {
+      row$x_centroid <- NA_real_; row$y_centroid <- NA_real_
+      row$axis_x <- NA_real_;     row$axis_y <- NA_real_
+    }
+    row
+  }
   if (source == "position") {
     M <- cbind(d[[xc]], d[[yc]])
     M <- scale(M, center = TRUE, scale = FALSE)
   } else {
-    if (nrow(d) < 2L) return(data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_))
+    if (nrow(d) < 2L) return(na_row())
     M <- cbind(diff(d[[xc]]), diff(d[[yc]]))
     M <- scale(M, center = TRUE, scale = FALSE)
   }
-  if (nrow(M) < 2L) return(data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_))
+  if (nrow(M) < 2L) return(na_row())
   S <- crossprod(M) / (nrow(M) - 1)
   ev <- eigen(S, symmetric = TRUE)$vectors[,1]
   # align sign with net displacement
   net <- c(d[[xc]][nrow(d)] - d[[xc]][1], d[[yc]][nrow(d)] - d[[yc]][1])
   if (sum(ev * net) < 0) ev <- -ev
   heading <- atan2(ev[2], ev[1])
-  data.frame(id = d[[id]][1], time = stats::median(d[[tc]], na.rm = TRUE), heading = .wrap_to_2pi(heading))
+  row <- data.frame(id = d[[id]][1], time = stats::median(d[[tc]], na.rm = TRUE),
+                    heading = .wrap_to_2pi(heading))
+  if (return_coords) {
+    row$x_centroid <- mean(d[[xc]]); row$y_centroid <- mean(d[[yc]])
+    row$axis_x <- ev[1];             row$axis_y <- ev[2]
+  }
+  row
 }
 
 # ---- ransac_straight rule ----------------------------------------------------
@@ -480,17 +532,27 @@ setMethod("derive_headings", "TrajSet", function(
                                                                           first_only = first_only,
                                                                           return_coords = return_coords)))
       },
-      distal   = do.call(rbind, lapply(sp, function(ii) .set_headings_distal_one(d[ii, , drop = FALSE], id, tc, xc, yc))),
+      distal   = {
+        return_coords <- dots$return_coords %||% FALSE
+        do.call(rbind, lapply(sp, function(ii) .set_headings_distal_one(d[ii, , drop = FALSE], id, tc, xc, yc,
+                                                                        return_coords = return_coords)))
+      },
       straight = {
         tol <- dots$tol %||% (pi/18); min_len <- dots$min_len %||% 5L
+        return_coords <- dots$return_coords %||% FALSE
         do.call(rbind, lapply(sp, function(ii) .set_headings_straight_one(d[ii, , drop = FALSE], id, tc, xc, yc,
-                                                                          tol = tol, min_len = as.integer(min_len))))
+                                                                          tol = tol, min_len = as.integer(min_len),
+                                                                          return_coords = return_coords)))
       },
       origin_mean = {
         r_power <- dots$r_power %||% 0
         do.call(rbind, lapply(sp, function(ii) .set_headings_origin_mean_one(d[ii, , drop = FALSE], id, tc, xc, yc, r_power = r_power)))
       },
-      net = do.call(rbind, lapply(sp, function(ii) .set_headings_net_one(d[ii, , drop = FALSE], id, tc, xc, yc))),
+      net = {
+        return_coords <- dots$return_coords %||% FALSE
+        do.call(rbind, lapply(sp, function(ii) .set_headings_net_one(d[ii, , drop = FALSE], id, tc, xc, yc,
+                                                                     return_coords = return_coords)))
+      },
       velocity_mean = {
         weight_by <- dots$weight_by %||% "step_length"
         do.call(rbind, lapply(sp, function(ii) .set_headings_velocity_mean_one(d[ii, , drop = FALSE], id, tc, xc, yc, weight_by = weight_by)))
@@ -502,7 +564,9 @@ setMethod("derive_headings", "TrajSet", function(
       goal_bias = do.call(rbind, lapply(sp, function(ii) .set_headings_goal_bias_one(d[ii, , drop = FALSE], id, tc, xc, yc))),
       pca_axis = {
         source <- dots$source %||% "position"
-        do.call(rbind, lapply(sp, function(ii) .set_headings_pca_axis_one(d[ii, , drop = FALSE], id, tc, xc, yc, source = source)))
+        return_coords <- dots$return_coords %||% FALSE
+        do.call(rbind, lapply(sp, function(ii) .set_headings_pca_axis_one(d[ii, , drop = FALSE], id, tc, xc, yc,
+                                                                          source = source, return_coords = return_coords)))
       },
       ransac_straight = {
         eps <- dots$eps %||% 0.02; min_inliers <- as.integer(dots$min_inliers %||% 10L); n_iter <- as.integer(dots$n_iter %||% 200L)

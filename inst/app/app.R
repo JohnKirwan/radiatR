@@ -9,6 +9,7 @@ library(radiatR)
 
 # Configure-step preview helpers (demo_tracks(), build_method_preview()).
 source("preview.R", local = FALSE)
+source("preview_constructions.R", local = FALSE)
 
 # ---- dialect registry --------------------------------------------------------
 
