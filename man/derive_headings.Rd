@@ -39,14 +39,6 @@ errors if not registered).}
 \item{first_only}{logical; if TRUE, return only the first matching heading per trajectory}
 
 \item{carry}{optional character vector of columns from the source data to append via nearest time}
-
-\item{return_coords}{Logical (passed via `...`, default `FALSE`). When `TRUE`,
-attaches the construction coordinates each rule used to derive the heading,
-in the chosen `coords` frame: `crossing` adds `x_inner`/`y_inner`; `distal`
-adds `x_distal`/`y_distal`; `net` adds `x_start`/`y_start`/`x_end`/`y_end`;
-`straight` adds `x_seg0`/`y_seg0`/`x_seg1`/`y_seg1` (the run endpoints);
-`pca_axis` adds `x_centroid`/`y_centroid`/`axis_x`/`axis_y` (a unit axis
-vector). Other rules ignore it.}
 }
 \value{
 data.frame with columns id, time (approx), heading (radians, unit-circle
@@ -55,4 +47,13 @@ data.frame with columns id, time (approx), heading (radians, unit-circle
 }
 \description{
 Derive heading angle(s) from trajectories using specified rule
+}
+\details{
+Passing `return_coords = TRUE` (via `...`, default `FALSE`) attaches the
+construction coordinates each rule used to derive the heading, in the chosen
+`coords` frame: `crossing` adds `x_inner`/`y_inner`; `distal` adds
+`x_distal`/`y_distal`; `net` adds `x_start`/`y_start`/`x_end`/`y_end`;
+`straight` adds `x_seg0`/`y_seg0`/`x_seg1`/`y_seg1` (the run endpoints);
+`pca_axis` adds `x_centroid`/`y_centroid`/`axis_x`/`axis_y` (a unit axis
+vector). Other rules ignore it.
 }
