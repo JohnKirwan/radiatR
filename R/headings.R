@@ -119,9 +119,29 @@ setGeneric(
 )
 
 # ---- crossing rule -----------------------------------------------------------
-# Picks vector between successive crossings of two radii circ0 < circ1 (default outward).
-# Heading = atan2(p1 - p0). If multiple such pairs occur, return one row per pair unless first_only=TRUE.
-# When return_coords=TRUE, also returns x_inner/y_inner (position at circ0 crossing).
+# Finds successive crossings of two radii circ0 < circ1 (default outward) and
+# projects the inner->outer crossing vector forward onto the unit circle (the
+# arena boundary); the heading is the bearing of that boundary intersection.
+# If multiple crossing pairs occur, returns one row per pair unless
+# first_only=TRUE. When return_coords=TRUE, also returns x_inner/y_inner (inner
+# circ0 crossing) and x_outer/y_outer (outer circ1 crossing).
+
+# Forward intersection of the ray from (x0,y0) toward (x1,y1) with the unit
+# circle: the inner->outer crossing vector projected to the arena boundary.
+# (x0,y0) is inside the unit circle, so the forward root is unique and positive.
+# Returns c(px, py), or c(NA, NA) when the direction is degenerate.
+.crossing_boundary_point <- function(x0, y0, x1, y1) {
+  dx <- x1 - x0; dy <- y1 - y0
+  len <- sqrt(dx^2 + dy^2)
+  if (!is.finite(len) || len == 0) return(c(NA_real_, NA_real_))
+  ux <- dx / len; uy <- dy / len
+  b    <- x0 * ux + y0 * uy
+  disc <- b^2 - (x0^2 + y0^2 - 1)
+  if (!is.finite(disc) || disc < 0) return(c(NA_real_, NA_real_))
+  t <- -b + sqrt(disc)              # forward root: toward the periphery
+  c(x0 + t * ux, y0 + t * uy)
+}
+
 .set_headings_crossing_one <- function(d, id, tc, xc, yc, circ0, circ1,
                                        direction = c("outward", "inward"),
                                        first_only = FALSE,
@@ -147,7 +167,8 @@ setGeneric(
       }
       if (found1) {
         c1 <- .segment_cross(d[[xc]][j], d[[yc]][j], d[[xc]][j+1], d[[yc]][j+1], circ1)
-        heading <- atan2(c1[2] - c0[2], c1[1] - c0[1])
+        p  <- .crossing_boundary_point(c0[1], c0[2], c1[1], c1[2])
+        heading <- atan2(p[2], p[1])
         row <- data.frame(id = d[[id]][i],
                           time = mean(c(d[[tc]][i] + c0[3] * (d[[tc]][i+1] - d[[tc]][i]),
                                         d[[tc]][j] + c1[3] * (d[[tc]][j+1] - d[[tc]][j]))),
@@ -155,6 +176,8 @@ setGeneric(
         if (return_coords) {
           row$x_inner <- c0[1]
           row$y_inner <- c0[2]
+          row$x_outer <- c1[1]
+          row$y_outer <- c1[2]
         }
         out[[k]] <- row
         k <- k + 1L
@@ -169,7 +192,9 @@ setGeneric(
     do.call(rbind, out)
   } else {
     if (return_coords) {
-      data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_, x_inner = NA_real_, y_inner = NA_real_)
+      data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_,
+                 x_inner = NA_real_, y_inner = NA_real_,
+                 x_outer = NA_real_, y_outer = NA_real_)
     } else {
       data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_)
     }
