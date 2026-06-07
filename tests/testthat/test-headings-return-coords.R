@@ -54,3 +54,25 @@ test_that("straight return_coords adds run endpoints that lie on the track", {
   hd0 <- derive_headings(cpunctatus, rule = "straight")
   expect_false(any(c("x_seg0", "x_seg1") %in% names(hd0)))
 })
+
+test_that("pca_axis return_coords adds a unit axis and centroid matching the heading", {
+  hd <- derive_headings(cpunctatus, rule = "pca_axis", return_coords = TRUE)
+  expect_true(all(c("x_centroid", "y_centroid", "axis_x", "axis_y") %in% names(hd)))
+
+  ok <- is.finite(hd$heading)
+  expect_equal(sqrt(hd$axis_x[ok]^2 + hd$axis_y[ok]^2), rep(1, sum(ok)), tolerance = 1e-8)
+
+  ang <- atan2(hd$axis_y[ok], hd$axis_x[ok]) %% (2 * pi)
+  expect_equal(ang, hd$heading[ok], tolerance = 1e-8)
+
+  # centroid is the per-track column mean of the positions
+  idc <- cpunctatus@cols$id; xc <- cpunctatus@cols$x; yc <- cpunctatus@cols$y
+  dat <- cpunctatus@data
+  cen_x <- tapply(dat[[xc]], dat[[idc]], mean)
+  cen_y <- tapply(dat[[yc]], dat[[idc]], mean)
+  expect_equal(unname(hd$x_centroid[ok]), as.vector(cen_x[as.character(hd$id[ok])]), tolerance = 1e-8)
+  expect_equal(unname(hd$y_centroid[ok]), as.vector(cen_y[as.character(hd$id[ok])]), tolerance = 1e-8)
+
+  hd0 <- derive_headings(cpunctatus, rule = "pca_axis")
+  expect_false(any(c("axis_x", "x_centroid") %in% names(hd0)))
+})

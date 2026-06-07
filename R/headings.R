@@ -283,24 +283,39 @@ setGeneric(
 
 # ---- pca_axis rule -----------------------------------------------------------
 # Heading of first principal axis of positions or velocities; sign aligned with net displacement
-.set_headings_pca_axis_one <- function(d, id, tc, xc, yc, source = c("position","velocity")) {
+.set_headings_pca_axis_one <- function(d, id, tc, xc, yc, source = c("position","velocity"),
+                                       return_coords = FALSE) {
   source <- match.arg(source)
+  na_row <- function() {
+    row <- data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_)
+    if (return_coords) {
+      row$x_centroid <- NA_real_; row$y_centroid <- NA_real_
+      row$axis_x <- NA_real_;     row$axis_y <- NA_real_
+    }
+    row
+  }
   if (source == "position") {
     M <- cbind(d[[xc]], d[[yc]])
     M <- scale(M, center = TRUE, scale = FALSE)
   } else {
-    if (nrow(d) < 2L) return(data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_))
+    if (nrow(d) < 2L) return(na_row())
     M <- cbind(diff(d[[xc]]), diff(d[[yc]]))
     M <- scale(M, center = TRUE, scale = FALSE)
   }
-  if (nrow(M) < 2L) return(data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_))
+  if (nrow(M) < 2L) return(na_row())
   S <- crossprod(M) / (nrow(M) - 1)
   ev <- eigen(S, symmetric = TRUE)$vectors[,1]
   # align sign with net displacement
   net <- c(d[[xc]][nrow(d)] - d[[xc]][1], d[[yc]][nrow(d)] - d[[yc]][1])
   if (sum(ev * net) < 0) ev <- -ev
   heading <- atan2(ev[2], ev[1])
-  data.frame(id = d[[id]][1], time = stats::median(d[[tc]], na.rm = TRUE), heading = .wrap_to_2pi(heading))
+  row <- data.frame(id = d[[id]][1], time = stats::median(d[[tc]], na.rm = TRUE),
+                    heading = .wrap_to_2pi(heading))
+  if (return_coords) {
+    row$x_centroid <- mean(d[[xc]]); row$y_centroid <- mean(d[[yc]])
+    row$axis_x <- ev[1];             row$axis_y <- ev[2]
+  }
+  row
 }
 
 # ---- ransac_straight rule ----------------------------------------------------
@@ -540,7 +555,9 @@ setMethod("derive_headings", "TrajSet", function(
       goal_bias = do.call(rbind, lapply(sp, function(ii) .set_headings_goal_bias_one(d[ii, , drop = FALSE], id, tc, xc, yc))),
       pca_axis = {
         source <- dots$source %||% "position"
-        do.call(rbind, lapply(sp, function(ii) .set_headings_pca_axis_one(d[ii, , drop = FALSE], id, tc, xc, yc, source = source)))
+        return_coords <- dots$return_coords %||% FALSE
+        do.call(rbind, lapply(sp, function(ii) .set_headings_pca_axis_one(d[ii, , drop = FALSE], id, tc, xc, yc,
+                                                                          source = source, return_coords = return_coords)))
       },
       ransac_straight = {
         eps <- dots$eps %||% 0.02; min_inliers <- as.integer(dots$min_inliers %||% 10L); n_iter <- as.integer(dots$n_iter %||% 200L)
