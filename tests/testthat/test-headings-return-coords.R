@@ -31,3 +31,26 @@ test_that("net return_coords adds start/end matching the heading", {
   hd0 <- derive_headings(cpunctatus, rule = "net")
   expect_false(any(c("x_start", "x_end") %in% names(hd0)))
 })
+
+test_that("straight return_coords adds run endpoints that lie on the track", {
+  hd <- derive_headings(cpunctatus, rule = "straight", return_coords = TRUE)
+  expect_true(all(c("x_seg0", "y_seg0", "x_seg1", "y_seg1") %in% names(hd)))
+
+  idc <- cpunctatus@cols$id; xc <- cpunctatus@cols$x; yc <- cpunctatus@cols$y
+  dat <- cpunctatus@data
+  ok  <- which(is.finite(hd$heading) & is.finite(hd$x_seg0))
+  expect_gt(length(ok), 0)
+
+  for (i in ok) {
+    trk <- dat[dat[[idc]] == hd$id[i], ]
+    on0 <- any(abs(trk[[xc]] - hd$x_seg0[i]) < 1e-9 & abs(trk[[yc]] - hd$y_seg0[i]) < 1e-9)
+    on1 <- any(abs(trk[[xc]] - hd$x_seg1[i]) < 1e-9 & abs(trk[[yc]] - hd$y_seg1[i]) < 1e-9)
+    # endpoints are real points of the track; they may coincide for a track whose
+    # straightest run is stationary (the rule treats a zero-displacement run as
+    # turn 0), so the columns faithfully report whatever segment the rule chose
+    expect_true(on0 && on1)
+  }
+
+  hd0 <- derive_headings(cpunctatus, rule = "straight")
+  expect_false(any(c("x_seg0", "x_seg1") %in% names(hd0)))
+})

@@ -184,9 +184,18 @@ setGeneric(
 # ---- straight rule -----------------------------------------------------------
 # Heading = angle of the longest contiguous segment where turning angle <= tol
 # turning angle between steps i-1->i and i->i+1 via atan2(cross, dot)
-.set_headings_straight_one <- function(d, id, tc, xc, yc, tol = pi/18, min_len = 5L) {
+.set_headings_straight_one <- function(d, id, tc, xc, yc, tol = pi/18, min_len = 5L,
+                                       return_coords = FALSE) {
+  na_row <- function() {
+    row <- data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_)
+    if (return_coords) {
+      row$x_seg0 <- NA_real_; row$y_seg0 <- NA_real_
+      row$x_seg1 <- NA_real_; row$y_seg1 <- NA_real_
+    }
+    row
+  }
   n <- nrow(d)
-  if (n < min_len + 1L) return(data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_))
+  if (n < min_len + 1L) return(na_row())
   vx <- diff(d[[xc]]); vy <- diff(d[[yc]])
   # angles between successive displacement vectors
   cross <- vx[-1]*vy[-length(vy)] - vy[-1]*vx[-length(vx)]
@@ -198,16 +207,23 @@ setGeneric(
   ends <- cumsum(r$lengths)
   starts <- ends - r$lengths + 1L
   idx_ok <- which(r$values)
-  if (!length(idx_ok)) return(data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_))
+  if (!length(idx_ok)) return(na_row())
   # choose longest run meeting min_len-1 turning checks => segment length >= min_len
   lens <- r$lengths[idx_ok]
   ok_idx <- which.max(lens)
-  if (lens[ok_idx] < (min_len - 1L)) return(data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_))
+  if (lens[ok_idx] < (min_len - 1L)) return(na_row())
   s_turn <- starts[idx_ok[ok_idx]]; e_turn <- ends[idx_ok[ok_idx]]
   s <- s_turn     # start step index
   e <- e_turn + 1 # end step index (because turn array shorter by 1)
   heading <- atan2(d[[yc]][s+1] - d[[yc]][s], d[[xc]][s+1] - d[[xc]][s])
-  data.frame(id = d[[id]][s], time = d[[tc]][floor((s+e)/2)], heading = .wrap_to_2pi(heading))
+  row <- data.frame(id = d[[id]][s], time = d[[tc]][floor((s+e)/2)],
+                    heading = .wrap_to_2pi(heading))
+  if (return_coords) {
+    last_pt <- e_turn + 2L          # last point of the straight run
+    row$x_seg0 <- d[[xc]][s];        row$y_seg0 <- d[[yc]][s]
+    row$x_seg1 <- d[[xc]][last_pt];  row$y_seg1 <- d[[yc]][last_pt]
+  }
+  row
 }
 
 # ---- origin_mean rule --------------------------------------------------------
@@ -499,8 +515,10 @@ setMethod("derive_headings", "TrajSet", function(
       },
       straight = {
         tol <- dots$tol %||% (pi/18); min_len <- dots$min_len %||% 5L
+        return_coords <- dots$return_coords %||% FALSE
         do.call(rbind, lapply(sp, function(ii) .set_headings_straight_one(d[ii, , drop = FALSE], id, tc, xc, yc,
-                                                                          tol = tol, min_len = as.integer(min_len))))
+                                                                          tol = tol, min_len = as.integer(min_len),
+                                                                          return_coords = return_coords)))
       },
       origin_mean = {
         r_power <- dots$r_power %||% 0
