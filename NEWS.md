@@ -8,6 +8,12 @@
   tortuosity ratio (path length / net displacement, ≥ 1), the reciprocal of the
   straightness index. Not yet surfaced in the Shiny app.
 
+## Headings
+
+* `derive_headings(..., return_coords = TRUE)` now also works for `distal`, `net`,
+  `straight`, and `pca_axis` (previously only `crossing`), attaching each rule's
+  construction coordinates so the geometry behind a heading can be drawn.
+
 ## Plotting
 
 * `radiate()` gains an `angle_labels` argument: `"degrees"` (default, e.g.
@@ -41,10 +47,11 @@
 * The Configure step gains a live **method preview**: a unit-circle panel beside
   the controls that draws a few example tracks and re-renders to show how the
   selected heading rule derives its heading, updating as the method or ring
-  radii change. For ring `crossing` it draws the two detection rings, a dot on
-  each interpolated ring crossing, and the dashed heading vector running through
-  both crossings to the unit-circle periphery; other methods mark just the
-  derived heading point. Heading markers and the crossing vector take each
+  radii change. Several rules now draw their construction: `crossing` its two
+  detection rings, ring-crossing dots, and dashed vector to the rim; `distal` the
+  furthest-from-centre point; `net` the first-to-last chord; `straight` the
+  longest straight run; and `pca_axis` the principal axis. Remaining rules mark
+  just the derived heading point. Constructions and heading markers take each
   trajectory's colour.
 * The Configure step's heading-method picker is now a dropdown exposing all of
   the package's parameter-free heading rules (plus ring `crossing`), with a
