@@ -169,10 +169,16 @@ setGeneric(
 
 # ---- distal rule ------------------------------------------------------------- -------------------------------------------------------------
 # Heading = angle of the most distal point (max radius from origin)
-.set_headings_distal_one <- function(d, id, tc, xc, yc) {
+.set_headings_distal_one <- function(d, id, tc, xc, yc, return_coords = FALSE) {
   r <- sqrt(d[[xc]]^2 + d[[yc]]^2)
   m <- which.max(r)
-  data.frame(id = d[[id]][m], time = d[[tc]][m], heading = .wrap_to_2pi(atan2(d[[yc]][m], d[[xc]][m])))
+  row <- data.frame(id = d[[id]][m], time = d[[tc]][m],
+                    heading = .wrap_to_2pi(atan2(d[[yc]][m], d[[xc]][m])))
+  if (return_coords) {
+    row$x_distal <- d[[xc]][m]
+    row$y_distal <- d[[yc]][m]
+  }
+  row
 }
 
 # ---- straight rule -----------------------------------------------------------
@@ -480,7 +486,11 @@ setMethod("derive_headings", "TrajSet", function(
                                                                           first_only = first_only,
                                                                           return_coords = return_coords)))
       },
-      distal   = do.call(rbind, lapply(sp, function(ii) .set_headings_distal_one(d[ii, , drop = FALSE], id, tc, xc, yc))),
+      distal   = {
+        return_coords <- dots$return_coords %||% FALSE
+        do.call(rbind, lapply(sp, function(ii) .set_headings_distal_one(d[ii, , drop = FALSE], id, tc, xc, yc,
+                                                                        return_coords = return_coords)))
+      },
       straight = {
         tol <- dots$tol %||% (pi/18); min_len <- dots$min_len %||% 5L
         do.call(rbind, lapply(sp, function(ii) .set_headings_straight_one(d[ii, , drop = FALSE], id, tc, xc, yc,
