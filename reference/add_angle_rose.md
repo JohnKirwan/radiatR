@@ -22,7 +22,8 @@ add_angle_rose(
   fill = "steelblue",
   colour = NA,
   alpha = 0.5,
-  arc_pts = 20L
+  arc_pts = 20L,
+  display = NULL
 )
 ```
 
@@ -77,6 +78,12 @@ add_angle_rose(
 - arc_pts:
 
   Points used to approximate each wedge arc. Default `20L`.
+
+- display:
+
+  A \`circ_display()\` controlling rotation, matching the parent
+  \`radiate()\` plot. Default \`NULL\` uses the input's \`display\`
+  attribute when present, otherwise the identity display.
 
 ## Value
 

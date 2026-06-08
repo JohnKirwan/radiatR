@@ -21,7 +21,8 @@ add_vonmises_density(
   colour = "steelblue",
   linewidth = 0.8,
   fill = NA,
-  alpha = 0.8
+  alpha = 0.8,
+  display = NULL
 )
 ```
 
@@ -68,6 +69,12 @@ add_vonmises_density(
 - alpha:
 
   Opacity. Default `0.8`.
+
+- display:
+
+  A \`circ_display()\` controlling rotation, matching the parent
+  \`radiate()\` plot. Default \`NULL\` uses the input's \`display\`
+  attribute when present, otherwise the identity display.
 
 ## Value
 

@@ -71,7 +71,8 @@ bin.  The layer can be faceted by passing the same column used in the parent
 <span>  fill <span class="op">=</span> <span class="st">"steelblue"</span>,</span>
 <span>  colour <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.5</span>,</span>
-<span>  arc_pts <span class="op">=</span> <span class="fl">20L</span></span>
+<span>  arc_pts <span class="op">=</span> <span class="fl">20L</span>,</span>
+<span>  display <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -127,6 +128,12 @@ for a donut style.</p></dd>
 
 <dt id="arg-arc-pts">arc_pts<a class="anchor" aria-label="anchor" href="#arg-arc-pts"></a></dt>
 <dd><p>Points used to approximate each wedge arc.  Default <code>20L</code>.</p></dd>
+
+
+<dt id="arg-display">display<a class="anchor" aria-label="anchor" href="#arg-display"></a></dt>
+<dd><p>A `circ_display()` controlling rotation, matching the parent
+`radiate()` plot. Default `NULL` uses the input's `display` attribute when
+present, otherwise the identity display.</p></dd>
 
 </dl></div>
     <div class="section level2">
