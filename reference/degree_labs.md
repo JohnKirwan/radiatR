@@ -6,15 +6,24 @@ degrees on a unit circle.
 ## Usage
 
 ``` r
-degree_labs(display = circ_display())
+degree_labs(display = circ_display(), colour = "black", units = NULL)
 ```
 
 ## Arguments
 
 - display:
 
-  A \[\`circ_display\`\] object. Controls whether labels are shown in
-  degrees or radians. Default \`circ_display()\`.
+  A \[\`circ_display\`\] object. Default \`circ_display()\`. Supplies
+  the label units when \`units\` is \`NULL\`.
+
+- colour:
+
+  Label colour. Default \`"black"\`.
+
+- units:
+
+  \`"degrees"\` (e.g. \`45°\`) or \`"radians"\` (e.g. \`π/4\`). When
+  \`NULL\` (default) the units are taken from \`display\`.
 
 ## Value
 

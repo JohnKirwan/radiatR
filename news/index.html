@@ -44,20 +44,48 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="radiatr-development-version">radiatR (development version)<a class="anchor" aria-label="anchor" href="#radiatr-development-version"></a></h2>
 <div class="section level3">
+<h3 id="track-metrics-development-version">Track metrics<a class="anchor" aria-label="anchor" href="#track-metrics-development-version"></a></h3>
+<ul><li>New <code>path_straightness(x, y)</code> and <code>straightness_index(ts)</code> compute the path straightness index (net displacement / path length, 0–1) per trajectory.</li>
+<li>New <code>path_tortuosity(x, y)</code> and <code>tortuosity_ratio(ts)</code> compute the classic tortuosity ratio (path length / net displacement, ≥ 1), the reciprocal of the straightness index. Not yet surfaced in the Shiny app.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="headings-development-version">Headings<a class="anchor" aria-label="anchor" href="#headings-development-version"></a></h3>
+<ul><li>
+<code>derive_headings(..., return_coords = TRUE)</code> now also works for <code>distal</code>, <code>net</code>, <code>straight</code>, and <code>pca_axis</code> (previously only <code>crossing</code>), attaching each rule’s construction coordinates so the geometry behind a heading can be drawn.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="plotting-development-version">Plotting<a class="anchor" aria-label="anchor" href="#plotting-development-version"></a></h3>
 <ul><li>
+<code><a href="../reference/radiate.html">radiate()</a></code> gains an <code>angle_labels</code> argument: <code>"degrees"</code> (default, e.g. <code>45°</code>), <code>"none"</code>, or <code>"radians"</code> (now rendered as π fractions, e.g. <code>π/4</code>, rather than decimals). <code><a href="../reference/degree_labs.html">degree_labs()</a></code> gains a matching <code>units</code> argument. <code>degrees = FALSE</code> remains as a back-compatible alias for <code>angle_labels = "none"</code>.</li>
+<li>
+<strong>Breaking:</strong> the quadrant lines (two dashed lines through the origin) are no longer drawn by default. <code><a href="../reference/radiate.html">radiate()</a></code> gains a <code>quadrants</code> argument (default <code>FALSE</code>) to opt back in.</li>
+<li>
+<code><a href="../reference/radiate.html">radiate()</a></code> gains a <code>rings</code> argument (default <code>FALSE</code>) drawing concentric guide rings (the radial analogue of a grid). Both the quadrant lines and the guide rings take their colour and width from the chosen theme’s grid lines, so they match the theme (and fall back to a subtle grey for themes without a grid, e.g. <code>void</code> and <code>classic</code>).</li>
+<li>
+<strong>Breaking:</strong> the <code><a href="../reference/radiate.html">radiate()</a></code> <code>style</code> argument (<code>"classic"</code>/<code>"minimal"</code>) is replaced by <code>theme</code>, named for the ggplot2 base themes: <code>"void"</code> (default), <code>"minimal"</code>, <code>"classic"</code>, <code>"bw"</code>, <code>"grey"</code>, <code>"light"</code>, <code>"dark"</code>, and <code>"linedraw"</code>. Each gives the matching <code>ggplot2::theme_*()</code> appearance (panel background, grid, border). The exported <code>sparse_theme()</code> and <code>spartan_theme()</code> are removed in favour of the new <code>radial_theme(name)</code>.</li>
+<li>Overlay elements (unit circle, ticks, degree labels) now adapt to the theme: they use light “ink” on the dark theme so they stay legible. <code><a href="../reference/add_ticks.html">add_ticks()</a></code> and <code><a href="../reference/degree_labs.html">degree_labs()</a></code> gain a <code>colour</code> argument.</li>
+<li>
 <code><a href="../reference/radiate.html">radiate()</a></code> gains a <code>show_tracks</code> argument (default <code>TRUE</code>) to draw the arena and overlays without the trajectory paths, symmetric with <code>show_arrow</code> and <code>show_labels</code>.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="shiny-app-development-version">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-development-version"></a></h3>
-<ul><li>The Results step now has on/off toggles for the trajectories, heading points, directedness arrow, and a mean-direction confidence-interval arc (95% bootstrap CI, off by default). The toggles drive both the on-screen plot and the plot download.</li>
+<ul><li>The Configure step gains a live <strong>method preview</strong>: a unit-circle panel beside the controls that draws a few example tracks and re-renders to show how the selected heading rule derives its heading, updating as the method or ring radii change. Several rules now draw their construction: <code>crossing</code> its two detection rings, ring-crossing dots, and dashed vector to the rim; <code>distal</code> the furthest-from-centre point; <code>net</code> the first-to-last chord; <code>straight</code> the longest straight run; and <code>pca_axis</code> the principal axis. Remaining rules mark just the derived heading point. Constructions and heading markers take each trajectory’s colour.</li>
+<li>The Configure step’s heading-method picker is now a dropdown exposing all of the package’s parameter-free heading rules (plus ring <code>crossing</code>), with a one-line description of the selected rule shown beneath it.</li>
+<li>A new <strong>None (no headings)</strong> option plots the tracks and path metrics only: the plot gains a straightness caption, the summary table reduces to Group and Straightness, and all circular-statistics overlays are suppressed.</li>
+<li>In None mode the data download exports the per-trial path-metrics table (“Metrics (CSV)”) instead of headings. The data-download button is also restyled so it no longer appears greyed out.</li>
+<li>The Results summary table gains a <strong>Straightness</strong> column: the mean path straightness index across each group’s trials.</li>
+<li>The Results step’s Display panel gains a <strong>Theme</strong> dropdown (Void, Minimal, Classic, Black &amp; white, Grey, Light, Dark, Line draw) that restyles the on-screen plot and the download.</li>
+<li>The Results Display panel gains an <strong>Angle labels</strong> dropdown (Degrees / None / Radians).</li>
+<li>The Results Display panel gains <strong>Quadrant lines</strong> and <strong>Guide rings</strong> toggles (both off by default); both follow the selected theme’s grid styling.</li>
+<li>The Results step now has on/off toggles for the trajectories, heading points, directedness arrow, and a mean-direction confidence-interval arc (95% bootstrap CI, off by default). The toggles drive both the on-screen plot and the plot download.</li>
 <li>The toggles moved to a “Display” card in the right-hand column, giving the plot panel the full width of its column.</li>
 <li>Plot downloads can now be exported as <strong>PDF</strong> or <strong>SVG</strong> (editable vector formats) as well as PNG, with editable width/height (inches) and, for PNG, a resolution control. The on-screen preview tracks the chosen aspect ratio.</li>
 <li>A “Preview size” slider scales the on-screen plot canvas without affecting the exported file dimensions.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-development-version">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-development-version"></a></h3>
-<ul><li>The <code><a href="../reference/radiate.html">radiate()</a></code> mean-direction (directedness) arrow now respects the clock display convention. In clock-display plots the trajectories are rotated 90 degrees (East to North) but the arrow was left in unit-circle coordinates, so it pointed ~90 degrees away from the tracks and heading markers it summarises. The arrow is now rotated with the rest of the plot.</li>
+<ul><li>The <code>crossing</code> heading rule now computes the heading as the bearing of the inner→outer ring-crossing vector projected onto the arena boundary (the unit circle) — the method described in the vignette and used in the original analysis — rather than the slope of the crossing segment. The two agree for radial tracks but differ for oblique ones, so crossing-based circular statistics change for non-radial trajectories. <code>derive_headings(rule = "crossing", return_coords = TRUE)</code> now also returns the outer crossing (<code>x_outer</code>/<code>y_outer</code>).</li>
+<li>The <code><a href="../reference/radiate.html">radiate()</a></code> mean-direction (directedness) arrow now respects the clock display convention. In clock-display plots the trajectories are rotated 90 degrees (East to North) but the arrow was left in unit-circle coordinates, so it pointed ~90 degrees away from the tracks and heading markers it summarises. The arrow is now rotated with the rest of the plot.</li>
 <li>
 <code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code> on a <code>TrajSet</code> now works for users of the installed package. It had been defined as an S4 method on the base S3 generic, which is only reachable from within the package’s own namespace, so user code got “cannot coerce class TrajSet to a data.frame”. It is now a registered S3 method.</li>
 </ul></div>

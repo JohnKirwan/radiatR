@@ -350,8 +350,8 @@ hd <- merge(hd, cond_map, by = "trial_id")
 compute_circ_mean(hd, colour_col = "condition")[,
   c("condition", "mean_dir", "resultant_R")]
 #>      condition   mean_dir resultant_R
-#> 1 concentrated 0.05580664   0.9028539
-#> 2      diffuse 0.29537110   0.7004167
+#> 1 concentrated 0.05301978   0.9039690
+#> 2      diffuse 0.29012285   0.7131608
 ```
 
 Visualise the headings alongside the trajectories:

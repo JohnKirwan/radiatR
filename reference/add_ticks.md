@@ -6,8 +6,14 @@ north, south, east, and west. The layer can be added to any ggplot.
 ## Usage
 
 ``` r
-add_ticks()
+add_ticks(colour = "black")
 ```
+
+## Arguments
+
+- colour:
+
+  Tick colour. Default \`"black"\`.
 
 ## Value
 

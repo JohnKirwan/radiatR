@@ -83,7 +83,7 @@
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>rule-specific parameters</p></dd>
+<dd><p>rule-specific parameters, including `return_coords` (see below)</p></dd>
 
 
 <dt id="arg-coords">coords<a class="anchor" aria-label="anchor" href="#arg-coords"></a></dt>
@@ -103,7 +103,18 @@ errors if not registered).</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>data.frame with columns id, time (approx), heading (radians, unit-circle
-  convention). For some rules there may be multiple headings per id.</p>
+  convention), plus the rule-specific construction columns above when
+  `return_coords = TRUE`. For some rules there may be multiple headings per id.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Passing `return_coords = TRUE` (via `...`, default `FALSE`) attaches the
+construction coordinates each rule used to derive the heading, in the chosen
+`coords` frame: `crossing` adds `x_inner`/`y_inner`; `distal` adds
+`x_distal`/`y_distal`; `net` adds `x_start`/`y_start`/`x_end`/`y_end`;
+`straight` adds `x_seg0`/`y_seg0`/`x_seg1`/`y_seg1` (the run endpoints);
+`pca_axis` adds `x_centroid`/`y_centroid`/`axis_x`/`axis_y` (a unit axis
+vector). Other rules ignore it.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

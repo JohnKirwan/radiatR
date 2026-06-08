@@ -33,7 +33,11 @@ radiate(
   xlab = NULL,
   ylab = NULL,
   axes = NULL,
-  style = c("classic", "minimal"),
+  angle_labels = c("degrees", "none", "radians"),
+  theme = c("void", "minimal", "classic", "bw", "grey", "gray", "light", "dark",
+    "linedraw"),
+  quadrants = FALSE,
+  rings = FALSE,
   show_labels = NULL,
   label_col = NULL,
   label_size = 3,
@@ -62,8 +66,12 @@ radiate(
   ncol = NULL,
   ticks = TRUE,
   degrees = TRUE,
+  angle_labels = c("degrees", "none", "radians"),
   title = NULL,
-  style = c("classic", "minimal"),
+  theme = c("void", "minimal", "classic", "bw", "grey", "gray", "light", "dark",
+    "linedraw"),
+  quadrants = FALSE,
+  rings = FALSE,
   ...
 )
 ```
@@ -139,11 +147,33 @@ radiate(
 
 - ticks, degrees, legend, title, xlab, ylab, axes:
 
-  Additional styling options.
+  Additional styling options. \`degrees\` is retained for
+  back-compatibility; \`degrees = FALSE\` is equivalent to
+  \`angle_labels = "none"\`.
 
-- style:
+- angle_labels:
 
-  Either \`"classic"\` (default) or \`"minimal"\`.
+  One of \`"degrees"\` (default; e.g. \`45°\`), \`"none"\`, or
+  \`"radians"\` (e.g. \`π/4\`) – the diagonal angle labels around the
+  circle.
+
+- theme:
+
+  Plot appearance, named for the ggplot2 base themes: one of \`"void"\`
+  (default), \`"minimal"\`, \`"classic"\`, \`"bw"\`, \`"grey"\`,
+  \`"light"\`, \`"dark"\`, or \`"linedraw"\`. See \[radial_theme()\].
+
+- quadrants:
+
+  Logical; draw the two dashed lines through the origin that demarcate
+  the quadrants. Default \`FALSE\`. Their colour and width follow the
+  chosen \`theme\`'s grid lines (see \[radial_theme()\]).
+
+- rings:
+
+  Logical; draw concentric guide rings (the radial analogue of a grid).
+  Default \`FALSE\`. Their colour and width follow the chosen
+  \`theme\`'s grid lines.
 
 - show_labels:
 

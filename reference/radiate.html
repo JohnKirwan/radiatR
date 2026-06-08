@@ -80,7 +80,11 @@ the object and handed off to the plotting helpers.</p>
 <span>  xlab <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ylab <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  axes <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  style <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"classic"</span>, <span class="st">"minimal"</span><span class="op">)</span>,</span>
+<span>  angle_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"degrees"</span>, <span class="st">"none"</span>, <span class="st">"radians"</span><span class="op">)</span>,</span>
+<span>  theme <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"void"</span>, <span class="st">"minimal"</span>, <span class="st">"classic"</span>, <span class="st">"bw"</span>, <span class="st">"grey"</span>, <span class="st">"gray"</span>, <span class="st">"light"</span>, <span class="st">"dark"</span>,</span>
+<span>    <span class="st">"linedraw"</span><span class="op">)</span>,</span>
+<span>  quadrants <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  rings <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  show_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  label_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  label_size <span class="op">=</span> <span class="fl">3</span>,</span>
@@ -109,8 +113,12 @@ the object and handed off to the plotting helpers.</p>
 <span>  ncol <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ticks <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  degrees <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  angle_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"degrees"</span>, <span class="st">"none"</span>, <span class="st">"radians"</span><span class="op">)</span>,</span>
 <span>  title <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  style <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"classic"</span>, <span class="st">"minimal"</span><span class="op">)</span>,</span>
+<span>  theme <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"void"</span>, <span class="st">"minimal"</span>, <span class="st">"classic"</span>, <span class="st">"bw"</span>, <span class="st">"grey"</span>, <span class="st">"gray"</span>, <span class="st">"light"</span>, <span class="st">"dark"</span>,</span>
+<span>    <span class="st">"linedraw"</span><span class="op">)</span>,</span>
+<span>  quadrants <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  rings <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -186,11 +194,32 @@ text and the in-panel `"inside"` annotation.</p></dd>
 
 
 <dt id="arg-ticks-degrees-legend-title-xlab-ylab-axes">ticks, degrees, legend, title, xlab, ylab, axes<a class="anchor" aria-label="anchor" href="#arg-ticks-degrees-legend-title-xlab-ylab-axes"></a></dt>
-<dd><p>Additional styling options.</p></dd>
+<dd><p>Additional styling options.
+`degrees` is retained for back-compatibility; `degrees = FALSE` is
+equivalent to `angle_labels = "none"`.</p></dd>
 
 
-<dt id="arg-style">style<a class="anchor" aria-label="anchor" href="#arg-style"></a></dt>
-<dd><p>Either `"classic"` (default) or `"minimal"`.</p></dd>
+<dt id="arg-angle-labels">angle_labels<a class="anchor" aria-label="anchor" href="#arg-angle-labels"></a></dt>
+<dd><p>One of `"degrees"` (default; e.g. `45°`), `"none"`, or
+`"radians"` (e.g. `π/4`) – the diagonal angle labels around the circle.</p></dd>
+
+
+<dt id="arg-theme">theme<a class="anchor" aria-label="anchor" href="#arg-theme"></a></dt>
+<dd><p>Plot appearance, named for the ggplot2 base themes: one of
+`"void"` (default), `"minimal"`, `"classic"`, `"bw"`, `"grey"`, `"light"`,
+`"dark"`, or `"linedraw"`. See [radial_theme()].</p></dd>
+
+
+<dt id="arg-quadrants">quadrants<a class="anchor" aria-label="anchor" href="#arg-quadrants"></a></dt>
+<dd><p>Logical; draw the two dashed lines through the origin that
+demarcate the quadrants. Default `FALSE`. Their colour and width follow the
+chosen `theme`'s grid lines (see [radial_theme()]).</p></dd>
+
+
+<dt id="arg-rings">rings<a class="anchor" aria-label="anchor" href="#arg-rings"></a></dt>
+<dd><p>Logical; draw concentric guide rings (the radial analogue of a
+grid). Default `FALSE`. Their colour and width follow the chosen `theme`'s
+grid lines.</p></dd>
 
 
 <dt id="arg-show-labels">show_labels<a class="anchor" aria-label="anchor" href="#arg-show-labels"></a></dt>

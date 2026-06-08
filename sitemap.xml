@@ -81,9 +81,12 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/load_tracks.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/load_tracks2.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/optically_center.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/path_straightness.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/path_tortuosity.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/pose_to_headings.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/rad_shepherd.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/radial_distort.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/radial_theme.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/radiatR-package.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/radiate.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/read_calibration.html</loc></url>
@@ -93,12 +96,12 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/scaled_xy2mm.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/sector_summary.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/simulate_tracks.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/sparse_theme.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/spartan_theme.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/stack_headings.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/straightness_index.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/test_concentration.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/test_mean_directions.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/test_uniformity.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/tortuosity_ratio.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/transform_history.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/vonmises_fit.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/wrappedcauchy_fit.html</loc></url>

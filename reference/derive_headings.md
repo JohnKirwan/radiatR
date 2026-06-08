@@ -39,7 +39,7 @@ derive_headings(
 
 - ...:
 
-  rule-specific parameters
+  rule-specific parameters, including \`return_coords\` (see below)
 
 - coords:
 
@@ -60,4 +60,17 @@ derive_headings(
 ## Value
 
 data.frame with columns id, time (approx), heading (radians, unit-circle
-convention). For some rules there may be multiple headings per id.
+convention), plus the rule-specific construction columns above when
+\`return_coords = TRUE\`. For some rules there may be multiple headings
+per id.
+
+## Details
+
+Passing \`return_coords = TRUE\` (via \`...\`, default \`FALSE\`)
+attaches the construction coordinates each rule used to derive the
+heading, in the chosen \`coords\` frame: \`crossing\` adds
+\`x_inner\`/\`y_inner\`; \`distal\` adds \`x_distal\`/\`y_distal\`;
+\`net\` adds \`x_start\`/\`y_start\`/\`x_end\`/\`y_end\`; \`straight\`
+adds \`x_seg0\`/\`y_seg0\`/\`x_seg1\`/\`y_seg1\` (the run endpoints);
+\`pca_axis\` adds \`x_centroid\`/\`y_centroid\`/\`axis_x\`/\`axis_y\` (a
+unit axis vector). Other rules ignore it.

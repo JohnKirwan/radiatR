@@ -2,8 +2,57 @@
 
 ## radiatR (development version)
 
+### Track metrics
+
+- New `path_straightness(x, y)` and `straightness_index(ts)` compute the
+  path straightness index (net displacement / path length, 0–1) per
+  trajectory.
+- New `path_tortuosity(x, y)` and `tortuosity_ratio(ts)` compute the
+  classic tortuosity ratio (path length / net displacement, ≥ 1), the
+  reciprocal of the straightness index. Not yet surfaced in the Shiny
+  app.
+
+### Headings
+
+- `derive_headings(..., return_coords = TRUE)` now also works for
+  `distal`, `net`, `straight`, and `pca_axis` (previously only
+  `crossing`), attaching each rule’s construction coordinates so the
+  geometry behind a heading can be drawn.
+
 ### Plotting
 
+- [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  gains an `angle_labels` argument: `"degrees"` (default, e.g. `45°`),
+  `"none"`, or `"radians"` (now rendered as π fractions, e.g. `π/4`,
+  rather than decimals).
+  [`degree_labs()`](https://johnkirwan.github.io/radiatR/reference/degree_labs.md)
+  gains a matching `units` argument. `degrees = FALSE` remains as a
+  back-compatible alias for `angle_labels = "none"`.
+- **Breaking:** the quadrant lines (two dashed lines through the origin)
+  are no longer drawn by default.
+  [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  gains a `quadrants` argument (default `FALSE`) to opt back in.
+- [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  gains a `rings` argument (default `FALSE`) drawing concentric guide
+  rings (the radial analogue of a grid). Both the quadrant lines and the
+  guide rings take their colour and width from the chosen theme’s grid
+  lines, so they match the theme (and fall back to a subtle grey for
+  themes without a grid, e.g. `void` and `classic`).
+- **Breaking:** the
+  [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  `style` argument (`"classic"`/`"minimal"`) is replaced by `theme`,
+  named for the ggplot2 base themes: `"void"` (default), `"minimal"`,
+  `"classic"`, `"bw"`, `"grey"`, `"light"`, `"dark"`, and `"linedraw"`.
+  Each gives the matching `ggplot2::theme_*()` appearance (panel
+  background, grid, border). The exported `sparse_theme()` and
+  `spartan_theme()` are removed in favour of the new
+  `radial_theme(name)`.
+- Overlay elements (unit circle, ticks, degree labels) now adapt to the
+  theme: they use light “ink” on the dark theme so they stay legible.
+  [`add_ticks()`](https://johnkirwan.github.io/radiatR/reference/add_ticks.md)
+  and
+  [`degree_labs()`](https://johnkirwan.github.io/radiatR/reference/degree_labs.md)
+  gain a `colour` argument.
 - [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   gains a `show_tracks` argument (default `TRUE`) to draw the arena and
   overlays without the trajectory paths, symmetric with `show_arrow` and
@@ -11,6 +60,37 @@
 
 ### Shiny app
 
+- The Configure step gains a live **method preview**: a unit-circle
+  panel beside the controls that draws a few example tracks and
+  re-renders to show how the selected heading rule derives its heading,
+  updating as the method or ring radii change. Several rules now draw
+  their construction: `crossing` its two detection rings, ring-crossing
+  dots, and dashed vector to the rim; `distal` the furthest-from-centre
+  point; `net` the first-to-last chord; `straight` the longest straight
+  run; and `pca_axis` the principal axis. Remaining rules mark just the
+  derived heading point. Constructions and heading markers take each
+  trajectory’s colour.
+- The Configure step’s heading-method picker is now a dropdown exposing
+  all of the package’s parameter-free heading rules (plus ring
+  `crossing`), with a one-line description of the selected rule shown
+  beneath it.
+- A new **None (no headings)** option plots the tracks and path metrics
+  only: the plot gains a straightness caption, the summary table reduces
+  to Group and Straightness, and all circular-statistics overlays are
+  suppressed.
+- In None mode the data download exports the per-trial path-metrics
+  table (“Metrics (CSV)”) instead of headings. The data-download button
+  is also restyled so it no longer appears greyed out.
+- The Results summary table gains a **Straightness** column: the mean
+  path straightness index across each group’s trials.
+- The Results step’s Display panel gains a **Theme** dropdown (Void,
+  Minimal, Classic, Black & white, Grey, Light, Dark, Line draw) that
+  restyles the on-screen plot and the download.
+- The Results Display panel gains an **Angle labels** dropdown (Degrees
+  / None / Radians).
+- The Results Display panel gains **Quadrant lines** and **Guide rings**
+  toggles (both off by default); both follow the selected theme’s grid
+  styling.
 - The Results step now has on/off toggles for the trajectories, heading
   points, directedness arrow, and a mean-direction confidence-interval
   arc (95% bootstrap CI, off by default). The toggles drive both the
@@ -26,6 +106,14 @@
 
 ### Bug fixes
 
+- The `crossing` heading rule now computes the heading as the bearing of
+  the inner→outer ring-crossing vector projected onto the arena boundary
+  (the unit circle) — the method described in the vignette and used in
+  the original analysis — rather than the slope of the crossing segment.
+  The two agree for radial tracks but differ for oblique ones, so
+  crossing-based circular statistics change for non-radial trajectories.
+  `derive_headings(rule = "crossing", return_coords = TRUE)` now also
+  returns the outer crossing (`x_outer`/`y_outer`).
 - The
   [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   mean-direction (directedness) arrow now respects the clock display

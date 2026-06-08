@@ -210,12 +210,12 @@ inner-ring crossing position.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">hd</span>, <span class="st">"display"</span><span class="op">)</span>    <span class="op">&lt;-</span> <span class="fu"><a href="../reference/circ_display.html">circ_display</a></span><span class="op">(</span>zero <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">hd</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"trial_id"</span>, <span class="st">"arc"</span>, <span class="st">"heading"</span>, <span class="st">"x_inner"</span>, <span class="st">"y_inner"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   trial_id arc   heading     x_inner     y_inner</span></span>
-<span><span class="co">#&gt; 1   10_1_1  10 0.4819203  0.19556350 -0.04102813</span></span>
-<span><span class="co">#&gt; 2  10_10_1  10 6.0509861 -0.03715972  0.19558015</span></span>
-<span><span class="co">#&gt; 3  10_11_1  10 1.2000610 -0.07231344  0.18624466</span></span>
-<span><span class="co">#&gt; 4  10_12_1  10 2.1808564 -0.18291981  0.08084798</span></span>
-<span><span class="co">#&gt; 5  10_13_1  10 5.4614739  0.18223038  0.08232129</span></span>
-<span><span class="co">#&gt; 6  10_14_1  10 1.7854935  0.09025066  0.17836615</span></span></code></pre></div>
+<span><span class="co">#&gt; 1   10_1_1  10 0.3545811  0.19556350 -0.04102813</span></span>
+<span><span class="co">#&gt; 2  10_10_1  10 6.2337825 -0.03715972  0.19558015</span></span>
+<span><span class="co">#&gt; 3  10_11_1  10 1.3353505 -0.07231344  0.18624466</span></span>
+<span><span class="co">#&gt; 4  10_12_1  10 2.2846471 -0.18291981  0.08084798</span></span>
+<span><span class="co">#&gt; 5  10_13_1  10 5.6521348  0.18223038  0.08232129</span></span>
+<span><span class="co">#&gt; 6  10_14_1  10 1.6589765  0.09025066  0.17836615</span></span></code></pre></div>
 <p>Overlaying the heading endpoints (one hollow circle per trial) and
 the grand mean direction on the combined trajectory plot gives a compact
 summary of the full dataset:</p>
@@ -232,7 +232,7 @@ summary of the full dataset:</p>
 <span><span class="co">#&gt; Warning: Removed 25 rows containing missing values or values outside the scale range</span></span>
 <span><span class="co">#&gt; (`geom_point()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/headings-overlay-1.png" class="r-plt" alt="" width="700"></p>
-<p>The grand mean arrow points at 289.8° relative to the reference
+<p>The grand mean arrow points at 283.2° relative to the reference
 direction (clock convention; 0° = toward reference) with <em>R</em> =
 0.08, reflecting the overall reference-relative tendency across all
 conditions.</p>
@@ -524,15 +524,15 @@ Bayesian model (e.g. the 2.5th and 97.5th percentiles of a
 behind the arrows above:</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/compute_circ_mean.html">compute_circ_mean</a></span><span class="op">(</span><span class="va">hd</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"arc"</span>, <span class="st">"mean_dir"</span>, <span class="st">"resultant_R"</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="co">#&gt;   arc mean_dir resultant_R</span></span>
-<span><span class="co">#&gt; 1   0 2.370302  0.22038448</span></span>
-<span><span class="co">#&gt; 2   5 5.445923  0.03152853</span></span>
-<span><span class="co">#&gt; 3  10 1.352548  0.26676323</span></span>
-<span><span class="co">#&gt; 4  15 6.138757  0.26959287</span></span>
-<span><span class="co">#&gt; 5  20 3.954391  0.09003068</span></span>
-<span><span class="co">#&gt; 6  30 0.723867  0.17875428</span></span>
-<span><span class="co">#&gt; 7  40 3.273545  0.13024377</span></span>
-<span><span class="co">#&gt; 8  50 1.232955  0.09500930</span></span></code></pre></div>
+<span><span class="co">#&gt;   arc  mean_dir resultant_R</span></span>
+<span><span class="co">#&gt; 1   0 2.4441971  0.21852376</span></span>
+<span><span class="co">#&gt; 2   5 6.1710354  0.03518184</span></span>
+<span><span class="co">#&gt; 3  10 1.3122762  0.27298867</span></span>
+<span><span class="co">#&gt; 4  15 6.1535219  0.25745294</span></span>
+<span><span class="co">#&gt; 5  20 3.7683984  0.10968390</span></span>
+<span><span class="co">#&gt; 6  30 0.8051961  0.16285026</span></span>
+<span><span class="co">#&gt; 7  40 3.3258479  0.12904693</span></span>
+<span><span class="co">#&gt; 8  50 1.6405047  0.09148952</span></span></code></pre></div>
 <p>For within-trial path consistency (tortuosity),
 <code><a href="../reference/circ_summary.html">circ_summary()</a></code> operates on the step-by-step angle
 distribution:</p>
@@ -837,14 +837,14 @@ tracks being fairly direct:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">sm_distal</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"distal"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/merge.html" class="external-link">merge</a></span><span class="op">(</span><span class="va">sm_cross</span>, <span class="va">sm_distal</span>, by <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   arc   crossing     distal</span></span>
-<span><span class="co">#&gt; 1   0 0.22038448 0.23531457</span></span>
-<span><span class="co">#&gt; 2  10 0.26676323 0.07055967</span></span>
-<span><span class="co">#&gt; 3  15 0.26959287 0.24477975</span></span>
-<span><span class="co">#&gt; 4  20 0.09003068 0.07326231</span></span>
-<span><span class="co">#&gt; 5  30 0.17875428 0.12936762</span></span>
-<span><span class="co">#&gt; 6  40 0.13024377 0.06536414</span></span>
-<span><span class="co">#&gt; 7   5 0.03152853 0.07181952</span></span>
-<span><span class="co">#&gt; 8  50 0.09500930 0.15790182</span></span></code></pre></div>
+<span><span class="co">#&gt; 1   0 0.21852376 0.23531457</span></span>
+<span><span class="co">#&gt; 2  10 0.27298867 0.07055967</span></span>
+<span><span class="co">#&gt; 3  15 0.25745294 0.24477975</span></span>
+<span><span class="co">#&gt; 4  20 0.10968390 0.07326231</span></span>
+<span><span class="co">#&gt; 5  30 0.16285026 0.12936762</span></span>
+<span><span class="co">#&gt; 6  40 0.12904693 0.06536414</span></span>
+<span><span class="co">#&gt; 7   5 0.03518184 0.07181952</span></span>
+<span><span class="co">#&gt; 8  50 0.09148952 0.15790182</span></span></code></pre></div>
 <p>Visualising the distal headings on the per-condition panel confirms
 that the spatial pattern is consistent with the crossing method:</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
@@ -895,14 +895,14 @@ positions are available.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/funprog.html" class="external-link">Reduce</a></span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">a</span>, <span class="va">b</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/merge.html" class="external-link">merge</a></span><span class="op">(</span><span class="va">a</span>, <span class="va">b</span>, by <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span>,</span>
 <span>       <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">sm_cross</span>, <span class="va">sm_distal</span>, <span class="va">sm_net</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   arc   crossing     distal        net</span></span>
-<span><span class="co">#&gt; 1   0 0.22038448 0.23531457 0.22962978</span></span>
-<span><span class="co">#&gt; 2  10 0.26676323 0.07055967 0.05152922</span></span>
-<span><span class="co">#&gt; 3  15 0.26959287 0.24477975 0.23894631</span></span>
-<span><span class="co">#&gt; 4  20 0.09003068 0.07326231 0.02827464</span></span>
-<span><span class="co">#&gt; 5  30 0.17875428 0.12936762 0.11498421</span></span>
-<span><span class="co">#&gt; 6  40 0.13024377 0.06536414 0.06850022</span></span>
-<span><span class="co">#&gt; 7   5 0.03152853 0.07181952 0.05236747</span></span>
-<span><span class="co">#&gt; 8  50 0.09500930 0.15790182 0.15353222</span></span></code></pre></div>
+<span><span class="co">#&gt; 1   0 0.21852376 0.23531457 0.22962978</span></span>
+<span><span class="co">#&gt; 2  10 0.27298867 0.07055967 0.05152922</span></span>
+<span><span class="co">#&gt; 3  15 0.25745294 0.24477975 0.23894631</span></span>
+<span><span class="co">#&gt; 4  20 0.10968390 0.07326231 0.02827464</span></span>
+<span><span class="co">#&gt; 5  30 0.16285026 0.12936762 0.11498421</span></span>
+<span><span class="co">#&gt; 6  40 0.12904693 0.06536414 0.06850022</span></span>
+<span><span class="co">#&gt; 7   5 0.03518184 0.07181952 0.05236747</span></span>
+<span><span class="co">#&gt; 8  50 0.09148952 0.15790182 0.15353222</span></span></code></pre></div>
 <p>For these tracks the three methods give very similar resultant
 lengths. Larger differences would be expected for species with complex
 search behaviour before committing to a direction.</p>

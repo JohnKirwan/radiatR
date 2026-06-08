@@ -167,10 +167,8 @@ The main radiate() function and its building blocks.
   : Draw a circular guide.
 - [`degree_labs()`](https://johnkirwan.github.io/radiatR/reference/degree_labs.md)
   : Label the four diagonal directions.
-- [`sparse_theme()`](https://johnkirwan.github.io/radiatR/reference/sparse_theme.md)
-  : Sparse overlay theme for radial plots.
-- [`spartan_theme()`](https://johnkirwan.github.io/radiatR/reference/spartan_theme.md)
-  : Minimalist theme for radial track plots.
+- [`radial_theme()`](https://johnkirwan.github.io/radiatR/reference/radial_theme.md)
+  : Themes for radial track plots, named for the ggplot2 base themes.
 - [`directedness_arrow()`](https://johnkirwan.github.io/radiatR/reference/directedness_arrow.md)
   : Make mean resultant length arrow
 - [`assign_cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.md)
@@ -422,12 +420,18 @@ Any remaining exported topics.
   : Legacy helper to merge manifest metadata with a track table
 - [`load_tracks2()`](https://johnkirwan.github.io/radiatR/reference/load_tracks2.md)
   : Flexible metadata join for track tables
+- [`path_straightness()`](https://johnkirwan.github.io/radiatR/reference/path_straightness.md)
+  : Path straightness index for a single trajectory
+- [`path_tortuosity()`](https://johnkirwan.github.io/radiatR/reference/path_tortuosity.md)
+  : Tortuosity ratio for a single trajectory
 - [`pose_to_headings()`](https://johnkirwan.github.io/radiatR/reference/pose_to_headings.md)
   : Derive per-frame headings from pose data without a TrajSet
 - [`rad_shepherd()`](https://johnkirwan.github.io/radiatR/reference/rad_shepherd.md)
   : Wrap angles to the interval (-pi, pi\]
 - [`radial_distort()`](https://johnkirwan.github.io/radiatR/reference/radial_distort.md)
   : Remove radial/tangential distortion from a point on the image plane.
+- [`radial_theme()`](https://johnkirwan.github.io/radiatR/reference/radial_theme.md)
+  : Themes for radial track plots, named for the ggplot2 base themes.
 - [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   : Make ggplot object of tracks radiating from circle centre.
 - [`read_calibration()`](https://johnkirwan.github.io/radiatR/reference/read_calibration.md)
@@ -446,18 +450,18 @@ Any remaining exported topics.
   : Proportion of time spent in angular sectors
 - [`simulate_tracks()`](https://johnkirwan.github.io/radiatR/reference/simulate_tracks.md)
   : Simulate trajectory sets under configurable experimental conditions
-- [`sparse_theme()`](https://johnkirwan.github.io/radiatR/reference/sparse_theme.md)
-  : Sparse overlay theme for radial plots.
-- [`spartan_theme()`](https://johnkirwan.github.io/radiatR/reference/spartan_theme.md)
-  : Minimalist theme for radial track plots.
 - [`stack_headings()`](https://johnkirwan.github.io/radiatR/reference/stack_headings.md)
   : Add stacking columns to a headings data frame
+- [`straightness_index()`](https://johnkirwan.github.io/radiatR/reference/straightness_index.md)
+  : Per-trajectory straightness index for a TrajSet
 - [`test_concentration()`](https://johnkirwan.github.io/radiatR/reference/test_concentration.md)
   : Test whether groups share the same concentration (dispersion)
 - [`test_mean_directions()`](https://johnkirwan.github.io/radiatR/reference/test_mean_directions.md)
   : Test whether groups share the same mean direction (Watson-Williams)
 - [`test_uniformity()`](https://johnkirwan.github.io/radiatR/reference/test_uniformity.md)
   : Per-group tests of circular uniformity
+- [`tortuosity_ratio()`](https://johnkirwan.github.io/radiatR/reference/tortuosity_ratio.md)
+  : Per-trajectory tortuosity ratio for a TrajSet
 - [`transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`log_transform()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`set_transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)

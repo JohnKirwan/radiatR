@@ -75,12 +75,12 @@ hd$arc   <- factor(hd$arc)
 hd <- hd[is.finite(hd$heading), , drop = FALSE]
 head(hd[, c("trial_id", "arc", "heading")])
 #>   trial_id arc   heading
-#> 1   10_1_1  10 0.4051187
-#> 2  10_10_1  10 2.8548809
-#> 3  10_11_1  10 5.9357842
-#> 4  10_12_1  10 2.1036930
-#> 5  10_13_1  10 0.7415753
-#> 6  10_14_1  10 4.9220757
+#> 1   10_1_1  10 0.2777794
+#> 2  10_10_1  10 3.0376774
+#> 3  10_11_1  10 6.0710737
+#> 4  10_12_1  10 2.2074837
+#> 5  10_13_1  10 0.9322361
+#> 6  10_14_1  10 4.7955587
 ```
 
 The `heading` column is in radians, reference-relative (0 = toward the
@@ -95,15 +95,15 @@ deviation. Grouping by `arc` gives one row per condition.
 ``` r
 
 circ_dispersion(hd, group_col = "arc")
-#>   arc      mean_dir resultant_R   circ_sd  n
-#> 1  10  1.9513801009  0.28083874 1.5937218 35
-#> 2  15  0.0003910935  0.19793492 1.7998983 27
-#> 3  20  2.9019871675  0.09652689 2.1623754 24
-#> 4  30 -0.1860117919  0.05781662 2.3876679 34
-#> 5  40  0.0851951450  0.63455690 0.9537592 19
-#> 6   5  0.3693921424  0.15615485 1.9271259 30
-#> 7  50 -0.2637564723  0.46069491 1.2450054 24
-#> 8   0  2.3094608512  0.07723939 2.2631154 33
+#>   arc     mean_dir resultant_R   circ_sd  n
+#> 1  10  1.980062802  0.25662879 1.6493178 35
+#> 2  15  0.002875648  0.18589914 1.8344214 27
+#> 3  20  2.960834000  0.07603959 2.2700225 24
+#> 4  30 -0.453000259  0.06016175 2.3709570 34
+#> 5  40  0.075648794  0.64058845 0.9437882 19
+#> 6   5  0.394217868  0.17579270 1.8646446 30
+#> 7  50 -0.173753450  0.44404605 1.2742268 24
+#> 8   0  2.276557489  0.08000698 2.2475059 33
 ```
 
 *R* runs from 0 (uniformly scattered) to 1 (all headings identical); the
@@ -116,14 +116,14 @@ bins the angles and reports dwell proportions per sector:
 
 sector_summary(hd, sectors = 8L)
 #>        sector  mid_angle count proportion
-#> 1 -158degrees -2.7488936    26 0.11504425
+#> 1 -158degrees -2.7488936    27 0.11946903
 #> 2 -112degrees -1.9634954    18 0.07964602
-#> 3  -68degrees -1.1780972    19 0.08407080
-#> 4  -22degrees -0.3926991    40 0.17699115
-#> 5   22degrees  0.3926991    50 0.22123894
-#> 6   68degrees  1.1780972    12 0.05309735
-#> 7  112degrees  1.9634954    37 0.16371681
-#> 8  158degrees  2.7488936    24 0.10619469
+#> 3  -68degrees -1.1780972    20 0.08849558
+#> 4  -22degrees -0.3926991    42 0.18584071
+#> 5   22degrees  0.3926991    45 0.19911504
+#> 6   68degrees  1.1780972    13 0.05752212
+#> 7  112degrees  1.9634954    35 0.15486726
+#> 8  158degrees  2.7488936    26 0.11504425
 ```
 
 ## Parametric fits
@@ -136,15 +136,15 @@ interval on $`\mu`$:
 ``` r
 
 vonmises_fit(hd, group_col = "arc")[, c("arc", "mu_deg", "kappa", "n")]
-#>   arc       mu_deg     kappa  n
-#> 1  10 111.80584401 0.5852832 35
-#> 2  15   0.02240801 0.4038778 27
-#> 3  20 166.27161690 0.1939602 24
-#> 4  30 -10.65769061 0.1158271 34
-#> 5  40   4.88132224 1.6586879 19
-#> 6   5  21.16461074 0.3161948 30
-#> 7  50 -15.11213268 1.0364612 24
-#> 8   0 132.32235972 0.1549419 33
+#>   arc      mu_deg     kappa  n
+#> 1  10 113.4492417 0.5310863 35
+#> 2  15   0.1647625 0.3784077 27
+#> 3  20 169.6432921 0.1525210 24
+#> 4  30 -25.9550030 0.1205419 34
+#> 5  40   4.3343566 1.6868180 19
+#> 6   5  22.5870200 0.3571578 30
+#> 7  50  -9.9553394 0.9900343 24
+#> 8   0 130.4371359 0.1605288 33
 ```
 
 [`wrappedcauchy_fit()`](https://johnkirwan.github.io/radiatR/reference/wrappedcauchy_fit.md)
@@ -156,14 +156,14 @@ to $`[0, 1)`$:
 
 wrappedcauchy_fit(hd, group_col = "arc")[, c("arc", "mu_deg", "rho", "n")]
 #>   arc     mu_deg        rho  n
-#> 1  10 119.966490 0.28228485 35
-#> 2  15   5.852273 0.29760542 27
-#> 3  20 157.965485 0.11478156 24
-#> 4  30 349.080326 0.07904604 34
-#> 5  40   4.389714 0.75074167 19
-#> 6   5  26.294216 0.14012202 30
-#> 7  50 350.918924 0.69560495 24
-#> 8   0 134.575216 0.08656156 33
+#> 1  10 118.338958 0.25480084 35
+#> 2  15   4.745037 0.27375349 27
+#> 3  20 159.559101 0.09056095 24
+#> 4  30 339.103222 0.08571126 34
+#> 5  40   6.248322 0.75905693 19
+#> 6   5  25.796263 0.15937039 30
+#> 7  50 351.847489 0.68966189 24
+#> 8   0 133.599471 0.08467292 33
 ```
 
 Both return a row per group, so a quick
@@ -182,15 +182,15 @@ at once, pass `p_adjust` for a corrected `p_value_adj` column:
 ``` r
 
 test_uniformity(hd, group_col = "arc", test = "rayleigh", p_adjust = "BH")
-#>   arc  statistic      p_value  n     test p_value_adj
-#> 1  10 0.28083874 0.0622893496 35 rayleigh 0.166104932
-#> 2  15 0.19793492 0.3504909570 27 rayleigh 0.700981914
-#> 3  20 0.09652689 0.8029307182 24 rayleigh 0.893970817
-#> 4  30 0.05781662 0.8939708170 34 rayleigh 0.893970817
-#> 5  40 0.63455690 0.0002250149 19 rayleigh 0.001800119
-#> 6   5 0.15615485 0.4849410243 30 rayleigh 0.775905639
-#> 7  50 0.46069491 0.0051026056 24 rayleigh 0.020410422
-#> 8   0 0.07723939 0.8235011628 33 rayleigh 0.893970817
+#>   arc  statistic     p_value  n     test p_value_adj
+#> 1  10 0.25662879 0.099244958 35 rayleigh 0.264653222
+#> 2  15 0.18589914 0.397036850 27 rayleigh 0.638463349
+#> 3  20 0.07603959 0.872766166 24 rayleigh 0.885708681
+#> 4  30 0.06016175 0.885708681 34 rayleigh 0.885708681
+#> 5  40 0.64058845 0.000186684 19 rayleigh 0.001493472
+#> 6   5 0.17579270 0.399039593 30 rayleigh 0.638463349
+#> 7  50 0.44404605 0.007583494 24 rayleigh 0.030333977
+#> 8   0 0.08000698 0.811900045 33 rayleigh 0.885708681
 ```
 
 ### Equal mean directions
@@ -202,8 +202,8 @@ on the mean angle. The omnibus form asks whether *any* group differs:
 ``` r
 
 test_mean_directions(hd, group_col = "arc")
-#>   n_groups statistic df1 df2      p_value            test
-#> 1        8  9.065412   7 218 8.161464e-10 Watson-Williams
+#>   n_groups statistic df1 df2     p_value            test
+#> 1        8  8.230315   7 218 6.70879e-09 Watson-Williams
 ```
 
 Set `pairwise = TRUE` for all pairwise comparisons; `p_adjust` is
@@ -216,12 +216,12 @@ pw <- test_mean_directions(hd, group_col = "arc",
                            pairwise = TRUE, p_adjust = "holm")
 head(pw[order(pw$p_value_adj), ])
 #>    group1 group2 statistic df1 df2      p_value            test  p_value_adj
-#> 14     20     30 124.29592   1  56 7.673941e-16 Watson-Williams 2.148703e-14
-#> 6      10     50  37.15046   1  57 1.004292e-07 Watson-Williams 2.711587e-06
-#> 22     30      0  28.42766   1  65 1.311148e-06 Watson-Williams 3.408985e-05
-#> 4      10     40  24.70037   1  52 7.650177e-06 Watson-Williams 1.912544e-04
-#> 8      15     20  20.62310   1  49 3.654422e-05 Watson-Williams 8.770614e-04
-#> 16     20      5  18.54248   1  52 7.380796e-05 Watson-Williams 1.697583e-03
+#> 14     20     30  68.71016   1  56 2.590906e-11 Watson-Williams 7.254536e-10
+#> 22     30      0  45.35938   1  65 5.086470e-09 Watson-Williams 1.373347e-07
+#> 6      10     50  31.92401   1  57 5.341214e-07 Watson-Williams 1.388716e-05
+#> 4      10     40  24.34873   1  52 8.658990e-06 Watson-Williams 2.164747e-04
+#> 1      10     15  16.68434   1  60 1.328071e-04 Watson-Williams 3.187369e-03
+#> 13     15      0  16.32869   1  58 1.586887e-04 Watson-Williams 3.649841e-03
 ```
 
 ### Equal concentrations
@@ -235,7 +235,7 @@ Watson-Williams test above:
 
 test_concentration(hd, group_col = "arc")
 #>   statistic df    p_value        test
-#> 1  14.45256  7 0.04369331 equal.kappa
+#> 1  14.23259  7 0.04719587 equal.kappa
 ```
 
 ## Circular correlation
@@ -250,8 +250,8 @@ numeric target half-width:
 
 hd$arc_num <- as.numeric(as.character(hd$arc))
 circ_cor(hd, x_col = "arc_num", angle_col = "heading", x_type = "linear")
-#>           r   n            type statistic df     p_value
-#> 1 0.2248515 226 circular-linear  11.42616  2 0.003302491
+#>           r   n            type statistic df    p_value
+#> 1 0.2175965 226 circular-linear   10.7007  2 0.00474648
 ```
 
 The returned `r` is unsigned (association strength, 0–1); the test
@@ -330,7 +330,7 @@ canvas +
 
 test_uniformity(hd, test = "rayleigh")
 #>   statistic    p_value   n     test
-#> 1 0.1278892 0.02481321 226 rayleigh
+#> 1 0.1298181 0.02217652 226 rayleigh
 ```
 
 The arrow tip lies well outside the dashed critical circle, matching the
