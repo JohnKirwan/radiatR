@@ -60,8 +60,17 @@ test_that("the app walks example -> Results and honours the layer toggles", {
     paste(utils::capture.output(print(app$get_logs())), collapse = "\n")
   ))
 
-  # Hiding every layer still renders the empty arena (no crash).
-  app$set_inputs(show_tracks = FALSE, show_points = FALSE,
+  # Switching the heading display to stacked dots must not error the plot.
+  app$set_inputs(heading_display = "stacked")
+  app$wait_for_idle(timeout = 30 * 1000)
+  expect_false(grepl(
+    "track_plot render failed",
+    paste(utils::capture.output(print(app$get_logs())), collapse = "\n")
+  ))
+
+  # Hiding every layer (no heading markers either) still renders the empty
+  # arena (no crash).
+  app$set_inputs(show_tracks = FALSE, heading_display = "none",
                  show_arrow = FALSE, show_ci = FALSE)
   app$wait_for_idle(timeout = 30 * 1000)
   expect_false(grepl(
