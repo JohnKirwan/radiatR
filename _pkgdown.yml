@@ -141,8 +141,7 @@ reference:
       - add_ticks
       - add_circ
       - degree_labs
-      - sparse_theme
-      - spartan_theme
+      - radial_theme
       - directedness_arrow
       - assign_cycle_colours
       - add_multiple_circles
