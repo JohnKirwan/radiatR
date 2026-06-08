@@ -53,6 +53,11 @@
   longest straight run; and `pca_axis` the principal axis. Remaining rules mark
   just the derived heading point. Constructions and heading markers take each
   trajectory's colour.
+* The Results Display panel's "Heading points" toggle is replaced by a **Heading
+  display** dropdown (Points (overlapping) / Stacked dots (inward) / None) that
+  selects how the per-trial heading markers are drawn. Stacked dots fan
+  coincident headings radially inward to reduce overplotting, stacked within
+  each condition group when the plot is faceted.
 * The Configure step's heading-method picker is now a dropdown exposing all of
   the package's parameter-free heading rules (plus ring `crossing`), with a
   one-line description of the selected rule shown beneath it.
