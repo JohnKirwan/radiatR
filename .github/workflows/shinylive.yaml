@@ -1,33 +1,113 @@
-# PARKED — the static shinylive (in-browser WebAssembly) build of the app is
-# currently disabled.
+# Build the bundled Shiny app (inst/app) as a static shinylive site and deploy
+# it to GitHub Pages under /app, alongside the pkgdown documentation.
 #
-# Why: a working, release-driven redesign exists on branch `ci/fix-shinylive`
-# (PR #43). It builds radiatR into a webR filesystem image, attaches it to a
-# GitHub Release, and lets `shinylive::export()` pull it in. End-to-end CI
-# proved every step works EXCEPT the final asset download: shinylive fetches
-# the release asset with an unauthenticated `download.file()`, and because this
-# repository is private, that public URL returns 404. shinylive offers no auth
-# hook for that download.
+# Why this is release-driven, not push-driven:
 #
-# To revive it, pick one of:
-#   * make the repository public, then merge PR #43 (the canonical build works
-#     as-is); or
-#   * keep it private and switch to a self-hosted VFS image that the app mounts
-#     at runtime from the public Pages site (no private-asset fetch).
+# shinylive resolves the WebAssembly binary for a package from that package's
+# *installed* DESCRIPTION metadata. For a package installed from GitHub it
+# downloads a `library.data` / `library.js.metadata` filesystem image attached
+# to the GitHub Release whose tag matches the install ref. radiatR is not on
+# CRAN's WASM mirror (repo.r-wasm.org), so it must ship its own image.
 #
-# Until then this workflow only runs on manual dispatch and does nothing, so it
-# never fails CI. The other app delivery paths (local `launch_app()` and Shiny
-# Server / shinyapps.io) are unaffected; see README "The graphical app".
+# So this workflow runs only on a published release, in two jobs:
+#   1. `wasm-assets` builds radiatR (and any `Config/Needs/wasm` deps) into a
+#      webR filesystem image inside the official webR/Emscripten container and
+#      attaches it to the release. (r-wasm/actions maintained reusable workflow.)
+#   2. `deploy-app` installs radiatR from the release tag — so its DESCRIPTION
+#      carries the GitHub remote metadata shinylive needs — exports the app
+#      (shinylive auto-downloads the image from step 1), and publishes it.
+#
+# To refresh the hosted app, publish (or re-publish) a GitHub Release.
 on:
-  workflow_dispatch:
+  release:
+    types: [published]
 
 name: shinylive.yaml
 
 jobs:
-  parked:
+  # Build radiatR's WebAssembly filesystem image and attach it to the release.
+  #
+  # We run the official webR/Emscripten container directly rather than using
+  # r-wasm/actions' reusable workflow: that workflow's `docker run` does not
+  # forward env vars, and the project .Rprofile activates renv inside the
+  # mounted workspace, which switches .libPaths() to an empty project library
+  # and hides the container's preinstalled rwasm ("no package called 'rwasm'").
+  # Setting RENV_CONFIG_AUTOLOADER_ENABLED=false on the container makes the renv
+  # autoloader stand down so rwasm stays on the library path.
+  wasm-assets:
     runs-on: ubuntu-latest
+    permissions:
+      # For publishing the image to the release
+      contents: write
     steps:
-      - name: Static shinylive build is parked
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build radiatR WebAssembly filesystem image
         run: |
-          echo "The shinylive static-app build is parked."
-          echo "See .github/workflows/shinylive.yaml header and PR #43."
+          docker run --rm \
+            -e RENV_CONFIG_AUTOLOADER_ENABLED=false \
+            -e GITHUB_PAT="${{ secrets.GITHUB_TOKEN }}" \
+            -v "$(pwd):/github/workspace" \
+            --workdir /github/workspace \
+            ghcr.io/r-wasm/webr:main \
+            Rscript -e 'rwasm::add_pkg(".", repo_dir = "_repo"); rwasm::make_vfs_library(out_dir = "_image", repo_dir = "_repo", compress = FALSE)'
+
+      - name: Upload the image to the release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: "_image/*"
+          tag: ${{ github.ref }}
+          file_glob: true
+          overwrite: true
+
+  # Export the app as a static shinylive site and deploy it to gh-pages /app.
+  deploy-app:
+    needs: wasm-assets
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    env:
+      # The project .Rprofile sources renv/activate.R, switching R to the renv
+      # project library. setup-r-dependencies installs its toolchain (pak
+      # included) with pak::lockfile_install(); installing pak into the active
+      # renv library aborts because pak cannot overwrite its own running copy.
+      # Disable the renv autoloader so CI installs into the normal library.
+      RENV_CONFIG_AUTOLOADER_ENABLED: false
+      # Needed for shinylive to query the GitHub release assets API.
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      # Install shinylive plus radiatR FROM the release tag. Installing from
+      # GitHub (not local source) gives radiatR the RemoteType/RemoteRef
+      # DESCRIPTION fields that shinylive uses to locate the release's WASM
+      # image; the ref must match the release tag built in `wasm-assets`.
+      - name: Install shinylive and radiatR (from the release tag)
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::shinylive
+            github::JohnKirwan/radiatR@${{ github.event.release.tag_name }}
+
+      - name: Export the app as a static shinylive site
+        run: shinylive::export(appdir = "inst/app", destdir = "_site/app")
+        shell: Rscript {0}
+
+      - name: Deploy to gh-pages /app (preserving pkgdown content)
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: _site/app
+          target-folder: app
+          clean: true
