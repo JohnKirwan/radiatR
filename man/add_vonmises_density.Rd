@@ -13,7 +13,8 @@ add_vonmises_density(
   colour = "steelblue",
   linewidth = 0.8,
   fill = NA,
-  alpha = 0.8
+  alpha = 0.8,
+  display = NULL
 )
 }
 \arguments{
@@ -37,6 +38,10 @@ Default \code{0.4} matches \code{add_angle_rose}.}
 \item{fill}{Fill colour.  Default \code{NA} (outline only).}
 
 \item{alpha}{Opacity.  Default \code{0.8}.}
+
+\item{display}{A `circ_display()` controlling rotation, matching the parent
+`radiate()` plot. Default `NULL` uses the input's `display` attribute when
+present, otherwise the identity display.}
 }
 \value{
 A \code{geom_polygon} layer, or \code{NULL} if \code{fit} is all

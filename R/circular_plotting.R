@@ -2254,6 +2254,9 @@ build_label_data <- function(data, label_col, x_col, y_col, colour_col = NULL, p
 #' @param colour Wedge border colour.  Default \code{NA} (no border).
 #' @param alpha Opacity.  Default \code{0.5}.
 #' @param arc_pts Points used to approximate each wedge arc.  Default \code{20L}.
+#' @param display A `circ_display()` controlling rotation, matching the parent
+#'   `radiate()` plot. Default `NULL` uses the input's `display` attribute when
+#'   present, otherwise the identity display.
 #' @return A \code{geom_polygon} layer that can be added to a \code{radiate()}
 #'   plot with \code{+}.
 #' @export
@@ -2327,6 +2330,9 @@ add_angle_rose <- function(hd, bins = 12L, angle_col = "heading",
 #' @param linewidth Outline width.  Default \code{0.8}.
 #' @param fill Fill colour.  Default \code{NA} (outline only).
 #' @param alpha Opacity.  Default \code{0.8}.
+#' @param display A `circ_display()` controlling rotation, matching the parent
+#'   `radiate()` plot. Default `NULL` uses the input's `display` attribute when
+#'   present, otherwise the identity display.
 #' @return A \code{geom_polygon} layer, or \code{NULL} if \code{fit} is all
 #'   \code{NA}.
 #' @export
@@ -2417,6 +2423,9 @@ add_vonmises_density <- function(fit, scale = 0.4, inner_r = 0,
 #' @param linewidth Outline width.  Default \code{0.8}.
 #' @param fill Fill colour.  Default \code{NA} (outline only).
 #' @param alpha Opacity.  Default \code{0.8}.
+#' @param display A `circ_display()` controlling rotation, matching the parent
+#'   `radiate()` plot. Default `NULL` uses the input's `display` attribute when
+#'   present, otherwise the identity display.
 #' @return A \code{geom_polygon} layer, or \code{NULL} if estimation fails.
 #' @export
 add_circular_kde <- function(hd, angle_col = "heading", group_col = NULL,
@@ -2514,6 +2523,9 @@ add_circular_kde <- function(hd, angle_col = "heading", group_col = NULL,
 #' @param linewidth Outline width.  Default \code{0.8}.
 #' @param fill Fill colour.  Default \code{NA} (outline only).
 #' @param alpha Opacity.  Default \code{0.8}.
+#' @param display A `circ_display()` controlling rotation, matching the parent
+#'   `radiate()` plot. Default `NULL` uses the input's `display` attribute when
+#'   present, otherwise the identity display.
 #' @return A \code{geom_polygon} layer, or \code{NULL} if estimation fails.
 #' @seealso \code{\link{add_vonmises_density}}, \code{\link{add_circular_kde}}
 #' @export

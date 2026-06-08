@@ -15,7 +15,8 @@ add_angle_rose(
   fill = "steelblue",
   colour = NA,
   alpha = 0.5,
-  arc_pts = 20L
+  arc_pts = 20L,
+  display = NULL
 )
 }
 \arguments{
@@ -46,6 +47,10 @@ for a donut style.}
 \item{alpha}{Opacity.  Default \code{0.5}.}
 
 \item{arc_pts}{Points used to approximate each wedge arc.  Default \code{20L}.}
+
+\item{display}{A `circ_display()` controlling rotation, matching the parent
+`radiate()` plot. Default `NULL` uses the input's `display` attribute when
+present, otherwise the identity display.}
 }
 \value{
 A \code{geom_polygon} layer that can be added to a \code{radiate()}
