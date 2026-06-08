@@ -85,6 +85,12 @@
 
 ## Bug fixes
 
+* `add_angle_rose()`, `add_circular_kde()`, `add_vonmises_density()`, and
+  `add_wrappedcauchy_density()` now honor the plot's `display` rotation (via a
+  new `display` argument, the input's `display` attribute, or the identity
+  default), so they stay aligned with the tracks and heading markers on a
+  rotated display (e.g. a clock-oriented plot) instead of being drawn ~90
+  degrees off. Behaviour on the default plot is unchanged.
 * The `crossing` heading rule now computes the heading as the bearing of the
   inner→outer ring-crossing vector projected onto the arena boundary (the unit
   circle) — the method described in the vignette and used in the original
