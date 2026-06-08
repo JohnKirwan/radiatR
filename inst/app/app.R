@@ -10,6 +10,7 @@ library(radiatR)
 # Configure-step preview helpers (demo_tracks(), build_method_preview()).
 source("preview.R", local = FALSE)
 source("preview_constructions.R", local = FALSE)
+source("results_overlays.R", local = FALSE)
 
 # ---- dialect registry --------------------------------------------------------
 
@@ -613,9 +614,15 @@ server <- function(input, output, session) {
                             "Radians (π/4)" = "radians"),
                 selected = "degrees"
               ),
+              selectInput(
+                "heading_display", "Heading display",
+                choices = c("Points (overlapping)"  = "points",
+                            "Stacked dots (inward)" = "stacked",
+                            "None"                  = "none"),
+                selected = "points"
+              ),
               tags$hr(class = "my-2"),
               .layer_switch("show_tracks",   "Trajectories",       TRUE),
-              .layer_switch("show_points",  "Heading points",     TRUE),
               .layer_switch("show_arrow",   "Directedness arrow", TRUE),
               .layer_switch("show_ci",      "Mean-direction CI",  FALSE),
               .layer_switch("show_vectors", "Heading vectors",    FALSE),
@@ -833,9 +840,10 @@ server <- function(input, output, session) {
     hd_disp <- rv$hd
     attr(hd_disp, "display") <- disp
 
-    if (tog(input$show_points, TRUE)) {
-      p <- p + add_heading_points(hd_disp, size = 2.5, alpha = 0.8)
-    }
+    heading_display <- if (is.null(input$heading_display)) "points"
+                       else input$heading_display
+    marker_layer <- heading_marker_layer(hd_disp, heading_display, gc, disp)
+    if (!is.null(marker_layer)) p <- p + marker_layer
     if (tog(input$show_ci, FALSE)) {
       p <- p + add_heading_interval(
         hd_disp, colour_col = gc, stat = "bootstrap_ci"
