@@ -85,6 +85,14 @@
 
 ## Bug fixes
 
+* The `crossing` heading rule now computes the heading as the bearing of the
+  inner→outer ring-crossing vector projected onto the arena boundary (the unit
+  circle) — the method described in the vignette and used in the original
+  analysis — rather than the slope of the crossing segment. The two agree for
+  radial tracks but differ for oblique ones, so crossing-based circular
+  statistics change for non-radial trajectories. `derive_headings(rule =
+  "crossing", return_coords = TRUE)` now also returns the outer crossing
+  (`x_outer`/`y_outer`).
 * The `radiate()` mean-direction (directedness) arrow now respects the clock
   display convention. In clock-display plots the trajectories are rotated 90
   degrees (East to North) but the arrow was left in unit-circle coordinates, so
