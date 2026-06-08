@@ -2260,7 +2260,8 @@ build_label_data <- function(data, label_col, x_col, y_col, colour_col = NULL, p
 add_angle_rose <- function(hd, bins = 12L, angle_col = "heading",
                             group_col = NULL, scale = 0.4, inner_r = 0,
                             normalize = TRUE, fill = "steelblue",
-                            colour = NA, alpha = 0.5, arc_pts = 20L) {
+                            colour = NA, alpha = 0.5, arc_pts = 20L,
+                            display = NULL) {
   stopifnot(is.data.frame(hd), angle_col %in% names(hd))
   ss    <- sector_summary(hd, sectors = bins, group_col = group_col,
                           angle_col = angle_col)
@@ -2268,6 +2269,7 @@ add_angle_rose <- function(hd, bins = 12L, angle_col = "heading",
   y_max <- max(ss[[y_col]], na.rm = TRUE)
   if (y_max <= 0) y_max <- 1
   hw    <- pi / bins   # half sector width in radians
+  disp  <- display %||% attr(hd, "display", exact = TRUE) %||% circ_display()
 
   .wedge <- function(mid, val, grp_label) {
     r_out  <- inner_r + scale * val / y_max
@@ -2276,7 +2278,8 @@ add_angle_rose <- function(hd, bins = 12L, angle_col = "heading",
             inner_r * cos(mid + hw), inner_r * cos(mid - hw))
     ys <- c(inner_r * sin(mid - hw), r_out * sin(thetas),
             inner_r * sin(mid + hw), inner_r * sin(mid - hw))
-    data.frame(x = xs, y = ys,
+    xy <- .uc_to_display_coords(xs, ys, disp)
+    data.frame(x = xy$x, y = xy$y,
                .rose_grp = paste0(grp_label, "_", round(mid, 4)),
                stringsAsFactors = FALSE)
   }
@@ -2330,7 +2333,7 @@ add_angle_rose <- function(hd, bins = 12L, angle_col = "heading",
 add_vonmises_density <- function(fit, scale = 0.4, inner_r = 0,
                                   group_col = NULL, n_pts = 360L,
                                   colour = "steelblue", linewidth = 0.8,
-                                  fill = NA, alpha = 0.8) {
+                                  fill = NA, alpha = 0.8, display = NULL) {
   stopifnot(is.data.frame(fit))
   miss <- setdiff(c("mu", "kappa"), names(fit))
   if (length(miss))
@@ -2339,6 +2342,7 @@ add_vonmises_density <- function(fit, scale = 0.4, inner_r = 0,
          " -- generate with vonmises_fit()")
 
   thetas <- seq(-pi, pi, length.out = n_pts + 1L)[seq_len(n_pts)]
+  disp   <- display %||% attr(fit, "display", exact = TRUE) %||% circ_display()
 
   .ring <- function(mu, kappa, grp) {
     if (is.na(mu) || is.na(kappa) || kappa < 0) return(NULL)
@@ -2348,7 +2352,8 @@ add_vonmises_density <- function(fit, scale = 0.4, inner_r = 0,
     d_max <- max(d, na.rm = TRUE)
     if (!is.finite(d_max) || d_max <= 0) return(NULL)
     r <- inner_r + scale * d / d_max
-    data.frame(x = r * cos(thetas), y = r * sin(thetas),
+    xy <- .uc_to_display_coords(r * cos(thetas), r * sin(thetas), disp)
+    data.frame(x = xy$x, y = xy$y,
                .vm_grp = grp, stringsAsFactors = FALSE)
   }
 
@@ -2418,10 +2423,12 @@ add_circular_kde <- function(hd, angle_col = "heading", group_col = NULL,
                               bw = NULL, scale = 0.4, inner_r = 0,
                               n_pts = 512L, kernel = "vonmises",
                               colour = "tomato", linewidth = 0.8,
-                              fill = NA, alpha = 0.8) {
+                              fill = NA, alpha = 0.8, display = NULL) {
   stopifnot(is.data.frame(hd))
   if (!angle_col %in% names(hd))
     stop("add_circular_kde: column '", angle_col, "' not found")
+
+  disp <- display %||% attr(hd, "display", exact = TRUE) %||% circ_display()
 
   .kde_ring <- function(sub, grp) {
     a <- as.numeric(sub[[angle_col]])
@@ -2447,7 +2454,8 @@ add_circular_kde <- function(hd, angle_col = "heading", group_col = NULL,
     d_max  <- max(d, na.rm = TRUE)
     if (!is.finite(d_max) || d_max <= 0) return(NULL)
     r <- inner_r + scale * d / d_max
-    data.frame(x = r * cos(thetas), y = r * sin(thetas),
+    xy <- .uc_to_display_coords(r * cos(thetas), r * sin(thetas), disp)
+    data.frame(x = xy$x, y = xy$y,
                .kde_grp = grp, stringsAsFactors = FALSE)
   }
 
@@ -2512,7 +2520,7 @@ add_circular_kde <- function(hd, angle_col = "heading", group_col = NULL,
 add_wrappedcauchy_density <- function(fit, scale = 0.4, inner_r = 0,
                                        group_col = NULL, n_pts = 360L,
                                        colour = "darkorange", linewidth = 0.8,
-                                       fill = NA, alpha = 0.8) {
+                                       fill = NA, alpha = 0.8, display = NULL) {
   stopifnot(is.data.frame(fit))
   miss <- setdiff(c("mu", "rho"), names(fit))
   if (length(miss))
@@ -2521,6 +2529,7 @@ add_wrappedcauchy_density <- function(fit, scale = 0.4, inner_r = 0,
          " -- generate with wrappedcauchy_fit()")
 
   thetas <- seq(-pi, pi, length.out = n_pts + 1L)[seq_len(n_pts)]
+  disp   <- display %||% attr(fit, "display", exact = TRUE) %||% circ_display()
 
   .ring <- function(mu, rho, grp) {
     if (is.na(mu) || is.na(rho) || rho < 0 || rho >= 1) return(NULL)
@@ -2530,7 +2539,8 @@ add_wrappedcauchy_density <- function(fit, scale = 0.4, inner_r = 0,
     d_max <- max(d, na.rm = TRUE)
     if (!is.finite(d_max) || d_max <= 0) return(NULL)
     r <- inner_r + scale * d / d_max
-    data.frame(x = r * cos(thetas), y = r * sin(thetas),
+    xy <- .uc_to_display_coords(r * cos(thetas), r * sin(thetas), disp)
+    data.frame(x = xy$x, y = xy$y,
                .wc_grp = grp, stringsAsFactors = FALSE)
   }
 
