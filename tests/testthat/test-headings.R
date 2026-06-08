@@ -14,7 +14,7 @@ test_that("derive_headings crossing rule returns heading angle", {
   expect_equal(hd$heading, theta %% (2 * pi), tolerance = 1e-6)
 })
 
-test_that("derive_headings crossing rule with return_coords adds x_inner/y_inner", {
+test_that("derive_headings crossing rule with return_coords adds inner/outer crossings", {
   theta <- pi / 4
   n <- 20
   r <- seq(0, 0.8, length.out = n)
@@ -24,10 +24,44 @@ test_that("derive_headings crossing rule with return_coords adds x_inner/y_inner
                 normalize_xy = FALSE)
   hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
                         return_coords = TRUE)
-  expect_named(hd, c("id", "time", "heading", "x_inner", "y_inner"))
+  expect_named(hd, c("id", "time", "heading", "x_inner", "y_inner",
+                     "x_outer", "y_outer"))
   r_inner <- sqrt(hd$x_inner^2 + hd$y_inner^2)
   expect_equal(r_inner, 0.2, tolerance = 1e-6)
   expect_equal(atan2(hd$y_inner, hd$x_inner), theta, tolerance = 1e-6)
+  r_outer <- sqrt(hd$x_outer^2 + hd$y_outer^2)
+  expect_equal(r_outer, 0.4, tolerance = 1e-6)
+  expect_equal(atan2(hd$y_outer, hd$x_outer), theta, tolerance = 1e-6)
+})
+
+test_that("crossing heading is the boundary projection, not the segment slope", {
+  # Horizontal track offset in y so the crossing line misses the origin: the
+  # segment slope is due-East (0), but the projection to the unit circle is not.
+  y0 <- 0.1
+  xs <- seq(0.05, 0.7, length.out = 40)
+  df <- data.frame(id = "A", time = seq_along(xs), x = xs, y = y0)
+  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+                normalize_xy = FALSE)
+  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                        return_coords = TRUE)
+  expect_equal(nrow(hd), 1)
+  expect_true(is.finite(hd$heading))
+
+  c0 <- c(hd$x_inner, hd$y_inner)
+  c1 <- c(hd$x_outer, hd$y_outer)
+  p  <- c(cos(hd$heading), sin(hd$heading))
+
+  # the heading point is on the unit circle (the arena boundary)
+  expect_equal(sqrt(sum(p^2)), 1, tolerance = 1e-8)
+  # p is collinear with the inner->outer line (cross product ~ 0)
+  cross <- (c1[1] - c0[1]) * (p[2] - c0[2]) - (c1[2] - c0[2]) * (p[1] - c0[1])
+  expect_equal(cross, 0, tolerance = 1e-8)
+  # p is the forward intersection (same side as the outer crossing)
+  expect_gt(sum((p - c0) * (c1 - c0)), 0)
+  # and it differs from the old segment-slope definition (this is the fix)
+  slope <- atan2(c1[2] - c0[2], c1[1] - c0[1]) %% (2 * pi)
+  ang_diff <- abs(((hd$heading - slope + pi) %% (2 * pi)) - pi)
+  expect_gt(ang_diff, 0.02)
 })
 
 test_that("derive_headings crossing without crossing returns NA row", {

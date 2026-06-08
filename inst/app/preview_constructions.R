@@ -7,17 +7,17 @@
 # Depends only on the radiatR package (assumed attached) and ggplot2.
 
 .construct_crossing <- function(ts, hd, circ0, circ1) {
-  u_x <- cos(hd$heading); u_y <- sin(hd$heading)
-  x0  <- hd$x_inner;      y0  <- hd$y_inner
-  b   <- x0 * u_x + y0 * u_y
-  r2  <- x0^2 + y0^2
-  t_out <- -b + sqrt(pmax(b^2 - (r2 - circ1^2), 0))  # outer ring crossing c1
-  t_rim <- -b + sqrt(pmax(b^2 - (r2 - 1),       0))  # unit-circle periphery
-  seg  <- data.frame(x_in = x0, y_in = y0,
-                     x_out = x0 + t_rim * u_x, y_out = y0 + t_rim * u_y,
+  if (!all(c("x_inner", "y_inner", "x_outer", "y_outer") %in% names(hd)))
+    return(NULL)
+  # The heading IS the bearing of the boundary projection, so the rim exit point
+  # is (cos heading, sin heading). The dashed vector runs from the inner crossing
+  # to that rim point and passes through the outer crossing; dots mark both
+  # crossings, and the common heading marker lands on the rim endpoint.
+  seg  <- data.frame(x_in = hd$x_inner, y_in = hd$y_inner,
+                     x_out = cos(hd$heading), y_out = sin(hd$heading),
                      .cycle_colour = hd$.cycle_colour)
-  dots <- data.frame(px = c(x0, x0 + t_out * u_x),
-                     py = c(y0, y0 + t_out * u_y),
+  dots <- data.frame(px = c(hd$x_inner, hd$x_outer),
+                     py = c(hd$y_inner, hd$y_outer),
                      .cycle_colour = rep(hd$.cycle_colour, 2L))
   list(
     add_multiple_circles(radii = c(circ0, circ1),
