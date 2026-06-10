@@ -53,6 +53,19 @@ test_that("stacked style actually stacks continuous headings into bins", {
   expect_gt(length(unique(round(l$data$stack_r, 6))), 1L)  # not all at base_r
 })
 
+test_that("default stacked dots sit inside the rim with the wider step", {
+  set.seed(1)
+  hd <- data.frame(id = seq_len(40), time = seq_len(40),
+                   heading = rnorm(40, 0, 0.1))   # one tight column
+  l <- heading_marker_layer(hd, "stacked", NULL, circ_display())
+  r <- sort(unique(round(l$data$stack_r, 6)), decreasing = TRUE)
+  # outermost dot is start_sep (0.035) inside the unit circle -> abuts, not on it
+  expect_equal(r[1], 1 - STACK_START_SEP, tolerance = 1e-9)
+  expect_lt(r[1], 1)
+  # successive dots are STACK_STEP apart (wider than circular's 0.025)
+  expect_equal(r[1] - r[2], STACK_STEP, tolerance = 1e-9)
+})
+
 test_that("stacked style tolerates NA headings (undefined-heading trials)", {
   # Some heading rules return NA for trials with no defined heading. Two or more
   # NAs previously tripped a logical-index assignment in wrap_to_2pi.

@@ -9,6 +9,14 @@
 # headings have no exact ties, so without binning nothing would stack).
 STACK_BIN_WIDTH <- pi / 36   # 5 degrees in radians
 
+# Stacked-dots spacing (data units; the unit circle has radius 1). Deliberately
+# a little different from the circular package's defaults: STACK_START_SEP shifts
+# the outermost dot just inside the rim so the dots abut the periphery line
+# rather than straddle it, and STACK_STEP is wider than circular's 0.025 so
+# individual points in a column read clearly.
+STACK_START_SEP <- 0.035
+STACK_STEP      <- 0.045
+
 # Build the per-trial heading-marker layer for the Results plot.
 #   hd      : headings frame with a "heading" column (radians).
 #   style   : "points" (overlapping hollow circles), "stacked" (stacked inward),
@@ -33,12 +41,14 @@ heading_marker_layer <- function(hd, style = "points", gc = NULL,
     if (!is.null(gc) && gc %in% names(hd)) {
       hd <- do.call(rbind, lapply(
         split(hd, hd[[gc]]),
-        function(g) stack_headings(g, col = "heading")
+        function(g) stack_headings(g, col = "heading",
+                                   step = STACK_STEP, start_sep = STACK_START_SEP)
       ))
       rownames(hd) <- NULL
       attr(hd, "display") <- display
     }
-    return(add_stacked_headings(hd, col = "heading", size = 2.5, alpha = 0.8))
+    return(add_stacked_headings(hd, col = "heading", size = 2.5, alpha = 0.8,
+                                step = STACK_STEP, start_sep = STACK_START_SEP))
   }
 
   # "points" (and any unrecognised style)

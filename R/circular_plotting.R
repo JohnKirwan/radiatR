@@ -1287,8 +1287,10 @@ add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
 #'   \code{\link{headings_frame}}.
 #' @param col Name of the angle column. Defaults to the \code{heading_col}
 #'   attribute when \code{data} is a \code{headings_frame}.
-#' @param step,tol,direction,base_r Passed to \code{\link{stack_headings}}
-#'   when \code{stack_r} is absent. See that function for details.
+#' @param step,start_sep,tol,direction,base_r Passed to
+#'   \code{\link{stack_headings}} when \code{stack_r} is absent. See that
+#'   function for details. \code{step} sets the gap between dots and
+#'   \code{start_sep} offsets the first dot off the reference circle.
 #' @param shade If \code{TRUE}, map \code{stack_n} to the alpha aesthetic
 #'   (scaled 0.2--1 across the observed range). Overrides the fixed
 #'   \code{alpha} argument.
@@ -1313,6 +1315,7 @@ add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
 add_stacked_headings <- function(data,
                                  col        = NULL,
                                  step       = 0.025,
+                                 start_sep  = 0,
                                  tol        = NULL,
                                  direction  = "inward",
                                  base_r     = 1,
@@ -1330,8 +1333,8 @@ add_stacked_headings <- function(data,
     stop(sprintf("column '%s' not found in data.", col))
 
   if (!"stack_r" %in% names(data))
-    data <- stack_headings(data, col = col, step = step, tol = tol,
-                           direction = direction, base_r = base_r,
+    data <- stack_headings(data, col = col, step = step, start_sep = start_sep,
+                           tol = tol, direction = direction, base_r = base_r,
                            shade = shade, shape = shape)
 
   disp_opts <- attr(data, "display", exact = TRUE) %||% circ_display()

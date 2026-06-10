@@ -85,6 +85,37 @@ test_that("stack_headings outward: outermost rank=1 at base_r, inner ranks incre
   expect_equal(sort(out$stack_r), c(1, 1.025), tolerance = 1e-10)
 })
 
+test_that("stack_headings start_sep offsets the whole stack off base_r (inward)", {
+  df <- data.frame(heading = c(0, 0, 0))
+  hf <- headings_frame(df, col = "heading", units = "radians")
+  out <- stack_headings(hf, step = 0.045, start_sep = 0.035,
+                        direction = "inward", base_r = 1)
+  # outermost dot is start_sep inside base_r; successive dots step by `step`
+  expect_equal(sort(out$stack_r, decreasing = TRUE),
+               c(0.965, 0.920, 0.875), tolerance = 1e-10)
+})
+
+test_that("stack_headings start_sep offsets outward too", {
+  df <- data.frame(heading = c(0, 0))
+  hf <- headings_frame(df, col = "heading", units = "radians")
+  out <- stack_headings(hf, step = 0.045, start_sep = 0.035,
+                        direction = "outward", base_r = 1)
+  expect_equal(sort(out$stack_r), c(1.035, 1.080), tolerance = 1e-10)
+})
+
+test_that("stack_headings start_sep defaults to 0 (back-compatible)", {
+  df <- data.frame(heading = c(0, 0))
+  hf <- headings_frame(df, col = "heading", units = "radians")
+  out <- stack_headings(hf, step = 0.025, direction = "inward", base_r = 1)
+  expect_equal(max(out$stack_r), 1, tolerance = 1e-10)  # first dot still on base_r
+})
+
+test_that("stack_headings rejects negative start_sep", {
+  df <- data.frame(heading = c(0, 0))
+  hf <- headings_frame(df, col = "heading", units = "radians")
+  expect_error(stack_headings(hf, start_sep = -0.1), "non-negative")
+})
+
 test_that("stack_headings unique angles: every observation gets stack_r == base_r", {
   df <- data.frame(heading = c(0, pi/4, pi/2))
   hf <- headings_frame(df, col = "heading", units = "radians")

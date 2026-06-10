@@ -8,6 +8,7 @@ stack_headings(
   data,
   col = NULL,
   step = 0.025,
+  start_sep = 0,
   tol = NULL,
   direction = "inward",
   base_r = 1,
@@ -21,8 +22,15 @@ stack_headings(
 \item{col}{Name of the angle column. Defaults to the \code{heading_col}
 attribute when \code{data} is a \code{headings_frame}.}
 
-\item{step}{Radial offset per stack level as a fraction of \code{base_r}.
-Default \code{0.025} matches \code{circular}'s \code{sep} default.}
+\item{step}{Radial gap between successive dots in a stack, in data units
+(the analogue of \code{circular::plot.circular}'s \code{sep}). Default
+\code{0.025} matches that package; larger values separate the dots more.}
+
+\item{start_sep}{Radial offset of the first (outermost, for \code{"inward"})
+dot from \code{base_r}, in data units (the analogue of
+\code{circular::plot.circular}'s \code{start.sep}). Default \code{0} places
+the first dot on the reference circle. A small positive value shifts the
+whole stack off the line so the dots abut rather than straddle it.}
 
 \item{tol}{Grouping tolerance in radians. \code{NULL} (default) = exact
 equality, correct for binned data. \code{tol > 0} assigns each

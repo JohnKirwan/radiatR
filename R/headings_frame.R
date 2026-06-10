@@ -102,8 +102,14 @@ bin_angles <- function(angles, width, phase = 0) {
 #' @param data A data frame with an angle column in radians.
 #' @param col Name of the angle column. Defaults to the \code{heading_col}
 #'   attribute when \code{data} is a \code{headings_frame}.
-#' @param step Radial offset per stack level as a fraction of \code{base_r}.
-#'   Default \code{0.025} matches \code{circular}'s \code{sep} default.
+#' @param step Radial gap between successive dots in a stack, in data units
+#'   (the analogue of \code{circular::plot.circular}'s \code{sep}). Default
+#'   \code{0.025} matches that package; larger values separate the dots more.
+#' @param start_sep Radial offset of the first (outermost, for \code{"inward"})
+#'   dot from \code{base_r}, in data units (the analogue of
+#'   \code{circular::plot.circular}'s \code{start.sep}). Default \code{0} places
+#'   the first dot on the reference circle. A small positive value shifts the
+#'   whole stack off the line so the dots abut rather than straddle it.
 #' @param tol Grouping tolerance in radians. \code{NULL} (default) = exact
 #'   equality, correct for binned data. \code{tol > 0} assigns each
 #'   observation to the nearest group centre within \code{tol} radians
@@ -127,6 +133,7 @@ bin_angles <- function(angles, width, phase = 0) {
 stack_headings <- function(data,
                            col       = NULL,
                            step      = 0.025,
+                           start_sep = 0,
                            tol       = NULL,
                            direction = "inward",
                            base_r    = 1,
@@ -139,6 +146,8 @@ stack_headings <- function(data,
     stop(sprintf("column '%s' not found in data.", col))
   if (step <= 0)
     stop("'step' must be positive.")
+  if (start_sep < 0)
+    stop("'start_sep' must be non-negative.")
   if (!is.null(tol) && tol < 0)
     stop("'tol' must be NULL or non-negative.")
   direction <- match.arg(direction, c("inward", "outward"))
@@ -184,7 +193,7 @@ stack_headings <- function(data,
   grp_count <- ifelse(is.na(grp), NA_integer_, grp_tbl[grp])
 
   # --- Compute stack_r --------------------------------------------------------
-  offset <- (rank_in_grp - 1L) * step
+  offset <- start_sep + (rank_in_grp - 1L) * step
   data$stack_r <- if (direction == "inward") base_r - offset else base_r + offset
   data$stack_n <- as.integer(grp_count)
 
