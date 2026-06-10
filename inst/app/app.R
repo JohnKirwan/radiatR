@@ -702,6 +702,30 @@ server <- function(input, output, session) {
                 class = "btn-sm btn-outline-primary w-100 mb-2"
               ),
               uiOutput("dl_csv_ui")
+            ),
+            accordion_panel(
+              "R code",
+              tags$p(
+                class = "text-muted small",
+                "radiatR code that reproduces this figure. Edit the data path",
+                " to point at your own file."
+              ),
+              tags$div(
+                style = "max-height:320px; overflow:auto;",
+                verbatimTextOutput("figure_code")
+              ),
+              tags$button(
+                class   = "btn btn-sm btn-outline-primary w-100 mb-2",
+                onclick = paste0(
+                  "navigator.clipboard.writeText(",
+                  "document.getElementById('figure_code').innerText);",
+                  "this.innerText='Copied';",
+                  "setTimeout(()=>this.innerText='Copy R code',1200);"
+                ),
+                "Copy R code"
+              ),
+              downloadButton("dl_code", "Download .R",
+                             class = "btn-sm btn-outline-primary w-100")
             )
           )
         )
@@ -992,6 +1016,17 @@ server <- function(input, output, session) {
       data.frame(Note = "Summary not available")
     })
   }, striped = TRUE, hover = TRUE, align = "c")
+
+  # The radiatR script reproducing the current figure (shown, copied, downloaded).
+  figure_code_text <- reactive({
+    req(rv$ts)
+    spec_to_code(current_spec())
+  })
+  output$figure_code <- renderText(figure_code_text())
+  output$dl_code <- downloadHandler(
+    filename = function() paste0("radiatR_figure_", Sys.Date(), ".R"),
+    content  = function(file) writeLines(figure_code_text(), file)
+  )
 
   output$dl_plot <- downloadHandler(
     filename = function() {
