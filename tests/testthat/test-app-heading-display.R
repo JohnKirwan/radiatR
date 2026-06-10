@@ -38,8 +38,8 @@ test_that("tracks and markers share one per-trajectory colour key (add_track_cyc
   ordered <- c("t3", "t1", "t2")
   hd  <- data.frame(id = c("t1", "t2", "t3"), heading = 0)
   hd2 <- attach_cycle_colour(hd, ordered_ids = ordered, n = 20L)
-  # the track-side key for the same ids/order
-  trk <- cycle_colour_factor(c("t3", "t1", "t2"), ordered, 20L)
+  # the track-side key for the same ids/order (package primitive)
+  trk <- cycle_colours(c("t3", "t1", "t2"), 20L, levels = ordered)
   names_trk <- setNames(as.integer(trk), c("t3", "t1", "t2"))
   expect_equal(as.integer(hd2$.cycle_colour), unname(names_trk[hd2$id]))
 })

@@ -8,23 +8,16 @@
 # grouping for colour; any chosen grouping column overrides it.
 HEADING_TRAJ_COL <- "id"
 
-# Global per-trajectory cycle index (1..n) for trajectory ids `vals`, numbered in
-# `ordered_ids` order and wrapped at n. Used as the single colour key for BOTH
-# tracks and heading markers, so colour always distinguishes the trajectory --
-# never the facet/condition variable -- and a marker matches its own track
-# regardless of faceting (a global key, unlike radiate's per-panel cycle).
-cycle_colour_factor <- function(vals, ordered_ids, n) {
-  idx <- ((match(vals, ordered_ids) - 1L) %% n) + 1L
-  factor(idx, levels = seq_len(n))
-}
+# The colour key both helpers below attach. radiatR::cycle_colours() (package)
+# is the single source of truth for the cycling itself; these wrappers just place
+# its result on the track data and the headings frame under a shared column so
+# tracks and markers share one scale (colour distinguishes the trajectory/group,
+# never the facet variable, and a marker matches its own track even when faceted).
 
-# Attach a cycled colour key (".cycle_colour") to a TrajSet's track data, keyed on
-# `key_col` (the trajectory id for the default, or any grouping column). Colours
-# cycle at n, so a high-cardinality key stays legible. radiate(colour_col =
-# ".cycle_colour") then colours by it.
+# Attach the cycled colour key to a TrajSet's track data, keyed on `key_col` (the
+# trajectory id for the default, or any grouping column).
 add_track_cycle_colour <- function(ts, key_col, n) {
-  vals <- ts@data[[key_col]]
-  ts@data[[".cycle_colour"]] <- cycle_colour_factor(vals, unique(vals), n)
+  ts@data[[".cycle_colour"]] <- cycle_colours(ts@data[[key_col]], n)
   ts
 }
 
@@ -39,17 +32,17 @@ ensure_traj_col <- function(hd, ts, col, id_col, traj_col = HEADING_TRAJ_COL) {
   hd
 }
 
-# Attach the SAME trajectory colour key to a headings frame, so markers share the
-# tracks' colour scale.
+# Attach the SAME colour key to a headings frame, so markers share the tracks'
+# colour scale. `ordered_ids` is the key order add_track_cycle_colour() used for
+# the tracks (typically unique(track_data[[key_col]])), passed as cycle_colours()
+# `levels` so a given key value gets the same colour on a marker as on its track.
 #   hd          : a headings frame.
-#   ordered_ids : unique trajectory ids in track-data order (must match the order
-#                 add_track_cycle_colour() used for the tracks).
+#   ordered_ids : the key ordering used for the tracks.
 #   n           : number of cycled colours.
-#   traj_col    : the trajectory-id column in hd (default HEADING_TRAJ_COL).
-# Returns hd with a ".cycle_colour" factor column (levels seq_len(n)).
+#   traj_col    : the key column in hd (default HEADING_TRAJ_COL, the trajectory).
 attach_cycle_colour <- function(hd, ordered_ids, n,
                                 traj_col = HEADING_TRAJ_COL) {
-  hd[[".cycle_colour"]] <- cycle_colour_factor(hd[[traj_col]], ordered_ids, n)
+  hd[[".cycle_colour"]] <- cycle_colours(hd[[traj_col]], n, levels = ordered_ids)
   hd
 }
 
