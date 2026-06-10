@@ -52,6 +52,11 @@
 <h3 id="headings-development-version">Headings<a class="anchor" aria-label="anchor" href="#headings-development-version"></a></h3>
 <ul><li>
 <code>derive_headings(..., return_coords = TRUE)</code> now also works for <code>distal</code>, <code>net</code>, <code>straight</code>, and <code>pca_axis</code> (previously only <code>crossing</code>), attaching each rule’s construction coordinates so the geometry behind a heading can be drawn.</li>
+<li>New <code><a href="../reference/bin_angles.html">bin_angles()</a></code> snaps angles to fixed-width circular bin centres. <code>phase = 0</code> (default) centres bins on the reference direction; <code>phase = width / 2</code> reproduces the edge-aligned bins of <code><a href="https://rdrr.io/pkg/circular/man/plot.circular.html" class="external-link">circular::plot.circular</a></code>; arbitrary phases allow e.g. quadrant binning. Intended as the precursor to a stacked dot plot (<code><a href="../reference/bin_angles.html">bin_angles()</a></code> then <code><a href="../reference/stack_headings.html">stack_headings()</a></code>).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="shiny-app-development-version">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-development-version"></a></h3>
+<ul><li>Fixed the “Stacked dots (inward)” heading display, which superimposed every dot at the rim instead of stacking. Headings are now binned (5-degree bins centred on the reference direction) before stacking, producing inward radial columns.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="plotting-development-version">Plotting<a class="anchor" aria-label="anchor" href="#plotting-development-version"></a></h3>
@@ -68,7 +73,7 @@
 <code><a href="../reference/radiate.html">radiate()</a></code> gains a <code>show_tracks</code> argument (default <code>TRUE</code>) to draw the arena and overlays without the trajectory paths, symmetric with <code>show_arrow</code> and <code>show_labels</code>.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="shiny-app-development-version">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-development-version"></a></h3>
+<h3 id="shiny-app-development-version-1">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-development-version-1"></a></h3>
 <ul><li>The Configure step gains a live <strong>method preview</strong>: a unit-circle panel beside the controls that draws a few example tracks and re-renders to show how the selected heading rule derives its heading, updating as the method or ring radii change. Several rules now draw their construction: <code>crossing</code> its two detection rings, ring-crossing dots, and dashed vector to the rim; <code>distal</code> the furthest-from-centre point; <code>net</code> the first-to-last chord; <code>straight</code> the longest straight run; and <code>pca_axis</code> the principal axis. Remaining rules mark just the derived heading point. Constructions and heading markers take each trajectory’s colour.</li>
 <li>The Results Display panel’s “Heading points” toggle is replaced by a <strong>Heading display</strong> dropdown (Points (overlapping) / Stacked dots (inward) / None) that selects how the per-trial heading markers are drawn. Stacked dots fan coincident headings radially inward to reduce overplotting, stacked within each condition group when the plot is faceted.</li>
 <li>The Configure step’s heading-method picker is now a dropdown exposing all of the package’s parameter-free heading rules (plus ring <code>crossing</code>), with a one-line description of the selected rule shown beneath it.</li>
@@ -93,7 +98,7 @@
 <code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code> on a <code>TrajSet</code> now works for users of the installed package. It had been defined as an S4 method on the base S3 generic, which is only reachable from within the package’s own namespace, so user code got “cannot coerce class TrajSet to a data.frame”. It is now a registered S3 method.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="shiny-app-development-version-1">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-development-version-1"></a></h3>
+<h3 id="shiny-app-development-version-2">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-development-version-2"></a></h3>
 <ul><li>The upload step now offers a one-click <strong>“Load the example millipede dataset”</strong> so the app can be tried end to end without supplying a tracking file. It loads the bundled <code>cpunctatus</code> example and jumps straight to the configure step.</li>
 <li>Fixed the results step crashing or producing an empty summary when the tracking data’s trial-ID column was not literally named <code>id</code>. The condition join and per-trial summary now key off the headings frame’s own <code>id</code> column.</li>
 <li>Fixed the results plot showing “Plot unavailable” whenever a condition column was detected: it set <code><a href="../reference/radiate.html">radiate()</a></code>’s mutually exclusive <code>colour_col</code> and <code>colour_cycle</code> at once. Colours now cycle only when no condition drives the colour scale, and plot-render failures are logged rather than swallowed.</li>

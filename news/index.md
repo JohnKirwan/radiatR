@@ -18,6 +18,24 @@
   `distal`, `net`, `straight`, and `pca_axis` (previously only
   `crossing`), attaching each rule’s construction coordinates so the
   geometry behind a heading can be drawn.
+- New
+  [`bin_angles()`](https://johnkirwan.github.io/radiatR/reference/bin_angles.md)
+  snaps angles to fixed-width circular bin centres. `phase = 0`
+  (default) centres bins on the reference direction; `phase = width / 2`
+  reproduces the edge-aligned bins of
+  [`circular::plot.circular`](https://rdrr.io/pkg/circular/man/plot.circular.html);
+  arbitrary phases allow e.g. quadrant binning. Intended as the
+  precursor to a stacked dot plot
+  ([`bin_angles()`](https://johnkirwan.github.io/radiatR/reference/bin_angles.md)
+  then
+  [`stack_headings()`](https://johnkirwan.github.io/radiatR/reference/stack_headings.md)).
+
+### Shiny app
+
+- Fixed the “Stacked dots (inward)” heading display, which superimposed
+  every dot at the rim instead of stacking. Headings are now binned
+  (5-degree bins centred on the reference direction) before stacking,
+  producing inward radial columns.
 
 ### Plotting
 

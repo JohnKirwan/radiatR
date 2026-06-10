@@ -519,6 +519,8 @@ Any remaining exported topics.
   : Coerce a TrajSet to a data frame
 - [`assign_cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.md)
   : Assign cycling colour indices to trajectories
+- [`bin_angles()`](https://johnkirwan.github.io/radiatR/reference/bin_angles.md)
+  : Snap angles to fixed-width circular bin centres
 - [`cal_model()`](https://johnkirwan.github.io/radiatR/reference/cal_model.md)
   : Build a camera calibration model from intrinsic coefficients
 - [`calibrate_positions()`](https://johnkirwan.github.io/radiatR/reference/calibrate_positions.md)
