@@ -31,6 +31,36 @@ test_that("stacked style returns a stacked-headings layer", {
   expect_true(has_cols(l, c(".x_stk", ".y_stk")))
 })
 
+test_that("attach_cycle_colour reproduces radiate's per-trajectory cycle index", {
+  ordered <- c("t3", "t1", "t2", "t4")          # track-data trajectory order
+  hd <- data.frame(id = c("t1", "t2", "t3", "t4", "t1"), heading = 0)
+  out <- attach_cycle_colour(hd, ordered_ids = ordered, n = 20L)
+  # index = position of each id in `ordered`, cycled mod n
+  expect_equal(as.integer(out$.cycle_colour), c(2L, 3L, 1L, 4L, 2L))
+  expect_identical(levels(out$.cycle_colour), as.character(1:20))
+})
+
+test_that("attach_cycle_colour wraps the cycle past n trajectories", {
+  ordered <- paste0("t", 1:25)
+  hd <- data.frame(id = c("t1", "t21", "t25"), heading = 0)
+  out <- attach_cycle_colour(hd, ordered_ids = ordered, n = 20L)
+  # t21 -> index 21 wraps to 1; t25 -> 5
+  expect_equal(as.integer(out$.cycle_colour), c(1L, 1L, 5L))
+})
+
+test_that("colour_col maps dot colour for both points and stacked styles", {
+  hd <- make_hd(); hd$grp <- c("a", "b", "a", "b")
+  lp <- heading_marker_layer(hd, "points",  NULL, circ_display(), colour_col = "grp")
+  ls <- heading_marker_layer(hd, "stacked", NULL, circ_display(), colour_col = "grp")
+  expect_true("colour" %in% names(lp$mapping))
+  expect_true("colour" %in% names(ls$mapping))
+})
+
+test_that("no colour_col leaves dots a fixed colour (no colour aesthetic)", {
+  l <- heading_marker_layer(make_hd(), "points", NULL, circ_display())
+  expect_false("colour" %in% names(l$mapping))
+})
+
 test_that("none style returns NULL", {
   expect_null(heading_marker_layer(make_hd(), "none", NULL, circ_display()))
 })
@@ -51,6 +81,19 @@ test_that("stacked style actually stacks continuous headings into bins", {
   expect_true("stack_r" %in% names(l$data))
   expect_gt(max(l$data$stack_n), 1L)          # at least one real column
   expect_gt(length(unique(round(l$data$stack_r, 6))), 1L)  # not all at base_r
+})
+
+test_that("default stacked dots sit inside the rim with the wider step", {
+  set.seed(1)
+  hd <- data.frame(id = seq_len(40), time = seq_len(40),
+                   heading = rnorm(40, 0, 0.1))   # one tight column
+  l <- heading_marker_layer(hd, "stacked", NULL, circ_display())
+  r <- sort(unique(round(l$data$stack_r, 6)), decreasing = TRUE)
+  # outermost dot is start_sep (0.035) inside the unit circle -> abuts, not on it
+  expect_equal(r[1], 1 - STACK_START_SEP, tolerance = 1e-9)
+  expect_lt(r[1], 1)
+  # successive dots are STACK_STEP apart (wider than circular's 0.025)
+  expect_equal(r[1] - r[2], STACK_STEP, tolerance = 1e-9)
 })
 
 test_that("stacked style tolerates NA headings (undefined-heading trials)", {

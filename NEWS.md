@@ -18,6 +18,11 @@
   reproduces the edge-aligned bins of `circular::plot.circular`; arbitrary phases
   allow e.g. quadrant binning. Intended as the precursor to a stacked dot plot
   (`bin_angles()` then `stack_headings()`).
+* `stack_headings()` and `add_stacked_headings()` gain a `start_sep` argument (the
+  analogue of `circular::plot.circular`'s `start.sep`): a radial offset of the
+  first dot from the reference circle, so a stack can abut the periphery rather
+  than straddle it. The existing `step` argument (the analogue of `sep`) sets the
+  gap between dots. Both default to circular's behaviour at the package level.
 
 ## Shiny app
 
@@ -27,6 +32,12 @@
 * Fixed an error ("NAs are not allowed in subscripted assignments") when stacking
   headings that include two or more `NA` values (trials with no defined heading).
   The internal angle-wrapping helper is now NA-safe.
+* The stacked-dots display now sits just inside the unit circle (the dots abut
+  the periphery line rather than straddle it) and uses a slightly wider gap
+  between dots, so individual points read more clearly.
+* Heading markers (both the points and stacked styles) now inherit each
+  trajectory's colour, matching the tracks: by condition when a condition column
+  is present, otherwise by the same per-trajectory colour cycle the tracks use.
 
 ## Plotting
 
