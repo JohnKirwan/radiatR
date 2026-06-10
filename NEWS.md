@@ -50,6 +50,13 @@
 
 ## Plotting
 
+* `radiate()` gains an `arrow_colour_col` argument: when set, the built-in mean
+  resultant arrow is drawn once per level of that column (within each panel, if
+  faceted) and coloured by it, so the arrow can follow a colour grouping
+  independently of faceting. The composable `add_heading_arrow()` and
+  `add_heading_interval()` already take `colour_col` for the same effect on the
+  mean-direction arrow and its confidence interval; the circular-statistics
+  vignette now shows this grouped-overlay pattern.
 * New exported `cycle_colours()` -- the order-stable primitive behind
   `assign_cycle_colours()` and `radiate()`'s `colour_cycle`. It maps a key to a
   cycled `1:n` colour index and accepts an explicit level order, so two data
