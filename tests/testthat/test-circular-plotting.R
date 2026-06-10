@@ -76,6 +76,15 @@ test_that("add_heading_vectors returns a geom_segment layer", {
   expect_error(add_heading_vectors(data.frame(heading = 1)), "x_inner")
 })
 
+test_that("add_heading_vectors maps colour when colour_col is supplied", {
+  hd <- data.frame(id = c("A", "B"), time = 1, heading = c(pi / 4, pi / 2),
+                   x_inner = c(0.14, 0.0), y_inner = c(0.14, 0.2),
+                   grp = c("a", "b"))
+  expect_true("colour" %in% names(add_heading_vectors(hd, colour_col = "grp")$mapping))
+  # no colour_col -> fixed colour, no colour aesthetic
+  expect_false("colour" %in% names(add_heading_vectors(hd)$mapping))
+})
+
 test_that("add_heading_points and add_heading_vectors can be added to ggplot", {
   library(ggplot2)
   hd <- data.frame(id = c("A", "B"), time = c(1, 1),

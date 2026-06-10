@@ -932,9 +932,11 @@ server <- function(input, output, session) {
     }
 
     # Heading vectors: inner-crossing → circle boundary (crossing rule only).
+    # Colour them by the same key as the tracks/markers so each vector inherits
+    # its trajectory's (or group's) colour.
     if (tog(input$show_vectors, FALSE) &&
         all(c("x_inner", "y_inner") %in% names(hd_disp))) {
-      p <- p + add_heading_vectors(hd_disp)
+      p <- p + add_heading_vectors(hd_disp, colour_col = marker_colour_col)
     }
 
     # Rayleigh critical circle at alpha = 0.05 (asymptotic approximation
