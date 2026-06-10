@@ -85,6 +85,30 @@ test_that("add_heading_vectors maps colour when colour_col is supplied", {
   expect_false("colour" %in% names(add_heading_vectors(hd)$mapping))
 })
 
+test_that("radiate(arrow_colour_col=) draws one coloured arrow per group", {
+  ts <- simulate_tracks(n_points = 30, seed = 1, output = "trajset")
+  n_cond <- length(unique(as.data.frame(ts)$condition))
+
+  p <- radiate(ts, group_col = "trial_id", show_arrow = TRUE,
+               arrow_colour_col = "condition")
+  seg <- Find(function(l) inherits(l$geom, "GeomSegment") &&
+                !is.null(l$geom_params$arrow), p$layers)
+  expect_false(is.null(seg))
+  expect_true("colour" %in% names(seg$mapping))      # arrow colour mapped to group
+  expect_equal(nrow(seg$data), n_cond)               # one arrow per condition
+  expect_true("condition" %in% names(seg$data))      # group value carried for the scale
+})
+
+test_that("radiate without arrow_colour_col keeps a single fixed-colour arrow", {
+  ts <- simulate_tracks(n_points = 30, seed = 1, output = "trajset")
+  p <- radiate(ts, group_col = "trial_id", show_arrow = TRUE)
+  seg <- Find(function(l) inherits(l$geom, "GeomSegment") &&
+                !is.null(l$geom_params$arrow), p$layers)
+  expect_false(is.null(seg))
+  expect_false("colour" %in% names(seg$mapping))     # no colour aesthetic
+  expect_equal(nrow(seg$data), 1L)                   # single summary arrow
+})
+
 test_that("add_heading_points and add_heading_vectors can be added to ggplot", {
   library(ggplot2)
   hd <- data.frame(id = c("A", "B"), time = c(1, 1),

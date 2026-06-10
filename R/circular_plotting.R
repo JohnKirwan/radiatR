@@ -1730,7 +1730,13 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   without the track geometry.
 #' @param show_arrow Whether to draw a mean resultant arrow from the centre.
 #' @param arrow_angle_col Column containing angles (radians) to summarise for the arrow.
-#' @param arrow_colour Arrow colour.
+#' @param arrow_colour Arrow colour (a single fixed colour). Ignored when
+#'   `arrow_colour_col` is set.
+#' @param arrow_colour_col Optional grouping column. When supplied, one mean
+#'   resultant arrow is drawn per level of this column (within each panel, if
+#'   `panel_by` is also set) and mapped to the colour aesthetic, so the arrow can
+#'   follow a colour grouping independently of faceting. Default `NULL` draws a
+#'   single arrow in `arrow_colour`.
 #' @param arrow_size Arrow linewidth.
 #' @param panel_by NULL, a column name, or a character vector of column names
 #'   to facet by (via [ggplot2::facet_wrap()]). The named column(s) must be
@@ -1800,6 +1806,7 @@ function(
   show_arrow = NULL,
   arrow_angle_col = NULL,
   arrow_colour = "black",
+  arrow_colour_col = NULL,
   arrow_size = 2,
   display = circ_display(),
   ...){
@@ -1976,32 +1983,29 @@ function(
         data.frame(x = 0, y = 0, xend = r * cos(ma), yend = r * sin(ma))
       }
 
-      # When panel_by is a single column, route each arrow to its own facet.
-      if (!is.null(panel_by) && length(panel_by) == 1L &&
-          panel_by %in% names(data)) {
-        panel_map <- unique(data[, c(group_col, panel_by), drop = FALSE])
-        trial_df  <- merge(trial_df, panel_map, by = group_col, all.x = TRUE)
-        arrow_rows <- lapply(
-          split(trial_df$.mean, trial_df[[panel_by]], drop = TRUE),
-          function(a) {
-            seg <- .circ_mean_seg(a)
+      # Group the arrow by the panel column (so each arrow routes to its facet)
+      # and/or the colour column (so it follows a colour grouping). Each grouping
+      # column is carried onto the arrow rows for faceting / the colour scale.
+      seg_cols <- unique(c(
+        if (!is.null(panel_by) && length(panel_by) == 1L &&
+            panel_by %in% names(data)) panel_by,
+        if (!is.null(arrow_colour_col) &&
+            arrow_colour_col %in% names(data)) arrow_colour_col
+      ))
+      seg_cols <- seg_cols[!is.na(seg_cols)]
+
+      if (length(seg_cols) && !is.null(group_col) && group_col %in% names(data)) {
+        key_map  <- unique(data[, c(group_col, seg_cols), drop = FALSE])
+        trial_df <- merge(trial_df, key_map, by = group_col, all.x = TRUE)
+        # split by the combination of grouping columns, preserving their classes
+        grp_key  <- interaction(trial_df[seg_cols], drop = TRUE, sep = "\r")
+        arrow_df <- do.call(rbind, lapply(split(seq_len(nrow(trial_df)), grp_key),
+          function(ix) {
+            seg <- .circ_mean_seg(trial_df$.mean[ix])
+            if (is.null(seg)) return(NULL)
+            for (sc in seg_cols) seg[[sc]] <- trial_df[[sc]][ix[1L]]  # constant in group
             seg
-          }
-        )
-        # Attach panel value (preserving original class/factor levels).
-        pby_vals <- names(arrow_rows)
-        pby_orig <- data[[panel_by]]
-        arrow_df <- do.call(rbind, Map(function(seg, pval) {
-          if (is.null(seg)) return(NULL)
-          seg[[panel_by]] <- if (is.factor(pby_orig)) {
-            factor(pval, levels = levels(pby_orig))
-          } else if (is.numeric(pby_orig)) {
-            as.numeric(pval)
-          } else {
-            pval
-          }
-          seg
-        }, arrow_rows, pby_vals))
+          }))
       } else {
         arrow_df <- .circ_mean_seg(trial_df$.mean)
       }
@@ -2013,14 +2017,20 @@ function(
       }
 
       if (!is.null(arrow_df) && nrow(arrow_df) > 0L) {
-        g <- g + ggplot2::geom_segment(
+        use_arrow_colour_col <- !is.null(arrow_colour_col) &&
+                                arrow_colour_col %in% names(arrow_df)
+        arrow_map <- ggplot2::aes(x = x, y = y, xend = xend, yend = yend)
+        if (use_arrow_colour_col)
+          arrow_map[["colour"]] <- rlang::sym(arrow_colour_col)
+        seg_args <- list(
           data        = arrow_df,
-          mapping     = ggplot2::aes(x = x, y = y, xend = xend, yend = yend),
-          colour      = arrow_colour,
+          mapping     = arrow_map,
           linewidth   = arrow_size,
           arrow       = grid::arrow(length = grid::unit(0.2, "cm")),
           inherit.aes = FALSE
         )
+        if (!use_arrow_colour_col) seg_args$colour <- arrow_colour
+        g <- g + do.call(ggplot2::geom_segment, seg_args)
       }
     } else if (!is.null(arrow_angle_col)) {
       warning("Arrow requested but column `", arrow_angle_col,
