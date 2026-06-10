@@ -24,6 +24,9 @@
 * Fixed the "Stacked dots (inward)" heading display, which superimposed every dot
   at the rim instead of stacking. Headings are now binned (5-degree bins centred
   on the reference direction) before stacking, producing inward radial columns.
+* Fixed an error ("NAs are not allowed in subscripted assignments") when stacking
+  headings that include two or more `NA` values (trials with no defined heading).
+  The internal angle-wrapping helper is now NA-safe.
 
 ## Plotting
 

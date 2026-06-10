@@ -55,7 +55,10 @@ wrap_to_2pi <- function(theta) {
   }
   twopi <- 2 * pi
   theta <- theta %% twopi
-  theta[theta < 0] <- theta[theta < 0] + twopi
+  # which() drops NA, so NA input stays NA (a logical index containing NA would
+  # error on assignment once two or more NAs are present).
+  neg <- which(theta < 0)
+  theta[neg] <- theta[neg] + twopi
   theta
 }
 

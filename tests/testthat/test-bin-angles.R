@@ -51,11 +51,14 @@ test_that("the snapped values are multiples of width plus phase", {
 
 test_that("NA in -> NA out, length preserved, vectorised", {
   w <- deg(5)
-  out <- bin_angles(c(deg(1), NA, deg(91)), w)
-  expect_length(out, 3L)
-  expect_true(is.na(out[2]))
+  # >= 2 NAs: a logical-index assignment in wrap_to_2pi errors on multiple NAs,
+  # so this guards the NA-safe path specifically.
+  out <- bin_angles(c(deg(1), NA, deg(91), NA, deg(2)), w)
+  expect_length(out, 5L)
+  expect_true(all(is.na(out[c(2, 4)])))
   expect_equal(out[1], 0)
   expect_equal(out[3], deg(90))
+  expect_equal(out[5], 0)
 })
 
 test_that("width must be a single positive number", {
