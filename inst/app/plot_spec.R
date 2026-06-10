@@ -116,3 +116,83 @@ spec_to_plot <- function(spec, ts, hd) {
 
   p
 }
+
+# Emit the radiatR script (a single string) that reproduces spec_to_plot(spec).
+spec_to_code <- function(spec) {
+  q   <- function(s) paste0('"', s, '"')
+  L   <- character(0)
+  add <- function(...) L[[length(L) + 1L]] <<- paste0(...)
+
+  add("library(radiatR)")
+  add("library(ggplot2)")
+  add("")
+
+  if (identical(spec$data$source, "example")) {
+    add("data(cpunctatus)")
+    add("ts <- cpunctatus")
+  } else {
+    dia <- if (!is.null(spec$data$dialect))
+      paste0(", dialect = ", q(spec$data$dialect)) else ""
+    add("ts <- TrajSet_read(", q(spec$data$path), dia, ")")
+  }
+
+  has_hd <- !identical(spec$headings$rule, "none")
+  if (has_hd) {
+    add("")
+    hp <- if (identical(spec$headings$rule, "crossing"))
+      paste0(", circ0 = ", spec$headings$circ0, ", circ1 = ", spec$headings$circ1) else ""
+    add("hd <- derive_headings(ts, rule = ", q(spec$headings$rule), hp, ")")
+    if (!is.null(spec$facet_by))
+      add("hd <- merge(hd, unique(as.data.frame(ts)[, c(", q(spec$group_col), ", ",
+          q(spec$facet_by), ")]), by.x = \"id\", by.y = ", q(spec$group_col),
+          ", all.x = TRUE)")
+  }
+
+  add("")
+  add("ts <- assign_colour_key(ts, by = ", q(spec$colour$by), ")")
+  if (has_hd)
+    add("hd <- assign_colour_key(hd, by = ", q(spec$colour$by), ", reference = ts)")
+  add("")
+  add("disp <- circ_display(zero = ", spec$display$zero, ")")
+
+  if (has_hd && identical(spec$heading_display, "stacked")) {
+    add("")
+    add("hd$heading <- bin_angles(hd$heading, width = pi / 36)")
+  }
+  if (has_hd && spec$show$arrow) {
+    cc <- if (is.null(spec$facet_by)) "" else paste0(", colour_col = ", q(spec$facet_by))
+    add("")
+    add("arrow_df <- compute_circ_mean(hd", cc, ")")
+  }
+
+  add("")
+  pby <- if (is.null(spec$facet_by)) "" else paste0(", panel_by = ", q(spec$facet_by))
+  add("radiate(ts, group_col = ", q(spec$group_col),
+      ", colour_col = \".colour\"", pby,
+      ", legend = ", if (spec$colour$legend) "TRUE" else "FALSE",
+      ", theme = ", q(spec$theme),
+      ", angle_labels = ", q(spec$angle_labels), ", display = disp)")
+
+  tail <- character(0)
+  if (spec$colour$legend)
+    tail <- c(tail, paste0("labs(colour = ", q(spec$colour$by), ")"))
+  if (has_hd && identical(spec$heading_display, "stacked")) {
+    grp <- if (is.null(spec$facet_by)) "" else paste0(", group = ", q(spec$facet_by))
+    tail <- c(tail, paste0("add_stacked_headings(hd, colour_col = \".colour\"", grp,
+                           ", step = 0.06, start_sep = 0.05, size = 2.5, alpha = 0.8)"))
+  }
+  if (has_hd && identical(spec$heading_display, "points"))
+    tail <- c(tail, "add_heading_points(hd, colour_col = \".colour\", size = 2.5, alpha = 0.8)")
+  if (has_hd && spec$show$arrow)
+    tail <- c(tail, "add_circ_mean(arrow_df, colour = \"black\")")
+  if (has_hd && spec$show$vectors)
+    tail <- c(tail, "add_heading_vectors(hd, colour_col = \".colour\")")
+
+  if (length(tail)) {
+    L[[length(L)]] <- paste0(L[[length(L)]], " +")
+    for (i in seq_along(tail))
+      add("  ", tail[[i]], if (i < length(tail)) " +" else "")
+  }
+
+  paste(L, collapse = "\n")
+}
