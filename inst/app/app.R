@@ -118,6 +118,11 @@ example_ts <- function() {
   )
 }
 
+# Number of cycled track colours when there is no condition column. Shared by
+# the radiate() colour_cycle and the heading-marker colour key so the dots
+# inherit the same per-trajectory colours as the tracks.
+CYCLE_N <- 20L
+
 # A finite scalar from a possibly-NULL/NA numeric input, else a default.
 num_or <- function(v, default) {
   if (is.null(v) || length(v) != 1L || is.na(v) || !is.finite(v)) default else v
@@ -768,7 +773,7 @@ server <- function(input, output, session) {
         group_col    = id_col,
         colour_col   = gc,
         panel_by     = gc,
-        colour_cycle = if (is.null(gc)) 20 else NULL,
+        colour_cycle = if (is.null(gc)) CYCLE_N else NULL,
         show_tracks  = tog(input$show_tracks, TRUE),
         show_arrow   = FALSE,
         show_labels  = FALSE,
@@ -814,7 +819,7 @@ server <- function(input, output, session) {
       panel_by        = gc,
       # colour_cycle and colour_col are mutually exclusive; only cycle
       # colours when no condition column is driving the colour scale.
-      colour_cycle    = if (is.null(gc)) 20 else NULL,
+      colour_cycle    = if (is.null(gc)) CYCLE_N else NULL,
       show_tracks     = tog(input$show_tracks, TRUE),
       show_arrow      = tog(input$show_arrow,  TRUE),
       arrow_angle_col = ".arrow_heading",
@@ -831,9 +836,26 @@ server <- function(input, output, session) {
     hd_disp <- rv$hd
     attr(hd_disp, "display") <- disp
 
+    # Colour the heading markers to match the tracks. With a condition column the
+    # tracks are coloured by it, so the markers map the same column. Without one,
+    # radiate() colours tracks by a per-trajectory cycle index (.cycle_colour);
+    # reproduce that exact index here (same id order, same CYCLE_N) so the dots
+    # share the tracks' colour scale and each dot matches its trajectory.
+    if (!is.null(gc)) {
+      marker_colour_col <- gc
+    } else {
+      # The track data keys trajectories by id_col; the headings frame keys them
+      # by "id" (same values). Map heading rows through the track id order.
+      uids <- unique(ts_arrow@data[[id_col]])
+      idx  <- ((match(hd_disp[["id"]], uids) - 1L) %% CYCLE_N) + 1L
+      hd_disp[[".cycle_colour"]] <- factor(idx, levels = seq_len(CYCLE_N))
+      marker_colour_col <- ".cycle_colour"
+    }
+
     heading_display <- if (is.null(input$heading_display)) "points"
                        else input$heading_display
-    marker_layer <- heading_marker_layer(hd_disp, heading_display, gc, disp)
+    marker_layer <- heading_marker_layer(hd_disp, heading_display, gc, disp,
+                                         colour_col = marker_colour_col)
     if (!is.null(marker_layer)) p <- p + marker_layer
     if (tog(input$show_ci, FALSE)) {
       p <- p + add_heading_interval(

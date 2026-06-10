@@ -35,6 +35,9 @@
 * The stacked-dots display now sits just inside the unit circle (the dots abut
   the periphery line rather than straddle it) and uses a slightly wider gap
   between dots, so individual points read more clearly.
+* Heading markers (both the points and stacked styles) now inherit each
+  trajectory's colour, matching the tracks: by condition when a condition column
+  is present, otherwise by the same per-trajectory colour cycle the tracks use.
 
 ## Plotting
 

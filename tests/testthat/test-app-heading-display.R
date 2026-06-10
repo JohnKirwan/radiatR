@@ -31,6 +31,19 @@ test_that("stacked style returns a stacked-headings layer", {
   expect_true(has_cols(l, c(".x_stk", ".y_stk")))
 })
 
+test_that("colour_col maps dot colour for both points and stacked styles", {
+  hd <- make_hd(); hd$grp <- c("a", "b", "a", "b")
+  lp <- heading_marker_layer(hd, "points",  NULL, circ_display(), colour_col = "grp")
+  ls <- heading_marker_layer(hd, "stacked", NULL, circ_display(), colour_col = "grp")
+  expect_true("colour" %in% names(lp$mapping))
+  expect_true("colour" %in% names(ls$mapping))
+})
+
+test_that("no colour_col leaves dots a fixed colour (no colour aesthetic)", {
+  l <- heading_marker_layer(make_hd(), "points", NULL, circ_display())
+  expect_false("colour" %in% names(l$mapping))
+})
+
 test_that("none style returns NULL", {
   expect_null(heading_marker_layer(make_hd(), "none", NULL, circ_display()))
 })
