@@ -616,7 +616,7 @@ server <- function(input, output, session) {
               tags$hr(class = "my-2"),
               sliderInput(
                 "preview_px", "Preview size (px)",
-                min = 240, max = 900, value = 460, step = 20
+                min = 480, max = 1000, value = 720, step = 20
               ),
               tags$span(
                 class = "text-muted small",
@@ -908,7 +908,7 @@ server <- function(input, output, session) {
   output$track_plot_ui <- renderUI({
     w    <- num_or(input$plot_w, 7)
     h    <- num_or(input$plot_h, 7)
-    base <- num_or(input$preview_px, 460)
+    base <- num_or(input$preview_px, 720)
     px   <- max(160, min(1000, round(base * (h / w))))
     plotOutput("track_plot", height = paste0(px, "px"))
   })
