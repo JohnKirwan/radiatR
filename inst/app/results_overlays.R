@@ -2,6 +2,13 @@
 # Sourced by app.R; also unit-tested directly. Depends only on the radiatR
 # package (assumed attached) and ggplot2.
 
+# Bin width for the stacked-dots display: 5 degrees, centred on the reference
+# direction (phase 0) so the modal heading sits on a column rather than split
+# across a bin boundary. Snapping headings to these centres first turns
+# stack_headings(tol = NULL) into clean inward radial columns (continuous
+# headings have no exact ties, so without binning nothing would stack).
+STACK_BIN_WIDTH <- pi / 36   # 5 degrees in radians
+
 # Build the per-trial heading-marker layer for the Results plot.
 #   hd      : headings frame with a "heading" column (radians).
 #   style   : "points" (overlapping hollow circles), "stacked" (stacked inward),
@@ -19,6 +26,10 @@ heading_marker_layer <- function(hd, style = "points", gc = NULL,
   attr(hd, "display") <- display
 
   if (identical(style, "stacked")) {
+    # Bin the continuous headings to 5-degree centres so coincident-binned
+    # angles become exact ties that stack_headings groups into radial columns.
+    hd$heading <- bin_angles(hd$heading, width = STACK_BIN_WIDTH)
+    attr(hd, "display") <- display
     if (!is.null(gc) && gc %in% names(hd)) {
       hd <- do.call(rbind, lapply(
         split(hd, hd[[gc]]),

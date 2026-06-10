@@ -13,6 +13,17 @@
 * `derive_headings(..., return_coords = TRUE)` now also works for `distal`, `net`,
   `straight`, and `pca_axis` (previously only `crossing`), attaching each rule's
   construction coordinates so the geometry behind a heading can be drawn.
+* New `bin_angles()` snaps angles to fixed-width circular bin centres. `phase = 0`
+  (default) centres bins on the reference direction; `phase = width / 2`
+  reproduces the edge-aligned bins of `circular::plot.circular`; arbitrary phases
+  allow e.g. quadrant binning. Intended as the precursor to a stacked dot plot
+  (`bin_angles()` then `stack_headings()`).
+
+## Shiny app
+
+* Fixed the "Stacked dots (inward)" heading display, which superimposed every dot
+  at the rim instead of stacking. Headings are now binned (5-degree bins centred
+  on the reference direction) before stacking, producing inward radial columns.
 
 ## Plotting
 
