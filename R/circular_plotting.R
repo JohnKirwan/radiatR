@@ -1384,6 +1384,8 @@ add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
 #'   \code{shape_code} is already a column in \code{data}.
 #'   Mapped to ggplot2 shape integers: 1 = hollow, 16 = filled,
 #'   21 = filled with ring.
+#' @param group Optional column name; stack within each group independently
+#'   (e.g. one stacking per facet). Default \code{NULL}.
 #' @param colour Fixed point colour (ignored when \code{colour_col} is set).
 #' @param colour_col Optional column name to map to the colour aesthetic.
 #' @param size Point size passed to \code{geom_point()}.
@@ -1406,6 +1408,7 @@ add_stacked_headings <- function(data,
                                  base_r     = 1,
                                  shade      = FALSE,
                                  shape      = FALSE,
+                                 group      = NULL,
                                  colour     = "black",
                                  colour_col = NULL,
                                  size       = 2,
@@ -1417,12 +1420,12 @@ add_stacked_headings <- function(data,
   if (!col %in% names(data))
     stop(sprintf("column '%s' not found in data.", col))
 
+  disp_opts <- attr(data, "display", exact = TRUE) %||% circ_display()
+
   if (!"stack_r" %in% names(data))
     data <- stack_headings(data, col = col, step = step, start_sep = start_sep,
                            tol = tol, direction = direction, base_r = base_r,
-                           shade = shade, shape = shape)
-
-  disp_opts <- attr(data, "display", exact = TRUE) %||% circ_display()
+                           shade = shade, shape = shape, group = group)
   xy <- .uc_to_display_coords(data$stack_r * cos(data[[col]]),
                                data$stack_r * sin(data[[col]]), disp_opts)
   data[[".x_stk"]] <- xy$x

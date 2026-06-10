@@ -123,6 +123,9 @@ bin_angles <- function(angles, width, phase = 0) {
 #' @param shape If \code{TRUE}, add a \code{shape_code} integer column:
 #'   1 = hollow (outermost / singleton), 2 = filled (middle), 3 = filled with
 #'   ring (innermost in a stack of 3+).
+#' @param group Optional column name; when set, stacking is computed
+#'   independently within each group and the rows recombined. Default
+#'   \code{NULL}.
 #'
 #' @return \code{data} augmented with \code{stack_r} and \code{stack_n}
 #'   columns (always), plus \code{shade_n} and/or \code{shape_code} when
@@ -138,7 +141,8 @@ stack_headings <- function(data,
                            direction = "inward",
                            base_r    = 1,
                            shade     = FALSE,
-                           shape     = FALSE) {
+                           shape     = FALSE,
+                           group     = NULL) {
   if (is.null(col))
     col <- if (!is.null(attr(data, "heading_col"))) attr(data, "heading_col")
            else "heading"
@@ -151,6 +155,22 @@ stack_headings <- function(data,
   if (!is.null(tol) && tol < 0)
     stop("'tol' must be NULL or non-negative.")
   direction <- match.arg(direction, c("inward", "outward"))
+
+  # Stack within each group independently when `group` is given (e.g. one
+  # stacking per facet). Recurse per group, then recombine.
+  if (!is.null(group)) {
+    if (!group %in% names(data))
+      stop(sprintf("group column '%s' not found in data.", group))
+    parts <- lapply(
+      split(seq_len(nrow(data)), data[[group]], drop = TRUE),
+      function(ix) stack_headings(data[ix, , drop = FALSE], col = col, step = step,
+        start_sep = start_sep, tol = tol, direction = direction, base_r = base_r,
+        shade = shade, shape = shape)
+    )
+    out <- do.call(rbind, parts)
+    rownames(out) <- NULL
+    return(out)
+  }
 
   angles <- data[[col]]
   n      <- length(angles)
