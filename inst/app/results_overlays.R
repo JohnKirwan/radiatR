@@ -14,8 +14,8 @@ STACK_BIN_WIDTH <- pi / 36   # 5 degrees in radians
 # the outermost dot just inside the rim so the dots abut the periphery line
 # rather than straddle it, and STACK_STEP is wider than circular's 0.025 so
 # individual points in a column read clearly.
-STACK_START_SEP <- 0.035
-STACK_STEP      <- 0.045
+STACK_START_SEP <- 0.05
+STACK_STEP      <- 0.06
 
 # Build the per-trial heading-marker layer for the Results plot.
 #   hd      : headings frame with a "heading" column (radians).
