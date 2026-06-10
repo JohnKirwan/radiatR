@@ -11,6 +11,7 @@ library(radiatR)
 source("preview.R", local = FALSE)
 source("preview_constructions.R", local = FALSE)
 source("results_overlays.R", local = FALSE)
+source("download_helpers.R", local = FALSE)
 
 # ---- dialect registry --------------------------------------------------------
 
@@ -187,24 +188,6 @@ straightness_caption <- function(ts, gc = NULL) {
     parts <- sprintf("%s: %.2f", names(agg), as.numeric(agg))
     paste0("Straightness - ", paste(parts, collapse = ", "))
   }
-}
-
-# Resolve a download format to a graphics device for ggsave(). Vector formats
-# prefer svglite/cairo so the output is editable in vector tools; PNG uses the
-# default raster device.
-.plot_device <- function(fmt) {
-  switch(fmt,
-    png = "png",
-    pdf = grDevices::cairo_pdf,
-    svg = if (requireNamespace("svglite", quietly = TRUE)) {
-      svglite::svglite
-    } else if (isTRUE(capabilities("cairo"))) {
-      grDevices::svg
-    } else {
-      stop("SVG output needs the 'svglite' package or cairo support in R.")
-    },
-    stop("Unknown plot format: ", fmt)
-  )
 }
 
 derive_hd <- function(ts, method, circ0, circ1) {
@@ -633,7 +616,7 @@ server <- function(input, output, session) {
               tags$hr(class = "my-2"),
               sliderInput(
                 "preview_px", "Preview size (px)",
-                min = 240, max = 900, value = 460, step = 20
+                min = 480, max = 1000, value = 720, step = 20
               ),
               tags$span(
                 class = "text-muted small",
@@ -657,12 +640,20 @@ server <- function(input, output, session) {
                 "plot_fmt", "Format",
                 choices = c("PDF (vector)"  = "pdf",
                             "SVG (vector)"  = "svg",
-                            "PNG (raster)"  = "png")
+                            "PNG (raster)"  = "png",
+                            "JPG (raster)"  = "jpg")
               ),
               conditionalPanel(
-                "input.plot_fmt == 'png'",
+                "input.plot_fmt == 'png' || input.plot_fmt == 'jpg'",
                 numericInput("plot_dpi", "Resolution (dpi)", value = 300,
                              min = 72, max = 600, step = 1)
+              ),
+              # JPEG has no alpha channel, so transparency only applies to the
+              # other formats; hide the option when JPG is selected.
+              conditionalPanel(
+                "input.plot_fmt != 'jpg'",
+                checkboxInput("plot_transparent",
+                              "Transparent background", value = FALSE)
               ),
               downloadButton(
                 "dl_plot", "Download plot",
@@ -917,7 +908,7 @@ server <- function(input, output, session) {
   output$track_plot_ui <- renderUI({
     w    <- num_or(input$plot_w, 7)
     h    <- num_or(input$plot_h, 7)
-    base <- num_or(input$preview_px, 460)
+    base <- num_or(input$preview_px, 720)
     px   <- max(160, min(1000, round(base * (h / w))))
     plotOutput("track_plot", height = paste0(px, "px"))
   })
@@ -1024,13 +1015,18 @@ server <- function(input, output, session) {
     content = function(file) {
       req(rv$ts)
       fmt <- if (is.null(input$plot_fmt)) "pdf" else input$plot_fmt
+      # Transparent background applies to every format except JPG (no alpha).
+      transparent <- isTRUE(input$plot_transparent) && fmt != "jpg"
+      p <- build_results_plot()
+      if (transparent) p <- p + .transparent_theme()
       ggsave(
-        file, build_results_plot(),
+        file, p,
         device = .plot_device(fmt),
         width  = num_or(input$plot_w, 7),
         height = num_or(input$plot_h, 7),
         units  = "in",
-        dpi    = num_or(input$plot_dpi, 300)
+        dpi    = num_or(input$plot_dpi, 300),
+        bg     = if (transparent) "transparent" else NULL
       )
     }
   )
