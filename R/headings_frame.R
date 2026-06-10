@@ -52,6 +52,46 @@ headings_frame <- function(data,
   data
 }
 
+#' Snap angles to fixed-width circular bin centres
+#'
+#' Bins angles (in radians) into fixed-width sectors and returns each angle
+#' snapped to its bin's centre. Snapping coincident-binned angles to a common
+#' value is the standard precursor to a stacked dot plot: feed the result to
+#' \code{\link{stack_headings}} (with the default \code{tol = NULL}) to build
+#' clean radial columns.
+#'
+#' @param angles Numeric vector of angles in radians. \code{NA} is preserved.
+#' @param width Bin width in radians; must be a single positive number. For a
+#'   5-degree bin use \code{pi / 36}.
+#' @param phase Radian location of a bin \emph{centre}. The default \code{0}
+#'   places bin centres at \code{0, width, 2 * width, ...}, so the reference
+#'   direction sits on a column rather than on a bin boundary. Set
+#'   \code{phase = width / 2} to reproduce the edge-aligned bins of
+#'   \code{circular::plot.circular} (centres at \code{width / 2},
+#'   \code{3 * width / 2}, ...). Any phase is allowed -- e.g. with
+#'   \code{width = pi / 2, phase = pi / 4} the bin boundaries fall on the axes,
+#'   binning by quadrant.
+#'
+#' @return A numeric vector the same length as \code{angles}, each value snapped
+#'   to its bin centre and wrapped to \code{[0, 2 * pi)}.
+#'
+#' @seealso \code{\link{stack_headings}}, \code{\link{add_stacked_headings}}
+#'
+#' @examples
+#' # 5-degree bins centred on the reference direction
+#' bin_angles(c(0.01, 0.10, 0.11), width = pi / 36)
+#' # circular-package style (edge-aligned) bins
+#' bin_angles(c(0.01, 0.10, 0.11), width = pi / 36, phase = pi / 72)
+#' @export
+bin_angles <- function(angles, width, phase = 0) {
+  if (!is.numeric(width) || length(width) != 1L)
+    stop("'width' must be a single positive number (radians).")
+  if (is.na(width) || width <= 0)
+    stop("'width' must be a single positive number (radians).")
+  centre <- round((angles - phase) / width) * width + phase
+  wrap_to_2pi(centre)
+}
+
 #' Add stacking columns to a headings data frame
 #'
 #' Computes radial positions for stacked dot plots on circular plots.
