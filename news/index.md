@@ -52,14 +52,17 @@
   dots abut the periphery line rather than straddle it) and uses a
   slightly wider gap between dots, so individual points read more
   clearly.
-- Plot colour now distinguishes the individual trajectory by default,
-  not the panel/facet variable. The “Facet by” selector (formerly “Group
-  by condition”) now only facets; a new **“Colour by”** selector in the
-  Display panel controls colour independently – defaulting to
-  per-trajectory, or any grouping column (cohort, condition, individual,
-  …). Tracks and heading markers (points and stacked) share one colour
-  key, so each marker matches its own trajectory/group even when
-  faceted. Colouring by a real grouping column also shows a legend.
+- Plot colour now distinguishes the **trajectory** (in sequential order)
+  by default, not the panel/facet variable. The “Facet by” selector
+  (formerly “Group by condition”) now only facets; a new **“Colour by”**
+  selector in the Display panel controls colour independently –
+  defaulting to “Trajectory”, or any grouping column (condition, cohort,
+  individual, …). Tracks and heading markers (points and stacked) share
+  one colour key, so each marker matches its own trajectory/group even
+  when faceted. A grouping with up to 20 levels gets a distinct colour
+  per level and a legend; a higher-cardinality key (the trajectory, or
+  e.g. an individual id with many animals) cycles a capped set of 20
+  colours with no legend.
 
 ### Plotting
 
