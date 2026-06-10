@@ -61,6 +61,22 @@ test_that("attach_cycle_colour wraps the cycle past n trajectories", {
   expect_equal(as.integer(out$.cycle_colour), c(1L, 1L, 5L))
 })
 
+test_that("ensure_traj_col adds a grouping column by trajectory, preserving rows/order", {
+  e <- new.env(); utils::data("cpunctatus", package = "radiatR", envir = e)
+  ts <- e$cpunctatus
+  id_col <- ts@cols$id
+  hd <- derive_headings(ts, rule = "distal")          # id, time, heading
+  out <- ensure_traj_col(hd, ts, "type", id_col)
+  expect_true("type" %in% names(out))
+  expect_equal(nrow(out), nrow(hd))                   # rows preserved
+  expect_identical(out$id, hd$id)                     # order preserved
+  df <- as.data.frame(ts)
+  expect_equal(out$type, df$type[match(hd$id, df[[id_col]])])
+  # no-op when the column is already present or NULL
+  expect_identical(ensure_traj_col(out, ts, "type", id_col), out)
+  expect_identical(ensure_traj_col(hd, ts, NULL, id_col), hd)
+})
+
 test_that("colour_col maps dot colour for both points and stacked styles", {
   hd <- make_hd(); hd$grp <- c("a", "b", "a", "b")
   lp <- heading_marker_layer(hd, "points",  NULL, circ_display(), colour_col = "grp")

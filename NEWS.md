@@ -35,11 +35,13 @@
 * The stacked-dots display now sits just inside the unit circle (the dots abut
   the periphery line rather than straddle it) and uses a slightly wider gap
   between dots, so individual points read more clearly.
-* Plot colour now distinguishes the individual trajectory, not the panel/facet
-  variable. Selecting a condition column facets the plot but no longer recolours
-  the tracks by condition; tracks and heading markers (points and stacked) share
-  one per-trajectory colour cycle, so each marker matches its own trajectory even
-  when faceted.
+* Plot colour now distinguishes the individual trajectory by default, not the
+  panel/facet variable. The "Facet by" selector (formerly "Group by condition")
+  now only facets; a new **"Colour by"** selector in the Display panel controls
+  colour independently -- defaulting to per-trajectory, or any grouping column
+  (cohort, condition, individual, ...). Tracks and heading markers (points and
+  stacked) share one colour key, so each marker matches its own trajectory/group
+  even when faceted. Colouring by a real grouping column also shows a legend.
 
 ## Plotting
 

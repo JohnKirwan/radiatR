@@ -26,6 +26,17 @@ add_track_cycle_colour <- function(ts, id_col, n) {
   ts
 }
 
+# Ensure a headings frame carries the grouping column `col` from the TrajSet
+# (looked up by trajectory id, which is constant per trajectory), so markers can
+# be coloured by an arbitrary variable. Preserves row order and attributes
+# (unlike merge()). Returns hd unchanged when col is NULL or already present.
+ensure_traj_col <- function(hd, ts, col, id_col, traj_col = HEADING_TRAJ_COL) {
+  if (is.null(col) || col %in% names(hd)) return(hd)
+  df <- as.data.frame(ts)
+  hd[[col]] <- df[[col]][match(hd[[traj_col]], df[[id_col]])]
+  hd
+}
+
 # Attach the SAME trajectory colour key to a headings frame, so markers share the
 # tracks' colour scale.
 #   hd          : a headings frame.
