@@ -31,6 +31,19 @@ test_that("stacked style returns a stacked-headings layer", {
   expect_true(has_cols(l, c(".x_stk", ".y_stk")))
 })
 
+test_that("tracks and markers share one per-trajectory colour key (add_track_cycle_colour / attach_cycle_colour agree)", {
+  # Build a tiny TrajSet-like object is overkill; test the two helpers produce
+  # the SAME index for the same trajectory id, so colour is by trajectory and a
+  # marker matches its track.
+  ordered <- c("t3", "t1", "t2")
+  hd  <- data.frame(id = c("t1", "t2", "t3"), heading = 0)
+  hd2 <- attach_cycle_colour(hd, ordered_ids = ordered, n = 20L)
+  # the track-side key for the same ids/order
+  trk <- cycle_colour_factor(c("t3", "t1", "t2"), ordered, 20L)
+  names_trk <- setNames(as.integer(trk), c("t3", "t1", "t2"))
+  expect_equal(as.integer(hd2$.cycle_colour), unname(names_trk[hd2$id]))
+})
+
 test_that("attach_cycle_colour reproduces radiate's per-trajectory cycle index", {
   ordered <- c("t3", "t1", "t2", "t4")          # track-data trajectory order
   hd <- data.frame(id = c("t1", "t2", "t3", "t4", "t1"), heading = 0)
@@ -46,6 +59,22 @@ test_that("attach_cycle_colour wraps the cycle past n trajectories", {
   out <- attach_cycle_colour(hd, ordered_ids = ordered, n = 20L)
   # t21 -> index 21 wraps to 1; t25 -> 5
   expect_equal(as.integer(out$.cycle_colour), c(1L, 1L, 5L))
+})
+
+test_that("ensure_traj_col adds a grouping column by trajectory, preserving rows/order", {
+  e <- new.env(); utils::data("cpunctatus", package = "radiatR", envir = e)
+  ts <- e$cpunctatus
+  id_col <- ts@cols$id
+  hd <- derive_headings(ts, rule = "distal")          # id, time, heading
+  out <- ensure_traj_col(hd, ts, "type", id_col)
+  expect_true("type" %in% names(out))
+  expect_equal(nrow(out), nrow(hd))                   # rows preserved
+  expect_identical(out$id, hd$id)                     # order preserved
+  df <- as.data.frame(ts)
+  expect_equal(out$type, df$type[match(hd$id, df[[id_col]])])
+  # no-op when the column is already present or NULL
+  expect_identical(ensure_traj_col(out, ts, "type", id_col), out)
+  expect_identical(ensure_traj_col(hd, ts, NULL, id_col), hd)
 })
 
 test_that("colour_col maps dot colour for both points and stacked styles", {

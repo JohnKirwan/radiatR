@@ -71,6 +71,18 @@ guess_dialect <- function(path) {
   "generic"
 }
 
+# Categorical columns usable for grouping (the Facet-by and Colour-by selectors):
+# character/factor columns with 2-12 distinct values, excluding the structural id
+# and time columns.
+grouping_cols <- function(ts) {
+  df   <- as.data.frame(ts)
+  cats <- names(df)[vapply(df, function(v) {
+    nu <- length(unique(stats::na.omit(v)))
+    (is.character(v) || is.factor(v)) && nu >= 2L && nu <= 12L
+  }, logical(1))]
+  setdiff(cats, c(ts@cols$id, ts@cols$time))
+}
+
 # Identify a candidate condition column in a loaded TrajSet.
 # Looks for character columns with 2-12 unique values that are not
 # structural (id, time, position, derivatives).
@@ -122,6 +134,10 @@ example_ts <- function() {
 # the radiate() colour_cycle and the heading-marker colour key so the dots
 # inherit the same per-trajectory colours as the tracks.
 CYCLE_N <- 20L
+
+# Sentinel "Colour by" value meaning "colour each trajectory" (the default),
+# as opposed to a real grouping column name.
+TRAJ_COLOUR_KEY <- "__trajectory__"
 
 # A finite scalar from a possibly-NULL/NA numeric input, else a default.
 num_or <- function(v, default) {
@@ -609,6 +625,7 @@ server <- function(input, output, session) {
                             "None"                  = "none"),
                 selected = "points"
               ),
+              uiOutput("colour_by_ui"),
               tags$hr(class = "my-2"),
               .layer_switch("show_tracks",   "Trajectories",       TRUE),
               .layer_switch("show_arrow",   "Directedness arrow", TRUE),
@@ -724,15 +741,7 @@ server <- function(input, output, session) {
     col <- rv$cond_col
     if (is.null(col)) return(NULL)
 
-    df    <- as.data.frame(rv$ts)
-    id_c  <- rv$ts@cols$id
-    tc    <- rv$ts@cols$time
-    other <- names(df)[vapply(df, function(v) {
-      nu <- length(unique(stats::na.omit(v)))
-      (is.character(v) || is.factor(v)) && nu >= 2L && nu <= 12L
-    }, logical(1))]
-    other <- setdiff(other, c(id_c, tc))
-
+    other <- grouping_cols(rv$ts)
     if (!length(other)) return(NULL)
     choices <- c("None" = "", stats::setNames(other, other))
 
@@ -740,11 +749,24 @@ server <- function(input, output, session) {
       tags$hr(),
       selectInput(
         "cond_col",
-        "Group by condition column (optional)",
+        "Facet by (optional)",
         choices  = choices,
         selected = col
       )
     )
+  })
+
+  # Colour-by selector (Display panel). Defaults to per-trajectory colour; any
+  # grouping column can instead drive the track + marker colour. Independent of
+  # the Facet-by selector.
+  output$colour_by_ui <- renderUI({
+    req(rv$ts)
+    cats    <- grouping_cols(rv$ts)
+    choices <- c("Trajectory (individual)" = TRAJ_COLOUR_KEY,
+                 stats::setNames(cats, cats))
+    sel <- if (!is.null(input$colour_by) && input$colour_by %in% choices)
+      input$colour_by else TRAJ_COLOUR_KEY
+    selectInput("colour_by", "Colour by", choices = choices, selected = sel)
   })
 
   # ---- step 3 outputs --------------------------------------------------------
@@ -764,16 +786,31 @@ server <- function(input, output, session) {
     # heading overlays, and the arrow all in the same orientation.
     disp <- circ_display(zero = 0)
 
+    # Colour-by: per-trajectory (default) or a chosen grouping column, set in the
+    # Display panel and independent of faceting (gc). track_colour() attaches the
+    # right colour column to a TrajSet; show the legend only for a real grouping
+    # (the per-trajectory cycle has no meaningful key).
+    cb <- input$colour_by
+    colour_by_traj <- is.null(cb) || !nzchar(cb) || identical(cb, TRAJ_COLOUR_KEY)
+    track_colour <- function(ts) {
+      if (colour_by_traj)
+        list(ts = add_track_cycle_colour(ts, id_col, CYCLE_N), col = ".cycle_colour")
+      else
+        list(ts = ts, col = cb)
+    }
+
     # None mode: no headings. Draw tracks + theme only, then a path-metrics
     # caption. Skip the arrow broadcast and every heading overlay below.
     if (is.null(rv$hd)) {
       plot_theme <- if (is.null(input$plot_theme)) "void" else input$plot_theme
+      tc <- track_colour(rv$ts)
       p <- radiate(
-        rv$ts,
+        tc$ts,
         group_col    = id_col,
-        colour_col   = gc,
+        colour_col   = tc$col,
         panel_by     = gc,
-        colour_cycle = if (is.null(gc)) CYCLE_N else NULL,
+        colour_cycle = NULL,
+        legend       = !colour_by_traj,
         show_tracks  = tog(input$show_tracks, TRUE),
         show_arrow   = FALSE,
         show_labels  = FALSE,
@@ -810,16 +847,22 @@ server <- function(input, output, session) {
     d[[".arrow_heading"]] <- hd_map$x[match(d[[id_col]], hd_map$id)]
     ts_arrow@data <- d
 
+    # Colour by trajectory (default) or the chosen grouping column; gc only
+    # facets. track_colour() attaches the matching colour key to the tracks, and
+    # the markers below carry the same key, so each marker matches its own track
+    # even when faceted.
+    tc <- track_colour(ts_arrow)
+    ts_arrow <- tc$ts
+
     plot_theme <- if (is.null(input$plot_theme)) "void" else input$plot_theme
 
     p <- radiate(
       ts_arrow,
       group_col       = id_col,
-      colour_col      = gc,
+      colour_col      = tc$col,
       panel_by        = gc,
-      # colour_cycle and colour_col are mutually exclusive; only cycle
-      # colours when no condition column is driving the colour scale.
-      colour_cycle    = if (is.null(gc)) CYCLE_N else NULL,
+      colour_cycle    = NULL,
+      legend          = !colour_by_traj,
       show_tracks     = tog(input$show_tracks, TRUE),
       show_arrow      = tog(input$show_arrow,  TRUE),
       arrow_angle_col = ".arrow_heading",
@@ -836,17 +879,17 @@ server <- function(input, output, session) {
     hd_disp <- rv$hd
     attr(hd_disp, "display") <- disp
 
-    # Colour the heading markers to match the tracks, using the same colour key
-    # throughout: a chosen grouping column (gc) when set, otherwise the default
-    # per-trajectory colour cycle. attach_cycle_colour() reproduces radiate()'s
-    # track cycle on the headings frame so the dots share the tracks' scale.
-    if (!is.null(gc)) {
-      marker_colour_col <- gc
-    } else {
+    # Markers carry the SAME colour key as the tracks (shared scale), so each dot
+    # matches its trajectory (or its group) -- independent of gc/facet.
+    if (colour_by_traj) {
       hd_disp <- attach_cycle_colour(
         hd_disp, ordered_ids = unique(ts_arrow@data[[id_col]]), n = CYCLE_N
       )
       marker_colour_col <- ".cycle_colour"
+    } else {
+      hd_disp <- ensure_traj_col(hd_disp, rv$ts, cb, id_col)
+      attr(hd_disp, "display") <- disp
+      marker_colour_col <- cb
     }
 
     heading_display <- if (is.null(input$heading_display)) "points"
