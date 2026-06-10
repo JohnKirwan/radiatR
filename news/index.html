@@ -53,11 +53,15 @@
 <ul><li>
 <code>derive_headings(..., return_coords = TRUE)</code> now also works for <code>distal</code>, <code>net</code>, <code>straight</code>, and <code>pca_axis</code> (previously only <code>crossing</code>), attaching each rule’s construction coordinates so the geometry behind a heading can be drawn.</li>
 <li>New <code><a href="../reference/bin_angles.html">bin_angles()</a></code> snaps angles to fixed-width circular bin centres. <code>phase = 0</code> (default) centres bins on the reference direction; <code>phase = width / 2</code> reproduces the edge-aligned bins of <code><a href="https://rdrr.io/pkg/circular/man/plot.circular.html" class="external-link">circular::plot.circular</a></code>; arbitrary phases allow e.g. quadrant binning. Intended as the precursor to a stacked dot plot (<code><a href="../reference/bin_angles.html">bin_angles()</a></code> then <code><a href="../reference/stack_headings.html">stack_headings()</a></code>).</li>
+<li>
+<code><a href="../reference/stack_headings.html">stack_headings()</a></code> and <code><a href="../reference/add_stacked_headings.html">add_stacked_headings()</a></code> gain a <code>start_sep</code> argument (the analogue of <code><a href="https://rdrr.io/pkg/circular/man/plot.circular.html" class="external-link">circular::plot.circular</a></code>’s <code>start.sep</code>): a radial offset of the first dot from the reference circle, so a stack can abut the periphery rather than straddle it. The existing <code>step</code> argument (the analogue of <code>sep</code>) sets the gap between dots. Both default to circular’s behaviour at the package level.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="shiny-app-development-version">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-development-version"></a></h3>
 <ul><li>Fixed the “Stacked dots (inward)” heading display, which superimposed every dot at the rim instead of stacking. Headings are now binned (5-degree bins centred on the reference direction) before stacking, producing inward radial columns.</li>
 <li>Fixed an error (“NAs are not allowed in subscripted assignments”) when stacking headings that include two or more <code>NA</code> values (trials with no defined heading). The internal angle-wrapping helper is now NA-safe.</li>
+<li>The stacked-dots display now sits just inside the unit circle (the dots abut the periphery line rather than straddle it) and uses a slightly wider gap between dots, so individual points read more clearly.</li>
+<li>Heading markers (both the points and stacked styles) now inherit each trajectory’s colour, matching the tracks: by condition when a condition column is present, otherwise by the same per-trajectory colour cycle the tracks use.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="plotting-development-version">Plotting<a class="anchor" aria-label="anchor" href="#plotting-development-version"></a></h3>

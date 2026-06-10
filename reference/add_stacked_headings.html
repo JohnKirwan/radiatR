@@ -61,6 +61,7 @@ it is used as-is; otherwise stacking is computed internally.</p>
 <span>  <span class="va">data</span>,</span>
 <span>  col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  step <span class="op">=</span> <span class="fl">0.025</span>,</span>
+<span>  start_sep <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  tol <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  direction <span class="op">=</span> <span class="st">"inward"</span>,</span>
 <span>  base_r <span class="op">=</span> <span class="fl">1</span>,</span>
@@ -88,9 +89,11 @@ it is used as-is; otherwise stacking is computed internally.</p>
 attribute when <code>data</code> is a <code>headings_frame</code>.</p></dd>
 
 
-<dt id="arg-step-tol-direction-base-r">step, tol, direction, base_r<a class="anchor" aria-label="anchor" href="#arg-step-tol-direction-base-r"></a></dt>
-<dd><p>Passed to <code><a href="stack_headings.html">stack_headings</a></code>
-when <code>stack_r</code> is absent. See that function for details.</p></dd>
+<dt id="arg-step-start-sep-tol-direction-base-r">step, start_sep, tol, direction, base_r<a class="anchor" aria-label="anchor" href="#arg-step-start-sep-tol-direction-base-r"></a></dt>
+<dd><p>Passed to
+<code><a href="stack_headings.html">stack_headings</a></code> when <code>stack_r</code> is absent. See that
+function for details. <code>step</code> sets the gap between dots and
+<code>start_sep</code> offsets the first dot off the reference circle.</p></dd>
 
 
 <dt id="arg-shade">shade<a class="anchor" aria-label="anchor" href="#arg-shade"></a></dt>

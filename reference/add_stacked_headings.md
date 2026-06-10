@@ -13,6 +13,7 @@ add_stacked_headings(
   data,
   col = NULL,
   step = 0.025,
+  start_sep = 0,
   tol = NULL,
   direction = "inward",
   base_r = 1,
@@ -38,11 +39,13 @@ add_stacked_headings(
   Name of the angle column. Defaults to the `heading_col` attribute when
   `data` is a `headings_frame`.
 
-- step, tol, direction, base_r:
+- step, start_sep, tol, direction, base_r:
 
   Passed to
   [`stack_headings`](https://johnkirwan.github.io/radiatR/reference/stack_headings.md)
-  when `stack_r` is absent. See that function for details.
+  when `stack_r` is absent. See that function for details. `step` sets
+  the gap between dots and `start_sep` offsets the first dot off the
+  reference circle.
 
 - shade:
 

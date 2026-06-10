@@ -61,6 +61,7 @@ coincident or binned headings.</p>
 <span>  <span class="va">data</span>,</span>
 <span>  col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  step <span class="op">=</span> <span class="fl">0.025</span>,</span>
+<span>  start_sep <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  tol <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  direction <span class="op">=</span> <span class="st">"inward"</span>,</span>
 <span>  base_r <span class="op">=</span> <span class="fl">1</span>,</span>
@@ -83,8 +84,17 @@ attribute when <code>data</code> is a <code>headings_frame</code>.</p></dd>
 
 
 <dt id="arg-step">step<a class="anchor" aria-label="anchor" href="#arg-step"></a></dt>
-<dd><p>Radial offset per stack level as a fraction of <code>base_r</code>.
-Default <code>0.025</code> matches <code>circular</code>'s <code>sep</code> default.</p></dd>
+<dd><p>Radial gap between successive dots in a stack, in data units
+(the analogue of <code><a href="https://rdrr.io/pkg/circular/man/plot.circular.html" class="external-link">circular::plot.circular</a></code>'s <code>sep</code>). Default
+<code>0.025</code> matches that package; larger values separate the dots more.</p></dd>
+
+
+<dt id="arg-start-sep">start_sep<a class="anchor" aria-label="anchor" href="#arg-start-sep"></a></dt>
+<dd><p>Radial offset of the first (outermost, for <code>"inward"</code>)
+dot from <code>base_r</code>, in data units (the analogue of
+<code><a href="https://rdrr.io/pkg/circular/man/plot.circular.html" class="external-link">circular::plot.circular</a></code>'s <code>start.sep</code>). Default <code>0</code> places
+the first dot on the reference circle. A small positive value shifts the
+whole stack off the line so the dots abut rather than straddle it.</p></dd>
 
 
 <dt id="arg-tol">tol<a class="anchor" aria-label="anchor" href="#arg-tol"></a></dt>

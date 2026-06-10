@@ -12,6 +12,7 @@ stack_headings(
   data,
   col = NULL,
   step = 0.025,
+  start_sep = 0,
   tol = NULL,
   direction = "inward",
   base_r = 1,
@@ -33,8 +34,20 @@ stack_headings(
 
 - step:
 
-  Radial offset per stack level as a fraction of `base_r`. Default
-  `0.025` matches `circular`'s `sep` default.
+  Radial gap between successive dots in a stack, in data units (the
+  analogue of
+  [`circular::plot.circular`](https://rdrr.io/pkg/circular/man/plot.circular.html)'s
+  `sep`). Default `0.025` matches that package; larger values separate
+  the dots more.
+
+- start_sep:
+
+  Radial offset of the first (outermost, for `"inward"`) dot from
+  `base_r`, in data units (the analogue of
+  [`circular::plot.circular`](https://rdrr.io/pkg/circular/man/plot.circular.html)'s
+  `start.sep`). Default `0` places the first dot on the reference
+  circle. A small positive value shifts the whole stack off the line so
+  the dots abut rather than straddle it.
 
 - tol:
 
