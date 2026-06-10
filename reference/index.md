@@ -376,6 +376,8 @@ Any remaining exported topics.
   : \*Cylindroiulus punctatus\* visual orientation trajectory dataset
 - [`cpunctatus_tracks`](https://johnkirwan.github.io/radiatR/reference/cpunctatus_tracks.md)
   : \*Cylindroiulus punctatus\* trajectory tibble
+- [`cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/cycle_colours.md)
+  : Cycle a bounded set of colour indices over the values of a key
 - [`degree_labs()`](https://johnkirwan.github.io/radiatR/reference/degree_labs.md)
   : Label the four diagonal directions.
 - [`derive_headings()`](https://johnkirwan.github.io/radiatR/reference/derive_headings.md)

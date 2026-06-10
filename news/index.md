@@ -66,6 +66,18 @@
 
 ### Plotting
 
+- New exported
+  [`cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/cycle_colours.md)
+  – the order-stable primitive behind
+  [`assign_cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.md)
+  and
+  [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)’s
+  `colour_cycle`. It maps a key to a cycled `1:n` colour index and
+  accepts an explicit level order, so two data frames sharing a key
+  (e.g. tracks and an overlay) can be coloured identically.
+  [`assign_cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.md)
+  now delegates to it, and the Shiny app uses it too, so the
+  colour-cycling logic has a single source of truth.
 - [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   gains an `angle_labels` argument: `"degrees"` (default, e.g. `45°`),
   `"none"`, or `"radians"` (now rendered as π fractions, e.g. `π/4`,
