@@ -53,6 +53,17 @@ test_that("stacked style actually stacks continuous headings into bins", {
   expect_gt(length(unique(round(l$data$stack_r, 6))), 1L)  # not all at base_r
 })
 
+test_that("stacked style tolerates NA headings (undefined-heading trials)", {
+  # Some heading rules return NA for trials with no defined heading. Two or more
+  # NAs previously tripped a logical-index assignment in wrap_to_2pi.
+  hd <- data.frame(id = 1:8, time = 1:8,
+                   heading = c(0.01, 0.02, 0.03, NA, 1.0, 1.0, NA, 2.0))
+  expect_no_error(
+    l <- heading_marker_layer(hd, "stacked", NULL, circ_display())
+  )
+  expect_true("stack_r" %in% names(l$data))
+})
+
 test_that("stacked headings snap to 5-degree bin centres (centred on zero)", {
   hd <- data.frame(id = 1:3, time = 1:3,
                    heading = c(0.01, 0.02, 0.03))  # all within the 0 bin (<2.5 deg)
