@@ -52,10 +52,14 @@
   dots abut the periphery line rather than straddle it) and uses a
   slightly wider gap between dots, so individual points read more
   clearly.
-- Heading markers (both the points and stacked styles) now inherit each
-  trajectory’s colour, matching the tracks: by condition when a
-  condition column is present, otherwise by the same per-trajectory
-  colour cycle the tracks use.
+- Plot colour now distinguishes the individual trajectory by default,
+  not the panel/facet variable. The “Facet by” selector (formerly “Group
+  by condition”) now only facets; a new **“Colour by”** selector in the
+  Display panel controls colour independently – defaulting to
+  per-trajectory, or any grouping column (cohort, condition, individual,
+  …). Tracks and heading markers (points and stacked) share one colour
+  key, so each marker matches its own trajectory/group even when
+  faceted. Colouring by a real grouping column also shows a legend.
 
 ### Plotting
 
