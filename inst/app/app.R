@@ -144,13 +144,9 @@ example_ts <- function() {
   )
 }
 
-# Number of cycled track colours when there is no condition column. Shared by
-# the radiate() colour_cycle and the heading-marker colour key so the dots
-# inherit the same per-trajectory colours as the tracks.
-CYCLE_N <- 20L
-
 # Sentinel "Colour by" value meaning "colour each trajectory" (the default),
-# as opposed to a real grouping column name.
+# as opposed to a real grouping column name. Must match SPEC_TRAJ_KEY in
+# plot_spec.R (build_plot_spec reads input$colour_by against it).
 TRAJ_COLOUR_KEY <- "__trajectory__"
 
 # A finite scalar from a possibly-NULL/NA numeric input, else a default.

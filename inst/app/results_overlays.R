@@ -23,6 +23,12 @@ STACK_BIN_WIDTH <- pi / 36   # 5 degrees in radians
 STACK_START_SEP <- 0.05
 STACK_STEP      <- 0.06
 
+# NOTE: the live Results plot is now built by plot_spec.R::spec_to_plot(), which
+# calls add_stacked_headings()/add_heading_points() directly. heading_marker_layer
+# is retained as a tested reference implementation of the points/stacked/none
+# selection (exercised by test-app-heading-display.R); it is not on the render
+# path. Retire it (and its STACK_* constants) if those tests are moved.
+#
 # Build the per-trial heading-marker layer for the Results plot.
 #   hd      : headings frame with a "heading" column (radians).
 #   style   : "points" (overlapping hollow circles), "stacked" (stacked inward),

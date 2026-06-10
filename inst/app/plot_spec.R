@@ -141,7 +141,11 @@ spec_to_code <- function(spec) {
     add("")
     hp <- if (identical(spec$headings$rule, "crossing"))
       paste0(", circ0 = ", spec$headings$circ0, ", circ1 = ", spec$headings$circ1) else ""
-    add("hd <- derive_headings(ts, rule = ", q(spec$headings$rule), hp, ")")
+    # Heading vectors need the crossing construction coords; request them so the
+    # emitted script can draw them (only the crossing rule produces x_inner/y_inner).
+    rc <- if (spec$show$vectors && identical(spec$headings$rule, "crossing"))
+      ", return_coords = TRUE" else ""
+    add("hd <- derive_headings(ts, rule = ", q(spec$headings$rule), hp, rc, ")")
     if (!is.null(spec$facet_by))
       add("hd <- merge(hd, unique(as.data.frame(ts)[, c(", q(spec$group_col), ", ",
           q(spec$facet_by), ")]), by.x = \"id\", by.y = ", q(spec$group_col),
@@ -186,7 +190,7 @@ spec_to_code <- function(spec) {
     tail <- c(tail, "add_heading_points(hd, colour_col = \".colour\", size = 2.5, alpha = 0.8)")
   if (has_hd && spec$show$arrow)
     tail <- c(tail, "add_circ_mean(arrow_df, colour = \"black\")")
-  if (has_hd && spec$show$vectors)
+  if (has_hd && spec$show$vectors && identical(spec$headings$rule, "crossing"))
     tail <- c(tail, "add_heading_vectors(hd, colour_col = \".colour\")")
 
   if (length(tail)) {

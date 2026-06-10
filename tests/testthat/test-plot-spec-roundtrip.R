@@ -48,3 +48,24 @@ test_that("emitted code reproduces spec_to_plot (points, distinct colour, no fac
   evald <- eval(parse(text = spec_to_code(rt$spec)), envir = env)
   expect_equal(.fingerprint(evald), .fingerprint(live))
 })
+
+test_that("emitted code reproduces spec_to_plot (crossing rule + heading vectors)", {
+  # the vectors layer needs the crossing construction coords, so the emitted
+  # derive_headings() must request return_coords = TRUE.
+  data(cpunctatus, package = "radiatR", envir = environment())
+  ts <- cpunctatus
+  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.3, circ1 = 0.6,
+                        return_coords = TRUE)
+  spec <- list(
+    data = list(source = "example", path = NULL, dialect = NULL),
+    headings = list(rule = "crossing", circ0 = 0.3, circ1 = 0.6),
+    group_col = ts@cols$id, facet_by = NULL,
+    colour = list(by = "trajectory", cap = 20, legend = FALSE),
+    theme = "bw", angle_labels = "degrees", display = list(zero = 0),
+    heading_display = "points",
+    show = list(tracks = TRUE, arrow = FALSE, vectors = TRUE))
+  live  <- spec_to_plot(spec, ts, hd)
+  env   <- new.env(parent = globalenv())
+  evald <- eval(parse(text = spec_to_code(spec)), envir = env)   # must not error
+  expect_equal(.fingerprint(evald), .fingerprint(live))
+})
