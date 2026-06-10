@@ -52,3 +52,38 @@ test_that("build_plot_spec: rule 'none' -> no headings", {
   )
   expect_equal(spec$headings$rule, "none")
 })
+
+# helper: does the plot have a layer with the given geom class?
+.has_geom <- function(p, cls) any(vapply(p$layers,
+  function(l) inherits(l$geom, cls), logical(1)))
+
+test_that("spec_to_plot renders tracks + stacked markers + arrow for an example spec", {
+  ts <- simulate_tracks(n_points = 20, seed = 1, output = "trajset")
+  hd <- derive_headings(ts, rule = "distal")
+  spec <- build_plot_spec(
+    ts = ts, hd = hd, method = "distal",
+    data = list(source = "example", path = NULL, dialect = NULL),
+    inputs = list(cond_col = "condition", colour_by = "__trajectory__",
+                  plot_theme = "bw", angle_labels = "degrees",
+                  heading_display = "stacked",
+                  show_tracks = TRUE, show_arrow = TRUE, show_vectors = FALSE))
+  p <- spec_to_plot(spec, ts, hd)
+  expect_s3_class(p, "ggplot")
+  expect_true(.has_geom(p, "GeomPoint"))     # stacked markers
+  expect_true(.has_geom(p, "GeomSegment"))   # arrow
+  expect_silent(ggplot2::ggplot_build(p))
+})
+
+test_that("spec_to_plot: rule 'none' draws tracks only (no markers)", {
+  ts <- simulate_tracks(n_points = 20, seed = 1, output = "trajset")
+  spec <- build_plot_spec(
+    ts = ts, hd = NULL, method = "none",
+    data = list(source = "example", path = NULL, dialect = NULL),
+    inputs = list(cond_col = "", colour_by = "__trajectory__",
+                  plot_theme = "void", angle_labels = "degrees",
+                  heading_display = "points",
+                  show_tracks = TRUE, show_arrow = TRUE, show_vectors = FALSE))
+  p <- spec_to_plot(spec, ts, NULL)
+  expect_s3_class(p, "ggplot")
+  expect_silent(ggplot2::ggplot_build(p))
+})

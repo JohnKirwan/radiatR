@@ -53,3 +53,66 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
                 vectors = isTRUE(inputs$show_vectors))
   )
 }
+
+# Render a spec to a ggplot, using only exported radiatR functions. `ts`/`hd` are
+# the in-memory objects; the spec's `data` block matters only for spec_to_code().
+spec_to_plot <- function(spec, ts, hd) {
+  disp <- circ_display(zero = spec$display$zero)
+  by   <- spec$colour$by
+  cap  <- spec$colour$cap
+
+  ts <- assign_colour_key(ts, by = by, n = cap)
+
+  p <- radiate(
+    ts,
+    group_col    = spec$group_col,
+    colour_col   = ".colour",
+    panel_by     = spec$facet_by,
+    colour_cycle = NULL,
+    legend       = spec$colour$legend,
+    show_tracks  = spec$show$tracks,
+    show_arrow   = FALSE,                  # arrow added explicitly below
+    show_labels  = FALSE,
+    theme        = spec$theme,
+    angle_labels = spec$angle_labels,
+    display      = disp
+  )
+  if (spec$colour$legend)
+    p <- p + ggplot2::labs(colour = by)
+
+  if (identical(spec$headings$rule, "none") || is.null(hd))
+    return(p)
+
+  # The headings frame may not carry the facet column; attach it (matched by
+  # trajectory id) so the markers/arrow route to the right facet and stack per
+  # facet.
+  if (!is.null(spec$facet_by) && !spec$facet_by %in% names(hd)) {
+    df <- as.data.frame(ts)
+    hd <- merge(hd, unique(df[, c(spec$group_col, spec$facet_by)]),
+                by.x = "id", by.y = spec$group_col, all.x = TRUE)
+  }
+
+  hd <- assign_colour_key(hd, by = by, n = cap, reference = ts)
+  attr(hd, "display") <- disp
+
+  if (!identical(spec$heading_display, "none")) {
+    if (identical(spec$heading_display, "stacked")) {
+      hd$heading <- bin_angles(hd$heading, width = SPEC_STACK_BIN_WIDTH)
+      p <- p + add_stacked_headings(hd, colour_col = ".colour", group = spec$facet_by,
+                 step = SPEC_STACK_STEP, start_sep = SPEC_STACK_START_SEP,
+                 size = SPEC_MARKER_SIZE, alpha = SPEC_MARKER_ALPHA)
+    } else {
+      p <- p + add_heading_points(hd, colour_col = ".colour",
+                 size = SPEC_MARKER_SIZE, alpha = SPEC_MARKER_ALPHA)
+    }
+  }
+
+  if (spec$show$arrow) {
+    arrow_df <- compute_circ_mean(hd, colour_col = spec$facet_by)
+    p <- p + add_circ_mean(arrow_df, colour = "black")
+  }
+  if (spec$show$vectors && all(c("x_inner", "y_inner") %in% names(hd)))
+    p <- p + add_heading_vectors(hd, colour_col = ".colour")
+
+  p
+}
