@@ -12,6 +12,7 @@ source("preview.R", local = FALSE)
 source("preview_constructions.R", local = FALSE)
 source("results_overlays.R", local = FALSE)
 source("download_helpers.R", local = FALSE)
+source("plot_spec.R", local = FALSE)
 
 # ---- dialect registry --------------------------------------------------------
 
@@ -318,14 +319,16 @@ ui <- page_fillable(
 server <- function(input, output, session) {
 
   rv <- reactiveValues(
-    step     = 1L,
-    path     = NULL,
-    dialect  = NULL,
-    ts       = NULL,
-    cond_col = NULL,
-    hd       = NULL,
-    method   = NULL,
-    error    = NULL
+    step      = 1L,
+    path      = NULL,
+    source    = NULL,
+    file_name = NULL,
+    dialect   = NULL,
+    ts        = NULL,
+    cond_col  = NULL,
+    hd        = NULL,
+    method    = NULL,
+    error     = NULL
   )
 
   # ---- step pills ------------------------------------------------------------
@@ -471,12 +474,14 @@ server <- function(input, output, session) {
   # ---- file upload -----------------------------------------------------------
   observeEvent(input$file, {
     req(input$file)
-    rv$path     <- input$file$datapath
-    rv$dialect  <- guess_dialect(rv$path)
-    rv$ts       <- NULL
-    rv$cond_col <- NULL
-    rv$hd       <- NULL
-    rv$error    <- NULL
+    rv$path      <- input$file$datapath
+    rv$source    <- "file"
+    rv$file_name <- input$file$name
+    rv$dialect   <- guess_dialect(rv$path)
+    rv$ts        <- NULL
+    rv$cond_col  <- NULL
+    rv$hd        <- NULL
+    rv$error     <- NULL
   })
 
   # ---- example dataset -------------------------------------------------------
@@ -489,13 +494,15 @@ server <- function(input, output, session) {
       rv$error <- "Could not load the bundled example dataset."
       return()
     }
-    rv$ts       <- ts
-    rv$path     <- NULL
-    rv$dialect  <- NULL
-    rv$cond_col <- detect_cond_col(ts)
-    rv$hd       <- NULL
-    rv$step     <- 2L
-    rv$error    <- NULL
+    rv$ts        <- ts
+    rv$path      <- NULL
+    rv$source    <- "example"
+    rv$file_name <- NULL
+    rv$dialect   <- NULL
+    rv$cond_col  <- detect_cond_col(ts)
+    rv$hd        <- NULL
+    rv$step      <- 2L
+    rv$error     <- NULL
   })
 
   # ---- wizard ----------------------------------------------------------------
@@ -786,157 +793,48 @@ server <- function(input, output, session) {
   # Treat an as-yet-unrendered toggle (NULL) as its declared default.
   tog <- function(v, default) if (is.null(v)) default else isTRUE(v)
 
-  # Build the results plot honouring the layer toggles. Shared by the
-  # on-screen plot and the PNG download so they always match.
-  build_results_plot <- function() {
-    id_col <- rv$ts@cols$id
-    gc <- if (!is.null(input$cond_col) && nzchar(input$cond_col))
-      input$cond_col else NULL
+  # The plot spec resolved from the current inputs (shared by the figure and the
+  # code export so they cannot drift).
+  current_spec <- function() build_plot_spec(
+    ts = rv$ts, hd = rv$hd, method = rv$method,
+    data = list(
+      source  = if (identical(rv$source, "example")) "example" else "file",
+      path    = rv$file_name %||% "your_tracks.csv",
+      dialect = if (is.null(rv$dialect) || rv$dialect %in% c("auto", "generic"))
+        NULL else rv$dialect),
+    inputs = list(
+      cond_col = input$cond_col, colour_by = input$colour_by,
+      circ0 = input$circ0, circ1 = input$circ1,
+      plot_theme = input$plot_theme, angle_labels = input$angle_labels,
+      heading_display = input$heading_display,
+      show_tracks = tog(input$show_tracks, TRUE),
+      show_arrow  = tog(input$show_arrow,  TRUE),
+      show_vectors = tog(input$show_vectors, FALSE)))
 
-    # Display convention: reference direction (East in UC / rel coords) at top,
-    # clockwise-positive. This matches the old clock display and keeps tracks,
-    # heading overlays, and the arrow all in the same orientation.
+  # Build the results plot. The core figure comes from the shared spec
+  # (spec_to_plot); the statistical decision-boundary overlays (CI, Rayleigh,
+  # V-test) are appended here (not yet part of the spec / code export).
+  build_results_plot <- function() {
+    spec <- current_spec()
+    p    <- spec_to_plot(spec, rv$ts, rv$hd)
+    gc   <- spec$facet_by
     disp <- circ_display(zero = 0)
 
-    # Colour-by (Display panel), independent of faceting (gc). Default colours by
-    # trajectory in sequential order; otherwise by a chosen grouping column. A key
-    # with more than CYCLE_N distinct levels (trajectory, or e.g. an individual id
-    # with many animals) cycles a capped set of colours and hides the legend; a
-    # low-cardinality grouping keeps one distinct colour per level and shows a
-    # legend. `key_col` is the column on the track data that drives the colour.
-    cb <- input$colour_by
-    colour_by_traj <- is.null(cb) || !nzchar(cb) || identical(cb, TRAJ_COLOUR_KEY)
-    if (!colour_by_traj && !(cb %in% names(as.data.frame(rv$ts))))
-      colour_by_traj <- TRUE                       # stale selection -> default
-    key_col  <- if (colour_by_traj) id_col else cb
-    n_levels <- length(unique(as.data.frame(rv$ts)[[key_col]]))
-    cycle_colours <- colour_by_traj || n_levels > CYCLE_N
-    show_legend   <- !cycle_colours
-
-    # Tracks: attach the cycled key when capping, else colour by the column.
-    track_colour <- function(ts) {
-      if (cycle_colours)
-        list(ts = add_track_cycle_colour(ts, key_col, CYCLE_N), col = ".cycle_colour")
-      else
-        list(ts = ts, col = cb)
-    }
-    # Markers: carry the SAME key as the tracks so each dot matches its track.
-    marker_colour <- function(hd, ts) {
-      if (cycle_colours) {
-        heading_key <- if (colour_by_traj) HEADING_TRAJ_COL else cb
-        if (!colour_by_traj) hd <- ensure_traj_col(hd, rv$ts, cb, id_col)
-        hd <- attach_cycle_colour(hd, ordered_ids = unique(ts@data[[key_col]]),
-                                  n = CYCLE_N, traj_col = heading_key)
-        list(hd = hd, col = ".cycle_colour")
-      } else {
-        list(hd = ensure_traj_col(hd, rv$ts, cb, id_col), col = cb)
-      }
-    }
-
-    # None mode: no headings. Draw tracks + theme only, then a path-metrics
-    # caption. Skip the arrow broadcast and every heading overlay below.
+    # None mode: tracks only, plus the path-metrics caption + subtitle.
     if (is.null(rv$hd)) {
-      plot_theme <- if (is.null(input$plot_theme)) "void" else input$plot_theme
-      tc <- track_colour(rv$ts)
-      p <- radiate(
-        tc$ts,
-        group_col    = id_col,
-        colour_col   = tc$col,
-        panel_by     = gc,
-        colour_cycle = NULL,
-        legend       = show_legend,
-        show_tracks  = tog(input$show_tracks, TRUE),
-        show_arrow   = FALSE,
-        show_labels  = FALSE,
-        theme        = plot_theme,
-        angle_labels = if (is.null(input$angle_labels)) "degrees"
-                       else input$angle_labels,
-        quadrants    = tog(input$show_quadrants, FALSE),
-        rings        = tog(input$show_rings, FALSE),
-        display      = disp
-      )
       cap <- straightness_caption(rv$ts, gc)
       if (nzchar(cap)) p <- p + ggplot2::labs(caption = cap)
-      p <- p + ggplot2::labs(subtitle = method_subtitle(rv$method))
-      return(p)
+      return(p + ggplot2::labs(subtitle = method_subtitle(rv$method)))
     }
 
-    # Drive the directedness arrow from the chosen heading method (rv$hd), so it
-    # summarises the SAME angles as the heading points, CI bar, and summary
-    # table. radiate's default arrow instead summarises the per-frame position
-    # angle (ts@cols$angle), which has no relation to the selected rule. We
-    # broadcast each trial's heading (circular mean across its rows) onto every
-    # frame of that trial; radiate then takes the per-trial mean (a no-op here)
-    # and the per-panel resultant, matching circ_summarise's R and direction.
-    ts_arrow <- rv$ts
-    hd_map   <- stats::aggregate(
-      rv$hd[["heading"]],
-      by  = list(id = rv$hd[["id"]]),
-      FUN = function(a) {
-        a <- a[is.finite(a)]
-        if (!length(a)) NA_real_ else atan2(mean(sin(a)), mean(cos(a)))
-      }
-    )
-    d <- ts_arrow@data
-    d[[".arrow_heading"]] <- hd_map$x[match(d[[id_col]], hd_map$id)]
-    ts_arrow@data <- d
-
-    # Colour by trajectory (default) or the chosen grouping column; gc only
-    # facets. track_colour() attaches the matching colour key to the tracks, and
-    # the markers below carry the same key, so each marker matches its own track
-    # even when faceted.
-    tc <- track_colour(ts_arrow)
-    ts_arrow <- tc$ts
-
-    plot_theme <- if (is.null(input$plot_theme)) "void" else input$plot_theme
-
-    p <- radiate(
-      ts_arrow,
-      group_col       = id_col,
-      colour_col      = tc$col,
-      panel_by        = gc,
-      colour_cycle    = NULL,
-      legend          = show_legend,
-      show_tracks     = tog(input$show_tracks, TRUE),
-      show_arrow      = tog(input$show_arrow,  TRUE),
-      arrow_angle_col = ".arrow_heading",
-      show_labels     = FALSE,
-      theme           = plot_theme,
-      angle_labels    = if (is.null(input$angle_labels)) "degrees"
-                        else input$angle_labels,
-      quadrants       = tog(input$show_quadrants, FALSE),
-      rings           = tog(input$show_rings, FALSE),
-      display         = disp
-    )
-
-    # Propagate display to the headings df so overlay functions rotate to match.
+    # Display-aware headings frame for the statistical overlays below.
     hd_disp <- rv$hd
     attr(hd_disp, "display") <- disp
 
-    # Markers carry the SAME colour key as the tracks (shared scale), so each dot
-    # matches its trajectory (or its group) -- independent of gc/facet.
-    mc <- marker_colour(hd_disp, ts_arrow)
-    hd_disp <- mc$hd
-    attr(hd_disp, "display") <- disp
-    marker_colour_col <- mc$col
-
-    heading_display <- if (is.null(input$heading_display)) "points"
-                       else input$heading_display
-    marker_layer <- heading_marker_layer(hd_disp, heading_display, gc, disp,
-                                         colour_col = marker_colour_col)
-    if (!is.null(marker_layer)) p <- p + marker_layer
     if (tog(input$show_ci, FALSE)) {
       p <- p + add_heading_interval(
         hd_disp, colour_col = gc, stat = "bootstrap_ci"
       )
-    }
-
-    # Heading vectors: inner-crossing → circle boundary (crossing rule only).
-    # Colour them by the same key as the tracks/markers so each vector inherits
-    # its trajectory's (or group's) colour.
-    if (tog(input$show_vectors, FALSE) &&
-        all(c("x_inner", "y_inner") %in% names(hd_disp))) {
-      p <- p + add_heading_vectors(hd_disp, colour_col = marker_colour_col)
     }
 
     # Rayleigh critical circle at alpha = 0.05 (asymptotic approximation
@@ -975,12 +873,8 @@ server <- function(input, output, session) {
         )
     }
 
-    # V-test decision boundary against the expected direction (display top =
-    # UC East in the relative coordinate frame, i.e. mu0 = pi/2 in the plot's
-    # display coordinates). The V test privileges one direction, so its boundary
-    # is a straight line PERPENDICULAR to mu0 at distance c = z_alpha / sqrt(2n)
-    # from the centre (clipped to the unit circle), not a radius. One boundary
-    # per panel when faceting; a single pooled boundary otherwise.
+    # V-test decision boundary against mu0 = pi/2 (display top). One boundary per
+    # panel when faceting; a single pooled boundary otherwise.
     if (tog(input$show_vtest, FALSE)) {
       v_layers <- add_critical_v_line(
         rv$hd, mu0 = pi / 2, angle_col = "heading",
