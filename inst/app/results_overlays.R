@@ -2,6 +2,29 @@
 # Sourced by app.R; also unit-tested directly. Depends only on the radiatR
 # package (assumed attached) and ggplot2.
 
+# derive_headings() standardises the trajectory identifier to this column, so a
+# headings frame keys its rows on it regardless of the TrajSet's own id column
+# name (which may be "trial_id", "animal", ...). The trajectory is the default
+# grouping for colour; any chosen grouping column overrides it.
+HEADING_TRAJ_COL <- "id"
+
+# Attach the per-trajectory cycle-colour key, so heading markers share the
+# tracks' colour scale and each marker inherits its trajectory's colour. radiate()
+# colours tracks by cycling `n` colours over the trajectories in `ordered_ids`
+# order (its colour_cycle path); reproducing the same index here -- keyed on the
+# trajectory column, not any hard-coded name -- guarantees an identical mapping.
+#   hd          : a headings frame.
+#   traj_col    : the trajectory-id column in hd (default HEADING_TRAJ_COL).
+#   ordered_ids : unique trajectory ids in track-data order (what radiate cycles).
+#   n           : number of cycled colours (matches radiate's colour_cycle).
+# Returns hd with a ".cycle_colour" factor column (levels seq_len(n)).
+attach_cycle_colour <- function(hd, ordered_ids, n,
+                                traj_col = HEADING_TRAJ_COL) {
+  idx <- ((match(hd[[traj_col]], ordered_ids) - 1L) %% n) + 1L
+  hd[[".cycle_colour"]] <- factor(idx, levels = seq_len(n))
+  hd
+}
+
 # Bin width for the stacked-dots display: 5 degrees, centred on the reference
 # direction (phase 0) so the modal heading sits on a column rather than split
 # across a bin boundary. Snapping headings to these centres first turns

@@ -31,6 +31,23 @@ test_that("stacked style returns a stacked-headings layer", {
   expect_true(has_cols(l, c(".x_stk", ".y_stk")))
 })
 
+test_that("attach_cycle_colour reproduces radiate's per-trajectory cycle index", {
+  ordered <- c("t3", "t1", "t2", "t4")          # track-data trajectory order
+  hd <- data.frame(id = c("t1", "t2", "t3", "t4", "t1"), heading = 0)
+  out <- attach_cycle_colour(hd, ordered_ids = ordered, n = 20L)
+  # index = position of each id in `ordered`, cycled mod n
+  expect_equal(as.integer(out$.cycle_colour), c(2L, 3L, 1L, 4L, 2L))
+  expect_identical(levels(out$.cycle_colour), as.character(1:20))
+})
+
+test_that("attach_cycle_colour wraps the cycle past n trajectories", {
+  ordered <- paste0("t", 1:25)
+  hd <- data.frame(id = c("t1", "t21", "t25"), heading = 0)
+  out <- attach_cycle_colour(hd, ordered_ids = ordered, n = 20L)
+  # t21 -> index 21 wraps to 1; t25 -> 5
+  expect_equal(as.integer(out$.cycle_colour), c(1L, 1L, 5L))
+})
+
 test_that("colour_col maps dot colour for both points and stacked styles", {
   hd <- make_hd(); hd$grp <- c("a", "b", "a", "b")
   lp <- heading_marker_layer(hd, "points",  NULL, circ_display(), colour_col = "grp")

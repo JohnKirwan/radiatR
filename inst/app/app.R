@@ -836,19 +836,16 @@ server <- function(input, output, session) {
     hd_disp <- rv$hd
     attr(hd_disp, "display") <- disp
 
-    # Colour the heading markers to match the tracks. With a condition column the
-    # tracks are coloured by it, so the markers map the same column. Without one,
-    # radiate() colours tracks by a per-trajectory cycle index (.cycle_colour);
-    # reproduce that exact index here (same id order, same CYCLE_N) so the dots
-    # share the tracks' colour scale and each dot matches its trajectory.
+    # Colour the heading markers to match the tracks, using the same colour key
+    # throughout: a chosen grouping column (gc) when set, otherwise the default
+    # per-trajectory colour cycle. attach_cycle_colour() reproduces radiate()'s
+    # track cycle on the headings frame so the dots share the tracks' scale.
     if (!is.null(gc)) {
       marker_colour_col <- gc
     } else {
-      # The track data keys trajectories by id_col; the headings frame keys them
-      # by "id" (same values). Map heading rows through the track id order.
-      uids <- unique(ts_arrow@data[[id_col]])
-      idx  <- ((match(hd_disp[["id"]], uids) - 1L) %% CYCLE_N) + 1L
-      hd_disp[[".cycle_colour"]] <- factor(idx, levels = seq_len(CYCLE_N))
+      hd_disp <- attach_cycle_colour(
+        hd_disp, ordered_ids = unique(ts_arrow@data[[id_col]]), n = CYCLE_N
+      )
       marker_colour_col <- ".cycle_colour"
     }
 
