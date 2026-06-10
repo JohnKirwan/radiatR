@@ -48,6 +48,12 @@
 
 ## Plotting
 
+* New exported `cycle_colours()` -- the order-stable primitive behind
+  `assign_cycle_colours()` and `radiate()`'s `colour_cycle`. It maps a key to a
+  cycled `1:n` colour index and accepts an explicit level order, so two data
+  frames sharing a key (e.g. tracks and an overlay) can be coloured identically.
+  `assign_cycle_colours()` now delegates to it, and the Shiny app uses it too, so
+  the colour-cycling logic has a single source of truth.
 * `radiate()` gains an `angle_labels` argument: `"degrees"` (default, e.g.
   `45°`), `"none"`, or `"radians"` (now rendered as π fractions, e.g. `π/4`,
   rather than decimals). `degree_labs()` gains a matching `units` argument.

@@ -298,6 +298,37 @@ directedness_arrow <- function(data, angle_col, arrow_head_cm = 0.2,
 
 # ---- colour utilities --------------------------------------------------------
 
+#' Cycle a bounded set of colour indices over the values of a key
+#'
+#' The order-stable primitive behind [assign_cycle_colours()] (and so
+#' [radiate()]'s `colour_cycle`). Maps each value of `x` to an index in `1:n`,
+#' numbering the distinct values by `levels` and wrapping back to `1` after every
+#' `n`. Passing an explicit `levels` lets two data frames that share a key (for
+#' example tracks and an overlay drawn on top of them) be coloured identically,
+#' so a given key value gets the same colour in both.
+#'
+#' @param x A vector of key values (e.g. trajectory ids or a grouping column).
+#' @param n Number of colours to cycle through (a positive integer).
+#' @param levels Optional ordering of the distinct key values. Defaults to their
+#'   order of first appearance in `x`. Supply a shared ordering to colour two
+#'   frames consistently.
+#'
+#' @return A factor the same length as `x` with levels `"1"`..`"n"` giving the
+#'   cycled colour index. `NA` in `x` is preserved as `NA`.
+#'
+#' @seealso [assign_cycle_colours()], [radiate()]
+#' @examples
+#' cycle_colours(c("a", "b", "c", "a"), n = 2)
+#' @export
+cycle_colours <- function(x, n, levels = NULL) {
+  n_int <- if (is.character(n)) length(n) else as.integer(n)
+  if (length(n_int) != 1L || is.na(n_int) || n_int < 1L)
+    stop("`n` must be a positive integer or non-empty colour vector.")
+  if (is.null(levels)) levels <- unique(x[!is.na(x)])
+  idx <- ((match(x, levels) - 1L) %% n_int) + 1L
+  factor(idx, levels = seq_len(n_int))
+}
+
 #' Assign cycling colour indices to trajectories
 #'
 #' Creates a factor column that assigns each unique trajectory a colour index
@@ -337,25 +368,21 @@ assign_cycle_colours <- function(data, id_col, n, panel_col = NULL,
 
   ids <- data[[id_col]]
 
-  idx <- if (is.null(panel_col)) {
-    unique_ids <- unique(ids)
-    ((match(ids, unique_ids) - 1L) %% n_int) + 1L
+  if (is.null(panel_col)) {
+    data[[out_col]] <- cycle_colours(ids, n_int)
   } else {
     if (!panel_col %in% names(data))
       stop("`panel_col` '", panel_col, "' not found in data.")
     panels <- data[[panel_col]]
-    out <- integer(length(ids))
+    out <- factor(rep(NA_integer_, length(ids)), levels = seq_len(n_int))
     for (p in unique(panels)) {
       # NA panel values form their own group; panels == NA would yield NA
-      # subscripts, so match them explicitly.
-      rows        <- if (is.na(p)) is.na(panels) else !is.na(panels) & panels == p
-      unique_ids_p <- unique(ids[rows])
-      out[rows]   <- ((match(ids[rows], unique_ids_p) - 1L) %% n_int) + 1L
+      # subscripts, so match them explicitly. Each panel restarts the cycle.
+      rows      <- if (is.na(p)) is.na(panels) else !is.na(panels) & panels == p
+      out[rows] <- cycle_colours(ids[rows], n_int)
     }
-    out
+    data[[out_col]] <- out
   }
-
-  data[[out_col]] <- factor(idx, levels = seq_len(n_int))
   data
 }
 
