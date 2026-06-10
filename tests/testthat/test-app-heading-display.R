@@ -31,6 +31,19 @@ test_that("stacked style returns a stacked-headings layer", {
   expect_true(has_cols(l, c(".x_stk", ".y_stk")))
 })
 
+test_that("tracks and markers share one per-trajectory colour key (add_track_cycle_colour / attach_cycle_colour agree)", {
+  # Build a tiny TrajSet-like object is overkill; test the two helpers produce
+  # the SAME index for the same trajectory id, so colour is by trajectory and a
+  # marker matches its track.
+  ordered <- c("t3", "t1", "t2")
+  hd  <- data.frame(id = c("t1", "t2", "t3"), heading = 0)
+  hd2 <- attach_cycle_colour(hd, ordered_ids = ordered, n = 20L)
+  # the track-side key for the same ids/order
+  trk <- cycle_colour_factor(c("t3", "t1", "t2"), ordered, 20L)
+  names_trk <- setNames(as.integer(trk), c("t3", "t1", "t2"))
+  expect_equal(as.integer(hd2$.cycle_colour), unname(names_trk[hd2$id]))
+})
+
 test_that("attach_cycle_colour reproduces radiate's per-trajectory cycle index", {
   ordered <- c("t3", "t1", "t2", "t4")          # track-data trajectory order
   hd <- data.frame(id = c("t1", "t2", "t3", "t4", "t1"), heading = 0)

@@ -8,20 +8,35 @@
 # grouping for colour; any chosen grouping column overrides it.
 HEADING_TRAJ_COL <- "id"
 
-# Attach the per-trajectory cycle-colour key, so heading markers share the
-# tracks' colour scale and each marker inherits its trajectory's colour. radiate()
-# colours tracks by cycling `n` colours over the trajectories in `ordered_ids`
-# order (its colour_cycle path); reproducing the same index here -- keyed on the
-# trajectory column, not any hard-coded name -- guarantees an identical mapping.
+# Global per-trajectory cycle index (1..n) for trajectory ids `vals`, numbered in
+# `ordered_ids` order and wrapped at n. Used as the single colour key for BOTH
+# tracks and heading markers, so colour always distinguishes the trajectory --
+# never the facet/condition variable -- and a marker matches its own track
+# regardless of faceting (a global key, unlike radiate's per-panel cycle).
+cycle_colour_factor <- function(vals, ordered_ids, n) {
+  idx <- ((match(vals, ordered_ids) - 1L) %% n) + 1L
+  factor(idx, levels = seq_len(n))
+}
+
+# Attach the trajectory colour key to a TrajSet's track data as ".cycle_colour",
+# so radiate(colour_col = ".cycle_colour") colours each trajectory consistently.
+add_track_cycle_colour <- function(ts, id_col, n) {
+  ids <- ts@data[[id_col]]
+  ts@data[[".cycle_colour"]] <- cycle_colour_factor(ids, unique(ids), n)
+  ts
+}
+
+# Attach the SAME trajectory colour key to a headings frame, so markers share the
+# tracks' colour scale.
 #   hd          : a headings frame.
+#   ordered_ids : unique trajectory ids in track-data order (must match the order
+#                 add_track_cycle_colour() used for the tracks).
+#   n           : number of cycled colours.
 #   traj_col    : the trajectory-id column in hd (default HEADING_TRAJ_COL).
-#   ordered_ids : unique trajectory ids in track-data order (what radiate cycles).
-#   n           : number of cycled colours (matches radiate's colour_cycle).
 # Returns hd with a ".cycle_colour" factor column (levels seq_len(n)).
 attach_cycle_colour <- function(hd, ordered_ids, n,
                                 traj_col = HEADING_TRAJ_COL) {
-  idx <- ((match(hd[[traj_col]], ordered_ids) - 1L) %% n) + 1L
-  hd[[".cycle_colour"]] <- factor(idx, levels = seq_len(n))
+  hd[[".cycle_colour"]] <- cycle_colour_factor(hd[[traj_col]], ordered_ids, n)
   hd
 }
 
