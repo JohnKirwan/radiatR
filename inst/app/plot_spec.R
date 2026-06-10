@@ -171,7 +171,8 @@ spec_to_code <- function(spec) {
       ", colour_col = \".colour\"", pby,
       ", legend = ", if (spec$colour$legend) "TRUE" else "FALSE",
       ", theme = ", q(spec$theme),
-      ", angle_labels = ", q(spec$angle_labels), ", display = disp)")
+      ", angle_labels = ", q(spec$angle_labels),
+      ", show_labels = FALSE, show_arrow = FALSE, display = disp)")
 
   tail <- character(0)
   if (spec$colour$legend)
