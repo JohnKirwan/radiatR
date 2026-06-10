@@ -62,6 +62,7 @@
 <li>Fixed an error (“NAs are not allowed in subscripted assignments”) when stacking headings that include two or more <code>NA</code> values (trials with no defined heading). The internal angle-wrapping helper is now NA-safe.</li>
 <li>The stacked-dots display now sits just inside the unit circle (the dots abut the periphery line rather than straddle it) and uses a slightly wider gap between dots, so individual points read more clearly.</li>
 <li>Plot colour now distinguishes the <strong>trajectory</strong> (in sequential order) by default, not the panel/facet variable. The “Facet by” selector (formerly “Group by condition”) now only facets; a new <strong>“Colour by”</strong> selector in the Display panel controls colour independently – defaulting to “Trajectory”, or any grouping column (condition, cohort, individual, …). Tracks and heading markers (points and stacked) share one colour key, so each marker matches its own trajectory/group even when faceted. A grouping with up to 20 levels gets a distinct colour per level and a legend; a higher-cardinality key (the trajectory, or e.g. an individual id with many animals) cycles a capped set of 20 colours with no legend.</li>
+<li>The “Heading vectors” overlay now inherits each trajectory’s (or group’s) colour, matching the tracks and markers, instead of being drawn in one colour.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="plotting-development-version">Plotting<a class="anchor" aria-label="anchor" href="#plotting-development-version"></a></h3>

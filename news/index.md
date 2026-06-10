@@ -63,6 +63,9 @@
   per level and a legend; a higher-cardinality key (the trajectory, or
   e.g. an individual id with many animals) cycles a capped set of 20
   colours with no legend.
+- The “Heading vectors” overlay now inherits each trajectory’s (or
+  group’s) colour, matching the tracks and markers, instead of being
+  drawn in one colour.
 
 ### Plotting
 
