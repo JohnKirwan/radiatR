@@ -61,6 +61,22 @@ test_that("attach_cycle_colour wraps the cycle past n trajectories", {
   expect_equal(as.integer(out$.cycle_colour), c(1L, 1L, 5L))
 })
 
+test_that("add_track_cycle_colour caps colours at n for a high-cardinality key", {
+  e <- new.env(); utils::data("cpunctatus", package = "radiatR", envir = e)
+  ts <- e$cpunctatus
+  out <- add_track_cycle_colour(ts, "individual", 20L)   # individual = 46 levels
+  expect_true(".cycle_colour" %in% names(out@data))
+  expect_lte(length(unique(out@data$.cycle_colour)), 20L)
+  expect_identical(levels(out@data$.cycle_colour), as.character(1:20))
+})
+
+test_that("attach_cycle_colour can key markers off an arbitrary grouping column", {
+  hd  <- data.frame(id = 1:4, grp = c("a", "b", "a", "c"), heading = 0)
+  out <- attach_cycle_colour(hd, ordered_ids = c("a", "b", "c"), n = 20L,
+                             traj_col = "grp")
+  expect_equal(as.integer(out$.cycle_colour), c(1L, 2L, 1L, 3L))  # a,b,a,c
+})
+
 test_that("ensure_traj_col adds a grouping column by trajectory, preserving rows/order", {
   e <- new.env(); utils::data("cpunctatus", package = "radiatR", envir = e)
   ts <- e$cpunctatus

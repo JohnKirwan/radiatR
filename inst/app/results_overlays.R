@@ -18,11 +18,13 @@ cycle_colour_factor <- function(vals, ordered_ids, n) {
   factor(idx, levels = seq_len(n))
 }
 
-# Attach the trajectory colour key to a TrajSet's track data as ".cycle_colour",
-# so radiate(colour_col = ".cycle_colour") colours each trajectory consistently.
-add_track_cycle_colour <- function(ts, id_col, n) {
-  ids <- ts@data[[id_col]]
-  ts@data[[".cycle_colour"]] <- cycle_colour_factor(ids, unique(ids), n)
+# Attach a cycled colour key (".cycle_colour") to a TrajSet's track data, keyed on
+# `key_col` (the trajectory id for the default, or any grouping column). Colours
+# cycle at n, so a high-cardinality key stays legible. radiate(colour_col =
+# ".cycle_colour") then colours by it.
+add_track_cycle_colour <- function(ts, key_col, n) {
+  vals <- ts@data[[key_col]]
+  ts@data[[".cycle_colour"]] <- cycle_colour_factor(vals, unique(vals), n)
   ts
 }
 
