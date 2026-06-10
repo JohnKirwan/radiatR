@@ -47,6 +47,7 @@ radiate(
   show_arrow = NULL,
   arrow_angle_col = NULL,
   arrow_colour = "black",
+  arrow_colour_col = NULL,
   arrow_size = 2,
   display = circ_display(),
   ...
@@ -211,7 +212,16 @@ radiate(
 
 - arrow_colour:
 
-  Arrow colour.
+  Arrow colour (a single fixed colour). Ignored when
+  \`arrow_colour_col\` is set.
+
+- arrow_colour_col:
+
+  Optional grouping column. When supplied, one mean resultant arrow is
+  drawn per level of this column (within each panel, if \`panel_by\` is
+  also set) and mapped to the colour aesthetic, so the arrow can follow
+  a colour grouping independently of faceting. Default \`NULL\` draws a
+  single arrow in \`arrow_colour\`.
 
 - arrow_size:
 

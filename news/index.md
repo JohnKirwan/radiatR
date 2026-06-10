@@ -69,6 +69,17 @@
 
 ### Plotting
 
+- [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  gains an `arrow_colour_col` argument: when set, the built-in mean
+  resultant arrow is drawn once per level of that column (within each
+  panel, if faceted) and coloured by it, so the arrow can follow a
+  colour grouping independently of faceting. The composable
+  [`add_heading_arrow()`](https://johnkirwan.github.io/radiatR/reference/add_heading_arrow.md)
+  and
+  [`add_heading_interval()`](https://johnkirwan.github.io/radiatR/reference/add_heading_interval.md)
+  already take `colour_col` for the same effect on the mean-direction
+  arrow and its confidence interval; the circular-statistics vignette
+  now shows this grouped-overlay pattern.
 - New exported
   [`cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/cycle_colours.md)
   – the order-stable primitive behind

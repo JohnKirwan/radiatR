@@ -298,6 +298,40 @@ circular kernel density estimate. Where the parametric curves track the
 rose closely the fit is good; a systematic gap (especially in the tails)
 is the cue to prefer the heavier-tailed wrapped Cauchy.
 
+## Per-group overlays
+
+Every overlay that summarises headings takes a `colour_col`, so a single
+call draws one element per group, coloured by it – handy for comparing
+conditions on one plot. Here the mean-direction **arrow**
+([`add_heading_arrow()`](https://johnkirwan.github.io/radiatR/reference/add_heading_arrow.md))
+and its bootstrap **confidence interval**
+([`add_heading_interval()`](https://johnkirwan.github.io/radiatR/reference/add_heading_interval.md))
+are split by target half-width (`arc`):
+
+``` r
+
+canvas +
+  add_heading_arrow(hd,    colour_col = "arc") +
+  add_heading_interval(hd, colour_col = "arc", stat = "bootstrap_ci")
+```
+
+![](circular-statistics_files/figure-html/grouped-overlays-1.png)
+
+Each `arc` group gets its own mean vector and CI arc in a matching
+colour. The grouping is independent of any faceting, so you can (for
+example) colour by cohort while faceting
+[`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+by treatment.
+[`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)’s
+own built-in arrow follows the same idea via `arrow_colour_col`, drawing
+one arrow per group:
+
+``` r
+
+radiate(cpunctatus, group_col = "trial_id",
+        show_arrow = TRUE, arrow_colour_col = "arc")
+```
+
 ## Significance geometry
 
 The remaining two helpers draw the *decision boundary* of a significance
