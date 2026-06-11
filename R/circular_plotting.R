@@ -329,6 +329,64 @@ cycle_colours <- function(x, n, levels = NULL) {
   factor(idx, levels = seq_len(n_int))
 }
 
+#' Assign a shared colour-key column to a TrajSet or data frame
+#'
+#' Writes a colour-key column (`into`, default `".colour"`) keyed on `by`, so the
+#' tracks and any overlays drawn on top share one colour scale. Two modes are
+#' chosen automatically by cardinality:
+#' * **Cycled** -- `by = "trajectory"` (the trajectory id column), or any column
+#'   with more than `n` levels: the key is a cycled `1:n` index
+#'   ([cycle_colours()]), so a high-cardinality key stays legible.
+#' * **Distinct** -- a column with `n` or fewer levels: the key holds the
+#'   column's raw values (as a factor), so a legend is meaningful.
+#'
+#' Pass `reference` (another TrajSet or frame sharing the key) to borrow its level
+#' order, so a given key value gets the same colour in both -- e.g. tracks and
+#' their heading markers. If `by` names a column absent from `x` but present on
+#' `reference`, it is borrowed by matching trajectory id.
+#'
+#' @param x A `TrajSet` or data frame to annotate.
+#' @param by `"trajectory"` (the trajectory id column) or a grouping column name.
+#' @param n Colour cap / cycle length (positive integer). Default 20.
+#' @param reference Optional `TrajSet`/frame whose key order to reuse. Default
+#'   `NULL` uses `x` itself.
+#' @param into Name of the key column to add. Default `".colour"`.
+#' @return `x` with the `into` column added.
+#' @seealso [cycle_colours()]
+#' @examples
+#' ts <- simulate_tracks(n_points = 10, output = "trajset")
+#' ts <- assign_colour_key(ts, by = "trajectory")
+#' @export
+assign_colour_key <- function(x, by, n = 20, reference = NULL, into = ".colour") {
+  is_ts <- function(o) methods::is(o, "TrajSet")
+  df_of <- function(o) if (is_ts(o)) o@data else o
+  id_of <- function(o) if (is_ts(o)) o@cols$id else "id"
+
+  ref    <- if (is.null(reference)) x else reference
+  x_df   <- df_of(x)
+  ref_df <- df_of(ref)
+
+  if (identical(by, "trajectory")) {
+    key_vals <- x_df[[id_of(x)]];  ref_vals <- ref_df[[id_of(ref)]]
+  } else if (by %in% names(x_df)) {
+    key_vals <- x_df[[by]];        ref_vals <- ref_df[[by]]
+  } else {
+    if (!by %in% names(ref_df))
+      stop("colour key column '", by, "' not found in x or reference.")
+    key_vals <- ref_df[[by]][match(x_df[[id_of(x)]], ref_df[[id_of(ref)]])]
+    ref_vals <- ref_df[[by]]
+  }
+
+  lvls <- if (is.factor(ref_vals)) levels(ref_vals)
+          else unique(ref_vals[!is.na(ref_vals)])
+  distinct <- !identical(by, "trajectory") && length(lvls) <= n
+  key <- if (distinct) factor(key_vals, levels = lvls)
+         else cycle_colours(key_vals, n, levels = lvls)
+
+  if (is_ts(x)) x@data[[into]] <- key else x[[into]] <- key
+  x
+}
+
 #' Assign cycling colour indices to trajectories
 #'
 #' Creates a factor column that assigns each unique trajectory a colour index
@@ -1326,6 +1384,8 @@ add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
 #'   \code{shape_code} is already a column in \code{data}.
 #'   Mapped to ggplot2 shape integers: 1 = hollow, 16 = filled,
 #'   21 = filled with ring.
+#' @param group Optional column name; stack within each group independently
+#'   (e.g. one stacking per facet). Default \code{NULL}.
 #' @param colour Fixed point colour (ignored when \code{colour_col} is set).
 #' @param colour_col Optional column name to map to the colour aesthetic.
 #' @param size Point size passed to \code{geom_point()}.
@@ -1348,6 +1408,7 @@ add_stacked_headings <- function(data,
                                  base_r     = 1,
                                  shade      = FALSE,
                                  shape      = FALSE,
+                                 group      = NULL,
                                  colour     = "black",
                                  colour_col = NULL,
                                  size       = 2,
@@ -1359,12 +1420,12 @@ add_stacked_headings <- function(data,
   if (!col %in% names(data))
     stop(sprintf("column '%s' not found in data.", col))
 
+  disp_opts <- attr(data, "display", exact = TRUE) %||% circ_display()
+
   if (!"stack_r" %in% names(data))
     data <- stack_headings(data, col = col, step = step, start_sep = start_sep,
                            tol = tol, direction = direction, base_r = base_r,
-                           shade = shade, shape = shape)
-
-  disp_opts <- attr(data, "display", exact = TRUE) %||% circ_display()
+                           shade = shade, shape = shape, group = group)
   xy <- .uc_to_display_coords(data$stack_r * cos(data[[col]]),
                                data$stack_r * sin(data[[col]]), disp_opts)
   data[[".x_stk"]] <- xy$x

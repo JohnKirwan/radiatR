@@ -315,3 +315,12 @@ test_that("radiate(headings_frame) panel_by errors on missing column", {
   expect_error(radiate(hf, panel_by = "nonexistent"),
                "panel_by column")
 })
+
+test_that("stack_headings(group=) stacks within each group independently", {
+  df <- data.frame(heading = c(0, 0, 0, 0), g = c("a", "a", "b", "b"))
+  hf <- headings_frame(df, col = "heading", units = "radians")
+  out <- stack_headings(hf, group = "g", step = 0.025, base_r = 1)
+  # each group restarts the stack: ranks 1,2 within "a" and within "b"
+  expect_equal(sort(out$stack_r[out$g == "a"], decreasing = TRUE), c(1, 0.975), tolerance = 1e-9)
+  expect_equal(sort(out$stack_r[out$g == "b"], decreasing = TRUE), c(1, 0.975), tolerance = 1e-9)
+})
