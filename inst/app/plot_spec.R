@@ -168,6 +168,11 @@ spec_to_code <- function(spec) {
     add("hd <- assign_colour_key(hd, by = ", q(spec$colour$by), ", reference = ts)")
   add("")
   add("disp <- circ_display(zero = ", spec$display$zero, ")")
+  # Tag the headings frame with the display convention so the heading overlays
+  # (points/vectors/arrow) orient the same way as the radiate() plot below --
+  # otherwise they fall back to circ_display()'s default and rotate out of step.
+  if (has_hd)
+    add("attr(hd, \"display\") <- disp")
 
   if (has_hd && identical(spec$heading_display, "stacked")) {
     add("")
