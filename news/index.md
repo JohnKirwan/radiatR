@@ -2,6 +2,21 @@
 
 ## radiatR (development version)
 
+### Camera calibration
+
+- **Breaking:** removed the camera-calibration layer entirely
+  (`read_calibration()`, `cal_model()`, `cam_cal_pt()`,
+  `cam_cal_many()`, `calibrate_positions()`, and the `CalModel` class),
+  along with its vignette. radiatR normalises each trajectory to a unit
+  arena, so its outputs (headings, mean direction, resultant length,
+  circular statistics) are scale-invariant and never needed metric
+  calibration; lens-distortion correction and scaling to real-world
+  units are better handled in the upstream tracking pipeline (the
+  tracker’s own calibration, or OpenCV `undistort`) before import. This
+  completes the narrowing begun in 0.2.0, which removed the calibration
+  *estimator*. The `R.matlab`, `yaml`, and `jsonlite` suggested
+  dependencies remain — they are still used by the loaders.
+
 ### Shiny app
 
 - Restored the **Quadrant lines** and **Guide rings** toggles, which had
@@ -300,12 +315,10 @@ overlays, and a no-code graphical interface.
 ### Camera calibration
 
 - Refocused the calibration layer on *importing* calibrations from
-  established tools rather than estimating them.
-  [`read_calibration()`](https://johnkirwan.github.io/radiatR/reference/read_calibration.md)
+  established tools rather than estimating them. `read_calibration()`
   reads camera intrinsics and Brown-Conrady distortion coefficients from
   the **MATLAB Computer Vision Toolbox** (`.mat`), **OpenCV**
-  `FileStorage` (YAML/JSON), or a plain **CSV**, and
-  [`cal_model()`](https://johnkirwan.github.io/radiatR/reference/cal_model.md)
+  `FileStorage` (YAML/JSON), or a plain **CSV**, and `cal_model()`
   builds a `CalModel` from coefficients you already hold. Both handle
   radiatR’s transposed intrinsic-matrix convention and the 1-based
   (MATLAB) vs 0-based (OpenCV) principal-point difference for you.
@@ -316,11 +329,7 @@ overlays, and a no-code graphical interface.
   `calibration_switch_axes()`). Estimating intrinsics from checkerboard
   images is better served by the mature toolboxes above; the bundled
   `calibration_corners.csv` / `calibration_truth.csv` fixtures are gone
-  with it.
-  [`cam_cal_pt()`](https://johnkirwan.github.io/radiatR/reference/cam_cal_pt.md),
-  [`cam_cal_many()`](https://johnkirwan.github.io/radiatR/reference/cam_cal_many.md),
-  and
-  [`calibrate_positions()`](https://johnkirwan.github.io/radiatR/reference/calibrate_positions.md)
+  with it. `cam_cal_pt()`, `cam_cal_many()`, and `calibrate_positions()`
   are unchanged.
 
 ### Bug fixes

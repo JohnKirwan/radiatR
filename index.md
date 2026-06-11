@@ -101,6 +101,13 @@ radiate(ts,
   add_heading_points(hd, colour_col = "condition")
 ```
 
+> **Coordinates.** radiatR normalises each trajectory to a unit arena,
+> so its outputs (headings, mean direction, resultant length, circular
+> statistics) are scale-invariant and need no metric calibration.
+> Correct lens distortion and any scaling to real-world units in your
+> tracking pipeline (e.g. your tracker’s own calibration, or OpenCV
+> `undistort`) before importing.
+
 ## Simulate Data
 
 [`simulate_tracks()`](https://johnkirwan.github.io/radiatR/reference/simulate_tracks.md)

@@ -41,7 +41,6 @@
 <li><a class="dropdown-item" href="articles/radiatR.html">Main workflow</a></li>
     <li><a class="dropdown-item" href="articles/loaders.html">Loaders</a></li>
     <li><a class="dropdown-item" href="articles/circular-statistics.html">Circular statistics &amp; distribution overlays</a></li>
-    <li><a class="dropdown-item" href="articles/camera-calibration.html">Camera calibration</a></li>
     <li><a class="dropdown-item" href="articles/simulate.html">Simulating trajectories</a></li>
   </ul>
 </li>
@@ -257,6 +256,9 @@
 <span>        panel_by   <span class="op">=</span> <span class="st">"condition"</span>,</span>
 <span>        show_arrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="reference/add_heading_points.html">add_heading_points</a></span><span class="op">(</span><span class="va">hd</span>, colour_col <span class="op">=</span> <span class="st">"condition"</span><span class="op">)</span></span></code></pre></div>
+<blockquote>
+<p><strong>Coordinates.</strong> radiatR normalises each trajectory to a unit arena, so its outputs (headings, mean direction, resultant length, circular statistics) are scale-invariant and need no metric calibration. Correct lens distortion and any scaling to real-world units in your tracking pipeline (e.g. your tracker’s own calibration, or OpenCV <code>undistort</code>) before importing.</p>
+</blockquote>
 </div>
 <div class="section level2">
 <h2 id="simulate-data">Simulate Data<a class="anchor" aria-label="anchor" href="#simulate-data"></a>

@@ -2,7 +2,6 @@
 <url><loc>https://johnkirwan.github.io/radiatR/404.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/CLAUDE.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/LICENSE.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/articles/camera-calibration.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/articles/circular-statistics.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/articles/index.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/articles/loaders.html</loc></url>
@@ -11,7 +10,6 @@
 <url><loc>https://johnkirwan.github.io/radiatR/authors.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/index.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/news/index.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/CalModel-class.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/TrajSet-class.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/TrajSet_load_manifest.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/TrajSet_read.html</loc></url>
@@ -41,10 +39,6 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/bin_angles.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/build_unit_circle_mapping.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/cal_model.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/calibrate_positions.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/cam_cal_many.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/cam_cal_pt.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/circ_cor.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/circ_dispersion.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/circ_display.html</loc></url>
@@ -65,7 +59,6 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/dot-heading_registry.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/draw_tracks.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/dtrack_read.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/focalize.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/get_tracked_object_pos.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/get_trial_limits.html</loc></url>
@@ -83,20 +76,16 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/list_loader_formats.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/load_tracks.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/load_tracks2.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/optically_center.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/path_straightness.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/path_tortuosity.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/pose_to_headings.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/rad_shepherd.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/radial_distort.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/radial_theme.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/radiatR-package.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/radiate.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/read_calibration.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/register_heading_rule.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/register_loader_dialect.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/register_loader_format.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/scaled_xy2mm.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/sector_summary.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/simulate_tracks.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/stack_headings.html</loc></url>

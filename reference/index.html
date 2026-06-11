@@ -22,7 +22,6 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-vignettes"><li><a class="dropdown-item" href="../articles/radiatR.html">Main workflow</a></li>
     <li><a class="dropdown-item" href="../articles/loaders.html">Loaders</a></li>
     <li><a class="dropdown-item" href="../articles/circular-statistics.html">Circular statistics &amp; distribution overlays</a></li>
-    <li><a class="dropdown-item" href="../articles/camera-calibration.html">Camera calibration</a></li>
     <li><a class="dropdown-item" href="../articles/simulate.html">Simulating trajectories</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -202,13 +201,6 @@
 
         </dt>
         <dd>TrajSet container for circular trajectories</dd>
-
-        <dt>
-
-          <code><a href="calibrate_positions.html">calibrate_positions()</a></code>
-
-        </dt>
-        <dd>Calibrate TrajSet positions using a camera model</dd>
 
         <dt>
 
@@ -643,50 +635,6 @@
         </dt>
         <dd>Count entries into a goal zone for circular arena trajectories</dd>
       </dl></div><div class="section level2">
-      <h2 id="calibration">Calibration<a class="anchor" aria-label="anchor" href="#calibration"></a></h2>
-
-      <div class="section-desc"><p>Import camera intrinsics and distortion coefficients from MATLAB, OpenCV, or a plain CSV, then apply them to undistort pixel tracks. radiatR does not estimate calibrations itself.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="read_calibration.html">read_calibration()</a></code>
-
-        </dt>
-        <dd>Import a camera calibration from an external toolbox</dd>
-
-        <dt>
-
-          <code><a href="cal_model.html">cal_model()</a></code>
-
-        </dt>
-        <dd>Build a camera calibration model from intrinsic coefficients</dd>
-
-        <dt>
-
-          <code><a href="cam_cal_pt.html">cam_cal_pt()</a></code>
-
-        </dt>
-        <dd>Calibrate the camera on the given xy coordinate</dd>
-
-        <dt>
-
-          <code><a href="cam_cal_many.html">cam_cal_many()</a></code>
-
-        </dt>
-        <dd>Calibrate the camera on the given set of points</dd>
-
-        <dt>
-
-          <code><a href="CalModel-class.html">CalModel-class</a></code>
-
-        </dt>
-        <dd>Camera calibration model for trajectory correction</dd>
-      </dl></div><div class="section level2">
       <h2 id="coordinate-utilities">Coordinate utilities<a class="anchor" aria-label="anchor" href="#coordinate-utilities"></a></h2>
 
       <div class="section-desc"><p>Angle-convention conversions and geometric helpers.</p></div>
@@ -757,13 +705,6 @@
 
 
       <dl><dt>
-
-          <code><a href="CalModel-class.html">CalModel-class</a></code>
-
-        </dt>
-        <dd>Camera calibration model for trajectory correction</dd>
-
-        <dt>
 
           <code><a href="TrajSet-class.html">TrajSet()</a></code> <code><a href="TrajSet-class.html">length(<i>&lt;TrajSet&gt;</i>)</a></code> <code><a href="TrajSet-class.html">`[`(<i>&lt;TrajSet&gt;</i>,<i>&lt;ANY&gt;</i>,<i>&lt;missing&gt;</i>,<i>&lt;missing&gt;</i>)</a></code> <code><a href="TrajSet-class.html">c(<i>&lt;TrajSet&gt;</i>)</a></code>
 
@@ -958,34 +899,6 @@
 
         </dt>
         <dd>Snap angles to fixed-width circular bin centres</dd>
-
-        <dt>
-
-          <code><a href="cal_model.html">cal_model()</a></code>
-
-        </dt>
-        <dd>Build a camera calibration model from intrinsic coefficients</dd>
-
-        <dt>
-
-          <code><a href="calibrate_positions.html">calibrate_positions()</a></code>
-
-        </dt>
-        <dd>Calibrate TrajSet positions using a camera model</dd>
-
-        <dt>
-
-          <code><a href="cam_cal_many.html">cam_cal_many()</a></code>
-
-        </dt>
-        <dd>Calibrate the camera on the given set of points</dd>
-
-        <dt>
-
-          <code><a href="cam_cal_pt.html">cam_cal_pt()</a></code>
-
-        </dt>
-        <dd>Calibrate the camera on the given xy coordinate</dd>
 
         <dt>
 
@@ -1269,13 +1182,6 @@
 
         <dt>
 
-          <code><a href="radial_distort.html">radial_distort()</a></code>
-
-        </dt>
-        <dd>Remove radial/tangential distortion from a point on the image plane.</dd>
-
-        <dt>
-
           <code><a href="radial_theme.html">radial_theme()</a></code>
 
         </dt>
@@ -1287,13 +1193,6 @@
 
         </dt>
         <dd>Make ggplot object of tracks radiating from circle centre.</dd>
-
-        <dt>
-
-          <code><a href="read_calibration.html">read_calibration()</a></code>
-
-        </dt>
-        <dd>Import a camera calibration from an external toolbox</dd>
 
         <dt>
 

@@ -67,8 +67,6 @@ column mappings and metadata.
   [`` `[`( ``*`<TrajSet>`*`,`*`<ANY>`*`,`*`<missing>`*`,`*`<missing>`*`)`](https://johnkirwan.github.io/radiatR/reference/TrajSet-class.md)
   [`c(`*`<TrajSet>`*`)`](https://johnkirwan.github.io/radiatR/reference/TrajSet-class.md)
   : TrajSet container for circular trajectories
-- [`calibrate_positions()`](https://johnkirwan.github.io/radiatR/reference/calibrate_positions.md)
-  : Calibrate TrajSet positions using a camera model
 - [`transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`log_transform()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`set_transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
@@ -234,23 +232,6 @@ Zone dwell-time, quadrant lines, and goal-entry counting.
 - [`count_goal_entries()`](https://johnkirwan.github.io/radiatR/reference/count_goal_entries.md)
   : Count entries into a goal zone for circular arena trajectories
 
-## Calibration
-
-Import camera intrinsics and distortion coefficients from MATLAB,
-OpenCV, or a plain CSV, then apply them to undistort pixel tracks.
-radiatR does not estimate calibrations itself.
-
-- [`read_calibration()`](https://johnkirwan.github.io/radiatR/reference/read_calibration.md)
-  : Import a camera calibration from an external toolbox
-- [`cal_model()`](https://johnkirwan.github.io/radiatR/reference/cal_model.md)
-  : Build a camera calibration model from intrinsic coefficients
-- [`cam_cal_pt()`](https://johnkirwan.github.io/radiatR/reference/cam_cal_pt.md)
-  : Calibrate the camera on the given xy coordinate
-- [`cam_cal_many()`](https://johnkirwan.github.io/radiatR/reference/cam_cal_many.md)
-  : Calibrate the camera on the given set of points
-- [`CalModel-class`](https://johnkirwan.github.io/radiatR/reference/CalModel-class.md)
-  : Camera calibration model for trajectory correction
-
 ## Coordinate utilities
 
 Angle-convention conversions and geometric helpers.
@@ -278,8 +259,6 @@ orientation experiment (Kirwan & Nilsson 2019).
 
 Any remaining exported topics.
 
-- [`CalModel-class`](https://johnkirwan.github.io/radiatR/reference/CalModel-class.md)
-  : Camera calibration model for trajectory correction
 - [`TrajSet()`](https://johnkirwan.github.io/radiatR/reference/TrajSet-class.md)
   [`length(`*`<TrajSet>`*`)`](https://johnkirwan.github.io/radiatR/reference/TrajSet-class.md)
   [`` `[`( ``*`<TrajSet>`*`,`*`<ANY>`*`,`*`<missing>`*`,`*`<missing>`*`)`](https://johnkirwan.github.io/radiatR/reference/TrajSet-class.md)
@@ -343,14 +322,6 @@ Any remaining exported topics.
   : Assign cycling colour indices to trajectories
 - [`bin_angles()`](https://johnkirwan.github.io/radiatR/reference/bin_angles.md)
   : Snap angles to fixed-width circular bin centres
-- [`cal_model()`](https://johnkirwan.github.io/radiatR/reference/cal_model.md)
-  : Build a camera calibration model from intrinsic coefficients
-- [`calibrate_positions()`](https://johnkirwan.github.io/radiatR/reference/calibrate_positions.md)
-  : Calibrate TrajSet positions using a camera model
-- [`cam_cal_many()`](https://johnkirwan.github.io/radiatR/reference/cam_cal_many.md)
-  : Calibrate the camera on the given set of points
-- [`cam_cal_pt()`](https://johnkirwan.github.io/radiatR/reference/cam_cal_pt.md)
-  : Calibrate the camera on the given xy coordinate
 - [`circ_cor()`](https://johnkirwan.github.io/radiatR/reference/circ_cor.md)
   : Circular correlation between headings and a covariate
 - [`circ_dispersion()`](https://johnkirwan.github.io/radiatR/reference/circ_dispersion.md)
@@ -434,14 +405,10 @@ Any remaining exported topics.
   : Derive per-frame headings from pose data without a TrajSet
 - [`rad_shepherd()`](https://johnkirwan.github.io/radiatR/reference/rad_shepherd.md)
   : Wrap angles to the interval (-pi, pi\]
-- [`radial_distort()`](https://johnkirwan.github.io/radiatR/reference/radial_distort.md)
-  : Remove radial/tangential distortion from a point on the image plane.
 - [`radial_theme()`](https://johnkirwan.github.io/radiatR/reference/radial_theme.md)
   : Themes for radial track plots, named for the ggplot2 base themes.
 - [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   : Make ggplot object of tracks radiating from circle centre.
-- [`read_calibration()`](https://johnkirwan.github.io/radiatR/reference/read_calibration.md)
-  : Import a camera calibration from an external toolbox
 - [`register_heading_rule()`](https://johnkirwan.github.io/radiatR/reference/register_heading_rule.md)
   : Register a custom heading derivation rule
 - [`register_loader_dialect()`](https://johnkirwan.github.io/radiatR/reference/register_loader_dialect.md)

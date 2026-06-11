@@ -22,7 +22,6 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-vignettes"><li><a class="dropdown-item" href="articles/radiatR.html">Main workflow</a></li>
     <li><a class="dropdown-item" href="articles/loaders.html">Loaders</a></li>
     <li><a class="dropdown-item" href="articles/circular-statistics.html">Circular statistics &amp; distribution overlays</a></li>
-    <li><a class="dropdown-item" href="articles/camera-calibration.html">Camera calibration</a></li>
     <li><a class="dropdown-item" href="articles/simulate.html">Simulating trajectories</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -46,7 +45,7 @@
 <p>This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.</p>
 <div class="section level2">
 <h2 id="what-this-is">What this is<a class="anchor" aria-label="anchor" href="#what-this-is"></a></h2>
-<p><code>radiatR</code> is an R package for plotting and analyzing animal movement trajectories in circular/radial arenas. It handles the full pipeline: camera calibration → data import → coordinate transformation → circular statistics → visualization.</p>
+<p><code>radiatR</code> is an R package for plotting and analyzing animal movement trajectories in circular/radial arenas. It handles the full pipeline: data import → coordinate transformation → circular statistics → visualization.</p>
 </div>
 <div class="section level2">
 <h2 id="development-commands">Development commands<a class="anchor" aria-label="anchor" href="#development-commands"></a></h2>
@@ -78,9 +77,8 @@
 </div>
 <div class="section level3">
 <h3 id="pipeline-stages">Pipeline stages<a class="anchor" aria-label="anchor" href="#pipeline-stages"></a></h3>
-<ol style="list-style-type: decimal"><li><p><strong>Calibration</strong> (<code>R/calibration.R</code>, <code>R/calibration_capture.R</code>) — maps pixel coordinates to real-world positions via a <code>CalModel</code> S4 object. <code>cam_cal_pt</code> / <code>cam_cal_many</code> build models; <code>calibrate_positions</code> (a <code>TrajSet</code> method) applies them.</p></li>
-<li><p><strong>Import</strong> (<code>R/loaders.R</code>) — the largest module. Reads manifest files that describe where track data lives, then dispatches to format-specific readers (<code>TrajSet_read_*</code>). The loader format registry (<code>register_loader_*</code>) lets callers add new file formats without modifying core code.</p></li>
-<li><p><strong>Coordinate transformation</strong> (<code>R/circular_trials.R</code>, <code>R/circular_mapping.R</code>) — converts Cartesian pixel coordinates to unit-circle angles. <code>circular_trials.R</code> extracts per-trial segments and normalises them to a unit arena; <code>circular_mapping.R</code> handles pixel→angle arithmetic.</p></li>
+<ol style="list-style-type: decimal"><li><p><strong>Import</strong> (<code>R/loaders.R</code>) — the largest module. Reads manifest files that describe where track data lives, then dispatches to format-specific readers (<code>TrajSet_read_*</code>). The loader format registry (<code>register_loader_*</code>) lets callers add new file formats without modifying core code.</p></li>
+<li><p><strong>Coordinate transformation</strong> (<code>R/circular_trials.R</code>, <code>R/circular_mapping.R</code>) — converts Cartesian pixel coordinates to unit-circle angles. <code>circular_trials.R</code> extracts per-trial segments and normalises them to a unit arena; <code>circular_mapping.R</code> handles pixel→angle arithmetic. (radiatR analyses normalised, unit-arena tracks; correcting lens distortion or scaling to metric units is left to the upstream tracking pipeline.)</p></li>
 <li><p><strong>Heading computation</strong> (<code>R/headings.R</code>) — derives directional headings from position sequences. Uses a rule registry pattern (analogous to the loader registry) so custom heading rules can be registered and applied by name.</p></li>
 <li><p><strong>Statistics</strong> (<code>R/circular_statistics.R</code>) — thin wrapper around the <code>circular</code> package. <code>circ_summary</code> is the main entry point.</p></li>
 <li><p><strong>Visualisation</strong> (<code>R/circular_plotting.R</code>) — <code><a href="reference/radiate.html">radiate()</a></code> is the primary plot function; returns a <code>ggplot2</code> object. Helper functions (<code>add_ticks</code>, <code>add_circ</code>, <code>degree_labs</code>, etc.) return ggplot2 layers and are designed to be added with <code>+</code>.</p></li>
