@@ -153,34 +153,6 @@ num_or <- function(v, default) {
   if (is.null(v) || length(v) != 1L || is.na(v) || !is.finite(v)) default else v
 }
 
-# Short human-readable labels for each heading method, keyed by the selectInput
-# value. Mirrors the dropdown choice names; used to name the chosen method in the
-# Results tab.
-method_labels <- c(
-  none            = "None (no headings)",
-  distal          = "Direction at furthest point",
-  net             = "Net displacement direction",
-  crossing        = "Exit direction (ring crossing)",
-  straight        = "Longest straight segment",
-  window_net      = "Smoothed (windowed) net direction",
-  origin_mean     = "Mean direction from centre",
-  velocity_mean   = "Mean velocity direction",
-  maxspeed_window = "Direction at peak speed",
-  vm_fit          = "Von Mises fit of step directions",
-  pca_axis        = "Principal axis (PCA)",
-  ransac_straight = "Robust straight-line fit (RANSAC)",
-  goal_bias       = "Goal-biased direction"
-)
-
-# Plot subtitle naming the heading method actually used (from rv$method, set at
-# derive time), so the Results tab and downloads always say which method drove it.
-method_subtitle <- function(method) {
-  if (is.null(method)) return(NULL)
-  lab <- method_labels[[method]]
-  if (is.null(lab)) lab <- method
-  paste0("Heading method: ", lab)
-}
-
 # Per-rule one-line descriptions for the Configure-step help line, keyed by the
 # selectInput value. "none" is an app-level sentinel (skip headings), not a
 # derive_headings() rule.
@@ -829,10 +801,8 @@ server <- function(input, output, session) {
         circ0 = input$circ0, circ1 = input$circ1,
         plot_theme = input$plot_theme, angle_labels = input$angle_labels,
         heading_display = input$heading_display,
-        # Resolved annotations: the method subtitle always; the path-metrics
-        # caption only in none mode (no headings). spec_to_plot/spec_to_code
-        # render and reproduce them.
-        subtitle = method_subtitle(rv$method),
+        # Path-metrics caption, none mode only (no headings). spec_to_plot and
+        # spec_to_code render and reproduce it.
         caption  = if (is.null(rv$hd)) straightness_caption(rv$ts, gc) else NULL,
         show_tracks = tog(input$show_tracks, TRUE),
         show_arrow  = tog(input$show_arrow,  TRUE),
@@ -845,8 +815,8 @@ server <- function(input, output, session) {
   }
 
   # The Results figure -- tracks, every statistical overlay (CI, Rayleigh,
-  # V-test), and the subtitle/caption -- now comes entirely from the shared spec,
-  # so the code export reproduces exactly what is on screen.
+  # V-test), and the none-mode caption -- now comes entirely from the shared
+  # spec, so the code export reproduces exactly what is on screen.
   build_results_plot <- function() spec_to_plot(current_spec(), rv$ts, rv$hd)
 
   # Preview canvas height tracks the chosen export aspect ratio so the on-screen
