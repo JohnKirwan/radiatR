@@ -58,6 +58,15 @@
   emits -- the on-screen circle and the exported figure are produced identically.
   Previously the circle was drawn by an inline `geom_path` that the code export
   could not reproduce.
+* Fixed the mean-resultant arrow's orientation: it was drawn relative to
+  unit-circle 0 while the trajectories, heading points, and heading vectors
+  followed the clock convention. `compute_circ_mean()` now carries the input's
+  `display` attribute onto its output, so `add_circ_mean()` orients the arrow
+  the same way as the rest of the figure. The exported **R code** now tags the
+  headings frame (`attr(hd, "display") <- disp`) so the overlays orient
+  correctly there too, and the round-trip test compares layer coordinates (not
+  just geom types and row counts) so an orientation mismatch can no longer slip
+  through.
 
 ## Plotting
 
