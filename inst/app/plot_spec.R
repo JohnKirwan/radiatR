@@ -57,12 +57,14 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
     # reproduces it verbatim. NULL/"" means no label.
     subtitle = inputs$subtitle,
     caption  = inputs$caption,
-    show = list(tracks   = isTRUE(inputs$show_tracks),
-                arrow    = isTRUE(inputs$show_arrow),
-                vectors  = isTRUE(inputs$show_vectors),
-                rayleigh = isTRUE(inputs$show_rayleigh),
-                ci       = isTRUE(inputs$show_ci),
-                vtest    = isTRUE(inputs$show_vtest))
+    show = list(tracks    = isTRUE(inputs$show_tracks),
+                arrow     = isTRUE(inputs$show_arrow),
+                vectors   = isTRUE(inputs$show_vectors),
+                rayleigh  = isTRUE(inputs$show_rayleigh),
+                ci        = isTRUE(inputs$show_ci),
+                vtest     = isTRUE(inputs$show_vtest),
+                quadrants = isTRUE(inputs$show_quadrants),
+                rings     = isTRUE(inputs$show_rings))
   )
 }
 
@@ -87,6 +89,8 @@ spec_to_plot <- function(spec, ts, hd) {
     show_labels  = FALSE,
     theme        = spec$theme,
     angle_labels = spec$angle_labels,
+    quadrants    = isTRUE(spec$show$quadrants),
+    rings        = isTRUE(spec$show$rings),
     display      = disp
   )
   if (spec$colour$legend)
@@ -219,11 +223,15 @@ spec_to_code <- function(spec) {
 
   add("")
   pby <- if (is.null(spec$facet_by)) "" else paste0(", panel_by = ", q(spec$facet_by))
+  # Only emit quadrants/rings when on -- they default to FALSE in radiate(), so
+  # the common case keeps a clean call.
+  qr <- paste0(if (isTRUE(spec$show$quadrants)) ", quadrants = TRUE" else "",
+               if (isTRUE(spec$show$rings))     ", rings = TRUE"     else "")
   add("radiate(ts, group_col = ", q(spec$group_col),
       ", colour_col = \".colour\"", pby,
       ", legend = ", if (spec$colour$legend) "TRUE" else "FALSE",
       ", theme = ", q(spec$theme),
-      ", angle_labels = ", q(spec$angle_labels),
+      ", angle_labels = ", q(spec$angle_labels), qr,
       ", show_labels = FALSE, show_arrow = FALSE, display = disp)")
 
   tail <- character(0)

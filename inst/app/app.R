@@ -839,7 +839,9 @@ server <- function(input, output, session) {
         show_vectors = tog(input$show_vectors, FALSE),
         show_rayleigh = tog(input$show_rayleigh, FALSE),
         show_ci    = tog(input$show_ci,    FALSE),
-        show_vtest = tog(input$show_vtest, FALSE)))
+        show_vtest = tog(input$show_vtest, FALSE),
+        show_quadrants = tog(input$show_quadrants, FALSE),
+        show_rings     = tog(input$show_rings,     FALSE)))
   }
 
   # The Results figure -- tracks, every statistical overlay (CI, Rayleigh,
