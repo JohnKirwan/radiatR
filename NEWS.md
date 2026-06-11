@@ -15,6 +15,9 @@
 
 ## Shiny app
 
+* The Results figure no longer prints a "Heading method: …" subtitle above the
+  plot. (The plot spec can still carry a subtitle; the app just no longer sets
+  one.)
 * Restored the **Quadrant lines** and **Guide rings** toggles, which had become
   inert when the Results figure moved to the shared plot spec: the spec now
   carries them and passes `quadrants` / `rings` to `radiate()`, and the **R
