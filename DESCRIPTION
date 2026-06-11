@@ -1,7 +1,7 @@
 Package: radiatR
 Type: Package
 Title: Analysis and Visualisation of Circular Arena Tracking Data
-Version: 0.2.0
+Version: 0.2.0.9000
 Author: John D. Kirwan
 Maintainer: John D. Kirwan <john@jkirwan.org>
 Description: A complete pipeline for analysing animal orientation and

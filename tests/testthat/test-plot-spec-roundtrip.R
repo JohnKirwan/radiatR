@@ -24,7 +24,8 @@ source(.p, local = TRUE)
 
 roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
                            rayleigh = FALSE, ci = FALSE, vtest = FALSE,
-                           subtitle = NULL, caption = NULL) {
+                           subtitle = NULL, caption = NULL,
+                           quadrants = FALSE, rings = FALSE) {
   data(cpunctatus, package = "radiatR", envir = environment())
   ts <- cpunctatus
   hd <- derive_headings(ts, rule = "distal")
@@ -43,7 +44,8 @@ roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
     heading_display = heading_display,
     subtitle = subtitle, caption = caption,
     show = list(tracks = TRUE, arrow = arrow, vectors = vectors,
-                rayleigh = rayleigh, ci = ci, vtest = vtest))
+                rayleigh = rayleigh, ci = ci, vtest = vtest,
+                quadrants = quadrants, rings = rings))
   list(spec = spec, ts = ts, hd = hd)
 }
 
@@ -126,6 +128,20 @@ test_that("emitted code reproduces spec_to_plot (V-test line, faceted)", {
   expect_overlay_adds_layers("vtest", "type")
   expect_roundtrip(
     roundtrip_spec("points", "trajectory", "type", FALSE, FALSE, vtest = TRUE))
+})
+
+test_that("emitted code reproduces spec_to_plot (quadrant lines + guide rings)", {
+  expect_overlay_adds_layers("quadrants", NULL)
+  expect_overlay_adds_layers("rings", NULL)
+  expect_roundtrip(
+    roundtrip_spec("points", "trajectory", NULL, FALSE, FALSE,
+                   quadrants = TRUE, rings = TRUE))
+})
+
+test_that("emitted code reproduces spec_to_plot (quadrants + rings, faceted)", {
+  expect_roundtrip(
+    roundtrip_spec("points", "trajectory", "type", FALSE, FALSE,
+                   quadrants = TRUE, rings = TRUE))
 })
 
 test_that("emitted code reproduces spec_to_plot (crossing rule + heading vectors)", {

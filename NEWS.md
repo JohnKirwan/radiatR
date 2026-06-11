@@ -1,3 +1,13 @@
+# radiatR (development version)
+
+## Shiny app
+
+* Restored the **Quadrant lines** and **Guide rings** toggles, which had become
+  inert when the Results figure moved to the shared plot spec: the spec now
+  carries them and passes `quadrants` / `rings` to `radiate()`, and the **R
+  code** export emits them, so every plot control round-trips through the export
+  again.
+
 # radiatR 0.2.0
 
 A large feature release that broadens *radiatR* from a focused plotting toolkit
