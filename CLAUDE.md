@@ -56,6 +56,21 @@ devtools::install_local(".")
 - **New heading rules**: use `register_heading_rule` (see `R/headings.R`).
 - Both registries follow the same pattern: a named list stored in package env, dispatched at runtime.
 
+### Shiny app (`inst/app/`)
+
+The package is the single source of truth; the app is a thin presentation layer
+over it. Every figure the app draws must be produced by exported package
+functions, never by plotting logic that lives only in the app. The Results
+figure is resolved into a plain spec (`plot_spec.R::build_plot_spec`) that both
+renders to a ggplot (`spec_to_plot`, calling only exported functions) and emits
+the equivalent radiatR script (`spec_to_code`). This is what lets the app hand
+the user runnable ggplot2 code that reproduces exactly what is on screen. When
+adding an app feature, push the real work into an exported package function and
+keep the app code a light wrapper; if the app needs behaviour the package can't
+yet express, extend the package first. A round-trip test asserts the emitted
+code reproduces the rendered figure (comparing layer coordinates), so the two
+paths cannot silently diverge.
+
 ### Documentation
 
 All public API is documented with Roxygen2. `man/` is auto-generated — edit `@` tags in `R/` source, then run `devtools::document()`. Never edit `NAMESPACE` or `man/*.Rd` by hand.

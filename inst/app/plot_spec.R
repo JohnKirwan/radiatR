@@ -53,6 +53,10 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
     angle_labels = inputs$angle_labels %||% "degrees",
     display      = list(zero = 0),
     heading_display = inputs$heading_display %||% "points",
+    # Resolved annotation text (computed app-side); stored so the code export
+    # reproduces it verbatim. NULL/"" means no label.
+    subtitle = inputs$subtitle,
+    caption  = inputs$caption,
     show = list(tracks   = isTRUE(inputs$show_tracks),
                 arrow    = isTRUE(inputs$show_arrow),
                 vectors  = isTRUE(inputs$show_vectors),
@@ -87,6 +91,13 @@ spec_to_plot <- function(spec, ts, hd) {
   )
   if (spec$colour$legend)
     p <- p + ggplot2::labs(colour = by)
+
+  # Annotation labels (resolved app-side). Applied before the none-mode early
+  # return so the tracks-only figure carries them too.
+  lab_args <- list()
+  if (!is.null(spec$subtitle) && nzchar(spec$subtitle)) lab_args$subtitle <- spec$subtitle
+  if (!is.null(spec$caption)  && nzchar(spec$caption))  lab_args$caption  <- spec$caption
+  if (length(lab_args)) p <- p + do.call(ggplot2::labs, lab_args)
 
   if (identical(spec$headings$rule, "none") || is.null(hd))
     return(p)
@@ -149,7 +160,9 @@ spec_to_plot <- function(spec, ts, hd) {
 
 # Emit the radiatR script (a single string) that reproduces spec_to_plot(spec).
 spec_to_code <- function(spec) {
-  q   <- function(s) paste0('"', s, '"')
+  # encodeString escapes embedded quotes/backslashes so the emitted literal
+  # parses back to the original string (matters for free-text subtitle/caption).
+  q   <- function(s) encodeString(s, quote = '"')
   L   <- character(0)
   add <- function(...) L[[length(L) + 1L]] <<- paste0(...)
 
@@ -247,6 +260,13 @@ spec_to_code <- function(spec) {
       "add_critical_v_line(hd, mu0 = pi / 2, angle_col = \"heading\"", gpg,
       ", colour = ", q(SPEC_VTEST_COLOUR), ", linewidth = ", SPEC_VTEST_LWD, ")"))
   }
+  lab_parts <- character(0)
+  if (!is.null(spec$subtitle) && nzchar(spec$subtitle))
+    lab_parts <- c(lab_parts, paste0("subtitle = ", q(spec$subtitle)))
+  if (!is.null(spec$caption) && nzchar(spec$caption))
+    lab_parts <- c(lab_parts, paste0("caption = ", q(spec$caption)))
+  if (length(lab_parts))
+    tail <- c(tail, paste0("labs(", paste(lab_parts, collapse = ", "), ")"))
 
   if (length(tail)) {
     L[[length(L)]] <- paste0(L[[length(L)]], " +")
