@@ -2725,7 +2725,14 @@ add_wrappedcauchy_density <- function(fit, scale = 0.4, inner_r = 0,
 #'   faceted, draw one circle per group (\code{TRUE}) or a single conservative
 #'   circle (\code{FALSE}, default).  Ignored when faceting (always per panel).
 #' @param colour Circle colour.  Default \code{"firebrick"}.  When
-#'   \code{per_group = TRUE} this is overridden by the colour scale.
+#'   \code{per_group = TRUE} and \code{colour_by_group = TRUE} this is overridden
+#'   by the colour scale.
+#' @param colour_by_group Logical.  When \code{per_group = TRUE}, map each
+#'   circle's colour to its group (\code{TRUE}, default) or draw every circle in
+#'   the fixed \code{colour} while still attaching the group column so the
+#'   circles facet (\code{FALSE}).  Use \code{FALSE} to keep per-panel circles a
+#'   single colour without injecting the grouping levels into the parent plot's
+#'   colour scale.  Ignored unless \code{per_group = TRUE}.
 #' @param linetype Line type.  Default \code{"dashed"}.
 #' @param linewidth Line width.  Default \code{0.6}.
 #' @param n_pts Points used to approximate each circle.  Default \code{200L}.
@@ -2736,6 +2743,7 @@ add_critical_r <- function(hd, alpha = 0.05,
                             test = c("rayleigh", "vtest"),
                             angle_col = "heading", group_col = NULL,
                             per_group = FALSE, colour = "firebrick",
+                            colour_by_group = TRUE,
                             linetype = "dashed", linewidth = 0.6,
                             n_pts = 200L) {
   test <- match.arg(test)
@@ -2800,6 +2808,19 @@ add_critical_r <- function(hd, alpha = 0.05,
   parts <- parts[!vapply(parts, is.null, logical(1L))]
   if (!length(parts)) return(NULL)
   circ_df <- do.call(rbind, parts)
+
+  # When colour_by_group is FALSE the group column is retained (so the circles
+  # still facet alongside the parent plot) but colour is drawn as a fixed value
+  # rather than mapped -- this avoids injecting the grouping levels into the
+  # parent plot's colour scale (e.g. when the panels are already coloured by a
+  # different variable).
+  if (!colour_by_group)
+    return(ggplot2::geom_path(
+      data = circ_df,
+      mapping = ggplot2::aes(x = x, y = y, group = .cr_grp),
+      colour = colour, linetype = linetype, linewidth = linewidth,
+      inherit.aes = FALSE
+    ))
 
   ggplot2::geom_path(
     data = circ_df,

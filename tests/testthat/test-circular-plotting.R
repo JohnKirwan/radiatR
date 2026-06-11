@@ -1279,6 +1279,25 @@ test_that("add_critical_r per_group draws one circle per group", {
   expect_gt(radii[["A"]], radii[["C"]])
 })
 
+test_that("add_critical_r colour_by_group = FALSE keeps per-panel circles a fixed colour", {
+  hd <- data.frame(
+    grp     = rep(c("A", "B", "C"), times = c(15, 30, 50)),
+    heading = rnorm(95, 0, 0.5)
+  )
+  layer <- add_critical_r(hd, group_col = "grp", per_group = TRUE,
+                          colour_by_group = FALSE, colour = "firebrick")
+  # group column survives so the circles still facet alongside the parent plot
+  expect_true("grp" %in% names(layer$data))
+  expect_equal(length(unique(layer$data$grp)), 3L)
+  # but colour is NOT mapped (fixed), so it cannot collide with the parent scale
+  expect_false("colour" %in% names(layer$mapping))
+  expect_identical(layer$aes_params$colour, "firebrick")
+  # per-panel radii are still distinct (per-group n, not pooled)
+  radii <- tapply(sqrt(layer$data$x^2 + layer$data$y^2),
+                  layer$data$grp, function(v) v[1])
+  expect_gt(radii[["A"]], radii[["C"]])
+})
+
 test_that("add_critical_r higher alpha gives smaller circle", {
   hd <- data.frame(heading = rnorm(30, 0, 0.5))
   r05 <- sqrt(add_critical_r(hd, alpha = 0.05)$data$x[1]^2 +

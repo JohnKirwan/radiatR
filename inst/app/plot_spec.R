@@ -13,6 +13,8 @@ SPEC_STACK_START_SEP <- 0.05
 SPEC_MARKER_SIZE     <- 2.5
 SPEC_MARKER_ALPHA    <- 0.8
 SPEC_TRAJ_KEY        <- "__trajectory__"
+SPEC_CRIT_COLOUR     <- "firebrick"   # Rayleigh critical circle
+SPEC_CRIT_LWD        <- 0.7
 
 # Resolve the figure choices into a spec list.
 #   ts     : the loaded TrajSet.
@@ -48,9 +50,10 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
     angle_labels = inputs$angle_labels %||% "degrees",
     display      = list(zero = 0),
     heading_display = inputs$heading_display %||% "points",
-    show = list(tracks  = isTRUE(inputs$show_tracks),
-                arrow   = isTRUE(inputs$show_arrow),
-                vectors = isTRUE(inputs$show_vectors))
+    show = list(tracks   = isTRUE(inputs$show_tracks),
+                arrow    = isTRUE(inputs$show_arrow),
+                vectors  = isTRUE(inputs$show_vectors),
+                rayleigh = isTRUE(inputs$show_rayleigh))
   )
 }
 
@@ -113,6 +116,13 @@ spec_to_plot <- function(spec, ts, hd) {
   }
   if (spec$show$vectors && all(c("x_inner", "y_inner") %in% names(hd)))
     p <- p + add_heading_vectors(hd, colour_col = ".colour")
+
+  # Rayleigh critical circle (alpha = 0.05). Per-panel when faceted, drawn in a
+  # fixed colour so it never collides with the trajectory colour scale.
+  if (isTRUE(spec$show$rayleigh))
+    p <- p + add_critical_r(hd, test = "rayleigh", group_col = spec$facet_by,
+               per_group = !is.null(spec$facet_by), colour_by_group = FALSE,
+               colour = SPEC_CRIT_COLOUR, linewidth = SPEC_CRIT_LWD)
 
   p
 }
@@ -192,6 +202,14 @@ spec_to_code <- function(spec) {
     tail <- c(tail, "add_circ_mean(arrow_df, colour = \"black\")")
   if (has_hd && spec$show$vectors && identical(spec$headings$rule, "crossing"))
     tail <- c(tail, "add_heading_vectors(hd, colour_col = \".colour\")")
+  if (has_hd && isTRUE(spec$show$rayleigh)) {
+    gca <- if (is.null(spec$facet_by)) ", group_col = NULL, per_group = FALSE"
+           else paste0(", group_col = ", q(spec$facet_by), ", per_group = TRUE")
+    tail <- c(tail, paste0(
+      "add_critical_r(hd, test = \"rayleigh\"", gca,
+      ", colour_by_group = FALSE, colour = ", q(SPEC_CRIT_COLOUR),
+      ", linewidth = ", SPEC_CRIT_LWD, ")"))
+  }
 
   if (length(tail)) {
     L[[length(L)]] <- paste0(L[[length(L)]], " +")

@@ -12,6 +12,7 @@ add_critical_r(
   group_col = NULL,
   per_group = FALSE,
   colour = "firebrick",
+  colour_by_group = TRUE,
   linetype = "dashed",
   linewidth = 0.6,
   n_pts = 200L
@@ -33,7 +34,15 @@ faceted, draw one circle per group (\code{TRUE}) or a single conservative
 circle (\code{FALSE}, default).  Ignored when faceting (always per panel).}
 
 \item{colour}{Circle colour.  Default \code{"firebrick"}.  When
-\code{per_group = TRUE} this is overridden by the colour scale.}
+\code{per_group = TRUE} and \code{colour_by_group = TRUE} this is overridden
+by the colour scale.}
+
+\item{colour_by_group}{Logical.  When \code{per_group = TRUE}, map each
+circle's colour to its group (\code{TRUE}, default) or draw every circle in
+the fixed \code{colour} while still attaching the group column so the
+circles facet (\code{FALSE}).  Use \code{FALSE} to keep per-panel circles a
+single colour without injecting the grouping levels into the parent plot's
+colour scale.  Ignored unless \code{per_group = TRUE}.}
 
 \item{linetype}{Line type.  Default \code{"dashed"}.}
 
