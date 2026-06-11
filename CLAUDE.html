@@ -94,6 +94,10 @@
 <li>Both registries follow the same pattern: a named list stored in package env, dispatched at runtime.</li>
 </ul></div>
 <div class="section level3">
+<h3 id="shiny-app-instapp">Shiny app (<code>inst/app/</code>)<a class="anchor" aria-label="anchor" href="#shiny-app-instapp"></a></h3>
+<p>The package is the single source of truth; the app is a thin presentation layer over it. Every figure the app draws must be produced by exported package functions, never by plotting logic that lives only in the app. The Results figure is resolved into a plain spec (<code>plot_spec.R::build_plot_spec</code>) that both renders to a ggplot (<code>spec_to_plot</code>, calling only exported functions) and emits the equivalent radiatR script (<code>spec_to_code</code>). This is what lets the app hand the user runnable ggplot2 code that reproduces exactly what is on screen. When adding an app feature, push the real work into an exported package function and keep the app code a light wrapper; if the app needs behaviour the package can’t yet express, extend the package first. A round-trip test asserts the emitted code reproduces the rendered figure (comparing layer coordinates), so the two paths cannot silently diverge.</p>
+</div>
+<div class="section level3">
 <h3 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a></h3>
 <p>All public API is documented with Roxygen2. <code>man/</code> is auto-generated — edit <code>@</code> tags in <code>R/</code> source, then run <code>devtools::document()</code>. Never edit <code>NAMESPACE</code> or <code>man/*.Rd</code> by hand.</p>
 </div>

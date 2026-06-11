@@ -91,7 +91,14 @@
   [`add_critical_v_line()`](https://johnkirwan.github.io/radiatR/reference/add_critical_v_line.md)
   that the **R code** panel emits. Together with the Rayleigh circle,
   every statistical overlay on the Results figure is now reproduced by
-  the code export. (The method subtitle is still added by the app.)
+  the code export.
+- The figure’s subtitle (heading method) and caption (path-metrics
+  summary, in the no-headings mode) are now carried by the plot spec and
+  emitted by the code export as well, so the entire Results figure –
+  body, overlays, and annotations – is reproduced by the exported
+  script. The app is now a thin wrapper: it resolves the figure choices
+  into the spec and renders it; nothing is drawn by app-only plotting
+  code.
 - Fixed the mean-resultant arrow’s orientation: it was drawn relative to
   unit-circle 0 while the trajectories, heading points, and heading
   vectors followed the clock convention.
