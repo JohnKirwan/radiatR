@@ -76,8 +76,23 @@
 - The “Heading vectors” overlay now inherits each trajectory’s (or
   group’s) colour, matching the tracks and markers, instead of being
   drawn in one colour.
+- The Rayleigh critical circle is now part of the shared plot spec, so
+  it is drawn by the same exported
+  [`add_critical_r()`](https://johnkirwan.github.io/radiatR/reference/add_critical_r.md)
+  call that the **R code** panel emits – the on-screen circle and the
+  exported figure are produced identically. Previously the circle was
+  drawn by an inline `geom_path` that the code export could not
+  reproduce.
 
 ### Plotting
+
+- [`add_critical_r()`](https://johnkirwan.github.io/radiatR/reference/add_critical_r.md)
+  gains a `colour_by_group` argument (default `TRUE`). With
+  `per_group = TRUE` the per-panel circles are mapped to the group by
+  default; set `colour_by_group = FALSE` to draw them in a fixed
+  `colour` while still attaching the group column so the circles facet –
+  avoiding a clash with an existing colour scale (e.g. the trajectory
+  colours in the Shiny app).
 
 - [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   gains an `arrow_colour_col` argument: when set, the built-in mean
@@ -90,6 +105,7 @@
   already take `colour_col` for the same effect on the mean-direction
   arrow and its confidence interval; the circular-statistics vignette
   now shows this grouped-overlay pattern.
+
 - New exported
   [`cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/cycle_colours.md)
   – the order-stable primitive behind
@@ -102,6 +118,7 @@
   [`assign_cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.md)
   now delegates to it, and the Shiny app uses it too, so the
   colour-cycling logic has a single source of truth.
+
 - New exported
   [`assign_colour_key()`](https://johnkirwan.github.io/radiatR/reference/assign_colour_key.md)
   attaches a shared colour-key column to a TrajSet or data frame (cycled
@@ -109,6 +126,7 @@
   a low-cardinality grouping; `reference` keeps the key consistent
   across frames), so tracks and overlays colour identically. It replaces
   the Shiny app’s internal colour helpers.
+
 - [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   gains an `angle_labels` argument: `"degrees"` (default, e.g. `45°`),
   `"none"`, or `"radians"` (now rendered as π fractions, e.g. `π/4`,
@@ -116,16 +134,19 @@
   [`degree_labs()`](https://johnkirwan.github.io/radiatR/reference/degree_labs.md)
   gains a matching `units` argument. `degrees = FALSE` remains as a
   back-compatible alias for `angle_labels = "none"`.
+
 - **Breaking:** the quadrant lines (two dashed lines through the origin)
   are no longer drawn by default.
   [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   gains a `quadrants` argument (default `FALSE`) to opt back in.
+
 - [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   gains a `rings` argument (default `FALSE`) drawing concentric guide
   rings (the radial analogue of a grid). Both the quadrant lines and the
   guide rings take their colour and width from the chosen theme’s grid
   lines, so they match the theme (and fall back to a subtle grey for
   themes without a grid, e.g. `void` and `classic`).
+
 - **Breaking:** the
   [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   `style` argument (`"classic"`/`"minimal"`) is replaced by `theme`,
@@ -135,12 +156,14 @@
   background, grid, border). The exported `sparse_theme()` and
   `spartan_theme()` are removed in favour of the new
   `radial_theme(name)`.
+
 - Overlay elements (unit circle, ticks, degree labels) now adapt to the
   theme: they use light “ink” on the dark theme so they stay legible.
   [`add_ticks()`](https://johnkirwan.github.io/radiatR/reference/add_ticks.md)
   and
   [`degree_labs()`](https://johnkirwan.github.io/radiatR/reference/degree_labs.md)
   gain a `colour` argument.
+
 - [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   gains a `show_tracks` argument (default `TRUE`) to draw the arena and
   overlays without the trajectory paths, symmetric with `show_arrow` and

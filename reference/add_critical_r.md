@@ -19,6 +19,7 @@ add_critical_r(
   group_col = NULL,
   per_group = FALSE,
   colour = "firebrick",
+  colour_by_group = TRUE,
   linetype = "dashed",
   linewidth = 0.6,
   n_pts = 200L
@@ -55,8 +56,17 @@ add_critical_r(
 
 - colour:
 
-  Circle colour. Default `"firebrick"`. When `per_group = TRUE` this is
-  overridden by the colour scale.
+  Circle colour. Default `"firebrick"`. When `per_group = TRUE` and
+  `colour_by_group = TRUE` this is overridden by the colour scale.
+
+- colour_by_group:
+
+  Logical. When `per_group = TRUE`, map each circle's colour to its
+  group (`TRUE`, default) or draw every circle in the fixed `colour`
+  while still attaching the group column so the circles facet (`FALSE`).
+  Use `FALSE` to keep per-panel circles a single colour without
+  injecting the grouping levels into the parent plot's colour scale.
+  Ignored unless `per_group = TRUE`.
 
 - linetype:
 
