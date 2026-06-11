@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">radiatR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,24 +37,24 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/JohnKirwan/radiatR/blob/master/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/JohnKirwan/radiatR/blob/v0.2.1/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="radiatr-development-version">radiatR (development version)<a class="anchor" aria-label="anchor" href="#radiatr-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.2.1" id="radiatr-021">radiatR 0.2.1<a class="anchor" aria-label="anchor" href="#radiatr-021"></a></h2>
 <div class="section level3">
-<h3 id="coordinate-handling-development-version">Coordinate handling<a class="anchor" aria-label="anchor" href="#coordinate-handling-development-version"></a></h3>
+<h3 id="coordinate-handling-0-2-1">Coordinate handling<a class="anchor" aria-label="anchor" href="#coordinate-handling-0-2-1"></a></h3>
 <ul><li>
 <strong>Fix:</strong> <code>normalize_xy = TRUE</code> (the <code><a href="../reference/TrajSet-class.html">TrajSet()</a></code> and <code><a href="../reference/TrajSet_read.html">TrajSet_read()</a></code> default) now arena-scales each trajectory instead of collapsing every point onto the unit circle. Previously it replaced each point with its unit vector (radius → 1), destroying trajectory shape: radius- and displacement-based heading rules (<code>net</code>, <code>distal</code>, <code>crossing</code>, <code>exit</code>, <code>origin_mean</code>, <code>straight</code>, …) returned wrong or <code>NA</code> headings, and uploaded data in the Shiny app was affected. Each trajectory is now centred on its bounding-box midpoint and scaled so its furthest point sits at radius 1, preserving shape and placing the arena centre at the origin (what the radius-based rules expect). Raw coordinates are still kept in <code>&lt;x&gt;_raw</code>/<code>&lt;y&gt;_raw</code>, and <code>rho</code> now holds the relative radius rather than a constant 1. Landmark-based mapping, when available, remains the accurate path; this only improves the no-landmark fallback. Stored <code>x</code>/<code>y</code>/<code>rho</code> values change for <code>normalize_xy = TRUE</code>; pass <code>normalize_xy = FALSE</code> to keep raw coordinates.</li>
 <li>Landmark-mapped tracks are never rescaled (they are built <code>normalize_xy = FALSE</code>), preserving legitimate excursions past the arena boundary. Track points that fall outside the boundary (radius &gt; 1) are now reported once per dataset – “N points across M trials exceeded the arena boundary (radius &gt; 1)” – instead of a separate warning per trial.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="camera-calibration-development-version">Camera calibration<a class="anchor" aria-label="anchor" href="#camera-calibration-development-version"></a></h3>
+<h3 id="camera-calibration-0-2-1">Camera calibration<a class="anchor" aria-label="anchor" href="#camera-calibration-0-2-1"></a></h3>
 <ul><li>
 <strong>Breaking:</strong> removed the camera-calibration layer entirely (<code>read_calibration()</code>, <code>cal_model()</code>, <code>cam_cal_pt()</code>, <code>cam_cal_many()</code>, <code>calibrate_positions()</code>, and the <code>CalModel</code> class), along with its vignette. radiatR normalises each trajectory to a unit arena, so its outputs (headings, mean direction, resultant length, circular statistics) are scale-invariant and never needed metric calibration; lens-distortion correction and scaling to real-world units are better handled in the upstream tracking pipeline (the tracker’s own calibration, or OpenCV <code>undistort</code>) before import. This completes the narrowing begun in 0.2.0, which removed the calibration <em>estimator</em>. The <code>R.matlab</code>, <code>yaml</code>, and <code>jsonlite</code> suggested dependencies remain — they are still used by the loaders.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="shiny-app-development-version">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-development-version"></a></h3>
+<h3 id="shiny-app-0-2-1">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-0-2-1"></a></h3>
 <ul><li>The upload screen now loads faster: <code>ggplot2</code> and <code>radiatR</code> (and, through <code>radiatR</code>, <code>circular</code>/<code>boot</code>/<code>mvtnorm</code>) are attached lazily the first time the user loads data, rather than at app startup. Under the WebAssembly (shinylive) build, attaching those packages is the bulk of the in-browser R boot, so the initial upload screen now paints on <code>shiny</code> + <code>bslib</code> alone and the heavier load happens when a file or the example is chosen.</li>
 <li>The Results figure no longer prints a “Heading method: …” subtitle above the plot. (The plot spec can still carry a subtitle; the app just no longer sets one.)</li>
 <li>Restored the <strong>Quadrant lines</strong> and <strong>Guide rings</strong> toggles, which had become inert when the Results figure moved to the shared plot spec: the spec now carries them and passes <code>quadrants</code> / <code>rings</code> to <code><a href="../reference/radiate.html">radiate()</a></code>, and the <strong>R code</strong> export emits them, so every plot control round-trips through the export again.</li>

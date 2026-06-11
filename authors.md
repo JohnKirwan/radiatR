@@ -7,16 +7,16 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/JohnKirwan/radiatR/blob/master/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/JohnKirwan/radiatR/blob/v0.2.1/DESCRIPTION)
 
 Kirwan JD (2026). *radiatR: Analysis and Visualisation of Circular Arena
-Tracking Data*. R package version 0.2.0.9000,
+Tracking Data*. R package version 0.2.1,
 <https://johnkirwan.github.io/radiatR>.
 
     @Manual{,
       title = {radiatR: Analysis and Visualisation of Circular Arena Tracking Data},
       author = {John D. Kirwan},
       year = {2026},
-      note = {R package version 0.2.0.9000},
+      note = {R package version 0.2.1},
       url = {https://johnkirwan.github.io/radiatR},
     }
