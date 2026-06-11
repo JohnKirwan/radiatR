@@ -1,4 +1,4 @@
-# radiatR (development version)
+# radiatR 0.2.1
 
 ## Coordinate handling
 
