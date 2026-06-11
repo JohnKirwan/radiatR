@@ -1113,6 +1113,9 @@ compute_circ_mean <- function(headings_df,
   out <- do.call(rbind, out_list)
   if (use_colour && is.factor(headings_df[[colour_col]]))
     out[[colour_col]] <- factor(out[[colour_col]], levels = levels(headings_df[[colour_col]]))
+  # Carry the input's display convention forward so add_circ_mean() orients the
+  # arrow the same way as the rest of the figure (rbind drops attributes).
+  attr(out, "display") <- attr(headings_df, "display", exact = TRUE)
   out
 }
 

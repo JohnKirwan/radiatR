@@ -3,12 +3,22 @@ if (!nzchar(.p) || !file.exists(.p))
   .p <- testthat::test_path("..", "..", "inst", "app", "plot_spec.R")
 source(.p, local = TRUE)
 
-# structural fingerprint of a built ggplot: per-layer geom class + row count
+# fingerprint of a built ggplot: per-layer geom class + the rounded position
+# columns of the built data. Comparing coordinates (not just geom + row count)
+# means a layer drawn at the wrong orientation -- e.g. an overlay that fell back
+# to the default display convention -- is caught.
 .fingerprint <- function(p) {
   b <- ggplot2::ggplot_build(p)
-  data.frame(
-    geom = vapply(p$layers, function(l) class(l$geom)[1], character(1)),
-    rows = vapply(b$data, nrow, integer(1))
+  pos <- c("x", "y", "xend", "yend")
+  coords <- lapply(b$data, function(d) {
+    cols <- intersect(pos, names(d))
+    m <- as.matrix(d[, cols, drop = FALSE])
+    round(m[order(m[, 1], m[, 2]), , drop = FALSE], 6)
+  })
+  list(
+    geom   = vapply(p$layers, function(l) class(l$geom)[1], character(1)),
+    rows   = vapply(b$data, nrow, integer(1)),
+    coords = coords
   )
 }
 

@@ -947,6 +947,17 @@ test_that("compute_circ_mean preserves factor levels on colour_col", {
   expect_equal(levels(result$grp), c("A", "B", "C"))
 })
 
+test_that("compute_circ_mean carries the input's display attribute onto its output", {
+  # add_circ_mean() orients the arrow from attr(summary_df, "display"); if
+  # compute_circ_mean() dropped the input display, the arrow would fall back to
+  # the default orientation and disagree with the rest of the figure.
+  disp <- circ_display(zero = 0)
+  hd <- data.frame(heading = c(0, 0, 0, 0))
+  attr(hd, "display") <- disp
+  result <- compute_circ_mean(hd)
+  expect_equal(attr(result, "display", exact = TRUE), disp)
+})
+
 # ---- add_circ_mean -----------------------------------------------------------
 
 test_that("add_circ_mean: default display points UC North to top", {
