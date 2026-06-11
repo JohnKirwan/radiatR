@@ -2,8 +2,9 @@ Package: radiatR
 Type: Package
 Title: Analysis and Visualisation of Circular Arena Tracking Data
 Version: 0.2.1
-Author: John D. Kirwan
-Maintainer: John D. Kirwan <john@jkirwan.org>
+Authors@R:
+    person("John D.", "Kirwan", email = "john@jkirwan.org",
+           role = c("aut", "cre"))
 Description: A complete pipeline for analysing animal orientation and
     movement in circular arenas. Reads data from 20+ tracking tools
     (EthoVision, DeepLabCut, SLEAP, TRex, ANY-maze, TrackMate, idtracker.ai,

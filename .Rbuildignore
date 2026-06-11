@@ -1,5 +1,7 @@
 ^renv$
 ^renv\.lock$
+^\.Rprofile$
+^dev$
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
