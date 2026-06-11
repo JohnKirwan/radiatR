@@ -76,11 +76,11 @@ test_that("transform history propagates from mapping pipeline", {
   expect_true(all(c("origin", "reference", "map", "inverse") %in% names(history$params[[1]])))
 
   ts <- res
-  extra <- log_transform(ts, step = "calibration",
+  extra <- log_transform(ts, step = "rescale",
                          traj_ids = history$id,
-                         implementation = "calibrate_positions",
-                         params = list(list(model = "identity")))
+                         implementation = "rescale_positions",
+                         params = list(list(factor = 1)))
   logged <- transform_history(extra)
-  expect_true(any(logged$step == "calibration"))
+  expect_true(any(logged$step == "rescale"))
   expect_equal(max(logged$order), 2)
 })
