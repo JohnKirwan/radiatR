@@ -4,8 +4,18 @@
 
 library(shiny)
 library(bslib)
-library(ggplot2)
-library(radiatR)
+
+# The analysis/plot packages are attached lazily (see ensure_pkgs()), not here,
+# so the upload screen paints on shiny + bslib alone. ggplot2 and radiatR (the
+# latter pulling in circular -> boot, mvtnorm) attach the first time the user
+# loads data -- which, under shinylive, is the bulk of the in-browser R boot. The
+# library() calls below stay in the source so shinylive still bundles them into
+# the WASM image; they only run when ensure_pkgs() is first called.
+ensure_pkgs <- function() {
+  if (!"radiatR" %in% .packages()) library(radiatR)
+  if (!"ggplot2" %in% .packages()) library(ggplot2)
+  invisible()
+}
 
 # Configure-step preview helpers (demo_tracks(), build_method_preview()).
 source("preview.R", local = FALSE)
@@ -356,6 +366,7 @@ server <- function(input, output, session) {
     } else {
       rv$dialect
     }
+    ensure_pkgs()   # first point that needs radiatR/ggplot2 for a file upload
     ts <- tryCatch(
       suppressMessages(suppressWarnings(load_ts(rv$path, d))),
       error = function(e) {
@@ -453,6 +464,7 @@ server <- function(input, output, session) {
 
   # ---- example dataset -------------------------------------------------------
   observeEvent(input$load_example, {
+    ensure_pkgs()   # materialising the cpunctatus TrajSet needs radiatR's S4 class
     ts <- tryCatch(
       example_ts(),
       error = function(e) NULL

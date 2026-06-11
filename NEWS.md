@@ -36,6 +36,12 @@
 
 ## Shiny app
 
+* The upload screen now loads faster: `ggplot2` and `radiatR` (and, through
+  `radiatR`, `circular`/`boot`/`mvtnorm`) are attached lazily the first time the
+  user loads data, rather than at app startup. Under the WebAssembly (shinylive)
+  build, attaching those packages is the bulk of the in-browser R boot, so the
+  initial upload screen now paints on `shiny` + `bslib` alone and the heavier
+  load happens when a file or the example is chosen.
 * The Results figure no longer prints a "Heading method: …" subtitle above the
   plot. (The plot spec can still carry a subtitle; the app just no longer sets
   one.)
