@@ -10,7 +10,6 @@ library(radiatR)
 # Configure-step preview helpers (demo_tracks(), build_method_preview()).
 source("preview.R", local = FALSE)
 source("preview_constructions.R", local = FALSE)
-source("results_overlays.R", local = FALSE)
 source("download_helpers.R", local = FALSE)
 source("plot_spec.R", local = FALSE)
 
