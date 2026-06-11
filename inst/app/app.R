@@ -828,7 +828,8 @@ server <- function(input, output, session) {
       heading_display = input$heading_display,
       show_tracks = tog(input$show_tracks, TRUE),
       show_arrow  = tog(input$show_arrow,  TRUE),
-      show_vectors = tog(input$show_vectors, FALSE)))
+      show_vectors = tog(input$show_vectors, FALSE),
+      show_rayleigh = tog(input$show_rayleigh, FALSE)))
 
   # Build the results plot. The core figure comes from the shared spec
   # (spec_to_plot); the statistical decision-boundary overlays (CI, Rayleigh,
@@ -856,41 +857,8 @@ server <- function(input, output, session) {
       )
     }
 
-    # Rayleigh critical circle at alpha = 0.05 (asymptotic approximation
-    # R_crit = sqrt(-log(alpha)/n)). Computed per group when faceted.
-    if (tog(input$show_rayleigh, FALSE)) {
-      alpha    <- 0.05
-      theta_sq <- seq(0, 2 * pi, length.out = 200L)
-      if (is.null(gc)) {
-        n      <- sum(is.finite(rv$hd$heading))
-        r_crit <- sqrt(-log(alpha) / n)
-        ray_df <- data.frame(.x = r_crit * cos(theta_sq),
-                             .y = r_crit * sin(theta_sq))
-      } else {
-        grps  <- if (is.factor(rv$hd[[gc]])) levels(rv$hd[[gc]])
-                 else unique(rv$hd[[gc]])
-        parts <- lapply(grps, function(g) {
-          n <- sum(is.finite(rv$hd$heading[rv$hd[[gc]] == g]))
-          if (n < 2L) return(NULL)
-          r_crit <- sqrt(-log(alpha) / n)
-          d <- data.frame(.x = r_crit * cos(theta_sq),
-                          .y = r_crit * sin(theta_sq))
-          d[[gc]] <- if (is.factor(rv$hd[[gc]]))
-            factor(g, levels = levels(rv$hd[[gc]])) else g
-          d
-        })
-        ray_df <- do.call(rbind, Filter(Negate(is.null), parts))
-      }
-      if (!is.null(ray_df) && nrow(ray_df) > 0L)
-        p <- p + ggplot2::geom_path(
-          data        = ray_df,
-          mapping     = ggplot2::aes(x = .data$.x, y = .data$.y),
-          colour      = "firebrick",
-          linewidth   = 0.7,
-          linetype    = "dashed",
-          inherit.aes = FALSE
-        )
-    }
+    # Rayleigh critical circle (alpha = 0.05) is part of the shared spec, so it
+    # is drawn by spec_to_plot() above (and reproduced by the code export).
 
     # V-test decision boundary against mu0 = pi/2 (display top). One boundary per
     # panel when faceting; a single pooled boundary otherwise.

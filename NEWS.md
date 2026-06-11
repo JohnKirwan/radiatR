@@ -53,8 +53,19 @@
   20 colours with no legend.
 * The "Heading vectors" overlay now inherits each trajectory's (or group's)
   colour, matching the tracks and markers, instead of being drawn in one colour.
+* The Rayleigh critical circle is now part of the shared plot spec, so it is
+  drawn by the same exported `add_critical_r()` call that the **R code** panel
+  emits -- the on-screen circle and the exported figure are produced identically.
+  Previously the circle was drawn by an inline `geom_path` that the code export
+  could not reproduce.
 
 ## Plotting
+
+* `add_critical_r()` gains a `colour_by_group` argument (default `TRUE`). With
+  `per_group = TRUE` the per-panel circles are mapped to the group by default;
+  set `colour_by_group = FALSE` to draw them in a fixed `colour` while still
+  attaching the group column so the circles facet -- avoiding a clash with an
+  existing colour scale (e.g. the trajectory colours in the Shiny app).
 
 * `radiate()` gains an `arrow_colour_col` argument: when set, the built-in mean
   resultant arrow is drawn once per level of that column (within each panel, if

@@ -12,7 +12,8 @@ source(.p, local = TRUE)
   )
 }
 
-roundtrip_spec <- function(heading_display, by, facet, arrow, vectors) {
+roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
+                           rayleigh = FALSE) {
   data(cpunctatus, package = "radiatR", envir = environment())
   ts <- cpunctatus
   hd <- derive_headings(ts, rule = "distal")
@@ -29,7 +30,8 @@ roundtrip_spec <- function(heading_display, by, facet, arrow, vectors) {
                            length(unique(as.data.frame(ts)[[by]])) <= 20),
     theme = "bw", angle_labels = "degrees", display = list(zero = 0),
     heading_display = heading_display,
-    show = list(tracks = TRUE, arrow = arrow, vectors = vectors))
+    show = list(tracks = TRUE, arrow = arrow, vectors = vectors,
+                rayleigh = rayleigh))
   list(spec = spec, ts = ts, hd = hd)
 }
 
@@ -43,6 +45,24 @@ test_that("emitted code reproduces spec_to_plot (stacked, trajectory, faceted, a
 
 test_that("emitted code reproduces spec_to_plot (points, distinct colour, no facet)", {
   rt <- roundtrip_spec("points", "type", NULL, FALSE, FALSE)
+  live  <- spec_to_plot(rt$spec, rt$ts, rt$hd)
+  env   <- new.env(parent = globalenv())
+  evald <- eval(parse(text = spec_to_code(rt$spec)), envir = env)
+  expect_equal(.fingerprint(evald), .fingerprint(live))
+})
+
+test_that("emitted code reproduces spec_to_plot (Rayleigh circle, faceted)", {
+  rt <- roundtrip_spec("points", "trajectory", "type", FALSE, FALSE,
+                       rayleigh = TRUE)
+  live  <- spec_to_plot(rt$spec, rt$ts, rt$hd)
+  env   <- new.env(parent = globalenv())
+  evald <- eval(parse(text = spec_to_code(rt$spec)), envir = env)
+  expect_equal(.fingerprint(evald), .fingerprint(live))
+})
+
+test_that("emitted code reproduces spec_to_plot (Rayleigh circle, no facet)", {
+  rt <- roundtrip_spec("points", "trajectory", NULL, FALSE, FALSE,
+                       rayleigh = TRUE)
   live  <- spec_to_plot(rt$spec, rt$ts, rt$hd)
   env   <- new.env(parent = globalenv())
   evald <- eval(parse(text = spec_to_code(rt$spec)), envir = env)
