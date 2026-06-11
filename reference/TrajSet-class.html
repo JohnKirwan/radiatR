@@ -111,7 +111,13 @@ together or not at all.</p></dd>
 
 
 <dt id="arg-normalize-xy">normalize_xy<a class="anchor" aria-label="anchor" href="#arg-normalize-xy"></a></dt>
-<dd><p>If TRUE, (x,y) are normalized to unit vectors (zero-length -&gt; NA)</p></dd>
+<dd><p>If TRUE (default), (x,y) are arena-scaled per trajectory:
+each trajectory is centred on its bounding-box midpoint and scaled so its
+furthest point sits at radius 1. This preserves trajectory shape and places
+the arena centre at the origin (what the radius-based heading rules expect).
+Raw coordinates are retained in `&lt;x&gt;_raw`/`&lt;y&gt;_raw`. If FALSE, (x,y) are kept
+as supplied. (Landmark-based mapping, when available, is more accurate; this
+is the no-landmark fallback.)</p></dd>
 
 
 <dt id="arg-meta">meta<a class="anchor" aria-label="anchor" href="#arg-meta"></a></dt>

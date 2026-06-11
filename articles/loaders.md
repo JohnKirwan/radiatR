@@ -126,6 +126,112 @@ coordinates.
 ``` r
 
 ts <- suppressWarnings(get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir))
+#> 1 point across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 11 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 1 point across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 5 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 5 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 1 point across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 9 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 10 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 9 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 8 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 5 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 1 point across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 8 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 8 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 5 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 8 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 7 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 23 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 11 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 8 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 7 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 1 point across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 10 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 1 point across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 1 point across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 7 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 11 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 19 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 9 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 9 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
 ts
 #> TrajSet: 235 trajectories, 44331 observations
 #> Columns: id='trial_id', time='frame', angle='rel_theta' (radians), x='trans_x', y='trans_y', rel_x='rel_x', rel_y='rel_y'
@@ -248,20 +354,20 @@ ts_dlc <- TrajSet_read(dlc_path, dialect = "deeplabcut_multiheader")
 ts_dlc
 #> TrajSet: 1 trajectories, 116 observations
 #> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'
-#>   id time         x         y snout_x snout_y leftear_x leftear_y rightear_x
-#> 1  1    1 0.1713185 0.9852157  21.521 265.428    33.819   265.941     19.984
-#> 2  1    2 0.1261041 0.9920170  10.248 288.487    19.984   297.198     12.298
-#> 3  1    3 0.1410944 0.9899961  24.596 354.075    38.431   354.075     23.058
-#> 4  1    4 0.2247796 0.9744096  73.787 374.572    78.911   366.373     57.390
-#> 5  1    5 0.2005174 0.9796901  38.431 333.066    50.729   341.777     39.968
-#> 6  1    6 0.1613250 0.9869013  23.571 327.430    30.745   339.215     28.183
-#>   rightear_y tailbase_x tailbase_y    x_raw    y_raw rho    angle
-#> 1    250.056     87.110    152.698 40.60850 233.5307   1 1.398629
-#> 2    281.313     95.821    221.361 34.58775 272.0897   1 1.444356
-#> 3    337.166     99.408    256.205 46.37325 325.3802   1 1.429230
-#> 4    361.761    106.581    270.040 79.16725 343.1865   1 1.344079
-#> 5    323.331    131.177    273.627 65.07625 317.9502   1 1.368910
-#> 6    321.793    131.177    318.719 53.41900 326.7892   1 1.408763
+#>   id time          x           y snout_x snout_y leftear_x leftear_y rightear_x
+#> 1  1    1 -0.3997793 -0.12643666  21.521 265.428    33.819   265.941     19.984
+#> 2  1    2 -0.4308106  0.07229848  10.248 288.487    19.984   297.198     12.298
+#> 3  1    3 -0.3700675  0.34696056  24.596 354.075    38.431   354.075     23.058
+#> 4  1    4 -0.2010454  0.43873493  73.787 374.572    78.911   366.373     57.390
+#> 5  1    5 -0.2736712  0.30866595  38.431 333.066    50.729   341.777     39.968
+#> 6  1    6 -0.3337533  0.35422263  23.571 327.430    30.745   339.215     28.183
+#>   rightear_y tailbase_x tailbase_y    x_raw    y_raw       rho    angle
+#> 1    250.056     87.110    152.698 40.60850 233.5307 0.4192967 3.447905
+#> 2    281.313     95.821    221.361 34.58775 272.0897 0.4368350 2.975322
+#> 3    337.166     99.408    256.205 46.37325 325.3802 0.5072786 2.388409
+#> 4    361.761    106.581    270.040 79.16725 343.1865 0.4826050 2.000481
+#> 5    323.331    131.177    273.627 65.07625 317.9502 0.4125174 2.296173
+#> 6    321.793    131.177    318.719 53.41900 326.7892 0.4866877 2.326450
 ```
 
 **SLEAP** — an analysis CSV with `<node>.x` / `.y` / `.score` columns,
@@ -274,10 +380,8 @@ ts_sleap <- TrajSet_read(sleap_path, dialect = "sleap")
 ts_sleap
 #> TrajSet: 1 trajectories, 1 observations
 #> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'
-#>     id time         x         y      a_x      a_y      b_x      b_y    x_raw
-#> 1 <NA>    0 0.7780386 0.6282165 205.9301 187.8896 278.6352 203.3659 242.2826
-#>      y_raw rho     angle
-#> 1 195.6278   1 0.6792588
+#>     id time x y      a_x      a_y      b_x      b_y    x_raw    y_raw rho angle
+#> 1 <NA>    0 0 0 205.9301 187.8896 278.6352 203.3659 242.2826 195.6278   0     0
 ```
 
 **Tracktor** — a tidy `frame` / `pos_x` / `pos_y` CSV (one individual
@@ -294,13 +398,13 @@ ts_tracktor <- TrajSet_read(tracktor_path, dialect = "tracktor")
 ts_tracktor
 #> TrajSet: 1 trajectories, 547 observations
 #> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'
-#>   id time         x         y    x_raw    y_raw rho     angle
-#> 1  1    3 0.9774197 0.2113071 1528.267 330.3940   1 0.2129121
-#> 2  1    4 0.9773659 0.2115559 1528.014 330.7465   1 0.2131666
-#> 3  1    5 0.9772680 0.2120079 1527.535 331.3825   1 0.2136291
-#> 4  1    6 0.9772460 0.2121091 1527.485 331.5372   1 0.2137326
-#> 5  1    7 0.9772475 0.2121024 1527.366 331.5003   1 0.2137258
-#> 6  1    8 0.9772470 0.2121043 1527.536 331.5405   1 0.2137277
+#>   id time         x          y    x_raw    y_raw       rho    angle
+#> 1  1    3 0.8793455 -0.4750115 1528.267 330.3940 0.9994421 5.787907
+#> 2  1    4 0.8790113 -0.4745446 1528.014 330.7465 0.9989261 5.788159
+#> 3  1    5 0.8783770 -0.4737024 1527.535 331.3825 0.9979680 5.788600
+#> 4  1    6 0.8783105 -0.4734975 1527.485 331.5372 0.9978122 5.788749
+#> 5  1    7 0.8781524 -0.4735463 1527.366 331.5003 0.9976962 5.788631
+#> 6  1    8 0.8783783 -0.4734931 1527.536 331.5405 0.9978698 5.788785
 ```
 
 The bundled dtrack example is larger and is shown in full in the
@@ -325,13 +429,13 @@ ts_df <- TrajSet_read(example_df, mapping = list(id = "id", time = "time", x = "
 ts_df
 #> TrajSet: 2 trajectories, 8 observations
 #> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'
-#>   id time           x          y x_raw y_raw rho      angle
-#> 1  A    0  1.00000000 0.00000000   1.0   0.0   1 0.00000000
-#> 2  A    1  0.99654576 0.08304548   1.2   0.1   1 0.08314123
-#> 3  A    2  0.97780241 0.20952909   1.4   0.3   1 0.21109333
-#> 4  A    3  0.96623494 0.25766265   1.5   0.4   1 0.26060239
-#> 5  B    0 -0.19611614 0.98058068  -0.2   1.0   1 1.76819189
-#> 6  B    1 -0.09053575 0.99589321  -0.1   1.1   1 1.66145621
+#>   id time          x          y x_raw y_raw       rho     angle
+#> 1  A    0 -0.7808688 -0.6246950   1.0   0.0 1.0000000 3.8163336
+#> 2  A    1 -0.1561738 -0.3123475   1.2   0.1 0.3492151 4.2487414
+#> 3  A    2  0.4685213  0.3123475   1.4   0.3 0.5630925 0.5880026
+#> 4  A    3  0.7808688  0.6246950   1.5   0.4 1.0000000 0.6747409
+#> 5  B    0 -0.5734623 -0.8192319  -0.2   1.0 1.0000000 4.1016630
+#> 6  B    1 -0.2457696 -0.4915392  -0.1   1.1 0.5495575 4.2487414
 ```
 
 To batch a directory of CSV files,
@@ -431,13 +535,13 @@ ts_json <- TrajSet_read(json_tracks_fn(fake_json))
 ts_json
 #> TrajSet: 2 trajectories, 6 observations
 #> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'
-#>     id time         x          y x_raw y_raw rho     angle
-#> A.1  A    0 0.0000000  0.0000000   0.0   0.0  NA 0.0000000
-#> A.2  A    1 0.9805807  0.1961161   1.0   0.2   1 0.1973956
-#> A.3  A    2 0.9701425  0.2425356   2.0   0.5   1 0.2449787
-#> B.1  B    0 1.0000000  0.0000000   1.0   0.0   1 0.0000000
-#> B.2  B    1 0.9970545 -0.0766965   1.3  -0.1   1 6.2064134
-#> B.3  B    2 0.9912279 -0.1321637   1.5  -0.2   1 6.1506338
+#>     id time          x           y x_raw y_raw        rho     angle
+#> A.1  A    0 -0.9701425 -0.24253563   0.0   0.0 1.00000000 3.3865713
+#> A.2  A    1  0.0000000 -0.04850713   1.0   0.2 0.04850713 4.7123890
+#> A.3  A    2  0.9701425  0.24253563   2.0   0.5 1.00000000 0.2449787
+#> B.1  B    0 -0.9284767  0.37139068   1.0   0.0 1.00000000 2.7610863
+#> B.2  B    1  0.1856953  0.00000000   1.3  -0.1 0.18569534 0.0000000
+#> B.3  B    2  0.9284767 -0.37139068   1.5  -0.2 1.00000000 5.9026789
 ```
 
 Dialects live in-memory for the current session. To persist them across
