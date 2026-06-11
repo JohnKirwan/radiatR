@@ -15,6 +15,9 @@ SPEC_MARKER_ALPHA    <- 0.8
 SPEC_TRAJ_KEY        <- "__trajectory__"
 SPEC_CRIT_COLOUR     <- "firebrick"   # Rayleigh critical circle
 SPEC_CRIT_LWD        <- 0.7
+SPEC_VTEST_MU0       <- pi / 2        # V-test hypothesised direction (display top)
+SPEC_VTEST_COLOUR    <- "steelblue"
+SPEC_VTEST_LWD       <- 0.8
 
 # Resolve the figure choices into a spec list.
 #   ts     : the loaded TrajSet.
@@ -53,7 +56,9 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
     show = list(tracks   = isTRUE(inputs$show_tracks),
                 arrow    = isTRUE(inputs$show_arrow),
                 vectors  = isTRUE(inputs$show_vectors),
-                rayleigh = isTRUE(inputs$show_rayleigh))
+                rayleigh = isTRUE(inputs$show_rayleigh),
+                ci       = isTRUE(inputs$show_ci),
+                vtest    = isTRUE(inputs$show_vtest))
   )
 }
 
@@ -117,12 +122,27 @@ spec_to_plot <- function(spec, ts, hd) {
   if (spec$show$vectors && all(c("x_inner", "y_inner") %in% names(hd)))
     p <- p + add_heading_vectors(hd, colour_col = ".colour")
 
+  # Mean-direction bootstrap CI arc (per facet group when faceted). hd already
+  # carries the display attribute (set above) so the arc orients correctly.
+  if (isTRUE(spec$show$ci))
+    p <- p + add_heading_interval(hd, colour_col = spec$facet_by,
+               stat = "bootstrap_ci")
+
   # Rayleigh critical circle (alpha = 0.05). Per-panel when faceted, drawn in a
   # fixed colour so it never collides with the trajectory colour scale.
   if (isTRUE(spec$show$rayleigh))
     p <- p + add_critical_r(hd, test = "rayleigh", group_col = spec$facet_by,
                per_group = !is.null(spec$facet_by), colour_by_group = FALSE,
                colour = SPEC_CRIT_COLOUR, linewidth = SPEC_CRIT_LWD)
+
+  # V-test decision boundary against mu0 (display top). One boundary per panel
+  # when faceting, a single pooled boundary otherwise. Always a fixed colour.
+  if (isTRUE(spec$show$vtest)) {
+    v <- add_critical_v_line(hd, mu0 = SPEC_VTEST_MU0, angle_col = "heading",
+           group_col = spec$facet_by, per_group = !is.null(spec$facet_by),
+           colour = SPEC_VTEST_COLOUR, linewidth = SPEC_VTEST_LWD)
+    if (!is.null(v)) p <- p + v
+  }
 
   p
 }
@@ -207,6 +227,11 @@ spec_to_code <- function(spec) {
     tail <- c(tail, "add_circ_mean(arrow_df, colour = \"black\")")
   if (has_hd && spec$show$vectors && identical(spec$headings$rule, "crossing"))
     tail <- c(tail, "add_heading_vectors(hd, colour_col = \".colour\")")
+  if (has_hd && isTRUE(spec$show$ci)) {
+    cc <- if (is.null(spec$facet_by)) "" else paste0(", colour_col = ", q(spec$facet_by))
+    tail <- c(tail, paste0(
+      "add_heading_interval(hd", cc, ", stat = \"bootstrap_ci\")"))
+  }
   if (has_hd && isTRUE(spec$show$rayleigh)) {
     gca <- if (is.null(spec$facet_by)) ", group_col = NULL, per_group = FALSE"
            else paste0(", group_col = ", q(spec$facet_by), ", per_group = TRUE")
@@ -214,6 +239,13 @@ spec_to_code <- function(spec) {
       "add_critical_r(hd, test = \"rayleigh\"", gca,
       ", colour_by_group = FALSE, colour = ", q(SPEC_CRIT_COLOUR),
       ", linewidth = ", SPEC_CRIT_LWD, ")"))
+  }
+  if (has_hd && isTRUE(spec$show$vtest)) {
+    gpg <- if (is.null(spec$facet_by)) ", group_col = NULL, per_group = FALSE"
+           else paste0(", group_col = ", q(spec$facet_by), ", per_group = TRUE")
+    tail <- c(tail, paste0(
+      "add_critical_v_line(hd, mu0 = pi / 2, angle_col = \"heading\"", gpg,
+      ", colour = ", q(SPEC_VTEST_COLOUR), ", linewidth = ", SPEC_VTEST_LWD, ")"))
   }
 
   if (length(tail)) {
