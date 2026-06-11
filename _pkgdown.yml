@@ -25,8 +25,6 @@ navbar:
           href: articles/loaders.html
         - text: "Circular statistics & distribution overlays"
           href: articles/circular-statistics.html
-        - text: "Camera calibration"
-          href: articles/camera-calibration.html
         - text: "Simulating trajectories"
           href: articles/simulate.html
 
@@ -71,7 +69,6 @@ reference:
       with column mappings and metadata.
     contents:
       - TrajSet-class
-      - calibrate_positions
       - transform_history
 
   - title: "Simulation"
@@ -181,18 +178,6 @@ reference:
       - add_quadrant_lines
       - zone_dwell
       - count_goal_entries
-
-  - title: "Calibration"
-    desc: >
-      Import camera intrinsics and distortion coefficients from MATLAB,
-      OpenCV, or a plain CSV, then apply them to undistort pixel tracks.
-      radiatR does not estimate calibrations itself.
-    contents:
-      - read_calibration
-      - cal_model
-      - cam_cal_pt
-      - cam_cal_many
-      - CalModel-class
 
   - title: "Coordinate utilities"
     desc: >

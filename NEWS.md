@@ -1,5 +1,18 @@
 # radiatR (development version)
 
+## Camera calibration
+
+* **Breaking:** removed the camera-calibration layer entirely (`read_calibration()`,
+  `cal_model()`, `cam_cal_pt()`, `cam_cal_many()`, `calibrate_positions()`, and the
+  `CalModel` class), along with its vignette. radiatR normalises each trajectory to
+  a unit arena, so its outputs (headings, mean direction, resultant length, circular
+  statistics) are scale-invariant and never needed metric calibration; lens-distortion
+  correction and scaling to real-world units are better handled in the upstream
+  tracking pipeline (the tracker's own calibration, or OpenCV `undistort`) before
+  import. This completes the narrowing begun in 0.2.0, which removed the calibration
+  *estimator*. The `R.matlab`, `yaml`, and `jsonlite` suggested dependencies remain —
+  they are still used by the loaders.
+
 ## Shiny app
 
 * Restored the **Quadrant lines** and **Guide rings** toggles, which had become

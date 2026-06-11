@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`radiatR` is an R package for plotting and analyzing animal movement trajectories in circular/radial arenas. It handles the full pipeline: camera calibration → data import → coordinate transformation → circular statistics → visualization.
+`radiatR` is an R package for plotting and analyzing animal movement trajectories in circular/radial arenas. It handles the full pipeline: data import → coordinate transformation → circular statistics → visualization.
 
 ## Development commands
 
@@ -38,17 +38,15 @@ devtools::install_local(".")
 
 ### Pipeline stages
 
-1. **Calibration** (`R/calibration.R`, `R/calibration_capture.R`) — maps pixel coordinates to real-world positions via a `CalModel` S4 object. `cam_cal_pt` / `cam_cal_many` build models; `calibrate_positions` (a `TrajSet` method) applies them.
+1. **Import** (`R/loaders.R`) — the largest module. Reads manifest files that describe where track data lives, then dispatches to format-specific readers (`TrajSet_read_*`). The loader format registry (`register_loader_*`) lets callers add new file formats without modifying core code.
 
-2. **Import** (`R/loaders.R`) — the largest module. Reads manifest files that describe where track data lives, then dispatches to format-specific readers (`TrajSet_read_*`). The loader format registry (`register_loader_*`) lets callers add new file formats without modifying core code.
+2. **Coordinate transformation** (`R/circular_trials.R`, `R/circular_mapping.R`) — converts Cartesian pixel coordinates to unit-circle angles. `circular_trials.R` extracts per-trial segments and normalises them to a unit arena; `circular_mapping.R` handles pixel→angle arithmetic. (radiatR analyses normalised, unit-arena tracks; correcting lens distortion or scaling to metric units is left to the upstream tracking pipeline.)
 
-3. **Coordinate transformation** (`R/circular_trials.R`, `R/circular_mapping.R`) — converts Cartesian pixel coordinates to unit-circle angles. `circular_trials.R` extracts per-trial segments and normalises them to a unit arena; `circular_mapping.R` handles pixel→angle arithmetic.
+3. **Heading computation** (`R/headings.R`) — derives directional headings from position sequences. Uses a rule registry pattern (analogous to the loader registry) so custom heading rules can be registered and applied by name.
 
-4. **Heading computation** (`R/headings.R`) — derives directional headings from position sequences. Uses a rule registry pattern (analogous to the loader registry) so custom heading rules can be registered and applied by name.
+4. **Statistics** (`R/circular_statistics.R`) — thin wrapper around the `circular` package. `circ_summary` is the main entry point.
 
-5. **Statistics** (`R/circular_statistics.R`) — thin wrapper around the `circular` package. `circ_summary` is the main entry point.
-
-6. **Visualisation** (`R/circular_plotting.R`) — `radiate()` is the primary plot function; returns a `ggplot2` object. Helper functions (`add_ticks`, `add_circ`, `degree_labs`, etc.) return ggplot2 layers and are designed to be added with `+`.
+5. **Visualisation** (`R/circular_plotting.R`) — `radiate()` is the primary plot function; returns a `ggplot2` object. Helper functions (`add_ticks`, `add_circ`, `degree_labs`, etc.) return ggplot2 layers and are designed to be added with `+`.
 
 ### Extension points
 
