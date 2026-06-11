@@ -829,16 +829,18 @@ server <- function(input, output, session) {
       show_tracks = tog(input$show_tracks, TRUE),
       show_arrow  = tog(input$show_arrow,  TRUE),
       show_vectors = tog(input$show_vectors, FALSE),
-      show_rayleigh = tog(input$show_rayleigh, FALSE)))
+      show_rayleigh = tog(input$show_rayleigh, FALSE),
+      show_ci    = tog(input$show_ci,    FALSE),
+      show_vtest = tog(input$show_vtest, FALSE)))
 
-  # Build the results plot. The core figure comes from the shared spec
-  # (spec_to_plot); the statistical decision-boundary overlays (CI, Rayleigh,
-  # V-test) are appended here (not yet part of the spec / code export).
+  # Build the results plot. The figure body -- including the statistical overlays
+  # (CI, Rayleigh, V-test) -- comes entirely from the shared spec (spec_to_plot),
+  # which the code export reproduces. Only the subtitle/caption annotations are
+  # still added here.
   build_results_plot <- function() {
     spec <- current_spec()
     p    <- spec_to_plot(spec, rv$ts, rv$hd)
     gc   <- spec$facet_by
-    disp <- circ_display(zero = 0)
 
     # None mode: tracks only, plus the path-metrics caption + subtitle.
     if (is.null(rv$hd)) {
@@ -847,30 +849,9 @@ server <- function(input, output, session) {
       return(p + ggplot2::labs(subtitle = method_subtitle(rv$method)))
     }
 
-    # Display-aware headings frame for the statistical overlays below.
-    hd_disp <- rv$hd
-    attr(hd_disp, "display") <- disp
-
-    if (tog(input$show_ci, FALSE)) {
-      p <- p + add_heading_interval(
-        hd_disp, colour_col = gc, stat = "bootstrap_ci"
-      )
-    }
-
-    # Rayleigh critical circle (alpha = 0.05) is part of the shared spec, so it
-    # is drawn by spec_to_plot() above (and reproduced by the code export).
-
-    # V-test decision boundary against mu0 = pi/2 (display top). One boundary per
-    # panel when faceting; a single pooled boundary otherwise.
-    if (tog(input$show_vtest, FALSE)) {
-      v_layers <- add_critical_v_line(
-        rv$hd, mu0 = pi / 2, angle_col = "heading",
-        group_col = gc, per_group = !is.null(gc),
-        colour = "steelblue", linewidth = 0.8
-      )
-      if (!is.null(v_layers)) p <- p + v_layers
-    }
-
+    # The statistical overlays (CI, Rayleigh, V-test) are part of the shared spec,
+    # so they are drawn by spec_to_plot() above (and reproduced by the code
+    # export). Only the method subtitle remains app-only for now.
     p + ggplot2::labs(subtitle = method_subtitle(rv$method))
   }
 

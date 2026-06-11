@@ -58,6 +58,12 @@
   emits -- the on-screen circle and the exported figure are produced identically.
   Previously the circle was drawn by an inline `geom_path` that the code export
   could not reproduce.
+* The mean-direction confidence interval and the V-test decision boundary are
+  now part of the shared plot spec too, drawn by the exported
+  `add_heading_interval()` and `add_critical_v_line()` that the **R code** panel
+  emits. Together with the Rayleigh circle, every statistical overlay on the
+  Results figure is now reproduced by the code export. (The method subtitle is
+  still added by the app.)
 * Fixed the mean-resultant arrow's orientation: it was drawn relative to
   unit-circle 0 while the trajectories, heading points, and heading vectors
   followed the clock convention. `compute_circ_mean()` now carries the input's

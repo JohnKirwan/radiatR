@@ -23,7 +23,7 @@ source(.p, local = TRUE)
 }
 
 roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
-                           rayleigh = FALSE) {
+                           rayleigh = FALSE, ci = FALSE, vtest = FALSE) {
   data(cpunctatus, package = "radiatR", envir = environment())
   ts <- cpunctatus
   hd <- derive_headings(ts, rule = "distal")
@@ -41,8 +41,19 @@ roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
     theme = "bw", angle_labels = "degrees", display = list(zero = 0),
     heading_display = heading_display,
     show = list(tracks = TRUE, arrow = arrow, vectors = vectors,
-                rayleigh = rayleigh))
+                rayleigh = rayleigh, ci = ci, vtest = vtest))
   list(spec = spec, ts = ts, hd = hd)
+}
+
+# Build the live figure and the eval'd emitted figure under the same RNG state,
+# then compare fingerprints. The seed matters only for the bootstrap CI overlay
+# (otherwise the two builds resample independently); deterministic layers are
+# unaffected.
+expect_roundtrip <- function(rt, seed = 1L) {
+  set.seed(seed); live  <- spec_to_plot(rt$spec, rt$ts, rt$hd)
+  env <- new.env(parent = globalenv())
+  set.seed(seed); evald <- eval(parse(text = spec_to_code(rt$spec)), envir = env)
+  expect_equal(.fingerprint(evald), .fingerprint(live))
 }
 
 test_that("emitted code reproduces spec_to_plot (stacked, trajectory, faceted, arrow)", {
@@ -77,6 +88,42 @@ test_that("emitted code reproduces spec_to_plot (Rayleigh circle, no facet)", {
   env   <- new.env(parent = globalenv())
   evald <- eval(parse(text = spec_to_code(rt$spec)), envir = env)
   expect_equal(.fingerprint(evald), .fingerprint(live))
+})
+
+# the overlay flag must actually add layer(s) to the figure (otherwise the
+# round-trip below would pass vacuously, both sides simply omitting the overlay).
+.n_layers <- function(rt) {
+  set.seed(1); length(spec_to_plot(rt$spec, rt$ts, rt$hd)$layers)
+}
+expect_overlay_adds_layers <- function(field, ...) {
+  off <- roundtrip_spec("points", "trajectory", ..., FALSE, FALSE)
+  on  <- off
+  on$spec$show[[field]] <- TRUE
+  expect_gt(.n_layers(on), .n_layers(off))
+}
+
+test_that("emitted code reproduces spec_to_plot (bootstrap CI, no facet)", {
+  expect_overlay_adds_layers("ci", NULL)
+  expect_roundtrip(
+    roundtrip_spec("points", "trajectory", NULL, FALSE, FALSE, ci = TRUE))
+})
+
+test_that("emitted code reproduces spec_to_plot (bootstrap CI, faceted)", {
+  expect_overlay_adds_layers("ci", "type")
+  expect_roundtrip(
+    roundtrip_spec("points", "trajectory", "type", FALSE, FALSE, ci = TRUE))
+})
+
+test_that("emitted code reproduces spec_to_plot (V-test line, no facet)", {
+  expect_overlay_adds_layers("vtest", NULL)
+  expect_roundtrip(
+    roundtrip_spec("points", "trajectory", NULL, FALSE, FALSE, vtest = TRUE))
+})
+
+test_that("emitted code reproduces spec_to_plot (V-test line, faceted)", {
+  expect_overlay_adds_layers("vtest", "type")
+  expect_roundtrip(
+    roundtrip_spec("points", "trajectory", "type", FALSE, FALSE, vtest = TRUE))
 })
 
 test_that("emitted code reproduces spec_to_plot (crossing rule + heading vectors)", {
