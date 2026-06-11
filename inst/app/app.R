@@ -814,46 +814,38 @@ server <- function(input, output, session) {
 
   # The plot spec resolved from the current inputs (shared by the figure and the
   # code export so they cannot drift).
-  current_spec <- function() build_plot_spec(
-    ts = rv$ts, hd = rv$hd, method = rv$method,
-    data = list(
-      source  = if (identical(rv$source, "example")) "example" else "file",
-      path    = rv$file_name %||% "your_tracks.csv",
-      dialect = if (is.null(rv$dialect) || rv$dialect %in% c("auto", "generic"))
-        NULL else rv$dialect),
-    inputs = list(
-      cond_col = input$cond_col, colour_by = input$colour_by,
-      circ0 = input$circ0, circ1 = input$circ1,
-      plot_theme = input$plot_theme, angle_labels = input$angle_labels,
-      heading_display = input$heading_display,
-      show_tracks = tog(input$show_tracks, TRUE),
-      show_arrow  = tog(input$show_arrow,  TRUE),
-      show_vectors = tog(input$show_vectors, FALSE),
-      show_rayleigh = tog(input$show_rayleigh, FALSE),
-      show_ci    = tog(input$show_ci,    FALSE),
-      show_vtest = tog(input$show_vtest, FALSE)))
-
-  # Build the results plot. The figure body -- including the statistical overlays
-  # (CI, Rayleigh, V-test) -- comes entirely from the shared spec (spec_to_plot),
-  # which the code export reproduces. Only the subtitle/caption annotations are
-  # still added here.
-  build_results_plot <- function() {
-    spec <- current_spec()
-    p    <- spec_to_plot(spec, rv$ts, rv$hd)
-    gc   <- spec$facet_by
-
-    # None mode: tracks only, plus the path-metrics caption + subtitle.
-    if (is.null(rv$hd)) {
-      cap <- straightness_caption(rv$ts, gc)
-      if (nzchar(cap)) p <- p + ggplot2::labs(caption = cap)
-      return(p + ggplot2::labs(subtitle = method_subtitle(rv$method)))
-    }
-
-    # The statistical overlays (CI, Rayleigh, V-test) are part of the shared spec,
-    # so they are drawn by spec_to_plot() above (and reproduced by the code
-    # export). Only the method subtitle remains app-only for now.
-    p + ggplot2::labs(subtitle = method_subtitle(rv$method))
+  current_spec <- function() {
+    gc <- if (!is.null(input$cond_col) && nzchar(input$cond_col))
+      input$cond_col else NULL
+    build_plot_spec(
+      ts = rv$ts, hd = rv$hd, method = rv$method,
+      data = list(
+        source  = if (identical(rv$source, "example")) "example" else "file",
+        path    = rv$file_name %||% "your_tracks.csv",
+        dialect = if (is.null(rv$dialect) || rv$dialect %in% c("auto", "generic"))
+          NULL else rv$dialect),
+      inputs = list(
+        cond_col = input$cond_col, colour_by = input$colour_by,
+        circ0 = input$circ0, circ1 = input$circ1,
+        plot_theme = input$plot_theme, angle_labels = input$angle_labels,
+        heading_display = input$heading_display,
+        # Resolved annotations: the method subtitle always; the path-metrics
+        # caption only in none mode (no headings). spec_to_plot/spec_to_code
+        # render and reproduce them.
+        subtitle = method_subtitle(rv$method),
+        caption  = if (is.null(rv$hd)) straightness_caption(rv$ts, gc) else NULL,
+        show_tracks = tog(input$show_tracks, TRUE),
+        show_arrow  = tog(input$show_arrow,  TRUE),
+        show_vectors = tog(input$show_vectors, FALSE),
+        show_rayleigh = tog(input$show_rayleigh, FALSE),
+        show_ci    = tog(input$show_ci,    FALSE),
+        show_vtest = tog(input$show_vtest, FALSE)))
   }
+
+  # The Results figure -- tracks, every statistical overlay (CI, Rayleigh,
+  # V-test), and the subtitle/caption -- now comes entirely from the shared spec,
+  # so the code export reproduces exactly what is on screen.
+  build_results_plot <- function() spec_to_plot(current_spec(), rv$ts, rv$hd)
 
   # Preview canvas height tracks the chosen export aspect ratio so the on-screen
   # plot reflects the width/height the user will download. The Preview size

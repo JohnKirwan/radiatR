@@ -23,7 +23,8 @@ source(.p, local = TRUE)
 }
 
 roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
-                           rayleigh = FALSE, ci = FALSE, vtest = FALSE) {
+                           rayleigh = FALSE, ci = FALSE, vtest = FALSE,
+                           subtitle = NULL, caption = NULL) {
   data(cpunctatus, package = "radiatR", envir = environment())
   ts <- cpunctatus
   hd <- derive_headings(ts, rule = "distal")
@@ -40,6 +41,7 @@ roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
                            length(unique(as.data.frame(ts)[[by]])) <= 20),
     theme = "bw", angle_labels = "degrees", display = list(zero = 0),
     heading_display = heading_display,
+    subtitle = subtitle, caption = caption,
     show = list(tracks = TRUE, arrow = arrow, vectors = vectors,
                 rayleigh = rayleigh, ci = ci, vtest = vtest))
   list(spec = spec, ts = ts, hd = hd)
@@ -145,4 +147,46 @@ test_that("emitted code reproduces spec_to_plot (crossing rule + heading vectors
   env   <- new.env(parent = globalenv())
   evald <- eval(parse(text = spec_to_code(spec)), envir = env)   # must not error
   expect_equal(.fingerprint(evald), .fingerprint(live))
+})
+
+# Subtitle/caption are plot labels, not layers, so the coordinate fingerprint
+# above does not see them -- assert them directly.
+
+test_that("spec_to_plot applies the spec subtitle and caption", {
+  rt <- roundtrip_spec("points", "trajectory", NULL, FALSE, FALSE,
+                       subtitle = "Heading method: distal-most point",
+                       caption  = "Mean straightness: 0.62")
+  p <- spec_to_plot(rt$spec, rt$ts, rt$hd)
+  expect_equal(p$labels$subtitle, "Heading method: distal-most point")
+  expect_equal(p$labels$caption,  "Mean straightness: 0.62")
+})
+
+test_that("spec_to_plot omits subtitle/caption labels when the spec has none", {
+  rt <- roundtrip_spec("points", "trajectory", NULL, FALSE, FALSE)
+  p  <- spec_to_plot(rt$spec, rt$ts, rt$hd)
+  expect_null(p$labels$subtitle)
+  expect_null(p$labels$caption)
+})
+
+test_that("spec_to_code emits the spec subtitle and caption as literal labs()", {
+  rt <- roundtrip_spec("points", "trajectory", NULL, FALSE, FALSE,
+                       subtitle = "Heading method: distal-most point",
+                       caption  = "Mean straightness: 0.62")
+  code <- spec_to_code(rt$spec)
+  expect_match(code, 'subtitle = "Heading method: distal-most point"', fixed = TRUE)
+  expect_match(code, 'caption = "Mean straightness: 0.62"', fixed = TRUE)
+  # the emitted code must run and carry the labels through
+  env <- new.env(parent = globalenv())
+  p   <- eval(parse(text = code), envir = env)
+  expect_equal(p$labels$subtitle, "Heading method: distal-most point")
+  expect_equal(p$labels$caption,  "Mean straightness: 0.62")
+})
+
+test_that("spec_to_code quotes special characters in subtitle/caption", {
+  rt <- roundtrip_spec("points", "trajectory", NULL, FALSE, FALSE,
+                       subtitle = 'has "quotes" and \\ backslash')
+  code <- spec_to_code(rt$spec)
+  env  <- new.env(parent = globalenv())
+  p    <- eval(parse(text = code), envir = env)   # must not error on the quoting
+  expect_equal(p$labels$subtitle, 'has "quotes" and \\ backslash')
 })
