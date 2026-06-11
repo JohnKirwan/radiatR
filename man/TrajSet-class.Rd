@@ -48,7 +48,13 @@ together or not at all.}
 
 \item{weight}{Optional weight column name}
 
-\item{normalize_xy}{If TRUE, (x,y) are normalized to unit vectors (zero-length -> NA)}
+\item{normalize_xy}{If TRUE (default), (x,y) are arena-scaled per trajectory:
+each trajectory is centred on its bounding-box midpoint and scaled so its
+furthest point sits at radius 1. This preserves trajectory shape and places
+the arena centre at the origin (what the radius-based heading rules expect).
+Raw coordinates are retained in `<x>_raw`/`<y>_raw`. If FALSE, (x,y) are kept
+as supplied. (Landmark-based mapping, when available, is more accurate; this
+is the no-landmark fallback.)}
 
 \item{meta}{Free-form list of metadata}
 

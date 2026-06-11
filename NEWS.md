@@ -1,5 +1,21 @@
 # radiatR (development version)
 
+## Coordinate handling
+
+* **Fix:** `normalize_xy = TRUE` (the `TrajSet()` and `TrajSet_read()` default) now
+  arena-scales each trajectory instead of collapsing every point onto the unit
+  circle. Previously it replaced each point with its unit vector (radius → 1),
+  destroying trajectory shape: radius- and displacement-based heading rules
+  (`net`, `distal`, `crossing`, `exit`, `origin_mean`, `straight`, ...) returned
+  wrong or `NA` headings, and uploaded data in the Shiny app was affected. Each
+  trajectory is now centred on its bounding-box midpoint and scaled so its
+  furthest point sits at radius 1, preserving shape and placing the arena centre
+  at the origin (what the radius-based rules expect). Raw coordinates are still
+  kept in `<x>_raw`/`<y>_raw`, and `rho` now holds the relative radius rather than
+  a constant 1. Landmark-based mapping, when available, remains the accurate path;
+  this only improves the no-landmark fallback. Stored `x`/`y`/`rho` values change
+  for `normalize_xy = TRUE`; pass `normalize_xy = FALSE` to keep raw coordinates.
+
 ## Camera calibration
 
 * **Breaking:** removed the camera-calibration layer entirely (`read_calibration()`,
