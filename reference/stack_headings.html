@@ -66,7 +66,8 @@ coincident or binned headings.</p>
 <span>  direction <span class="op">=</span> <span class="st">"inward"</span>,</span>
 <span>  base_r <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  shade <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  shape <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  shape <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  group <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -123,6 +124,12 @@ not treated as neighbours.</p></dd>
 <dd><p>If <code>TRUE</code>, add a <code>shape_code</code> integer column:
 1 = hollow (outermost / singleton), 2 = filled (middle), 3 = filled with
 ring (innermost in a stack of 3+).</p></dd>
+
+
+<dt id="arg-group">group<a class="anchor" aria-label="anchor" href="#arg-group"></a></dt>
+<dd><p>Optional column name; when set, stacking is computed
+independently within each group and the rows recombined. Default
+<code>NULL</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

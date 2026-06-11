@@ -67,6 +67,7 @@ it is used as-is; otherwise stacking is computed internally.</p>
 <span>  base_r <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  shade <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  shape <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  group <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  colour <span class="op">=</span> <span class="st">"black"</span>,</span>
 <span>  colour_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  size <span class="op">=</span> <span class="fl">2</span>,</span>
@@ -108,6 +109,11 @@ per-observation shape encoding. Shape is also applied when
 <code>shape_code</code> is already a column in <code>data</code>.
 Mapped to ggplot2 shape integers: 1 = hollow, 16 = filled,
 21 = filled with ring.</p></dd>
+
+
+<dt id="arg-group">group<a class="anchor" aria-label="anchor" href="#arg-group"></a></dt>
+<dd><p>Optional column name; stack within each group independently
+(e.g. one stacking per facet). Default <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-colour">colour<a class="anchor" aria-label="anchor" href="#arg-colour"></a></dt>

@@ -19,6 +19,7 @@ add_stacked_headings(
   base_r = 1,
   shade = FALSE,
   shape = FALSE,
+  group = NULL,
   colour = "black",
   colour_col = NULL,
   size = 2,
@@ -59,6 +60,11 @@ add_stacked_headings(
   to request per-observation shape encoding. Shape is also applied when
   `shape_code` is already a column in `data`. Mapped to ggplot2 shape
   integers: 1 = hollow, 16 = filled, 21 = filled with ring.
+
+- group:
+
+  Optional column name; stack within each group independently (e.g. one
+  stacking per facet). Default `NULL`.
 
 - colour:
 

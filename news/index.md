@@ -38,9 +38,19 @@
   circle, so a stack can abut the periphery rather than straddle it. The
   existing `step` argument (the analogue of `sep`) sets the gap between
   dots. Both default to circular’s behaviour at the package level.
+- [`stack_headings()`](https://johnkirwan.github.io/radiatR/reference/stack_headings.md)
+  and
+  [`add_stacked_headings()`](https://johnkirwan.github.io/radiatR/reference/add_stacked_headings.md)
+  gain a `group` argument that stacks dots within each group
+  independently (e.g. one stacking per facet).
 
 ### Shiny app
 
+- The Results step gains an **R code** panel that shows the
+  radiatR/ggplot2 code reproducing the current figure, with **Copy** and
+  **Download .R** buttons. The emitted script calls only exported
+  package functions; a round-trip test verifies the code reproduces the
+  on-screen figure.
 - Fixed the “Stacked dots (inward)” heading display, which superimposed
   every dot at the rim instead of stacking. Headings are now binned
   (5-degree bins centred on the reference direction) before stacking,
@@ -92,6 +102,13 @@
   [`assign_cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.md)
   now delegates to it, and the Shiny app uses it too, so the
   colour-cycling logic has a single source of truth.
+- New exported
+  [`assign_colour_key()`](https://johnkirwan.github.io/radiatR/reference/assign_colour_key.md)
+  attaches a shared colour-key column to a TrajSet or data frame (cycled
+  for the trajectory or a high-cardinality key, raw values + legend for
+  a low-cardinality grouping; `reference` keeps the key consistent
+  across frames), so tracks and overlays colour identically. It replaces
+  the Shiny app’s internal colour helpers.
 - [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   gains an `angle_labels` argument: `"degrees"` (default, e.g. `45°`),
   `"none"`, or `"radians"` (now rendered as π fractions, e.g. `π/4`,

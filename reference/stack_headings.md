@@ -17,7 +17,8 @@ stack_headings(
   direction = "inward",
   base_r = 1,
   shade = FALSE,
-  shape = FALSE
+  shape = FALSE,
+  group = NULL
 )
 ```
 
@@ -75,6 +76,11 @@ stack_headings(
   If `TRUE`, add a `shape_code` integer column: 1 = hollow (outermost /
   singleton), 2 = filled (middle), 3 = filled with ring (innermost in a
   stack of 3+).
+
+- group:
+
+  Optional column name; when set, stacking is computed independently
+  within each group and the rows recombined. Default `NULL`.
 
 ## Value
 

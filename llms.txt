@@ -517,6 +517,8 @@ Any remaining exported topics.
   : Overlay a fitted wrapped Cauchy density curve on a radiate plot
 - [`as.data.frame(`*`<TrajSet>`*`)`](https://johnkirwan.github.io/radiatR/reference/as.data.frame.TrajSet.md)
   : Coerce a TrajSet to a data frame
+- [`assign_colour_key()`](https://johnkirwan.github.io/radiatR/reference/assign_colour_key.md)
+  : Assign a shared colour-key column to a TrajSet or data frame
 - [`assign_cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.md)
   : Assign cycling colour indices to trajectories
 - [`bin_angles()`](https://johnkirwan.github.io/radiatR/reference/bin_angles.md)
