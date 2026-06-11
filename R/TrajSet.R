@@ -198,6 +198,34 @@ setValidity("TrajSet", function(object) {
   TRUE
 })
 
+# Per-trajectory affine map into the unit arena: centre each trajectory on its
+# bounding-box midpoint and scale so the furthest point sits at radius 1. Used by
+# the TrajSet constructor when normalize_xy = TRUE. Preserves trajectory shape and
+# places the arena centre at the origin (what the radius-based heading rules
+# assume). Degenerate (zero-extent or all-NA) trajectories map to the origin.
+.normalize_to_unit_arena <- function(x, y, id) {
+  xo <- rep(NA_real_, length(x))
+  yo <- rep(NA_real_, length(y))
+  # Group by id; rows with a missing id are treated as one group (rather than
+  # dropped, which would discard their coordinates) since `NA == NA` is NA.
+  grp <- as.character(id)
+  grp[is.na(grp)] <- ".__na_id__"
+  for (g in unique(grp)) {
+    idx <- which(grp == g)
+    gx  <- x[idx]; gy <- y[idx]
+    fin <- is.finite(gx) & is.finite(gy)
+    if (!any(fin)) next
+    cx <- (min(gx[fin]) + max(gx[fin])) / 2
+    cy <- (min(gy[fin]) + max(gy[fin])) / 2
+    rx <- gx - cx; ry <- gy - cy
+    rmax <- max(sqrt(rx[fin]^2 + ry[fin]^2))
+    s <- if (is.finite(rmax) && rmax > 0) 1 / rmax else 1
+    xo[idx] <- rx * s
+    yo[idx] <- ry * s
+  }
+  list(x = xo, y = yo)
+}
+
 #' Construct a TrajSet
 #'
 #' @param df data.frame in long form
@@ -209,7 +237,13 @@ setValidity("TrajSet", function(object) {
 #'   together or not at all.
 #' @param angle_unit Units of provided angle ("radians" or "degrees"); stored internally as radians
 #' @param weight Optional weight column name
-#' @param normalize_xy If TRUE, (x,y) are normalized to unit vectors (zero-length -> NA)
+#' @param normalize_xy If TRUE (default), (x,y) are arena-scaled per trajectory:
+#'   each trajectory is centred on its bounding-box midpoint and scaled so its
+#'   furthest point sits at radius 1. This preserves trajectory shape and places
+#'   the arena centre at the origin (what the radius-based heading rules expect).
+#'   Raw coordinates are retained in `<x>_raw`/`<y>_raw`. If FALSE, (x,y) are kept
+#'   as supplied. (Landmark-based mapping, when available, is more accurate; this
+#'   is the no-landmark fallback.)
 #' @param meta Free-form list of metadata
 #' @param transform_history Optional tibble describing transformation steps applied to the
 #'   trajectories. Must contain columns `step`, `order`, `id`, `implementation`, `params`,
@@ -281,9 +315,13 @@ TrajSet <- function(df,
       d[[raw_y_name]] <- d[[y]]
       raw_cols$x <- raw_x_name
       raw_cols$y <- raw_y_name
+      norm <- .normalize_to_unit_arena(d[[x]], d[[y]], d[[id]])
+      xy_x <- norm$x; xy_y <- norm$y
+    } else {
+      xy_x <- d[[x]]; xy_y <- d[[y]]
     }
 
-    conv <- cartesian_to_polar(d[[x]], d[[y]], normalize = normalize_xy)
+    conv <- cartesian_to_polar(xy_x, xy_y, normalize = FALSE)
     d[[x]] <- conv$x
     d[[y]] <- conv$y
     theta_from_xy <- conv$theta

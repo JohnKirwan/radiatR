@@ -315,7 +315,8 @@ test_that("line-circle intercept utilities behave as expected", {
     y = c(0, 0),
     angle = c(0, 0)
   )
-  ts <- TrajSet(traj_df, id = "id", time = "time", x = "x", y = "y", angle = "angle", angle_unit = "radians")
+  ts <- TrajSet(traj_df, id = "id", time = "time", x = "x", y = "y", angle = "angle", angle_unit = "radians",
+                normalize_xy = FALSE)
   ints_traj <- line_circle_intercept_traj(ts, "A", 1:2)
   expect_equal(ints_traj$y_int, 0, tolerance = 1e-8)
 })

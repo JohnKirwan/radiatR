@@ -66,3 +66,22 @@ test_that("get_tracked_object_pos sets display convention meta keys", {
   expect_equal(ts@meta$plot_x_col,         "rel_x")
   expect_equal(ts@meta$plot_y_col,         "rel_y")
 })
+
+test_that("get_tracked_object_pos reports out-of-bounds points once, aggregated over trials", {
+  # unit radius = 1 px (origin (0,0) -> reference (1,0)); two trials.
+  landmarks <- data.frame(frame = c(1, 2, 6, 7),
+                          x = c(0, 1, 0, 1), y = c(0, 0, 0, 0))
+  # both trials contain points well beyond radius 1 (arena-mapped coords kept as-is).
+  animal_track <- data.frame(frame = 1:10,
+                             x = c(0, 0.5, 1.2, 1.5, 0.3, 0, 0.5, 1.3, 1.6, 0.2),
+                             y = 0)
+  file_tbl <- tibble::tibble(basename = "video1", arc = 0, type = "Herm",
+                             obstacle = "none", id = "animal")
+  limits <- suppressWarnings(get_trial_limits(landmarks, animal_track, file_tbl, vid_num = 1))
+
+  msgs <- testthat::capture_messages(
+    suppressWarnings(get_tracked_object_pos(limits, animal_track)))
+  oob <- grep("exceeded the arena boundary", msgs, value = TRUE)
+  expect_length(oob, 1L)                 # one message, not one per trial
+  expect_match(oob, "across 2 trials")   # aggregated across both trials
+})
