@@ -350,3 +350,20 @@ test_that("radiate.headings_frame uses the modern themed chrome (grid theme draw
   geoms <- vapply(g$layers, function(l) class(l$geom)[1], character(1))
   expect_true("GeomPath" %in% geoms)
 })
+
+test_that("radiate.headings_frame markers honour a non-default display", {
+  hf <- headings_frame(data.frame(angle = c(0, 45, 90)),
+                       col = angle, units = "degrees")
+  pts <- function(g) {
+    b <- ggplot2::ggplot_build(g)
+    pt_layers <- which(vapply(g$layers,
+      function(l) inherits(l$geom, "GeomPoint"), logical(1)))
+    d <- b$data[[pt_layers[1]]]
+    as.matrix(d[order(d$x, d$y), c("x", "y")])
+  }
+  g_default <- radiate(hf, show_markers = TRUE, display = circ_display(zero = 0))
+  g_rot     <- radiate(hf, show_markers = TRUE,
+                       display = circ_display(zero = pi / 2))
+  # A different zero direction must move the marker coordinates.
+  expect_false(isTRUE(all.equal(pts(g_default), pts(g_rot))))
+})

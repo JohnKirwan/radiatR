@@ -2515,6 +2515,7 @@ radiate.headings_frame <- function(
   g <- .radial_chrome_background(g, style, origin = origin)
 
   if (isTRUE(show_markers)) {
+    attr(data, "display") <- display
     g <- g + add_stacked_headings(
       data, col = col, step = step, tol = tol, direction = direction,
       base_r = base_r, shade = shade, shape = shape,
