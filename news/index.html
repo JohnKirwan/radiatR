@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">radiatR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,9 +41,9 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="radiatr-development-version">radiatR (development version)<a class="anchor" aria-label="anchor" href="#radiatr-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.3.0" id="radiatr-030">radiatR 0.3.0<a class="anchor" aria-label="anchor" href="#radiatr-030"></a></h2>
 <div class="section level3">
-<h3 id="plotting-development-version">Plotting<a class="anchor" aria-label="anchor" href="#plotting-development-version"></a></h3>
+<h3 id="plotting-0-3-0">Plotting<a class="anchor" aria-label="anchor" href="#plotting-0-3-0"></a></h3>
 <ul><li>
 <strong>Behaviour change:</strong> for grid-bearing themes (<code>bw</code>, <code>grey</code>, <code>light</code>, <code>dark</code>, <code>linedraw</code>, <code>minimal</code>), <code><a href="../reference/radiate.html">radiate()</a></code> now replaces the Cartesian grid behind the unit circle with a theme-styled <em>radial</em> grid – a circular disc in the theme’s panel colour, quadrant crosshairs and a ring at 0.5 (major), and 45 degree diagonals plus rings at 0.25/0.75 (minor). Control it with the new <code>grid = c("radial", "cartesian", "none")</code> argument (default <code>"radial"</code>); <code>grid = "cartesian"</code> restores the previous square grid. <code>grid_colour</code> overrides the derived colour.</li>
 <li>New exported <code><a href="../reference/add_radial_grid.html">add_radial_grid()</a></code> and <code><a href="../reference/add_origin_point.html">add_origin_point()</a></code> composable layers, so the radial grid can be hand-built or restyled like any ggplot2 layer. The existing <code>quadrants</code>/<code>rings</code> arguments still add a-la-carte guides when <code>grid != "radial"</code>.</li>
