@@ -50,12 +50,16 @@ circ_display <- function(zero = pi / 2,
 
 # ---- annotation layers -------------------------------------------------------
 
-#' Create tick marks at the cardinal directions.
+#' Create evenly spaced radial tick marks.
 #'
-#' Generates a `geom_segment()` layer containing small tick marks at north,
-#' south, east, and west. The layer can be added to any ggplot.
+#' Generates a `geom_segment()` layer containing `n` evenly spaced tick marks
+#' around the unit circle, each spanning a radial distance of `length`
+#' straddling radius 1. The layer can be added to any ggplot.
 #'
 #' @param colour Tick colour. Default `"black"`.
+#' @param linewidth Tick line width. Default `0.5`.
+#' @param length Radial length of each tick, in data units. Default `0.1`.
+#' @param n Number of evenly spaced ticks. Default `8L`.
 #'
 #' @return A `geom_segment()` layer.
 #'
@@ -65,16 +69,17 @@ circ_display <- function(zero = pi / 2,
 #'   coord_fixed() +
 #'   add_ticks()
 #' @export
-add_ticks <- function(colour = "black") {
+add_ticks <- function(colour = "black", linewidth = 0.5, length = 0.1, n = 8L) {
+  th    <- 2 * pi * (seq_len(n) - 1L) / n
+  r_in  <- 1 - length / 2
+  r_out <- 1 + length / 2
   tick_df <- data.frame(
-    x = c(0, .66, .95, .66, 0, -.66, -.95, -.66),
-    y = c(.95, .66, 0, -.66, -.95, -.66, 0, .66),
-    xend = c(0, .74, 1.05, .74, 0, -.74, -1.05, -.74),
-    yend = c(1.05, .74, 0, -.74, -1.05, -.74, 0, .74)
+    x = r_in * cos(th),   y = r_in * sin(th),
+    xend = r_out * cos(th), yend = r_out * sin(th)
   )
 
   ggplot2::geom_segment(
-    data = tick_df,
+    data    = tick_df,
     mapping = ggplot2::aes(
       x = .data$x,
       y = .data$y,
@@ -82,6 +87,7 @@ add_ticks <- function(colour = "black") {
       yend = .data$yend
     ),
     colour      = colour,
+    linewidth   = linewidth,
     inherit.aes = FALSE
   )
 }

@@ -2,19 +2,26 @@
 % Please edit documentation in R/circular_plotting.R
 \name{add_ticks}
 \alias{add_ticks}
-\title{Create tick marks at the cardinal directions.}
+\title{Create evenly spaced radial tick marks.}
 \usage{
-add_ticks(colour = "black")
+add_ticks(colour = "black", linewidth = 0.5, length = 0.1, n = 8L)
 }
 \arguments{
 \item{colour}{Tick colour. Default `"black"`.}
+
+\item{linewidth}{Tick line width. Default `0.5`.}
+
+\item{length}{Radial length of each tick, in data units. Default `0.1`.}
+
+\item{n}{Number of evenly spaced ticks. Default `8L`.}
 }
 \value{
 A `geom_segment()` layer.
 }
 \description{
-Generates a `geom_segment()` layer containing small tick marks at north,
-south, east, and west. The layer can be added to any ggplot.
+Generates a `geom_segment()` layer containing `n` evenly spaced tick marks
+around the unit circle, each spanning a radial distance of `length`
+straddling radius 1. The layer can be added to any ggplot.
 }
 \examples{
 library(ggplot2)

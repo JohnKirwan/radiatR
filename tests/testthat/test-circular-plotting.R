@@ -264,6 +264,24 @@ test_that("add_heading_vectors: display zero=0 rotates endpoint", {
   expect_equal(seg$yend, 1, tolerance = 1e-6)
 })
 
+test_that("add_ticks: n controls count, length the reach, colour/linewidth applied", {
+  library(ggplot2)
+  d <- ggplot_build(ggplot() + add_ticks(n = 12, length = 0.2,
+                                          colour = "red", linewidth = 2))$data[[1]]
+  expect_equal(nrow(d), 12L)
+  r_in  <- sqrt(d$x^2 + d$y^2)
+  r_out <- sqrt(d$xend^2 + d$yend^2)
+  expect_equal(unique(round(r_out - r_in, 6)), 0.2)   # each tick spans `length`
+  expect_equal(d$colour[1], "red")
+  expect_equal(d$linewidth[1], 2)
+})
+
+test_that("add_ticks default reproduces 8 ticks", {
+  library(ggplot2)
+  d <- ggplot_build(ggplot() + add_ticks())$data[[1]]
+  expect_equal(nrow(d), 8L)
+})
+
 test_that("plotting helpers return ggplot layers", {
   ticks <- add_ticks()
   expect_s3_class(ticks, "LayerInstance")
