@@ -108,7 +108,8 @@ test_that("quadrant lines inherit the theme's grid colour, with a fallback", {
     ggplot2::calc_element("panel.grid", radial_theme(name))$colour
 
   g_min <- radiate(ts, group_col = "trial_id", show_arrow = FALSE,
-                   show_labels = FALSE, quadrants = TRUE, theme = "minimal")
+                   show_labels = FALSE, quadrants = TRUE, theme = "minimal",
+                   grid = "cartesian")
   expect_equal(quad_colour(g_min), grid_colour("minimal"))
 
   # void draws no grid -> fall back to a subtle grey

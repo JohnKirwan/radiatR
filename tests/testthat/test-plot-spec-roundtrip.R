@@ -40,7 +40,7 @@ roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
     colour = list(by = by, cap = 20,
                   legend = !identical(by, "trajectory") &&
                            length(unique(as.data.frame(ts)[[by]])) <= 20),
-    theme = "bw", angle_labels = "degrees", display = list(zero = 0),
+    theme = "void", angle_labels = "degrees", display = list(zero = 0),
     heading_display = heading_display,
     subtitle = subtitle, caption = caption,
     show = list(tracks = TRUE, arrow = arrow, vectors = vectors,
@@ -142,6 +142,17 @@ test_that("emitted code reproduces spec_to_plot (quadrants + rings, faceted)", {
   expect_roundtrip(
     roundtrip_spec("points", "trajectory", "type", FALSE, FALSE,
                    quadrants = TRUE, rings = TRUE))
+})
+
+test_that("emitted code reproduces spec_to_plot (radial grid on a grid theme)", {
+  # On a grid-bearing theme radiate() draws the radial grid by default; verify it
+  # is present and that the spec->plot / spec->code paths reproduce it identically.
+  rt <- roundtrip_spec("points", "trajectory", NULL, FALSE, FALSE)
+  rt$spec$theme <- "grey"
+  live  <- spec_to_plot(rt$spec, rt$ts, rt$hd)
+  geoms <- vapply(live$layers, function(l) class(l$geom)[1], character(1))
+  expect_true("GeomPolygon" %in% geoms)   # the radial-grid disc
+  expect_roundtrip(rt)
 })
 
 test_that("emitted code reproduces spec_to_plot (crossing rule + heading vectors)", {

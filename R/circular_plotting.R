@@ -176,6 +176,124 @@ add_quadrant_lines <- function(colour = "grey60", linewidth = 0.5, linetype = "d
   )
 }
 
+#' Mark the centre of a radial plot
+#'
+#' Adds a single point at the origin `(0, 0)` -- a centre reference for sparse
+#' themes where no crosshairs meet at the middle.
+#'
+#' @param colour Point colour. Default `"grey50"`.
+#' @param size Point size. Default `1.5`.
+#' @param shape Point shape. Default `16` (filled circle).
+#' @param ... Further arguments passed to [ggplot2::geom_point()].
+#' @return A `geom_point()` layer.
+#' @examples
+#' library(ggplot2)
+#' ggplot() + coord_fixed() + add_circ() + add_origin_point()
+#' @importFrom ggplot2 geom_point aes
+#' @export
+add_origin_point <- function(colour = "grey50", size = 1.5, shape = 16, ...) {
+  ggplot2::geom_point(
+    data        = data.frame(x = 0, y = 0),
+    mapping     = ggplot2::aes(x = .data$x, y = .data$y),
+    colour      = colour, size = size, shape = shape,
+    inherit.aes = FALSE, ...
+  )
+}
+
+# n radial lines from the origin to the rim, starting at `phase` (radians).
+.radial_spokes <- function(n, phase = 0, colour = "grey60",
+                           linewidth = 0.5, linetype = "solid") {
+  if (is.null(n) || n < 1L) return(NULL)
+  th <- phase + 2 * pi * (seq_len(n) - 1L) / n
+  df <- data.frame(x = 0, y = 0, xend = cos(th), yend = sin(th))
+  ggplot2::geom_segment(
+    data    = df,
+    mapping = ggplot2::aes(x = .data$x, y = .data$y,
+                           xend = .data$xend, yend = .data$yend),
+    colour  = colour, linewidth = linewidth, linetype = linetype,
+    inherit.aes = FALSE
+  )
+}
+
+#' Radial grid layers (the radial analogue of a Cartesian grid)
+#'
+#' Returns a list of layers -- an optional filled disc, concentric rings, and
+#' radial spokes, in two weights (major/minor) -- to compose onto a radial
+#' `radiate()` plot with `+`. The unit boundary (radius 1) is left to the arena
+#' circle ([add_circ()]); grid rings are interior only.
+#'
+#' @param rings_major,rings_minor Numeric radii (`<1`) of the major and minor
+#'   rings. Defaults `0.5` and `c(0.25, 0.75)`.
+#' @param spokes_major,spokes_minor Number of evenly spaced spokes for each
+#'   weight. `4` major gives the quadrant crosshairs; `4` minor interleaves them
+#'   as 45-degree diagonals. Minor spokes are offset from major by half the major
+#'   spacing (`pi / spokes_major`), so their placement is defined relative to the
+#'   major count.
+#' @param colour,colour_minor Spoke/ring colour. `colour_minor` defaults to
+#'   `colour`.
+#' @param linewidth,linewidth_minor Line widths. `linewidth_minor` defaults to
+#'   `0.5 * linewidth`.
+#' @param linetype Line type for the spokes. Default `"solid"`.
+#' @param disc_fill Fill colour for the background disc; `NA` (default) draws no
+#'   disc.
+#' @param origin Logical; add a centre dot ([add_origin_point()]). Default
+#'   `FALSE`.
+#' @param origin_colour,origin_size Centre-dot style.
+#' @param n_pts Points used to approximate the disc outline. Default `200L`.
+#' @return A list of ggplot2 layers.
+#' @seealso [add_multiple_circles()], [add_quadrant_lines()], [add_origin_point()]
+#' @examples
+#' library(ggplot2)
+#' ggplot() + coord_fixed() +
+#'   add_radial_grid(disc_fill = "grey92", colour = "white") +
+#'   add_circ()
+#' @importFrom ggplot2 geom_polygon geom_segment aes
+#' @export
+add_radial_grid <- function(rings_major = 0.5, rings_minor = c(0.25, 0.75),
+                            spokes_major = 4L, spokes_minor = 4L,
+                            colour = "grey92", colour_minor = NULL,
+                            linewidth = 0.5, linewidth_minor = NULL,
+                            linetype = "solid", disc_fill = NA,
+                            origin = FALSE, origin_colour = "grey50",
+                            origin_size = 1.5, n_pts = 200L) {
+  if (is.null(colour_minor))    colour_minor    <- colour
+  if (is.null(linewidth_minor)) linewidth_minor <- 0.5 * linewidth
+  layers <- list()
+
+  # add_circ() returns list(layer) and add_multiple_circles() returns a
+  # list-of-lists; flatten one level so `layers` is a flat list of layers.
+  ring_layers <- function(radii, col, lw) {
+    if (!length(radii)) return(list())
+    do.call(c, add_multiple_circles(radii = radii, circle_color = col, circle_size = lw))
+  }
+
+  if (!is.null(disc_fill) && !is.na(disc_fill)) {
+    th <- seq(0, 2 * pi, length.out = n_pts)
+    layers <- c(layers, list(ggplot2::geom_polygon(
+      data    = data.frame(x = cos(th), y = sin(th)),
+      mapping = ggplot2::aes(x = .data$x, y = .data$y),
+      fill = disc_fill, colour = NA, inherit.aes = FALSE)))
+  }
+
+  # minor first (drawn under major)
+  layers <- c(layers, ring_layers(rings_minor, colour_minor, linewidth_minor))
+  sp_min <- .radial_spokes(spokes_minor, phase = pi / max(spokes_major, 1L),
+                           colour = colour_minor, linewidth = linewidth_minor,
+                           linetype = linetype)
+  if (!is.null(sp_min)) layers <- c(layers, list(sp_min))
+
+  layers <- c(layers, ring_layers(rings_major, colour, linewidth))
+  sp_maj <- .radial_spokes(spokes_major, phase = 0,
+                           colour = colour, linewidth = linewidth,
+                           linetype = linetype)
+  if (!is.null(sp_maj)) layers <- c(layers, list(sp_maj))
+
+  if (isTRUE(origin))
+    layers <- c(layers, list(add_origin_point(colour = origin_colour, size = origin_size)))
+
+  layers
+}
+
 #' Label the four diagonal directions.
 #'
 #' Provides a list of annotation layers that mark 45, 135, 225, and 315 degrees on a
@@ -1522,15 +1640,30 @@ RADIAL_THEMES <- c("void", "minimal", "classic", "bw", "grey", "gray",
 # `panel.grid` element so they match whatever grid that theme draws. Themes
 # that draw no grid (void, classic) fall back to a subtle grey.
 .theme_grid_style <- function(name) {
-  el <- ggplot2::calc_element("panel.grid", radial_theme(name))
-  if (inherits(el, "element_line") &&
-      !is.null(el$colour) && !is.na(el$colour)) {
-    lw <- if (!is.null(el$linewidth) && !is.na(el$linewidth)) el$linewidth
-          else 0.5
-    list(colour = el$colour, linewidth = lw)
-  } else {
-    list(colour = "grey60", linewidth = 0.5)
+  th <- radial_theme(name)
+  line_style <- function(elname) {
+    el <- ggplot2::calc_element(elname, th)
+    if (inherits(el, "element_line") &&
+        !is.null(el$colour) && !is.na(el$colour)) {
+      lw <- if (!is.null(el$linewidth) && !is.na(el$linewidth)) el$linewidth else 0.5
+      list(colour = el$colour, linewidth = lw)
+    } else {
+      list(colour = "grey60", linewidth = 0.5)
+    }
   }
+  major <- line_style("panel.grid.major")
+  minor <- line_style("panel.grid.minor")
+
+  gmaj <- ggplot2::calc_element("panel.grid.major", th)
+  has_grid <- inherits(gmaj, "element_line") &&
+    !is.null(gmaj$colour) && !is.na(gmaj$colour)
+
+  bg   <- ggplot2::calc_element("panel.background", th)
+  fill <- if (inherits(bg, "element_rect") &&
+              !is.null(bg$fill) && !is.na(bg$fill)) bg$fill else NA_character_
+
+  list(colour = major$colour, linewidth = major$linewidth,  # flat back-compat aliases
+       major = major, minor = minor, fill = fill, has_grid = has_grid)
 }
 
 # ---- trajectory plotting -----------------------------------------------------
@@ -1776,6 +1909,14 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #' @param theme Plot appearance, named for the ggplot2 base themes: one of
 #'   `"void"` (default), `"minimal"`, `"classic"`, `"bw"`, `"grey"`, `"light"`,
 #'   `"dark"`, or `"linedraw"`. See [radial_theme()].
+#' @param grid One of `"radial"` (default), `"cartesian"`, or `"none"`. `"radial"`
+#'   replaces the theme's Cartesian grid with theme-styled radial guides
+#'   (circular disc + major/minor crosshairs and rings) for grid-bearing themes,
+#'   and draws nothing for grid-less themes (`void`, `classic`). `"cartesian"`
+#'   keeps the theme's square grid; `"none"` removes all gridlines.
+#' @param grid_colour Optional colour overriding the theme-derived guide colour.
+#' @param origin Logical or `NULL`. Draw a centre dot. `NULL` (default) draws it
+#'   only when the resolved grid has no crosshairs (grid-less themes).
 #' @param quadrants Logical; draw the two dashed lines through the origin that
 #'   demarcate the quadrants. Default `FALSE`. Their colour and width follow the
 #'   chosen `theme`'s grid lines (see [radial_theme()]).
@@ -1861,6 +2002,9 @@ function(
             "light", "dark", "linedraw"),
   quadrants = FALSE,
   rings = FALSE,
+  grid = c("radial", "cartesian", "none"),
+  grid_colour = NULL,
+  origin = NULL,
   show_labels = NULL,
   label_col = NULL,
   label_size = 3,
@@ -1878,6 +2022,7 @@ function(
   if (is.null(legend)) {legend = FALSE}
   if (is.null(axes)) {axes = FALSE}
   angle_labels <- match.arg(angle_labels)
+  grid <- match.arg(grid)
   # Back-compat: an explicit `degrees = FALSE` hides the angle labels.
   if (isFALSE(degrees)) angle_labels <- "none"
   theme <- match.arg(theme)
@@ -1956,6 +2101,26 @@ function(
     layer_mapping <- do.call(ggplot2::aes, mapping_list)
   }
 
+  gs        <- .theme_grid_style(theme)
+  guide_col <- if (is.null(grid_colour)) gs$major$colour else grid_colour
+  radial_on        <- identical(grid, "radial")
+  draw_radial_grid <- radial_on && isTRUE(gs$has_grid)
+  if (is.null(origin)) origin <- radial_on && !draw_radial_grid   # on only where no crosshairs
+
+  if (draw_radial_grid) {
+    g <- g + add_radial_grid(
+      colour          = guide_col,
+      # grid_colour (when given) recolours both weights; otherwise keep the
+      # theme's distinct minor colour.
+      colour_minor    = if (is.null(grid_colour)) gs$minor$colour else guide_col,
+      linewidth       = gs$major$linewidth,
+      linewidth_minor = gs$minor$linewidth,
+      disc_fill       = gs$fill,
+      origin          = FALSE
+    )
+  }
+  if (isTRUE(origin)) g <- g + add_origin_point(colour = guide_col)
+
   if (show_tracks) {
     g <- g + draw_tracks(
       data = data,
@@ -1968,13 +2133,23 @@ function(
   }
 
   g <- g + radial_theme(theme)
-  grid_style <- .theme_grid_style(theme)
-  if (rings)
-    g <- g + add_multiple_circles(circle_color = grid_style$colour,
-                                  circle_size  = grid_style$linewidth)
-  if (quadrants)
-    g <- g + add_quadrant_lines(colour    = grid_style$colour,
-                                linewidth = grid_style$linewidth)
+  if (draw_radial_grid) {
+    g <- g + ggplot2::theme(
+      panel.grid       = ggplot2::element_blank(),
+      panel.background = ggplot2::element_blank(),
+      panel.border     = ggplot2::element_blank()
+    )
+  } else if (identical(grid, "none")) {
+    g <- g + ggplot2::theme(panel.grid = ggplot2::element_blank())
+  }
+  if (!draw_radial_grid) {                # a-la-carte overlays only when no radial grid is drawn
+    if (rings)
+      g <- g + add_multiple_circles(circle_color = guide_col,
+                                    circle_size  = gs$major$linewidth)
+    if (quadrants)
+      g <- g + add_quadrant_lines(colour    = guide_col,
+                                  linewidth = gs$major$linewidth)
+  }
   g <- g + add_circ(circle_color = ink, circle_size = 1.2)
   if (ticks) g <- g + add_ticks(colour = ink)
   if (angle_labels != "none")

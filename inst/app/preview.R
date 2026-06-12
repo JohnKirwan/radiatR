@@ -44,7 +44,7 @@ build_method_preview <- function(ts, method, circ0 = 0.3, circ1 = 0.6,
 
   base <- radiate(ts, group_col = idc, show_arrow = FALSE, show_labels = FALSE,
                   show_tracks = TRUE, theme = "minimal", colour_cycle = n,
-                  display = display)
+                  display = display, grid = "none")
 
   # method_labels is provided by app.R; fall back to the raw method name when this
   # helper is sourced standalone (e.g. in tests).

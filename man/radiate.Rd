@@ -36,6 +36,9 @@ radiate(data, ...)
     "linedraw"),
   quadrants = FALSE,
   rings = FALSE,
+  grid = c("radial", "cartesian", "none"),
+  grid_colour = NULL,
+  origin = NULL,
   show_labels = NULL,
   label_col = NULL,
   label_size = 3,
@@ -132,6 +135,17 @@ chosen `theme`'s grid lines (see [radial_theme()]).}
 \item{rings}{Logical; draw concentric guide rings (the radial analogue of a
 grid). Default `FALSE`. Their colour and width follow the chosen `theme`'s
 grid lines.}
+
+\item{grid}{One of `"radial"` (default), `"cartesian"`, or `"none"`. `"radial"`
+replaces the theme's Cartesian grid with theme-styled radial guides
+(circular disc + major/minor crosshairs and rings) for grid-bearing themes,
+and draws nothing for grid-less themes (`void`, `classic`). `"cartesian"`
+keeps the theme's square grid; `"none"` removes all gridlines.}
+
+\item{grid_colour}{Optional colour overriding the theme-derived guide colour.}
+
+\item{origin}{Logical or `NULL`. Draw a centre dot. `NULL` (default) draws it
+only when the resolved grid has no crosshairs (grid-less themes).}
 
 \item{show_labels}{Whether to place labels at the perimeter.}
 
