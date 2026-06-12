@@ -1983,8 +1983,13 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   and draws nothing for grid-less themes (`void`, `classic`). `"cartesian"`
 #'   keeps the theme's square grid; `"none"` removes all gridlines.
 #' @param grid_colour Optional colour overriding the theme-derived guide colour.
-#' @param origin Logical or `NULL`. Draw a centre dot. `NULL` (default) draws it
-#'   only when the resolved grid has no crosshairs (grid-less themes).
+#' @param origin Logical; draw a centre point. Default `FALSE`. When drawn it
+#'   takes the theme's axis ink colour.
+#' @param circumference Logical; draw the unit-circle circumference as a fallback
+#'   boundary when no radial grid marks it (grid-less themes, `grid = "none"`).
+#'   Default `TRUE`. Styled from the theme's `axis.line` (else the axis ink). On
+#'   grid-bearing themes the grid's outer ring marks the boundary instead, so this
+#'   has no effect there.
 #' @param quadrants Logical; draw the two dashed lines through the origin that
 #'   demarcate the quadrants. Default `FALSE`. Their colour and width follow the
 #'   chosen `theme`'s grid lines (see [radial_theme()]).
@@ -2031,9 +2036,11 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   unit-circle coordinates (e.g. the `cpunctatus` dataset).
 #' @param ticks,degrees,legend,title,xlab,ylab,axes Additional styling options.
 #'   `degrees` is retained for back-compatibility; `degrees = FALSE` is
-#'   equivalent to `angle_labels = "none"`.
+#'   equivalent to `angle_labels = "none"`. Tick styling (colour, width, length)
+#'   follows the chosen `theme`'s `axis.ticks`.
 #' @param angle_labels One of `"degrees"` (default; e.g. `45°`), `"none"`, or
 #'   `"radians"` (e.g. `π/4`) -- the diagonal angle labels around the circle.
+#'   Label styling (colour, size, family) follows the chosen `theme`'s `axis.text`.
 #' @param ... Additional arguments forwarded to [draw_tracks()].
 #' @return A `ggplot2` object.
 #' @examples
