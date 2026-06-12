@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">radiatR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,9 +41,9 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="radiatr-development-version">radiatR (development version)<a class="anchor" aria-label="anchor" href="#radiatr-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.3.1" id="radiatr-031">radiatR 0.3.1<a class="anchor" aria-label="anchor" href="#radiatr-031"></a></h2>
 <div class="section level3">
-<h3 id="plotting-development-version">Plotting<a class="anchor" aria-label="anchor" href="#plotting-development-version"></a></h3>
+<h3 id="plotting-0-3-1">Plotting<a class="anchor" aria-label="anchor" href="#plotting-0-3-1"></a></h3>
 <ul><li>The fallback circumference (drawn on grid-less themes such as <code>void</code>) is now drawn at <code>theme_classic</code>’s axis-line weight (0.5) rather than a bold 1.2, so it reads like an axis rather than a heavy frame.</li>
 <li>The radial axis chrome – the circumference (unit circle), angular tick marks, and degree labels – now takes its styling from the base theme chosen via <code>radiate(theme = )</code>, mapped from that theme’s <code>axis.line</code> / <code>axis.ticks</code> / <code>axis.text</code>. Picking a different theme restyles them (colour, line width, label size and family), and colour is kept legible against a dark panel. <code><a href="../reference/add_ticks.html">add_ticks()</a></code> gains <code>colour</code>, <code>linewidth</code>, <code>length</code>, and <code>n</code>; <code><a href="../reference/degree_labs.html">degree_labs()</a></code> gains <code>size</code> and <code>family</code>; <code><a href="../reference/add_circ.html">add_circ()</a></code> gains <code>linetype</code> and <code>colour</code>/<code>linewidth</code> aliases. (Styling follows the theme passed to <code><a href="../reference/radiate.html">radiate()</a></code>, not a <code>+ theme()</code> added afterwards, since the chrome is drawn as layers.)</li>
 <li>On grid-bearing themes the radial grid’s outer ring now reaches the unit circle, so it marks the boundary; the separate circumference is drawn only as a fallback where no grid delineates it (control with <code>radiate(circumference = )</code>). A consequence: on light grid themes (<code>minimal</code>, <code>bw</code>, <code>light</code>) the boundary is now a subtle grid-coloured ring rather than a bold dark circle – add a bold ring back with <code>+ add_circ(colour = "black", linewidth = 1.2)</code> if desired.</li>
@@ -51,7 +51,7 @@
 <code>radiate(origin = )</code> now defaults to <code>FALSE</code> (the centre point is opt-in on all themes) and, when drawn, takes the theme’s axis ink colour.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="shiny-app-development-version">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-development-version"></a></h3>
+<h3 id="shiny-app-0-3-1">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-0-3-1"></a></h3>
 <ul><li>Stacked heading dots are spaced a little further apart and start a little further inward from the circumference (the <code>step</code> and <code>start_sep</code> defaults the app uses).</li>
 </ul></div>
 </div>
