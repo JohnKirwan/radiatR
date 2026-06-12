@@ -4,6 +4,9 @@
 
 ### Plotting
 
+- The fallback circumference (drawn on grid-less themes such as `void`)
+  is now drawn at `theme_classic`’s axis-line weight (0.5) rather than a
+  bold 1.2, so it reads like an axis rather than a heavy frame.
 - The radial axis chrome – the circumference (unit circle), angular tick
   marks, and degree labels – now takes its styling from the base theme
   chosen via `radiate(theme = )`, mapped from that theme’s `axis.line` /
@@ -30,6 +33,12 @@
 - `radiate(origin = )` now defaults to `FALSE` (the centre point is
   opt-in on all themes) and, when drawn, takes the theme’s axis ink
   colour.
+
+### Shiny app
+
+- Stacked heading dots are spaced a little further apart and start a
+  little further inward from the circumference (the `step` and
+  `start_sep` defaults the app uses).
 
 ## radiatR 0.3.0
 
