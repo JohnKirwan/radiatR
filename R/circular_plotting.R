@@ -1522,15 +1522,30 @@ RADIAL_THEMES <- c("void", "minimal", "classic", "bw", "grey", "gray",
 # `panel.grid` element so they match whatever grid that theme draws. Themes
 # that draw no grid (void, classic) fall back to a subtle grey.
 .theme_grid_style <- function(name) {
-  el <- ggplot2::calc_element("panel.grid", radial_theme(name))
-  if (inherits(el, "element_line") &&
-      !is.null(el$colour) && !is.na(el$colour)) {
-    lw <- if (!is.null(el$linewidth) && !is.na(el$linewidth)) el$linewidth
-          else 0.5
-    list(colour = el$colour, linewidth = lw)
-  } else {
-    list(colour = "grey60", linewidth = 0.5)
+  th <- radial_theme(name)
+  line_style <- function(elname) {
+    el <- ggplot2::calc_element(elname, th)
+    if (inherits(el, "element_line") &&
+        !is.null(el$colour) && !is.na(el$colour)) {
+      lw <- if (!is.null(el$linewidth) && !is.na(el$linewidth)) el$linewidth else 0.5
+      list(colour = el$colour, linewidth = lw)
+    } else {
+      list(colour = "grey60", linewidth = 0.5)
+    }
   }
+  major <- line_style("panel.grid.major")
+  minor <- line_style("panel.grid.minor")
+
+  gmaj <- ggplot2::calc_element("panel.grid.major", th)
+  has_grid <- inherits(gmaj, "element_line") &&
+    !is.null(gmaj$colour) && !is.na(gmaj$colour)
+
+  bg   <- ggplot2::calc_element("panel.background", th)
+  fill <- if (inherits(bg, "element_rect") &&
+              !is.null(bg$fill) && !is.na(bg$fill)) bg$fill else NA_character_
+
+  list(colour = major$colour, linewidth = major$linewidth,  # flat back-compat aliases
+       major = major, minor = minor, fill = fill, has_grid = has_grid)
 }
 
 # ---- trajectory plotting -----------------------------------------------------

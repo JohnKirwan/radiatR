@@ -1442,3 +1442,17 @@ test_that("mean arrow rotates with display zero=0 (stimulus at top)", {
   expect_gt(a$yend, 0.9)
   expect_lt(abs(a$xend), 1e-6)
 })
+
+test_that(".theme_grid_style exposes major/minor styles, panel fill, and has_grid", {
+  s <- radiatR:::.theme_grid_style("grey")
+  expect_true(s$has_grid)
+  expect_equal(tolower(s$major$colour), "white")   # theme_grey gridlines are white
+  expect_true(is.numeric(s$major$linewidth))
+  expect_false(is.na(s$fill))                       # grey panel has a fill
+  expect_equal(s$colour, s$major$colour)            # back-compat flat alias
+
+  v <- radiatR:::.theme_grid_style("void")
+  expect_false(v$has_grid)
+  expect_true(is.na(v$fill))
+  expect_equal(v$colour, "grey60")                  # fallback preserved
+})
