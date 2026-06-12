@@ -1909,6 +1909,14 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #' @param theme Plot appearance, named for the ggplot2 base themes: one of
 #'   `"void"` (default), `"minimal"`, `"classic"`, `"bw"`, `"grey"`, `"light"`,
 #'   `"dark"`, or `"linedraw"`. See [radial_theme()].
+#' @param grid One of `"radial"` (default), `"cartesian"`, or `"none"`. `"radial"`
+#'   replaces the theme's Cartesian grid with theme-styled radial guides
+#'   (circular disc + major/minor crosshairs and rings) for grid-bearing themes,
+#'   and draws nothing for grid-less themes (`void`, `classic`). `"cartesian"`
+#'   keeps the theme's square grid; `"none"` removes all gridlines.
+#' @param grid_colour Optional colour overriding the theme-derived guide colour.
+#' @param origin Logical or `NULL`. Draw a centre dot. `NULL` (default) draws it
+#'   only when the resolved grid has no crosshairs (grid-less themes).
 #' @param quadrants Logical; draw the two dashed lines through the origin that
 #'   demarcate the quadrants. Default `FALSE`. Their colour and width follow the
 #'   chosen `theme`'s grid lines (see [radial_theme()]).
