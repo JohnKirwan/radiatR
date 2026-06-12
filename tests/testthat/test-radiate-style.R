@@ -23,18 +23,22 @@ test_that("radial_theme returns the matching ggplot2 base theme", {
   expect_error(radial_theme("nope"))
 })
 
-test_that("dark theme uses light ink for the unit circle so it stays visible", {
+test_that("dark theme uses light ink for axis chrome so it stays visible", {
   ts <- simulate_tracks(n_points = 20, seed = 7, output = "trajset")
-  circle_colour <- function(p) {
-    # the unit circle is the annotate('path') layer spanning the full circle
+  # Axis ticks are always drawn (ticks = TRUE by default); their colour is
+  # derived from the theme's axis.ticks, legibility-guarded against the panel
+  # fill. theme_dark()'s axis.ticks colour is dark-on-dark, so it gets bumped
+  # to the light "grey85" ink. theme_minimal() has no axis.ticks; it falls
+  # back to its own (light-panel) ink, which is not "grey85".
+  tick_colour <- function(p) {
     for (l in p$layers) {
       d <- l$data
-      if (is.data.frame(d) && all(c("x", "y") %in% names(d)) &&
-          nrow(d) >= 999L &&
-          isTRUE(all.equal(max(abs(d$x)), 1, tolerance = 1e-6))) {
-        col <- if (!is.null(l$aes_params$colour)) l$aes_params$colour
-               else l$aes_params$color
-        if (!is.null(col)) return(col)
+      if (inherits(l$geom, "GeomSegment") && !is.null(l$aes_params$colour) &&
+          is.data.frame(d) && all(c("x", "y", "xend", "yend") %in% names(d))) {
+        r <- sqrt(d$x^2 + d$y^2)
+        # ticks straddle r = 1 (radial marks just inside/outside the rim);
+        # spokes run from the centre (r ~ 0) to the rim (r = 1).
+        if (all(abs(r - 1) < 0.5) && !any(r < 0.5)) return(l$aes_params$colour)
       }
     }
     NA_character_
@@ -43,8 +47,8 @@ test_that("dark theme uses light ink for the unit circle so it stays visible", {
                      show_labels = FALSE, theme = "dark")
   p_light <- radiate(ts, group_col = "trial_id", show_arrow = FALSE,
                      show_labels = FALSE, theme = "minimal")
-  expect_equal(circle_colour(p_dark),  "grey85")
-  expect_equal(circle_colour(p_light), "black")
+  expect_equal(tick_colour(p_dark),  "grey85")
+  expect_false(identical(tick_colour(p_light), "grey85"))
 })
 
 test_that("show_tracks toggles the trajectory layer", {
