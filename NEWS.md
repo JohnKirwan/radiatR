@@ -1,5 +1,14 @@
 # radiatR (development version)
 
+## Plotting
+
+* `radiate.headings_frame()` now draws the same theme-responsive radial chrome
+  as `radiate()` for trajectories (circumference, ticks, degree labels, radial
+  grid, origin) instead of a fixed bold circle, and gains `show_markers`,
+  `colour_col`, `legend`, `display`, `grid`, `grid_colour`, `circumference`, and
+  `origin` arguments. `show_markers = FALSE` returns the radial frame only, so
+  callers can layer their own marker and statistic overlays.
+
 # radiatR 0.3.1
 
 ## Plotting
