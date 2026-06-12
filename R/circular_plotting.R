@@ -176,6 +176,30 @@ add_quadrant_lines <- function(colour = "grey60", linewidth = 0.5, linetype = "d
   )
 }
 
+#' Mark the centre of a radial plot
+#'
+#' Adds a single point at the origin `(0, 0)` -- a centre reference for sparse
+#' themes where no crosshairs meet at the middle.
+#'
+#' @param colour Point colour. Default `"grey50"`.
+#' @param size Point size. Default `1.5`.
+#' @param shape Point shape. Default `16` (filled circle).
+#' @param ... Further arguments passed to [ggplot2::geom_point()].
+#' @return A `geom_point()` layer.
+#' @examples
+#' library(ggplot2)
+#' ggplot() + coord_fixed() + add_circ() + add_origin_point()
+#' @importFrom ggplot2 geom_point aes
+#' @export
+add_origin_point <- function(colour = "grey50", size = 1.5, shape = 16, ...) {
+  ggplot2::geom_point(
+    data        = data.frame(x = 0, y = 0),
+    mapping     = ggplot2::aes(x = .data$x, y = .data$y),
+    colour      = colour, size = size, shape = shape,
+    inherit.aes = FALSE, ...
+  )
+}
+
 #' Label the four diagonal directions.
 #'
 #' Provides a list of annotation layers that mark 45, 135, 225, and 315 degrees on a

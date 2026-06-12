@@ -17,4 +17,13 @@ Useful links:
 }
 
 }
+\author{
+\strong{Maintainer}: John D. Kirwan \email{john@jkirwan.org}
+
+Authors:
+\itemize{
+  \item John D. Kirwan \email{john@jkirwan.org}
+}
+
+}
 \keyword{internal}

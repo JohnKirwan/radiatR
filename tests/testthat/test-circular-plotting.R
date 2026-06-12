@@ -1456,3 +1456,11 @@ test_that(".theme_grid_style exposes major/minor styles, panel fill, and has_gri
   expect_true(is.na(v$fill))
   expect_equal(v$colour, "grey60")                  # fallback preserved
 })
+
+test_that("add_origin_point draws one point at the origin with given style", {
+  library(ggplot2)
+  d <- ggplot_build(ggplot() + add_origin_point(colour = "red", size = 3))$data[[1]]
+  expect_equal(nrow(d), 1L)
+  expect_equal(d$x, 0); expect_equal(d$y, 0)
+  expect_equal(d$colour, "red")
+})
