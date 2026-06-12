@@ -1539,3 +1539,21 @@ test_that("radiate(grid_colour=) overrides the derived guide colour", {
   seg <- p$layers[[which(vapply(p$layers, function(l) inherits(l$geom, "GeomSegment"), logical(1)))[1]]]
   expect_equal(seg$aes_params$colour, "red")
 })
+
+test_that(".theme_axis_style resolves axis elements, ink, and legibility", {
+  cl <- radiatR:::.theme_axis_style("classic")
+  expect_true(cl$line$present)                      # classic draws axis.line
+  expect_equal(tolower(cl$line$colour), "black")
+
+  gr <- radiatR:::.theme_axis_style("grey")
+  expect_false(gr$line$present)                     # grey: axis.line blank
+  expect_true(gr$ticks$present)                     # grey: ticks drawn
+  expect_true(gr$text$present)                      # grey: axis.text drawn
+  expect_equal(gr$ink, gr$ticks$colour)             # ink falls through to a present axis colour (light disc)
+
+  dk <- radiatR:::.theme_axis_style("dark")
+  expect_true(radiatR:::.is_dark(dk$fill))          # dark theme has a dark panel
+  expect_true(radiatR:::.is_dark("black"))
+  expect_false(radiatR:::.is_dark("white"))
+  expect_equal(dk$ink, "grey85")                    # ink flips light on the dark disc
+})

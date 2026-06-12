@@ -1635,6 +1635,61 @@ RADIAL_THEMES <- c("void", "minimal", "classic", "bw", "grey", "gray",
 # theme has a dark panel; everything else gets near-black ink.
 .theme_ink <- function(name) if (identical(name, "dark")) "grey85" else "black"
 
+# TRUE if a colour reads as "dark" (relative luminance < 0.5).
+.is_dark <- function(col) {
+  if (is.null(col) || is.na(col)) return(FALSE)
+  rgb <- tryCatch(grDevices::col2rgb(col)[, 1], error = function(e) c(255, 255, 255))
+  (0.299 * rgb[1] + 0.587 * rgb[2] + 0.114 * rgb[3]) / 255 < 0.5
+}
+
+# Keep an overlay colour legible against the disc fill: a dark colour on a dark
+# disc is replaced with a light ink.
+.legible <- function(colour, fill) {
+  if (is.null(colour) || is.na(colour)) return(colour)
+  if (.is_dark(fill) && .is_dark(colour)) "grey85" else colour
+}
+
+# Resolve the theme's axis-like styling (axis.line / axis.ticks / axis.text) plus
+# the disc fill and a legibility-guarded "ink" fallback colour. radiatR draws its
+# axis chrome ON the disc, so colour is legibility-adjusted; size/family/presence
+# are taken verbatim.
+.theme_axis_style <- function(name) {
+  th <- radial_theme(name)
+  line_el <- function(elname) {
+    el <- ggplot2::calc_element(elname, th)
+    if (inherits(el, "element_line") && !is.null(el$colour) && !is.na(el$colour)) {
+      lw <- if (!is.null(el$linewidth) && !is.na(el$linewidth)) el$linewidth else 0.5
+      list(colour = el$colour, linewidth = lw, present = TRUE)
+    } else {
+      list(colour = NA_character_, linewidth = 0.5, present = FALSE)
+    }
+  }
+  text_el <- function(elname) {
+    el <- ggplot2::calc_element(elname, th)
+    if (inherits(el, "element_text") && !is.null(el$colour) && !is.na(el$colour)) {
+      sz  <- if (!is.null(el$size) && !is.na(el$size)) el$size else 11
+      fam <- if (is.null(el$family) || identical(el$family, "")) "" else el$family
+      list(colour = el$colour, size = sz, family = fam, present = TRUE)
+    } else {
+      list(colour = NA_character_, size = 11, family = "", present = FALSE)
+    }
+  }
+  line  <- line_el("axis.line")
+  ticks <- line_el("axis.ticks")
+  text  <- text_el("axis.text")
+
+  bg   <- ggplot2::calc_element("panel.background", th)
+  fill <- if (inherits(bg, "element_rect") && !is.null(bg$fill) && !is.na(bg$fill))
+    bg$fill else NA_character_
+
+  cand <- c(line$colour, ticks$colour, text$colour)
+  cand <- cand[!is.na(cand)]
+  raw_ink <- if (length(cand)) cand[[1]] else "black"
+
+  list(line = line, ticks = ticks, text = text, fill = fill,
+       ink = .legible(raw_ink, fill))
+}
+
 # Grid-like styling (colour, linewidth) for the radial guide overlays
 # (quadrant lines and guide rings), pulled from the chosen theme's own
 # `panel.grid` element so they match whatever grid that theme draws. Themes
