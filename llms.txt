@@ -491,8 +491,12 @@ Any remaining exported topics.
   : Add heading vector segments from inner crossing to unit circle
 - [`add_multiple_circles()`](https://johnkirwan.github.io/radiatR/reference/add_multiple_circles.md)
   : Add multiple concentric circles to a ggplot object
+- [`add_origin_point()`](https://johnkirwan.github.io/radiatR/reference/add_origin_point.md)
+  : Mark the centre of a radial plot
 - [`add_quadrant_lines()`](https://johnkirwan.github.io/radiatR/reference/add_quadrant_lines.md)
   : Add quadrant lines to a radial plot
+- [`add_radial_grid()`](https://johnkirwan.github.io/radiatR/reference/add_radial_grid.md)
+  : Radial grid layers (the radial analogue of a Cartesian grid)
 - [`add_stacked_headings()`](https://johnkirwan.github.io/radiatR/reference/add_stacked_headings.md)
   : Add stacked heading dots as a ggplot2 layer
 - [`add_ticks()`](https://johnkirwan.github.io/radiatR/reference/add_ticks.md)

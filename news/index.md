@@ -1,5 +1,27 @@
 # Changelog
 
+## radiatR (development version)
+
+### Plotting
+
+- **Behaviour change:** for grid-bearing themes (`bw`, `grey`, `light`,
+  `dark`, `linedraw`, `minimal`),
+  [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  now replaces the Cartesian grid behind the unit circle with a
+  theme-styled *radial* grid – a circular disc in the theme’s panel
+  colour, quadrant crosshairs and a ring at 0.5 (major), and 45 degree
+  diagonals plus rings at 0.25/0.75 (minor). Control it with the new
+  `grid = c("radial", "cartesian", "none")` argument (default
+  `"radial"`); `grid = "cartesian"` restores the previous square grid.
+  `grid_colour` overrides the derived colour.
+- New exported
+  [`add_radial_grid()`](https://johnkirwan.github.io/radiatR/reference/add_radial_grid.md)
+  and
+  [`add_origin_point()`](https://johnkirwan.github.io/radiatR/reference/add_origin_point.md)
+  composable layers, so the radial grid can be hand-built or restyled
+  like any ggplot2 layer. The existing `quadrants`/`rings` arguments
+  still add a-la-carte guides when `grid != "radial"`.
+
 ## radiatR 0.2.1
 
 ### Coordinate handling

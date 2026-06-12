@@ -25,3 +25,11 @@ Useful links:
 - <https://github.com/JohnKirwan/radiatR>
 
 - Report bugs at <https://github.com/JohnKirwan/radiatR/issues>
+
+## Author
+
+**Maintainer**: John D. Kirwan <john@jkirwan.org>
+
+Authors:
+
+- John D. Kirwan <john@jkirwan.org>
