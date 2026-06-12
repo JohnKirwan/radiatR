@@ -264,6 +264,24 @@ test_that("add_heading_vectors: display zero=0 rotates endpoint", {
   expect_equal(seg$yend, 1, tolerance = 1e-6)
 })
 
+test_that("add_ticks: n controls count, length the reach, colour/linewidth applied", {
+  library(ggplot2)
+  d <- ggplot_build(ggplot() + add_ticks(n = 12, length = 0.2,
+                                          colour = "red", linewidth = 2))$data[[1]]
+  expect_equal(nrow(d), 12L)
+  r_in  <- sqrt(d$x^2 + d$y^2)
+  r_out <- sqrt(d$xend^2 + d$yend^2)
+  expect_equal(unique(round(r_out - r_in, 6)), 0.2)   # each tick spans `length`
+  expect_equal(d$colour[1], "red")
+  expect_equal(d$linewidth[1], 2)
+})
+
+test_that("add_ticks default reproduces 8 ticks", {
+  library(ggplot2)
+  d <- ggplot_build(ggplot() + add_ticks())$data[[1]]
+  expect_equal(nrow(d), 8L)
+})
+
 test_that("plotting helpers return ggplot layers", {
   ticks <- add_ticks()
   expect_s3_class(ticks, "LayerInstance")
@@ -1522,15 +1540,12 @@ test_that("radiate(grid='none') blanks the grid with no radial guides", {
   expect_false("GeomPolygon" %in% geoms)
 })
 
-test_that("radiate(): gridless theme draws an origin dot, no guides", {
+test_that("radiate(): gridless theme draws no origin dot by default; origin=TRUE adds it", {
   data(cpunctatus, package = "radiatR")
-  p <- radiate(cpunctatus, theme = "void")
-  geoms <- vapply(p$layers, function(l) class(l$geom)[1], character(1))
-  expect_true("GeomPoint" %in% geoms)        # origin dot
-  expect_false("GeomPolygon" %in% geoms)     # no disc/guides
-  p2 <- radiate(cpunctatus, theme = "void", origin = FALSE)
-  geoms2 <- vapply(p2$layers, function(l) class(l$geom)[1], character(1))
-  expect_false("GeomPoint" %in% geoms2)
+  geoms <- function(p) vapply(p$layers, function(l) class(l$geom)[1], character(1))
+  expect_false("GeomPoint" %in% geoms(radiate(cpunctatus, theme = "void")))
+  expect_false("GeomPolygon" %in% geoms(radiate(cpunctatus, theme = "void")))
+  expect_true("GeomPoint" %in% geoms(radiate(cpunctatus, theme = "void", origin = TRUE)))
 })
 
 test_that("radiate(grid_colour=) overrides the derived guide colour", {
@@ -1538,4 +1553,88 @@ test_that("radiate(grid_colour=) overrides the derived guide colour", {
   p <- radiate(cpunctatus, theme = "grey", grid_colour = "red")
   seg <- p$layers[[which(vapply(p$layers, function(l) inherits(l$geom, "GeomSegment"), logical(1)))[1]]]
   expect_equal(seg$aes_params$colour, "red")
+})
+
+test_that(".theme_axis_style resolves axis elements, ink, and legibility", {
+  cl <- radiatR:::.theme_axis_style("classic")
+  expect_true(cl$line$present)                      # classic draws axis.line
+  expect_equal(tolower(cl$line$colour), "black")
+
+  gr <- radiatR:::.theme_axis_style("grey")
+  expect_false(gr$line$present)                     # grey: axis.line blank
+  expect_true(gr$ticks$present)                     # grey: ticks drawn
+  expect_true(gr$text$present)                      # grey: axis.text drawn
+  expect_equal(gr$ink, gr$ticks$colour)             # ink falls through to a present axis colour (light disc)
+
+  dk <- radiatR:::.theme_axis_style("dark")
+  expect_true(radiatR:::.is_dark(dk$fill))          # dark theme has a dark panel
+  expect_true(radiatR:::.is_dark("black"))
+  expect_false(radiatR:::.is_dark("white"))
+  expect_equal(dk$ink, "grey85")                    # ink flips light on the dark disc
+})
+
+test_that("degree_labs: size and family are applied to the label layers", {
+  ls <- degree_labs(size = 6, family = "mono")
+  expect_equal(ls[[1]]$aes_params$size, 6)
+  expect_equal(ls[[1]]$aes_params$family, "mono")
+})
+
+test_that("add_circ: colour/linewidth aliases and linetype apply", {
+  library(ggplot2)
+  lyr <- add_circ(colour = "red", linewidth = 3, linetype = "dashed")[[1]]
+  expect_equal(lyr$aes_params$colour, "red")
+  expect_equal(lyr$aes_params$linewidth, 3)
+  expect_equal(lyr$aes_params$linetype, "dashed")
+})
+
+test_that("radiate(): origin is opt-in everywhere", {
+  data(cpunctatus, package = "radiatR")
+  expect_false("GeomPoint" %in%
+    vapply(radiate(cpunctatus, theme = "void")$layers,
+           function(l) class(l$geom)[1], character(1)))
+  expect_true("GeomPoint" %in%
+    vapply(radiate(cpunctatus, theme = "void", origin = TRUE)$layers,
+           function(l) class(l$geom)[1], character(1)))
+})
+
+test_that("radiate(): circumference is a fallback (drawn on void, removable)", {
+  data(cpunctatus, package = "radiatR")
+  np <- function(p) sum(vapply(p$layers, function(l) inherits(l$geom, "GeomPath"), logical(1)))
+  expect_equal(np(radiate(cpunctatus, theme = "void")) -
+               np(radiate(cpunctatus, theme = "void", circumference = FALSE)), 1L)
+})
+
+test_that("radiate(): grid themes mark the boundary with a 1.0 ring", {
+  data(cpunctatus, package = "radiatR")
+  g <- radiate(cpunctatus, theme = "grey")
+  has_rim <- any(vapply(g$layers, function(l) {
+    if (!inherits(l$geom, "GeomPath")) return(FALSE)
+    d <- l$data
+    !is.null(d) && all(c("x", "y") %in% names(d)) &&
+      isTRUE(abs(max(sqrt(d$x^2 + d$y^2)) - 1) < 1e-6)
+  }, logical(1)))
+  expect_true(has_rim)
+})
+
+test_that("radiate(): tick/label presence is argument-controlled, not theme-gated", {
+  data(cpunctatus, package = "radiatR")
+  n_seg <- function(p) sum(vapply(p$layers, function(l) inherits(l$geom, "GeomSegment"), logical(1)))
+  n_txt <- function(p) sum(vapply(p$layers, function(l) inherits(l$geom, "GeomText"),    logical(1)))
+  base <- radiate(cpunctatus, theme = "void")
+  expect_gt(n_seg(base), n_seg(radiate(cpunctatus, theme = "void", ticks = FALSE)))
+  expect_gt(n_txt(base), 0L)                                                         # void keeps labels
+  expect_equal(n_txt(radiate(cpunctatus, theme = "void", angle_labels = "none")), 0L)
+})
+
+test_that("radiate(): chrome styling comes from the named theme", {
+  data(cpunctatus, package = "radiatR")
+  cl   <- radiate(cpunctatus, theme = "classic")
+  circ_layers <- Filter(function(l) inherits(l$geom, "GeomPath") &&
+                           !is.null(l$aes_params$colour), cl$layers)
+  circ <- circ_layers[[1]]
+  expect_equal(tolower(circ$aes_params$colour), "black")   # classic axis.line is black
+
+  dk  <- radiate(cpunctatus, theme = "dark")
+  lab <- Filter(function(l) inherits(l$geom, "GeomText"), dk$layers)[[1]]
+  expect_equal(lab$aes_params$colour, "grey85")            # legibility guard on dark disc
 })

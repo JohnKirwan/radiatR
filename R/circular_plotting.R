@@ -50,12 +50,16 @@ circ_display <- function(zero = pi / 2,
 
 # ---- annotation layers -------------------------------------------------------
 
-#' Create tick marks at the cardinal directions.
+#' Create evenly spaced radial tick marks.
 #'
-#' Generates a `geom_segment()` layer containing small tick marks at north,
-#' south, east, and west. The layer can be added to any ggplot.
+#' Generates a `geom_segment()` layer containing `n` evenly spaced tick marks
+#' around the unit circle, each spanning a radial distance of `length`
+#' straddling radius 1. The layer can be added to any ggplot.
 #'
 #' @param colour Tick colour. Default `"black"`.
+#' @param linewidth Tick line width. Default `0.5`.
+#' @param length Radial length of each tick, in data units. Default `0.1`.
+#' @param n Number of evenly spaced ticks. Default `8L`.
 #'
 #' @return A `geom_segment()` layer.
 #'
@@ -65,16 +69,17 @@ circ_display <- function(zero = pi / 2,
 #'   coord_fixed() +
 #'   add_ticks()
 #' @export
-add_ticks <- function(colour = "black") {
+add_ticks <- function(colour = "black", linewidth = 0.5, length = 0.1, n = 8L) {
+  th    <- 2 * pi * (seq_len(n) - 1L) / n
+  r_in  <- 1 - length / 2
+  r_out <- 1 + length / 2
   tick_df <- data.frame(
-    x = c(0, .66, .95, .66, 0, -.66, -.95, -.66),
-    y = c(.95, .66, 0, -.66, -.95, -.66, 0, .66),
-    xend = c(0, .74, 1.05, .74, 0, -.74, -1.05, -.74),
-    yend = c(1.05, .74, 0, -.74, -1.05, -.74, 0, .74)
+    x = r_in * cos(th),   y = r_in * sin(th),
+    xend = r_out * cos(th), yend = r_out * sin(th)
   )
 
   ggplot2::geom_segment(
-    data = tick_df,
+    data    = tick_df,
     mapping = ggplot2::aes(
       x = .data$x,
       y = .data$y,
@@ -82,6 +87,7 @@ add_ticks <- function(colour = "black") {
       yend = .data$yend
     ),
     colour      = colour,
+    linewidth   = linewidth,
     inherit.aes = FALSE
   )
 }
@@ -95,6 +101,11 @@ add_ticks <- function(colour = "black") {
 #' @param circle_color Line colour for the circle.
 #' @param circle_alpha Alpha transparency for the circle.
 #' @param circle_size Line width for the circle.
+#' @param linetype Line type for the circle.
+#' @param colour ggplot-style alias for `circle_color`. If supplied, takes
+#'   precedence over `circle_color`.
+#' @param linewidth ggplot-style alias for `circle_size`. If supplied, takes
+#'   precedence over `circle_size`.
 #'
 #' @return A list containing a single ggplot annotation layer.
 #'
@@ -106,15 +117,18 @@ add_ticks <- function(colour = "black") {
 #' ggplot() +
 #'   coord_fixed() +
 #'   add_circ(radius = 1)
-add_circ <- function(
-  radius = 1, circle_color = "grey60", circle_alpha = 1, circle_size = 1) {
-
+add_circ <- function(radius = 1, circle_color = "grey60", circle_alpha = 1,
+                     circle_size = 1, linetype = "solid",
+                     colour = NULL, linewidth = NULL) {
+  if (!is.null(colour))    circle_color <- colour      # ggplot-style aliases
+  if (!is.null(linewidth)) circle_size  <- linewidth
   list(
     ggplot2::annotate(
       "path",
       x = radius * cos(seq(0, 2 * pi, length.out = 1000)),
       y = radius * sin(seq(0, 2 * pi, length.out = 1000)),
-      color = circle_color, alpha = circle_alpha, linewidth = circle_size
+      color = circle_color, alpha = circle_alpha,
+      linewidth = circle_size, linetype = linetype
     )
   )
 }
@@ -304,6 +318,9 @@ add_radial_grid <- function(rings_major = 0.5, rings_minor = c(0.25, 0.75),
 #' @param colour Label colour. Default `"black"`.
 #' @param units `"degrees"` (e.g. `45°`) or `"radians"` (e.g. `π/4`). When
 #'   `NULL` (default) the units are taken from `display`.
+#' @param size Label text size, in mm. Default `3.88` (ggplot2's default
+#'   text size).
+#' @param family Label font family. Default `""` (the device default).
 #' @return A list of ggplot2 annotation layers.
 #'
 #' @examples
@@ -313,7 +330,7 @@ add_radial_grid <- function(rings_major = 0.5, rings_minor = c(0.25, 0.75),
 #'   degree_labs()
 #' @export
 degree_labs <- function(display = circ_display(), colour = "black",
-                        units = NULL) {
+                        units = NULL, size = 3.88, family = "") {
   if (is.null(units)) units <- display$units
   units <- match.arg(units, c("degrees", "radians"))
   diag_r      <- 0.85
@@ -326,7 +343,8 @@ degree_labs <- function(display = circ_display(), colour = "black",
     paste0(disp_angles, "\U00B0")
   }
   mapply(function(p, lab) ggplot2::annotate("text", x = p[1], y = p[2],
-                                            label = lab, colour = colour),
+                                            label = lab, colour = colour,
+                                            size = size, family = family),
          pos, labels, SIMPLIFY = FALSE)
 }
 
@@ -1630,10 +1648,60 @@ radial_theme <- function(name = "void", base_size = 11) {
 RADIAL_THEMES <- c("void", "minimal", "classic", "bw", "grey", "gray",
                    "light", "dark", "linedraw")
 
-# Foreground ("ink") colour for overlay elements (unit circle, ticks, degree
-# labels) so they stay legible against the chosen theme's panel. Only the dark
-# theme has a dark panel; everything else gets near-black ink.
-.theme_ink <- function(name) if (identical(name, "dark")) "grey85" else "black"
+# TRUE if a colour reads as "dark" (relative luminance < 0.5).
+.is_dark <- function(col) {
+  if (is.null(col) || is.na(col)) return(FALSE)
+  rgb <- tryCatch(grDevices::col2rgb(col)[, 1], error = function(e) c(255, 255, 255))
+  (0.299 * rgb[1] + 0.587 * rgb[2] + 0.114 * rgb[3]) / 255 < 0.5
+}
+
+# Keep an overlay colour legible against the disc fill: a dark colour on a dark
+# disc is replaced with a light ink.
+.legible <- function(colour, fill) {
+  if (is.null(colour) || is.na(colour)) return(colour)
+  if (.is_dark(fill) && .is_dark(colour)) "grey85" else colour
+}
+
+# Resolve the theme's axis-like styling (axis.line / axis.ticks / axis.text) plus
+# the disc fill and a legibility-guarded "ink" fallback colour. radiatR draws its
+# axis chrome ON the disc, so colour is legibility-adjusted; size/family/presence
+# are taken verbatim.
+.theme_axis_style <- function(name) {
+  th <- radial_theme(name)
+  line_el <- function(elname) {
+    el <- ggplot2::calc_element(elname, th)
+    if (inherits(el, "element_line") && !is.null(el$colour) && !is.na(el$colour)) {
+      lw <- if (!is.null(el$linewidth) && !is.na(el$linewidth)) el$linewidth else 0.5
+      list(colour = el$colour, linewidth = lw, present = TRUE)
+    } else {
+      list(colour = NA_character_, linewidth = 0.5, present = FALSE)
+    }
+  }
+  text_el <- function(elname) {
+    el <- ggplot2::calc_element(elname, th)
+    if (inherits(el, "element_text") && !is.null(el$colour) && !is.na(el$colour)) {
+      sz  <- if (!is.null(el$size) && !is.na(el$size)) el$size else 11
+      fam <- if (is.null(el$family) || identical(el$family, "")) "" else el$family
+      list(colour = el$colour, size = sz, family = fam, present = TRUE)
+    } else {
+      list(colour = NA_character_, size = 11, family = "", present = FALSE)
+    }
+  }
+  line  <- line_el("axis.line")
+  ticks <- line_el("axis.ticks")
+  text  <- text_el("axis.text")
+
+  bg   <- ggplot2::calc_element("panel.background", th)
+  fill <- if (inherits(bg, "element_rect") && !is.null(bg$fill) && !is.na(bg$fill))
+    bg$fill else NA_character_
+
+  cand <- c(line$colour, ticks$colour, text$colour)
+  cand <- cand[!is.na(cand)]
+  raw_ink <- if (length(cand)) cand[[1]] else "black"
+
+  list(line = line, ticks = ticks, text = text, fill = fill,
+       ink = .legible(raw_ink, fill))
+}
 
 # Grid-like styling (colour, linewidth) for the radial guide overlays
 # (quadrant lines and guide rings), pulled from the chosen theme's own
@@ -1915,8 +1983,13 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   and draws nothing for grid-less themes (`void`, `classic`). `"cartesian"`
 #'   keeps the theme's square grid; `"none"` removes all gridlines.
 #' @param grid_colour Optional colour overriding the theme-derived guide colour.
-#' @param origin Logical or `NULL`. Draw a centre dot. `NULL` (default) draws it
-#'   only when the resolved grid has no crosshairs (grid-less themes).
+#' @param origin Logical; draw a centre point. Default `FALSE`. When drawn it
+#'   takes the theme's axis ink colour.
+#' @param circumference Logical; draw the unit-circle circumference as a fallback
+#'   boundary when no radial grid marks it (grid-less themes, `grid = "none"`).
+#'   Default `TRUE`. Styled from the theme's `axis.line` (else the axis ink). On
+#'   grid-bearing themes the grid's outer ring marks the boundary instead, so this
+#'   has no effect there.
 #' @param quadrants Logical; draw the two dashed lines through the origin that
 #'   demarcate the quadrants. Default `FALSE`. Their colour and width follow the
 #'   chosen `theme`'s grid lines (see [radial_theme()]).
@@ -1963,9 +2036,11 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   unit-circle coordinates (e.g. the `cpunctatus` dataset).
 #' @param ticks,degrees,legend,title,xlab,ylab,axes Additional styling options.
 #'   `degrees` is retained for back-compatibility; `degrees = FALSE` is
-#'   equivalent to `angle_labels = "none"`.
+#'   equivalent to `angle_labels = "none"`. Tick styling (colour, width, length)
+#'   follows the chosen `theme`'s `axis.ticks`.
 #' @param angle_labels One of `"degrees"` (default; e.g. `45°`), `"none"`, or
 #'   `"radians"` (e.g. `π/4`) -- the diagonal angle labels around the circle.
+#'   Label styling (colour, size, family) follows the chosen `theme`'s `axis.text`.
 #' @param ... Additional arguments forwarded to [draw_tracks()].
 #' @return A `ggplot2` object.
 #' @examples
@@ -2004,7 +2079,8 @@ function(
   rings = FALSE,
   grid = c("radial", "cartesian", "none"),
   grid_colour = NULL,
-  origin = NULL,
+  origin = FALSE,
+  circumference = TRUE,
   show_labels = NULL,
   label_col = NULL,
   label_size = 3,
@@ -2026,7 +2102,6 @@ function(
   # Back-compat: an explicit `degrees = FALSE` hides the angle labels.
   if (isFALSE(degrees)) angle_labels <- "none"
   theme <- match.arg(theme)
-  ink   <- .theme_ink(theme)
   if (is.null(show_labels)) {
     show_labels <- TRUE
   }
@@ -2102,16 +2177,18 @@ function(
   }
 
   gs        <- .theme_grid_style(theme)
+  ax        <- .theme_axis_style(theme)
   guide_col <- if (is.null(grid_colour)) gs$major$colour else grid_colour
   radial_on        <- identical(grid, "radial")
   draw_radial_grid <- radial_on && isTRUE(gs$has_grid)
-  if (is.null(origin)) origin <- radial_on && !draw_radial_grid   # on only where no crosshairs
+
+  # per-element default colour: own analogue if present, else legible ink
+  col_of <- function(part) if (isTRUE(part$present)) .legible(part$colour, ax$fill) else ax$ink
 
   if (draw_radial_grid) {
     g <- g + add_radial_grid(
+      rings_major     = c(0.5, 1),                 # outermost ring marks the boundary
       colour          = guide_col,
-      # grid_colour (when given) recolours both weights; otherwise keep the
-      # theme's distinct minor colour.
       colour_minor    = if (is.null(grid_colour)) gs$minor$colour else guide_col,
       linewidth       = gs$major$linewidth,
       linewidth_minor = gs$minor$linewidth,
@@ -2119,30 +2196,26 @@ function(
       origin          = FALSE
     )
   }
-  if (isTRUE(origin)) g <- g + add_origin_point(colour = guide_col)
+  if (isTRUE(origin)) g <- g + add_origin_point(colour = ax$ink)
 
   if (show_tracks) {
     g <- g + draw_tracks(
-      data = data,
-      x_col = x_col,
-      y_col = y_col,
-      geom = geom,
-      mapping = layer_mapping,
-      ...
+      data = data, x_col = x_col, y_col = y_col,
+      geom = geom, mapping = layer_mapping, ...
     )
   }
 
   g <- g + radial_theme(theme)
   if (draw_radial_grid) {
     g <- g + ggplot2::theme(
-      panel.grid       = ggplot2::element_blank(),
+      panel.grid = ggplot2::element_blank(),
       panel.background = ggplot2::element_blank(),
-      panel.border     = ggplot2::element_blank()
+      panel.border = ggplot2::element_blank()
     )
   } else if (identical(grid, "none")) {
     g <- g + ggplot2::theme(panel.grid = ggplot2::element_blank())
   }
-  if (!draw_radial_grid) {                # a-la-carte overlays only when no radial grid is drawn
+  if (!draw_radial_grid) {                    # a-la-carte overlays only when no radial grid
     if (rings)
       g <- g + add_multiple_circles(circle_color = guide_col,
                                     circle_size  = gs$major$linewidth)
@@ -2150,10 +2223,21 @@ function(
       g <- g + add_quadrant_lines(colour    = guide_col,
                                   linewidth = gs$major$linewidth)
   }
-  g <- g + add_circ(circle_color = ink, circle_size = 1.2)
-  if (ticks) g <- g + add_ticks(colour = ink)
+
+  # Circumference: fallback boundary only when the grid doesn't already mark it.
+  if (isTRUE(circumference) && !draw_radial_grid) {
+    circ_lw <- if (isTRUE(ax$line$present)) ax$line$linewidth else 1.2
+    g <- g + add_circ(circle_color = col_of(ax$line), circle_size = circ_lw)
+  }
+  # Ticks: presence from the `ticks` arg; styling from axis.ticks (ink/width fallback).
+  if (isTRUE(ticks))
+    g <- g + add_ticks(colour = col_of(ax$ticks), linewidth = ax$ticks$linewidth)
+  # Degree labels: presence from `angle_labels`; styling from axis.text (ink/size fallback).
   if (angle_labels != "none")
-    g <- g + degree_labs(display = display, units = angle_labels, colour = ink)
+    g <- g + degree_labs(display = display, units = angle_labels,
+                         colour = col_of(ax$text),
+                         size   = ax$text$size / ggplot2::.pt,
+                         family = ax$text$family)
 
   label_col <- resolve_label_column(data, label_col, group_col)
   if (show_labels && !is.null(label_col)) {
@@ -2382,7 +2466,7 @@ radiate.headings_frame <- function(
   ...) {
 
   theme <- match.arg(theme)
-  ink   <- .theme_ink(theme)
+  ink   <- .theme_axis_style(theme)$ink
   grid_style <- .theme_grid_style(theme)
   angle_labels <- match.arg(angle_labels)
   if (isFALSE(degrees)) angle_labels <- "none"
