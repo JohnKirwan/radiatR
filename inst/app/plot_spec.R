@@ -5,6 +5,25 @@
 
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
+# Normalise an app-provided data frame of angles into a `headings_frame` whose
+# angle column is named "heading". `col` is the (string) angle column; `units`
+# and `convention` feed headings_frame()'s validation/conversion (convention
+# "unit_circle" or "clock"). An optional `group` column is preserved for
+# faceting / colour / per-group statistics. Used by both the uploaded-file path
+# and the cpunctatus example path (whose angles are already radians/unit_circle).
+build_headings_input <- function(df, col, units, convention, group = NULL) {
+  # as.name() makes headings_frame()'s ensym() capture work with a string col.
+  hf <- do.call(headings_frame,
+                list(data = df, col = as.name(col), units = units,
+                     angle_convention = convention))
+  hc <- attr(hf, "heading_col")
+  if (!identical(hc, "heading")) {
+    hf[["heading"]]          <- hf[[hc]]
+    attr(hf, "heading_col")  <- "heading"
+  }
+  hf
+}
+
 # Shared defaults (kept here so spec_to_plot and spec_to_code agree).
 SPEC_CYCLE_N         <- 20L
 SPEC_STACK_BIN_WIDTH <- pi / 36   # 5 degrees
