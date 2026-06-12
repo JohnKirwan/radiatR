@@ -1093,7 +1093,7 @@ test_that("radiate applies display transform to track coordinates", {
   ts <- TrajSet(df, id = "trial_id", time = "frame", x = "x", y = "y",
                 normalize_xy = FALSE)
   p     <- radiate(ts, group_col = "trial_id", show_labels = FALSE,
-                   show_arrow = FALSE)
+                   show_arrow = FALSE, grid = "cartesian")
   built <- ggplot_build(p)
   path_layer <- Filter(function(d) "x" %in% names(d) && "y" %in% names(d),
                        built$data)[[1]]
@@ -1108,7 +1108,7 @@ test_that("radiate with display zero=0 rotates East track to North on canvas", {
                 normalize_xy = FALSE)
   d  <- circ_display(zero = 0)
   p  <- radiate(ts, group_col = "trial_id", show_labels = FALSE,
-                show_arrow = FALSE, display = d)
+                show_arrow = FALSE, display = d, grid = "cartesian")
   built <- ggplot_build(p)
   path_layer <- Filter(function(g) "x" %in% names(g) && "y" %in% names(g),
                        built$data)[[1]]
@@ -1494,4 +1494,48 @@ test_that("add_radial_grid treats disc_fill = NULL as no disc", {
   ls <- add_radial_grid(disc_fill = NULL)
   geoms <- vapply(ls, function(l) class(l$geom)[1], character(1))
   expect_false("GeomPolygon" %in% geoms)
+})
+
+test_that("radiate(): radial grid is the default for grid themes", {
+  data(cpunctatus, package = "radiatR")
+  p <- radiate(cpunctatus, theme = "grey")
+  expect_true(inherits(p$theme$panel.grid, "element_blank"))      # cartesian grid removed
+  geoms <- vapply(p$layers, function(l) class(l$geom)[1], character(1))
+  expect_true("GeomPolygon" %in% geoms)                           # disc
+  expect_true(any(geoms == "GeomSegment"))                        # crosshairs/diagonals
+  expect_false("GeomPoint" %in% geoms)                            # no origin dot on grid themes
+})
+
+test_that("radiate(grid='cartesian') keeps the native grid, no radial guides", {
+  data(cpunctatus, package = "radiatR")
+  p <- radiate(cpunctatus, theme = "grey", grid = "cartesian")
+  expect_false(inherits(p$theme$panel.grid, "element_blank"))
+  geoms <- vapply(p$layers, function(l) class(l$geom)[1], character(1))
+  expect_false("GeomPolygon" %in% geoms)
+})
+
+test_that("radiate(grid='none') blanks the grid with no radial guides", {
+  data(cpunctatus, package = "radiatR")
+  p <- radiate(cpunctatus, theme = "grey", grid = "none")
+  expect_true(inherits(p$theme$panel.grid, "element_blank"))
+  geoms <- vapply(p$layers, function(l) class(l$geom)[1], character(1))
+  expect_false("GeomPolygon" %in% geoms)
+})
+
+test_that("radiate(): gridless theme draws an origin dot, no guides", {
+  data(cpunctatus, package = "radiatR")
+  p <- radiate(cpunctatus, theme = "void")
+  geoms <- vapply(p$layers, function(l) class(l$geom)[1], character(1))
+  expect_true("GeomPoint" %in% geoms)        # origin dot
+  expect_false("GeomPolygon" %in% geoms)     # no disc/guides
+  p2 <- radiate(cpunctatus, theme = "void", origin = FALSE)
+  geoms2 <- vapply(p2$layers, function(l) class(l$geom)[1], character(1))
+  expect_false("GeomPoint" %in% geoms2)
+})
+
+test_that("radiate(grid_colour=) overrides the derived guide colour", {
+  data(cpunctatus, package = "radiatR")
+  p <- radiate(cpunctatus, theme = "grey", grid_colour = "red")
+  seg <- p$layers[[which(vapply(p$layers, function(l) inherits(l$geom, "GeomSegment"), logical(1)))[1]]]
+  expect_equal(seg$aes_params$colour, "red")
 })

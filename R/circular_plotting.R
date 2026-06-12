@@ -1994,6 +1994,9 @@ function(
             "light", "dark", "linedraw"),
   quadrants = FALSE,
   rings = FALSE,
+  grid = c("radial", "cartesian", "none"),
+  grid_colour = NULL,
+  origin = NULL,
   show_labels = NULL,
   label_col = NULL,
   label_size = 3,
@@ -2011,6 +2014,7 @@ function(
   if (is.null(legend)) {legend = FALSE}
   if (is.null(axes)) {axes = FALSE}
   angle_labels <- match.arg(angle_labels)
+  grid <- match.arg(grid)
   # Back-compat: an explicit `degrees = FALSE` hides the angle labels.
   if (isFALSE(degrees)) angle_labels <- "none"
   theme <- match.arg(theme)
@@ -2089,6 +2093,26 @@ function(
     layer_mapping <- do.call(ggplot2::aes, mapping_list)
   }
 
+  gs        <- .theme_grid_style(theme)
+  guide_col <- if (is.null(grid_colour)) gs$major$colour else grid_colour
+  radial_on        <- identical(grid, "radial")
+  draw_radial_grid <- radial_on && isTRUE(gs$has_grid)
+  if (is.null(origin)) origin <- radial_on && !draw_radial_grid   # on only where no crosshairs
+
+  if (draw_radial_grid) {
+    g <- g + add_radial_grid(
+      colour          = guide_col,
+      # grid_colour (when given) recolours both weights; otherwise keep the
+      # theme's distinct minor colour.
+      colour_minor    = if (is.null(grid_colour)) gs$minor$colour else guide_col,
+      linewidth       = gs$major$linewidth,
+      linewidth_minor = gs$minor$linewidth,
+      disc_fill       = gs$fill,
+      origin          = FALSE
+    )
+  }
+  if (isTRUE(origin)) g <- g + add_origin_point(colour = guide_col)
+
   if (show_tracks) {
     g <- g + draw_tracks(
       data = data,
@@ -2101,13 +2125,23 @@ function(
   }
 
   g <- g + radial_theme(theme)
-  grid_style <- .theme_grid_style(theme)
-  if (rings)
-    g <- g + add_multiple_circles(circle_color = grid_style$colour,
-                                  circle_size  = grid_style$linewidth)
-  if (quadrants)
-    g <- g + add_quadrant_lines(colour    = grid_style$colour,
-                                linewidth = grid_style$linewidth)
+  if (draw_radial_grid) {
+    g <- g + ggplot2::theme(
+      panel.grid       = ggplot2::element_blank(),
+      panel.background = ggplot2::element_blank(),
+      panel.border     = ggplot2::element_blank()
+    )
+  } else if (identical(grid, "none")) {
+    g <- g + ggplot2::theme(panel.grid = ggplot2::element_blank())
+  }
+  if (!draw_radial_grid) {                # a-la-carte overlays only when no radial grid is drawn
+    if (rings)
+      g <- g + add_multiple_circles(circle_color = guide_col,
+                                    circle_size  = gs$major$linewidth)
+    if (quadrants)
+      g <- g + add_quadrant_lines(colour    = guide_col,
+                                  linewidth = gs$major$linewidth)
+  }
   g <- g + add_circ(circle_color = ink, circle_size = 1.2)
   if (ticks) g <- g + add_ticks(colour = ink)
   if (angle_labels != "none")

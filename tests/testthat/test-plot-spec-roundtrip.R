@@ -40,7 +40,7 @@ roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
     colour = list(by = by, cap = 20,
                   legend = !identical(by, "trajectory") &&
                            length(unique(as.data.frame(ts)[[by]])) <= 20),
-    theme = "bw", angle_labels = "degrees", display = list(zero = 0),
+    theme = "void", angle_labels = "degrees", display = list(zero = 0),
     heading_display = heading_display,
     subtitle = subtitle, caption = caption,
     show = list(tracks = TRUE, arrow = arrow, vectors = vectors,
