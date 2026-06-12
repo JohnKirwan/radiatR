@@ -1,7 +1,7 @@
 Package: radiatR
 Type: Package
 Title: Analysis and Visualisation of Circular Arena Tracking Data
-Version: 0.2.1.9000
+Version: 0.3.0
 Authors@R:
     person("John D.", "Kirwan", email = "john@jkirwan.org",
            role = c("aut", "cre"))

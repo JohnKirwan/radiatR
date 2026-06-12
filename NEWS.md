@@ -1,4 +1,4 @@
-# radiatR (development version)
+# radiatR 0.3.0
 
 ## Plotting
 
