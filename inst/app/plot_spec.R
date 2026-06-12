@@ -9,7 +9,7 @@
 SPEC_CYCLE_N         <- 20L
 SPEC_STACK_BIN_WIDTH <- pi / 36   # 5 degrees
 SPEC_STACK_STEP      <- 0.08
-SPEC_STACK_START_SEP <- 0.08
+SPEC_STACK_START_SEP <- 0.07
 SPEC_MARKER_SIZE     <- 2.5
 SPEC_MARKER_ALPHA    <- 0.8
 SPEC_TRAJ_KEY        <- "__trajectory__"
