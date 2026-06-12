@@ -8,7 +8,10 @@ add_circ(
   radius = 1,
   circle_color = "grey60",
   circle_alpha = 1,
-  circle_size = 1
+  circle_size = 1,
+  linetype = "solid",
+  colour = NULL,
+  linewidth = NULL
 )
 }
 \arguments{
@@ -19,6 +22,14 @@ add_circ(
 \item{circle_alpha}{Alpha transparency for the circle.}
 
 \item{circle_size}{Line width for the circle.}
+
+\item{linetype}{Line type for the circle.}
+
+\item{colour}{ggplot-style alias for `circle_color`. If supplied, takes
+precedence over `circle_color`.}
+
+\item{linewidth}{ggplot-style alias for `circle_size`. If supplied, takes
+precedence over `circle_size`.}
 }
 \value{
 A list containing a single ggplot annotation layer.

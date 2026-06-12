@@ -101,6 +101,11 @@ add_ticks <- function(colour = "black", linewidth = 0.5, length = 0.1, n = 8L) {
 #' @param circle_color Line colour for the circle.
 #' @param circle_alpha Alpha transparency for the circle.
 #' @param circle_size Line width for the circle.
+#' @param linetype Line type for the circle.
+#' @param colour ggplot-style alias for `circle_color`. If supplied, takes
+#'   precedence over `circle_color`.
+#' @param linewidth ggplot-style alias for `circle_size`. If supplied, takes
+#'   precedence over `circle_size`.
 #'
 #' @return A list containing a single ggplot annotation layer.
 #'
@@ -112,15 +117,18 @@ add_ticks <- function(colour = "black", linewidth = 0.5, length = 0.1, n = 8L) {
 #' ggplot() +
 #'   coord_fixed() +
 #'   add_circ(radius = 1)
-add_circ <- function(
-  radius = 1, circle_color = "grey60", circle_alpha = 1, circle_size = 1) {
-
+add_circ <- function(radius = 1, circle_color = "grey60", circle_alpha = 1,
+                     circle_size = 1, linetype = "solid",
+                     colour = NULL, linewidth = NULL) {
+  if (!is.null(colour))    circle_color <- colour      # ggplot-style aliases
+  if (!is.null(linewidth)) circle_size  <- linewidth
   list(
     ggplot2::annotate(
       "path",
       x = radius * cos(seq(0, 2 * pi, length.out = 1000)),
       y = radius * sin(seq(0, 2 * pi, length.out = 1000)),
-      color = circle_color, alpha = circle_alpha, linewidth = circle_size
+      color = circle_color, alpha = circle_alpha,
+      linewidth = circle_size, linetype = linetype
     )
   )
 }

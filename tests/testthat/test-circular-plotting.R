@@ -1581,3 +1581,11 @@ test_that("degree_labs: size and family are applied to the label layers", {
   expect_equal(ls[[1]]$aes_params$size, 6)
   expect_equal(ls[[1]]$aes_params$family, "mono")
 })
+
+test_that("add_circ: colour/linewidth aliases and linetype apply", {
+  library(ggplot2)
+  lyr <- add_circ(colour = "red", linewidth = 3, linetype = "dashed")[[1]]
+  expect_equal(lyr$aes_params$colour, "red")
+  expect_equal(lyr$aes_params$linewidth, 3)
+  expect_equal(lyr$aes_params$linetype, "dashed")
+})
