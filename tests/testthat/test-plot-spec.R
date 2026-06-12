@@ -106,3 +106,21 @@ test_that("spec_to_plot: rule 'none' draws tracks only (no markers)", {
   expect_s3_class(p, "ggplot")
   expect_silent(ggplot2::ggplot_build(p))
 })
+
+test_that("build_plot_spec: headings mode records mode and headings data block", {
+  df <- data.frame(dir = c(0, 90, 180), cond = c("a","a","b"))
+  hf <- build_headings_input(df, col = "dir", units = "degrees",
+                             convention = "clock", group = "cond")
+  spec <- build_plot_spec(
+    ts = NULL, hd = hf, method = NULL,
+    data = list(source = "file", mode = "headings", path = "angles.csv",
+                col = "dir", units = "degrees", convention = "clock",
+                group = "cond"),
+    inputs = list(colour_by = "cond", cond_col = "cond",
+                  heading_display = "points", plot_theme = "void",
+                  angle_labels = "degrees")
+  )
+  expect_identical(spec$mode, "headings")
+  expect_identical(spec$facet_by, "cond")
+  expect_false(isTRUE(spec$show$tracks))     # no tracks in headings mode
+})
