@@ -1464,3 +1464,34 @@ test_that("add_origin_point draws one point at the origin with given style", {
   expect_equal(d$x, 0); expect_equal(d$y, 0)
   expect_equal(d$colour, "red")
 })
+
+test_that(".radial_spokes places n radii at evenly spaced angles", {
+  sp <- radiatR:::.radial_spokes(4, phase = 0)
+  d  <- sp$data
+  ang <- sort(round((atan2(d$yend, d$xend) %% (2 * pi)) * 180 / pi))
+  expect_equal(ang, c(0, 90, 180, 270))
+})
+
+test_that("add_radial_grid composes disc, rings, spokes and origin", {
+  ls <- add_radial_grid(rings_major = 0.5, rings_minor = c(0.25, 0.75),
+                        spokes_major = 4, spokes_minor = 4,
+                        colour = "white", disc_fill = "grey92", origin = TRUE)
+  geoms <- vapply(ls, function(l) class(l$geom)[1], character(1))
+  expect_equal(sum(geoms == "GeomPolygon"), 1L)   # disc
+  expect_equal(sum(geoms == "GeomPath"),    3L)   # rings at .25/.5/.75
+  expect_equal(sum(geoms == "GeomSegment"), 2L)   # major + minor spoke layers
+  expect_equal(sum(geoms == "GeomPoint"),   1L)   # origin
+})
+
+test_that("add_radial_grid omits the disc when disc_fill is NA and origin when FALSE", {
+  ls <- add_radial_grid(disc_fill = NA, origin = FALSE)
+  geoms <- vapply(ls, function(l) class(l$geom)[1], character(1))
+  expect_false("GeomPolygon" %in% geoms)
+  expect_false("GeomPoint" %in% geoms)
+})
+
+test_that("add_radial_grid treats disc_fill = NULL as no disc", {
+  ls <- add_radial_grid(disc_fill = NULL)
+  geoms <- vapply(ls, function(l) class(l$geom)[1], character(1))
+  expect_false("GeomPolygon" %in% geoms)
+})

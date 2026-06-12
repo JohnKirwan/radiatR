@@ -200,6 +200,100 @@ add_origin_point <- function(colour = "grey50", size = 1.5, shape = 16, ...) {
   )
 }
 
+# n radial lines from the origin to the rim, starting at `phase` (radians).
+.radial_spokes <- function(n, phase = 0, colour = "grey60",
+                           linewidth = 0.5, linetype = "solid") {
+  if (is.null(n) || n < 1L) return(NULL)
+  th <- phase + 2 * pi * (seq_len(n) - 1L) / n
+  df <- data.frame(x = 0, y = 0, xend = cos(th), yend = sin(th))
+  ggplot2::geom_segment(
+    data    = df,
+    mapping = ggplot2::aes(x = .data$x, y = .data$y,
+                           xend = .data$xend, yend = .data$yend),
+    colour  = colour, linewidth = linewidth, linetype = linetype,
+    inherit.aes = FALSE
+  )
+}
+
+#' Radial grid layers (the radial analogue of a Cartesian grid)
+#'
+#' Returns a list of layers -- an optional filled disc, concentric rings, and
+#' radial spokes, in two weights (major/minor) -- to compose onto a radial
+#' `radiate()` plot with `+`. The unit boundary (radius 1) is left to the arena
+#' circle ([add_circ()]); grid rings are interior only.
+#'
+#' @param rings_major,rings_minor Numeric radii (`<1`) of the major and minor
+#'   rings. Defaults `0.5` and `c(0.25, 0.75)`.
+#' @param spokes_major,spokes_minor Number of evenly spaced spokes for each
+#'   weight. `4` major gives the quadrant crosshairs; `4` minor interleaves them
+#'   as 45-degree diagonals. Minor spokes are offset from major by half the major
+#'   spacing (`pi / spokes_major`), so their placement is defined relative to the
+#'   major count.
+#' @param colour,colour_minor Spoke/ring colour. `colour_minor` defaults to
+#'   `colour`.
+#' @param linewidth,linewidth_minor Line widths. `linewidth_minor` defaults to
+#'   `0.5 * linewidth`.
+#' @param linetype Line type for the spokes. Default `"solid"`.
+#' @param disc_fill Fill colour for the background disc; `NA` (default) draws no
+#'   disc.
+#' @param origin Logical; add a centre dot ([add_origin_point()]). Default
+#'   `FALSE`.
+#' @param origin_colour,origin_size Centre-dot style.
+#' @param n_pts Points used to approximate the disc outline. Default `200L`.
+#' @return A list of ggplot2 layers.
+#' @seealso [add_multiple_circles()], [add_quadrant_lines()], [add_origin_point()]
+#' @examples
+#' library(ggplot2)
+#' ggplot() + coord_fixed() +
+#'   add_radial_grid(disc_fill = "grey92", colour = "white") +
+#'   add_circ()
+#' @importFrom ggplot2 geom_polygon geom_segment aes
+#' @export
+add_radial_grid <- function(rings_major = 0.5, rings_minor = c(0.25, 0.75),
+                            spokes_major = 4L, spokes_minor = 4L,
+                            colour = "grey92", colour_minor = NULL,
+                            linewidth = 0.5, linewidth_minor = NULL,
+                            linetype = "solid", disc_fill = NA,
+                            origin = FALSE, origin_colour = "grey50",
+                            origin_size = 1.5, n_pts = 200L) {
+  if (is.null(colour_minor))    colour_minor    <- colour
+  if (is.null(linewidth_minor)) linewidth_minor <- 0.5 * linewidth
+  layers <- list()
+
+  # add_circ() returns list(layer) and add_multiple_circles() returns a
+  # list-of-lists; flatten one level so `layers` is a flat list of layers.
+  ring_layers <- function(radii, col, lw) {
+    if (!length(radii)) return(list())
+    do.call(c, add_multiple_circles(radii = radii, circle_color = col, circle_size = lw))
+  }
+
+  if (!is.null(disc_fill) && !is.na(disc_fill)) {
+    th <- seq(0, 2 * pi, length.out = n_pts)
+    layers <- c(layers, list(ggplot2::geom_polygon(
+      data    = data.frame(x = cos(th), y = sin(th)),
+      mapping = ggplot2::aes(x = .data$x, y = .data$y),
+      fill = disc_fill, colour = NA, inherit.aes = FALSE)))
+  }
+
+  # minor first (drawn under major)
+  layers <- c(layers, ring_layers(rings_minor, colour_minor, linewidth_minor))
+  sp_min <- .radial_spokes(spokes_minor, phase = pi / max(spokes_major, 1L),
+                           colour = colour_minor, linewidth = linewidth_minor,
+                           linetype = linetype)
+  if (!is.null(sp_min)) layers <- c(layers, list(sp_min))
+
+  layers <- c(layers, ring_layers(rings_major, colour, linewidth))
+  sp_maj <- .radial_spokes(spokes_major, phase = 0,
+                           colour = colour, linewidth = linewidth,
+                           linetype = linetype)
+  if (!is.null(sp_maj)) layers <- c(layers, list(sp_maj))
+
+  if (isTRUE(origin))
+    layers <- c(layers, list(add_origin_point(colour = origin_colour, size = origin_size)))
+
+  layers
+}
+
 #' Label the four diagonal directions.
 #'
 #' Provides a list of annotation layers that mark 45, 135, 225, and 315 degrees on a
