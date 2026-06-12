@@ -74,6 +74,14 @@ radiate(data, ...)
     "linedraw"),
   quadrants = FALSE,
   rings = FALSE,
+  grid = c("radial", "cartesian", "none"),
+  grid_colour = NULL,
+  circumference = TRUE,
+  origin = FALSE,
+  colour_col = NULL,
+  legend = FALSE,
+  display = circ_display(),
+  show_markers = TRUE,
   ...
 )
 }
@@ -122,6 +130,9 @@ text and the in-panel `"inside"` annotation.}
 `degrees` is retained for back-compatibility; `degrees = FALSE` is
 equivalent to `angle_labels = "none"`. Tick styling (colour, width, length)
 follows the chosen `theme`'s `axis.ticks`.}
+
+\item{legend}{When \code{TRUE}, show the plot legend; when \code{FALSE}
+(default) the legend is hidden.}
 
 \item{angle_labels}{One of `"degrees"` (default; e.g. `45°`), `"none"`, or
 `"radians"` (e.g. `π/4`) -- the diagonal angle labels around the circle.
@@ -196,6 +207,10 @@ unit-circle coordinates (e.g. the `cpunctatus` dataset).}
 
 \item{step, tol, direction, base_r, shade, shape}{Passed to
 \code{\link{add_stacked_headings}}. See that function for details.}
+
+\item{show_markers}{When \code{TRUE} (default) the stacked-dot markers are
+drawn; \code{FALSE} returns the themed radial frame only, for callers
+that layer their own marker and statistic overlays.}
 }
 \value{
 A `ggplot2` object.
