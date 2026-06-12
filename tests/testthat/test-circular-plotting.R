@@ -1575,3 +1575,9 @@ test_that(".theme_axis_style resolves axis elements, ink, and legibility", {
   expect_false(radiatR:::.is_dark("white"))
   expect_equal(dk$ink, "grey85")                    # ink flips light on the dark disc
 })
+
+test_that("degree_labs: size and family are applied to the label layers", {
+  ls <- degree_labs(size = 6, family = "mono")
+  expect_equal(ls[[1]]$aes_params$size, 6)
+  expect_equal(ls[[1]]$aes_params$family, "mono")
+})

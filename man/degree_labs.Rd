@@ -4,7 +4,13 @@
 \alias{degree_labs}
 \title{Label the four diagonal directions.}
 \usage{
-degree_labs(display = circ_display(), colour = "black", units = NULL)
+degree_labs(
+  display = circ_display(),
+  colour = "black",
+  units = NULL,
+  size = 3.88,
+  family = ""
+)
 }
 \arguments{
 \item{display}{A [`circ_display`] object. Default `circ_display()`. Supplies
@@ -14,6 +20,11 @@ the label units when `units` is `NULL`.}
 
 \item{units}{`"degrees"` (e.g. `45°`) or `"radians"` (e.g. `π/4`). When
 `NULL` (default) the units are taken from `display`.}
+
+\item{size}{Label text size, in mm. Default `3.88` (ggplot2's default
+text size).}
+
+\item{family}{Label font family. Default `""` (the device default).}
 }
 \value{
 A list of ggplot2 annotation layers.

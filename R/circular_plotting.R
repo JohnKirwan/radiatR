@@ -310,6 +310,9 @@ add_radial_grid <- function(rings_major = 0.5, rings_minor = c(0.25, 0.75),
 #' @param colour Label colour. Default `"black"`.
 #' @param units `"degrees"` (e.g. `45°`) or `"radians"` (e.g. `π/4`). When
 #'   `NULL` (default) the units are taken from `display`.
+#' @param size Label text size, in mm. Default `3.88` (ggplot2's default
+#'   text size).
+#' @param family Label font family. Default `""` (the device default).
 #' @return A list of ggplot2 annotation layers.
 #'
 #' @examples
@@ -319,7 +322,7 @@ add_radial_grid <- function(rings_major = 0.5, rings_minor = c(0.25, 0.75),
 #'   degree_labs()
 #' @export
 degree_labs <- function(display = circ_display(), colour = "black",
-                        units = NULL) {
+                        units = NULL, size = 3.88, family = "") {
   if (is.null(units)) units <- display$units
   units <- match.arg(units, c("degrees", "radians"))
   diag_r      <- 0.85
@@ -332,7 +335,8 @@ degree_labs <- function(display = circ_display(), colour = "black",
     paste0(disp_angles, "\U00B0")
   }
   mapply(function(p, lab) ggplot2::annotate("text", x = p[1], y = p[2],
-                                            label = lab, colour = colour),
+                                            label = lab, colour = colour,
+                                            size = size, family = family),
          pos, labels, SIMPLIFY = FALSE)
 }
 
