@@ -2225,8 +2225,10 @@ function(
   }
 
   # Circumference: fallback boundary only when the grid doesn't already mark it.
+  # When the theme draws no axis line (e.g. void) use theme_classic's axis-line
+  # weight (0.5) so the fallback reads like an axis, not a bold frame.
   if (isTRUE(circumference) && !draw_radial_grid) {
-    circ_lw <- if (isTRUE(ax$line$present)) ax$line$linewidth else 1.2
+    circ_lw <- if (isTRUE(ax$line$present)) ax$line$linewidth else 0.5
     g <- g + add_circ(circle_color = col_of(ax$line), circle_size = circ_lw)
   }
   # Ticks: presence from the `ticks` arg; styling from axis.ticks (ink/width fallback).

@@ -8,8 +8,8 @@
 # Shared defaults (kept here so spec_to_plot and spec_to_code agree).
 SPEC_CYCLE_N         <- 20L
 SPEC_STACK_BIN_WIDTH <- pi / 36   # 5 degrees
-SPEC_STACK_STEP      <- 0.06
-SPEC_STACK_START_SEP <- 0.05
+SPEC_STACK_STEP      <- 0.08
+SPEC_STACK_START_SEP <- 0.08
 SPEC_MARKER_SIZE     <- 2.5
 SPEC_MARKER_ALPHA    <- 0.8
 SPEC_TRAJ_KEY        <- "__trajectory__"
@@ -240,7 +240,8 @@ spec_to_code <- function(spec) {
   if (has_hd && identical(spec$heading_display, "stacked")) {
     grp <- if (is.null(spec$facet_by)) "" else paste0(", group = ", q(spec$facet_by))
     tail <- c(tail, paste0("add_stacked_headings(hd, colour_col = \".colour\"", grp,
-                           ", step = 0.06, start_sep = 0.05, size = 2.5, alpha = 0.8)"))
+                           ", step = ", SPEC_STACK_STEP, ", start_sep = ", SPEC_STACK_START_SEP,
+                           ", size = ", SPEC_MARKER_SIZE, ", alpha = ", SPEC_MARKER_ALPHA, ")"))
   }
   if (has_hd && identical(spec$heading_display, "points"))
     tail <- c(tail, "add_heading_points(hd, colour_col = \".colour\", size = 2.5, alpha = 0.8)")
