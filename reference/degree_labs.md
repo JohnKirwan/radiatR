@@ -6,7 +6,13 @@ degrees on a unit circle.
 ## Usage
 
 ``` r
-degree_labs(display = circ_display(), colour = "black", units = NULL)
+degree_labs(
+  display = circ_display(),
+  colour = "black",
+  units = NULL,
+  size = 3.88,
+  family = ""
+)
 ```
 
 ## Arguments
@@ -24,6 +30,15 @@ degree_labs(display = circ_display(), colour = "black", units = NULL)
 
   \`"degrees"\` (e.g. \`45°\`) or \`"radians"\` (e.g. \`π/4\`). When
   \`NULL\` (default) the units are taken from \`display\`.
+
+- size:
+
+  Label text size, in mm. Default \`3.88\` (ggplot2's default text
+  size).
+
+- family:
+
+  Label font family. Default \`""\` (the device default).
 
 ## Value
 

@@ -1,12 +1,13 @@
-# Create tick marks at the cardinal directions.
+# Create evenly spaced radial tick marks.
 
-Generates a \`geom_segment()\` layer containing small tick marks at
-north, south, east, and west. The layer can be added to any ggplot.
+Generates a \`geom_segment()\` layer containing \`n\` evenly spaced tick
+marks around the unit circle, each spanning a radial distance of
+\`length\` straddling radius 1. The layer can be added to any ggplot.
 
 ## Usage
 
 ``` r
-add_ticks(colour = "black")
+add_ticks(colour = "black", linewidth = 0.5, length = 0.1, n = 8L)
 ```
 
 ## Arguments
@@ -14,6 +15,18 @@ add_ticks(colour = "black")
 - colour:
 
   Tick colour. Default \`"black"\`.
+
+- linewidth:
+
+  Tick line width. Default \`0.5\`.
+
+- length:
+
+  Radial length of each tick, in data units. Default \`0.1\`.
+
+- n:
+
+  Number of evenly spaced ticks. Default \`8L\`.
 
 ## Value
 

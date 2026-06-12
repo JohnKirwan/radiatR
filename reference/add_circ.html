@@ -9,7 +9,7 @@ radius and appearance. The returned list can be added directly to a ggplot."></h
 
     <a class="navbar-brand me-2" href="../index.html">radiatR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,7 +39,7 @@ radius and appearance. The returned list can be added directly to a ggplot."></h
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Draw a circular guide.</h1>
-      <small class="dont-index">Source: <a href="https://github.com/JohnKirwan/radiatR/blob/v0.3.0/R/circular_plotting.R" class="external-link"><code>R/circular_plotting.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/JohnKirwan/radiatR/blob/master/R/circular_plotting.R" class="external-link"><code>R/circular_plotting.R</code></a></small>
       <div class="d-none name"><code>add_circ.Rd</code></div>
     </div>
 
@@ -54,7 +54,10 @@ radius and appearance. The returned list can be added directly to a ggplot.</p>
 <span>  radius <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  circle_color <span class="op">=</span> <span class="st">"grey60"</span>,</span>
 <span>  circle_alpha <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  circle_size <span class="op">=</span> <span class="fl">1</span></span>
+<span>  circle_size <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  linetype <span class="op">=</span> <span class="st">"solid"</span>,</span>
+<span>  colour <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  linewidth <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -76,6 +79,20 @@ radius and appearance. The returned list can be added directly to a ggplot.</p>
 
 <dt id="arg-circle-size">circle_size<a class="anchor" aria-label="anchor" href="#arg-circle-size"></a></dt>
 <dd><p>Line width for the circle.</p></dd>
+
+
+<dt id="arg-linetype">linetype<a class="anchor" aria-label="anchor" href="#arg-linetype"></a></dt>
+<dd><p>Line type for the circle.</p></dd>
+
+
+<dt id="arg-colour">colour<a class="anchor" aria-label="anchor" href="#arg-colour"></a></dt>
+<dd><p>ggplot-style alias for `circle_color`. If supplied, takes
+precedence over `circle_color`.</p></dd>
+
+
+<dt id="arg-linewidth">linewidth<a class="anchor" aria-label="anchor" href="#arg-linewidth"></a></dt>
+<dd><p>ggplot-style alias for `circle_size`. If supplied, takes
+precedence over `circle_size`.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -1,5 +1,36 @@
 # Changelog
 
+## radiatR (development version)
+
+### Plotting
+
+- The radial axis chrome – the circumference (unit circle), angular tick
+  marks, and degree labels – now takes its styling from the base theme
+  chosen via `radiate(theme = )`, mapped from that theme’s `axis.line` /
+  `axis.ticks` / `axis.text`. Picking a different theme restyles them
+  (colour, line width, label size and family), and colour is kept
+  legible against a dark panel.
+  [`add_ticks()`](https://johnkirwan.github.io/radiatR/reference/add_ticks.md)
+  gains `colour`, `linewidth`, `length`, and `n`;
+  [`degree_labs()`](https://johnkirwan.github.io/radiatR/reference/degree_labs.md)
+  gains `size` and `family`;
+  [`add_circ()`](https://johnkirwan.github.io/radiatR/reference/add_circ.md)
+  gains `linetype` and `colour`/`linewidth` aliases. (Styling follows
+  the theme passed to
+  [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md),
+  not a `+ theme()` added afterwards, since the chrome is drawn as
+  layers.)
+- On grid-bearing themes the radial grid’s outer ring now reaches the
+  unit circle, so it marks the boundary; the separate circumference is
+  drawn only as a fallback where no grid delineates it (control with
+  `radiate(circumference = )`). A consequence: on light grid themes
+  (`minimal`, `bw`, `light`) the boundary is now a subtle grid-coloured
+  ring rather than a bold dark circle – add a bold ring back with
+  `+ add_circ(colour = "black", linewidth = 1.2)` if desired.
+- `radiate(origin = )` now defaults to `FALSE` (the centre point is
+  opt-in on all themes) and, when drawn, takes the theme’s axis ink
+  colour.
+
 ## radiatR 0.3.0
 
 ### Plotting

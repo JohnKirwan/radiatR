@@ -40,7 +40,8 @@ radiate(
   rings = FALSE,
   grid = c("radial", "cartesian", "none"),
   grid_colour = NULL,
-  origin = NULL,
+  origin = FALSE,
+  circumference = TRUE,
   show_labels = NULL,
   label_col = NULL,
   label_size = 3,
@@ -153,13 +154,15 @@ radiate(
 
   Additional styling options. \`degrees\` is retained for
   back-compatibility; \`degrees = FALSE\` is equivalent to
-  \`angle_labels = "none"\`.
+  \`angle_labels = "none"\`. Tick styling (colour, width, length)
+  follows the chosen \`theme\`'s \`axis.ticks\`.
 
 - angle_labels:
 
   One of \`"degrees"\` (default; e.g. \`45°\`), \`"none"\`, or
   \`"radians"\` (e.g. \`π/4\`) – the diagonal angle labels around the
-  circle.
+  circle. Label styling (colour, size, family) follows the chosen
+  \`theme\`'s \`axis.text\`.
 
 - theme:
 
@@ -194,8 +197,16 @@ radiate(
 
 - origin:
 
-  Logical or \`NULL\`. Draw a centre dot. \`NULL\` (default) draws it
-  only when the resolved grid has no crosshairs (grid-less themes).
+  Logical; draw a centre point. Default \`FALSE\`. When drawn it takes
+  the theme's axis ink colour.
+
+- circumference:
+
+  Logical; draw the unit-circle circumference as a fallback boundary
+  when no radial grid marks it (grid-less themes, \`grid = "none"\`).
+  Default \`TRUE\`. Styled from the theme's \`axis.line\` (else the axis
+  ink). On grid-bearing themes the grid's outer ring marks the boundary
+  instead, so this has no effect there.
 
 - show_labels:
 

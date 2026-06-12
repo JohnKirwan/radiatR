@@ -11,7 +11,7 @@ the object and handed off to the plotting helpers."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">radiatR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,7 +41,7 @@ the object and handed off to the plotting helpers."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Make ggplot object of tracks radiating from circle centre.</h1>
-      <small class="dont-index">Source: <a href="https://github.com/JohnKirwan/radiatR/blob/v0.3.0/R/circular_plotting.R" class="external-link"><code>R/circular_plotting.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/JohnKirwan/radiatR/blob/master/R/circular_plotting.R" class="external-link"><code>R/circular_plotting.R</code></a></small>
       <div class="d-none name"><code>radiate.Rd</code></div>
     </div>
 
@@ -86,7 +86,8 @@ the object and handed off to the plotting helpers.</p>
 <span>  rings <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  grid <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"radial"</span>, <span class="st">"cartesian"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
 <span>  grid_colour <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  origin <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  origin <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  circumference <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  show_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  label_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  label_size <span class="op">=</span> <span class="fl">3</span>,</span>
@@ -199,12 +200,14 @@ text and the in-panel `"inside"` annotation.</p></dd>
 <dt id="arg-ticks-degrees-legend-title-xlab-ylab-axes">ticks, degrees, legend, title, xlab, ylab, axes<a class="anchor" aria-label="anchor" href="#arg-ticks-degrees-legend-title-xlab-ylab-axes"></a></dt>
 <dd><p>Additional styling options.
 `degrees` is retained for back-compatibility; `degrees = FALSE` is
-equivalent to `angle_labels = "none"`.</p></dd>
+equivalent to `angle_labels = "none"`. Tick styling (colour, width, length)
+follows the chosen `theme`'s `axis.ticks`.</p></dd>
 
 
 <dt id="arg-angle-labels">angle_labels<a class="anchor" aria-label="anchor" href="#arg-angle-labels"></a></dt>
 <dd><p>One of `"degrees"` (default; e.g. `45°`), `"none"`, or
-`"radians"` (e.g. `π/4`) – the diagonal angle labels around the circle.</p></dd>
+`"radians"` (e.g. `π/4`) – the diagonal angle labels around the circle.
+Label styling (colour, size, family) follows the chosen `theme`'s `axis.text`.</p></dd>
 
 
 <dt id="arg-theme">theme<a class="anchor" aria-label="anchor" href="#arg-theme"></a></dt>
@@ -238,8 +241,16 @@ keeps the theme's square grid; `"none"` removes all gridlines.</p></dd>
 
 
 <dt id="arg-origin">origin<a class="anchor" aria-label="anchor" href="#arg-origin"></a></dt>
-<dd><p>Logical or `NULL`. Draw a centre dot. `NULL` (default) draws it
-only when the resolved grid has no crosshairs (grid-less themes).</p></dd>
+<dd><p>Logical; draw a centre point. Default `FALSE`. When drawn it
+takes the theme's axis ink colour.</p></dd>
+
+
+<dt id="arg-circumference">circumference<a class="anchor" aria-label="anchor" href="#arg-circumference"></a></dt>
+<dd><p>Logical; draw the unit-circle circumference as a fallback
+boundary when no radial grid marks it (grid-less themes, `grid = "none"`).
+Default `TRUE`. Styled from the theme's `axis.line` (else the axis ink). On
+grid-bearing themes the grid's outer ring marks the boundary instead, so this
+has no effect there.</p></dd>
 
 
 <dt id="arg-show-labels">show_labels<a class="anchor" aria-label="anchor" href="#arg-show-labels"></a></dt>

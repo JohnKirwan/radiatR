@@ -11,7 +11,10 @@ add_circ(
   radius = 1,
   circle_color = "grey60",
   circle_alpha = 1,
-  circle_size = 1
+  circle_size = 1,
+  linetype = "solid",
+  colour = NULL,
+  linewidth = NULL
 )
 ```
 
@@ -33,6 +36,20 @@ add_circ(
 - circle_size:
 
   Line width for the circle.
+
+- linetype:
+
+  Line type for the circle.
+
+- colour:
+
+  ggplot-style alias for \`circle_color\`. If supplied, takes precedence
+  over \`circle_color\`.
+
+- linewidth:
+
+  ggplot-style alias for \`circle_size\`. If supplied, takes precedence
+  over \`circle_size\`.
 
 ## Value
 

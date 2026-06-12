@@ -347,7 +347,7 @@ The main radiate() function and its building blocks.
 - [`draw_tracks()`](https://johnkirwan.github.io/radiatR/reference/draw_tracks.md)
   : Create geom layers for Cartesian track coordinates
 - [`add_ticks()`](https://johnkirwan.github.io/radiatR/reference/add_ticks.md)
-  : Create tick marks at the cardinal directions.
+  : Create evenly spaced radial tick marks.
 - [`add_circ()`](https://johnkirwan.github.io/radiatR/reference/add_circ.md)
   : Draw a circular guide.
 - [`degree_labs()`](https://johnkirwan.github.io/radiatR/reference/degree_labs.md)
@@ -500,7 +500,7 @@ Any remaining exported topics.
 - [`add_stacked_headings()`](https://johnkirwan.github.io/radiatR/reference/add_stacked_headings.md)
   : Add stacked heading dots as a ggplot2 layer
 - [`add_ticks()`](https://johnkirwan.github.io/radiatR/reference/add_ticks.md)
-  : Create tick marks at the cardinal directions.
+  : Create evenly spaced radial tick marks.
 - [`add_vonmises_density()`](https://johnkirwan.github.io/radiatR/reference/add_vonmises_density.md)
   : Overlay a fitted von Mises density curve on a radiate plot
 - [`add_wrappedcauchy_density()`](https://johnkirwan.github.io/radiatR/reference/add_wrappedcauchy_density.md)
