@@ -51,3 +51,41 @@ test_that("apply_transform errors when fn returns a non-data-frame", {
   ts <- cpunctatus
   expect_error(apply_transform(ts, function(df, cols) 42), "data frame")
 })
+
+# Recipe A: edge-referenced -> centre-referenced reference offset (per-trial,
+# read from a stimulus-width metadata column).
+edge_to_centre <- function(df, cols, width_col, units = "degrees") {
+  half <- (df[[width_col]] / 2) * (if (units == "degrees") pi / 180 else 1)
+  ang  <- (df[[cols$angle]] + half) %% (2 * pi)
+  df[[cols$angle]] <- ang
+  rho <- df[[cols$rho]]
+  df[[cols$rel_x]] <- rho * cos(ang)
+  df[[cols$rel_y]] <- rho * sin(ang)
+  df
+}
+
+# Recipe B: polarization direction -> axis (angle doubling).
+direction_to_axis <- function(df, cols) {
+  df[[cols$angle]] <- (2 * df[[cols$angle]]) %% (2 * pi)
+  df
+}
+
+test_that("edge_to_centre offsets the heading by half the stimulus width", {
+  ts <- cpunctatus
+  ts@data$width <- 30                       # degrees, constant for the test
+  out  <- apply_transform(ts, edge_to_centre, width_col = "width",
+                          units = "degrees", step = "edge_to_centre")
+  half <- 15 * pi / 180
+  exp_ang <- (cpunctatus@data[[cpunctatus@cols$angle]] + half) %% (2 * pi)
+  expect_equal(out@data[[ts@cols$angle]], exp_ang)
+  expect_equal(out@data[[ts@cols$rel_x]], cpunctatus@data[[cpunctatus@cols$rho]] * cos(exp_ang))
+  expect_equal(out@data[[ts@cols$rel_y]], cpunctatus@data[[cpunctatus@cols$rho]] * sin(exp_ang))
+})
+
+test_that("direction_to_axis doubles the angle modulo 2*pi", {
+  ts  <- cpunctatus
+  out <- apply_transform(ts, direction_to_axis, by = "all",
+                         step = "direction_to_axis")
+  expect_equal(out@data[[ts@cols$angle]],
+               (2 * cpunctatus@data[[cpunctatus@cols$angle]]) %% (2 * pi))
+})

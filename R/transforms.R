@@ -24,7 +24,38 @@
 #'
 #' @seealso [transform_history()], [log_transform()]
 #' @examples
-#' # (see the recipes in the package vignette / examples below)
+#' data(cpunctatus)
+#'
+#' # Recipe A -- edge-referenced -> centre-referenced stimulus. Many experiments
+#' # mark a stimulus by its (precisely digitisable) leading edge; to analyse
+#' # headings relative to the stimulus *centre*, offset the reference by half the
+#' # angular width, which may differ per trial. Here `fn` reads a per-trial
+#' # `width` column from the data. (A constant offset -- e.g. a fixed magnetic
+#' # declination -- would just skip the per-trial column.)
+#' edge_to_centre <- function(df, cols, width_col, units = "degrees") {
+#'   half <- (df[[width_col]] / 2) * (if (units == "degrees") pi / 180 else 1)
+#'   ang  <- (df[[cols$angle]] + half) %% (2 * pi)
+#'   df[[cols$angle]] <- ang
+#'   rho <- df[[cols$rho]]
+#'   df[[cols$rel_x]] <- rho * cos(ang)        # keep rel_x/rel_y consistent
+#'   df[[cols$rel_y]] <- rho * sin(ang)
+#'   df
+#' }
+#' ts <- cpunctatus
+#' ts@data$width <- 20                          # demo: a 20-degree-wide stimulus
+#' ts2 <- apply_transform(ts, edge_to_centre, width_col = "width",
+#'                        units = "degrees", step = "edge_to_centre")
+#'
+#' # Recipe B -- polarization direction -> axis. Polarized-light e-vectors are
+#' # axial (defined mod pi); doubling folds direction into orientation for axial
+#' # circular statistics. (Doubling remaps the angular space, so rel_x/rel_y are
+#' # not physical positions afterwards -- use it for the angle/stat path.)
+#' direction_to_axis <- function(df, cols) {
+#'   df[[cols$angle]] <- (2 * df[[cols$angle]]) %% (2 * pi)
+#'   df
+#' }
+#' ts_axial <- apply_transform(cpunctatus, direction_to_axis, by = "all",
+#'                             step = "direction_to_axis")
 #' @export
 apply_transform <- function(x, fn, ..., by = c("trajectory", "all"), step = NULL) {
   if (!methods::is(x, "TrajSet")) stop("`x` must be a TrajSet.")
@@ -67,5 +98,5 @@ apply_transform <- function(x, fn, ..., by = c("trajectory", "all"), step = NULL
   methods::validObject(x)
   dots <- list(...)
   log_transform(x, step = step, implementation = step,
-                 params = if (length(dots)) dots else NULL)
+                 params = if (length(dots)) list(dots) else NULL)
 }
