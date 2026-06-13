@@ -96,9 +96,13 @@ Suppress range warnings with
 
 <dt id="arg-stats">stats<a class="anchor" aria-label="anchor" href="#arg-stats"></a></dt>
 <dd><p>Character vector selecting which statistics to compute. Order
-determines column order in the output. Valid values: <code>"n"</code>,
+determines column order in the output. Valid values: <code>"n"</code> (count of
+valid, non-missing headings), <code>"n_total"</code> (group size including
+missing), <code>"n_missing"</code> (excluded, non-finite headings),
 <code>"mean_dir"</code>, <code>"mean_dir_deg"</code>, <code>"resultant_R"</code>,
-<code>"kappa"</code>. Default: all five.</p></dd>
+<code>"kappa"</code>. Default: <code>"n"</code>, <code>"mean_dir"</code>,
+<code>"mean_dir_deg"</code>, <code>"resultant_R"</code>, <code>"kappa"</code>
+(<code>"n_total"</code>/<code>"n_missing"</code> are opt-in).</p></dd>
 
 
 <dt id="arg-display">display<a class="anchor" aria-label="anchor" href="#arg-display"></a></dt>

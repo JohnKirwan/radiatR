@@ -64,6 +64,9 @@ hd <- derive_headings(cpunctatus, rule = "crossing",
                       circ0 = 0.2, circ1 = 0.4,
                       coords = "relative",
                       angle_convention = "clock")
+#> Warning: derive_headings(rule = 'crossing'): 25 of 251 trials (10.0%) produced
+#> no heading and are excluded from circular statistics. Rule-based failures are
+#> often non-random and can bias results; inspect attr(x, "missing_ids").
 names(hd)[names(hd) == "id"] <- "trial_id"
 
 # attach target half-width (arc) from the dataset, by trial

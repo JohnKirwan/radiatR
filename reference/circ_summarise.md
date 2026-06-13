@@ -46,9 +46,12 @@ circ_summarise(
 - stats:
 
   Character vector selecting which statistics to compute. Order
-  determines column order in the output. Valid values: `"n"`,
-  `"mean_dir"`, `"mean_dir_deg"`, `"resultant_R"`, `"kappa"`. Default:
-  all five.
+  determines column order in the output. Valid values: `"n"` (count of
+  valid, non-missing headings), `"n_total"` (group size including
+  missing), `"n_missing"` (excluded, non-finite headings), `"mean_dir"`,
+  `"mean_dir_deg"`, `"resultant_R"`, `"kappa"`. Default: `"n"`,
+  `"mean_dir"`, `"mean_dir_deg"`, `"resultant_R"`, `"kappa"`
+  (`"n_total"`/`"n_missing"` are opt-in).
 
 - display:
 

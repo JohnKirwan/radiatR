@@ -2,6 +2,27 @@
 
 ## radiatR (development version)
 
+### Statistics and headings
+
+- [`derive_headings()`](https://johnkirwan.github.io/radiatR/reference/derive_headings.md)
+  gains an `on_missing` argument (`"warn"` (default), `"error"`, or
+  `"quiet"`) and now reports how many trials produced no heading. Failed
+  trials are always retained as `NA` rows, and the result carries
+  `n_total`, `n_missing`, and `missing_ids` attributes. Rule-based
+  failures are often non-random and can bias circular statistics, so
+  they are surfaced by default.
+- [`circ_summarise()`](https://johnkirwan.github.io/radiatR/reference/circ_summarise.md)
+  gains requestable `n_total` and `n_missing` stats so the
+  excluded-trial denominator can travel with the summary (default output
+  unchanged).
+
+### Shiny app
+
+- The Results screen now shows an attrition banner when trials were
+  excluded – loud, with a bias caveat, for headings derived from
+  trajectories, and a neutral note for provided headings. The summary
+  table gains an `Excluded` column.
+
 ### Plotting
 
 - [`radiate.headings_frame()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)

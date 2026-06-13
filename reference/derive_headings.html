@@ -65,6 +65,7 @@
 <span>  <span class="va">...</span>,</span>
 <span>  first_only <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  carry <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  on_missing <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"warn"</span>, <span class="st">"error"</span>, <span class="st">"quiet"</span><span class="op">)</span>,</span>
 <span>  coords <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"absolute"</span>, <span class="st">"relative"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -97,6 +98,16 @@ errors if not registered).</p></dd>
 
 <dt id="arg-carry">carry<a class="anchor" aria-label="anchor" href="#arg-carry"></a></dt>
 <dd><p>optional character vector of columns from the source data to append via nearest time</p></dd>
+
+
+<dt id="arg-on-missing">on_missing<a class="anchor" aria-label="anchor" href="#arg-on-missing"></a></dt>
+<dd><p>One of `"warn"` (default), `"error"`, or `"quiet"`,
+controlling what happens when a rule produces no heading (`NA`) for one or
+more trials. The `NA` rows are always retained; the returned object carries
+`n_total`, `n_missing`, and `missing_ids` attributes. `"warn"` emits a
+warning, `"error"` stops, `"quiet"` is silent. Rule-based failures are often
+non-random (e.g. tracks that never reach the periphery) and can bias
+circular statistics, so they are surfaced by default.</p></dd>
 
 </dl></div>
     <div class="section level2">

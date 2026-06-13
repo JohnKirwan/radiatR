@@ -43,12 +43,23 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="radiatr-development-version">radiatR (development version)<a class="anchor" aria-label="anchor" href="#radiatr-development-version"></a></h2>
 <div class="section level3">
+<h3 id="statistics-and-headings-development-version">Statistics and headings<a class="anchor" aria-label="anchor" href="#statistics-and-headings-development-version"></a></h3>
+<ul><li>
+<code><a href="../reference/derive_headings.html">derive_headings()</a></code> gains an <code>on_missing</code> argument (<code>"warn"</code> (default), <code>"error"</code>, or <code>"quiet"</code>) and now reports how many trials produced no heading. Failed trials are always retained as <code>NA</code> rows, and the result carries <code>n_total</code>, <code>n_missing</code>, and <code>missing_ids</code> attributes. Rule-based failures are often non-random and can bias circular statistics, so they are surfaced by default.</li>
+<li>
+<code><a href="../reference/circ_summarise.html">circ_summarise()</a></code> gains requestable <code>n_total</code> and <code>n_missing</code> stats so the excluded-trial denominator can travel with the summary (default output unchanged).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="shiny-app-development-version">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-development-version"></a></h3>
+<ul><li>The Results screen now shows an attrition banner when trials were excluded – loud, with a bias caveat, for headings derived from trajectories, and a neutral note for provided headings. The summary table gains an <code>Excluded</code> column.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="plotting-development-version">Plotting<a class="anchor" aria-label="anchor" href="#plotting-development-version"></a></h3>
 <ul><li>
 <code><a href="../reference/radiate.html">radiate.headings_frame()</a></code> now draws the same theme-responsive radial chrome as <code><a href="../reference/radiate.html">radiate()</a></code> for trajectories (circumference, ticks, degree labels, radial grid, origin) instead of a fixed bold circle, and gains <code>show_markers</code>, <code>colour_col</code>, <code>legend</code>, <code>display</code>, <code>grid</code>, <code>grid_colour</code>, <code>circumference</code>, and <code>origin</code> arguments. <code>show_markers = FALSE</code> returns the radial frame only, so callers can layer their own marker and statistic overlays.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="shiny-app-development-version">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-development-version"></a></h3>
+<h3 id="shiny-app-development-version-1">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-development-version-1"></a></h3>
 <ul><li>The app now accepts a dataset of pre-computed headings (one angle per trial) in place of trajectories. Choose the input type on the upload screen, map the angle column, units, and convention (unit-circle or compass) plus an optional grouping column, and the Results figure draws the stacked dots / points, mean arrow, confidence interval, and Rayleigh / V-test from the angles directly. A “Load example headings” link derives a demonstration set from the bundled millipede data.</li>
 </ul></div>
 </div>
