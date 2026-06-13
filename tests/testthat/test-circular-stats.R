@@ -850,3 +850,25 @@ test_that("circ_cor test=FALSE omits test columns", {
   expect_false("statistic" %in% names(res))
   expect_true("r" %in% names(res))
 })
+
+test_that("circ_summarise reports n_total and n_missing when requested", {
+  df <- data.frame(
+    g = c("a", "a", "a", "b", "b"),
+    angle = c(0.1, NA, 1.2, NA, 2.0)
+  )
+  out <- circ_summarise(df, angle, units = "radians", .by = "g",
+                        stats = c("n", "n_total", "n_missing"))
+  out <- out[order(out$g), ]
+  expect_equal(out$n,         c(2L, 1L))   # valid (non-NA) per group
+  expect_equal(out$n_total,   c(3L, 2L))
+  expect_equal(out$n_missing, c(1L, 1L))
+  expect_true(all(out$n_total == out$n + out$n_missing))
+})
+
+test_that("circ_summarise default stats are unchanged (no denominator columns)", {
+  df <- data.frame(angle = c(0.1, 0.2, NA))
+  out <- circ_summarise(df, angle, units = "radians")
+  expect_false("n_total"   %in% names(out))
+  expect_false("n_missing" %in% names(out))
+  expect_true("n" %in% names(out))
+})
