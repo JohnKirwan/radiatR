@@ -2469,8 +2469,6 @@ function(
 #'   \code{\link{headings_frame}}.
 #' @param step,tol,direction,base_r,shade,shape Passed to
 #'   \code{\link{add_stacked_headings}}. See that function for details.
-#' @param legend When \code{TRUE}, show the plot legend; when \code{FALSE}
-#'   (default) the legend is hidden.
 #' @param show_markers When \code{TRUE} (default) the stacked-dot markers are
 #'   drawn; \code{FALSE} returns the themed radial frame only, for callers
 #'   that layer their own marker and statistic overlays.

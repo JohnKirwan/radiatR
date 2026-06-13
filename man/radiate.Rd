@@ -131,9 +131,6 @@ text and the in-panel `"inside"` annotation.}
 equivalent to `angle_labels = "none"`. Tick styling (colour, width, length)
 follows the chosen `theme`'s `axis.ticks`.}
 
-\item{legend}{When \code{TRUE}, show the plot legend; when \code{FALSE}
-(default) the legend is hidden.}
-
 \item{angle_labels}{One of `"degrees"` (default; e.g. `45°`), `"none"`, or
 `"radians"` (e.g. `π/4`) -- the diagonal angle labels around the circle.
 Label styling (colour, size, family) follows the chosen `theme`'s `axis.text`.}
