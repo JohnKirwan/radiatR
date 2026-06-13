@@ -12,7 +12,7 @@ test_that("trial utilities summarise and transform tracks", {
   file_tbl <- tibble::tibble(
     basename = "video1",
     arc = 0,
-    type = "Herm",
+    type = "stimulus",
     obstacle = "none",
     id = "animal"
   )
@@ -58,7 +58,7 @@ test_that("get_tracked_object_pos sets display convention meta keys", {
     y = seq(0, 0.2, length.out = 10)
   )
   file_tbl <- tibble::tibble(
-    basename = "video1", arc = 0, type = "Herm", obstacle = "none", id = "animal"
+    basename = "video1", arc = 0, type = "stimulus", obstacle = "none", id = "animal"
   )
   limits <- suppressWarnings(get_trial_limits(landmarks, animal_track, file_tbl, vid_num = 1))
   ts     <- suppressWarnings(get_tracked_object_pos(limits, animal_track))
@@ -75,7 +75,7 @@ test_that("get_tracked_object_pos reports out-of-bounds points once, aggregated 
   animal_track <- data.frame(frame = 1:10,
                              x = c(0, 0.5, 1.2, 1.5, 0.3, 0, 0.5, 1.3, 1.6, 0.2),
                              y = 0)
-  file_tbl <- tibble::tibble(basename = "video1", arc = 0, type = "Herm",
+  file_tbl <- tibble::tibble(basename = "video1", arc = 0, type = "stimulus",
                              obstacle = "none", id = "animal")
   limits <- suppressWarnings(get_trial_limits(landmarks, animal_track, file_tbl, vid_num = 1))
 

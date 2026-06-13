@@ -94,8 +94,9 @@ message("Copied ", length(pairs), " track pairs to ", ext_dir)
 # ---- 3. write the package manifest CSV --------------------------------------
 # Map the experiment columns onto the loader's expected fields:
 #   file <- trial_name, arc <- target_halfwidth, id <- individual.
-# type = "control" when target_halfwidth == 0, else "stimulus" (a non-"Herm"
-# type so the P. lividus-specific arc midpoint adjustment is not applied).
+# type = "control" when target_halfwidth == 0, else "stimulus".
+# (Any reference-centre offset is now applied post-load via apply_transform();
+#  see the edge_to_centre recipe in ?apply_transform.)
 
 manifest <- data.frame(
   file             = manifest_raw$trial_name,

@@ -1,5 +1,21 @@
 # radiatR (development version)
 
+## Transformations
+
+* New `apply_transform()` applies a user-supplied transformation to a loaded
+  `TrajSet` (per-trajectory or whole-frame), returning a modified `TrajSet` and
+  recording the step in its `transform_history`. Two worked recipes are
+  documented: an edge-referenced -> centre-referenced reference offset (a
+  per-trial offset read from stimulus-width metadata) and a polarization
+  direction -> axis (angle-doubling) remap.
+* Removed the hard-coded 1st-Hermitian (`type == "Herm"`) reference-angle
+  adjustment and the now-unused `midpoint` argument from `get_trial_limits()`;
+  experiment-specific reference corrections are now expressed via
+  `apply_transform()`. The bundled `cpunctatus` data is unchanged.
+* The `TrajSet` row-order validity check no longer requires a global sort by id
+  (which depended on string collation / locale); it now checks the actual
+  invariant -- each trajectory's rows form a contiguous, time-ordered block.
+
 ## Documentation
 
 * Repositioned the package documentation from "animal movement in circular

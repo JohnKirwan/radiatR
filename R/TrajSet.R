@@ -191,9 +191,21 @@ setValidity("TrajSet", function(object) {
     if (!is.numeric(d[[cl$rho]])) return("rho column must be numeric")
   }
 
-  # enforce (id,time) sorted order
-  o <- order(d[[cl$id]], d[[cl$time]])
-  if (!identical(o, seq_len(nrow(d)))) return("rows must be sorted by id, then time")
+  # enforce that rows are grouped by id (each id forms one contiguous block)
+  # and sorted by time within each block. A global ordering across distinct id
+  # labels is not required -- and is not locale-independent -- only that each
+  # trajectory's rows are contiguous and internally time-ordered.
+  id_vals <- d[[cl$id]]
+  if (nrow(d) > 1L) {
+    run_id   <- cumsum(c(TRUE, id_vals[-1] != id_vals[-length(id_vals)]))
+    n_blocks <- length(unique(run_id))
+    n_ids    <- length(unique(id_vals))
+    if (n_blocks != n_ids) return("rows must be grouped by id (each id contiguous)")
+
+    time_vals <- d[[cl$time]]
+    not_sorted <- tapply(time_vals, run_id, function(t) any(diff(as.numeric(t)) < 0))
+    if (any(unlist(not_sorted))) return("rows must be sorted by time within each id")
+  }
 
   TRUE
 })

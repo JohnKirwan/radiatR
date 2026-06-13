@@ -41,16 +41,13 @@
 #' @param file_tbl Tibble returned by [import_tracks()] (optionally enriched by
 #'   [load_tracks()] or [load_tracks2()]).
 #' @param vid_num Index of the current video within `file_tbl`.
-#' @param midpoint Character flag indicating whether reference angles should be
-#'   shifted to the midpoint (`"midpoint"`, default) or left as-is.
 #'
 #' @return A tibble with one row per trial containing trial limits and reference
 #'   metadata.
 #'
 #' @importFrom tibble as_tibble
 #' @export
-get_trial_limits <- function(landmarks, animal_track, file_tbl, vid_num,
-                             midpoint = "midpoint") {
+get_trial_limits <- function(landmarks, animal_track, file_tbl, vid_num) {
   landmarks_df <- .coerce_xy_frame(landmarks, "landmark")
   track_df <- .coerce_xy_frame(animal_track, "track")
 
@@ -98,16 +95,6 @@ get_trial_limits <- function(landmarks, animal_track, file_tbl, vid_num,
     if (col %in% names(file_tbl)) {
       tl[[col]] <- file_tbl[[col]][file_tbl$basename == tl$video]
     }
-  }
-
-  if (identical(midpoint, "midpoint") && "type" %in% names(tl) &&
-      isTRUE(tl$type[1] == "Herm")) {
-    ref_theta <- mapply(rad2clock, tl$ref_theta)
-    ref_theta <- ref_theta - tl$arc * (pi / 360)
-    ref_theta <- wrap_to_2pi(ref_theta)
-    tl$ref_theta <- mapply(rad_unclock, ref_theta)
-    tl$ref_x_0 <- cos(tl$ref_theta)
-    tl$ref_y_0 <- sin(tl$ref_theta)
   }
 
   theta <- tl$ref_theta
