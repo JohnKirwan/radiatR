@@ -2,6 +2,28 @@
 
 ## radiatR (development version)
 
+### Plotting
+
+- [`radiate.headings_frame()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  now draws the same theme-responsive radial chrome as
+  [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  for trajectories (circumference, ticks, degree labels, radial grid,
+  origin) instead of a fixed bold circle, and gains `show_markers`,
+  `colour_col`, `legend`, `display`, `grid`, `grid_colour`,
+  `circumference`, and `origin` arguments. `show_markers = FALSE`
+  returns the radial frame only, so callers can layer their own marker
+  and statistic overlays.
+
+### Shiny app
+
+- The app now accepts a dataset of pre-computed headings (one angle per
+  trial) in place of trajectories. Choose the input type on the upload
+  screen, map the angle column, units, and convention (unit-circle or
+  compass) plus an optional grouping column, and the Results figure
+  draws the stacked dots / points, mean arrow, confidence interval, and
+  Rayleigh / V-test from the angles directly. A “Load example headings”
+  link derives a demonstration set from the bundled millipede data.
+
 ## radiatR 0.3.1
 
 ### Plotting

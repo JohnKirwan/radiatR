@@ -77,6 +77,14 @@ radiate(
     "linedraw"),
   quadrants = FALSE,
   rings = FALSE,
+  grid = c("radial", "cartesian", "none"),
+  grid_colour = NULL,
+  circumference = TRUE,
+  origin = FALSE,
+  colour_col = NULL,
+  legend = FALSE,
+  display = circ_display(),
+  show_markers = TRUE,
   ...
 )
 ```
@@ -278,6 +286,12 @@ radiate(
   Passed to
   [`add_stacked_headings`](https://johnkirwan.github.io/radiatR/reference/add_stacked_headings.md).
   See that function for details.
+
+- show_markers:
+
+  When `TRUE` (default) the stacked-dot markers are drawn; `FALSE`
+  returns the themed radial frame only, for callers that layer their own
+  marker and statistic overlays.
 
 ## Value
 

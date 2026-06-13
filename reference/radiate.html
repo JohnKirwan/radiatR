@@ -123,6 +123,14 @@ the object and handed off to the plotting helpers.</p>
 <span>    <span class="st">"linedraw"</span><span class="op">)</span>,</span>
 <span>  quadrants <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  rings <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  grid <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"radial"</span>, <span class="st">"cartesian"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
+<span>  grid_colour <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  circumference <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  origin <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  colour_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  legend <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  display <span class="op">=</span> <span class="fu"><a href="circ_display.html">circ_display</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  show_markers <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -320,6 +328,12 @@ unit-circle coordinates (e.g. the `cpunctatus` dataset).</p></dd>
 <dt id="arg-step-tol-direction-base-r-shade-shape">step, tol, direction, base_r, shade, shape<a class="anchor" aria-label="anchor" href="#arg-step-tol-direction-base-r-shade-shape"></a></dt>
 <dd><p>Passed to
 <code><a href="add_stacked_headings.html">add_stacked_headings</a></code>. See that function for details.</p></dd>
+
+
+<dt id="arg-show-markers">show_markers<a class="anchor" aria-label="anchor" href="#arg-show-markers"></a></dt>
+<dd><p>When <code>TRUE</code> (default) the stacked-dot markers are
+drawn; <code>FALSE</code> returns the themed radial frame only, for callers
+that layer their own marker and statistic overlays.</p></dd>
 
 </dl></div>
     <div class="section level2">
