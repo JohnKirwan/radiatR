@@ -69,6 +69,7 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
   }
   if (!by_traj && !(cb %in% names(df))) by_traj <- TRUE   # stale selection
   key_col  <- if (by_traj) id_col else cb
+  # key_col may be absent in headings mode with no group (id_col "id" not in an uploaded table)
   n_levels <- if (key_col %in% names(df)) length(unique(df[[key_col]])) else 1L
   legend   <- !by_traj && n_levels <= SPEC_CYCLE_N        # distinct -> legend
 
@@ -78,6 +79,7 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
   list(
     data      = data,
     mode      = mode,
+    # in headings mode method is NULL, so headings$rule is absent by design (every reader gates on mode first)
     headings = c(list(rule = method), rule_params),
     group_col = id_col,
     facet_by  = gc,
@@ -236,6 +238,10 @@ spec_to_code <- function(spec) {
   add("")
 
   headings_mode <- identical(spec$mode, "headings")
+  # Headings mode always has a headings frame; trajectory mode has one unless the
+  # heading rule is "none". Used to gate both the trajectory-branch derive_headings
+  # emission and the shared overlay/tail emission below.
+  has_hd <- headings_mode || !identical(spec$headings$rule, "none")
 
   if (headings_mode) {
     if (identical(spec$data$source, "example")) {
@@ -268,7 +274,6 @@ spec_to_code <- function(spec) {
       add("ts <- TrajSet_read(", q(spec$data$path), dia, ")")
     }
 
-    has_hd <- !identical(spec$headings$rule, "none")
     if (has_hd) {
       add("")
       hp <- if (identical(spec$headings$rule, "crossing"))
@@ -289,8 +294,6 @@ spec_to_code <- function(spec) {
     if (has_hd)
       add("hd <- assign_colour_key(hd, by = ", q(spec$colour$by), ", reference = ts)")
   }
-
-  has_hd <- headings_mode || !identical(spec$headings$rule, "none")
 
   add("")
   add("disp <- circ_display(zero = ", spec$display$zero, ")")
