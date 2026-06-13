@@ -55,3 +55,58 @@ test_that("spec_to_code: rule none -> tracks only, no derive_headings", {
   expect_false(grepl("add_stacked_headings|add_heading_points", code))
   expect_silent(parse(text = code))
 })
+
+test_that("spec_to_code: headings file mode emits headings_frame + frame-only radiate", {
+  df <- data.frame(dir = c(0, 90, 180), cond = c("a","a","b"))
+  hf <- build_headings_input(df, col = "dir", units = "degrees",
+                             convention = "clock", group = "cond")
+  spec <- build_plot_spec(
+    ts = NULL, hd = hf, method = NULL,
+    data = list(source = "file", mode = "headings", path = "angles.csv",
+                col = "dir", units = "degrees", convention = "clock",
+                group = "cond"),
+    inputs = list(colour_by = "cond", cond_col = "cond",
+                  heading_display = "points", plot_theme = "void",
+                  angle_labels = "degrees")
+  )
+  code <- spec_to_code(spec)
+  expect_match(code, "headings_frame\\(", fixed = FALSE)
+  expect_match(code, "show_markers = FALSE", fixed = TRUE)
+  expect_match(code, "read.csv\\(", fixed = FALSE)
+})
+
+test_that("spec_to_code: headings example mode emits derive_headings(cpunctatus)", {
+  hf <- structure(
+    data.frame(id = "t1", time = 1, heading = 0.5, cond = "a"),
+    class = c("headings_frame", "data.frame"), heading_col = "heading")
+  spec <- build_plot_spec(
+    ts = NULL, hd = hf, method = NULL,
+    data = list(source = "example", mode = "headings", path = NULL,
+                col = "heading", units = "radians", convention = "unit_circle",
+                group = "cond"),
+    inputs = list(colour_by = "cond", cond_col = "cond",
+                  heading_display = "points", plot_theme = "void",
+                  angle_labels = "degrees")
+  )
+  code <- spec_to_code(spec)
+  expect_match(code, "derive_headings(cpunctatus", fixed = TRUE)
+})
+
+test_that("spec_to_code: headings with no group emits a single-colour key", {
+  df <- data.frame(dir = c(0, 90, 180, 270))
+  hf <- build_headings_input(df, col = "dir", units = "degrees",
+                             convention = "unit_circle", group = NULL)
+  spec <- build_plot_spec(
+    ts = NULL, hd = hf, method = NULL,
+    data = list(source = "file", mode = "headings", path = "angles.csv",
+                col = "dir", units = "degrees", convention = "unit_circle",
+                group = NULL),
+    inputs = list(colour_by = NULL, cond_col = NULL,
+                  heading_display = "points", plot_theme = "void",
+                  angle_labels = "degrees")
+  )
+  expect_identical(spec$colour$by, "trajectory")   # sentinel -> single colour
+  expect_false(spec$colour$legend)
+  code <- spec_to_code(spec)
+  expect_match(code, "hd$.colour <- factor(\"all\")", fixed = TRUE)
+})

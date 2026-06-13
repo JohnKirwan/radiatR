@@ -324,3 +324,46 @@ test_that("stack_headings(group=) stacks within each group independently", {
   expect_equal(sort(out$stack_r[out$g == "a"], decreasing = TRUE), c(1, 0.975), tolerance = 1e-9)
   expect_equal(sort(out$stack_r[out$g == "b"], decreasing = TRUE), c(1, 0.975), tolerance = 1e-9)
 })
+
+test_that("radiate.headings_frame draws frame-only when show_markers = FALSE", {
+  hf <- headings_frame(
+    data.frame(angle = c(10, 20, 30, 200, 210)),
+    col = angle, units = "degrees"
+  )
+  g_frame   <- radiate(hf, show_markers = FALSE, theme = "void")
+  g_markers <- radiate(hf, show_markers = TRUE,  theme = "void")
+  expect_s3_class(g_frame, "ggplot")
+  expect_silent(ggplot2::ggplot_build(g_frame))
+  # The marker layer is the GeomPoint added by add_stacked_headings; absent in
+  # frame-only mode, present otherwise.
+  has_points <- function(g) any(vapply(g$layers,
+    function(l) inherits(l$geom, "GeomPoint"), logical(1)))
+  expect_false(has_points(g_frame))
+  expect_true(has_points(g_markers))
+})
+
+test_that("radiate.headings_frame uses the modern themed chrome (grid theme draws a grid)", {
+  hf <- headings_frame(data.frame(angle = c(0, 90, 180, 270)),
+                       col = angle, units = "degrees")
+  g <- radiate(hf, show_markers = FALSE, theme = "bw")
+  expect_silent(ggplot2::ggplot_build(g))
+  geoms <- vapply(g$layers, function(l) class(l$geom)[1], character(1))
+  expect_true("GeomPath" %in% geoms)
+})
+
+test_that("radiate.headings_frame markers honour a non-default display", {
+  hf <- headings_frame(data.frame(angle = c(0, 45, 90)),
+                       col = angle, units = "degrees")
+  pts <- function(g) {
+    b <- ggplot2::ggplot_build(g)
+    pt_layers <- which(vapply(g$layers,
+      function(l) inherits(l$geom, "GeomPoint"), logical(1)))
+    d <- b$data[[pt_layers[1]]]
+    as.matrix(d[order(d$x, d$y), c("x", "y")])
+  }
+  g_default <- radiate(hf, show_markers = TRUE, display = circ_display(zero = 0))
+  g_rot     <- radiate(hf, show_markers = TRUE,
+                       display = circ_display(zero = pi / 2))
+  # A different zero direction must move the marker coordinates.
+  expect_false(isTRUE(all.equal(pts(g_default), pts(g_rot))))
+})

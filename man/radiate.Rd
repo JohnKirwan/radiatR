@@ -74,6 +74,14 @@ radiate(data, ...)
     "linedraw"),
   quadrants = FALSE,
   rings = FALSE,
+  grid = c("radial", "cartesian", "none"),
+  grid_colour = NULL,
+  circumference = TRUE,
+  origin = FALSE,
+  colour_col = NULL,
+  legend = FALSE,
+  display = circ_display(),
+  show_markers = TRUE,
   ...
 )
 }
@@ -196,6 +204,10 @@ unit-circle coordinates (e.g. the `cpunctatus` dataset).}
 
 \item{step, tol, direction, base_r, shade, shape}{Passed to
 \code{\link{add_stacked_headings}}. See that function for details.}
+
+\item{show_markers}{When \code{TRUE} (default) the stacked-dot markers are
+drawn; \code{FALSE} returns the themed radial frame only, for callers
+that layer their own marker and statistic overlays.}
 }
 \value{
 A `ggplot2` object.

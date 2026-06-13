@@ -4,6 +4,25 @@ if (!nzchar(.p) || !file.exists(.p))
   .p <- testthat::test_path("..", "..", "inst", "app", "plot_spec.R")
 source(.p, local = TRUE)
 
+test_that("build_headings_input maps a degrees/compass column to a headings frame", {
+  df  <- data.frame(dir = c(0, 90, 180, 270), cond = c("a","a","b","b"))
+  hf  <- build_headings_input(df, col = "dir", units = "degrees",
+                              convention = "clock", group = "cond")
+  expect_s3_class(hf, "headings_frame")
+  expect_true("heading" %in% names(hf))          # angle column renamed to "heading"
+  expect_true(all(hf$heading >= 0 & hf$heading < 2 * pi))  # radians, wrapped
+  expect_true("cond" %in% names(hf))             # group column carried through
+})
+
+test_that("build_headings_input coerces a plain derive_headings()-style frame", {
+  df  <- data.frame(id = c("t1","t2"), time = c(5, 9),
+                    heading = c(0.5, 2.1))        # already radians/unit-circle
+  hf  <- build_headings_input(df, col = "heading", units = "radians",
+                              convention = "unit_circle", group = NULL)
+  expect_s3_class(hf, "headings_frame")
+  expect_equal(hf$heading, c(0.5, 2.1))
+})
+
 test_that("build_plot_spec captures the figure choices", {
   ts <- simulate_tracks(n_points = 20, seed = 1, output = "trajset")
   hd <- derive_headings(ts, rule = "distal")
@@ -86,4 +105,22 @@ test_that("spec_to_plot: rule 'none' draws tracks only (no markers)", {
   p <- spec_to_plot(spec, ts, NULL)
   expect_s3_class(p, "ggplot")
   expect_silent(ggplot2::ggplot_build(p))
+})
+
+test_that("build_plot_spec: headings mode records mode and headings data block", {
+  df <- data.frame(dir = c(0, 90, 180), cond = c("a","a","b"))
+  hf <- build_headings_input(df, col = "dir", units = "degrees",
+                             convention = "clock", group = "cond")
+  spec <- build_plot_spec(
+    ts = NULL, hd = hf, method = NULL,
+    data = list(source = "file", mode = "headings", path = "angles.csv",
+                col = "dir", units = "degrees", convention = "clock",
+                group = "cond"),
+    inputs = list(colour_by = "cond", cond_col = "cond",
+                  heading_display = "points", plot_theme = "void",
+                  angle_labels = "degrees")
+  )
+  expect_identical(spec$mode, "headings")
+  expect_identical(spec$facet_by, "cond")
+  expect_false(isTRUE(spec$show$tracks))     # no tracks in headings mode
 })

@@ -5,6 +5,25 @@
 
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
+# Normalise an app-provided data frame of angles into a `headings_frame` whose
+# angle column is named "heading". `col` is the (string) angle column; `units`
+# and `convention` feed headings_frame()'s validation/conversion (convention
+# "unit_circle" or "clock"). An optional `group` column is preserved for
+# faceting / colour / per-group statistics. Used by both the uploaded-file path
+# and the cpunctatus example path (whose angles are already radians/unit_circle).
+build_headings_input <- function(df, col, units, convention, group = NULL) {
+  # as.name() makes headings_frame()'s ensym() capture work with a string col.
+  hf <- do.call(headings_frame,
+                list(data = df, col = as.name(col), units = units,
+                     angle_convention = convention))
+  hc <- attr(hf, "heading_col")
+  if (!identical(hc, "heading")) {
+    hf[["heading"]]          <- hf[[hc]]
+    attr(hf, "heading_col")  <- "heading"
+  }
+  hf
+}
+
 # Shared defaults (kept here so spec_to_plot and spec_to_code agree).
 SPEC_CYCLE_N         <- 20L
 SPEC_STACK_BIN_WIDTH <- pi / 36   # 5 degrees
@@ -26,24 +45,41 @@ SPEC_VTEST_LWD       <- 0.8
 #   data   : list(source = "file"|"example", path, dialect).
 #   inputs : a plain list of the relevant input values (see fields used below).
 build_plot_spec <- function(ts, hd, method, data, inputs) {
-  id_col <- ts@cols$id
-  df     <- as.data.frame(ts)
+  mode <- data$mode %||% "trajectories"
+  headings_mode <- identical(mode, "headings")
+
+  if (headings_mode) {
+    df     <- as.data.frame(hd)
+    id_col <- "id"                          # derive_headings/headings frames key on "id" when present
+  } else {
+    id_col <- ts@cols$id
+    df     <- as.data.frame(ts)
+  }
 
   gc <- if (!is.null(inputs$cond_col) && nzchar(inputs$cond_col))
     inputs$cond_col else NULL
+  # In headings mode a group only exists if it is a column of hd.
+  if (headings_mode && !is.null(gc) && !(gc %in% names(df))) gc <- NULL
 
   cb <- inputs$colour_by
   by_traj <- is.null(cb) || !nzchar(cb) || identical(cb, SPEC_TRAJ_KEY)
+  if (headings_mode && by_traj) {
+    # No per-trajectory identity for headings; fall back to the group column if any.
+    cb <- gc; by_traj <- is.null(gc)
+  }
   if (!by_traj && !(cb %in% names(df))) by_traj <- TRUE   # stale selection
   key_col  <- if (by_traj) id_col else cb
-  n_levels <- length(unique(df[[key_col]]))
+  # key_col may be absent in headings mode with no group (id_col "id" not in an uploaded table)
+  n_levels <- if (key_col %in% names(df)) length(unique(df[[key_col]])) else 1L
   legend   <- !by_traj && n_levels <= SPEC_CYCLE_N        # distinct -> legend
 
   rule_params <- if (identical(method, "crossing"))
     list(circ0 = inputs$circ0 %||% 0.3, circ1 = inputs$circ1 %||% 0.6) else list()
 
   list(
-    data     = data,
+    data      = data,
+    mode      = mode,
+    # in headings mode method is NULL, so headings$rule is absent by design (every reader gates on mode first)
     headings = c(list(rule = method), rule_params),
     group_col = id_col,
     facet_by  = gc,
@@ -57,7 +93,7 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
     # reproduces it verbatim. NULL/"" means no label.
     subtitle = inputs$subtitle,
     caption  = inputs$caption,
-    show = list(tracks    = isTRUE(inputs$show_tracks),
+    show = list(tracks    = !headings_mode && isTRUE(inputs$show_tracks),
                 arrow     = isTRUE(inputs$show_arrow),
                 vectors   = isTRUE(inputs$show_vectors),
                 rayleigh  = isTRUE(inputs$show_rayleigh),
@@ -74,25 +110,49 @@ spec_to_plot <- function(spec, ts, hd) {
   disp <- circ_display(zero = spec$display$zero)
   by   <- spec$colour$by
   cap  <- spec$colour$cap
+  headings_mode <- identical(spec$mode, "headings")
 
-  ts <- assign_colour_key(ts, by = by, n = cap)
-
-  p <- radiate(
-    ts,
-    group_col    = spec$group_col,
-    colour_col   = ".colour",
-    panel_by     = spec$facet_by,
-    colour_cycle = NULL,
-    legend       = spec$colour$legend,
-    show_tracks  = spec$show$tracks,
-    show_arrow   = FALSE,                  # arrow added explicitly below
-    show_labels  = FALSE,
-    theme        = spec$theme,
-    angle_labels = spec$angle_labels,
-    quadrants    = isTRUE(spec$show$quadrants),
-    rings        = isTRUE(spec$show$rings),
-    display      = disp
-  )
+  if (headings_mode) {
+    # No group column -> "trajectory" sentinel means a single colour. An uploaded
+    # angle table has no "id" column, so assign_colour_key(by="trajectory") is not
+    # valid; use a one-level constant key instead.
+    if (identical(by, "trajectory")) {
+      hd$.colour <- factor("all")
+    } else {
+      hd <- assign_colour_key(hd, by = by, n = cap)
+    }
+    attr(hd, "display") <- disp
+    p <- radiate(
+      hd,
+      show_markers = FALSE,
+      colour_col   = ".colour",
+      panel_by     = spec$facet_by,
+      legend       = spec$colour$legend,
+      theme        = spec$theme,
+      angle_labels = spec$angle_labels,
+      quadrants    = isTRUE(spec$show$quadrants),
+      rings        = isTRUE(spec$show$rings),
+      display      = disp
+    )
+  } else {
+    ts <- assign_colour_key(ts, by = by, n = cap)
+    p <- radiate(
+      ts,
+      group_col    = spec$group_col,
+      colour_col   = ".colour",
+      panel_by     = spec$facet_by,
+      colour_cycle = NULL,
+      legend       = spec$colour$legend,
+      show_tracks  = spec$show$tracks,
+      show_arrow   = FALSE,                  # arrow added explicitly below
+      show_labels  = FALSE,
+      theme        = spec$theme,
+      angle_labels = spec$angle_labels,
+      quadrants    = isTRUE(spec$show$quadrants),
+      rings        = isTRUE(spec$show$rings),
+      display      = disp
+    )
+  }
   if (spec$colour$legend)
     p <- p + ggplot2::labs(colour = by)
 
@@ -103,20 +163,23 @@ spec_to_plot <- function(spec, ts, hd) {
   if (!is.null(spec$caption)  && nzchar(spec$caption))  lab_args$caption  <- spec$caption
   if (length(lab_args)) p <- p + do.call(ggplot2::labs, lab_args)
 
-  if (identical(spec$headings$rule, "none") || is.null(hd))
+  # Trajectory mode with rule "none" or no headings: tracks-only figure.
+  if (!headings_mode && (identical(spec$headings$rule, "none") || is.null(hd)))
     return(p)
 
-  # The headings frame may not carry the facet column; attach it (matched by
-  # trajectory id) so the markers/arrow route to the right facet and stack per
-  # facet.
-  if (!is.null(spec$facet_by) && !spec$facet_by %in% names(hd)) {
-    df <- as.data.frame(ts)
-    hd <- merge(hd, unique(df[, c(spec$group_col, spec$facet_by)]),
-                by.x = "id", by.y = spec$group_col, all.x = TRUE)
-  }
+  if (!headings_mode) {
+    # The headings frame may not carry the facet column; attach it (matched by
+    # trajectory id) so the markers/arrow route to the right facet and stack per
+    # facet.
+    if (!is.null(spec$facet_by) && !spec$facet_by %in% names(hd)) {
+      df <- as.data.frame(ts)
+      hd <- merge(hd, unique(df[, c(spec$group_col, spec$facet_by)]),
+                  by.x = "id", by.y = spec$group_col, all.x = TRUE)
+    }
 
-  hd <- assign_colour_key(hd, by = by, n = cap, reference = ts)
-  attr(hd, "display") <- disp
+    hd <- assign_colour_key(hd, by = by, n = cap, reference = ts)
+    attr(hd, "display") <- disp
+  }
 
   if (!identical(spec$heading_display, "none")) {
     if (identical(spec$heading_display, "stacked")) {
@@ -174,35 +237,67 @@ spec_to_code <- function(spec) {
   add("library(ggplot2)")
   add("")
 
-  if (identical(spec$data$source, "example")) {
-    add("data(cpunctatus)")
-    add("ts <- cpunctatus")
-  } else {
-    dia <- if (!is.null(spec$data$dialect))
-      paste0(", dialect = ", q(spec$data$dialect)) else ""
-    add("ts <- TrajSet_read(", q(spec$data$path), dia, ")")
-  }
+  headings_mode <- identical(spec$mode, "headings")
+  # Headings mode always has a headings frame; trajectory mode has one unless the
+  # heading rule is "none". Used to gate both the trajectory-branch derive_headings
+  # emission and the shared overlay/tail emission below.
+  has_hd <- headings_mode || !identical(spec$headings$rule, "none")
 
-  has_hd <- !identical(spec$headings$rule, "none")
-  if (has_hd) {
+  if (headings_mode) {
+    if (identical(spec$data$source, "example")) {
+      add("data(cpunctatus)")
+      add("hd <- derive_headings(cpunctatus, rule = \"distal\", coords = \"relative\")")
+      if (!is.null(spec$facet_by))
+        add("hd <- merge(hd, unique(as.data.frame(cpunctatus)[, c(\"trial_id\", ",
+            q(spec$facet_by), ")]), by.x = \"id\", by.y = \"trial_id\", all.x = TRUE)")
+      add("hd <- headings_frame(hd, col = heading, units = \"radians\")")
+    } else {
+      add("df <- read.csv(", q(spec$data$path), ")")
+      add("hd <- headings_frame(df, col = ", spec$data$col,
+          ", units = ", q(spec$data$units),
+          ", angle_convention = ", q(spec$data$convention), ")")
+      if (!identical(spec$data$col, "heading")) {
+        add("names(hd)[names(hd) == ", q(spec$data$col), "] <- \"heading\"")
+        add("attr(hd, \"heading_col\") <- \"heading\"")
+      }
+    }
     add("")
-    hp <- if (identical(spec$headings$rule, "crossing"))
-      paste0(", circ0 = ", spec$headings$circ0, ", circ1 = ", spec$headings$circ1) else ""
-    # Heading vectors need the crossing construction coords; request them so the
-    # emitted script can draw them (only the crossing rule produces x_inner/y_inner).
-    rc <- if (spec$show$vectors && identical(spec$headings$rule, "crossing"))
-      ", return_coords = TRUE" else ""
-    add("hd <- derive_headings(ts, rule = ", q(spec$headings$rule), hp, rc, ")")
-    if (!is.null(spec$facet_by))
-      add("hd <- merge(hd, unique(as.data.frame(ts)[, c(", q(spec$group_col), ", ",
-          q(spec$facet_by), ")]), by.x = \"id\", by.y = ", q(spec$group_col),
-          ", all.x = TRUE)")
+    if (identical(spec$colour$by, "trajectory")) {
+      add("hd$.colour <- factor(\"all\")")          # single-colour: no group column
+    } else {
+      add("hd <- assign_colour_key(hd, by = ", q(spec$colour$by), ")")
+    }
+  } else {
+    if (identical(spec$data$source, "example")) {
+      add("data(cpunctatus)")
+      add("ts <- cpunctatus")
+    } else {
+      dia <- if (!is.null(spec$data$dialect))
+        paste0(", dialect = ", q(spec$data$dialect)) else ""
+      add("ts <- TrajSet_read(", q(spec$data$path), dia, ")")
+    }
+
+    if (has_hd) {
+      add("")
+      hp <- if (identical(spec$headings$rule, "crossing"))
+        paste0(", circ0 = ", spec$headings$circ0, ", circ1 = ", spec$headings$circ1) else ""
+      # Heading vectors need the crossing construction coords; request them so the
+      # emitted script can draw them (only the crossing rule produces x_inner/y_inner).
+      rc <- if (spec$show$vectors && identical(spec$headings$rule, "crossing"))
+        ", return_coords = TRUE" else ""
+      add("hd <- derive_headings(ts, rule = ", q(spec$headings$rule), hp, rc, ")")
+      if (!is.null(spec$facet_by))
+        add("hd <- merge(hd, unique(as.data.frame(ts)[, c(", q(spec$group_col), ", ",
+            q(spec$facet_by), ")]), by.x = \"id\", by.y = ", q(spec$group_col),
+            ", all.x = TRUE)")
+    }
+
+    add("")
+    add("ts <- assign_colour_key(ts, by = ", q(spec$colour$by), ")")
+    if (has_hd)
+      add("hd <- assign_colour_key(hd, by = ", q(spec$colour$by), ", reference = ts)")
   }
 
-  add("")
-  add("ts <- assign_colour_key(ts, by = ", q(spec$colour$by), ")")
-  if (has_hd)
-    add("hd <- assign_colour_key(hd, by = ", q(spec$colour$by), ", reference = ts)")
   add("")
   add("disp <- circ_display(zero = ", spec$display$zero, ")")
   # Tag the headings frame with the display convention so the heading overlays
@@ -227,12 +322,20 @@ spec_to_code <- function(spec) {
   # the common case keeps a clean call.
   qr <- paste0(if (isTRUE(spec$show$quadrants)) ", quadrants = TRUE" else "",
                if (isTRUE(spec$show$rings))     ", rings = TRUE"     else "")
-  add("radiate(ts, group_col = ", q(spec$group_col),
-      ", colour_col = \".colour\"", pby,
-      ", legend = ", if (spec$colour$legend) "TRUE" else "FALSE",
-      ", theme = ", q(spec$theme),
-      ", angle_labels = ", q(spec$angle_labels), qr,
-      ", show_labels = FALSE, show_arrow = FALSE, display = disp)")
+  if (headings_mode) {
+    add("radiate(hd, show_markers = FALSE, colour_col = \".colour\"", pby,
+        ", legend = ", if (spec$colour$legend) "TRUE" else "FALSE",
+        ", theme = ", q(spec$theme),
+        ", angle_labels = ", q(spec$angle_labels), qr,
+        ", display = disp)")
+  } else {
+    add("radiate(ts, group_col = ", q(spec$group_col),
+        ", colour_col = \".colour\"", pby,
+        ", legend = ", if (spec$colour$legend) "TRUE" else "FALSE",
+        ", theme = ", q(spec$theme),
+        ", angle_labels = ", q(spec$angle_labels), qr,
+        ", show_labels = FALSE, show_arrow = FALSE, display = disp)")
+  }
 
   tail <- character(0)
   if (spec$colour$legend)

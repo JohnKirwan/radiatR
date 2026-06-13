@@ -153,6 +153,24 @@ test_that("degree_labs formats degrees with a symbol and radians as pi fractions
   expect_setequal(rlabs, c("π/4", "3π/4", "5π/4", "7π/4"))
 })
 
+test_that("radiate.default chrome layer signature is stable across the refactor", {
+  ts <- simulate_tracks(n_points = 20, seed = 11, output = "trajset")
+
+  # void: no grid -> circumference fallback + 8-tick segment + labels, no tracks
+  g <- radiate(ts, group_col = "trial_id", show_arrow = FALSE,
+               show_labels = FALSE, show_tracks = FALSE, theme = "void")
+  geoms <- vapply(g$layers, function(l) class(l$geom)[1], character(1))
+  expect_true("GeomPath"    %in% geoms)   # circumference
+  expect_true("GeomSegment" %in% geoms)   # ticks
+  expect_silent(ggplot2::ggplot_build(g))
+
+  # bw: grid theme -> radial grid present (GeomPath rings), no separate bold circ
+  gb <- radiate(ts, group_col = "trial_id", show_arrow = FALSE,
+                show_labels = FALSE, show_tracks = FALSE, theme = "bw")
+  expect_s3_class(gb, "ggplot")
+  expect_silent(ggplot2::ggplot_build(gb))
+})
+
 test_that("radiate angle_labels switches between degrees, none and radians", {
   ts <- simulate_tracks(conditions = data.frame(n_trials = 3L),
                         n_points = 20, seed = 8, output = "trajset")
