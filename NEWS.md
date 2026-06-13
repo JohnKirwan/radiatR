@@ -8,6 +8,11 @@
   `derive_coords()` is the single source of the unit-circle -> polar/relative
   math (also used internally by the loader mapping). For a reference-frame
   offset, prefer `set_reference()` over a manual `apply_transform()`.
+* `as.data.frame(ts)` now returns the full frame even when derived coordinate
+  columns (`rel_theta`/`rel_x`/`rel_y`/`radius`/`trans_rho`/`abs_theta`) are not
+  stored, computing any missing ones from the canonical position and the
+  trajectory reference. Internal analyses read through it, so they no longer
+  depend on those columns being physically present.
 
 ## Loaders
 
