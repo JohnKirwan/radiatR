@@ -2,9 +2,9 @@
 
 Classifies each trajectory observation into one of N quadrant sectors
 and M annular rings, then returns per-trial frame counts and
-proportions. Applicable to any circular arena experiment where spatial
-dwell time is of interest (water maze, open-field, Drosophila preference
-assay, etc.).
+proportions. Applicable to any circular-field analysis where spatial
+dwell time is of interest (e.g. water maze, open-field, Drosophila
+preference assay).
 
 ## Usage
 
@@ -26,8 +26,8 @@ zone_dwell(
 
 - target_angle:
 
-  Numeric. Radians. Direction of the target zone from the arena centre.
-  Q1 spans +/-45degrees around this angle.
+  Numeric. Radians. Direction of the target zone from the origin. Q1
+  spans +/-45degrees around this angle.
 
 - target_radius:
 

@@ -93,7 +93,7 @@ format.</p>
 <p>The package ships the trials from a <em>Cylindroiulus punctatus</em>
 (millipede) visual orientation experiment. Tracks are stored as paired
 tab-separated text files: <code>_point01.txt</code> holds two landmark
-rows (arena centre + target location on the wall);
+rows (the origin + target location on the circumference);
 <code>_point02.txt</code> holds the full per-frame xy trajectory.</p>
 <div class="section level3">
 <h3 id="step-1-discover-files">Step 1 — discover files<a class="anchor" aria-label="anchor" href="#step-1-discover-files"></a>
@@ -179,7 +179,7 @@ path.</p>
 <h3 id="step-4-extract-and-normalise-trajectories">Step 4 — extract and normalise trajectories<a class="anchor" aria-label="anchor" href="#step-4-extract-and-normalise-trajectories"></a>
 </h3>
 <p><code><a href="../reference/get_all_object_pos.html">get_all_object_pos()</a></code> reads each file pair, uses the
-landmark rows to establish the arena geometry, and returns a
+landmark rows to establish the unit-circle geometry, and returns a
 <code>TrajSet</code> with normalised unit-circle coordinates.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_all_object_pos.html">get_all_object_pos</a></span><span class="op">(</span>file_tbl <span class="op">=</span> <span class="va">file_tbl</span>, track_dir <span class="op">=</span> <span class="va">track_dir</span><span class="op">)</span><span class="op">)</span></span>

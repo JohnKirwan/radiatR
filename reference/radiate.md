@@ -239,8 +239,8 @@ radiate(
 - show_tracks:
 
   Whether to draw the trajectory paths. Default \`TRUE\`. Set to
-  \`FALSE\` to render the arena and any overlays (arrow, circle, ticks)
-  without the track geometry.
+  \`FALSE\` to render the unit circle and any overlays (arrow, circle,
+  ticks) without the track geometry.
 
 - show_arrow:
 

@@ -5,15 +5,15 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>radiatR -- Circular Arena Tracking • radiatR</title>
+<title>radiatR -- Headings &amp; Trajectories in Circular Space • radiatR</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="radiatR -- Circular Arena Tracking">
-<meta name="description" content="Import, analyse, and visualise animal movement trajectories recorded in circular arenas. Covers the full pipeline: multi-format data loading, coordinate transformation, heading derivation, circular statistics, and ggplot2 visualisation.
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="radiatR -- Headings &amp; Trajectories in Circular Space">
+<meta name="description" content="Analyse and visualise headings and trajectories in circular space -- directional (angular) data of any kind. Supply a table of angles directly, or reconstruct headings from movement trajectories with import from 20+ tracking tools. Covers the full pipeline: data input, coordinate transformation, heading derivation, circular statistics, and ggplot2 visualisation.
 ">
-<meta property="og:description" content="Import, analyse, and visualise animal movement trajectories recorded in circular arenas. Covers the full pipeline: multi-format data loading, coordinate transformation, heading derivation, circular statistics, and ggplot2 visualisation.
+<meta property="og:description" content="Analyse and visualise headings and trajectories in circular space -- directional (angular) data of any kind. Supply a table of angles directly, or reconstruct headings from movement trajectories with import from 20+ tracking tools. Covers the full pipeline: data input, coordinate transformation, heading derivation, circular statistics, and ggplot2 visualisation.
 ">
 </head>
 <body>
@@ -63,7 +63,7 @@
 </h1></div>
 <!-- badges: start -->
 
-<p>An R package for importing, analysing, and visualising animal movement trajectories recorded in circular arenas. It covers the full pipeline: loader framework → coordinate transformation → circular statistics → ggplot2 visualisation.</p>
+<p>An R package for analysing and visualising <strong>headings and trajectories in circular space</strong> — directional (angular) data of any kind. It covers the full pipeline: angle/trajectory input → coordinate transformation → circular statistics → ggplot2 visualisation. Bring a table of headings directly, or reconstruct them from movement trajectories, with import from 20+ tracking tools.</p>
 <div class="section level2">
 <h2 id="key-features">Key Features<a class="anchor" aria-label="anchor" href="#key-features"></a>
 </h2>
@@ -77,7 +77,7 @@
 <li>
 <strong>Circular statistics</strong> — mean direction, resultant length, concentration, and grouped summaries via the <code>circular</code> package</li>
 <li>
-<strong>ggplot2 visualisation</strong> — <code><a href="reference/radiate.html">radiate()</a></code> renders unit-circle track plots with concentric guides, mean-direction arrows, tick marks, and faceting; composable with <code>add_*</code> layer helpers</li>
+<strong>ggplot2 visualisation</strong> — <code><a href="reference/radiate.html">radiate()</a></code> renders unit-circle plots of headings and trajectories with concentric guides, mean-direction arrows, tick marks, and faceting; composable with <code>add_*</code> layer helpers</li>
 </ul>
 </div>
 <div class="section level2">

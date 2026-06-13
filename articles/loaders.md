@@ -26,9 +26,9 @@ format.
 
 The package ships the trials from a *Cylindroiulus punctatus*
 (millipede) visual orientation experiment. Tracks are stored as paired
-tab-separated text files: `_point01.txt` holds two landmark rows (arena
-centre + target location on the wall); `_point02.txt` holds the full
-per-frame xy trajectory.
+tab-separated text files: `_point01.txt` holds two landmark rows (the
+origin + target location on the circumference); `_point02.txt` holds the
+full per-frame xy trajectory.
 
 ### Step 1 — discover files
 
@@ -119,9 +119,9 @@ head(file_tbl[, c("basename", "arc", "type", "obstacle", "id")])
 ### Step 4 — extract and normalise trajectories
 
 [`get_all_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.md)
-reads each file pair, uses the landmark rows to establish the arena
-geometry, and returns a `TrajSet` with normalised unit-circle
-coordinates.
+reads each file pair, uses the landmark rows to establish the
+unit-circle geometry, and returns a `TrajSet` with normalised
+unit-circle coordinates.
 
 ``` r
 

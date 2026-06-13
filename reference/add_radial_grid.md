@@ -3,7 +3,8 @@
 Returns a list of layers – an optional filled disc, concentric rings,
 and radial spokes, in two weights (major/minor) – to compose onto a
 radial \`radiate()\` plot with \`+\`. The unit boundary (radius 1) is
-left to the arena circle (\[add_circ()\]); grid rings are interior only.
+left to the circumference (\[add_circ()\]); grid rings are interior
+only.
 
 ## Usage
 

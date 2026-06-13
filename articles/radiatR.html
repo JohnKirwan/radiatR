@@ -82,8 +82,9 @@
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p><code>radiatR</code> streamlines the journey from raw tracking files
-to publication-ready plots for experiments conducted in circular arenas.
+<p><code>radiatR</code> streamlines the journey from headings and
+trajectories in circular space to publication-ready radial plots. Angles
+can be supplied directly, or reconstructed from movement trajectories.
 The package includes:</p>
 <ul>
 <li>utilities for importing paired landmark/track text files produced by
@@ -97,11 +98,12 @@ and annotated paths.</li>
 <div class="section level2">
 <h2 id="import-pipeline">Import Pipeline<a class="anchor" aria-label="anchor" href="#import-pipeline"></a>
 </h2>
-<p>The package ships the full set of millipede example tracks that
-demonstrate the import workflow. Landmark files
-(<code>_point01.txt</code>) record two pixel-space reference points per
-trial (arena centre and target location on the arena wall); track files
-(<code>_point02.txt</code>) contain the full xy trajectory.</p>
+<p>The package ships a full set of example tracks (a millipede
+orientation experiment) that demonstrate the import workflow. Landmark
+files (<code>_point01.txt</code>) record two pixel-space reference
+points per trial (the origin and a target location on the
+circumference); track files (<code>_point02.txt</code>) contain the full
+xy trajectory.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">track_dir</span>     <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"tracks"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span>
 <span><span class="va">manifest_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"millipede_trials.csv"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span>

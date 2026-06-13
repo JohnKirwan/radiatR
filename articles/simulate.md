@@ -15,7 +15,7 @@ library(ggplot2)
 ## Overview
 
 [`simulate_tracks()`](https://johnkirwan.github.io/radiatR/reference/simulate_tracks.md)
-generates synthetic circular-arena trajectories without any tracking
+generates synthetic trajectories in circular space without any tracking
 files. Its main uses are:
 
 - Verifying that a new analysis pipeline works before real data arrives.

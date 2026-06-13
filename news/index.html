@@ -43,6 +43,10 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="radiatr-development-version">radiatR (development version)<a class="anchor" aria-label="anchor" href="#radiatr-development-version"></a></h2>
 <div class="section level3">
+<h3 id="documentation-development-version">Documentation<a class="anchor" aria-label="anchor" href="#documentation-development-version"></a></h3>
+<ul><li>Repositioned the package documentation from “animal movement in circular arenas” toward the general case – analysis and visualisation of headings and trajectories in circular space – reflecting that angles can be supplied directly (not only reconstructed from tracking data). Animal-movement tracking remains a primary supported application. No code or API changes.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="statistics-and-headings-development-version">Statistics and headings<a class="anchor" aria-label="anchor" href="#statistics-and-headings-development-version"></a></h3>
 <ul><li>
 <code><a href="../reference/derive_headings.html">derive_headings()</a></code> gains an <code>on_missing</code> argument (<code>"warn"</code> (default), <code>"error"</code>, or <code>"quiet"</code>) and now reports how many trials produced no heading. Failed trials are always retained as <code>NA</code> rows, and the result carries <code>n_total</code>, <code>n_missing</code>, and <code>missing_ids</code> attributes. Rule-based failures are often non-random and can bias circular statistics, so they are surfaced by default.</li>

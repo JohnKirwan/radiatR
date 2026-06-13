@@ -230,7 +230,7 @@ Zone dwell-time, quadrant lines, and goal-entry counting.
 - [`zone_dwell()`](https://johnkirwan.github.io/radiatR/reference/zone_dwell.md)
   : Dwell-time proportions across quadrant x ring zones
 - [`count_goal_entries()`](https://johnkirwan.github.io/radiatR/reference/count_goal_entries.md)
-  : Count entries into a goal zone for circular arena trajectories
+  : Count entries into a goal zone for trajectories in a circular field
 
 ## Coordinate utilities
 
@@ -348,7 +348,7 @@ Any remaining exported topics.
 - [`compute_circular_density()`](https://johnkirwan.github.io/radiatR/reference/compute_circular_density.md)
   : Compute a circular density data frame from heading observations
 - [`count_goal_entries()`](https://johnkirwan.github.io/radiatR/reference/count_goal_entries.md)
-  : Count entries into a goal zone for circular arena trajectories
+  : Count entries into a goal zone for trajectories in a circular field
 - [`cpunctatus`](https://johnkirwan.github.io/radiatR/reference/cpunctatus.md)
   : \*Cylindroiulus punctatus\* visual orientation trajectory dataset
 - [`cpunctatus_tracks`](https://johnkirwan.github.io/radiatR/reference/cpunctatus_tracks.md)

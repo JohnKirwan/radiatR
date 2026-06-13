@@ -2,8 +2,8 @@
 
 Draws two dashed lines through the centre of the unit circle – one
 horizontal (0degrees/180degrees) and one vertical (90degrees/270degrees)
-– dividing the arena into four quadrants. The lines extend to the arena
-boundary (unit circle).
+– dividing the unit circle into four quadrants. The lines extend to the
+circumference (unit circle).
 
 ## Usage
 

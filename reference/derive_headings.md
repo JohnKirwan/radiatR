@@ -66,8 +66,8 @@ derive_headings(
   carries \`n_total\`, \`n_missing\`, and \`missing_ids\` attributes.
   \`"warn"\` emits a warning, \`"error"\` stops, \`"quiet"\` is silent.
   Rule-based failures are often non-random (e.g. tracks that never reach
-  the periphery) and can bias circular statistics, so they are surfaced
-  by default.
+  the circumference) and can bias circular statistics, so they are
+  surfaced by default.
 
 ## Value
 

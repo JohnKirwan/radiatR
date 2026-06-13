@@ -19,7 +19,7 @@ tortuosity_ratio(ts, x_col = ts@cols$x, y_col = ts@cols$y)
 - x_col, y_col:
 
   Names of the coordinate columns to use. Default to the \`TrajSet\`'s
-  recorded x/y columns (the real arena positions), so the metric
+  recorded x/y columns (the real recorded positions), so the metric
   reflects the physical path rather than any display transform.
 
 ## Value

@@ -1,9 +1,11 @@
 # radiatR
 
-An R package for importing, analysing, and visualising animal movement
-trajectories recorded in circular arenas. It covers the full pipeline:
-loader framework → coordinate transformation → circular statistics →
-ggplot2 visualisation.
+An R package for analysing and visualising **headings and trajectories
+in circular space** — directional (angular) data of any kind. It covers
+the full pipeline: angle/trajectory input → coordinate transformation →
+circular statistics → ggplot2 visualisation. Bring a table of headings
+directly, or reconstruct them from movement trajectories, with import
+from 20+ tracking tools.
 
 ## Key Features
 
@@ -18,9 +20,9 @@ ggplot2 visualisation.
   concentration, and grouped summaries via the `circular` package
 - **ggplot2 visualisation** —
   [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
-  renders unit-circle track plots with concentric guides, mean-direction
-  arrows, tick marks, and faceting; composable with `add_*` layer
-  helpers
+  renders unit-circle plots of headings and trajectories with concentric
+  guides, mean-direction arrows, tick marks, and faceting; composable
+  with `add_*` layer helpers
 
 ## Supported Tracking Tools
 
