@@ -208,6 +208,9 @@ derive_hd <- function(ts, method, circ0, circ1) {
   # for datasets without a normalised relative coordinate system.
   has_rel <- !is.null(ts@cols$rel_x) && !is.null(ts@cols$rel_y)
   args <- list(x = ts, coords = if (has_rel) "relative" else "absolute")
+  # The app surfaces attrition via the Results banner, not the R console; quiet
+  # still attaches the n_total/n_missing/missing_ids attributes the banner reads.
+  args$on_missing <- "quiet"
   if (method == "crossing") {
     args$rule          <- "crossing"
     args$circ0         <- circ0
@@ -239,7 +242,7 @@ rayleigh_p_fmt <- function(angles) {
 circ_summary_table <- function(hd, by_col) {
   cm <- circ_summarise(
     hd, "heading", units = "radians", .by = by_col,
-    stats = c("n", "mean_dir_deg", "resultant_R"),
+    stats = c("n", "n_missing", "mean_dir_deg", "resultant_R"),
     display = circ_display(zero = 0)
   )
   groups <- unique(hd[[by_col]])
@@ -250,6 +253,7 @@ circ_summary_table <- function(hd, by_col) {
     c(by_col, "Rayleigh p"))
   cm <- merge(cm, p_df, by = by_col, sort = FALSE)
   names(cm)[names(cm) == by_col]         <- "Group"
+  names(cm)[names(cm) == "n_missing"]    <- "Excluded"
   names(cm)[names(cm) == "mean_dir_deg"] <- "Direction (°)"
   names(cm)[names(cm) == "resultant_R"]  <- "R"
   cm[["Direction (°)"]] <- round(cm[["Direction (°)"]], 1)
@@ -733,6 +737,7 @@ server <- function(input, output, session) {
     # ---- Step 3: results ----
     } else {
       tagList(
+        uiOutput("attrition_banner"),
         layout_columns(
           col_widths = c(8, 4),
           card(
@@ -1047,6 +1052,28 @@ server <- function(input, output, session) {
     )
     print(p)
   }, res = 120)
+
+  # Attrition banner: shown only when some trials produced no heading. Derived
+  # headings get a loud bias caveat; provided headings get a neutral note.
+  output$attrition_banner <- renderUI({
+    if (is.null(rv$hd)) return(NULL)
+    derived <- !identical(rv$mode, "headings") &&
+               !is.null(rv$method) && !identical(rv$method, "none")
+    if (derived) {
+      n_total   <- attr(rv$hd, "n_total")   %||% nrow(rv$hd)
+      n_missing <- attr(rv$hd, "n_missing") %||% sum(is.na(rv$hd$heading))
+      rule      <- rv$method
+    } else {
+      n_total   <- nrow(rv$hd)
+      n_missing <- sum(is.na(rv$hd$heading))
+      rule      <- NULL
+    }
+    note <- attrition_note(n_total, n_missing, derived = derived, rule = rule)
+    if (is.null(note)) return(NULL)
+    div(class = if (derived) "alert alert-warning mt-0 mb-3"
+                else "alert alert-info mt-0 mb-3",
+        note)
+  })
 
   output$summary_tbl <- renderTable({
     if (identical(rv$mode, "headings")) {
