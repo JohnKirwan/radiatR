@@ -232,6 +232,31 @@ rayleigh_p_fmt <- function(angles) {
   }, error = function(e) "—")
 }
 
+# Display-ready circular summary (n, mean direction, resultant R, Rayleigh p) for
+# a headings frame, grouped by `by_col`. Returns a data frame with the group
+# column renamed to "Group"; callers may append trajectory-only columns
+# (e.g. Straightness) keyed on the returned "Group" values.
+circ_summary_table <- function(hd, by_col) {
+  cm <- circ_summarise(
+    hd, "heading", units = "radians", .by = by_col,
+    stats = c("n", "mean_dir_deg", "resultant_R"),
+    display = circ_display(zero = 0)
+  )
+  groups <- unique(hd[[by_col]])
+  p_vals <- vapply(groups, function(g)
+    rayleigh_p_fmt(hd$heading[hd[[by_col]] == g]), character(1L))
+  p_df <- stats::setNames(
+    data.frame(groups, p_vals, stringsAsFactors = FALSE),
+    c(by_col, "Rayleigh p"))
+  cm <- merge(cm, p_df, by = by_col, sort = FALSE)
+  names(cm)[names(cm) == by_col]         <- "Group"
+  names(cm)[names(cm) == "mean_dir_deg"] <- "Direction (°)"
+  names(cm)[names(cm) == "resultant_R"]  <- "R"
+  cm[["Direction (°)"]] <- round(cm[["Direction (°)"]], 1)
+  cm[["R"]]             <- round(cm[["R"]], 3)
+  cm
+}
+
 plain_error <- function(e) {
   m <- conditionMessage(e)
   if (grepl("id|time|mapping", m, ignore.case = TRUE))
@@ -368,7 +393,12 @@ server <- function(input, output, session) {
   # Step 1 → 2: load TrajSet and detect condition column
   observeEvent(input$go2, {
     if (identical(rv$mode, "headings")) {
-      if (is.null(rv$raw_hd)) { rv$error <- "Please upload a file of headings first."; return() }
+      if (is.null(rv$raw_hd)) {
+        # Example headings are already loaded (no file to map) -> straight to results.
+        if (!is.null(rv$hd)) { rv$step <- 3L; rv$error <- NULL; return() }
+        rv$error <- "Please upload a file of headings first."
+        return()
+      }
       num_cols <- names(rv$raw_hd)[vapply(rv$raw_hd, is.numeric, logical(1))]
       if (!length(num_cols)) {
         rv$error <- "No numeric angle column found; headings input needs a column of angles."
@@ -436,6 +466,12 @@ server <- function(input, output, session) {
   # Step 2 → 3: derive headings, join condition if present
   observeEvent(input$go3, {
     if (identical(rv$mode, "headings")) {
+      if (is.null(rv$raw_hd)) {
+        # Example headings already built; nothing to map -> show results.
+        if (!is.null(rv$hd)) { rv$step <- 3L; rv$error <- NULL; return() }
+        rv$error <- "Please upload a file of headings first."
+        return()
+      }
       grp <- if (!is.null(input$hd_group) && nzchar(input$hd_group))
         input$hd_group else NULL
       hd <- tryCatch(
@@ -604,24 +640,35 @@ server <- function(input, output, session) {
 
     # ---- Step 2: configure (headings) ----
     } else if (rv$step == 2L && identical(rv$mode, "headings")) {
-      num_cols <- names(rv$raw_hd)[vapply(rv$raw_hd, is.numeric, logical(1))]
-      all_cols <- names(rv$raw_hd)
-      tagList(
-        h5("Describe your headings"),
-        selectInput("hd_col", "Angle column", choices = num_cols,
-                    selected = num_cols[1]),
-        selectInput("hd_units", "Units",
-                    choices = c("Degrees" = "degrees", "Radians" = "radians"),
-                    selected = "degrees"),
-        selectInput("hd_convention", "Angle convention",
-                    choices = c("Unit circle (0° = East, counter-clockwise)" = "unit_circle",
-                                "Compass (0° = North, clockwise)"            = "clock"),
-                    selected = "unit_circle"),
-        selectInput("hd_group", "Group column (optional)",
-                    choices = c("(none)" = "", stats::setNames(all_cols, all_cols)),
-                    selected = ""),
-        err_box
-      )
+      if (is.null(rv$raw_hd)) {
+        tagList(
+          h5("Example headings"),
+          p(class = "text-muted",
+            "These headings come from the bundled example dataset — no column ",
+            "mapping is needed. Click Analyse to view the results, or go back ",
+            "and upload your own file of angles."),
+          err_box
+        )
+      } else {
+        num_cols <- names(rv$raw_hd)[vapply(rv$raw_hd, is.numeric, logical(1))]
+        all_cols <- names(rv$raw_hd)
+        tagList(
+          h5("Describe your headings"),
+          selectInput("hd_col", "Angle column", choices = num_cols,
+                      selected = num_cols[1]),
+          selectInput("hd_units", "Units",
+                      choices = c("Degrees" = "degrees", "Radians" = "radians"),
+                      selected = "degrees"),
+          selectInput("hd_convention", "Angle convention",
+                      choices = c("Unit circle (0° = East, counter-clockwise)" = "unit_circle",
+                                  "Compass (0° = North, clockwise)"            = "clock"),
+                      selected = "unit_circle"),
+          selectInput("hd_group", "Group column (optional)",
+                      choices = c("(none)" = "", stats::setNames(all_cols, all_cols)),
+                      selected = ""),
+          err_box
+        )
+      }
 
     # ---- Step 2: configure ----
     } else if (rv$step == 2L) {
@@ -1012,23 +1059,7 @@ server <- function(input, output, session) {
       # the per-group rayleigh loop run uniformly; the dummy is dropped below.
       if (pooled) { hd[[".all"]] <- "All"; by_col <- ".all" }
       out <- tryCatch({
-        cm <- circ_summarise(
-          hd, "heading", units = "radians", .by = by_col,
-          stats = c("n", "mean_dir_deg", "resultant_R"),
-          display = circ_display(zero = 0)
-        )
-        groups <- unique(hd[[by_col]])
-        p_vals <- vapply(groups, function(g)
-          rayleigh_p_fmt(hd$heading[hd[[by_col]] == g]), character(1L))
-        p_df <- stats::setNames(
-          data.frame(groups, p_vals, stringsAsFactors = FALSE),
-          c(by_col, "Rayleigh p"))
-        cm <- merge(cm, p_df, by = by_col, sort = FALSE)
-        names(cm)[names(cm) == by_col]         <- "Group"
-        names(cm)[names(cm) == "mean_dir_deg"] <- "Direction (°)"
-        names(cm)[names(cm) == "resultant_R"]  <- "R"
-        cm[["Direction (°)"]] <- round(cm[["Direction (°)"]], 1)
-        cm[["R"]]             <- round(cm[["R"]], 3)
+        cm <- circ_summary_table(hd, by_col)
         if (pooled) cm[["Group"]] <- NULL    # single pooled row: drop the dummy group col
         cm
       }, error = function(e) data.frame(Note = "Summary not available"))
@@ -1060,23 +1091,7 @@ server <- function(input, output, session) {
     by_col <- if (!is.null(gc)) gc else "id"
 
     tryCatch({
-      cm <- circ_summarise(
-        rv$hd, "heading",
-        units   = "radians",
-        .by     = by_col,
-        stats   = c("n", "mean_dir_deg", "resultant_R"),
-        display = circ_display(zero = 0)
-      )
-      # Rayleigh test p-value per group
-      groups <- unique(rv$hd[[by_col]])
-      p_vals <- vapply(groups, function(g) {
-        rayleigh_p_fmt(rv$hd$heading[rv$hd[[by_col]] == g])
-      }, character(1L))
-      p_df <- stats::setNames(
-        data.frame(groups, p_vals, stringsAsFactors = FALSE),
-        c(by_col, "Rayleigh p")
-      )
-      cm <- merge(cm, p_df, by = by_col, sort = FALSE)
+      cm <- circ_summary_table(rv$hd, by_col)
 
       # Mean path straightness per group: net displacement / path length per
       # trial (0 = convoluted, 1 = straight), averaged over the group's trials.
@@ -1094,14 +1109,7 @@ server <- function(input, output, session) {
         agg <- stats::setNames(st$straightness, as.character(st[[idc]]))
       }
       cm[["Straightness"]] <-
-        round(as.numeric(agg[as.character(cm[[by_col]])]), 3)
-
-      names(cm)[names(cm) == by_col]         <- "Group"
-      names(cm)[names(cm) == "mean_dir_deg"] <- "Direction (°)"
-      names(cm)[names(cm) == "resultant_R"]  <- "R"
-      cm[["Direction (°)"]] <-
-        round(cm[["Direction (°)"]], 1)
-      cm[["R"]] <- round(cm[["R"]], 3)
+        round(as.numeric(agg[as.character(cm[["Group"]])]), 3)
       cm
     }, error = function(e) {
       data.frame(Note = "Summary not available")
