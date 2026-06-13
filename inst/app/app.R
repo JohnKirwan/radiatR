@@ -342,10 +342,12 @@ server <- function(input, output, session) {
   })
 
   observeEvent(input$input_type, {
+    # Also fires once on initial load (harmless: fields are already NULL).
     rv$mode   <- input$input_type
     rv$ts     <- NULL
     rv$hd     <- NULL
     rv$raw_hd <- NULL
+    rv$hd_map <- NULL
     rv$error  <- NULL
   })
 
@@ -357,6 +359,10 @@ server <- function(input, output, session) {
     rv$cond_col <- NULL
     rv$hd       <- NULL
     rv$error    <- NULL
+    rv$mode     <- "trajectories"
+    rv$raw_hd   <- NULL
+    rv$hd_map   <- NULL
+    updateRadioButtons(session, "input_type", selected = "trajectories")
   })
 
   # Step 1 → 2: load TrajSet and detect condition column
@@ -1002,6 +1008,8 @@ server <- function(input, output, session) {
       hd     <- rv$hd
       by_col <- grp
       pooled <- is.null(by_col)
+      # No group column: inject a dummy single-level column so circ_summarise /
+      # the per-group rayleigh loop run uniformly; the dummy is dropped below.
       if (pooled) { hd[[".all"]] <- "All"; by_col <- ".all" }
       out <- tryCatch({
         cm <- circ_summarise(
