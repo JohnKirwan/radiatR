@@ -91,10 +91,14 @@ get_trial_limits <- function(landmarks, animal_track, file_tbl, vid_num) {
   }
 
   tl$video <- file_tbl$basename[vid_num]
-  for (col in c("arc", "type", "obstacle", "id")) {
-    if (col %in% names(file_tbl)) {
-      tl[[col]] <- file_tbl[[col]][file_tbl$basename == tl$video]
-    }
+  # Carry every manifest/metadata column from file_tbl onto the trial table.
+  # Structural file-reference columns (basename/landmark/track) are excluded, as
+  # are names already used by the trial table (so user metadata can't clobber
+  # computed columns like ref_theta/quadrant).
+  structural <- c("basename", "landmark", "track")
+  carry_cols <- setdiff(names(file_tbl), c(structural, names(tl)))
+  for (col in carry_cols) {
+    tl[[col]] <- file_tbl[[col]][file_tbl$basename == tl$video]
   }
 
   theta <- tl$ref_theta
