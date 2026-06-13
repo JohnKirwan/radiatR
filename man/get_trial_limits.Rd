@@ -4,13 +4,7 @@
 \alias{get_trial_limits}
 \title{Summarise per-trial metadata for a single video.}
 \usage{
-get_trial_limits(
-  landmarks,
-  animal_track,
-  file_tbl,
-  vid_num,
-  midpoint = "midpoint"
-)
+get_trial_limits(landmarks, animal_track, file_tbl, vid_num)
 }
 \arguments{
 \item{landmarks}{Data frame or `TrajSet` (two rows per trial) containing frame
@@ -23,9 +17,6 @@ frames in the video.}
 [load_tracks()] or [load_tracks2()]).}
 
 \item{vid_num}{Index of the current video within `file_tbl`.}
-
-\item{midpoint}{Character flag indicating whether reference angles should be
-shifted to the midpoint (`"midpoint"`, default) or left as-is.}
 }
 \value{
 A tibble with one row per trial containing trial limits and reference
