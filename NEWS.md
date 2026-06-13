@@ -1,5 +1,13 @@
 # radiatR (development version)
 
+## Documentation
+
+* Repositioned the package documentation from "animal movement in circular
+  arenas" toward the general case -- analysis and visualisation of headings and
+  trajectories in circular space -- reflecting that angles can be supplied
+  directly (not only reconstructed from tracking data). Animal-movement tracking
+  remains a primary supported application. No code or API changes.
+
 ## Statistics and headings
 
 * `derive_headings()` gains an `on_missing` argument (`"warn"` (default),

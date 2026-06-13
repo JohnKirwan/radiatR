@@ -159,8 +159,8 @@ add_multiple_circles <- function(radii = c(0.25, 0.5, 0.75),
 #' Add quadrant lines to a radial plot
 #'
 #' Draws two dashed lines through the centre of the unit circle -- one
-#' horizontal (0degrees/180degrees) and one vertical (90degrees/270degrees) -- dividing the arena into
-#' four quadrants. The lines extend to the arena boundary (unit circle).
+#' horizontal (0degrees/180degrees) and one vertical (90degrees/270degrees) -- dividing the unit circle into
+#' four quadrants. The lines extend to the circumference (unit circle).
 #'
 #' @param colour Line colour. Default `"grey60"`.
 #' @param linewidth Line width. Default `0.5`.
@@ -233,8 +233,8 @@ add_origin_point <- function(colour = "grey50", size = 1.5, shape = 16, ...) {
 #'
 #' Returns a list of layers -- an optional filled disc, concentric rings, and
 #' radial spokes, in two weights (major/minor) -- to compose onto a radial
-#' `radiate()` plot with `+`. The unit boundary (radius 1) is left to the arena
-#' circle ([add_circ()]); grid rings are interior only.
+#' `radiate()` plot with `+`. The unit boundary (radius 1) is left to the
+#' circumference ([add_circ()]); grid rings are interior only.
 #'
 #' @param rings_major,rings_minor Numeric radii (`<1`) of the major and minor
 #'   rings. Defaults `0.5` and `c(0.25, 0.75)`.
@@ -2076,7 +2076,7 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #' @param label_padding Multiplier applied to the unit circle when placing labels.
 #' @param label_use_repel Use `ggrepel::geom_text_repel()` when available.
 #' @param show_tracks Whether to draw the trajectory paths. Default `TRUE`.
-#'   Set to `FALSE` to render the arena and any overlays (arrow, circle, ticks)
+#'   Set to `FALSE` to render the unit circle and any overlays (arrow, circle, ticks)
 #'   without the track geometry.
 #' @param show_arrow Whether to draw a mean resultant arrow from the centre.
 #' @param arrow_angle_col Column containing angles (radians) to summarise for the arrow.

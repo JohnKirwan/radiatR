@@ -103,7 +103,7 @@ path_tortuosity <- function(x, y) {
 #'
 #' @param ts A `TrajSet`.
 #' @param x_col,y_col Names of the coordinate columns to use. Default to the
-#'   `TrajSet`'s recorded x/y columns (the real arena positions), so the metric
+#'   `TrajSet`'s recorded x/y columns (the real recorded positions), so the metric
 #'   reflects the physical path rather than any display transform.
 #' @return A `data.frame` with one row per trajectory: the `TrajSet`'s id column
 #'   and a numeric `straightness` column.
@@ -120,7 +120,7 @@ straightness_index <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
 #'
 #' @param ts A `TrajSet`.
 #' @param x_col,y_col Names of the coordinate columns to use. Default to the
-#'   `TrajSet`'s recorded x/y columns (the real arena positions), so the metric
+#'   `TrajSet`'s recorded x/y columns (the real recorded positions), so the metric
 #'   reflects the physical path rather than any display transform.
 #' @return A `data.frame` with one row per trajectory: the `TrajSet`'s id column
 #'   and a numeric `tortuosity` column (`>= 1`, possibly `Inf`).

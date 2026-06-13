@@ -33,7 +33,7 @@ A tibble with one row per trial containing trial limits and reference
 }
 \description{
 Uses paired landmark coordinates to determine the temporal bounds of each
-trial, the arena origin, and the reference heading. Additional metadata from
+trial, the origin, and the reference heading. Additional metadata from
 `file_tbl` is merged into the result. Accepts landmark and track data either
 as data frames or as `TrajSet` objects.
 }

@@ -46,7 +46,7 @@ controlling what happens when a rule produces no heading (`NA`) for one or
 more trials. The `NA` rows are always retained; the returned object carries
 `n_total`, `n_missing`, and `missing_ids` attributes. `"warn"` emits a
 warning, `"error"` stops, `"quiet"` is silent. Rule-based failures are often
-non-random (e.g. tracks that never reach the periphery) and can bias
+non-random (e.g. tracks that never reach the circumference) and can bias
 circular statistics, so they are surfaced by default.}
 }
 \value{

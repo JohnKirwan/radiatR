@@ -5,12 +5,14 @@ template:
   bootswatch: flatly
 
 home:
-  title: "radiatR -- Circular Arena Tracking"
+  title: "radiatR -- Headings & Trajectories in Circular Space"
   description: >
-    Import, analyse, and visualise animal movement trajectories recorded
-    in circular arenas. Covers the full pipeline: multi-format data loading,
-    coordinate transformation, heading derivation, circular statistics, and
-    ggplot2 visualisation.
+    Analyse and visualise headings and trajectories in circular space --
+    directional (angular) data of any kind. Supply a table of angles directly,
+    or reconstruct headings from movement trajectories with import from 20+
+    tracking tools. Covers the full pipeline: data input, coordinate
+    transformation, heading derivation, circular statistics, and ggplot2
+    visualisation.
 
 navbar:
   structure:

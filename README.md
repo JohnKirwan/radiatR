@@ -4,7 +4,7 @@
 [![R-CMD-check](https://github.com/JohnKirwan/radiatR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/JohnKirwan/radiatR/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-An R package for importing, analysing, and visualising animal movement trajectories recorded in circular arenas. It covers the full pipeline: loader framework → coordinate transformation → circular statistics → ggplot2 visualisation.
+An R package for analysing and visualising **headings and trajectories in circular space** — directional (angular) data of any kind. It covers the full pipeline: angle/trajectory input → coordinate transformation → circular statistics → ggplot2 visualisation. Bring a table of headings directly, or reconstruct them from movement trajectories, with import from 20+ tracking tools.
 
 ## Key Features
 
@@ -12,7 +12,7 @@ An R package for importing, analysing, and visualising animal movement trajector
 - **Pose-estimation support** — multi-bodypart centroid and body-axis heading from DeepLabCut, EthoVision multi-zone, ANY-maze nose/tail, Ctrax ellipse
 - **Heading rule registry** — derive per-trial headings by any of 15+ built-in rules or register your own
 - **Circular statistics** — mean direction, resultant length, concentration, and grouped summaries via the `circular` package
-- **ggplot2 visualisation** — `radiate()` renders unit-circle track plots with concentric guides, mean-direction arrows, tick marks, and faceting; composable with `add_*` layer helpers
+- **ggplot2 visualisation** — `radiate()` renders unit-circle plots of headings and trajectories with concentric guides, mean-direction arrows, tick marks, and faceting; composable with `add_*` layer helpers
 
 ## Supported Tracking Tools
 
