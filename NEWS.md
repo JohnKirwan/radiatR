@@ -1,5 +1,13 @@
 # radiatR (development version)
 
+## Loaders
+
+* `load_tracks()` and `get_trial_limits()` now carry every column from the
+  manifest / `file_tbl` onto trials (and into the resulting `TrajSet`), rather
+  than a fixed `arc`/`type`/`obstacle`/`id` list left over from one experiment.
+  Structural file-reference columns (`basename`/`landmark`/`track`) are excluded.
+  Use `load_tracks2(colnames = )` to rename or restrict the columns carried.
+
 ## Transformations
 
 * New `apply_transform()` applies a user-supplied transformation to a loaded
