@@ -16,7 +16,7 @@ zone_dwell(
 \item{x}{A [`TrajSet`] object with x/y (or rel_x/rel_y) columns registered.}
 
 \item{target_angle}{Numeric. Radians. Direction of the target zone from the
-arena centre. Q1 spans +/-45degrees around this angle.}
+origin. Q1 spans +/-45degrees around this angle.}
 
 \item{target_radius}{Numeric. Accepted for API symmetry with
 [count_goal_entries()] but not used in zone assignment. Default `1`.}
@@ -38,8 +38,8 @@ A `data.frame` with one row per observed (id x quadrant x ring)
 \description{
 Classifies each trajectory observation into one of N quadrant sectors and M
 annular rings, then returns per-trial frame counts and proportions. Applicable
-to any circular arena experiment where spatial dwell time is of interest
-(water maze, open-field, Drosophila preference assay, etc.).
+to any circular-field analysis where spatial dwell time is of interest
+(e.g. water maze, open-field, Drosophila preference assay).
 }
 \details{
 The target quadrant (Q1) is centred on `target_angle`; Q2--Q4 follow

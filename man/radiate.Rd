@@ -175,7 +175,7 @@ has no effect there.}
 \item{label_use_repel}{Use `ggrepel::geom_text_repel()` when available.}
 
 \item{show_tracks}{Whether to draw the trajectory paths. Default `TRUE`.
-Set to `FALSE` to render the arena and any overlays (arrow, circle, ticks)
+Set to `FALSE` to render the unit circle and any overlays (arrow, circle, ticks)
 without the track geometry.}
 
 \item{show_arrow}{Whether to draw a mean resultant arrow from the centre.}

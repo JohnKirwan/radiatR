@@ -2,7 +2,7 @@
 % Please edit documentation in R/circular_statistics.R
 \name{count_goal_entries}
 \alias{count_goal_entries}
-\title{Count entries into a goal zone for circular arena trajectories}
+\title{Count entries into a goal zone for trajectories in a circular field}
 \usage{
 count_goal_entries(
   x,
@@ -15,14 +15,14 @@ count_goal_entries(
 \arguments{
 \item{x}{A [`TrajSet`] object with x/y (or rel_x/rel_y) columns registered.}
 
-\item{target_angle}{Numeric. Radians. Direction of the goal from the arena centre.}
+\item{target_angle}{Numeric. Radians. Direction of the goal from the origin.}
 
-\item{target_radius}{Numeric. Distance of the goal from the arena centre.
+\item{target_radius}{Numeric. Distance of the goal from the origin.
 Default `1` (wall). Together with `target_angle` gives the goal position:
 `gx = target_radius * cos(target_angle)`, `gy = target_radius * sin(target_angle)`.}
 
 \item{crossing_radius}{Numeric. Radius of the goal zone in unit-circle
-coordinates. Default `0.15` (15\% of arena radius; roughly a 10 cm platform
+coordinates. Default `0.15` (15\% of the radius; roughly a 10 cm platform
 in a 60 cm pool).}
 
 \item{coords}{Character. `"absolute"` (default) or `"relative"`.
@@ -35,12 +35,12 @@ A `data.frame` with one row per trial: `id` (character) and
 \description{
 For each trial, counts the number of times the trajectory enters a circular
 zone of radius `crossing_radius` centred on the goal location. Applicable to
-any circular arena experiment with a defined goal (hidden platform in a water
-maze, reward zone in an open-field, etc.).
+any circular-field analysis with a defined goal (e.g. the hidden platform in
+a water maze, a reward zone in an open-field).
 }
 \details{
 An "entry" is a `FALSE -> TRUE` transition in the `distance < crossing_radius`
-sequence (ordered by time). An animal that starts inside the zone on the
+sequence (ordered by time). A trajectory that starts inside the zone on the
 first frame counts as one entry.
 }
 \examples{

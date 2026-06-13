@@ -233,14 +233,14 @@ setValidity("TrajSet", function(object) {
 #' @param angle Optional angle column (radians or degrees, see angle_unit)
 #' @param x,y Optional cartesian columns; if provided, converted to unit circle and angle inferred
 #' @param rel_x,rel_y Optional column names for pre-transformed relative
-#'   coordinates (arena-centred, unit-circle scaled).  Both must be supplied
+#'   coordinates (centred on the origin, unit-circle scaled).  Both must be supplied
 #'   together or not at all.
 #' @param angle_unit Units of provided angle ("radians" or "degrees"); stored internally as radians
 #' @param weight Optional weight column name
-#' @param normalize_xy If TRUE (default), (x,y) are arena-scaled per trajectory:
+#' @param normalize_xy If TRUE (default), (x,y) are scaled to the unit circle per trajectory:
 #'   each trajectory is centred on its bounding-box midpoint and scaled so its
 #'   furthest point sits at radius 1. This preserves trajectory shape and places
-#'   the arena centre at the origin (what the radius-based heading rules expect).
+#'   the origin at the centre (what the radius-based heading rules expect).
 #'   Raw coordinates are retained in `<x>_raw`/`<y>_raw`. If FALSE, (x,y) are kept
 #'   as supplied. (Landmark-based mapping, when available, is more accurate; this
 #'   is the no-landmark fallback.)

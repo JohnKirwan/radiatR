@@ -105,8 +105,8 @@ setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")
 #'
 #' Classifies each trajectory observation into one of N quadrant sectors and M
 #' annular rings, then returns per-trial frame counts and proportions. Applicable
-#' to any circular arena experiment where spatial dwell time is of interest
-#' (water maze, open-field, Drosophila preference assay, etc.).
+#' to any circular-field analysis where spatial dwell time is of interest
+#' (e.g. water maze, open-field, Drosophila preference assay).
 #'
 #' The target quadrant (Q1) is centred on `target_angle`; Q2--Q4 follow
 #' counter-clockwise. Observations outside `max(ring_breaks)` are excluded from
@@ -114,7 +114,7 @@ setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")
 #'
 #' @param x A [`TrajSet`] object with x/y (or rel_x/rel_y) columns registered.
 #' @param target_angle Numeric. Radians. Direction of the target zone from the
-#'   arena centre. Q1 spans +/-45degrees around this angle.
+#'   origin. Q1 spans +/-45degrees around this angle.
 #' @param target_radius Numeric. Accepted for API symmetry with
 #'   [count_goal_entries()] but not used in zone assignment. Default `1`.
 #' @param ring_breaks Numeric vector. Annular ring boundaries, must start at
@@ -202,24 +202,24 @@ zone_dwell <- function(x, target_angle, target_radius = 1,
   result
 }
 
-#' Count entries into a goal zone for circular arena trajectories
+#' Count entries into a goal zone for trajectories in a circular field
 #'
 #' For each trial, counts the number of times the trajectory enters a circular
 #' zone of radius `crossing_radius` centred on the goal location. Applicable to
-#' any circular arena experiment with a defined goal (hidden platform in a water
-#' maze, reward zone in an open-field, etc.).
+#' any circular-field analysis with a defined goal (e.g. the hidden platform in
+#' a water maze, a reward zone in an open-field).
 #'
 #' An "entry" is a `FALSE -> TRUE` transition in the `distance < crossing_radius`
-#' sequence (ordered by time). An animal that starts inside the zone on the
+#' sequence (ordered by time). A trajectory that starts inside the zone on the
 #' first frame counts as one entry.
 #'
 #' @param x A [`TrajSet`] object with x/y (or rel_x/rel_y) columns registered.
-#' @param target_angle Numeric. Radians. Direction of the goal from the arena centre.
-#' @param target_radius Numeric. Distance of the goal from the arena centre.
+#' @param target_angle Numeric. Radians. Direction of the goal from the origin.
+#' @param target_radius Numeric. Distance of the goal from the origin.
 #'   Default `1` (wall). Together with `target_angle` gives the goal position:
 #'   `gx = target_radius * cos(target_angle)`, `gy = target_radius * sin(target_angle)`.
 #' @param crossing_radius Numeric. Radius of the goal zone in unit-circle
-#'   coordinates. Default `0.15` (15\% of arena radius; roughly a 10 cm platform
+#'   coordinates. Default `0.15` (15\% of the radius; roughly a 10 cm platform
 #'   in a 60 cm pool).
 #' @param coords Character. `"absolute"` (default) or `"relative"`.
 #'   See [zone_dwell()].
