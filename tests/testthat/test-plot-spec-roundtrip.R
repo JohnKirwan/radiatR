@@ -217,3 +217,28 @@ test_that("spec_to_code quotes special characters in subtitle/caption", {
   p    <- eval(parse(text = code), envir = env)   # must not error on the quoting
   expect_equal(p$labels$subtitle, 'has "quotes" and \\ backslash')
 })
+
+test_that("round-trip: headings example reproduces the rendered figure", {
+  data(cpunctatus, package = "radiatR")
+  hd0 <- derive_headings(cpunctatus, rule = "distal", coords = "relative")
+  cond <- unique(as.data.frame(cpunctatus)[, c("trial_id", "type")])
+  hd0  <- merge(hd0, cond, by.x = "id", by.y = "trial_id", all.x = TRUE)
+  hd   <- build_headings_input(hd0, col = "heading", units = "radians",
+                               convention = "unit_circle", group = "type")
+
+  spec <- build_plot_spec(
+    ts = NULL, hd = hd, method = NULL,
+    data = list(source = "example", mode = "headings", path = NULL,
+                col = "heading", units = "radians", convention = "unit_circle",
+                group = "type"),
+    inputs = list(colour_by = "type", cond_col = "type",
+                  heading_display = "points", plot_theme = "void",
+                  angle_labels = "degrees",
+                  show_arrow = TRUE, show_rayleigh = TRUE)
+  )
+
+  set.seed(1L); live  <- spec_to_plot(spec, NULL, hd)
+  env <- new.env(parent = globalenv())
+  set.seed(1L); evald <- eval(parse(text = spec_to_code(spec)), envir = env)
+  expect_equal(.fingerprint(evald), .fingerprint(live))
+})
