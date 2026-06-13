@@ -88,3 +88,36 @@ test_that("set_reference accepts per-trajectory values", {
   expect_equal(reference(out)$ref_theta[match(ids0, reference(out)$id)],
                unname(vals))
 })
+
+# cpunctatus predates Phase 1, so it has no @meta$reference even though its
+# stored relative frame was built with per-trial references. Reconstruct that
+# reference (ref = abs_theta - rel_theta per trajectory) so the materialiser
+# re-derives the same values it would have stored.
+.with_reconstructed_reference <- function(ts) {
+  d <- ts@data
+  ref_id <- tapply(seq_len(nrow(d)), d[[ts@cols$id]],
+                   function(i) (d$abs_theta[i] - d$rel_theta[i])[1] %% (2 * pi))
+  set_reference(ts, stats::setNames(as.numeric(ref_id), names(ref_id)))
+}
+
+test_that("as.data.frame restores derived columns dropped from @data", {
+  ts   <- .with_reconstructed_reference(cpunctatus)
+  full <- ts@data
+  drop <- c("rel_x", "rel_y", "radius", "trans_rho", "abs_theta")  # keep cols$angle present
+
+  ts2 <- ts
+  for (cc in drop) ts2@data[[cc]] <- NULL
+  expect_false(any(drop %in% names(ts2@data)))
+
+  d <- as.data.frame(ts2)
+  expect_true(all(drop %in% names(d)))
+  for (cc in c("rel_x", "rel_y", "trans_rho", "abs_theta")) {
+    expect_equal(d[[cc]], full[[cc]], info = cc)
+  }
+  expect_equal(d[["radius"]], full[["trans_rho"]])
+})
+
+test_that("as.data.frame is a no-op when derived columns are present", {
+  ts <- cpunctatus
+  expect_identical(as.data.frame(ts), ts@data)
+})
