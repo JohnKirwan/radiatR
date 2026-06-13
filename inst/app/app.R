@@ -305,7 +305,10 @@ server <- function(input, output, session) {
     cond_col  = NULL,
     hd        = NULL,
     method    = NULL,
-    error     = NULL
+    error     = NULL,
+    mode      = "trajectories",
+    raw_hd    = NULL,
+    hd_map    = NULL    # list(col, units, convention, group) for the headings spec
   )
 
   # ---- step pills ------------------------------------------------------------
@@ -338,6 +341,14 @@ server <- function(input, output, session) {
     }
   })
 
+  observeEvent(input$input_type, {
+    rv$mode   <- input$input_type
+    rv$ts     <- NULL
+    rv$hd     <- NULL
+    rv$raw_hd <- NULL
+    rv$error  <- NULL
+  })
+
   observeEvent(input$restart, {
     rv$step     <- 1L
     rv$path     <- NULL
@@ -350,6 +361,16 @@ server <- function(input, output, session) {
 
   # Step 1 → 2: load TrajSet and detect condition column
   observeEvent(input$go2, {
+    if (identical(rv$mode, "headings")) {
+      if (is.null(rv$raw_hd)) { rv$error <- "Please upload a file of headings first."; return() }
+      num_cols <- names(rv$raw_hd)[vapply(rv$raw_hd, is.numeric, logical(1))]
+      if (!length(num_cols)) {
+        rv$error <- "No numeric angle column found; headings input needs a column of angles."
+        return()
+      }
+      rv$step <- 2L; rv$error <- NULL
+      return()
+    }
     if (is.null(rv$path)) {
       # An example dataset may already be loaded without a file path.
       if (!is.null(rv$ts)) {
@@ -408,6 +429,21 @@ server <- function(input, output, session) {
 
   # Step 2 → 3: derive headings, join condition if present
   observeEvent(input$go3, {
+    if (identical(rv$mode, "headings")) {
+      grp <- if (!is.null(input$hd_group) && nzchar(input$hd_group))
+        input$hd_group else NULL
+      hd <- tryCatch(
+        build_headings_input(rv$raw_hd, col = input$hd_col,
+                             units = input$hd_units,
+                             convention = input$hd_convention, group = grp),
+        error = function(e) { rv$error <- plain_error(e); NULL })
+      if (!is.null(hd)) {
+        rv$hd     <- hd; rv$method <- NULL; rv$step <- 3L; rv$error <- NULL
+        rv$hd_map <- list(col = input$hd_col, units = input$hd_units,
+                          convention = input$hd_convention, group = grp)
+      }
+      return()
+    }
     req(rv$ts)
     method <- if (is.null(input$method)) "distal" else input$method
     if (identical(method, "none")) {
@@ -455,6 +491,14 @@ server <- function(input, output, session) {
     rv$path      <- input$file$datapath
     rv$source    <- "file"
     rv$file_name <- input$file$name
+    if (identical(rv$mode, "headings")) {
+      rv$raw_hd <- tryCatch(
+        utils::read.csv(input$file$datapath, stringsAsFactors = FALSE,
+                        check.names = TRUE),
+        error = function(e) { rv$error <- plain_error(e); NULL })
+      rv$ts <- NULL
+      return()
+    }
     rv$dialect   <- guess_dialect(rv$path)
     rv$ts        <- NULL
     rv$cond_col  <- NULL
@@ -484,6 +528,30 @@ server <- function(input, output, session) {
     rv$error     <- NULL
   })
 
+  observeEvent(input$load_example_hd, {
+    ensure_pkgs()
+    hd <- tryCatch({
+      ex   <- example_ts()
+      hd0  <- derive_headings(ex, rule = "distal", coords = "relative")
+      cond <- unique(as.data.frame(ex)[, c("trial_id", "type")])
+      hd0  <- merge(hd0, cond, by.x = "id", by.y = "trial_id", all.x = TRUE)
+      build_headings_input(hd0, col = "heading", units = "radians",
+                           convention = "unit_circle", group = "type")
+    }, error = function(e) NULL)
+    if (is.null(hd)) { rv$error <- "Could not build the example headings."; return() }
+    rv$mode      <- "headings"
+    rv$hd        <- hd
+    rv$hd_map    <- list(col = "heading", units = "radians",
+                         convention = "unit_circle", group = "type")
+    rv$ts        <- NULL
+    rv$raw_hd    <- NULL
+    rv$source    <- "example"
+    rv$file_name <- NULL
+    rv$method    <- NULL
+    rv$step      <- 3L
+    rv$error     <- NULL
+  })
+
   # ---- wizard ----------------------------------------------------------------
   output$wizard <- renderUI({
 
@@ -498,23 +566,54 @@ server <- function(input, output, session) {
           "Upload a CSV or text file from your tracking software.",
           " EthoVision, DeepLabCut, SLEAP, TRex, ANY-maze,",
           " TrackMate, idtracker.ai, and others are supported."),
+        radioButtons(
+          "input_type", "What are you uploading?",
+          choices = c("Trajectories (track coordinates)" = "trajectories",
+                      "Headings (one angle per trial)"    = "headings"),
+          selected = "trajectories", inline = TRUE
+        ),
         fileInput(
           "file", NULL,
           accept      = c(".csv", ".txt", ".tsv", ".mat"),
           buttonLabel = "Browse…",
           placeholder = "No file selected"
         ),
-        div(
-          class = "text-muted small mb-2",
-          "Don't have a file handy? ",
-          actionLink(
-            "load_example",
-            "Load the example millipede dataset"
-          ),
-          " (Cylindroiulus punctatus, 235 trials)."
-        ),
+        if (identical(rv$mode, "headings")) {
+          div(class = "text-muted small mb-2",
+              "Don't have a file? ",
+              actionLink("load_example_hd",
+                         "Load example headings (from the millipede dataset)"),
+              ".")
+        } else {
+          div(class = "text-muted small mb-2",
+              "Don't have a file handy? ",
+              actionLink("load_example",
+                         "Load the example millipede dataset"),
+              " (Cylindroiulus punctatus, 235 trials).")
+        },
         uiOutput("format_box"),
         uiOutput("preview_section"),
+        err_box
+      )
+
+    # ---- Step 2: configure (headings) ----
+    } else if (rv$step == 2L && identical(rv$mode, "headings")) {
+      num_cols <- names(rv$raw_hd)[vapply(rv$raw_hd, is.numeric, logical(1))]
+      all_cols <- names(rv$raw_hd)
+      tagList(
+        h5("Describe your headings"),
+        selectInput("hd_col", "Angle column", choices = num_cols,
+                    selected = num_cols[1]),
+        selectInput("hd_units", "Units",
+                    choices = c("Degrees" = "degrees", "Radians" = "radians"),
+                    selected = "degrees"),
+        selectInput("hd_convention", "Angle convention",
+                    choices = c("Unit circle (0° = East, counter-clockwise)" = "unit_circle",
+                                "Compass (0° = North, clockwise)"            = "clock"),
+                    selected = "unit_circle"),
+        selectInput("hd_group", "Group column (optional)",
+                    choices = c("(none)" = "", stats::setNames(all_cols, all_cols)),
+                    selected = ""),
         err_box
       )
 
@@ -783,6 +882,14 @@ server <- function(input, output, session) {
   # grouping column can instead drive the track + marker colour. Independent of
   # the Facet-by selector.
   output$colour_by_ui <- renderUI({
+    if (identical(rv$mode, "headings")) {
+      grp <- (rv$hd_map %||% list(group = NULL))$group
+      choices <- if (is.null(grp)) c("Single colour" = SPEC_TRAJ_KEY)
+                 else stats::setNames(c(SPEC_TRAJ_KEY, grp), c("Single colour", grp))
+      sel <- if (!is.null(input$colour_by) && input$colour_by %in% choices)
+        input$colour_by else (grp %||% SPEC_TRAJ_KEY)
+      return(selectInput("colour_by", "Colour by", choices = choices, selected = sel))
+    }
     req(rv$ts)
     cats    <- colour_cols(rv$ts)
     choices <- c("Trajectory" = TRAJ_COLOUR_KEY, stats::setNames(cats, cats))
@@ -799,12 +906,38 @@ server <- function(input, output, session) {
   # The plot spec resolved from the current inputs (shared by the figure and the
   # code export so they cannot drift).
   current_spec <- function() {
+    if (identical(rv$mode, "headings")) {
+      # Read the mapping from rv$hd_map (set by Step 2 OR the example button) so
+      # the spec is correct even when Step 2 was skipped (example path).
+      map <- rv$hd_map %||% list(col = "heading", units = "radians",
+                                 convention = "unit_circle", group = NULL)
+      grp <- map$group
+      return(build_plot_spec(
+        ts = NULL, hd = rv$hd, method = NULL,
+        data = list(
+          source = if (identical(rv$source, "example")) "example" else "file",
+          mode = "headings", path = rv$file_name %||% "your_headings.csv",
+          col = map$col, units = map$units,
+          convention = map$convention, group = grp),
+        inputs = list(
+          cond_col = grp, colour_by = input$colour_by,
+          plot_theme = input$plot_theme, angle_labels = input$angle_labels,
+          heading_display = input$heading_display,
+          show_arrow = tog(input$show_arrow, TRUE),
+          show_vectors = tog(input$show_vectors, FALSE),
+          show_rayleigh = tog(input$show_rayleigh, FALSE),
+          show_ci = tog(input$show_ci, FALSE),
+          show_vtest = tog(input$show_vtest, FALSE),
+          show_quadrants = tog(input$show_quadrants, FALSE),
+          show_rings = tog(input$show_rings, FALSE))))
+    }
     gc <- if (!is.null(input$cond_col) && nzchar(input$cond_col))
       input$cond_col else NULL
     build_plot_spec(
       ts = rv$ts, hd = rv$hd, method = rv$method,
       data = list(
         source  = if (identical(rv$source, "example")) "example" else "file",
+        mode    = "trajectories",
         path    = rv$file_name %||% "your_tracks.csv",
         dialect = if (is.null(rv$dialect) || rv$dialect %in% c("auto", "generic"))
           NULL else rv$dialect),
@@ -844,7 +977,7 @@ server <- function(input, output, session) {
   })
 
   output$track_plot <- renderPlot({
-    req(rv$ts)
+    req(rv$ts %||% rv$hd)
     p <- tryCatch(
       build_results_plot(),
       error = function(e) {
