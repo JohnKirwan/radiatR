@@ -834,12 +834,9 @@ TrajSet_load_manifest <- function(file_tbl, track_dir, manifest = NULL,
 #' @export
 load_tracks <- function(file_tbl, df, track_dir) {
   if (missing(df)) stop("`df` must be supplied.")
-  defaults <- intersect(c("arc", "type", "obstacle", "id"), names(df))
-  manifest_cols <- NULL
-  if (length(defaults)) {
-    manifest_cols <- setNames(defaults, defaults)
-  }
-  out <- .augment_with_manifest(file_tbl, df, manifest_cols)
+  # Carry every manifest column (all non-`file` columns); `.augment_with_manifest`
+  # does this when `manifest_cols = NULL`. Use load_tracks2() to rename/restrict.
+  out <- .augment_with_manifest(file_tbl, df, NULL)
   .validate_track_paths(.resolve_track_paths(track_dir, out$track))
   out
 }
