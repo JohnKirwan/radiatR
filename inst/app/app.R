@@ -996,6 +996,36 @@ server <- function(input, output, session) {
   }, res = 120)
 
   output$summary_tbl <- renderTable({
+    if (identical(rv$mode, "headings")) {
+      req(rv$hd)
+      grp    <- (rv$hd_map %||% list(group = NULL))$group
+      hd     <- rv$hd
+      by_col <- grp
+      pooled <- is.null(by_col)
+      if (pooled) { hd[[".all"]] <- "All"; by_col <- ".all" }
+      out <- tryCatch({
+        cm <- circ_summarise(
+          hd, "heading", units = "radians", .by = by_col,
+          stats = c("n", "mean_dir_deg", "resultant_R"),
+          display = circ_display(zero = 0)
+        )
+        groups <- unique(hd[[by_col]])
+        p_vals <- vapply(groups, function(g)
+          rayleigh_p_fmt(hd$heading[hd[[by_col]] == g]), character(1L))
+        p_df <- stats::setNames(
+          data.frame(groups, p_vals, stringsAsFactors = FALSE),
+          c(by_col, "Rayleigh p"))
+        cm <- merge(cm, p_df, by = by_col, sort = FALSE)
+        names(cm)[names(cm) == by_col]         <- "Group"
+        names(cm)[names(cm) == "mean_dir_deg"] <- "Direction (°)"
+        names(cm)[names(cm) == "resultant_R"]  <- "R"
+        cm[["Direction (°)"]] <- round(cm[["Direction (°)"]], 1)
+        cm[["R"]]             <- round(cm[["R"]], 3)
+        if (pooled) cm[["Group"]] <- NULL    # single pooled row: drop the dummy group col
+        cm
+      }, error = function(e) data.frame(Note = "Summary not available"))
+      return(out)
+    }
     req(rv$ts)
     gc <- if (!is.null(input$cond_col) && nzchar(input$cond_col))
       input$cond_col else NULL
@@ -1072,7 +1102,7 @@ server <- function(input, output, session) {
 
   # The radiatR script reproducing the current figure (shown, copied, downloaded).
   figure_code_text <- reactive({
-    req(rv$ts)
+    req(rv$ts %||% rv$hd)
     spec_to_code(current_spec())
   })
   output$figure_code <- renderText(figure_code_text())
@@ -1087,7 +1117,7 @@ server <- function(input, output, session) {
       paste0("radiatR_plot_", Sys.Date(), ".", fmt)
     },
     content = function(file) {
-      req(rv$ts)
+      req(rv$ts %||% rv$hd)
       fmt <- if (is.null(input$plot_fmt)) "pdf" else input$plot_fmt
       # Transparent background applies to every format except JPG (no alpha).
       transparent <- isTRUE(input$plot_transparent) && fmt != "jpg"
@@ -1118,7 +1148,7 @@ server <- function(input, output, session) {
       paste0(stem, Sys.Date(), ".csv")
     },
     content = function(file) {
-      req(rv$ts)
+      req(rv$ts %||% rv$hd)
       dat <- if (is.null(rv$hd)) straightness_index(rv$ts) else rv$hd
       utils::write.csv(dat, file, row.names = FALSE)
     }
