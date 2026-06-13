@@ -257,6 +257,7 @@ spec_to_code <- function(spec) {
           ", units = ", q(spec$data$units),
           ", angle_convention = ", q(spec$data$convention), ")")
       add("names(hd)[names(hd) == ", q(spec$data$col), "] <- \"heading\"")
+      add("attr(hd, \"heading_col\") <- \"heading\"")
     }
     add("")
     if (identical(spec$colour$by, "trajectory")) {
