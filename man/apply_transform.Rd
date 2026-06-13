@@ -38,25 +38,15 @@ column \emph{roles} (`x@cols`), not hard-coded column names.
 \examples{
 data(cpunctatus)
 
-# Recipe A -- edge-referenced -> centre-referenced stimulus. Many experiments
-# mark a stimulus by its (precisely digitisable) leading edge; to analyse
-# headings relative to the stimulus *centre*, offset the reference by half the
-# angular width, which may differ per trial. Here `fn` reads a per-trial
-# `width` column from the data. (A constant offset -- e.g. a fixed magnetic
-# declination -- would just skip the per-trial column.)
-edge_to_centre <- function(df, cols, width_col, units = "degrees") {
-  half <- (df[[width_col]] / 2) * (if (units == "degrees") pi / 180 else 1)
-  ang  <- (df[[cols$angle]] + half) \%\% (2 * pi)
-  df[[cols$angle]] <- ang
-  rho <- df[[cols$rho]]
-  df[[cols$rel_x]] <- rho * cos(ang)        # keep rel_x/rel_y consistent
-  df[[cols$rel_y]] <- rho * sin(ang)
-  df
-}
-ts <- cpunctatus
-ts@data$width <- 20                          # demo: a 20-degree-wide stimulus
-ts2 <- apply_transform(ts, edge_to_centre, width_col = "width",
-                       units = "degrees", step = "edge_to_centre")
+# Recipe A -- a reference-frame offset (e.g. edge-referenced -> centre-
+# referenced stimulus) is a frame change, so use set_reference(), not
+# apply_transform(): it re-derives rel_theta/rel_x/rel_y consistently. Because
+# rel_theta = abs - reference, offsetting the heading by +half (half the
+# stimulus's angular width) is a reference change of (reference - half).
+ts     <- set_reference(cpunctatus, 0)        # ensure a reference exists
+half   <- (20 / 2) * pi / 180                 # a 20-degree-wide stimulus
+newref <- reference(ts)$ref_theta - half      # per-trajectory if widths differ
+ts2    <- set_reference(ts, stats::setNames(newref, reference(ts)$id))
 
 # Recipe B -- polarization direction -> axis. Polarized-light e-vectors are
 # axial (defined mod pi); doubling folds direction into orientation for axial

@@ -54,3 +54,37 @@ test_that("the object-position pipeline records a per-trajectory reference", {
   expect_true(all(c("id", "ref_theta") %in% names(ref)))
   expect_setequal(ref$id, ids(ts))
 })
+
+test_that("set_reference re-derives the relative frame consistently", {
+  ts  <- cpunctatus
+  off <- 0.4
+  out <- set_reference(ts, off)             # scalar reference for all trajectories
+
+  cols <- out@cols
+  d <- derive_coords(out@data[[cols$x]], out@data[[cols$y]], reference = off)
+  expect_equal(out@data[[cols$angle]], d$rel_theta_unit)
+  expect_equal(out@data[[cols$rel_x]], d$rel_x)
+  expect_equal(out@data[[cols$rel_y]], d$rel_y)
+  expect_true(all(reference(out)$ref_theta == off))
+  expect_equal(nrow(transform_history(out)),
+               nrow(transform_history(ts)) + length(ids(ts)))
+  expect_true("set_reference" %in% transform_history(out)$step)
+})
+
+test_that("set_reference with reference 0 makes relative == absolute", {
+  out  <- set_reference(cpunctatus, 0)
+  cols <- out@cols
+  d <- derive_coords(out@data[[cols$x]], out@data[[cols$y]], reference = 0)
+  expect_equal(out@data[[cols$angle]], d$abs_theta_unit)
+  expect_equal(out@data[[cols$rel_x]], out@data[[cols$x]])
+  expect_equal(out@data[[cols$rel_y]], out@data[[cols$y]])
+})
+
+test_that("set_reference accepts per-trajectory values", {
+  ts   <- cpunctatus
+  ids0 <- ids(ts)
+  vals <- stats::setNames(seq(0, 1, length.out = length(ids0)), ids0)
+  out  <- set_reference(ts, vals)
+  expect_equal(reference(out)$ref_theta[match(ids0, reference(out)$id)],
+               unname(vals))
+})
