@@ -121,3 +121,27 @@ test_that("as.data.frame is a no-op when derived columns are present", {
   ts <- cpunctatus
   expect_identical(as.data.frame(ts), ts@data)
 })
+
+test_that("consumers produce identical output without stored derived columns", {
+  ts      <- .with_reconstructed_reference(cpunctatus)   # helper defined above
+  ts_drop <- ts
+  for (cc in c("rel_x", "rel_y", "radius", "trans_rho", "abs_theta"))
+    ts_drop@data[[cc]] <- NULL
+  # keep cols$angle (rel_theta) present (the registered angle role); the test
+  # exercises the plotting consumer that reads rel_x/rel_y for track geometry.
+
+  set.seed(1)
+  p_full <- radiate(ts,      group_col = "trial_id", show_arrow = FALSE,
+                    show_labels = FALSE)
+  set.seed(1)
+  p_drop <- radiate(ts_drop, group_col = "trial_id", show_arrow = FALSE,
+                    show_labels = FALSE)
+  fp <- function(p) {
+    b <- ggplot2::ggplot_build(p)
+    lapply(b$data, function(z) {
+      cc <- intersect(c("x", "y"), names(z))
+      round(as.matrix(z[, cc, drop = FALSE]), 6)
+    })
+  }
+  expect_equal(fp(p_drop), fp(p_full))
+})

@@ -529,7 +529,7 @@ setMethod("derive_headings", "TrajSet", function(
   if (is.null(xc) || is.null(yc))
     stop("derive_headings: TrajSet needs x/y columns for these rules.")
 
-  d <- x@data
+  d <- as.data.frame(x)
   sp <- split(seq_len(nrow(d)), d[[id]])
 
   # built-in dispatcher
