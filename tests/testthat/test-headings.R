@@ -70,7 +70,8 @@ test_that("derive_headings crossing without crossing returns NA row", {
                    x = c(0, 0.05, 0.1, 0.05, 0), y = rep(0, 5))
   ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
                 normalize_xy = FALSE)
-  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4)
+  hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                        on_missing = "quiet")
   expect_equal(nrow(hd), 1)
   expect_true(is.na(hd$heading))
 })
@@ -429,4 +430,59 @@ test_that("pose_to_headings clock convention flips axis correctly", {
                              angle_convention="clock")
   expect_equal(hd_uc$heading, pi/2, tolerance=1e-9)  # pointing East
   expect_equal(hd_cl$heading, 0,    tolerance=1e-9)  # pointing North = 0 in clock
+})
+
+# ---- attrition reporting (on_missing) ---------------------------------------
+
+# A TrajSet of 5 trials: 3 reach r=0.8 (cross circ0/circ1), 2 stay central
+# (max r = 0.3 < circ1 = 0.4) so the crossing rule yields NA for them.
+make_attrition_ts <- function() {
+  mk <- function(id, theta, r_max, n = 15) {
+    r <- seq(0, r_max, length.out = n)
+    data.frame(id = id, time = seq_len(n),
+               x = r * cos(theta), y = r * sin(theta))
+  }
+  rows <- rbind(
+    mk("cross1", 0.3, 0.8), mk("cross2", 1.2, 0.8), mk("cross3", 2.5, 0.8),
+    mk("central1", 0.5, 0.30), mk("central2", 1.8, 0.30)
+  )
+  TrajSet(rows, id = "id", time = "time", x = "x", y = "y", normalize_xy = FALSE)
+}
+
+test_that("derive_headings warns and reports attrition by default", {
+  ts <- make_attrition_ts()
+  expect_warning(
+    hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4),
+    "produced no heading"
+  )
+  expect_equal(nrow(hd), 5L)                          # NA rows retained
+  expect_equal(attr(hd, "n_total"), 5L)
+  expect_equal(attr(hd, "n_missing"), 2L)
+  expect_setequal(attr(hd, "missing_ids"), c("central1", "central2"))
+})
+
+test_that("derive_headings on_missing = 'error' stops", {
+  ts <- make_attrition_ts()
+  expect_error(
+    derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                    on_missing = "error"),
+    "produced no heading"
+  )
+})
+
+test_that("derive_headings on_missing = 'quiet' is silent but still attaches attrs", {
+  ts <- make_attrition_ts()
+  expect_silent(
+    hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
+                          on_missing = "quiet")
+  )
+  expect_equal(attr(hd, "n_missing"), 2L)
+  expect_equal(attr(hd, "n_total"), 5L)
+})
+
+test_that("derive_headings does not warn when every trial yields a heading", {
+  ts <- make_attrition_ts()
+  # distal always produces a heading (furthest point) -> no attrition
+  expect_silent(hd <- derive_headings(ts, rule = "distal"))
+  expect_equal(attr(hd, "n_missing"), 0L)
 })

@@ -33,7 +33,8 @@ test_that("net return_coords adds start/end matching the heading", {
 })
 
 test_that("straight return_coords adds run endpoints that lie on the track", {
-  hd <- derive_headings(cpunctatus, rule = "straight", return_coords = TRUE)
+  hd <- derive_headings(cpunctatus, rule = "straight", return_coords = TRUE,
+                        on_missing = "quiet")
   expect_true(all(c("x_seg0", "y_seg0", "x_seg1", "y_seg1") %in% names(hd)))
 
   idc <- cpunctatus@cols$id; xc <- cpunctatus@cols$x; yc <- cpunctatus@cols$y
@@ -51,7 +52,7 @@ test_that("straight return_coords adds run endpoints that lie on the track", {
     expect_true(on0 && on1)
   }
 
-  hd0 <- derive_headings(cpunctatus, rule = "straight")
+  hd0 <- derive_headings(cpunctatus, rule = "straight", on_missing = "quiet")
   expect_false(any(c("x_seg0", "x_seg1") %in% names(hd0)))
 })
 

@@ -96,6 +96,13 @@
 #' @param coords Character. Which Cartesian columns to use: `"absolute"` (default,
 #'   uses `x`/`y` from `TrajSet@@cols`) or `"relative"` (uses `rel_x`/`rel_y`;
 #'   errors if not registered).
+#' @param on_missing One of `"warn"` (default), `"error"`, or `"quiet"`,
+#'   controlling what happens when a rule produces no heading (`NA`) for one or
+#'   more trials. The `NA` rows are always retained; the returned object carries
+#'   `n_total`, `n_missing`, and `missing_ids` attributes. `"warn"` emits a
+#'   warning, `"error"` stops, `"quiet"` is silent. Rule-based failures are often
+#'   non-random (e.g. tracks that never reach the periphery) and can bias
+#'   circular statistics, so they are surfaced by default.
 #' @details
 #' Passing `return_coords = TRUE` (via `...`, default `FALSE`) attaches the
 #' construction coordinates each rule used to derive the heading, in the chosen
@@ -498,9 +505,14 @@ setMethod("derive_headings", "TrajSet", function(
     ...,
     first_only = FALSE,
     carry = NULL,
+    on_missing = c("warn", "error", "quiet"),
     coords = c("absolute", "relative")) {
 
-  coords <- match.arg(coords)
+  coords     <- match.arg(coords)
+  on_missing <- match.arg(on_missing)
+  # Capture a readable rule label before match.arg(rule) reassigns `rule` in the
+  # built-in dispatch branch below.
+  rule_label <- if (is.function(rule)) "custom" else as.character(rule)[1]
 
   id <- x@cols$id; tc <- x@cols$time
 
@@ -624,6 +636,29 @@ setMethod("derive_headings", "TrajSet", function(
 
   rownames(res) <- NULL
   if (!is.null(carry)) res <- .carry_nearest(res, d, idc = id, tc = tc, cols = carry)
+
+  # Attrition: trials for which the rule produced no heading (NA). Rows are
+  # always retained; the attributes let downstream consumers report the
+  # used-vs-total denominator. The policy only controls messaging.
+  n_total     <- nrow(res)
+  miss        <- is.na(res$heading)
+  n_missing   <- sum(miss)
+  attr(res, "n_total")     <- n_total
+  attr(res, "n_missing")   <- n_missing
+  attr(res, "missing_ids") <- res$id[miss]
+
+  if (n_missing > 0L && on_missing != "quiet") {
+    pct <- round(100 * n_missing / n_total, 1)
+    msg <- sprintf(
+      paste0("derive_headings(rule = '%s'): %d of %d trials (%.1f%%) produced ",
+             "no heading and are excluded from circular statistics. Rule-based ",
+             "failures are often non-random and can bias results; inspect ",
+             "attr(x, \"missing_ids\")."),
+      rule_label, n_missing, n_total, pct)
+    if (on_missing == "error")
+      stop(msg, " Set on_missing = \"warn\" or \"quiet\" to proceed.", call. = FALSE)
+    warning(msg, call. = FALSE)
+  }
 
   attr(res, "coords") <- coords
   res
