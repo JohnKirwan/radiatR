@@ -28,7 +28,7 @@ library(ggplot2)
 
 ## Overview
 
-`radiatR` streamlines the journey from raw tracking files to publication-ready plots for experiments conducted in circular arenas. The package includes:
+`radiatR` streamlines the journey from headings and trajectories in circular space to publication-ready radial plots. Angles can be supplied directly, or reconstructed from movement trajectories. The package includes:
 
 -   utilities for importing paired landmark/track text files produced by popular tracking suites;
 -   helpers for extracting trial limits and computing circular summary statistics;
@@ -36,7 +36,7 @@ library(ggplot2)
 
 ## Import Pipeline
 
-The package ships the full set of millipede example tracks that demonstrate the import workflow. Landmark files (`_point01.txt`) record two pixel-space reference points per trial (arena centre and target location on the arena wall); track files (`_point02.txt`) contain the full xy trajectory.
+The package ships a full set of example tracks (a millipede orientation experiment) that demonstrate the import workflow. Landmark files (`_point01.txt`) record two pixel-space reference points per trial (the origin and a target location on the circumference); track files (`_point02.txt`) contain the full xy trajectory.
 
 ```{r load-demo}
 track_dir     <- system.file("extdata", "tracks", package = "radiatR")
