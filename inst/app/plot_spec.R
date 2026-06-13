@@ -24,6 +24,26 @@ build_headings_input <- function(df, col, units, convention, group = NULL) {
   hf
 }
 
+# Attrition message for the Results banner, or NULL when there is no attrition.
+# `derived` selects the loud, bias-caveat wording (headings derived from tracks
+# via a rule) vs the neutral wording (angles provided directly). Shiny-free so
+# it can be unit-tested.
+attrition_note <- function(n_total, n_missing, derived, rule = NULL) {
+  if (is.null(n_missing) || is.null(n_total) || n_missing <= 0L) return(NULL)
+  used <- n_total - n_missing
+  pct  <- round(100 * n_missing / n_total)
+  if (isTRUE(derived)) {
+    sprintf(paste0("%d of %d trials produced a heading; %d (%d%%) were excluded ",
+                   "by rule '%s'. Rule-based exclusion is often non-random and ",
+                   "can bias circular statistics — inspect the excluded ",
+                   "trials before interpreting."),
+            used, n_total, n_missing, pct, rule %||% "?")
+  } else {
+    sprintf("%d of %d rows have no angle and are excluded from the statistics.",
+            n_missing, n_total)
+  }
+}
+
 # Shared defaults (kept here so spec_to_plot and spec_to_code agree).
 SPEC_CYCLE_N         <- 20L
 SPEC_STACK_BIN_WIDTH <- pi / 36   # 5 degrees

@@ -124,3 +124,22 @@ test_that("build_plot_spec: headings mode records mode and headings data block",
   expect_identical(spec$facet_by, "cond")
   expect_false(isTRUE(spec$show$tracks))     # no tracks in headings mode
 })
+
+test_that("attrition_note: derived wording names the rule and warns of bias", {
+  msg <- attrition_note(n_total = 235, n_missing = 47, derived = TRUE, rule = "distal")
+  expect_type(msg, "character")
+  expect_match(msg, "188 of 235")
+  expect_match(msg, "distal")
+  expect_match(msg, "bias")
+})
+
+test_that("attrition_note: provided wording is neutral", {
+  msg <- attrition_note(n_total = 200, n_missing = 12, derived = FALSE)
+  expect_match(msg, "12 of 200")
+  expect_false(grepl("bias", msg))
+})
+
+test_that("attrition_note: returns NULL when there is no attrition", {
+  expect_null(attrition_note(n_total = 100, n_missing = 0, derived = TRUE, rule = "distal"))
+  expect_null(attrition_note(n_total = 100, n_missing = NULL, derived = FALSE))
+})
