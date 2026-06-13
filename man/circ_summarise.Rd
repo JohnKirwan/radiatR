@@ -31,9 +31,13 @@ Suppress range warnings with
 \code{group_by()} groups on \code{data}.}
 
 \item{stats}{Character vector selecting which statistics to compute. Order
-determines column order in the output. Valid values: \code{"n"},
+determines column order in the output. Valid values: \code{"n"} (count of
+valid, non-missing headings), \code{"n_total"} (group size including
+missing), \code{"n_missing"} (excluded, non-finite headings),
 \code{"mean_dir"}, \code{"mean_dir_deg"}, \code{"resultant_R"},
-\code{"kappa"}. Default: all five.}
+\code{"kappa"}. Default: \code{"n"}, \code{"mean_dir"},
+\code{"mean_dir_deg"}, \code{"resultant_R"}, \code{"kappa"}
+(\code{"n_total"}/\code{"n_missing"} are opt-in).}
 
 \item{display}{A [`circ_display`] object. When supplied, `mean_dir_deg` is
 converted using the display convention (clockwise, `zero` offset). When

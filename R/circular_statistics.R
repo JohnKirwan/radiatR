@@ -281,8 +281,10 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 # circ_summarise -- tidy grouped circular summary
 
 .circ_summarise_one <- function(angles, stats, display) {
-  angles <- angles[is.finite(angles)]
-  n      <- length(angles)
+  n_total   <- length(angles)
+  angles    <- angles[is.finite(angles)]
+  n         <- length(angles)
+  n_missing <- n_total - n
 
   if (n == 0L) {
     uc_mu <- NA_real_; R <- NA_real_; kap <- NA_real_
@@ -298,6 +300,8 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
   for (s in stats) {
     row[[s]] <- switch(s,
       n            = as.integer(n),
+      n_total      = as.integer(n_total),
+      n_missing    = as.integer(n_missing),
       mean_dir     = uc_mu,
       mean_dir_deg = if (is.na(uc_mu)) NA_real_ else .uc_angle_to_display(uc_mu, display),
       resultant_R  = R,
@@ -327,9 +331,13 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 #' @param .by Character vector of grouping column names. Overrides any
 #'   \code{group_by()} groups on \code{data}.
 #' @param stats Character vector selecting which statistics to compute. Order
-#'   determines column order in the output. Valid values: \code{"n"},
+#'   determines column order in the output. Valid values: \code{"n"} (count of
+#'   valid, non-missing headings), \code{"n_total"} (group size including
+#'   missing), \code{"n_missing"} (excluded, non-finite headings),
 #'   \code{"mean_dir"}, \code{"mean_dir_deg"}, \code{"resultant_R"},
-#'   \code{"kappa"}. Default: all five.
+#'   \code{"kappa"}. Default: \code{"n"}, \code{"mean_dir"},
+#'   \code{"mean_dir_deg"}, \code{"resultant_R"}, \code{"kappa"}
+#'   (\code{"n_total"}/\code{"n_missing"} are opt-in).
 #' @param display A [`circ_display`] object. When supplied, `mean_dir_deg` is
 #'   converted using the display convention (clockwise, `zero` offset). When
 #'   `NULL` (default), `mean_dir_deg` is the raw degree equivalent of the
@@ -365,7 +373,8 @@ circ_summarise <- function(data,
          "  Hint: most behavioral data is recorded in degrees.")
   units <- match.arg(units, c("radians", "degrees"))
 
-  valid_stats <- c("n", "mean_dir", "mean_dir_deg", "resultant_R", "kappa")
+  valid_stats <- c("n", "n_total", "n_missing", "mean_dir", "mean_dir_deg",
+                   "resultant_R", "kappa")
   unknown <- setdiff(stats, valid_stats)
   if (length(unknown))
     stop(sprintf("Unknown stats: '%s'. Valid values are: %s.",

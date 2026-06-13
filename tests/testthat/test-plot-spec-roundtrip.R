@@ -161,7 +161,7 @@ test_that("emitted code reproduces spec_to_plot (crossing rule + heading vectors
   data(cpunctatus, package = "radiatR", envir = environment())
   ts <- cpunctatus
   hd <- derive_headings(ts, rule = "crossing", circ0 = 0.3, circ1 = 0.6,
-                        return_coords = TRUE)
+                        return_coords = TRUE, on_missing = "quiet")
   spec <- list(
     data = list(source = "example", path = NULL, dialect = NULL),
     headings = list(rule = "crossing", circ0 = 0.3, circ1 = 0.6),
@@ -172,7 +172,9 @@ test_that("emitted code reproduces spec_to_plot (crossing rule + heading vectors
     show = list(tracks = TRUE, arrow = FALSE, vectors = TRUE))
   live  <- spec_to_plot(spec, ts, hd)
   env   <- new.env(parent = globalenv())
-  evald <- eval(parse(text = spec_to_code(spec)), envir = env)   # must not error
+  # The emitted script keeps derive_headings()'s default attrition warning
+  # (a standalone user should see it); suppress it here to keep the test clean.
+  evald <- suppressWarnings(eval(parse(text = spec_to_code(spec)), envir = env))   # must not error
   expect_equal(.fingerprint(evald), .fingerprint(live))
 })
 

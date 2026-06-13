@@ -17,8 +17,8 @@ test_that("normalize_xy=TRUE yields the same headings regardless of raw scale/of
   tsR <- TrajSet(raw,  id = "id", time = "time", x = "x", y = "y", normalize_xy = TRUE)
 
   for (rule in c("net", "distal", "origin_mean", "velocity_mean", "straight", "pca_axis")) {
-    hB <- as.numeric(derive_headings(tsB, rule = rule)$heading)
-    hR <- as.numeric(derive_headings(tsR, rule = rule)$heading)
+    hB <- as.numeric(derive_headings(tsB, rule = rule, on_missing = "quiet")$heading)
+    hR <- as.numeric(derive_headings(tsR, rule = rule, on_missing = "quiet")$heading)
     expect_equal(hR, hB, tolerance = 1e-6, info = rule)
   }
 })
