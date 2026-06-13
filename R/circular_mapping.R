@@ -176,21 +176,17 @@ build_unit_circle_mapping <- function(origin, reference, flip_y = TRUE) {
 
     trans_x <- cx / radius
     trans_y <- cy / radius
-    trans_rho <- sqrt(trans_x^2 + trans_y^2)
-
-    abs_theta_clock <- rad2clock(atan2(trans_y, trans_x))
-    abs_theta_unit <- rad_unclock(abs_theta_clock)
-    rel_theta_unit <- rad_shepherd(abs_theta_unit - ref_theta_unit)
+    d <- derive_coords(trans_x, trans_y, reference = ref_theta_unit)
 
     list(
-      trans_x = trans_x,
-      trans_y = trans_y,
-      trans_rho = trans_rho,
-      abs_theta_clock = abs_theta_clock,
-      abs_theta_unit = abs_theta_unit,
-      rel_theta_unit = rel_theta_unit,
-      rel_x = trans_rho * cos(rel_theta_unit),
-      rel_y = trans_rho * sin(rel_theta_unit)
+      trans_x         = trans_x,
+      trans_y         = trans_y,
+      trans_rho       = d$trans_rho,
+      abs_theta_clock = d$abs_theta_clock,
+      abs_theta_unit  = d$abs_theta_unit,
+      rel_theta_unit  = d$rel_theta_unit,
+      rel_x           = d$rel_x,
+      rel_y           = d$rel_y
     )
   }
 
