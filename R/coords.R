@@ -32,3 +32,32 @@ derive_coords <- function(trans_x, trans_y, reference = 0) {
     rel_y           = trans_rho * sin(rel_theta_unit)
   )
 }
+
+#' Per-trajectory reference direction of a TrajSet
+#'
+#' The reference direction (unit-circle radians) against which each trajectory's
+#' relative frame (`rel_theta`/`rel_x`/`rel_y`) is defined. Trajectories with no
+#' recorded reference default to `0` (relative frame equals absolute frame).
+#'
+#' @param x A [`TrajSet`].
+#' @return For `reference()`, a data frame with `id` and `ref_theta` (or `NULL`
+#'   when none is set).
+#' @seealso [set_reference()], [derive_coords()]
+#' @rdname reference
+#' @export
+setGeneric("reference", function(x) standardGeneric("reference"))
+
+#' @rdname reference
+#' @export
+setMethod("reference", "TrajSet", function(x) x@meta$reference)
+
+# Named id -> ref_theta vector covering every trajectory; absent ids default 0.
+.reference_lookup <- function(x) {
+  all_ids <- as.character(ids(x))
+  lut <- stats::setNames(rep(0, length(all_ids)), all_ids)
+  ref <- x@meta$reference
+  if (!is.null(ref) && nrow(ref)) {
+    lut[as.character(ref$id)] <- ref$ref_theta
+  }
+  lut
+}

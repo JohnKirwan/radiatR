@@ -282,6 +282,10 @@ get_tracked_object_pos <- function(
   )
   trajset <- set_transform_history(trajset, transform_history)
   trajset@meta$trial_limits        <- trial_limits
+  present_ids <- unique(combined$trial_id)
+  ref_tbl <- tibble::tibble(id = trial_limits$vid_ord,
+                            ref_theta = trial_limits$ref_theta)
+  trajset@meta$reference <- ref_tbl[ref_tbl$id %in% present_ids, , drop = FALSE]
   trajset@meta$display_convention  <- "clock"
   trajset@meta$plot_x_col          <- "rel_x"
   trajset@meta$plot_y_col          <- "rel_y"
