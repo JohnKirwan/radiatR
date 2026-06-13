@@ -1,5 +1,14 @@
 # radiatR (development version)
 
+## Coordinates
+
+* The per-trajectory reference direction is now first-class: `reference()` reads
+  it and `set_reference()` changes it, re-deriving the relative frame
+  (`rel_theta`/`rel_x`/`rel_y`) consistently so it cannot drift. New exported
+  `derive_coords()` is the single source of the unit-circle -> polar/relative
+  math (also used internally by the loader mapping). For a reference-frame
+  offset, prefer `set_reference()` over a manual `apply_transform()`.
+
 ## Loaders
 
 * `load_tracks()` and `get_trial_limits()` now carry every column from the
