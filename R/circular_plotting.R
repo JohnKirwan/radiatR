@@ -495,7 +495,7 @@ cycle_colours <- function(x, n, levels = NULL) {
 #' @export
 assign_colour_key <- function(x, by, n = 20, reference = NULL, into = ".colour") {
   is_ts <- function(o) methods::is(o, "TrajSet")
-  df_of <- function(o) if (is_ts(o)) o@data else o
+  df_of <- function(o) if (is_ts(o)) as.data.frame(o) else o
   id_of <- function(o) if (is_ts(o)) o@cols$id else "id"
 
   ref    <- if (is.null(reference)) x else reference
@@ -1762,7 +1762,7 @@ setMethod("gg_traj", "TrajSet",
     coord <- match.arg(coord)
     geom  <- match.arg(geom, several.ok = TRUE)
 
-    d   <- x@data
+    d   <- as.data.frame(x)
     idc <- x@cols$id
     xc  <- x@cols$x
     yc  <- x@cols$y
@@ -2208,7 +2208,7 @@ function(
     ts <- data
   }
 
-  data <- ts@data
+  data <- as.data.frame(ts)
   if (!is.null(ts@meta$plot_x_col) && identical(x_col, "rel_x")) {
     x_col <- ts@meta$plot_x_col
     if (!is.null(ts@meta$plot_y_col) && identical(y_col, "rel_y"))

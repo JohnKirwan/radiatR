@@ -612,7 +612,33 @@ setMethod("circ_summary", "TrajSet", function(x, w = NULL) {
 #' @return A data frame: the TrajSet's `data` slot.
 #' @exportS3Method base::as.data.frame
 as.data.frame.TrajSet <- function(x, row.names = NULL, optional = FALSE, ...) {
-  x@data
+  d    <- x@data
+  cols <- x@cols
+  if (is.null(cols$x) || is.null(cols$y)) return(d)   # no position -> cannot derive
+
+  # Stored derived column name -> field of derive_coords() output.
+  want <- list()
+  if (!is.null(cols$angle)) want[[cols$angle]] <- "rel_theta_unit"
+  if (!is.null(cols$rel_x)) want[[cols$rel_x]] <- "rel_x"
+  if (!is.null(cols$rel_y)) want[[cols$rel_y]] <- "rel_y"
+  if (!is.null(cols$rho))   want[[cols$rho]]   <- "trans_rho"
+  want[["trans_rho"]] <- "trans_rho"
+  want[["abs_theta"]] <- "abs_theta_unit"
+
+  missing_cols <- names(want)[!names(want) %in% names(d)]
+  if (!length(missing_cols)) return(d)               # all present -> no-op
+
+  lut     <- .reference_lookup(x)
+  ids_chr <- as.character(d[[cols$id]])
+  for (cname in missing_cols) d[[cname]] <- NA_real_
+  for (id in unique(ids_chr)) {
+    rows <- which(ids_chr %in% id)
+    idx  <- match(id, names(lut))
+    ref  <- if (!is.na(idx)) lut[[idx]] else 0
+    dc <- derive_coords(d[[cols$x]][rows], d[[cols$y]][rows], reference = ref)
+    for (cname in missing_cols) d[[cname]][rows] <- dc[[ want[[cname]] ]]
+  }
+  d
 }
 
 setAs("data.frame", "TrajSet", function(from) {

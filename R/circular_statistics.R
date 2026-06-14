@@ -49,7 +49,7 @@ setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")
   by <- match.arg(by)
   id <- x@cols$id; tm <- x@cols$time; th <- x@cols$angle
   wcol <- if (is.null(w)) x@cols$weight else w
-  d <- x@data
+  d <- as.data.frame(x)
   split_idx <- if (by == "id") split(seq_len(nrow(d)), d[[id]]) else list(all = seq_len(nrow(d)))
 
   rows <- lapply(names(split_idx), function(k) {
@@ -162,7 +162,7 @@ zone_dwell <- function(x, target_angle, target_radius = 1,
     stop("zone_dwell: TrajSet needs x/y columns.")
 
   id_col <- x@cols$id
-  d      <- x@data
+  d      <- as.data.frame(x)
   px     <- d[[xc]]
   py     <- d[[yc]]
   r      <- sqrt(px^2 + py^2)
@@ -256,7 +256,7 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
     stop("count_goal_entries: TrajSet needs x/y columns.")
 
   id_col <- x@cols$id
-  d      <- x@data
+  d      <- as.data.frame(x)
   gx     <- target_radius * cos(target_angle)
   gy     <- target_radius * sin(target_angle)
 
