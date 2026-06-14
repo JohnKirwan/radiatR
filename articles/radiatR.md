@@ -169,17 +169,15 @@ ts_demo
 #> TrajSet: 235 trajectories, 44331 observations
 #> Columns: id='trial_id', time='frame', angle='rel_theta' (radians), x='trans_x', y='trans_y', rel_x='rel_x', rel_y='rel_y'
 #> Transform steps: unit_circle_mapping 
-#> # A tibble: 6 × 15
-#>   trial_id frame     x     y trans_x  trans_y trans_rho abs_theta rel_theta
-#>   <chr>    <int> <dbl> <dbl>   <dbl>    <dbl>     <dbl>     <dbl>     <dbl>
-#> 1 10_1_1       1  456.  372. 0.00511  0         0.00511     0         6.21 
-#> 2 10_1_1       2  458.  370. 0.0128   0.00770   0.0149      0.541     0.464
-#> 3 10_1_1       3  456.  370. 0.00511  0.00770   0.00924     0.985     0.908
-#> 4 10_1_1       4  454.  370. 0        0.00770   0.00770     1.57      1.49 
-#> 5 10_1_1       5  456.  377. 0.00511 -0.0153    0.0162      5.03      4.96 
-#> 6 10_1_1       6  459.  382. 0.0154  -0.0307    0.0343      5.18      5.10 
-#> # ℹ 6 more variables: rel_x <dbl>, rel_y <dbl>, video <chr>, order <chr>,
-#> #   vid_ord <chr>, radius <dbl>
+#> # A tibble: 6 × 10
+#>   trial_id frame     x     y trans_x  trans_y rel_theta video order vid_ord
+#>   <chr>    <int> <dbl> <dbl>   <dbl>    <dbl>     <dbl> <chr> <chr> <chr>  
+#> 1 10_1_1       1  456.  372. 0.00511  0           6.21  10_1  1     10_1_1 
+#> 2 10_1_1       2  458.  370. 0.0128   0.00770     0.464 10_1  1     10_1_1 
+#> 3 10_1_1       3  456.  370. 0.00511  0.00770     0.908 10_1  1     10_1_1 
+#> 4 10_1_1       4  454.  370. 0        0.00770     1.49  10_1  1     10_1_1 
+#> 5 10_1_1       5  456.  377. 0.00511 -0.0153      4.96  10_1  1     10_1_1 
+#> 6 10_1_1       6  459.  382. 0.0154  -0.0307      5.10  10_1  1     10_1_1
 ```
 
 [`get_all_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.md)
