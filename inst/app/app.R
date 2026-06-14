@@ -616,7 +616,10 @@ server <- function(input, output, session) {
           "input_type", "What are you uploading?",
           choices = c("Trajectories (track coordinates)" = "trajectories",
                       "Headings (one angle per trial)"    = "headings"),
-          selected = "trajectories", inline = TRUE
+          # Bind to rv$mode so a wizard re-render (triggered when rv$mode/rv$error
+          # change) preserves the user's choice instead of resetting to the
+          # hardcoded default -- otherwise selecting "Headings" snaps back.
+          selected = rv$mode %||% "trajectories", inline = TRUE
         ),
         fileInput(
           "file", NULL,

@@ -79,6 +79,37 @@ test_that("the app walks example -> Results and honours the layer toggles", {
   ))
 })
 
+test_that("selecting the Headings input type sticks across wizard re-renders", {
+  skip_on_cran()
+  skip_if_not_installed("shinytest2")
+  skip_if_not_installed("chromote")
+  skip_if(is.null(chromote::find_chrome()), "no Chrome/Chromium binary found")
+
+  app_dir <- system.file("app", package = "radiatR")
+  skip_if(!nzchar(app_dir),
+          "radiatR app directory not found (package installed?)")
+
+  app <- shinytest2::AppDriver$new(
+    app_dir,
+    name         = "headings-input-type",
+    load_timeout = 60 * 1000,
+    timeout      = 30 * 1000
+  )
+  withr::defer(app$stop())
+
+  # Switch the upload type to headings. Changing it re-renders the whole wizard
+  # (rv$mode is a dependency); the selection must persist. A hardcoded `selected`
+  # used to snap it back to "trajectories" on that re-render, making the headings
+  # upload path unreachable.
+  app$set_inputs(input_type = "headings")
+  app$wait_for_idle(timeout = 30 * 1000)
+  expect_identical(app$get_value(input = "input_type"), "headings")
+
+  # The headings-only "Load example headings" link renders only while in
+  # headings mode, so its presence confirms the mode actually took effect.
+  expect_match(app$get_html("#load_example_hd"), "Load example headings")
+})
+
 test_that("the app exports a vector plot download", {
   skip_on_cran()
   skip_if_not_installed("shinytest2")
