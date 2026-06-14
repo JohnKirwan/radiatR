@@ -18,3 +18,4 @@
 ^_build$
 ^_site$
 unpublished/
+^figure$

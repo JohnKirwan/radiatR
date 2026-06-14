@@ -12,6 +12,7 @@ dev/
 _build/
 _site/
 unpublished/
+figure/
 
 # R graphics device default output
 Rplots.pdf
