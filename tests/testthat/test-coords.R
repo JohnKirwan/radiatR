@@ -179,3 +179,37 @@ test_that("a constructed TrajSet does not store a rho/radius column but material
   expect_equal(d[[rho_role]],
                sqrt(d[[ts@cols$x]]^2 + d[[ts@cols$y]]^2))
 })
+
+test_that("the object-position pipeline builds a lean TrajSet (no stored derived columns)", {
+  tmp_dir <- tempfile("radiatr_lean"); dir.create(tmp_dir)
+  on.exit(unlink(tmp_dir, recursive = TRUE))
+  landmarks <- data.frame(frame = c(1, 1, 101, 101),
+                          x = c(0, 45, 0, -42), y = c(0, 0, 0, 0))
+  tracks <- data.frame(
+    frame = 1:200,
+    x = c(seq(0, 40, length.out = 100), seq(0, -38, length.out = 100)),
+    y = c(seq(0, 8,  length.out = 100), seq(0, -6,  length.out = 100)))
+  write.table(landmarks, file.path(tmp_dir, "video_demo_point01.txt"),
+              sep = "\t", col.names = FALSE, row.names = FALSE)
+  write.table(tracks, file.path(tmp_dir, "video_demo_point02.txt"),
+              sep = "\t", col.names = FALSE, row.names = FALSE)
+  landmarks_df <- read.delim(file.path(tmp_dir, "video_demo_point01.txt"), header = FALSE)[, 1:3]
+  names(landmarks_df) <- c("frame", "x", "y")
+  tracks_df <- read.delim(file.path(tmp_dir, "video_demo_point02.txt"), header = FALSE)[, 1:3]
+  names(tracks_df) <- c("frame", "x", "y")
+  file_tbl <- import_tracks(tmp_dir)
+
+  ts <- suppressWarnings(get_all_object_pos(landmarks_df, tracks_df, file_tbl, tmp_dir))
+
+  # canonical + primary observable present
+  expect_true(all(c("trans_x", "trans_y", "rel_theta") %in% names(ts@data)))
+  # the five derived columns are NOT stored
+  expect_false(any(c("trans_rho", "abs_theta", "rel_x", "rel_y") %in% names(ts@data)))
+  # roles are still registered so the materializer can fill them
+  expect_identical(ts@cols$rel_x, "rel_x")
+  expect_identical(ts@cols$rel_y, "rel_y")
+  expect_silent(methods::validObject(ts))
+
+  d <- as.data.frame(ts)
+  expect_true(all(c("trans_rho", "abs_theta", "rel_x", "rel_y") %in% names(d)))
+})

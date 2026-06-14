@@ -173,11 +173,7 @@ get_tracked_object_pos <- function(
       tibble::add_column(
         trans_x = mapped$trans_x,
         trans_y = mapped$trans_y,
-        trans_rho = mapped$trans_rho,
-        abs_theta = mapped$abs_theta_unit,
         rel_theta = mapped$rel_theta_unit,
-        rel_x = mapped$rel_x,
-        rel_y = mapped$rel_y,
         video = trial_limits$video[i],
         order = as.character(i),
         vid_ord = trial_id,
@@ -266,7 +262,6 @@ get_tracked_object_pos <- function(
     .before = "frame"
   )
 
-  rel_ok <- all(c("rel_x", "rel_y") %in% names(combined))
   trajset <- TrajSet(
     combined,
     id = "trial_id",
@@ -274,8 +269,8 @@ get_tracked_object_pos <- function(
     angle = "rel_theta",
     x = "trans_x",
     y = "trans_y",
-    rel_x = if (rel_ok) "rel_x" else NULL,
-    rel_y = if (rel_ok) "rel_y" else NULL,
+    rel_x = "rel_x",
+    rel_y = "rel_y",
     angle_unit = "radians",
     normalize_xy = FALSE,
     meta = list(source = "get_tracked_object_pos")
