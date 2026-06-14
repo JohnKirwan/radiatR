@@ -168,14 +168,14 @@ num_or <- function(v, default) {
 # derive_headings() rule.
 method_help_text <- c(
   none            = "Plot the tracks and path metrics only - no headings or circular statistics.",
-  distal          = "Heading when the animal was furthest from the centre. No setup needed.",
+  distal          = "Heading when the subject was furthest from the centre. No setup needed.",
   net             = "Straight-line direction from start to end. Simple and always applicable.",
-  crossing        = "Heading as the animal crosses a detection ring. Set the ring radii below.",
+  crossing        = "Heading as the subject crosses a detection ring. Set the ring radii below.",
   straight        = "Direction of the longest near-straight run in the path.",
   window_net      = "Net direction over a sliding window, smoothing local wobble.",
   origin_mean     = "Mean of the directions from the centre to each point.",
   velocity_mean   = "Mean of the step (velocity) directions along the path.",
-  maxspeed_window = "Direction over the window of the animal's fastest movement.",
+  maxspeed_window = "Direction over the window of the subject's fastest movement.",
   vm_fit          = "Von Mises fit to the step directions (peak of the fitted distribution).",
   pca_axis        = "Principal (long) axis of the visited positions.",
   ransac_straight = "Robust straight-line fit that ignores outlying points (RANSAC).",

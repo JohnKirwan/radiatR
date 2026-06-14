@@ -22,6 +22,14 @@
   data (e.g. the bundled `cpunctatus`) that still carries the columns behaves
   identically.
 
+## Terminology
+
+* The exported `animal_track` parameter of `get_trial_limits()`,
+  `get_tracked_object_pos()`, and `get_all_object_pos()` is renamed to `track`
+  (breaking). Residual animal-specific framing in the documentation is
+  generalised to "subject". Example references to the bundled millipede/urchin
+  datasets and the column-name guesses used by importers are unchanged.
+
 ## Loaders
 
 * `load_tracks()` and `get_trial_limits()` now carry every column from the

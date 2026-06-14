@@ -36,7 +36,7 @@
 #'
 #' @param landmarks Data frame or `TrajSet` (two rows per trial) containing frame
 #'   numbers and landmark coordinates.
-#' @param animal_track Data frame or `TrajSet` of Cartesian coordinates for all
+#' @param track Data frame or `TrajSet` of Cartesian coordinates for all
 #'   frames in the video.
 #' @param file_tbl Tibble returned by [import_tracks()] (optionally enriched by
 #'   [load_tracks()] or [load_tracks2()]).
@@ -47,9 +47,9 @@
 #'
 #' @importFrom tibble as_tibble
 #' @export
-get_trial_limits <- function(landmarks, animal_track, file_tbl, vid_num) {
+get_trial_limits <- function(landmarks, track, file_tbl, vid_num) {
   landmarks_df <- .coerce_xy_frame(landmarks, "landmark")
-  track_df <- .coerce_xy_frame(animal_track, "track")
+  track_df <- .coerce_xy_frame(track, "track")
 
   num_trials <- nrow(landmarks_df) / 2
   if (num_trials < 1 || num_trials != floor(num_trials)) {
@@ -121,7 +121,7 @@ get_trial_limits <- function(landmarks, animal_track, file_tbl, vid_num) {
 #' radius crossings are selected.
 #'
 #' @param trial_limits Data frame produced by [get_trial_limits()].
-#' @param animal_track Data frame or `TrajSet` of Cartesian coordinates for the
+#' @param track Data frame or `TrajSet` of Cartesian coordinates for the
 #'   entire video.
 #' @param circ0 Inner radius threshold (default `0.1`).
 #' @param circ1 Outer radius threshold (default `0.2`).
@@ -136,11 +136,11 @@ get_trial_limits <- function(landmarks, animal_track, file_tbl, vid_num) {
 #' @importFrom tibble tibble add_column as_tibble
 #' @export
 get_tracked_object_pos <- function(
-    trial_limits, animal_track,
+    trial_limits, track,
     circ0 = 0.1, circ1 = 0.2, radius_criterion = c("first_past", "closest")) {
 
   radius_criterion <- match.arg(radius_criterion)
-  track_df <- .coerce_xy_frame(animal_track, "track")
+  track_df <- .coerce_xy_frame(track, "track")
 
   num_trials <- nrow(trial_limits)
   if (!"valid_track" %in% names(trial_limits)) {
@@ -297,7 +297,7 @@ get_tracked_object_pos <- function(
 #'
 #' @param landmarks Optional data frame or `TrajSet` for the first entry. Retained
 #'   for backwards compatibility; values are overwritten internally.
-#' @param animal_track Optional data frame or `TrajSet` for the first entry.
+#' @param track Optional data frame or `TrajSet` for the first entry.
 #' @param file_tbl Tibble produced by [import_tracks()], optionally enriched via
 #'   [load_tracks()] or [load_tracks2()].
 #' @param track_dir Directory containing the landmark and track text files.
@@ -308,17 +308,17 @@ get_tracked_object_pos <- function(
 #'
 #' @importFrom utils read.delim
 #' @export
-get_all_object_pos <- function(landmarks = NULL, animal_track = NULL,
+get_all_object_pos <- function(landmarks = NULL, track = NULL,
                                file_tbl, track_dir) {
   trajsets <- list()
   trial_limits_list <- list()
 
   for (i in seq_len(nrow(file_tbl))) {
-    animal_track_df <- utils::read.delim(
+    track_df <- utils::read.delim(
       normalizePath(file.path(track_dir, file_tbl$track[i])),
       sep = "\t", header = FALSE
     )[, 1:3]
-    names(animal_track_df) <- c("frame", "x", "y")
+    names(track_df) <- c("frame", "x", "y")
     landmarks_df <- utils::read.delim(
       normalizePath(file.path(track_dir, file_tbl$landmark[i])),
       sep = "\t", header = FALSE
@@ -327,8 +327,8 @@ get_all_object_pos <- function(landmarks = NULL, animal_track = NULL,
     if (nrow(landmarks_df) %% 2 == 1) {
       warning("Odd number of landmarks: ", file_tbl$basename[i])
     }
-    trial_limits <- get_trial_limits(landmarks_df, animal_track_df, file_tbl, i)
-    ts <- get_tracked_object_pos(trial_limits, animal_track_df)
+    trial_limits <- get_trial_limits(landmarks_df, track_df, file_tbl, i)
+    ts <- get_tracked_object_pos(trial_limits, track_df)
     if (!is.null(ts)) {
       trajsets <- c(trajsets, list(ts))
       trial_limits_list <- c(trial_limits_list, list(ts@meta$trial_limits))

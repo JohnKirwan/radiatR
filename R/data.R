@@ -14,7 +14,7 @@
 #'
 #' Coordinates are normalised to the unit circle (arena radius = 1) and rotated
 #' so the target lies in a common reference direction; `rel_theta`, `rel_x`,
-#' and `rel_y` give the target-relative heading and position. The animal
+#' and `rel_y` give the target-relative heading and position. The subject
 #' identifier is retained in the `individual` column.
 #'
 #' The raw dtrack landmark/track text files for every trial are shipped in
