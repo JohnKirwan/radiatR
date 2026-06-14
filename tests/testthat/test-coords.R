@@ -145,3 +145,24 @@ test_that("consumers produce identical output without stored derived columns", {
   }
   expect_equal(fp(p_drop), fp(p_full))
 })
+
+test_that("a TrajSet may register rel_x/rel_y/rho roles whose columns are absent", {
+  df <- data.frame(
+    id    = rep("a", 4),
+    time  = 1:4,
+    trans_x = c(0.5, -0.3, 0.1, -0.2),
+    trans_y = c(0.2,  0.4, -0.1, 0.3),
+    rel_theta = c(0.1, 0.2, 0.3, 0.4)
+  )
+  ts <- TrajSet(df, id = "id", time = "time", angle = "rel_theta",
+                x = "trans_x", y = "trans_y",
+                rel_x = "rel_x", rel_y = "rel_y",   # roles registered, columns absent
+                angle_unit = "radians", normalize_xy = FALSE)
+  expect_false("rel_x" %in% names(ts@data))
+  expect_false("rel_y" %in% names(ts@data))
+  expect_silent(methods::validObject(ts))
+  # the materializer fills them on demand
+  d <- as.data.frame(ts)
+  expect_true(all(c("rel_x", "rel_y") %in% names(d)))
+  expect_true(is.numeric(d$rel_x))
+})
