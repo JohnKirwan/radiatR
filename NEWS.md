@@ -13,6 +13,14 @@
   stored, computing any missing ones from the canonical position and the
   trajectory reference. Internal analyses read through it, so they no longer
   depend on those columns being physically present.
+* `TrajSet` objects built by the loader pipeline no longer store the redundant
+  derived coordinate columns (`trans_rho`/`abs_theta`/`rel_x`/`rel_y`), and no
+  construction path stores a `rho`/`radius` column; `as.data.frame(ts)` computes
+  them on demand from the canonical position and the trajectory reference. The
+  canonical `trans_x`/`trans_y`/`raw_*` and the analysis angle `rel_theta` are
+  kept. Storage of the derived frame is now an implementation detail; existing
+  data (e.g. the bundled `cpunctatus`) that still carries the columns behaves
+  identically.
 
 ## Loaders
 
