@@ -110,13 +110,16 @@ setMethod("set_reference", "TrajSet", function(x, value) {
 
   d   <- x@data
   idc <- cols$id
+  has_rel_xy <- all(c(cols$rel_x, cols$rel_y) %in% names(d))
   for (id in unique(as.character(d[[idc]]))) {
     rows <- which(as.character(d[[idc]]) == id)
     ref  <- if (id %in% names(new_ref)) new_ref[[id]] else 0
     dc <- derive_coords(d[[cols$x]][rows], d[[cols$y]][rows], reference = ref)
     d[[cols$angle]][rows] <- dc$rel_theta_unit
-    d[[cols$rel_x]][rows] <- dc$rel_x
-    d[[cols$rel_y]][rows] <- dc$rel_y
+    if (has_rel_xy) {
+      d[[cols$rel_x]][rows] <- dc$rel_x
+      d[[cols$rel_y]][rows] <- dc$rel_y
+    }
   }
   x@data <- d
   methods::validObject(x)

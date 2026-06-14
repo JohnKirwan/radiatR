@@ -183,12 +183,13 @@ setValidity("TrajSet", function(object) {
   }
   if (!is.null(cl$rel_x) || !is.null(cl$rel_y)) {
     if (is.null(cl$rel_x) || is.null(cl$rel_y)) return("both rel_x and rel_y must be in cols if either is used")
-    if (!all(c(cl$rel_x, cl$rel_y) %in% names(d))) return("rel_x/rel_y columns not present in data")
-    if (!is.numeric(d[[cl$rel_x]]) || !is.numeric(d[[cl$rel_y]])) return("rel_x/rel_y must be numeric")
+    present <- c(cl$rel_x, cl$rel_y) %in% names(d)
+    if (any(present) && !all(present)) return("rel_x and rel_y must both be present or both absent")
+    if (all(present) && (!is.numeric(d[[cl$rel_x]]) || !is.numeric(d[[cl$rel_y]])))
+      return("rel_x/rel_y must be numeric")
   }
-  if (!is.null(cl$rho)) {
-    if (!cl$rho %in% names(d)) return("rho column not present in data")
-    if (!is.numeric(d[[cl$rho]])) return("rho column must be numeric")
+  if (!is.null(cl$rho) && cl$rho %in% names(d) && !is.numeric(d[[cl$rho]])) {
+    return("rho column must be numeric")
   }
 
   # enforce that rows are grouped by id (each id forms one contiguous block)
@@ -294,15 +295,16 @@ TrajSet <- function(df,
     angle_unit <- "radians"  # angles derived from x/y via atan2, always radians
   }
 
-  # Validate rel_x/rel_y pairing
+  # Validate rel_x/rel_y pairing. The columns are derivable, so a role may be
+  # registered without the column being stored; require numeric only if present.
   have_rel <- !is.null(rel_x) || !is.null(rel_y)
   if (have_rel) {
     if (is.null(rel_x) || is.null(rel_y))
       stop("Both rel_x and rel_y must be supplied if either is provided.")
-    if (!rel_x %in% names(df))
-      stop("rel_x column '", rel_x, "' not found in df.")
-    if (!rel_y %in% names(df))
-      stop("rel_y column '", rel_y, "' not found in df.")
+    if (rel_x %in% names(df) && !is.numeric(df[[rel_x]]))
+      stop("rel_x column '", rel_x, "' must be numeric.")
+    if (rel_y %in% names(df) && !is.numeric(df[[rel_y]]))
+      stop("rel_y column '", rel_y, "' must be numeric.")
   }
 
   d <- df
@@ -337,11 +339,11 @@ TrajSet <- function(df,
     d[[x]] <- conv$x
     d[[y]] <- conv$y
     theta_from_xy <- conv$theta
-    # Store radius information when available
+    # Register a radius role when radius information is available. The column is
+    # derivable from the position, so it is materialized on demand by
+    # as.data.frame() rather than stored.
     if (!all(is.na(conv$rho))) {
-      rho_name <- make_unique_name(names(d), if (normalize_xy) "rho" else "radius")
-      d[[rho_name]] <- conv$rho
-      rho_col <- rho_name
+      rho_col <- make_unique_name(names(d), if (normalize_xy) "rho" else "radius")
     }
   }
 

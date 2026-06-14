@@ -145,3 +145,130 @@ test_that("consumers produce identical output without stored derived columns", {
   }
   expect_equal(fp(p_drop), fp(p_full))
 })
+
+test_that("a TrajSet may register rel_x/rel_y/rho roles whose columns are absent", {
+  df <- data.frame(
+    id    = rep("a", 4),
+    time  = 1:4,
+    trans_x = c(0.5, -0.3, 0.1, -0.2),
+    trans_y = c(0.2,  0.4, -0.1, 0.3),
+    rel_theta = c(0.1, 0.2, 0.3, 0.4)
+  )
+  ts <- TrajSet(df, id = "id", time = "time", angle = "rel_theta",
+                x = "trans_x", y = "trans_y",
+                rel_x = "rel_x", rel_y = "rel_y",   # roles registered, columns absent
+                angle_unit = "radians", normalize_xy = FALSE)
+  expect_false("rel_x" %in% names(ts@data))
+  expect_false("rel_y" %in% names(ts@data))
+  expect_silent(methods::validObject(ts))
+  # the materializer fills them on demand
+  d <- as.data.frame(ts)
+  expect_true(all(c("rel_x", "rel_y") %in% names(d)))
+  expect_true(is.numeric(d$rel_x))
+})
+
+test_that("a constructed TrajSet does not store a rho/radius column but materializes it", {
+  ts <- simulate_tracks(n_points = 20, seed = 3, output = "trajset")
+  rho_role <- ts@cols$rho
+  expect_false(is.null(rho_role))            # the role is still registered
+  expect_false(rho_role %in% names(ts@data)) # but the column is not stored
+  expect_silent(methods::validObject(ts))
+
+  d <- as.data.frame(ts)
+  expect_true(rho_role %in% names(d))        # materialized on demand
+  expect_equal(d[[rho_role]],
+               sqrt(d[[ts@cols$x]]^2 + d[[ts@cols$y]]^2))
+})
+
+test_that("the object-position pipeline builds a lean TrajSet (no stored derived columns)", {
+  tmp_dir <- tempfile("radiatr_lean"); dir.create(tmp_dir)
+  on.exit(unlink(tmp_dir, recursive = TRUE))
+  landmarks <- data.frame(frame = c(1, 1, 101, 101),
+                          x = c(0, 45, 0, -42), y = c(0, 0, 0, 0))
+  tracks <- data.frame(
+    frame = 1:200,
+    x = c(seq(0, 40, length.out = 100), seq(0, -38, length.out = 100)),
+    y = c(seq(0, 8,  length.out = 100), seq(0, -6,  length.out = 100)))
+  write.table(landmarks, file.path(tmp_dir, "video_demo_point01.txt"),
+              sep = "\t", col.names = FALSE, row.names = FALSE)
+  write.table(tracks, file.path(tmp_dir, "video_demo_point02.txt"),
+              sep = "\t", col.names = FALSE, row.names = FALSE)
+  landmarks_df <- read.delim(file.path(tmp_dir, "video_demo_point01.txt"), header = FALSE)[, 1:3]
+  names(landmarks_df) <- c("frame", "x", "y")
+  tracks_df <- read.delim(file.path(tmp_dir, "video_demo_point02.txt"), header = FALSE)[, 1:3]
+  names(tracks_df) <- c("frame", "x", "y")
+  file_tbl <- import_tracks(tmp_dir)
+
+  ts <- suppressWarnings(get_all_object_pos(landmarks_df, tracks_df, file_tbl, tmp_dir))
+
+  # canonical + primary observable present
+  expect_true(all(c("trans_x", "trans_y", "rel_theta") %in% names(ts@data)))
+  # the five derived columns are NOT stored
+  expect_false(any(c("trans_rho", "abs_theta", "rel_x", "rel_y") %in% names(ts@data)))
+  # roles are still registered so the materializer can fill them
+  expect_identical(ts@cols$rel_x, "rel_x")
+  expect_identical(ts@cols$rel_y, "rel_y")
+  expect_silent(methods::validObject(ts))
+
+  d <- as.data.frame(ts)
+  expect_true(all(c("trans_rho", "abs_theta", "rel_x", "rel_y") %in% names(d)))
+})
+
+test_that("set_reference on a lean object updates rel_theta without materializing rel_x/rel_y", {
+  df <- data.frame(
+    id    = rep("a", 20),
+    time  = 1:20,
+    trans_x = cos(seq(0, 2 * pi, length.out = 20)),
+    trans_y = sin(seq(0, 2 * pi, length.out = 20)),
+    rel_theta = derive_coords(cos(seq(0, 2 * pi, length.out = 20)),
+                               sin(seq(0, 2 * pi, length.out = 20)),
+                               reference = 0)$rel_theta_unit
+  )
+  ts <- TrajSet(df, id = "id", time = "time", angle = "rel_theta",
+                 x = "trans_x", y = "trans_y",
+                 rel_x = "rel_x", rel_y = "rel_y",   # roles registered, columns absent
+                 angle_unit = "radians", normalize_xy = FALSE)
+  expect_false("rel_x" %in% names(ts@data))
+
+  out <- set_reference(ts, 0.3)
+  expect_false("rel_x" %in% names(out@data))   # still not stored
+  expect_false("rel_y" %in% names(out@data))
+  expect_silent(methods::validObject(out))
+
+  # rel_theta updated to match derive_coords at the new reference
+  cols <- out@cols
+  d <- derive_coords(out@data[[cols$x]], out@data[[cols$y]], reference = 0.3)
+  expect_equal(out@data[[cols$angle]], d$rel_theta_unit)
+  # and the materializer still yields correct rel_x/rel_y
+  full <- as.data.frame(out)
+  expect_equal(full[[cols$rel_x]], d$rel_x)
+})
+
+test_that("consumers on a lean object equal the column-full path", {
+  # cpunctatus predates Phase 1 and has no @meta$reference, even though its
+  # stored relative frame was built with per-trial references. Reconstruct
+  # that reference so the lean materialiser reproduces the same rel_x/rel_y
+  # as the stored columns (see .with_reconstructed_reference above).
+  full <- .with_reconstructed_reference(cpunctatus)  # has stored derived columns
+  lean <- full
+  for (cn in c("trans_rho", "abs_theta", full@cols$rel_x, full@cols$rel_y,
+               full@cols$rho)) {
+    if (!is.null(cn) && cn %in% names(lean@data)) lean@data[[cn]] <- NULL
+  }
+  expect_silent(methods::validObject(lean))
+
+  # stats parity (circ_summary accepts a TrajSet and reads through as.data.frame)
+  expect_equal(
+    circ_summary(lean, by = "id"),
+    circ_summary(full, by = "id")
+  )
+
+  # radiate() structural parity (layer coordinates)
+  bl <- ggplot2::ggplot_build(radiate(lean))
+  bf <- ggplot2::ggplot_build(radiate(full))
+  expect_equal(length(bl$data), length(bf$data))
+  for (i in seq_along(bl$data)) {
+    common <- intersect(names(bl$data[[i]]), names(bf$data[[i]]))
+    expect_equal(bl$data[[i]][common], bf$data[[i]][common])
+  }
+})
