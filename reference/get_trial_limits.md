@@ -8,7 +8,7 @@ data either as data frames or as \`TrajSet\` objects.
 ## Usage
 
 ``` r
-get_trial_limits(landmarks, animal_track, file_tbl, vid_num)
+get_trial_limits(landmarks, track, file_tbl, vid_num)
 ```
 
 ## Arguments
@@ -18,7 +18,7 @@ get_trial_limits(landmarks, animal_track, file_tbl, vid_num)
   Data frame or \`TrajSet\` (two rows per trial) containing frame
   numbers and landmark coordinates.
 
-- animal_track:
+- track:
 
   Data frame or \`TrajSet\` of Cartesian coordinates for all frames in
   the video.

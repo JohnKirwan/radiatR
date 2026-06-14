@@ -873,9 +873,9 @@ Two parameter-free alternatives are especially useful:
 
 ### distal
 
-The **distal** rule takes `atan2(y, x)` at the frame where the animal is
-farthest from the arena centre. It requires no ring parameters and never
-returns `NA` because every trial has a most-distal frame.
+The **distal** rule takes `atan2(y, x)` at the frame where the subject
+is farthest from the arena centre. It requires no ring parameters and
+never returns `NA` because every trial has a most-distal frame.
 
 ``` r
 

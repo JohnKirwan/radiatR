@@ -2,7 +2,7 @@
 
 Computes a heading angle for every row in `df` from either two bodypart
 keypoint columns or a pre-computed orientation angle column. Intended
-for tethered or mostly stationary animals where the position trajectory
+for tethered or mostly stationary subjects where the position trajectory
 is absent or uninformative and body pose is the primary signal, but also
 useful for extracting a dense heading time series from trajectory data.
 The output is compatible with

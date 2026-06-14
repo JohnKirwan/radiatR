@@ -34,6 +34,18 @@
   implementation detail; existing data (e.g. the bundled `cpunctatus`)
   that still carries the columns behaves identically.
 
+### Terminology
+
+- The exported `animal_track` parameter of
+  [`get_trial_limits()`](https://johnkirwan.github.io/radiatR/reference/get_trial_limits.md),
+  [`get_tracked_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_tracked_object_pos.md),
+  and
+  [`get_all_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.md)
+  is renamed to `track` (breaking). Residual animal-specific framing in
+  the documentation is generalised to “subject”. Example references to
+  the bundled millipede/urchin datasets and the column-name guesses used
+  by importers are unchanged.
+
 ### Loaders
 
 - [`load_tracks()`](https://johnkirwan.github.io/radiatR/reference/load_tracks.md)

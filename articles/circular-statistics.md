@@ -111,7 +111,7 @@ circ_dispersion(hd, group_col = "arc")
 
 *R* runs from 0 (uniformly scattered) to 1 (all headings identical); the
 circular SD moves the opposite way. For dense per-frame heading series —
-gaze direction from a tethered animal, say —
+gaze direction from a tethered subject, say —
 [`sector_summary()`](https://johnkirwan.github.io/radiatR/reference/sector_summary.md)
 bins the angles and reports dwell proportions per sector:
 

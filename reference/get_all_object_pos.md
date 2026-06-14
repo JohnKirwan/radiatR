@@ -8,7 +8,7 @@ and the augmented trial limits are returned alongside it.
 ## Usage
 
 ``` r
-get_all_object_pos(landmarks = NULL, animal_track = NULL, file_tbl, track_dir)
+get_all_object_pos(landmarks = NULL, track = NULL, file_tbl, track_dir)
 ```
 
 ## Arguments
@@ -18,7 +18,7 @@ get_all_object_pos(landmarks = NULL, animal_track = NULL, file_tbl, track_dir)
   Optional data frame or \`TrajSet\` for the first entry. Retained for
   backwards compatibility; values are overwritten internally.
 
-- animal_track:
+- track:
 
   Optional data frame or \`TrajSet\` for the first entry.
 

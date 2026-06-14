@@ -11,7 +11,7 @@ inner/outer radius crossings are selected.
 ``` r
 get_tracked_object_pos(
   trial_limits,
-  animal_track,
+  track,
   circ0 = 0.1,
   circ1 = 0.2,
   radius_criterion = c("first_past", "closest")
@@ -24,7 +24,7 @@ get_tracked_object_pos(
 
   Data frame produced by \[get_trial_limits()\].
 
-- animal_track:
+- track:
 
   Data frame or \`TrajSet\` of Cartesian coordinates for the entire
   video.
