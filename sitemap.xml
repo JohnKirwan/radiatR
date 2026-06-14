@@ -36,6 +36,7 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/add_ticks.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/add_vonmises_density.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/add_wrappedcauchy_density.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/apply_transform.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/as.data.frame.TrajSet.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/assign_colour_key.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.html</loc></url>
@@ -56,6 +57,7 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/cpunctatus_tracks.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/cycle_colours.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/degree_labs.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/derive_coords.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/derive_headings.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/directedness_arrow.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/dot-heading_registry.html</loc></url>
@@ -85,10 +87,12 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/radial_theme.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/radiatR-package.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/radiate.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/reference.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/register_heading_rule.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/register_loader_dialect.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/register_loader_format.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/sector_summary.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/set_reference.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/simulate_tracks.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/stack_headings.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/straightness_index.html</loc></url>

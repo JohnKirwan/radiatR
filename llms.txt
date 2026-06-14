@@ -507,6 +507,8 @@ Any remaining exported topics.
   : Overlay a fitted von Mises density curve on a radiate plot
 - [`add_wrappedcauchy_density()`](https://johnkirwan.github.io/radiatR/reference/add_wrappedcauchy_density.md)
   : Overlay a fitted wrapped Cauchy density curve on a radiate plot
+- [`apply_transform()`](https://johnkirwan.github.io/radiatR/reference/apply_transform.md)
+  : Apply a bespoke transformation to a TrajSet
 - [`as.data.frame(`*`<TrajSet>`*`)`](https://johnkirwan.github.io/radiatR/reference/as.data.frame.TrajSet.md)
   : Coerce a TrajSet to a data frame
 - [`assign_colour_key()`](https://johnkirwan.github.io/radiatR/reference/assign_colour_key.md)
@@ -546,6 +548,9 @@ Any remaining exported topics.
   : Cycle a bounded set of colour indices over the values of a key
 - [`degree_labs()`](https://johnkirwan.github.io/radiatR/reference/degree_labs.md)
   : Label the four diagonal directions.
+- [`derive_coords()`](https://johnkirwan.github.io/radiatR/reference/derive_coords.md)
+  : Derive polar and reference-relative coordinates from unit-circle
+  position
 - [`derive_headings()`](https://johnkirwan.github.io/radiatR/reference/derive_headings.md)
   : Derive heading angle(s) from trajectories using specified rule
 - [`directedness_arrow()`](https://johnkirwan.github.io/radiatR/reference/directedness_arrow.md)
@@ -602,6 +607,8 @@ Any remaining exported topics.
   : Themes for radial track plots, named for the ggplot2 base themes.
 - [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   : Make ggplot object of tracks radiating from circle centre.
+- [`reference()`](https://johnkirwan.github.io/radiatR/reference/reference.md)
+  : Per-trajectory reference direction of a TrajSet
 - [`register_heading_rule()`](https://johnkirwan.github.io/radiatR/reference/register_heading_rule.md)
   : Register a custom heading derivation rule
 - [`register_loader_dialect()`](https://johnkirwan.github.io/radiatR/reference/register_loader_dialect.md)
@@ -614,6 +621,8 @@ Any remaining exported topics.
   regex-based column finding.
 - [`sector_summary()`](https://johnkirwan.github.io/radiatR/reference/sector_summary.md)
   : Proportion of time spent in angular sectors
+- [`set_reference()`](https://johnkirwan.github.io/radiatR/reference/set_reference.md)
+  : Set the per-trajectory reference and re-derive the relative frame
 - [`simulate_tracks()`](https://johnkirwan.github.io/radiatR/reference/simulate_tracks.md)
   : Simulate trajectory sets under configurable experimental conditions
 - [`stack_headings()`](https://johnkirwan.github.io/radiatR/reference/stack_headings.md)

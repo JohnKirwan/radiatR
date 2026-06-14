@@ -2,6 +2,62 @@
 
 ## radiatR (development version)
 
+### Coordinates
+
+- The per-trajectory reference direction is now first-class:
+  [`reference()`](https://johnkirwan.github.io/radiatR/reference/reference.md)
+  reads it and
+  [`set_reference()`](https://johnkirwan.github.io/radiatR/reference/set_reference.md)
+  changes it, re-deriving the relative frame
+  (`rel_theta`/`rel_x`/`rel_y`) consistently so it cannot drift. New
+  exported
+  [`derive_coords()`](https://johnkirwan.github.io/radiatR/reference/derive_coords.md)
+  is the single source of the unit-circle -\> polar/relative math (also
+  used internally by the loader mapping). For a reference-frame offset,
+  prefer
+  [`set_reference()`](https://johnkirwan.github.io/radiatR/reference/set_reference.md)
+  over a manual
+  [`apply_transform()`](https://johnkirwan.github.io/radiatR/reference/apply_transform.md).
+- `as.data.frame(ts)` now returns the full frame even when derived
+  coordinate columns
+  (`rel_theta`/`rel_x`/`rel_y`/`radius`/`trans_rho`/`abs_theta`) are not
+  stored, computing any missing ones from the canonical position and the
+  trajectory reference. Internal analyses read through it, so they no
+  longer depend on those columns being physically present.
+
+### Loaders
+
+- [`load_tracks()`](https://johnkirwan.github.io/radiatR/reference/load_tracks.md)
+  and
+  [`get_trial_limits()`](https://johnkirwan.github.io/radiatR/reference/get_trial_limits.md)
+  now carry every column from the manifest / `file_tbl` onto trials (and
+  into the resulting `TrajSet`), rather than a fixed
+  `arc`/`type`/`obstacle`/`id` list left over from one experiment.
+  Structural file-reference columns (`basename`/`landmark`/`track`) are
+  excluded. Use `load_tracks2(colnames = )` to rename or restrict the
+  columns carried.
+
+### Transformations
+
+- New
+  [`apply_transform()`](https://johnkirwan.github.io/radiatR/reference/apply_transform.md)
+  applies a user-supplied transformation to a loaded `TrajSet`
+  (per-trajectory or whole-frame), returning a modified `TrajSet` and
+  recording the step in its `transform_history`. Two worked recipes are
+  documented: an edge-referenced -\> centre-referenced reference offset
+  (a per-trial offset read from stimulus-width metadata) and a
+  polarization direction -\> axis (angle-doubling) remap.
+- Removed the hard-coded 1st-Hermitian (`type == "Herm"`)
+  reference-angle adjustment and the now-unused `midpoint` argument from
+  [`get_trial_limits()`](https://johnkirwan.github.io/radiatR/reference/get_trial_limits.md);
+  experiment-specific reference corrections are now expressed via
+  [`apply_transform()`](https://johnkirwan.github.io/radiatR/reference/apply_transform.md).
+  The bundled `cpunctatus` data is unchanged.
+- The `TrajSet` row-order validity check no longer requires a global
+  sort by id (which depended on string collation / locale); it now
+  checks the actual invariant – each trajectory’s rows form a
+  contiguous, time-ordered block.
+
 ### Documentation
 
 - Repositioned the package documentation from “animal movement in

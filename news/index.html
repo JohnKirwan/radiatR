@@ -43,6 +43,23 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="radiatr-development-version">radiatR (development version)<a class="anchor" aria-label="anchor" href="#radiatr-development-version"></a></h2>
 <div class="section level3">
+<h3 id="coordinates-development-version">Coordinates<a class="anchor" aria-label="anchor" href="#coordinates-development-version"></a></h3>
+<ul><li>The per-trajectory reference direction is now first-class: <code><a href="../reference/reference.html">reference()</a></code> reads it and <code><a href="../reference/set_reference.html">set_reference()</a></code> changes it, re-deriving the relative frame (<code>rel_theta</code>/<code>rel_x</code>/<code>rel_y</code>) consistently so it cannot drift. New exported <code><a href="../reference/derive_coords.html">derive_coords()</a></code> is the single source of the unit-circle -&gt; polar/relative math (also used internally by the loader mapping). For a reference-frame offset, prefer <code><a href="../reference/set_reference.html">set_reference()</a></code> over a manual <code><a href="../reference/apply_transform.html">apply_transform()</a></code>.</li>
+<li>
+<code>as.data.frame(ts)</code> now returns the full frame even when derived coordinate columns (<code>rel_theta</code>/<code>rel_x</code>/<code>rel_y</code>/<code>radius</code>/<code>trans_rho</code>/<code>abs_theta</code>) are not stored, computing any missing ones from the canonical position and the trajectory reference. Internal analyses read through it, so they no longer depend on those columns being physically present.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="loaders-development-version">Loaders<a class="anchor" aria-label="anchor" href="#loaders-development-version"></a></h3>
+<ul><li>
+<code><a href="../reference/load_tracks.html">load_tracks()</a></code> and <code><a href="../reference/get_trial_limits.html">get_trial_limits()</a></code> now carry every column from the manifest / <code>file_tbl</code> onto trials (and into the resulting <code>TrajSet</code>), rather than a fixed <code>arc</code>/<code>type</code>/<code>obstacle</code>/<code>id</code> list left over from one experiment. Structural file-reference columns (<code>basename</code>/<code>landmark</code>/<code>track</code>) are excluded. Use <code>load_tracks2(colnames = )</code> to rename or restrict the columns carried.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="transformations-development-version">Transformations<a class="anchor" aria-label="anchor" href="#transformations-development-version"></a></h3>
+<ul><li>New <code><a href="../reference/apply_transform.html">apply_transform()</a></code> applies a user-supplied transformation to a loaded <code>TrajSet</code> (per-trajectory or whole-frame), returning a modified <code>TrajSet</code> and recording the step in its <code>transform_history</code>. Two worked recipes are documented: an edge-referenced -&gt; centre-referenced reference offset (a per-trial offset read from stimulus-width metadata) and a polarization direction -&gt; axis (angle-doubling) remap.</li>
+<li>Removed the hard-coded 1st-Hermitian (<code>type == "Herm"</code>) reference-angle adjustment and the now-unused <code>midpoint</code> argument from <code><a href="../reference/get_trial_limits.html">get_trial_limits()</a></code>; experiment-specific reference corrections are now expressed via <code><a href="../reference/apply_transform.html">apply_transform()</a></code>. The bundled <code>cpunctatus</code> data is unchanged.</li>
+<li>The <code>TrajSet</code> row-order validity check no longer requires a global sort by id (which depended on string collation / locale); it now checks the actual invariant – each trajectory’s rows form a contiguous, time-ordered block.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="documentation-development-version">Documentation<a class="anchor" aria-label="anchor" href="#documentation-development-version"></a></h3>
 <ul><li>Repositioned the package documentation from “animal movement in circular arenas” toward the general case – analysis and visualisation of headings and trajectories in circular space – reflecting that angles can be supplied directly (not only reconstructed from tracking data). Animal-movement tracking remains a primary supported application. No code or API changes.</li>
 </ul></div>
