@@ -166,3 +166,16 @@ test_that("a TrajSet may register rel_x/rel_y/rho roles whose columns are absent
   expect_true(all(c("rel_x", "rel_y") %in% names(d)))
   expect_true(is.numeric(d$rel_x))
 })
+
+test_that("a constructed TrajSet does not store a rho/radius column but materializes it", {
+  ts <- simulate_tracks(n_points = 20, seed = 3, output = "trajset")
+  rho_role <- ts@cols$rho
+  expect_false(is.null(rho_role))            # the role is still registered
+  expect_false(rho_role %in% names(ts@data)) # but the column is not stored
+  expect_silent(methods::validObject(ts))
+
+  d <- as.data.frame(ts)
+  expect_true(rho_role %in% names(d))        # materialized on demand
+  expect_equal(d[[rho_role]],
+               sqrt(d[[ts@cols$x]]^2 + d[[ts@cols$y]]^2))
+})

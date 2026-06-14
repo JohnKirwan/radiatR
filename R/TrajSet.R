@@ -339,11 +339,11 @@ TrajSet <- function(df,
     d[[x]] <- conv$x
     d[[y]] <- conv$y
     theta_from_xy <- conv$theta
-    # Store radius information when available
+    # Register a radius role when radius information is available. The column is
+    # derivable from the position, so it is materialized on demand by
+    # as.data.frame() rather than stored.
     if (!all(is.na(conv$rho))) {
-      rho_name <- make_unique_name(names(d), if (normalize_xy) "rho" else "radius")
-      d[[rho_name]] <- conv$rho
-      rho_col <- rho_name
+      rho_col <- make_unique_name(names(d), if (normalize_xy) "rho" else "radius")
     }
   }
 
