@@ -243,3 +243,32 @@ test_that("set_reference on a lean object updates rel_theta without materializin
   full <- as.data.frame(out)
   expect_equal(full[[cols$rel_x]], d$rel_x)
 })
+
+test_that("consumers on a lean object equal the column-full path", {
+  # cpunctatus predates Phase 1 and has no @meta$reference, even though its
+  # stored relative frame was built with per-trial references. Reconstruct
+  # that reference so the lean materialiser reproduces the same rel_x/rel_y
+  # as the stored columns (see .with_reconstructed_reference above).
+  full <- .with_reconstructed_reference(cpunctatus)  # has stored derived columns
+  lean <- full
+  for (cn in c("trans_rho", "abs_theta", full@cols$rel_x, full@cols$rel_y,
+               full@cols$rho)) {
+    if (!is.null(cn) && cn %in% names(lean@data)) lean@data[[cn]] <- NULL
+  }
+  expect_silent(methods::validObject(lean))
+
+  # stats parity (circ_summary accepts a TrajSet and reads through as.data.frame)
+  expect_equal(
+    circ_summary(lean, by = "id"),
+    circ_summary(full, by = "id")
+  )
+
+  # radiate() structural parity (layer coordinates)
+  bl <- ggplot2::ggplot_build(radiate(lean))
+  bf <- ggplot2::ggplot_build(radiate(full))
+  expect_equal(length(bl$data), length(bf$data))
+  for (i in seq_along(bl$data)) {
+    common <- intersect(names(bl$data[[i]]), names(bf$data[[i]]))
+    expect_equal(bl$data[[i]][common], bf$data[[i]][common])
+  }
+})
