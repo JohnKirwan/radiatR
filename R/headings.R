@@ -891,7 +891,7 @@ register_heading_rule("ellipse_axis", function(df, cols, theta_col = "theta",
 #'
 #' Computes a heading angle for every row in \code{df} from either two
 #' bodypart keypoint columns or a pre-computed orientation angle column.
-#' Intended for tethered or mostly stationary animals where the position
+#' Intended for tethered or mostly stationary subjects where the position
 #' trajectory is absent or uninformative and body pose is the primary signal,
 #' but also useful for extracting a dense heading time series from trajectory
 #' data.  The output is compatible with \code{\link{circ_dispersion}},
