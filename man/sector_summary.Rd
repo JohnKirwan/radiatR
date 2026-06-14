@@ -26,5 +26,5 @@ Data frame with columns \code{group_col} (if supplied),
 \description{
 Bins heading angles into sectors and returns count and proportion per sector,
 optionally grouped by trial or condition.  Useful for dwell-time analysis of
-dense per-frame heading series (e.g. gaze direction from a tethered animal).
+dense per-frame heading series (e.g. gaze direction from a tethered subject).
 }

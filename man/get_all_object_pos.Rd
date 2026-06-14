@@ -4,13 +4,13 @@
 \alias{get_all_object_pos}
 \title{Aggregate track positions across all videos in a manifest.}
 \usage{
-get_all_object_pos(landmarks = NULL, animal_track = NULL, file_tbl, track_dir)
+get_all_object_pos(landmarks = NULL, track = NULL, file_tbl, track_dir)
 }
 \arguments{
 \item{landmarks}{Optional data frame or `TrajSet` for the first entry. Retained
 for backwards compatibility; values are overwritten internally.}
 
-\item{animal_track}{Optional data frame or `TrajSet` for the first entry.}
+\item{track}{Optional data frame or `TrajSet` for the first entry.}
 
 \item{file_tbl}{Tibble produced by [import_tracks()], optionally enriched via
 [load_tracks()] or [load_tracks2()].}
