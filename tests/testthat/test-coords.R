@@ -213,3 +213,33 @@ test_that("the object-position pipeline builds a lean TrajSet (no stored derived
   d <- as.data.frame(ts)
   expect_true(all(c("trans_rho", "abs_theta", "rel_x", "rel_y") %in% names(d)))
 })
+
+test_that("set_reference on a lean object updates rel_theta without materializing rel_x/rel_y", {
+  df <- data.frame(
+    id    = rep("a", 20),
+    time  = 1:20,
+    trans_x = cos(seq(0, 2 * pi, length.out = 20)),
+    trans_y = sin(seq(0, 2 * pi, length.out = 20)),
+    rel_theta = derive_coords(cos(seq(0, 2 * pi, length.out = 20)),
+                               sin(seq(0, 2 * pi, length.out = 20)),
+                               reference = 0)$rel_theta_unit
+  )
+  ts <- TrajSet(df, id = "id", time = "time", angle = "rel_theta",
+                 x = "trans_x", y = "trans_y",
+                 rel_x = "rel_x", rel_y = "rel_y",   # roles registered, columns absent
+                 angle_unit = "radians", normalize_xy = FALSE)
+  expect_false("rel_x" %in% names(ts@data))
+
+  out <- set_reference(ts, 0.3)
+  expect_false("rel_x" %in% names(out@data))   # still not stored
+  expect_false("rel_y" %in% names(out@data))
+  expect_silent(methods::validObject(out))
+
+  # rel_theta updated to match derive_coords at the new reference
+  cols <- out@cols
+  d <- derive_coords(out@data[[cols$x]], out@data[[cols$y]], reference = 0.3)
+  expect_equal(out@data[[cols$angle]], d$rel_theta_unit)
+  # and the materializer still yields correct rel_x/rel_y
+  full <- as.data.frame(out)
+  expect_equal(full[[cols$rel_x]], d$rel_x)
+})
