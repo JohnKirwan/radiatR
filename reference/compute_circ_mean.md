@@ -10,7 +10,12 @@ regardless of the input convention, making it suitable for direct use in
 ## Usage
 
 ``` r
-compute_circ_mean(headings_df, heading_col = "heading", colour_col = NULL)
+compute_circ_mean(
+  headings_df,
+  heading_col = "heading",
+  colour_col = NULL,
+  axial = FALSE
+)
 ```
 
 ## Arguments
@@ -29,6 +34,13 @@ compute_circ_mean(headings_df, heading_col = "heading", colour_col = NULL)
 
   Optional. Name of a column to group by. One row is returned per group.
   The same column maps to colour in \[add_circ_mean()\].
+
+- axial:
+
+  Logical. Treat the angles as axial (bidirectional, mod-pi) data:
+  \`mean_dir\` is the axis in \`\[0, pi)\` and \`resultant_R\` is the
+  axial resultant length, both via the angle-doubling method. Default
+  \`FALSE\`.
 
 ## Value
 

@@ -13,6 +13,7 @@ circ_summarise(
   col,
   units,
   .by = NULL,
+  axial = FALSE,
   stats = c("n", "mean_dir", "mean_dir_deg", "resultant_R", "kappa"),
   display = circ_display()
 )
@@ -42,6 +43,13 @@ circ_summarise(
 
   Character vector of grouping column names. Overrides any `group_by()`
   groups on `data`.
+
+- axial:
+
+  Logical. Treat the angles as axial (bidirectional, mod-pi) data:
+  statistics are computed via the angle-doubling method and the mean is
+  reported as an axis in \`\[0, pi)\` radians / \`\[0, 180)\` degrees.
+  Default \`FALSE\` (ordinary directional data).
 
 - stats:
 

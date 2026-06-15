@@ -10,7 +10,7 @@ frame with an angle column.
 ## Usage
 
 ``` r
-circ_dispersion(hd, group_col = NULL, angle_col = "heading")
+circ_dispersion(hd, group_col = NULL, angle_col = "heading", axial = FALSE)
 ```
 
 ## Arguments
@@ -27,6 +27,13 @@ circ_dispersion(hd, group_col = NULL, angle_col = "heading")
 - angle_col:
 
   Name of the heading column. Default `"heading"`.
+
+- axial:
+
+  Logical. Treat the angles as axial (bidirectional, mod-pi) data:
+  statistics are computed via the angle-doubling method and the mean is
+  reported as an axis in \`\[0, pi)\` radians / \`\[0, 180)\` degrees.
+  Default \`FALSE\` (ordinary directional data).
 
 ## Value
 

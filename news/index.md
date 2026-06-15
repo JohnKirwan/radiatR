@@ -2,6 +2,23 @@
 
 ## radiatR (development version)
 
+### Statistics
+
+- The circular-statistics core gains an `axial = TRUE` option for
+  bidirectional (mod-pi) data:
+  [`circ_summary()`](https://johnkirwan.github.io/radiatR/reference/circ_summary.md),
+  [`circ_summarise()`](https://johnkirwan.github.io/radiatR/reference/circ_summarise.md),
+  [`circ_dispersion()`](https://johnkirwan.github.io/radiatR/reference/circ_dispersion.md),
+  [`test_uniformity()`](https://johnkirwan.github.io/radiatR/reference/test_uniformity.md),
+  [`test_mean_directions()`](https://johnkirwan.github.io/radiatR/reference/test_mean_directions.md),
+  [`test_concentration()`](https://johnkirwan.github.io/radiatR/reference/test_concentration.md),
+  [`compute_circ_mean()`](https://johnkirwan.github.io/radiatR/reference/compute_circ_mean.md),
+  and
+  [`compute_circ_interval()`](https://johnkirwan.github.io/radiatR/reference/compute_circ_interval.md)
+  compute the axial mean (an axis in \[0, 180)), axial resultant length,
+  and the corresponding tests via the standard angle-doubling method.
+  The directional default (`axial = FALSE`) is unchanged.
+
 ### Coordinates
 
 - The per-trajectory reference direction is now first-class:

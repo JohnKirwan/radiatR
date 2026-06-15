@@ -16,7 +16,13 @@ Two tests are available:
 ## Usage
 
 ``` r
-test_concentration(hd, group_col, angle_col = "heading", parametric = TRUE)
+test_concentration(
+  hd,
+  group_col,
+  angle_col = "heading",
+  parametric = TRUE,
+  axial = FALSE
+)
 ```
 
 ## Arguments
@@ -37,6 +43,12 @@ test_concentration(hd, group_col, angle_col = "heading", parametric = TRUE)
 
   Logical. `TRUE` (default) uses `equal.kappa.test`; `FALSE` uses
   `wallraff.test`.
+
+- axial:
+
+  Logical. Treat the angles as axial (bidirectional, mod-pi) data: the
+  test is run via the angle-doubling method, comparing axial
+  concentrations. Default \`FALSE\` (ordinary directional data).
 
 ## Value
 

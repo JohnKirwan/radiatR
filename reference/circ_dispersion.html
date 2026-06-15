@@ -59,7 +59,7 @@ frame with an angle column.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">circ_dispersion</span><span class="op">(</span><span class="va">hd</span>, group_col <span class="op">=</span> <span class="cn">NULL</span>, angle_col <span class="op">=</span> <span class="st">"heading"</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">circ_dispersion</span><span class="op">(</span><span class="va">hd</span>, group_col <span class="op">=</span> <span class="cn">NULL</span>, angle_col <span class="op">=</span> <span class="st">"heading"</span>, axial <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -77,6 +77,13 @@ summaries).  <code>NULL</code> treats the entire data frame as one group.</p></d
 
 <dt id="arg-angle-col">angle_col<a class="anchor" aria-label="anchor" href="#arg-angle-col"></a></dt>
 <dd><p>Name of the heading column.  Default <code>"heading"</code>.</p></dd>
+
+
+<dt id="arg-axial">axial<a class="anchor" aria-label="anchor" href="#arg-axial"></a></dt>
+<dd><p>Logical. Treat the angles as axial (bidirectional, mod-pi)
+data: statistics are computed via the angle-doubling method and the mean is
+reported as an axis in `[0, pi)` radians / `[0, 180)` degrees. Default
+`FALSE` (ordinary directional data).</p></dd>
 
 </dl></div>
     <div class="section level2">

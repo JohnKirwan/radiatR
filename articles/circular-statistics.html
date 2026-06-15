@@ -161,15 +161,15 @@ length <em>R</em>, and circular standard deviation. Grouping by
 <code>arc</code> gives one row per condition.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/circ_dispersion.html">circ_dispersion</a></span><span class="op">(</span><span class="va">hd</span>, group_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   arc     mean_dir resultant_R   circ_sd  n</span></span>
-<span><span class="co">#&gt; 1  10  1.980062802  0.25662879 1.6493178 35</span></span>
-<span><span class="co">#&gt; 2  15  0.002875648  0.18589914 1.8344214 27</span></span>
-<span><span class="co">#&gt; 3  20  2.960834000  0.07603959 2.2700225 24</span></span>
-<span><span class="co">#&gt; 4  30 -0.453000259  0.06016175 2.3709570 34</span></span>
-<span><span class="co">#&gt; 5  40  0.075648794  0.64058845 0.9437882 19</span></span>
-<span><span class="co">#&gt; 6   5  0.394217868  0.17579270 1.8646446 30</span></span>
-<span><span class="co">#&gt; 7  50 -0.173753450  0.44404605 1.2742268 24</span></span>
-<span><span class="co">#&gt; 8   0  2.276557489  0.08000698 2.2475059 33</span></span></code></pre></div>
+<span><span class="co">#&gt;   arc    mean_dir resultant_R   circ_sd  n</span></span>
+<span><span class="co">#&gt; 1  10 1.980062802  0.25662879 1.6493178 35</span></span>
+<span><span class="co">#&gt; 2  15 0.002875648  0.18589914 1.8344214 27</span></span>
+<span><span class="co">#&gt; 3  20 2.960834000  0.07603959 2.2700225 24</span></span>
+<span><span class="co">#&gt; 4  30 5.830185048  0.06016175 2.3709570 34</span></span>
+<span><span class="co">#&gt; 5  40 0.075648794  0.64058845 0.9437882 19</span></span>
+<span><span class="co">#&gt; 6   5 0.394217868  0.17579270 1.8646446 30</span></span>
+<span><span class="co">#&gt; 7  50 6.109431857  0.44404605 1.2742268 24</span></span>
+<span><span class="co">#&gt; 8   0 2.276557489  0.08000698 2.2475059 33</span></span></code></pre></div>
 <p><em>R</em> runs from 0 (uniformly scattered) to 1 (all headings
 identical); the circular SD moves the opposite way. For dense per-frame
 heading series — gaze direction from a tethered subject, say —

@@ -15,7 +15,8 @@ test_uniformity(
   group_col = NULL,
   angle_col = "heading",
   test = c("rayleigh", "kuiper", "rao", "watson"),
-  p_adjust = "none"
+  p_adjust = "none",
+  axial = FALSE
 )
 ```
 
@@ -45,6 +46,12 @@ test_uniformity(
   added to the result. Recommended: `"BH"` (Benjamini-Hochberg) when
   testing many conditions. Only meaningful for the Rayleigh test (exact
   p-values).
+
+- axial:
+
+  Logical. Treat the angles as axial (bidirectional, mod-pi) data: the
+  uniformity test is run via the angle-doubling method (testing for an
+  axis). Default \`FALSE\` (ordinary directional data).
 
 ## Value
 

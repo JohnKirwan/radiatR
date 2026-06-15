@@ -61,6 +61,7 @@ one row per group. Output <code>mean_dir</code> is always in radians;
 <span>  <span class="va">col</span>,</span>
 <span>  <span class="va">units</span>,</span>
 <span>  .by <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  axial <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  stats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"n"</span>, <span class="st">"mean_dir"</span>, <span class="st">"mean_dir_deg"</span>, <span class="st">"resultant_R"</span>, <span class="st">"kappa"</span><span class="op">)</span>,</span>
 <span>  display <span class="op">=</span> <span class="fu"><a href="circ_display.html">circ_display</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -92,6 +93,13 @@ Suppress range warnings with
 <dt id="arg--by">.by<a class="anchor" aria-label="anchor" href="#arg--by"></a></dt>
 <dd><p>Character vector of grouping column names. Overrides any
 <code>group_by()</code> groups on <code>data</code>.</p></dd>
+
+
+<dt id="arg-axial">axial<a class="anchor" aria-label="anchor" href="#arg-axial"></a></dt>
+<dd><p>Logical. Treat the angles as axial (bidirectional, mod-pi)
+data: statistics are computed via the angle-doubling method and the mean is
+reported as an axis in `[0, pi)` radians / `[0, 180)` degrees. Default
+`FALSE` (ordinary directional data).</p></dd>
 
 
 <dt id="arg-stats">stats<a class="anchor" aria-label="anchor" href="#arg-stats"></a></dt>

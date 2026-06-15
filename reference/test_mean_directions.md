@@ -15,7 +15,8 @@ test_mean_directions(
   group_col,
   angle_col = "heading",
   pairwise = FALSE,
-  p_adjust = "none"
+  p_adjust = "none",
+  axial = FALSE
 )
 ```
 
@@ -46,6 +47,12 @@ test_mean_directions(
   Strongly recommended when `pairwise = TRUE`: use `"BH"`
   (Benjamini-Hochberg) or `"holm"` (family-wise control). Ignored for
   the omnibus test (single p-value, no adjustment needed).
+
+- axial:
+
+  Logical. Treat the angles as axial (bidirectional, mod-pi) data: the
+  test is run via the angle-doubling method, comparing group axes.
+  Default \`FALSE\` (ordinary directional data).
 
 ## Value
 

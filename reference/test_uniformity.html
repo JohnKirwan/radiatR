@@ -67,7 +67,8 @@ than a continuous p-value.</p>
 <span>  group_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  angle_col <span class="op">=</span> <span class="st">"heading"</span>,</span>
 <span>  test <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rayleigh"</span>, <span class="st">"kuiper"</span>, <span class="st">"rao"</span>, <span class="st">"watson"</span><span class="op">)</span>,</span>
-<span>  p_adjust <span class="op">=</span> <span class="st">"none"</span></span>
+<span>  p_adjust <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  axial <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -99,6 +100,12 @@ as one group.</p></dd>
 <code>group_col</code> is supplied; a <code>p_value_adj</code> column is added to the
 result.  Recommended: <code>"BH"</code> (Benjamini-Hochberg) when testing many
 conditions.  Only meaningful for the Rayleigh test (exact p-values).</p></dd>
+
+
+<dt id="arg-axial">axial<a class="anchor" aria-label="anchor" href="#arg-axial"></a></dt>
+<dd><p>Logical. Treat the angles as axial (bidirectional, mod-pi)
+data: the uniformity test is run via the angle-doubling method (testing for
+an axis). Default `FALSE` (ordinary directional data).</p></dd>
 
 </dl></div>
     <div class="section level2">

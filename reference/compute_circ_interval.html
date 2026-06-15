@@ -71,7 +71,8 @@ before passing to [add_circ_interval()].</p>
 <span>  colour_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  stat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"bootstrap_ci"</span>, <span class="st">"sd"</span><span class="op">)</span>,</span>
 <span>  boot_reps <span class="op">=</span> <span class="fl">1000L</span>,</span>
-<span>  boot_alpha <span class="op">=</span> <span class="fl">0.05</span></span>
+<span>  boot_alpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  axial <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -104,6 +105,13 @@ Default `1000L`. Ignored when `stat = "sd"`.</p></dd>
 <dt id="arg-boot-alpha">boot_alpha<a class="anchor" aria-label="anchor" href="#arg-boot-alpha"></a></dt>
 <dd><p>Significance level for the bootstrap CI. Default `0.05`
 produces a 95% interval.</p></dd>
+
+
+<dt id="arg-axial">axial<a class="anchor" aria-label="anchor" href="#arg-axial"></a></dt>
+<dd><p>Logical. Treat the angles as axial (bidirectional, mod-pi)
+data: the interval is computed via the angle-doubling method and `mean_dir`
+is reported as an axis in `[0, pi)`, with the endpoints scaled accordingly.
+Default `FALSE` (ordinary directional data).</p></dd>
 
 </dl></div>
     <div class="section level2">
