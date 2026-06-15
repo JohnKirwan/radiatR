@@ -60,3 +60,15 @@ test_that("circ_summary(TrajSet, axial=TRUE) equals doubled-angle summary, mean 
   # directional path unchanged
   expect_equal(circ_summary(ts, by = "global", axial = FALSE), dir)
 })
+
+test_that("circ_dispersion(axial=TRUE) gives the axial mean, R and circ_sd", {
+  set.seed(5)
+  a  <- (c(rnorm(50, 50, 6), rnorm(50, 230, 6)) * pi/180) %% (2*pi)
+  hd <- data.frame(heading = a)
+  ax <- circ_dispersion(hd, angle_col = "heading", axial = TRUE)
+  expect_gt(ax$resultant_R, 0.85)
+  expect_equal(ax$mean_dir, (Arg(mean(exp(1i*2*a)))/2) %% pi, tolerance = 1e-8)
+  expect_equal(ax$circ_sd, sqrt(-2*log(ax$resultant_R)), tolerance = 1e-8)
+  # directional default unchanged
+  expect_equal(circ_dispersion(hd, axial = FALSE), circ_dispersion(hd))
+})

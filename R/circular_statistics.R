@@ -458,7 +458,8 @@ circ_summarise <- function(data,
 #'   \code{mean_dir}, \code{resultant_R}, \code{circ_sd}, \code{n}.
 #'   Circular standard deviation is \eqn{\sqrt{-2 \log R}}.
 #' @export
-circ_dispersion <- function(hd, group_col = NULL, angle_col = "heading") {
+circ_dispersion <- function(hd, group_col = NULL, angle_col = "heading",
+                            axial = FALSE) {
   stopifnot(is.data.frame(hd))
   if (!angle_col %in% names(hd))
     stop("circ_dispersion: column '", angle_col, "' not found")
@@ -468,9 +469,10 @@ circ_dispersion <- function(hd, group_col = NULL, angle_col = "heading") {
     if (!length(a))
       return(data.frame(mean_dir = NA_real_, resultant_R = NA_real_,
                         circ_sd  = NA_real_, n = 0L))
-    S <- mean(sin(a)); C <- mean(cos(a))
+    folded <- .fold_angles(a, axial)
+    S <- mean(sin(folded)); C <- mean(cos(folded))
     R <- sqrt(S^2 + C^2)
-    data.frame(mean_dir    = atan2(S, C),
+    data.frame(mean_dir    = .unfold_mean(atan2(S, C), axial),
                resultant_R = R,
                circ_sd     = sqrt(-2 * log(max(R, .Machine$double.eps))),
                n           = length(a))
