@@ -214,3 +214,23 @@ test_that("the axial toggle renders example headings without error", {
   expect_false(grepl("track_plot render failed",
     paste(utils::capture.output(print(app$get_logs())), collapse = "\n")))
 })
+
+test_that("the velocity_axis method renders the example trajectory without error", {
+  skip_on_cran()
+  skip_if_not_installed("shinytest2")
+  skip_if_not_installed("chromote")
+  skip_if(is.null(chromote::find_chrome()), "no Chrome/Chromium binary found")
+  app_dir <- system.file("app", package = "radiatR")
+  skip_if(!nzchar(app_dir), "radiatR app directory not found (package installed?)")
+
+  app <- shinytest2::AppDriver$new(app_dir, name = "velocity-axis-method",
+                                   load_timeout = 60 * 1000, timeout = 30 * 1000)
+  withr::defer(app$stop())
+
+  app$click("load_example");          app$wait_for_idle(timeout = 30 * 1000)
+  app$set_inputs(method = "velocity_axis"); app$wait_for_idle(timeout = 30 * 1000)
+  app$click("go3");                   app$wait_for_idle(timeout = 30 * 1000)
+  expect_identical(app$get_value(input = "method"), "velocity_axis")
+  expect_false(grepl("track_plot render failed",
+    paste(utils::capture.output(print(app$get_logs())), collapse = "\n")))
+})
