@@ -830,7 +830,7 @@ circ_cor <- function(hd, x_col, angle_col = "heading",
 #' @export
 test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
                              test = c("rayleigh", "kuiper", "rao", "watson"),
-                             p_adjust = "none") {
+                             p_adjust = "none", axial = FALSE) {
   test <- match.arg(test)
   stopifnot(is.data.frame(hd))
   if (!angle_col %in% names(hd))
@@ -863,7 +863,7 @@ test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
   .one <- function(sub) {
     a <- as.numeric(sub[[angle_col]]); a <- a[is.finite(a)]
     if (length(a) < 3L) return(NULL)
-    a_c <- circular::circular(a, units = "radians", type = "angles")
+    a_c <- circular::circular(.fold_angles(a, axial), units = "radians", type = "angles")
     r   <- tryCatch(.run(a_c), error = function(e) NULL)
     if (is.null(r)) return(NULL)
     data.frame(statistic = r$statistic, p_value = r$p_value,

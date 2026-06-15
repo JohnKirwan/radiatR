@@ -72,3 +72,17 @@ test_that("circ_dispersion(axial=TRUE) gives the axial mean, R and circ_sd", {
   # directional default unchanged
   expect_equal(circ_dispersion(hd, axial = FALSE), circ_dispersion(hd))
 })
+
+test_that("test_uniformity(axial=TRUE) detects an axis the directional test misses", {
+  set.seed(6)
+  a  <- (c(rnorm(80, 70, 8), rnorm(80, 250, 8)) * pi/180) %% (2*pi)
+  hd <- data.frame(heading = a)
+  dir <- test_uniformity(hd, test = "rayleigh")
+  ax  <- test_uniformity(hd, test = "rayleigh", axial = TRUE)
+  expect_gt(dir$p_value, 0.05)     # directionally ~uniform (lobes cancel)
+  expect_lt(ax$p_value,  0.001)    # axially highly non-uniform
+  # matches a manual doubled-angle Rayleigh
+  man <- test_uniformity(data.frame(heading = (2*a) %% (2*pi)), test = "rayleigh")
+  expect_equal(ax$statistic, man$statistic)
+  expect_equal(ax$p_value,   man$p_value)
+})
