@@ -110,3 +110,15 @@ test_that("spec_to_code: headings with no group emits a single-colour key", {
   code <- spec_to_code(spec)
   expect_match(code, "hd$.colour <- factor(\"all\")", fixed = TRUE)
 })
+
+test_that("spec_to_code emits axial = TRUE for axial headings specs", {
+  sp <- example_spec(rule = "distal", arrow = TRUE)
+  sp$data <- list(source = "example", path = NULL, dialect = NULL)
+  sp$axial <- TRUE
+  sp$show$ci <- TRUE
+  code <- spec_to_code(sp)
+  expect_true(grepl("compute_circ_mean(hd, colour_col = \"type\", axial = TRUE)", code, fixed = TRUE))
+  expect_true(grepl("add_circ_mean(arrow_df, colour = \"black\", axial = TRUE)", code, fixed = TRUE))
+  expect_true(grepl("add_heading_interval(hd, colour_col = \"type\", stat = \"bootstrap_ci\", axial = TRUE)", code, fixed = TRUE))
+  expect_silent(parse(text = code))
+})
