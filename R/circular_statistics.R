@@ -14,6 +14,10 @@
 #'   (default), all steps are weighted equally.
 #' @param by Character. `"id"` (default) returns one row per trial;
 #'   `"global"` pools all observations into a single summary row.
+#' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
+#'   data: statistics are computed via the angle-doubling method and the mean is
+#'   reported as an axis in `[0, pi)` radians / `[0, 180)` degrees. Default
+#'   `FALSE` (ordinary directional data).
 #' @return A `data.frame` with columns `id`, `n`, `t_start`, `t_end`,
 #'   `mean_dir` (radians, unit-circle convention, 0 to 2pi), `resultant_R`
 #'   (0--1), and `kappa`
@@ -28,7 +32,7 @@
 #'
 #' @export
 #' @importFrom circular mean.circular rho.circular circular
-setGeneric("circ_summary", function(x, w = NULL, by = c("id","global"))
+setGeneric("circ_summary", function(x, w = NULL, by = c("id","global"), axial = FALSE)
   standardGeneric("circ_summary"))
 
 .est_kappa_safe <- function(tc, fallback = NA_real_, ...) {
@@ -43,9 +47,22 @@ setGeneric("circ_summary", function(x, w = NULL, by = c("id","global"))
   fallback
 }
 
+# Fold angles into the frame where a k-axial distribution becomes unimodal.
+# axial = TRUE multiplies by 2 (bidirectional / mod-pi data); FALSE is a no-op
+# (ordinary directional data). Internal; the public API exposes only `axial`.
+.fold_angles <- function(theta, axial = FALSE) {
+  if (isTRUE(axial)) (2 * theta) %% (2 * pi) else theta
+}
+
+# Map a mean computed in the folded frame back to the data frame: an axis in
+# [0, pi) when axial, else the directional mean wrapped to [0, 2pi).
+.unfold_mean <- function(mu_folded, axial = FALSE) {
+  if (isTRUE(axial)) (mu_folded / 2) %% pi else mu_folded %% (2 * pi)
+}
+
 #' @rdname circ_summary
 #' @export
-setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")) {
+setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global"), axial = FALSE) {
   by <- match.arg(by)
   id <- x@cols$id; tm <- x@cols$time; th <- x@cols$angle
   wcol <- if (is.null(w)) x@cols$weight else w
@@ -64,21 +81,22 @@ setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")
     theta_valid <- theta[valid]
     wts_valid <- if (!is.null(wts)) wts[valid] else NULL
 
-    tc <- circular::circular(theta_valid, units = "radians", modulo = "2pi")
-    mu <- if (length(theta_valid)) {
+    folded <- .fold_angles(theta_valid, axial)
+    tc <- circular::circular(folded, units = "radians", modulo = "2pi")
+    mu <- if (length(folded)) {
       circular::mean.circular(tc, na.rm = TRUE, weights = wts_valid)
     } else {
       NA_real_
     }
 
-    if (length(theta_valid)) {
+    if (length(folded)) {
       if (is.null(wts_valid)) {
-        mean_cos <- mean(cos(theta_valid))
-        mean_sin <- mean(sin(theta_valid))
+        mean_cos <- mean(cos(folded))
+        mean_sin <- mean(sin(folded))
       } else {
         w_norm <- wts_valid / sum(wts_valid)
-        mean_cos <- sum(w_norm * cos(theta_valid))
-        mean_sin <- sum(w_norm * sin(theta_valid))
+        mean_cos <- sum(w_norm * cos(folded))
+        mean_sin <- sum(w_norm * sin(folded))
       }
       R <- sqrt(mean_cos^2 + mean_sin^2)
     } else {
@@ -86,7 +104,7 @@ setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")
     }
 
     kap    <- .est_kappa_safe(tc, fallback = NA_real_, w = wts_valid)
-    out_mu <- .wrap_to_2pi(as.numeric(mu))
+    out_mu <- .unfold_mean(.wrap_to_2pi(as.numeric(mu)), axial)
     data.frame(
       id          = if (by == "id") k else "global",
       n           = sum(!is.na(theta)),
@@ -280,7 +298,7 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 # ---------------------------------------------------------------------------
 # circ_summarise -- tidy grouped circular summary
 
-.circ_summarise_one <- function(angles, stats, display) {
+.circ_summarise_one <- function(angles, stats, display, axial = FALSE) {
   n_total   <- length(angles)
   angles    <- angles[is.finite(angles)]
   n         <- length(angles)
@@ -289,10 +307,12 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
   if (n == 0L) {
     uc_mu <- NA_real_; R <- NA_real_; kap <- NA_real_
   } else {
-    tc    <- circular::circular(angles, units = "radians", modulo = "2pi")
-    uc_mu <- .wrap_to_2pi(as.numeric(circular::mean.circular(tc)))
-    R     <- as.numeric(circular::rho.circular(tc))
-    kap   <- if (n >= 3L) .est_kappa_safe(tc) else NA_real_
+    folded <- .fold_angles(angles, axial)
+    tc     <- circular::circular(folded, units = "radians", modulo = "2pi")
+    uc_mu  <- .unfold_mean(.wrap_to_2pi(as.numeric(circular::mean.circular(tc))),
+                           axial)
+    R      <- as.numeric(circular::rho.circular(tc))
+    kap    <- if (n >= 3L) .est_kappa_safe(tc) else NA_real_
   }
 
   row <- vector("list", length(stats))
@@ -356,11 +376,16 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 #' @importFrom rlang ensym as_string
 #' @importFrom tibble as_tibble
 #' @importFrom circular circular mean.circular rho.circular
+#' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
+#'   data: statistics are computed via the angle-doubling method and the mean is
+#'   reported as an axis in `[0, pi)` radians / `[0, 180)` degrees. Default
+#'   `FALSE` (ordinary directional data).
 #' @export
 circ_summarise <- function(data,
                            col,
                            units,
                            .by     = NULL,
+                           axial   = FALSE,
                            stats   = c("n", "mean_dir", "mean_dir_deg",
                                        "resultant_R", "kappa"),
                            display = circ_display()) {
@@ -399,7 +424,7 @@ circ_summarise <- function(data,
   data_df <- as.data.frame(data)
 
   if (length(group_vars) == 0L) {
-    srow <- .circ_summarise_one(data_df[[col_name]], stats, display)
+    srow <- .circ_summarise_one(data_df[[col_name]], stats, display, axial)
     return(tibble::as_tibble(as.data.frame(srow, stringsAsFactors = FALSE)))
   }
 
@@ -412,7 +437,7 @@ circ_summarise <- function(data,
 
   result_rows <- lapply(names(idx_list), function(k) {
     ii   <- idx_list[[k]]
-    srow <- .circ_summarise_one(data_df[[col_name]][ii], stats, display)
+    srow <- .circ_summarise_one(data_df[[col_name]][ii], stats, display, axial)
     krow <- data_df[ii[1L], group_vars, drop = FALSE]
     rownames(krow) <- NULL
     cbind(krow, as.data.frame(srow, stringsAsFactors = FALSE))
@@ -440,8 +465,13 @@ circ_summarise <- function(data,
 #' @return Data frame with columns \code{group_col} (if supplied),
 #'   \code{mean_dir}, \code{resultant_R}, \code{circ_sd}, \code{n}.
 #'   Circular standard deviation is \eqn{\sqrt{-2 \log R}}.
+#' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
+#'   data: statistics are computed via the angle-doubling method and the mean is
+#'   reported as an axis in `[0, pi)` radians / `[0, 180)` degrees. Default
+#'   `FALSE` (ordinary directional data).
 #' @export
-circ_dispersion <- function(hd, group_col = NULL, angle_col = "heading") {
+circ_dispersion <- function(hd, group_col = NULL, angle_col = "heading",
+                            axial = FALSE) {
   stopifnot(is.data.frame(hd))
   if (!angle_col %in% names(hd))
     stop("circ_dispersion: column '", angle_col, "' not found")
@@ -451,9 +481,10 @@ circ_dispersion <- function(hd, group_col = NULL, angle_col = "heading") {
     if (!length(a))
       return(data.frame(mean_dir = NA_real_, resultant_R = NA_real_,
                         circ_sd  = NA_real_, n = 0L))
-    S <- mean(sin(a)); C <- mean(cos(a))
+    folded <- .fold_angles(a, axial)
+    S <- mean(sin(folded)); C <- mean(cos(folded))
     R <- sqrt(S^2 + C^2)
-    data.frame(mean_dir    = atan2(S, C),
+    data.frame(mean_dir    = .unfold_mean(atan2(S, C), axial),
                resultant_R = R,
                circ_sd     = sqrt(-2 * log(max(R, .Machine$double.eps))),
                n           = length(a))
@@ -808,10 +839,13 @@ circ_cor <- function(hd, x_col, angle_col = "heading",
 #' @return Tidy data frame with columns \code{group_col} (if supplied),
 #'   \code{statistic}, \code{p_value}, \code{n}, \code{test}, and
 #'   \code{p_value_adj} (when \code{p_adjust != "none"}).
+#' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
+#'   data: the uniformity test is run via the angle-doubling method (testing for
+#'   an axis). Default `FALSE` (ordinary directional data).
 #' @export
 test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
                              test = c("rayleigh", "kuiper", "rao", "watson"),
-                             p_adjust = "none") {
+                             p_adjust = "none", axial = FALSE) {
   test <- match.arg(test)
   stopifnot(is.data.frame(hd))
   if (!angle_col %in% names(hd))
@@ -844,7 +878,7 @@ test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
   .one <- function(sub) {
     a <- as.numeric(sub[[angle_col]]); a <- a[is.finite(a)]
     if (length(a) < 3L) return(NULL)
-    a_c <- circular::circular(a, units = "radians", type = "angles")
+    a_c <- circular::circular(.fold_angles(a, axial), units = "radians", type = "angles")
     r   <- tryCatch(.run(a_c), error = function(e) NULL)
     if (is.null(r)) return(NULL)
     data.frame(statistic = r$statistic, p_value = r$p_value,
@@ -893,9 +927,13 @@ test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
 #'   \code{statistic}, \code{df1}, \code{df2}, \code{p_value}, \code{test}.
 #'   Pairwise result additionally has \code{group1}, \code{group2}, and
 #'   \code{p_value_adj} (when \code{p_adjust != "none"}).
+#' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
+#'   data: the test is run via the angle-doubling method, comparing group axes.
+#'   Default `FALSE` (ordinary directional data).
 #' @export
 test_mean_directions <- function(hd, group_col, angle_col = "heading",
-                                  pairwise = FALSE, p_adjust = "none") {
+                                  pairwise = FALSE, p_adjust = "none",
+                                  axial = FALSE) {
   stopifnot(is.data.frame(hd))
   for (col in c(angle_col, group_col))
     if (!col %in% names(hd))
@@ -905,7 +943,7 @@ test_mean_directions <- function(hd, group_col, angle_col = "heading",
   circ_list <- stats::setNames(lapply(groups, function(g) {
     a <- as.numeric(hd[[angle_col]][hd[[group_col]] == g])
     a <- a[is.finite(a)]
-    circular::circular(a, units = "radians", type = "angles")
+    circular::circular(.fold_angles(a, axial), units = "radians", type = "angles")
   }), as.character(groups))
   circ_list <- Filter(function(x) length(x) >= 2L, circ_list)
   if (length(circ_list) < 2L)
@@ -969,16 +1007,19 @@ test_mean_directions <- function(hd, group_col, angle_col = "heading",
 #'   \code{equal.kappa.test}; \code{FALSE} uses \code{wallraff.test}.
 #' @return One-row tidy data frame with \code{statistic}, \code{df} (parametric
 #'   only), \code{p_value}, and \code{test}.
+#' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
+#'   data: the test is run via the angle-doubling method, comparing axial
+#'   concentrations. Default `FALSE` (ordinary directional data).
 #' @export
 test_concentration <- function(hd, group_col, angle_col = "heading",
-                                parametric = TRUE) {
+                                parametric = TRUE, axial = FALSE) {
   stopifnot(is.data.frame(hd))
   for (col in c(angle_col, group_col))
     if (!col %in% names(hd))
       stop("test_concentration: column '", col, "' not found")
 
   a   <- as.numeric(hd[[angle_col]]); keep <- is.finite(a)
-  a_c <- circular::circular(a[keep], units = "radians", type = "angles")
+  a_c <- circular::circular(.fold_angles(a[keep], axial), units = "radians", type = "angles")
   grp <- hd[[group_col]][keep]
 
   if (parametric) {

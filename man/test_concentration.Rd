@@ -4,7 +4,13 @@
 \alias{test_concentration}
 \title{Test whether groups share the same concentration (dispersion)}
 \usage{
-test_concentration(hd, group_col, angle_col = "heading", parametric = TRUE)
+test_concentration(
+  hd,
+  group_col,
+  angle_col = "heading",
+  parametric = TRUE,
+  axial = FALSE
+)
 }
 \arguments{
 \item{hd}{Data frame with heading and group columns.}
@@ -15,6 +21,10 @@ test_concentration(hd, group_col, angle_col = "heading", parametric = TRUE)
 
 \item{parametric}{Logical.  \code{TRUE} (default) uses
 \code{equal.kappa.test}; \code{FALSE} uses \code{wallraff.test}.}
+
+\item{axial}{Logical. Treat the angles as axial (bidirectional, mod-pi)
+data: the test is run via the angle-doubling method, comparing axial
+concentrations. Default `FALSE` (ordinary directional data).}
 }
 \value{
 One-row tidy data frame with \code{statistic}, \code{df} (parametric

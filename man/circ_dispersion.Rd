@@ -4,7 +4,7 @@
 \alias{circ_dispersion}
 \title{Per-group circular dispersion statistics for a dense heading series}
 \usage{
-circ_dispersion(hd, group_col = NULL, angle_col = "heading")
+circ_dispersion(hd, group_col = NULL, angle_col = "heading", axial = FALSE)
 }
 \arguments{
 \item{hd}{Data frame containing headings in radians.}
@@ -13,6 +13,11 @@ circ_dispersion(hd, group_col = NULL, angle_col = "heading")
 summaries).  \code{NULL} treats the entire data frame as one group.}
 
 \item{angle_col}{Name of the heading column.  Default \code{"heading"}.}
+
+\item{axial}{Logical. Treat the angles as axial (bidirectional, mod-pi)
+data: statistics are computed via the angle-doubling method and the mean is
+reported as an axis in `[0, pi)` radians / `[0, 180)` degrees. Default
+`FALSE` (ordinary directional data).}
 }
 \value{
 Data frame with columns \code{group_col} (if supplied),

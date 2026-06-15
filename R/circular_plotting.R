@@ -963,25 +963,27 @@ add_heading_density <- function(headings_df,
 # ---- circular interval arc ---------------------------------------------------
 
 #' @noRd
-.compute_one_interval <- function(angles, stat, boot_reps, boot_alpha) {
+.compute_one_interval <- function(angles, stat, boot_reps, boot_alpha, axial = FALSE) {
   angles <- angles[is.finite(angles)]
-  n      <- length(angles)
-  circ   <- circular::circular(angles, units = "radians", modulo = "2pi")
+  folded <- .fold_angles(angles, axial)
+  n      <- length(folded)
+  circ   <- circular::circular(folded, units = "radians", modulo = "2pi")
 
-  mean_dir <- if (n >= 1L) {
+  mean_f <- if (n >= 1L) {
     mu <- as.numeric(circular::mean.circular(circ))
     atan2(sin(mu), cos(mu))
   } else NA_real_
 
   if (n < 3L) {
+    mean_dir <- .unfold_mean(mean_f %% (2*pi), axial)
     return(data.frame(mean_dir = mean_dir, lower = NA_real_, upper = NA_real_,
                       wraps = FALSE, stringsAsFactors = FALSE))
   }
 
   if (stat == "sd") {
     sd_val <- as.numeric(circular::sd.circular(circ))
-    lower  <- mean_dir - sd_val
-    upper  <- mean_dir + sd_val
+    lower_f <- mean_f - sd_val
+    upper_f <- mean_f + sd_val
   } else {
     ci <- tryCatch(
       as.numeric(
@@ -990,8 +992,21 @@ add_heading_density <- function(headings_df,
       ),
       error = function(e) c(NA_real_, NA_real_)
     )
-    lower <- ci[1L]
-    upper <- ci[2L]
+    lower_f <- ci[1L]
+    upper_f <- ci[2L]
+  }
+
+  if (isTRUE(axial)) {
+    # unfold: axis is the halved mean; endpoints keep their (halved) deviation
+    dl <- atan2(sin(lower_f - mean_f), cos(lower_f - mean_f))
+    du <- atan2(sin(upper_f - mean_f), cos(upper_f - mean_f))
+    mean_dir <- (mean_f / 2) %% pi
+    lower <- mean_dir + dl / 2
+    upper <- mean_dir + du / 2
+  } else {
+    mean_dir <- mean_f
+    lower <- lower_f
+    upper <- upper_f
   }
 
   lower <- atan2(sin(lower), cos(lower))
@@ -1021,6 +1036,10 @@ add_heading_density <- function(headings_df,
 #'   Default `1000L`. Ignored when `stat = "sd"`.
 #' @param boot_alpha Significance level for the bootstrap CI. Default `0.05`
 #'   produces a 95\% interval.
+#' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
+#'   data: the interval is computed via the angle-doubling method and `mean_dir`
+#'   is reported as an axis in `[0, pi)`, with the endpoints scaled accordingly.
+#'   Default `FALSE` (ordinary directional data).
 #'
 #' @return A data frame with columns `mean_dir`, `lower`, `upper` (radians,
 #'   `[-pi, pi]`), and `wraps` (logical, `TRUE` when the arc crosses the +/-pi
@@ -1034,7 +1053,8 @@ compute_circ_interval <- function(headings_df,
                                   colour_col  = NULL,
                                   stat        = c("bootstrap_ci", "sd"),
                                   boot_reps   = 1000L,
-                                  boot_alpha  = 0.05) {
+                                  boot_alpha  = 0.05,
+                                  axial       = FALSE) {
   stat <- match.arg(stat)
   if (!heading_col %in% names(headings_df))
     stop("`heading_col` '", heading_col, "' not found in headings_df.")
@@ -1044,7 +1064,7 @@ compute_circ_interval <- function(headings_df,
 
   out_list <- lapply(seq_along(groups), function(i) {
     angles <- groups[[i]][[heading_col]]
-    row    <- .compute_one_interval(angles, stat, boot_reps, boot_alpha)
+    row    <- .compute_one_interval(angles, stat, boot_reps, boot_alpha, axial)
     if (use_colour) row[[colour_col]] <- names(groups)[[i]]
     row
   })
@@ -1212,6 +1232,9 @@ add_heading_interval <- function(headings_df,
 #'   `"heading"`.
 #' @param colour_col Optional. Name of a column to group by. One row is
 #'   returned per group. The same column maps to colour in [add_circ_mean()].
+#' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
+#'   data: `mean_dir` is the axis in `[0, pi)` and `resultant_R` is the axial
+#'   resultant length, both via the angle-doubling method. Default `FALSE`.
 #' @return A data frame with columns `mean_dir` (unit-circle radians, 0 to
 #'   2pi), `resultant_R` (0--1), and `colour_col` when supplied. Both are `NA`
 #'   when a group contains fewer than 2 finite angles.
@@ -1221,7 +1244,8 @@ add_heading_interval <- function(headings_df,
 #' @export
 compute_circ_mean <- function(headings_df,
                               heading_col = "heading",
-                              colour_col  = NULL) {
+                              colour_col  = NULL,
+                              axial       = FALSE) {
   if (!heading_col %in% names(headings_df))
     stop("`heading_col` '", heading_col, "' not found in headings_df.")
 
@@ -1236,8 +1260,11 @@ compute_circ_mean <- function(headings_df,
       row <- data.frame(mean_dir = NA_real_, resultant_R = NA_real_,
                         stringsAsFactors = FALSE)
     } else {
-      circ_obj <- circular::circular(angles, units = "radians", modulo = "2pi")
-      mean_dir <- .wrap_to_2pi(as.numeric(circular::mean.circular(circ_obj, na.rm = TRUE)))
+      circ_obj <- circular::circular(.fold_angles(angles, axial),
+                                     units = "radians", modulo = "2pi")
+      mean_dir <- .unfold_mean(
+        .wrap_to_2pi(as.numeric(circular::mean.circular(circ_obj, na.rm = TRUE))),
+        axial)
       R        <- as.numeric(circular::rho.circular(circ_obj, na.rm = TRUE))
       row <- data.frame(mean_dir = mean_dir, resultant_R = R, stringsAsFactors = FALSE)
     }

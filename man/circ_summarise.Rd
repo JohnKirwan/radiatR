@@ -9,6 +9,7 @@ circ_summarise(
   col,
   units,
   .by = NULL,
+  axial = FALSE,
   stats = c("n", "mean_dir", "mean_dir_deg", "resultant_R", "kappa"),
   display = circ_display()
 )
@@ -29,6 +30,11 @@ Suppress range warnings with
 
 \item{.by}{Character vector of grouping column names. Overrides any
 \code{group_by()} groups on \code{data}.}
+
+\item{axial}{Logical. Treat the angles as axial (bidirectional, mod-pi)
+data: statistics are computed via the angle-doubling method and the mean is
+reported as an axis in `[0, pi)` radians / `[0, 180)` degrees. Default
+`FALSE` (ordinary directional data).}
 
 \item{stats}{Character vector selecting which statistics to compute. Order
 determines column order in the output. Valid values: \code{"n"} (count of
