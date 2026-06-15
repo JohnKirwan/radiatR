@@ -44,3 +44,13 @@ test_that("add_heading_interval(axial=TRUE) routes the axial interval through", 
   l  <- add_heading_interval(hf, axial = TRUE, stat = "sd")
   expect_length(unique(l$data$.group_id), 2L)   # both ends
 })
+
+test_that("add_critical_v_line(axial=TRUE) mirrors the chord to both poles", {
+  hd <- data.frame(heading = runif(40, 0, 2*pi))
+  l0 <- add_critical_v_line(hd, mu0 = pi/2, axial = FALSE)   # list of layers
+  l1 <- add_critical_v_line(hd, mu0 = pi/2, axial = TRUE)
+  # the chord geom_segment carries twice as many rows (a chord at each pole)
+  seg0 <- l0[[length(l0)]]$data
+  seg1 <- l1[[length(l1)]]$data
+  expect_equal(nrow(seg1), 2L * nrow(seg0))
+})

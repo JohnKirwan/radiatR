@@ -3221,7 +3221,7 @@ add_critical_v_line <- function(hd, mu0, alpha = 0.05,
                                  per_group = FALSE, show_region = FALSE,
                                  colour = "firebrick", linetype = "dashed",
                                  linewidth = 0.6, region_fill = "firebrick",
-                                 region_alpha = 0.08, n_pts = 100L) {
+                                 region_alpha = 0.08, axial = FALSE, n_pts = 100L) {
   stopifnot(is.data.frame(hd), alpha > 0, alpha < 1)
   if (missing(mu0)) stop("add_critical_v_line: 'mu0' (hypothesised direction) is required")
   if (!angle_col %in% names(hd))
@@ -3232,22 +3232,19 @@ add_critical_v_line <- function(hd, mu0, alpha = 0.05,
 
   # Geometry for one boundary at perpendicular distance c along mu0.
   # Returns list(chord = data.frame(x,y,xend,yend), region = data.frame(x,y)).
-  .geom <- function(cc, grp) {
-    if (is.na(cc) || cc >= 1) return(NULL)        # line outside the disc
-    half  <- sqrt(1 - cc^2)                        # half-chord length
-    ux <- cos(mu0); uy <- sin(mu0)                # along mu0
-    px <- -uy;      py <- ux                       # perpendicular (chord dir)
+  .one_pole <- function(cc, grp, mu) {
+    half <- sqrt(1 - cc^2)
+    ux <- cos(mu); uy <- sin(mu)
+    px <- -uy;     py <- ux
     foot <- c(cc * ux, cc * uy)
     e1 <- foot + half * c(px, py)
     e2 <- foot - half * c(px, py)
     chord <- data.frame(x = e1[1], y = e1[2], xend = e2[1], yend = e2[2],
                         .v_grp = grp, stringsAsFactors = FALSE)
-
     region <- NULL
     if (show_region) {
-      span <- acos(cc)                             # arc half-width about mu0
-      phis <- seq(mu0 - span, mu0 + span, length.out = n_pts)
-      # arc points on unit circle, then close along the chord back to start
+      span <- acos(cc)
+      phis <- seq(mu - span, mu + span, length.out = n_pts)
       region <- data.frame(
         x = c(cos(phis), e2[1], e1[1]),
         y = c(sin(phis), e2[2], e1[2]),
@@ -3255,6 +3252,20 @@ add_critical_v_line <- function(hd, mu0, alpha = 0.05,
       )
     }
     list(chord = chord, region = region)
+  }
+  .geom <- function(cc, grp) {
+    if (is.na(cc) || cc >= 1) return(NULL)        # line outside the disc
+    poles <- list(.one_pole(cc, grp, mu0))
+    if (isTRUE(axial))
+      poles <- c(poles, list(.one_pole(cc, paste0(grp, ".pi"), mu0 + pi)))
+    list(
+      chord  = do.call(rbind, lapply(poles, `[[`, "chord")),
+      region = {
+        rg <- lapply(poles, `[[`, "region")
+        rg <- rg[!vapply(rg, is.null, logical(1L))]
+        if (length(rg)) do.call(rbind, rg) else NULL
+      }
+    )
   }
 
   # Collect (c, group-key) pairs to draw
