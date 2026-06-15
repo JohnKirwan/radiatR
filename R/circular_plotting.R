@@ -1313,6 +1313,7 @@ add_circ_mean <- function(summary_df,
                           linewidth       = 1,
                           colour          = NULL,
                           arrow_length_cm = 0.2,
+                          axial           = FALSE,
                           ...) {
   for (col in c("mean_dir", "resultant_R")) {
     if (!col %in% names(summary_df))
@@ -1335,14 +1336,22 @@ add_circ_mean <- function(summary_df,
 
   summary_df <- summary_df[valid_rows, , drop = FALSE]
 
-  summary_df$.x <- 0
-  summary_df$.y <- 0
   disp <- attr(summary_df, "display", exact = TRUE) %||% circ_display()
-  xy   <- .uc_to_display_coords(summary_df$resultant_R * cos(summary_df$mean_dir),
+  tip  <- .uc_to_display_coords(summary_df$resultant_R * cos(summary_df$mean_dir),
                                  summary_df$resultant_R * sin(summary_df$mean_dir),
                                  disp)
-  summary_df$.xend <- xy$x
-  summary_df$.yend <- xy$y
+  if (isTRUE(axial)) {
+    tail <- .uc_to_display_coords(-summary_df$resultant_R * cos(summary_df$mean_dir),
+                                  -summary_df$resultant_R * sin(summary_df$mean_dir),
+                                  disp)
+    summary_df$.x <- tail$x
+    summary_df$.y <- tail$y
+  } else {
+    summary_df$.x <- 0
+    summary_df$.y <- 0
+  }
+  summary_df$.xend <- tip$x
+  summary_df$.yend <- tip$y
 
   seg_map <- ggplot2::aes(x = .data$.x, y = .data$.y,
                           xend = .data$.xend, yend = .data$.yend)
@@ -1352,7 +1361,8 @@ add_circ_mean <- function(summary_df,
     data        = summary_df,
     mapping     = seg_map,
     linewidth   = linewidth,
-    arrow       = grid::arrow(length = grid::unit(arrow_length_cm, "cm")),
+    arrow       = grid::arrow(length = grid::unit(arrow_length_cm, "cm"),
+                              ends = if (isTRUE(axial)) "both" else "last"),
     inherit.aes = FALSE,
     ...
   )
@@ -1387,15 +1397,16 @@ add_heading_arrow <- function(headings_df,
                               linewidth       = 1,
                               colour          = NULL,
                               arrow_length_cm = 0.2,
+                              axial           = FALSE,
                               ...) {
   if (is.null(display))
     display <- attr(headings_df, "display", exact = TRUE) %||% circ_display()
   sm <- compute_circ_mean(headings_df, heading_col = heading_col,
-                          colour_col = colour_col)
+                          colour_col = colour_col, axial = axial)
   attr(sm, "display") <- display
   add_circ_mean(sm, colour_col = colour_col,
                 linewidth = linewidth, colour = colour,
-                arrow_length_cm = arrow_length_cm, ...)
+                arrow_length_cm = arrow_length_cm, axial = axial, ...)
 }
 
 # ---- heading overlay layers --------------------------------------------------
