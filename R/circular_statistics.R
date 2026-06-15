@@ -43,6 +43,19 @@ setGeneric("circ_summary", function(x, w = NULL, by = c("id","global"))
   fallback
 }
 
+# Fold angles into the frame where a k-axial distribution becomes unimodal.
+# axial = TRUE multiplies by 2 (bidirectional / mod-pi data); FALSE is a no-op
+# (ordinary directional data). Internal; the public API exposes only `axial`.
+.fold_angles <- function(theta, axial = FALSE) {
+  if (isTRUE(axial)) (2 * theta) %% (2 * pi) else theta
+}
+
+# Map a mean computed in the folded frame back to the data frame: an axis in
+# [0, pi) when axial, else the directional mean wrapped to [0, 2pi).
+.unfold_mean <- function(mu_folded, axial = FALSE) {
+  if (isTRUE(axial)) (mu_folded / 2) %% pi else mu_folded %% (2 * pi)
+}
+
 #' @rdname circ_summary
 #' @export
 setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")) {
