@@ -235,12 +235,11 @@ derive_hd <- function(ts, method, circ0, circ1) {
   do.call(derive_headings, args)
 }
 
-rayleigh_p_fmt <- function(angles) {
+rayleigh_p_fmt <- function(angles, axial = FALSE) {
   tryCatch({
-    a <- circular::circular(
-      angles[is.finite(angles)],
-      units = "radians", type = "angles"
-    )
+    ang <- angles[is.finite(angles)]
+    if (isTRUE(axial)) ang <- (2 * ang) %% (2 * pi)
+    a <- circular::circular(ang, units = "radians", type = "angles")
     p <- circular::rayleigh.test(a)$p.value
     if (is.na(p))   return("—")
     if (p < 0.001)  return("< 0.001")
@@ -252,15 +251,15 @@ rayleigh_p_fmt <- function(angles) {
 # a headings frame, grouped by `by_col`. Returns a data frame with the group
 # column renamed to "Group"; callers may append trajectory-only columns
 # (e.g. Straightness) keyed on the returned "Group" values.
-circ_summary_table <- function(hd, by_col) {
+circ_summary_table <- function(hd, by_col, axial = FALSE) {
   cm <- circ_summarise(
     hd, "heading", units = "radians", .by = by_col,
     stats = c("n", "n_missing", "mean_dir_deg", "resultant_R"),
-    display = circ_display(zero = 0)
+    display = circ_display(zero = 0), axial = axial
   )
   groups <- unique(hd[[by_col]])
   p_vals <- vapply(groups, function(g)
-    rayleigh_p_fmt(hd$heading[hd[[by_col]] == g]), character(1L))
+    rayleigh_p_fmt(hd$heading[hd[[by_col]] == g], axial = axial), character(1L))
   p_df <- stats::setNames(
     data.frame(groups, p_vals, stringsAsFactors = FALSE),
     c(by_col, "Rayleigh p"))
@@ -819,6 +818,8 @@ server <- function(input, output, session) {
               .layer_switch("show_tracks",   "Trajectories",       TRUE),
               .layer_switch("show_arrow",   "Directedness arrow", TRUE),
               .layer_switch("show_ci",      "Mean-direction CI",  FALSE),
+              if (identical(rv$mode, "headings"))
+                .layer_switch("axial", "Axial (bidirectional)", FALSE),
               .layer_switch("show_vectors", "Heading vectors",    FALSE),
               .layer_switch("show_rayleigh", "Rayleigh circle",    FALSE),
               .layer_switch("show_vtest",   "V-test line",        FALSE),
@@ -1018,6 +1019,7 @@ server <- function(input, output, session) {
           show_vectors = tog(input$show_vectors, FALSE),
           show_rayleigh = tog(input$show_rayleigh, FALSE),
           show_ci = tog(input$show_ci, FALSE),
+          axial = tog(input$axial, FALSE),
           show_vtest = tog(input$show_vtest, FALSE),
           show_quadrants = tog(input$show_quadrants, FALSE),
           show_rings = tog(input$show_rings, FALSE))))
@@ -1045,6 +1047,7 @@ server <- function(input, output, session) {
         show_vectors = tog(input$show_vectors, FALSE),
         show_rayleigh = tog(input$show_rayleigh, FALSE),
         show_ci    = tog(input$show_ci,    FALSE),
+        axial      = tog(input$axial,      FALSE),
         show_vtest = tog(input$show_vtest, FALSE),
         show_quadrants = tog(input$show_quadrants, FALSE),
         show_rings     = tog(input$show_rings,     FALSE)))
@@ -1119,7 +1122,7 @@ server <- function(input, output, session) {
       # the per-group rayleigh loop run uniformly; the dummy is dropped below.
       if (pooled) { hd[[".all"]] <- "All"; by_col <- ".all" }
       out <- tryCatch({
-        cm <- circ_summary_table(hd, by_col)
+        cm <- circ_summary_table(hd, by_col, axial = tog(input$axial, FALSE))
         if (pooled) cm[["Group"]] <- NULL    # single pooled row: drop the dummy group col
         cm
       }, error = function(e) data.frame(Note = "Summary not available"))
