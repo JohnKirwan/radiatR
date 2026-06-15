@@ -293,7 +293,7 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 # ---------------------------------------------------------------------------
 # circ_summarise -- tidy grouped circular summary
 
-.circ_summarise_one <- function(angles, stats, display) {
+.circ_summarise_one <- function(angles, stats, display, axial = FALSE) {
   n_total   <- length(angles)
   angles    <- angles[is.finite(angles)]
   n         <- length(angles)
@@ -302,10 +302,12 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
   if (n == 0L) {
     uc_mu <- NA_real_; R <- NA_real_; kap <- NA_real_
   } else {
-    tc    <- circular::circular(angles, units = "radians", modulo = "2pi")
-    uc_mu <- .wrap_to_2pi(as.numeric(circular::mean.circular(tc)))
-    R     <- as.numeric(circular::rho.circular(tc))
-    kap   <- if (n >= 3L) .est_kappa_safe(tc) else NA_real_
+    folded <- .fold_angles(angles, axial)
+    tc     <- circular::circular(folded, units = "radians", modulo = "2pi")
+    uc_mu  <- .unfold_mean(.wrap_to_2pi(as.numeric(circular::mean.circular(tc))),
+                           axial)
+    R      <- as.numeric(circular::rho.circular(tc))
+    kap    <- if (n >= 3L) .est_kappa_safe(tc) else NA_real_
   }
 
   row <- vector("list", length(stats))
@@ -374,6 +376,7 @@ circ_summarise <- function(data,
                            col,
                            units,
                            .by     = NULL,
+                           axial   = FALSE,
                            stats   = c("n", "mean_dir", "mean_dir_deg",
                                        "resultant_R", "kappa"),
                            display = circ_display()) {
@@ -412,7 +415,7 @@ circ_summarise <- function(data,
   data_df <- as.data.frame(data)
 
   if (length(group_vars) == 0L) {
-    srow <- .circ_summarise_one(data_df[[col_name]], stats, display)
+    srow <- .circ_summarise_one(data_df[[col_name]], stats, display, axial)
     return(tibble::as_tibble(as.data.frame(srow, stringsAsFactors = FALSE)))
   }
 
@@ -425,7 +428,7 @@ circ_summarise <- function(data,
 
   result_rows <- lapply(names(idx_list), function(k) {
     ii   <- idx_list[[k]]
-    srow <- .circ_summarise_one(data_df[[col_name]][ii], stats, display)
+    srow <- .circ_summarise_one(data_df[[col_name]][ii], stats, display, axial)
     krow <- data_df[ii[1L], group_vars, drop = FALSE]
     rownames(krow) <- NULL
     cbind(krow, as.data.frame(srow, stringsAsFactors = FALSE))
