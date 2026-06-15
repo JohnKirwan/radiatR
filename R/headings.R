@@ -119,7 +119,7 @@ setGeneric(
   "derive_headings",
   function(
     x,
-    rule = c("crossing","distal","straight","origin_mean","net","velocity_mean","window_net","goal_bias","pca_axis","ransac_straight","maxspeed_window","vm_fit","exit","entry","ring_tangent"),
+    rule = c("crossing","distal","straight","origin_mean","net","velocity_mean","velocity_axis","window_net","goal_bias","pca_axis","ransac_straight","maxspeed_window","vm_fit","exit","entry","ring_tangent"),
     ...,
     coords = c("absolute", "relative")
   ) standardGeneric("derive_headings")
@@ -492,6 +492,26 @@ setGeneric(
   data.frame(id = d[[id]][1], time = stats::median(d[[tc]], na.rm = TRUE), heading = .wrap_to_2pi(as.numeric(mu)))
 }
 
+# ---- velocity_axis rule ------------------------------------------------------
+# Heading = axial mean of instantaneous step headings (angle-doubling); the
+# back-and-forth movement axis in [0, pi). Weights default to step length.
+.set_headings_velocity_axis_one <- function(d, id, tc, xc, yc,
+                                            weight_by = c("step_length", "uniform")) {
+  weight_by <- match.arg(weight_by)
+  if (nrow(d) < 2L)
+    return(data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_))
+  vx <- diff(d[[xc]]); vy <- diff(d[[yc]])
+  th <- atan2(vy, vx)
+  w  <- if (weight_by == "step_length") sqrt(vx^2 + vy^2) else rep(1, length(th))
+  ok <- is.finite(th) & is.finite(w)
+  axis <- if (any(ok)) {
+    mv <- sum(w[ok] * exp(1i * 2 * th[ok])) / sum(w[ok])
+    (Arg(mv) / 2) %% pi
+  } else NA_real_
+  data.frame(id = d[[id]][1], time = stats::median(d[[tc]], na.rm = TRUE),
+             heading = axis)
+}
+
 # ---- method for TrajSet ------------------------------------------------------
 #' @param first_only logical; if TRUE, return only the first matching heading per trajectory
 #' @param carry optional character vector of columns from the source data to append via nearest time
@@ -500,8 +520,8 @@ setGeneric(
 setMethod("derive_headings", "TrajSet", function(
     x,
     rule = c("crossing","distal","straight","origin_mean","net","velocity_mean",
-             "window_net","goal_bias","pca_axis","ransac_straight","maxspeed_window",
-             "vm_fit","exit","entry","ring_tangent"),
+             "velocity_axis","window_net","goal_bias","pca_axis","ransac_straight",
+             "maxspeed_window","vm_fit","exit","entry","ring_tangent"),
     ...,
     first_only = FALSE,
     carry = NULL,
@@ -533,7 +553,7 @@ setMethod("derive_headings", "TrajSet", function(
   sp <- split(seq_len(nrow(d)), d[[id]])
 
   # built-in dispatcher
-  builtins <- c("crossing","distal","straight","origin_mean","net","velocity_mean","window_net","goal_bias","pca_axis","ransac_straight","maxspeed_window","vm_fit","exit","entry","ring_tangent")
+  builtins <- c("crossing","distal","straight","origin_mean","net","velocity_mean","velocity_axis","window_net","goal_bias","pca_axis","ransac_straight","maxspeed_window","vm_fit","exit","entry","ring_tangent")
 
   # locate user rule if provided as function or registered name
   dots <- list(...)
@@ -593,6 +613,12 @@ setMethod("derive_headings", "TrajSet", function(
       velocity_mean = {
         weight_by <- dots$weight_by %||% "step_length"
         do.call(rbind, lapply(sp, function(ii) .set_headings_velocity_mean_one(d[ii, , drop = FALSE], id, tc, xc, yc, weight_by = weight_by)))
+      },
+      velocity_axis = {
+        weight_by <- dots$weight_by %||% "step_length"
+        do.call(rbind, lapply(sp, function(ii)
+          .set_headings_velocity_axis_one(d[ii, , drop = FALSE], id, tc, xc, yc,
+                                          weight_by = weight_by)))
       },
       window_net = {
         window_n <- as.integer(dots$window_n %||% 21L); stride <- as.integer(dots$stride %||% 1L)
