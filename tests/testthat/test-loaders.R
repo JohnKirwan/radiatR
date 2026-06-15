@@ -366,3 +366,31 @@ test_that("sleap dialect reads official SLEAP CSV fixture and handles NA scores"
                mean(c(205.9300539013689, 278.63521449272383)),
                tolerance = 1e-6)
 })
+
+test_that(".guess_col is case-insensitive and respects candidate priority", {
+  expect_equal(radiatR:::.guess_col(c("ID", "time"), c("id", "subject")), "ID")
+  expect_equal(radiatR:::.guess_col(c("Frame"), c("time", "frame")), "Frame")
+  expect_null(radiatR:::.guess_col(c("foo", "bar"), c("id")))
+})
+
+test_that(".guess_xy_suffix matches separator-suffixed axis columns", {
+  expect_equal(radiatR:::.guess_xy_suffix(c("Track1_X", "Track1_Y"), "x"), "Track1_X")
+  expect_equal(radiatR:::.guess_xy_suffix(c("Track1_X", "Track1_Y"), "y"), "Track1_Y")
+  expect_null(radiatR:::.guess_xy_suffix(c("max", "flux"), "x"))   # not separator-preceded
+})
+
+test_that("guess_columns recognises case-insensitive and suffixed columns", {
+  d <- data.frame(Frame = 1:3, Track1_X = c(0, 1, 2), Track1_Y = c(0, 0, 1))
+  names(d) <- c("Frame", "Track1_X", "Track1_Y")
+  g <- guess_columns(d)
+  expect_equal(g$time, "Frame")
+  expect_equal(g$x, "Track1_X")
+  expect_equal(g$y, "Track1_Y")
+  expect_null(g$id)
+})
+
+test_that("guess_columns honours explicit mapping overrides", {
+  d <- data.frame(a = 1:3, b = 1:3, c = 1:3)
+  g <- guess_columns(d, mapping = list(x = "b", y = "c", time = "a"))
+  expect_equal(g$x, "b"); expect_equal(g$y, "c"); expect_equal(g$time, "a")
+})

@@ -215,8 +215,51 @@ list_loader_dialects <- function() sort(ls(envir = .loader_registry))
 
 # Guess columns by conventional names
 .guess_col <- function(nms, candidates) {
-  hit <- intersect(candidates, nms)
-  if (length(hit)) hit[1] else NULL
+  ln <- tolower(nms)
+  for (cand in candidates) {
+    i <- which(ln == tolower(cand))
+    if (length(i)) return(nms[i[1L]])
+  }
+  NULL
+}
+
+# Match a coordinate column whose name ends in the axis letter after a start or
+# separator (e.g. "Track1_X" -> x). Used when no exact x/y candidate matches.
+.guess_xy_suffix <- function(nms, axis) {
+  re  <- sprintf("(^|[._-])%s$", axis)
+  hit <- nms[grepl(re, nms, ignore.case = TRUE)]
+  if (length(hit)) hit[1L] else NULL
+}
+
+#' Guess the role of each column in a track table
+#'
+#' Inspects a data frame's column names and returns the best guess for each
+#' `TrajSet` role (`id`, `time`, `x`, `y`, `angle`, `weight`), honouring any
+#' explicit `mapping` overrides. Matching is case-insensitive; `x`/`y` also match
+#' separator-suffixed names such as `Track1_X`. A role with no match is `NULL`.
+#' This is the same logic [TrajSet_read()] uses internally; call it to see or
+#' pre-fill a column mapping. It does not synthesize missing `id`/`time` columns
+#' (a `NULL` signals that `TrajSet_read()` will apply its single-track / row-order
+#' fallback).
+#'
+#' @param data A data frame (or anything with `names()`).
+#' @param mapping Optional named list of explicit role -> column overrides.
+#' @return A named list with elements `id`, `time`, `x`, `y`, `angle`, `weight`
+#'   (each a column name or `NULL`).
+#' @examples
+#' guess_columns(data.frame(Frame = 1:2, Track1_X = 0:1, Track1_Y = 0:1))
+#' @export
+guess_columns <- function(data, mapping = list()) {
+  nms <- names(data)
+  pick <- function(role, cands) mapping[[role]] %||% .guess_col(nms, cands)
+  list(
+    id     = pick("id",     c("id", "track", "trajectory", "animal", "subject")),
+    time   = pick("time",   c("time", "t", "timestamp", "datetime", "frame", "sec", "seconds")),
+    angle  = pick("angle",  c("theta", "angle", "phi", "bearing", "deg", "degrees")),
+    x      = mapping$x %||% .guess_col(nms, c("x", "x_pos", "xcoord", "pos_x")) %||% .guess_xy_suffix(nms, "x"),
+    y      = mapping$y %||% .guess_col(nms, c("y", "y_pos", "ycoord", "pos_y")) %||% .guess_xy_suffix(nms, "y"),
+    weight = pick("weight", c("w", "weight", "weights"))
+  )
 }
 
 # Drop a leading pandas-style row-index column.
