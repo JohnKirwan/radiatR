@@ -10,6 +10,15 @@
   standard angle-doubling method. The directional default (`axial = FALSE`) is
   unchanged.
 
+## Plotting
+
+* The mean-direction and interval overlays gain `axial = TRUE` for bidirectional
+  data: `add_circ_mean()`/`add_heading_arrow()` draw a double-headed axis through
+  the centre, `add_circ_interval()`/`add_heading_interval()` draw the CI at both
+  poles, and `add_critical_v_line()` mirrors its boundary. The Shiny app gains an
+  "Axial (bidirectional)" toggle (headings input) that makes the figure, the
+  summary table, and the exported code axial together.
+
 ## Coordinates
 
 * The per-trajectory reference direction is now first-class: `reference()` reads

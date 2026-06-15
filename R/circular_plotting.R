@@ -1107,6 +1107,9 @@ compute_circ_interval <- function(headings_df,
 #'
 #' @return A `geom_path()` layer.
 #'
+#' @param axial Logical. Render the overlay for axial (bidirectional, mod-pi)
+#'   data via the angle-doubling method: the CI is drawn at both poles of the
+#'   axis. Default `FALSE`.
 #' @seealso [compute_circ_interval()], [add_heading_interval()]
 #' @importFrom ggplot2 geom_path aes
 #' @importFrom rlang .data sym
@@ -1185,6 +1188,9 @@ add_circ_interval <- function(interval_df,
 #'
 #' @return A `geom_path()` layer.
 #'
+#' @param axial Logical. Render the overlay for axial (bidirectional, mod-pi)
+#'   data via the angle-doubling method: the CI is drawn at both poles of the
+#'   axis. Default `FALSE`.
 #' @seealso [compute_circ_interval()], [add_circ_interval()]
 #' @importFrom circular circular mean.circular sd.circular mle.vonmises.bootstrap.ci
 #' @importFrom ggplot2 geom_path aes
@@ -1306,6 +1312,9 @@ compute_circ_mean <- function(headings_df,
 #'
 #' @return A `geom_segment()` layer.
 #'
+#' @param axial Logical. Render the overlay for axial (bidirectional, mod-pi)
+#'   data: the mean is drawn as a double-headed axis through the centre. Default
+#'   `FALSE`.
 #' @seealso [compute_circ_mean()], [add_heading_arrow()]
 #' @importFrom ggplot2 geom_segment aes
 #' @importFrom rlang .data sym
@@ -1387,6 +1396,9 @@ add_circ_mean <- function(summary_df,
 #'
 #' @return A `geom_segment()` layer.
 #'
+#' @param axial Logical. Render the overlay for axial (bidirectional, mod-pi)
+#'   data: the mean is drawn as a double-headed axis through the centre. Default
+#'   `FALSE`.
 #' @seealso [compute_circ_mean()], [add_circ_mean()]
 #' @importFrom circular circular mean.circular rho.circular
 #' @importFrom ggplot2 geom_segment aes
@@ -3211,6 +3223,8 @@ add_critical_r <- function(hd, alpha = 0.05,
 #' @param region_fill Fill colour for the rejection region.  Default
 #'   \code{"firebrick"}.
 #' @param region_alpha Fill opacity.  Default \code{0.08}.
+#' @param axial Logical. Render the V-test boundary for axial (bidirectional,
+#'   mod-pi) data: the decision chord is mirrored to both poles. Default `FALSE`.
 #' @param n_pts Points approximating the rejection arc.  Default \code{100L}.
 #' @return A list of ggplot2 layers, or \code{NULL} if no group has a boundary
 #'   inside the unit circle.
