@@ -86,3 +86,28 @@ test_that("test_uniformity(axial=TRUE) detects an axis the directional test miss
   expect_equal(ax$statistic, man$statistic)
   expect_equal(ax$p_value,   man$p_value)
 })
+
+test_that("test_mean_directions(axial=TRUE) compares axes (matches doubled angles)", {
+  set.seed(7)
+  mk <- function(mu) (c(rnorm(40, mu, 8), rnorm(40, mu + 180, 8)) * pi/180) %% (2*pi)
+  hd <- rbind(data.frame(heading = mk(40),  g = "a"),
+              data.frame(heading = mk(110), g = "b"))
+  ax  <- test_mean_directions(hd, "g", axial = TRUE)
+  man <- test_mean_directions(data.frame(heading = (2*hd$heading) %% (2*pi),
+                                         g = hd$g), "g")
+  expect_equal(ax$statistic, man$statistic)
+  expect_equal(ax$p_value,   man$p_value)
+  expect_lt(ax$p_value, 0.001)        # the two axes differ
+})
+
+test_that("test_concentration(axial=TRUE) matches the doubled-angle test", {
+  set.seed(9)
+  mk <- function(mu, sd) (c(rnorm(50, mu, sd), rnorm(50, mu + 180, sd)) * pi/180) %% (2*pi)
+  hd <- rbind(data.frame(heading = mk(60, 5),  g = "a"),
+              data.frame(heading = mk(60, 20), g = "b"))
+  ax  <- test_concentration(hd, "g", axial = TRUE)
+  man <- test_concentration(data.frame(heading = (2*hd$heading) %% (2*pi),
+                                       g = hd$g), "g")
+  expect_equal(ax$statistic, man$statistic)
+  expect_equal(ax$p_value,   man$p_value)
+})

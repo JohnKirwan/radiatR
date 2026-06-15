@@ -914,7 +914,8 @@ test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
 #'   \code{p_value_adj} (when \code{p_adjust != "none"}).
 #' @export
 test_mean_directions <- function(hd, group_col, angle_col = "heading",
-                                  pairwise = FALSE, p_adjust = "none") {
+                                  pairwise = FALSE, p_adjust = "none",
+                                  axial = FALSE) {
   stopifnot(is.data.frame(hd))
   for (col in c(angle_col, group_col))
     if (!col %in% names(hd))
@@ -924,7 +925,7 @@ test_mean_directions <- function(hd, group_col, angle_col = "heading",
   circ_list <- stats::setNames(lapply(groups, function(g) {
     a <- as.numeric(hd[[angle_col]][hd[[group_col]] == g])
     a <- a[is.finite(a)]
-    circular::circular(a, units = "radians", type = "angles")
+    circular::circular(.fold_angles(a, axial), units = "radians", type = "angles")
   }), as.character(groups))
   circ_list <- Filter(function(x) length(x) >= 2L, circ_list)
   if (length(circ_list) < 2L)
@@ -990,14 +991,14 @@ test_mean_directions <- function(hd, group_col, angle_col = "heading",
 #'   only), \code{p_value}, and \code{test}.
 #' @export
 test_concentration <- function(hd, group_col, angle_col = "heading",
-                                parametric = TRUE) {
+                                parametric = TRUE, axial = FALSE) {
   stopifnot(is.data.frame(hd))
   for (col in c(angle_col, group_col))
     if (!col %in% names(hd))
       stop("test_concentration: column '", col, "' not found")
 
   a   <- as.numeric(hd[[angle_col]]); keep <- is.finite(a)
-  a_c <- circular::circular(a[keep], units = "radians", type = "angles")
+  a_c <- circular::circular(.fold_angles(a[keep], axial), units = "radians", type = "angles")
   grp <- hd[[group_col]][keep]
 
   if (parametric) {
