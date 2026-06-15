@@ -110,6 +110,49 @@ test_that("selecting the Headings input type sticks across wizard re-renders", {
   expect_match(app$get_html("#load_example_hd"), "Load example headings")
 })
 
+test_that("example headings land on Configure with a facet selector (arc/type)", {
+  skip_on_cran()
+  skip_if_not_installed("shinytest2")
+  skip_if_not_installed("chromote")
+  skip_if(is.null(chromote::find_chrome()), "no Chrome/Chromium binary found")
+
+  app_dir <- system.file("app", package = "radiatR")
+  skip_if(!nzchar(app_dir),
+          "radiatR app directory not found (package installed?)")
+
+  app <- shinytest2::AppDriver$new(
+    app_dir,
+    name         = "headings-facet",
+    load_timeout = 60 * 1000,
+    timeout      = 30 * 1000
+  )
+  withr::defer(app$stop())
+
+  app$set_inputs(input_type = "headings")
+  app$wait_for_idle(timeout = 30 * 1000)
+  app$click("load_example_hd")
+  app$wait_for_idle(timeout = 30 * 1000)
+
+  # The example no longer skips Configure: a Facet-by selector is present and
+  # defaults to arc (not locked to type).
+  expect_identical(app$get_value(input = "hd_group"), "arc")
+  # `type` is also offered (selecting it sticks; it is not the only option).
+  app$set_inputs(hd_group = "type")
+  app$wait_for_idle(timeout = 30 * 1000)
+  expect_identical(app$get_value(input = "hd_group"), "type")
+  app$set_inputs(hd_group = "arc")
+  app$wait_for_idle(timeout = 30 * 1000)
+
+  # Choosing arc and analysing renders results without error.
+  app$click("go3")
+  app$wait_for_idle(timeout = 30 * 1000)
+  expect_false(is.null(app$get_value(output = "summary_tbl")))
+  expect_false(grepl(
+    "track_plot render failed",
+    paste(utils::capture.output(print(app$get_logs())), collapse = "\n")
+  ))
+})
+
 test_that("the app exports a vector plot download", {
   skip_on_cran()
   skip_if_not_installed("shinytest2")
