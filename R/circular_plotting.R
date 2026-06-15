@@ -1117,7 +1117,8 @@ add_circ_interval <- function(interval_df,
                               linewidth  = 1.5,
                               colour     = NULL,
                               linetype   = "solid",
-                              n_theta    = 500L) {
+                              n_theta    = 500L,
+                              axial      = FALSE) {
   for (col in c("lower", "upper")) {
     if (!col %in% names(interval_df))
       stop("`interval_df` is missing required column '", col, "'.")
@@ -1139,25 +1140,24 @@ add_circ_interval <- function(interval_df,
     ))
   }
 
-  parts <- lapply(valid_rows, function(i) {
-    lower <- interval_df$lower[i]
-    upper <- interval_df$upper[i]
-    wraps <- if (has_wraps) isTRUE(interval_df$wraps[i]) else lower > upper
-    theta_seq <- if (wraps) {
-      seq(lower, upper + 2 * pi, length.out = n_theta)
-    } else {
-      seq(lower, upper, length.out = n_theta)
-    }
-    cos_vals <- radius * cos(theta_seq)
-    sin_vals <- radius * sin(theta_seq)
-    xy       <- .uc_to_display_coords(cos_vals, sin_vals, disp_opts)
-    d <- data.frame(
-      .x        = xy$x,
-      .y        = xy$y,
-      .group_id = i
-    )
+  one_arc <- function(i, lo, hi, gid) {
+    wraps <- if (has_wraps) isTRUE(interval_df$wraps[i]) else lo > hi
+    theta_seq <- if (wraps) seq(lo, hi + 2 * pi, length.out = n_theta)
+                 else        seq(lo, hi, length.out = n_theta)
+    xy <- .uc_to_display_coords(radius * cos(theta_seq),
+                                radius * sin(theta_seq), disp_opts)
+    d  <- data.frame(.x = xy$x, .y = xy$y, .group_id = gid)
     if (has_group_col) d[[colour_col]] <- interval_df[[colour_col]][i]
     d
+  }
+  parts <- lapply(valid_rows, function(i) {
+    lo <- interval_df$lower[i]; hi <- interval_df$upper[i]
+    if (isTRUE(axial)) {
+      rbind(one_arc(i, lo, hi, i),
+            one_arc(i, lo + pi, hi + pi, i + max(valid_rows)))
+    } else {
+      one_arc(i, lo, hi, i)
+    }
   })
   arc_df <- do.call(rbind, parts)
 
@@ -1201,18 +1201,21 @@ add_heading_interval <- function(headings_df,
                                  linewidth   = 1.5,
                                  colour      = NULL,
                                  linetype    = "solid",
-                                 n_theta     = 500L) {
+                                 n_theta     = 500L,
+                                 axial       = FALSE) {
   if (is.null(display))
     display <- attr(headings_df, "display", exact = TRUE) %||% circ_display()
   stat <- match.arg(stat)
   iv   <- compute_circ_interval(headings_df, heading_col = heading_col,
                                 colour_col = colour_col,
                                 stat = stat,
-                                boot_reps = boot_reps, boot_alpha = boot_alpha)
+                                boot_reps = boot_reps, boot_alpha = boot_alpha,
+                                axial = axial)
   attr(iv, "display") <- display
   add_circ_interval(iv, colour_col = colour_col,
                     radius = radius, linewidth = linewidth,
-                    colour = colour, linetype = linetype, n_theta = n_theta)
+                    colour = colour, linetype = linetype, n_theta = n_theta,
+                    axial = axial)
 }
 
 # ---- circular mean arrow -----------------------------------------------------

@@ -27,3 +27,20 @@ test_that("add_heading_arrow(axial=TRUE) routes the axial mean through (axis seg
   expect_equal(l$data$.y, -l$data$.yend)
   expect_equal(as.integer(l$geom_params$arrow$ends), 3L)
 })
+
+test_that("add_circ_interval(axial=TRUE) draws the arc at both ends", {
+  iv <- data.frame(mean_dir = 0.5, lower = 0.4, upper = 0.6, wraps = FALSE)
+  l1 <- add_circ_interval(iv, axial = FALSE)
+  l2 <- add_circ_interval(iv, axial = TRUE)
+  # twice the arc points (two groups), and two distinct .group_id values
+  expect_equal(nrow(l2$data), 2L * nrow(l1$data))
+  expect_length(unique(l2$data$.group_id), 2L)
+})
+
+test_that("add_heading_interval(axial=TRUE) routes the axial interval through", {
+  set.seed(2)
+  a  <- (c(rnorm(60, 35, 6), rnorm(60, 215, 6)) * pi/180) %% (2*pi)
+  hf <- headings_frame(data.frame(heading = a), heading, units = "radians")
+  l  <- add_heading_interval(hf, axial = TRUE, stat = "sd")
+  expect_length(unique(l$data$.group_id), 2L)   # both ends
+})
