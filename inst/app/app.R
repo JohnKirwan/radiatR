@@ -106,6 +106,19 @@ colour_cols <- function(ts) {
   setdiff(cats, c(ts@cols$id, ts@cols$time))
 }
 
+# Categorical columns of a headings data frame usable for faceting/grouping (the
+# headings analogue of grouping_cols(): char/factor with 2-12 levels, excluding
+# the id and heading columns). Used to populate the headings "Facet by" selector.
+.hd_group_choices <- function(hd) {
+  if (is.null(hd)) return(character(0))
+  hc   <- attr(hd, "heading_col") %||% "heading"
+  cats <- names(hd)[vapply(hd, function(v) {
+    nu <- length(unique(stats::na.omit(v)))
+    (is.character(v) || is.factor(v)) && nu >= 2L && nu <= 12L
+  }, logical(1))]
+  setdiff(cats, c("id", hc))
+}
+
 # Identify a candidate condition column in a loaded TrajSet.
 # Looks for character columns with 2-12 unique values that are not
 # structural (id, time, position, derivatives).
@@ -471,8 +484,13 @@ server <- function(input, output, session) {
   observeEvent(input$go3, {
     if (identical(rv$mode, "headings")) {
       if (is.null(rv$raw_hd)) {
-        # Example headings already built; nothing to map -> show results.
-        if (!is.null(rv$hd)) { rv$step <- 3L; rv$error <- NULL; return() }
+        # Example headings already built; apply the chosen facet -> show results.
+        if (!is.null(rv$hd)) {
+          grp <- if (!is.null(input$hd_group) && nzchar(input$hd_group))
+            input$hd_group else NULL
+          hm <- rv$hd_map; hm$group <- grp; rv$hd_map <- hm
+          rv$step <- 3L; rv$error <- NULL; return()
+        }
         rv$error <- "Please upload a file of headings first."
         return()
       }
@@ -576,25 +594,33 @@ server <- function(input, output, session) {
 
   observeEvent(input$load_example_hd, {
     ensure_pkgs()
+    ex <- tryCatch(example_ts(), error = function(e) NULL)
+    if (is.null(ex)) {
+      rv$error <- "Could not load the bundled example dataset."; return()
+    }
+    # Carry EVERY condition column (e.g. arc, type), not just one, so the facet
+    # is selectable in Configure rather than hard-coded.
+    cond_cols <- grouping_cols(ex)
+    id_col    <- ex@cols$id
     hd <- tryCatch({
-      ex   <- example_ts()
       hd0  <- derive_headings(ex, rule = "distal", coords = "relative")
-      cond <- unique(as.data.frame(ex)[, c("trial_id", "type")])
-      hd0  <- merge(hd0, cond, by.x = "id", by.y = "trial_id", all.x = TRUE)
+      cond <- unique(as.data.frame(ex)[, c(id_col, cond_cols), drop = FALSE])
+      hd0  <- merge(hd0, cond, by.x = "id", by.y = id_col, all.x = TRUE)
       build_headings_input(hd0, col = "heading", units = "radians",
-                           convention = "unit_circle", group = "type")
+                           convention = "unit_circle")
     }, error = function(e) NULL)
     if (is.null(hd)) { rv$error <- "Could not build the example headings."; return() }
     rv$mode      <- "headings"
     rv$hd        <- hd
     rv$hd_map    <- list(col = "heading", units = "radians",
-                         convention = "unit_circle", group = "type")
+                         convention = "unit_circle",
+                         group = detect_cond_col(ex))   # default facet (e.g. arc)
     rv$ts        <- NULL
     rv$raw_hd    <- NULL
     rv$source    <- "example"
     rv$file_name <- NULL
     rv$method    <- NULL
-    rv$step      <- 3L
+    rv$step      <- 2L     # land on Configure so the facet can be chosen
     rv$error     <- NULL
   })
 
@@ -648,12 +674,16 @@ server <- function(input, output, session) {
     # ---- Step 2: configure (headings) ----
     } else if (rv$step == 2L && identical(rv$mode, "headings")) {
       if (is.null(rv$raw_hd)) {
+        choices <- .hd_group_choices(rv$hd)
+        cur     <- (rv$hd_map %||% list(group = NULL))$group %||% ""
         tagList(
           h5("Example headings"),
           p(class = "text-muted",
-            "These headings come from the bundled example dataset — no column ",
-            "mapping is needed. Click Analyse to view the results, or go back ",
-            "and upload your own file of angles."),
+            "These headings come from the bundled millipede dataset — no column ",
+            "mapping is needed. Choose how to facet the plot, then click Analyse."),
+          selectInput("hd_group", "Facet by (optional)",
+                      choices  = c("(none)" = "", stats::setNames(choices, choices)),
+                      selected = cur),
           err_box
         )
       } else {
