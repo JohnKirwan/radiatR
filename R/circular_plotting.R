@@ -1036,6 +1036,10 @@ add_heading_density <- function(headings_df,
 #'   Default `1000L`. Ignored when `stat = "sd"`.
 #' @param boot_alpha Significance level for the bootstrap CI. Default `0.05`
 #'   produces a 95\% interval.
+#' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
+#'   data: the interval is computed via the angle-doubling method and `mean_dir`
+#'   is reported as an axis in `[0, pi)`, with the endpoints scaled accordingly.
+#'   Default `FALSE` (ordinary directional data).
 #'
 #' @return A data frame with columns `mean_dir`, `lower`, `upper` (radians,
 #'   `[-pi, pi]`), and `wraps` (logical, `TRUE` when the arc crosses the +/-pi
@@ -1228,6 +1232,9 @@ add_heading_interval <- function(headings_df,
 #'   `"heading"`.
 #' @param colour_col Optional. Name of a column to group by. One row is
 #'   returned per group. The same column maps to colour in [add_circ_mean()].
+#' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
+#'   data: `mean_dir` is the axis in `[0, pi)` and `resultant_R` is the axial
+#'   resultant length, both via the angle-doubling method. Default `FALSE`.
 #' @return A data frame with columns `mean_dir` (unit-circle radians, 0 to
 #'   2pi), `resultant_R` (0--1), and `colour_col` when supplied. Both are `NA`
 #'   when a group contains fewer than 2 finite angles.

@@ -9,7 +9,8 @@ test_uniformity(
   group_col = NULL,
   angle_col = "heading",
   test = c("rayleigh", "kuiper", "rao", "watson"),
-  p_adjust = "none"
+  p_adjust = "none",
+  axial = FALSE
 )
 }
 \arguments{
@@ -28,6 +29,10 @@ as one group.}
 \code{group_col} is supplied; a \code{p_value_adj} column is added to the
 result.  Recommended: \code{"BH"} (Benjamini-Hochberg) when testing many
 conditions.  Only meaningful for the Rayleigh test (exact p-values).}
+
+\item{axial}{Logical. Treat the angles as axial (bidirectional, mod-pi)
+data: the uniformity test is run via the angle-doubling method (testing for
+an axis). Default `FALSE` (ordinary directional data).}
 }
 \value{
 Tidy data frame with columns \code{group_col} (if supplied),

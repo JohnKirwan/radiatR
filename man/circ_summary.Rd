@@ -5,11 +5,11 @@
 \alias{circ_summary,TrajSet-method}
 \title{Circular summaries per trajectory}
 \usage{
-circ_summary(x, w = NULL, by = c("id", "global"))
+circ_summary(x, w = NULL, by = c("id", "global"), axial = FALSE)
 
-circ_summary(x, w = NULL, by = c("id", "global"))
+circ_summary(x, w = NULL, by = c("id", "global"), axial = FALSE)
 
-\S4method{circ_summary}{TrajSet}(x, w = NULL, by = c("id", "global"))
+\S4method{circ_summary}{TrajSet}(x, w = NULL, by = c("id", "global"), axial = FALSE)
 }
 \arguments{
 \item{x}{A [`TrajSet`] object.}
@@ -19,6 +19,11 @@ circ_summary(x, w = NULL, by = c("id", "global"))
 
 \item{by}{Character. `"id"` (default) returns one row per trial;
 `"global"` pools all observations into a single summary row.}
+
+\item{axial}{Logical. Treat the angles as axial (bidirectional, mod-pi)
+data: statistics are computed via the angle-doubling method and the mean is
+reported as an axis in `[0, pi)` radians / `[0, 180)` degrees. Default
+`FALSE` (ordinary directional data).}
 }
 \value{
 data.frame(id, n, t_start, t_end, mean_dir, resultant_R, kappa)

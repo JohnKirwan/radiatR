@@ -9,7 +9,8 @@ test_mean_directions(
   group_col,
   angle_col = "heading",
   pairwise = FALSE,
-  p_adjust = "none"
+  p_adjust = "none",
+  axial = FALSE
 )
 }
 \arguments{
@@ -28,6 +29,10 @@ the pairwise output; a \code{p_value_adj} column is added.  Strongly
 recommended when \code{pairwise = TRUE}: use \code{"BH"}
 (Benjamini-Hochberg) or \code{"holm"} (family-wise control).  Ignored
 for the omnibus test (single p-value, no adjustment needed).}
+
+\item{axial}{Logical. Treat the angles as axial (bidirectional, mod-pi)
+data: the test is run via the angle-doubling method, comparing group axes.
+Default `FALSE` (ordinary directional data).}
 }
 \value{
 Tidy data frame.  Omnibus result has columns \code{n_groups},

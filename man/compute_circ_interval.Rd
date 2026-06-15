@@ -10,7 +10,8 @@ compute_circ_interval(
   colour_col = NULL,
   stat = c("bootstrap_ci", "sd"),
   boot_reps = 1000L,
-  boot_alpha = 0.05
+  boot_alpha = 0.05,
+  axial = FALSE
 )
 }
 \arguments{
@@ -28,6 +29,11 @@ Default `1000L`. Ignored when `stat = "sd"`.}
 
 \item{boot_alpha}{Significance level for the bootstrap CI. Default `0.05`
 produces a 95\% interval.}
+
+\item{axial}{Logical. Treat the angles as axial (bidirectional, mod-pi)
+data: the interval is computed via the angle-doubling method and `mean_dir`
+is reported as an axis in `[0, pi)`, with the endpoints scaled accordingly.
+Default `FALSE` (ordinary directional data).}
 }
 \value{
 A data frame with columns `mean_dir`, `lower`, `upper` (radians,

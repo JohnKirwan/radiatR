@@ -14,6 +14,10 @@
 #'   (default), all steps are weighted equally.
 #' @param by Character. `"id"` (default) returns one row per trial;
 #'   `"global"` pools all observations into a single summary row.
+#' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
+#'   data: statistics are computed via the angle-doubling method and the mean is
+#'   reported as an axis in `[0, pi)` radians / `[0, 180)` degrees. Default
+#'   `FALSE` (ordinary directional data).
 #' @return A `data.frame` with columns `id`, `n`, `t_start`, `t_end`,
 #'   `mean_dir` (radians, unit-circle convention, 0 to 2pi), `resultant_R`
 #'   (0--1), and `kappa`
@@ -372,6 +376,10 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 #' @importFrom rlang ensym as_string
 #' @importFrom tibble as_tibble
 #' @importFrom circular circular mean.circular rho.circular
+#' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
+#'   data: statistics are computed via the angle-doubling method and the mean is
+#'   reported as an axis in `[0, pi)` radians / `[0, 180)` degrees. Default
+#'   `FALSE` (ordinary directional data).
 #' @export
 circ_summarise <- function(data,
                            col,
@@ -457,6 +465,10 @@ circ_summarise <- function(data,
 #' @return Data frame with columns \code{group_col} (if supplied),
 #'   \code{mean_dir}, \code{resultant_R}, \code{circ_sd}, \code{n}.
 #'   Circular standard deviation is \eqn{\sqrt{-2 \log R}}.
+#' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
+#'   data: statistics are computed via the angle-doubling method and the mean is
+#'   reported as an axis in `[0, pi)` radians / `[0, 180)` degrees. Default
+#'   `FALSE` (ordinary directional data).
 #' @export
 circ_dispersion <- function(hd, group_col = NULL, angle_col = "heading",
                             axial = FALSE) {
@@ -827,6 +839,9 @@ circ_cor <- function(hd, x_col, angle_col = "heading",
 #' @return Tidy data frame with columns \code{group_col} (if supplied),
 #'   \code{statistic}, \code{p_value}, \code{n}, \code{test}, and
 #'   \code{p_value_adj} (when \code{p_adjust != "none"}).
+#' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
+#'   data: the uniformity test is run via the angle-doubling method (testing for
+#'   an axis). Default `FALSE` (ordinary directional data).
 #' @export
 test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
                              test = c("rayleigh", "kuiper", "rao", "watson"),
@@ -912,6 +927,9 @@ test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
 #'   \code{statistic}, \code{df1}, \code{df2}, \code{p_value}, \code{test}.
 #'   Pairwise result additionally has \code{group1}, \code{group2}, and
 #'   \code{p_value_adj} (when \code{p_adjust != "none"}).
+#' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
+#'   data: the test is run via the angle-doubling method, comparing group axes.
+#'   Default `FALSE` (ordinary directional data).
 #' @export
 test_mean_directions <- function(hd, group_col, angle_col = "heading",
                                   pairwise = FALSE, p_adjust = "none",
@@ -989,6 +1007,9 @@ test_mean_directions <- function(hd, group_col, angle_col = "heading",
 #'   \code{equal.kappa.test}; \code{FALSE} uses \code{wallraff.test}.
 #' @return One-row tidy data frame with \code{statistic}, \code{df} (parametric
 #'   only), \code{p_value}, and \code{test}.
+#' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
+#'   data: the test is run via the angle-doubling method, comparing axial
+#'   concentrations. Default `FALSE` (ordinary directional data).
 #' @export
 test_concentration <- function(hd, group_col, angle_col = "heading",
                                 parametric = TRUE, axial = FALSE) {

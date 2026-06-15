@@ -4,7 +4,12 @@
 \alias{compute_circ_mean}
 \title{Compute circular mean direction and resultant length from a headings data frame}
 \usage{
-compute_circ_mean(headings_df, heading_col = "heading", colour_col = NULL)
+compute_circ_mean(
+  headings_df,
+  heading_col = "heading",
+  colour_col = NULL,
+  axial = FALSE
+)
 }
 \arguments{
 \item{headings_df}{Data frame with a column of heading angles in radians.
@@ -16,6 +21,10 @@ compute_circ_mean(headings_df, heading_col = "heading", colour_col = NULL)
 
 \item{colour_col}{Optional. Name of a column to group by. One row is
 returned per group. The same column maps to colour in [add_circ_mean()].}
+
+\item{axial}{Logical. Treat the angles as axial (bidirectional, mod-pi)
+data: `mean_dir` is the axis in `[0, pi)` and `resultant_R` is the axial
+resultant length, both via the angle-doubling method. Default `FALSE`.}
 }
 \value{
 A data frame with columns `mean_dir` (unit-circle radians, 0 to
