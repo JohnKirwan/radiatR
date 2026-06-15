@@ -111,3 +111,34 @@ test_that("test_concentration(axial=TRUE) matches the doubled-angle test", {
   expect_equal(ax$statistic, man$statistic)
   expect_equal(ax$p_value,   man$p_value)
 })
+
+test_that("compute_circ_mean(axial=TRUE) returns the axis and axial R", {
+  set.seed(10)
+  a  <- (c(rnorm(60, 35, 6), rnorm(60, 215, 6)) * pi/180) %% (2*pi)
+  hf <- data.frame(heading = a)
+  ax <- compute_circ_mean(hf, axial = TRUE)
+  expect_equal(ax$mean_dir,    (Arg(mean(exp(1i*2*a)))/2) %% pi, tolerance = 1e-8)
+  expect_equal(ax$resultant_R, Mod(mean(exp(1i*2*a))),           tolerance = 1e-8)
+})
+
+test_that("compute_circ_interval(axial=TRUE) gives an axis-scaled SD interval", {
+  set.seed(11)
+  a  <- (c(rnorm(80, 35, 7), rnorm(80, 215, 7)) * pi/180) %% (2*pi)
+  hf <- data.frame(heading = a)
+  ax  <- compute_circ_interval(hf, stat = "sd", axial = TRUE)
+  man <- compute_circ_interval(data.frame(heading = (2*a) %% (2*pi)), stat = "sd")
+  # the axis is the doubled-angle mean halved
+  expect_equal(ax$mean_dir, (man$mean_dir / 2) %% pi, tolerance = 1e-8)
+  # the interval half-width is halved relative to the doubled-angle interval
+  hw_ax  <- ((atan2(sin(ax$upper  - ax$mean_dir),  cos(ax$upper  - ax$mean_dir))))
+  hw_man <- ((atan2(sin(man$upper - man$mean_dir), cos(man$upper - man$mean_dir))))
+  expect_equal(hw_ax, hw_man / 2, tolerance = 1e-8)
+})
+
+test_that("compute_circ_* axial=FALSE unchanged", {
+  set.seed(12)
+  hf <- data.frame(heading = runif(40, 0, 2*pi))
+  expect_equal(compute_circ_mean(hf, axial = FALSE), compute_circ_mean(hf))
+  expect_equal(compute_circ_interval(hf, stat = "sd", axial = FALSE),
+               compute_circ_interval(hf, stat = "sd"))
+})
