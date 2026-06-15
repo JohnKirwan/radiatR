@@ -11,7 +11,8 @@ add_circ_interval(
   linewidth = 1.5,
   colour = NULL,
   linetype = "solid",
-  n_theta = 500L
+  n_theta = 500L,
+  axial = FALSE
 )
 }
 \arguments{
@@ -33,6 +34,10 @@ in `"black"`. Supplying any colour string always overrides `colour_col`.}
 \item{linetype}{Line type. Default `"solid"`.}
 
 \item{n_theta}{Number of points along the arc. Default `500L`.}
+
+\item{axial}{Logical. Render the overlay for axial (bidirectional, mod-pi)
+data via the angle-doubling method: the CI is drawn at both poles of the
+axis. Default `FALSE`.}
 }
 \value{
 A `geom_path()` layer.

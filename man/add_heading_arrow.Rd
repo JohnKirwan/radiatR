@@ -12,6 +12,7 @@ add_heading_arrow(
   linewidth = 1,
   colour = NULL,
   arrow_length_cm = 0.2,
+  axial = FALSE,
   ...
 )
 }
@@ -36,6 +37,10 @@ colour is mapped from that column; when `NULL` and no `colour_col`, draws
 in `"black"`. Supplying any colour string always overrides `colour_col`.}
 
 \item{arrow_length_cm}{Arrowhead length in cm. Default `0.2`.}
+
+\item{axial}{Logical. Render the overlay for axial (bidirectional, mod-pi)
+data: the mean is drawn as a double-headed axis through the centre. Default
+`FALSE`.}
 
 \item{...}{Additional arguments forwarded to `geom_segment` (e.g.
 `linetype`, `alpha`, or a custom `arrow` spec that overrides the default).}

@@ -99,6 +99,7 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
   list(
     data      = data,
     mode      = mode,
+    axial     = isTRUE(inputs$axial),
     # in headings mode method is NULL, so headings$rule is absent by design (every reader gates on mode first)
     headings = c(list(rule = method), rule_params),
     group_col = id_col,
@@ -214,8 +215,8 @@ spec_to_plot <- function(spec, ts, hd) {
   }
 
   if (spec$show$arrow) {
-    arrow_df <- compute_circ_mean(hd, colour_col = spec$facet_by)
-    p <- p + add_circ_mean(arrow_df, colour = "black")
+    arrow_df <- compute_circ_mean(hd, colour_col = spec$facet_by, axial = isTRUE(spec$axial))
+    p <- p + add_circ_mean(arrow_df, colour = "black", axial = isTRUE(spec$axial))
   }
   if (spec$show$vectors && all(c("x_inner", "y_inner") %in% names(hd)))
     p <- p + add_heading_vectors(hd, colour_col = ".colour")
@@ -224,7 +225,7 @@ spec_to_plot <- function(spec, ts, hd) {
   # carries the display attribute (set above) so the arc orients correctly.
   if (isTRUE(spec$show$ci))
     p <- p + add_heading_interval(hd, colour_col = spec$facet_by,
-               stat = "bootstrap_ci")
+               stat = "bootstrap_ci", axial = isTRUE(spec$axial))
 
   # Rayleigh critical circle (alpha = 0.05). Per-panel when faceted, drawn in a
   # fixed colour so it never collides with the trajectory colour scale.
@@ -238,7 +239,8 @@ spec_to_plot <- function(spec, ts, hd) {
   if (isTRUE(spec$show$vtest)) {
     v <- add_critical_v_line(hd, mu0 = SPEC_VTEST_MU0, angle_col = "heading",
            group_col = spec$facet_by, per_group = !is.null(spec$facet_by),
-           colour = SPEC_VTEST_COLOUR, linewidth = SPEC_VTEST_LWD)
+           colour = SPEC_VTEST_COLOUR, linewidth = SPEC_VTEST_LWD,
+           axial = isTRUE(spec$axial))
     if (!is.null(v)) p <- p + v
   }
 
@@ -262,6 +264,7 @@ spec_to_code <- function(spec) {
   # heading rule is "none". Used to gate both the trajectory-branch derive_headings
   # emission and the shared overlay/tail emission below.
   has_hd <- headings_mode || !identical(spec$headings$rule, "none")
+  ax <- if (isTRUE(spec$axial)) ", axial = TRUE" else ""
 
   if (headings_mode) {
     if (identical(spec$data$source, "example")) {
@@ -333,7 +336,7 @@ spec_to_code <- function(spec) {
   if (has_hd && spec$show$arrow) {
     cc <- if (is.null(spec$facet_by)) "" else paste0(", colour_col = ", q(spec$facet_by))
     add("")
-    add("arrow_df <- compute_circ_mean(hd", cc, ")")
+    add("arrow_df <- compute_circ_mean(hd", cc, ax, ")")
   }
 
   add("")
@@ -369,13 +372,13 @@ spec_to_code <- function(spec) {
   if (has_hd && identical(spec$heading_display, "points"))
     tail <- c(tail, "add_heading_points(hd, colour_col = \".colour\", size = 2.5, alpha = 0.8)")
   if (has_hd && spec$show$arrow)
-    tail <- c(tail, "add_circ_mean(arrow_df, colour = \"black\")")
+    tail <- c(tail, paste0("add_circ_mean(arrow_df, colour = \"black\"", ax, ")"))
   if (has_hd && spec$show$vectors && identical(spec$headings$rule, "crossing"))
     tail <- c(tail, "add_heading_vectors(hd, colour_col = \".colour\")")
   if (has_hd && isTRUE(spec$show$ci)) {
     cc <- if (is.null(spec$facet_by)) "" else paste0(", colour_col = ", q(spec$facet_by))
     tail <- c(tail, paste0(
-      "add_heading_interval(hd", cc, ", stat = \"bootstrap_ci\")"))
+      "add_heading_interval(hd", cc, ", stat = \"bootstrap_ci\"", ax, ")"))
   }
   if (has_hd && isTRUE(spec$show$rayleigh)) {
     gca <- if (is.null(spec$facet_by)) ", group_col = NULL, per_group = FALSE"
@@ -390,7 +393,7 @@ spec_to_code <- function(spec) {
            else paste0(", group_col = ", q(spec$facet_by), ", per_group = TRUE")
     tail <- c(tail, paste0(
       "add_critical_v_line(hd, mu0 = pi / 2, angle_col = \"heading\"", gpg,
-      ", colour = ", q(SPEC_VTEST_COLOUR), ", linewidth = ", SPEC_VTEST_LWD, ")"))
+      ", colour = ", q(SPEC_VTEST_COLOUR), ", linewidth = ", SPEC_VTEST_LWD, ax, ")"))
   }
   lab_parts <- character(0)
   if (!is.null(spec$subtitle) && nzchar(spec$subtitle))

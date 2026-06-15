@@ -25,7 +25,7 @@ source(.p, local = TRUE)
 roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
                            rayleigh = FALSE, ci = FALSE, vtest = FALSE,
                            subtitle = NULL, caption = NULL,
-                           quadrants = FALSE, rings = FALSE) {
+                           quadrants = FALSE, rings = FALSE, axial = FALSE) {
   data(cpunctatus, package = "radiatR", envir = environment())
   ts <- cpunctatus
   hd <- derive_headings(ts, rule = "distal")
@@ -41,6 +41,7 @@ roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
                   legend = !identical(by, "trajectory") &&
                            length(unique(as.data.frame(ts)[[by]])) <= 20),
     theme = "void", angle_labels = "degrees", display = list(zero = 0),
+    axial = axial,
     heading_display = heading_display,
     subtitle = subtitle, caption = caption,
     show = list(tracks = TRUE, arrow = arrow, vectors = vectors,
@@ -272,6 +273,29 @@ test_that("round-trip: headings uploaded file with a non-'heading' column", {
   expect_equal(.fingerprint(evald), .fingerprint(live))
 })
 
+test_that("spec_to_plot honours spec$axial (double-headed arrow)", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  ts   <- cpunctatus
+  hd   <- derive_headings(ts, rule = "distal")
+  spec <- list(
+    data = list(source = "example", path = NULL, dialect = NULL),
+    headings = list(rule = "distal"),
+    group_col = ts@cols$id, facet_by = NULL, axial = TRUE,
+    colour = list(by = "trajectory", cap = 20, legend = FALSE),
+    theme = "void", angle_labels = "degrees", display = list(zero = 0),
+    heading_display = "points",
+    show = list(tracks = FALSE, arrow = TRUE, vectors = FALSE,
+                rayleigh = FALSE, ci = FALSE, vtest = FALSE,
+                quadrants = FALSE, rings = FALSE))
+  p <- spec_to_plot(spec, ts = ts, hd = hd)
+  # the mean arrow is the only GeomSegment whose data uses the .x/.xend columns
+  arrow_layers <- Filter(function(l)
+    inherits(l$geom, "GeomSegment") && ".x" %in% names(l$data), p$layers)
+  expect_length(arrow_layers, 1L)
+  seg <- arrow_layers[[1]]$data
+  expect_equal(seg$.x, -seg$.xend)      # axial arrow: segment through the origin
+})
+
 test_that("round-trip: headings uploaded file, single colour (no group), stacked", {
   set.seed(8)
   raw <- data.frame(theta = c(0.1, 0.3, 0.35, 1.2, 1.25, 3.0, 3.05, 5.5),
@@ -295,4 +319,10 @@ test_that("round-trip: headings uploaded file, single colour (no group), stacked
   env <- new.env(parent = globalenv())
   set.seed(1L); evald <- eval(parse(text = spec_to_code(spec)), envir = env)
   expect_equal(.fingerprint(evald), .fingerprint(live))
+})
+
+test_that("emitted code reproduces spec_to_plot (axial: double-headed arrow + CI)", {
+  rt <- roundtrip_spec("stacked", "trajectory", NULL, arrow = TRUE,
+                       vectors = FALSE, ci = TRUE, axial = TRUE)
+  expect_roundtrip(rt)
 })

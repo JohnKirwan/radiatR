@@ -1107,6 +1107,9 @@ compute_circ_interval <- function(headings_df,
 #'
 #' @return A `geom_path()` layer.
 #'
+#' @param axial Logical. Render the overlay for axial (bidirectional, mod-pi)
+#'   data via the angle-doubling method: the CI is drawn at both poles of the
+#'   axis. Default `FALSE`.
 #' @seealso [compute_circ_interval()], [add_heading_interval()]
 #' @importFrom ggplot2 geom_path aes
 #' @importFrom rlang .data sym
@@ -1117,7 +1120,8 @@ add_circ_interval <- function(interval_df,
                               linewidth  = 1.5,
                               colour     = NULL,
                               linetype   = "solid",
-                              n_theta    = 500L) {
+                              n_theta    = 500L,
+                              axial      = FALSE) {
   for (col in c("lower", "upper")) {
     if (!col %in% names(interval_df))
       stop("`interval_df` is missing required column '", col, "'.")
@@ -1139,25 +1143,24 @@ add_circ_interval <- function(interval_df,
     ))
   }
 
-  parts <- lapply(valid_rows, function(i) {
-    lower <- interval_df$lower[i]
-    upper <- interval_df$upper[i]
-    wraps <- if (has_wraps) isTRUE(interval_df$wraps[i]) else lower > upper
-    theta_seq <- if (wraps) {
-      seq(lower, upper + 2 * pi, length.out = n_theta)
-    } else {
-      seq(lower, upper, length.out = n_theta)
-    }
-    cos_vals <- radius * cos(theta_seq)
-    sin_vals <- radius * sin(theta_seq)
-    xy       <- .uc_to_display_coords(cos_vals, sin_vals, disp_opts)
-    d <- data.frame(
-      .x        = xy$x,
-      .y        = xy$y,
-      .group_id = i
-    )
+  one_arc <- function(i, lo, hi, gid) {
+    wraps <- if (has_wraps) isTRUE(interval_df$wraps[i]) else lo > hi
+    theta_seq <- if (wraps) seq(lo, hi + 2 * pi, length.out = n_theta)
+                 else        seq(lo, hi, length.out = n_theta)
+    xy <- .uc_to_display_coords(radius * cos(theta_seq),
+                                radius * sin(theta_seq), disp_opts)
+    d  <- data.frame(.x = xy$x, .y = xy$y, .group_id = gid)
     if (has_group_col) d[[colour_col]] <- interval_df[[colour_col]][i]
     d
+  }
+  parts <- lapply(valid_rows, function(i) {
+    lo <- interval_df$lower[i]; hi <- interval_df$upper[i]
+    if (isTRUE(axial)) {
+      rbind(one_arc(i, lo, hi, i),
+            one_arc(i, lo + pi, hi + pi, i + max(valid_rows)))
+    } else {
+      one_arc(i, lo, hi, i)
+    }
   })
   arc_df <- do.call(rbind, parts)
 
@@ -1185,6 +1188,9 @@ add_circ_interval <- function(interval_df,
 #'
 #' @return A `geom_path()` layer.
 #'
+#' @param axial Logical. Render the overlay for axial (bidirectional, mod-pi)
+#'   data via the angle-doubling method: the CI is drawn at both poles of the
+#'   axis. Default `FALSE`.
 #' @seealso [compute_circ_interval()], [add_circ_interval()]
 #' @importFrom circular circular mean.circular sd.circular mle.vonmises.bootstrap.ci
 #' @importFrom ggplot2 geom_path aes
@@ -1201,18 +1207,21 @@ add_heading_interval <- function(headings_df,
                                  linewidth   = 1.5,
                                  colour      = NULL,
                                  linetype    = "solid",
-                                 n_theta     = 500L) {
+                                 n_theta     = 500L,
+                                 axial       = FALSE) {
   if (is.null(display))
     display <- attr(headings_df, "display", exact = TRUE) %||% circ_display()
   stat <- match.arg(stat)
   iv   <- compute_circ_interval(headings_df, heading_col = heading_col,
                                 colour_col = colour_col,
                                 stat = stat,
-                                boot_reps = boot_reps, boot_alpha = boot_alpha)
+                                boot_reps = boot_reps, boot_alpha = boot_alpha,
+                                axial = axial)
   attr(iv, "display") <- display
   add_circ_interval(iv, colour_col = colour_col,
                     radius = radius, linewidth = linewidth,
-                    colour = colour, linetype = linetype, n_theta = n_theta)
+                    colour = colour, linetype = linetype, n_theta = n_theta,
+                    axial = axial)
 }
 
 # ---- circular mean arrow -----------------------------------------------------
@@ -1303,6 +1312,9 @@ compute_circ_mean <- function(headings_df,
 #'
 #' @return A `geom_segment()` layer.
 #'
+#' @param axial Logical. Render the overlay for axial (bidirectional, mod-pi)
+#'   data: the mean is drawn as a double-headed axis through the centre. Default
+#'   `FALSE`.
 #' @seealso [compute_circ_mean()], [add_heading_arrow()]
 #' @importFrom ggplot2 geom_segment aes
 #' @importFrom rlang .data sym
@@ -1313,6 +1325,7 @@ add_circ_mean <- function(summary_df,
                           linewidth       = 1,
                           colour          = NULL,
                           arrow_length_cm = 0.2,
+                          axial           = FALSE,
                           ...) {
   for (col in c("mean_dir", "resultant_R")) {
     if (!col %in% names(summary_df))
@@ -1335,14 +1348,22 @@ add_circ_mean <- function(summary_df,
 
   summary_df <- summary_df[valid_rows, , drop = FALSE]
 
-  summary_df$.x <- 0
-  summary_df$.y <- 0
   disp <- attr(summary_df, "display", exact = TRUE) %||% circ_display()
-  xy   <- .uc_to_display_coords(summary_df$resultant_R * cos(summary_df$mean_dir),
+  tip  <- .uc_to_display_coords(summary_df$resultant_R * cos(summary_df$mean_dir),
                                  summary_df$resultant_R * sin(summary_df$mean_dir),
                                  disp)
-  summary_df$.xend <- xy$x
-  summary_df$.yend <- xy$y
+  if (isTRUE(axial)) {
+    tail <- .uc_to_display_coords(-summary_df$resultant_R * cos(summary_df$mean_dir),
+                                  -summary_df$resultant_R * sin(summary_df$mean_dir),
+                                  disp)
+    summary_df$.x <- tail$x
+    summary_df$.y <- tail$y
+  } else {
+    summary_df$.x <- 0
+    summary_df$.y <- 0
+  }
+  summary_df$.xend <- tip$x
+  summary_df$.yend <- tip$y
 
   seg_map <- ggplot2::aes(x = .data$.x, y = .data$.y,
                           xend = .data$.xend, yend = .data$.yend)
@@ -1352,7 +1373,8 @@ add_circ_mean <- function(summary_df,
     data        = summary_df,
     mapping     = seg_map,
     linewidth   = linewidth,
-    arrow       = grid::arrow(length = grid::unit(arrow_length_cm, "cm")),
+    arrow       = grid::arrow(length = grid::unit(arrow_length_cm, "cm"),
+                              ends = if (isTRUE(axial)) "both" else "last"),
     inherit.aes = FALSE,
     ...
   )
@@ -1374,6 +1396,9 @@ add_circ_mean <- function(summary_df,
 #'
 #' @return A `geom_segment()` layer.
 #'
+#' @param axial Logical. Render the overlay for axial (bidirectional, mod-pi)
+#'   data: the mean is drawn as a double-headed axis through the centre. Default
+#'   `FALSE`.
 #' @seealso [compute_circ_mean()], [add_circ_mean()]
 #' @importFrom circular circular mean.circular rho.circular
 #' @importFrom ggplot2 geom_segment aes
@@ -1387,15 +1412,16 @@ add_heading_arrow <- function(headings_df,
                               linewidth       = 1,
                               colour          = NULL,
                               arrow_length_cm = 0.2,
+                              axial           = FALSE,
                               ...) {
   if (is.null(display))
     display <- attr(headings_df, "display", exact = TRUE) %||% circ_display()
   sm <- compute_circ_mean(headings_df, heading_col = heading_col,
-                          colour_col = colour_col)
+                          colour_col = colour_col, axial = axial)
   attr(sm, "display") <- display
   add_circ_mean(sm, colour_col = colour_col,
                 linewidth = linewidth, colour = colour,
-                arrow_length_cm = arrow_length_cm, ...)
+                arrow_length_cm = arrow_length_cm, axial = axial, ...)
 }
 
 # ---- heading overlay layers --------------------------------------------------
@@ -3197,6 +3223,8 @@ add_critical_r <- function(hd, alpha = 0.05,
 #' @param region_fill Fill colour for the rejection region.  Default
 #'   \code{"firebrick"}.
 #' @param region_alpha Fill opacity.  Default \code{0.08}.
+#' @param axial Logical. Render the V-test boundary for axial (bidirectional,
+#'   mod-pi) data: the decision chord is mirrored to both poles. Default `FALSE`.
 #' @param n_pts Points approximating the rejection arc.  Default \code{100L}.
 #' @return A list of ggplot2 layers, or \code{NULL} if no group has a boundary
 #'   inside the unit circle.
@@ -3207,7 +3235,7 @@ add_critical_v_line <- function(hd, mu0, alpha = 0.05,
                                  per_group = FALSE, show_region = FALSE,
                                  colour = "firebrick", linetype = "dashed",
                                  linewidth = 0.6, region_fill = "firebrick",
-                                 region_alpha = 0.08, n_pts = 100L) {
+                                 region_alpha = 0.08, axial = FALSE, n_pts = 100L) {
   stopifnot(is.data.frame(hd), alpha > 0, alpha < 1)
   if (missing(mu0)) stop("add_critical_v_line: 'mu0' (hypothesised direction) is required")
   if (!angle_col %in% names(hd))
@@ -3218,22 +3246,19 @@ add_critical_v_line <- function(hd, mu0, alpha = 0.05,
 
   # Geometry for one boundary at perpendicular distance c along mu0.
   # Returns list(chord = data.frame(x,y,xend,yend), region = data.frame(x,y)).
-  .geom <- function(cc, grp) {
-    if (is.na(cc) || cc >= 1) return(NULL)        # line outside the disc
-    half  <- sqrt(1 - cc^2)                        # half-chord length
-    ux <- cos(mu0); uy <- sin(mu0)                # along mu0
-    px <- -uy;      py <- ux                       # perpendicular (chord dir)
+  .one_pole <- function(cc, grp, mu) {
+    half <- sqrt(1 - cc^2)
+    ux <- cos(mu); uy <- sin(mu)
+    px <- -uy;     py <- ux
     foot <- c(cc * ux, cc * uy)
     e1 <- foot + half * c(px, py)
     e2 <- foot - half * c(px, py)
     chord <- data.frame(x = e1[1], y = e1[2], xend = e2[1], yend = e2[2],
                         .v_grp = grp, stringsAsFactors = FALSE)
-
     region <- NULL
     if (show_region) {
-      span <- acos(cc)                             # arc half-width about mu0
-      phis <- seq(mu0 - span, mu0 + span, length.out = n_pts)
-      # arc points on unit circle, then close along the chord back to start
+      span <- acos(cc)
+      phis <- seq(mu - span, mu + span, length.out = n_pts)
       region <- data.frame(
         x = c(cos(phis), e2[1], e1[1]),
         y = c(sin(phis), e2[2], e1[2]),
@@ -3241,6 +3266,20 @@ add_critical_v_line <- function(hd, mu0, alpha = 0.05,
       )
     }
     list(chord = chord, region = region)
+  }
+  .geom <- function(cc, grp) {
+    if (is.na(cc) || cc >= 1) return(NULL)        # line outside the disc
+    poles <- list(.one_pole(cc, grp, mu0))
+    if (isTRUE(axial))
+      poles <- c(poles, list(.one_pole(cc, paste0(grp, ".pi"), mu0 + pi)))
+    list(
+      chord  = do.call(rbind, lapply(poles, `[[`, "chord")),
+      region = {
+        rg <- lapply(poles, `[[`, "region")
+        rg <- rg[!vapply(rg, is.null, logical(1L))]
+        if (length(rg)) do.call(rbind, rg) else NULL
+      }
+    )
   }
 
   # Collect (c, group-key) pairs to draw
