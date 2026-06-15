@@ -47,3 +47,16 @@ test_that("circ_summarise(axial=FALSE) is unchanged", {
                circ_summarise(df, heading, units = "radians", .by = "g",
                               axial = FALSE))
 })
+
+test_that("circ_summary(TrajSet, axial=TRUE) equals doubled-angle summary, mean halved", {
+  ts  <- simulate_tracks(n_points = 30, seed = 8, output = "trajset")
+  dir <- circ_summary(ts, by = "global")
+  ax  <- circ_summary(ts, by = "global", axial = TRUE)
+  d   <- as.data.frame(ts)
+  th  <- d[[ts@cols$angle]]; th <- th[is.finite(th)]
+  R2  <- sqrt(mean(cos(2*th))^2 + mean(sin(2*th))^2)
+  expect_equal(ax$resultant_R, R2)
+  expect_equal(ax$mean_dir, (Arg(mean(exp(1i*2*th))) %% (2*pi) / 2) %% pi)
+  # directional path unchanged
+  expect_equal(circ_summary(ts, by = "global", axial = FALSE), dir)
+})

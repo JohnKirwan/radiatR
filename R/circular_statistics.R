@@ -28,7 +28,7 @@
 #'
 #' @export
 #' @importFrom circular mean.circular rho.circular circular
-setGeneric("circ_summary", function(x, w = NULL, by = c("id","global"))
+setGeneric("circ_summary", function(x, w = NULL, by = c("id","global"), axial = FALSE)
   standardGeneric("circ_summary"))
 
 .est_kappa_safe <- function(tc, fallback = NA_real_, ...) {
@@ -58,7 +58,7 @@ setGeneric("circ_summary", function(x, w = NULL, by = c("id","global"))
 
 #' @rdname circ_summary
 #' @export
-setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")) {
+setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global"), axial = FALSE) {
   by <- match.arg(by)
   id <- x@cols$id; tm <- x@cols$time; th <- x@cols$angle
   wcol <- if (is.null(w)) x@cols$weight else w
@@ -77,21 +77,22 @@ setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")
     theta_valid <- theta[valid]
     wts_valid <- if (!is.null(wts)) wts[valid] else NULL
 
-    tc <- circular::circular(theta_valid, units = "radians", modulo = "2pi")
-    mu <- if (length(theta_valid)) {
+    folded <- .fold_angles(theta_valid, axial)
+    tc <- circular::circular(folded, units = "radians", modulo = "2pi")
+    mu <- if (length(folded)) {
       circular::mean.circular(tc, na.rm = TRUE, weights = wts_valid)
     } else {
       NA_real_
     }
 
-    if (length(theta_valid)) {
+    if (length(folded)) {
       if (is.null(wts_valid)) {
-        mean_cos <- mean(cos(theta_valid))
-        mean_sin <- mean(sin(theta_valid))
+        mean_cos <- mean(cos(folded))
+        mean_sin <- mean(sin(folded))
       } else {
         w_norm <- wts_valid / sum(wts_valid)
-        mean_cos <- sum(w_norm * cos(theta_valid))
-        mean_sin <- sum(w_norm * sin(theta_valid))
+        mean_cos <- sum(w_norm * cos(folded))
+        mean_sin <- sum(w_norm * sin(folded))
       }
       R <- sqrt(mean_cos^2 + mean_sin^2)
     } else {
@@ -99,7 +100,7 @@ setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")
     }
 
     kap    <- .est_kappa_safe(tc, fallback = NA_real_, w = wts_valid)
-    out_mu <- .wrap_to_2pi(as.numeric(mu))
+    out_mu <- .unfold_mean(.wrap_to_2pi(as.numeric(mu)), axial)
     data.frame(
       id          = if (by == "id") k else "global",
       n           = sum(!is.na(theta)),
