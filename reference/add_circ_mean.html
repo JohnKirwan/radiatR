@@ -62,6 +62,7 @@ as a `geom_segment()` arrow. `mean_dir` must be in unit-circle convention
 <span>  linewidth <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  colour <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  arrow_length_cm <span class="op">=</span> <span class="fl">0.2</span>,</span>
+<span>  axial <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -92,6 +93,12 @@ in `"black"`. Supplying any colour string always overrides `colour_col`.</p></dd
 
 <dt id="arg-arrow-length-cm">arrow_length_cm<a class="anchor" aria-label="anchor" href="#arg-arrow-length-cm"></a></dt>
 <dd><p>Arrowhead length in cm. Default `0.2`.</p></dd>
+
+
+<dt id="arg-axial">axial<a class="anchor" aria-label="anchor" href="#arg-axial"></a></dt>
+<dd><p>Logical. Render the overlay for axial (bidirectional, mod-pi)
+data: the mean is drawn as a double-headed axis through the centre. Default
+`FALSE`.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

@@ -15,7 +15,8 @@ add_circ_interval(
   linewidth = 1.5,
   colour = NULL,
   linetype = "solid",
-  n_theta = 500L
+  n_theta = 500L,
+  axial = FALSE
 )
 ```
 
@@ -54,6 +55,12 @@ add_circ_interval(
 - n_theta:
 
   Number of points along the arc. Default \`500L\`.
+
+- axial:
+
+  Logical. Render the overlay for axial (bidirectional, mod-pi) data via
+  the angle-doubling method: the CI is drawn at both poles of the axis.
+  Default \`FALSE\`.
 
 ## Value
 

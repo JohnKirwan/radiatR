@@ -26,6 +26,7 @@ add_critical_v_line(
   linewidth = 0.6,
   region_fill = "firebrick",
   region_alpha = 0.08,
+  axial = FALSE,
   n_pts = 100L
 )
 ```
@@ -81,6 +82,11 @@ add_critical_v_line(
 - region_alpha:
 
   Fill opacity. Default `0.08`.
+
+- axial:
+
+  Logical. Render the V-test boundary for axial (bidirectional, mod-pi)
+  data: the decision chord is mirrored to both poles. Default \`FALSE\`.
 
 - n_pts:
 

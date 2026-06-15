@@ -19,6 +19,19 @@
   and the corresponding tests via the standard angle-doubling method.
   The directional default (`axial = FALSE`) is unchanged.
 
+### Plotting
+
+- The mean-direction and interval overlays gain `axial = TRUE` for
+  bidirectional data:
+  [`add_circ_mean()`](https://johnkirwan.github.io/radiatR/reference/add_circ_mean.md)/[`add_heading_arrow()`](https://johnkirwan.github.io/radiatR/reference/add_heading_arrow.md)
+  draw a double-headed axis through the centre,
+  [`add_circ_interval()`](https://johnkirwan.github.io/radiatR/reference/add_circ_interval.md)/[`add_heading_interval()`](https://johnkirwan.github.io/radiatR/reference/add_heading_interval.md)
+  draw the CI at both poles, and
+  [`add_critical_v_line()`](https://johnkirwan.github.io/radiatR/reference/add_critical_v_line.md)
+  mirrors its boundary. The Shiny app gains an “Axial (bidirectional)”
+  toggle (headings input) that makes the figure, the summary table, and
+  the exported code axial together.
+
 ### Coordinates
 
 - The per-trajectory reference direction is now first-class:

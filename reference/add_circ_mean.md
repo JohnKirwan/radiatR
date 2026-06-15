@@ -14,6 +14,7 @@ add_circ_mean(
   linewidth = 1,
   colour = NULL,
   arrow_length_cm = 0.2,
+  axial = FALSE,
   ...
 )
 ```
@@ -45,6 +46,12 @@ add_circ_mean(
 - arrow_length_cm:
 
   Arrowhead length in cm. Default \`0.2\`.
+
+- axial:
+
+  Logical. Render the overlay for axial (bidirectional, mod-pi) data:
+  the mean is drawn as a double-headed axis through the centre. Default
+  \`FALSE\`.
 
 - ...:
 
