@@ -394,3 +394,35 @@ test_that("guess_columns honours explicit mapping overrides", {
   g <- guess_columns(d, mapping = list(x = "b", y = "c", time = "a"))
   expect_equal(g$x, "b"); expect_equal(g$y, "c"); expect_equal(g$time, "a")
 })
+
+test_that("TrajSet_read loads a single-track custom CSV, dropping non-finite rows", {
+  tmp <- tempfile(fileext = ".csv")
+  on.exit(unlink(tmp))
+  df <- data.frame(Frame = 1:6,
+                   Track1_X = c(0, 1, 2, NaN, 4, 5),
+                   Track1_Y = c(0, 0, 1, NaN, 2, 3))
+  utils::write.csv(df, tmp, row.names = FALSE)
+  ts <- suppressMessages(TrajSet_read(tmp, normalize_xy = FALSE))
+  expect_s4_class(ts, "TrajSet")
+  expect_equal(length(ids(ts)), 1L)                 # synthetic single-track id
+  expect_equal(nrow(as.data.frame(ts)), 5L)          # the NaN row dropped
+})
+
+test_that("TrajSet_read synthesizes time from row order when no time column", {
+  tmp <- tempfile(fileext = ".csv")
+  on.exit(unlink(tmp))
+  utils::write.csv(data.frame(x = c(0, 1, 2), y = c(0, 1, 0)), tmp, row.names = FALSE)
+  ts <- suppressMessages(TrajSet_read(tmp, normalize_xy = FALSE))
+  expect_s4_class(ts, "TrajSet")
+  expect_equal(length(ids(ts)), 1L)
+  expect_equal(nrow(as.data.frame(ts)), 3L)
+})
+
+test_that("TrajSet_read still honours present id/time/x/y columns (parity)", {
+  tmp <- tempfile(fileext = ".csv")
+  on.exit(unlink(tmp))
+  utils::write.csv(data.frame(id = c("a","a","b","b"), frame = c(1,2,1,2),
+                              x = c(0,1,0,1), y = c(0,1,1,0)), tmp, row.names = FALSE)
+  ts <- suppressMessages(TrajSet_read(tmp, normalize_xy = FALSE))
+  expect_setequal(as.character(ids(ts)), c("a", "b"))   # real id used, not synthesized
+})

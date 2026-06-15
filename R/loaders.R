@@ -648,18 +648,35 @@ TrajSet_read <- function(x,
 
   stopifnot(is.data.frame(df))
 
-  nms <- names(df)
-  # Guess columns if not mapped
-  id <- mapping$id %||% .guess_col(nms, c("id","ID","track","trajectory","animal","subject"))
-  time <- mapping$time %||% .guess_col(nms, c("time","t","timestamp","datetime","frame","sec","seconds"))
-  angle <- mapping$angle %||% .guess_col(nms, c("theta","angle","phi","bearing","deg","degrees"))
-  xcol <- mapping$x %||% .guess_col(nms, c("x","X","x_pos","xcoord","pos_x"))
-  ycol <- mapping$y %||% .guess_col(nms, c("y","Y","y_pos","ycoord","pos_y"))
-  wcol <- mapping$weight %||% .guess_col(nms, c("w","weight","weights"))
+  guessed <- guess_columns(df, mapping)
+  id <- guessed$id; time <- guessed$time; angle <- guessed$angle
+  xcol <- guessed$x; ycol <- guessed$y; wcol <- guessed$weight
 
-  if (is.null(id) || is.null(time)) stop("Could not identify 'id' and 'time' columns; specify mapping=")
   if (is.null(angle) && (is.null(xcol) || is.null(ycol)))
     stop("Need either an angle column or both x and y columns; specify mapping=")
+
+  # Single-track id fallback: no id column -> treat the file as one trajectory.
+  if (is.null(id)) {
+    message("No id column found; treating the file as a single trajectory.")
+    df[["..id"]] <- if (!is.null(src) && isTRUE(id_from_filename))
+      tools::file_path_sans_ext(src) else "1"
+    id <- "..id"
+  }
+  # Row-order time fallback: no time/frame column -> use row order.
+  if (is.null(time)) {
+    message("No time/frame column found; using row order as time.")
+    df[["..time"]] <- seq_len(nrow(df))
+    time <- "..time"
+  }
+  # Drop rows with non-finite coordinates (position-based load).
+  if (!is.null(xcol) && !is.null(ycol)) {
+    finite <- is.finite(df[[xcol]]) & is.finite(df[[ycol]])
+    n_bad <- sum(!finite)
+    if (n_bad > 0L) {
+      message(sprintf("Dropped %d row(s) with non-finite coordinates.", n_bad))
+      df <- df[finite, , drop = FALSE]
+    }
+  }
 
   # coarse type fixes
   if (!is.numeric(df[[id]])) df[[id]] <- as.character(df[[id]])
