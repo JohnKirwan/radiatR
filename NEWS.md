@@ -51,6 +51,15 @@
 
 ## Loaders
 
+* `TrajSet_read()` and `TrajSet_read_dir()` now auto-detect the field separator
+  (comma, semicolon, tab, or pipe) and decimal mark from file *content* rather
+  than the extension, so semicolon-separated and European decimal-comma exports,
+  and tab-delimited files saved as `.csv`, load correctly. A new `read_opts`
+  argument (`delim`, `decimal`, `sheet`) overrides detection when needed. Excel
+  workbooks (`.xlsx`/`.xls`) can be read directly (first sheet by default, or
+  `read_opts$sheet`), via the soft-dependency `readxl`. In the Shiny app the
+  first-rows preview now reflects the actual detected parse, and a new Delimiter
+  control lets you correct a misdetected separator in place.
 * `TrajSet_read()` now loads single-track CSVs with custom column names: column
   guessing is case-insensitive and matches separator-suffixed coordinates
   (e.g. `Track1_X`/`Track1_Y`); a missing id column is treated as a single

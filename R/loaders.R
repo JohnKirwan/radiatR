@@ -322,24 +322,70 @@ guess_columns <- function(data, mapping = list()) {
   }
 }
 
-# read file with soft dependencies
-.read_any <- function(path, ...) {
+# Sniff the field separator (and, for ';', the decimal mark) from a delimited
+# file's first non-empty lines. Returns list(delim, decimal). Chooses the
+# candidate that appears most often AND consistently across lines; ties or no
+# signal fall back to comma + dot. ';' implies the European decimal comma.
+.guess_delim <- function(path) {
+  default <- list(delim = ",", decimal = ".")
+  lines <- tryCatch(
+    readLines(path, n = 20L, warn = FALSE, encoding = "UTF-8"),
+    error = function(e) character(0))
+  lines <- lines[nzchar(trimws(lines))]
+  lines <- utils::head(lines, 5L)
+  if (!length(lines)) return(default)
+
+  cands <- c(",", ";", "\t", "|")
+  counts <- vapply(cands, function(d) {
+    vapply(lines, function(ln) lengths(regmatches(ln, gregexpr(d, ln, fixed = TRUE))),
+           integer(1))
+  }, integer(length(lines)))
+  if (is.null(dim(counts))) counts <- matrix(counts, nrow = length(lines))
+
+  # a separator is viable only if it appears at least once and the same number
+  # of times on every line we looked at (consistency guard)
+  viable <- apply(counts, 2L, function(col) col[1L] > 0 && length(unique(col)) == 1L)
+  if (!any(viable)) return(default)
+  best <- cands[which(viable)][which.max(counts[1L, viable])]
+  list(delim = best, decimal = if (best == ";") "," else ".")
+}
+
+# read file with soft dependencies. Delimited formats are content-sniffed
+# (separator + decimal mark) unless delim/decimal are supplied; Excel and
+# Arrow formats dispatch by extension. `sheet` selects an Excel worksheet.
+.read_any <- function(path, delim = NULL, decimal = NULL, sheet = NULL, ...) {
   ext <- tolower(sub(".*\\.", "", path))
-  if (.is_installed("readr") && ext %in% c("csv","tsv","txt")) {
-    if (ext == "tsv") return(readr::read_tsv(path, show_col_types = FALSE, progress = FALSE, ...))
-    return(readr::read_csv(path, show_col_types = FALSE, progress = FALSE, ...))
+
+  if (ext %in% c("xlsx", "xls")) {
+    if (!.is_installed("readxl"))
+      stop("Reading Excel files requires the 'readxl' package; ",
+           "install it with install.packages(\"readxl\").")
+    return(readxl::read_excel(path, sheet = sheet %||% 1L, ...))
   }
-  if (.is_installed("data.table") && ext %in% c("csv","tsv","txt")) {
-    sep <- if (ext == "tsv") "\t" else ","
-    return(data.table::fread(path, sep = sep, showProgress = FALSE, ...))
-  }
-  if (.is_installed("arrow") && ext %in% c("parquet","feather")) {
+
+  if (.is_installed("arrow") && ext %in% c("parquet", "feather")) {
     if (ext == "parquet") return(arrow::read_parquet(path, ...))
     return(arrow::read_feather(path, ...))
   }
-  # base fallback
-  if (ext == "tsv") return(utils::read.table(path, header = TRUE, sep = "\t", stringsAsFactors = FALSE, ...))
-  utils::read.table(path, header = TRUE, sep = if (ext=="csv") "," else " ", stringsAsFactors = FALSE, ...)
+
+  # delimited: sniff separator + decimal mark unless overridden
+  if (is.null(delim) || is.null(decimal)) {
+    g <- .guess_delim(path)
+    if (is.null(delim))   delim   <- g$delim
+    if (is.null(decimal)) decimal <- g$decimal
+  }
+
+  if (.is_installed("readr"))
+    return(readr::read_delim(
+      path, delim = delim,
+      locale = readr::locale(decimal_mark = decimal),
+      show_col_types = FALSE, progress = FALSE, ...))
+  if (.is_installed("data.table"))
+    return(data.table::fread(
+      path, sep = delim, dec = decimal, showProgress = FALSE, ...))
+  utils::read.table(
+    path, header = TRUE, sep = delim, dec = decimal,
+    stringsAsFactors = FALSE, ...)
 }
 
 # ---- core: TrajSet_read ------------------------------------------------------
@@ -424,6 +470,9 @@ TrajSet_read_format <- function(x, format, ...) {
 #' @param tz timezone for POSIX times (default "UTC")
 #' @param fps frames-per-second when time_type = "frames"
 #' @param normalize_xy TRUE to normalize (x,y) to unit circle when both provided
+#' @param read_opts list of file-reading overrides: `delim` (field separator),
+#'   `decimal` (decimal mark), and `sheet` (Excel worksheet name or number).
+#'   Any `NULL` element is auto-detected. Defaults to all-auto.
 #' @param dialect optional registered dialect name to pre-process raw input
 #' @param dialect_args named list of extra arguments forwarded to the dialect
 #'   function (e.g. \code{list(bodypart = c("head","thorax"))})
@@ -442,6 +491,7 @@ TrajSet_read <- function(x,
                          normalize_xy = TRUE,
                          dialect = NULL,
                          dialect_args = list(),
+                         read_opts = list(delim = NULL, decimal = NULL, sheet = NULL),
                          mutate = NULL,
                          keep = NULL, drop = NULL,
                          id_from_filename = TRUE,
@@ -474,11 +524,13 @@ TrajSet_read <- function(x,
     df <- x
     src <- NULL
   } else if (is.character(x) && length(x) == 1L && file.exists(x)) {
-    df <- .read_any(x)
+    df <- .read_any(x, delim = read_opts$delim,
+                    decimal = read_opts$decimal, sheet = read_opts$sheet)
     src <- basename(x)
   } else if (is.character(x) && length(x) > 1L) {
     dfl <- lapply(x, function(p) {
-      d <- .read_any(p)
+      d <- .read_any(p, delim = read_opts$delim,
+                     decimal = read_opts$decimal, sheet = read_opts$sheet)
       if (id_from_filename && !is.null(mapping$id) && !(mapping$id %in% names(d))) {
         d[[mapping$id]] <- tools::file_path_sans_ext(basename(p))
       }
