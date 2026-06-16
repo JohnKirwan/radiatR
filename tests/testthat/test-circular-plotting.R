@@ -1638,3 +1638,32 @@ test_that("radiate(): chrome styling comes from the named theme", {
   lab <- Filter(function(l) inherits(l$geom, "GeomText"), dk$layers)[[1]]
   expect_equal(lab$aes_params$colour, "grey85")            # legibility guard on dark disc
 })
+
+test_that(".mirror_axial doubles rows and adds antipodal angles, preserving other columns", {
+  df <- data.frame(heading = c(0, pi / 2, 3), grp = c("a", "b", "a"),
+                   x_inner = c(0.1, 0.2, 0.3), stringsAsFactors = FALSE)
+  out <- radiatR:::.mirror_axial(df, "heading")
+
+  expect_equal(nrow(out), 2L * nrow(df))
+  expect_equal(out[seq_len(nrow(df)), , drop = FALSE], df)
+  mirrored <- out[(nrow(df) + 1L):nrow(out), , drop = FALSE]
+  expect_equal(mirrored$heading, (df$heading + pi) %% (2 * pi))
+  expect_equal(mirrored$grp, df$grp)
+  expect_equal(mirrored$x_inner, df$x_inner)
+})
+
+test_that(".mirror_axial negates requested coordinate columns on the mirrored copy", {
+  df  <- data.frame(heading = c(0, 1), x_inner = c(0.1, -0.2), y_inner = c(0.3, 0.4))
+  out <- radiatR:::.mirror_axial(df, "heading", negate = c("x_inner", "y_inner"))
+  mirrored <- out[3:4, , drop = FALSE]
+  expect_equal(mirrored$x_inner, -df$x_inner)
+  expect_equal(mirrored$y_inner, -df$y_inner)
+  expect_equal(out[1:2, "x_inner"], df$x_inner)
+})
+
+test_that(".mirror_axial on an empty frame returns an empty frame", {
+  df  <- data.frame(heading = numeric(0), grp = character(0))
+  out <- radiatR:::.mirror_axial(df, "heading")
+  expect_equal(nrow(out), 0L)
+  expect_equal(names(out), names(df))
+})

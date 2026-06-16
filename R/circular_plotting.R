@@ -1426,6 +1426,21 @@ add_heading_arrow <- function(headings_df,
 
 # ---- heading overlay layers --------------------------------------------------
 
+# Row-bind the antipodal (theta + pi) copy of each observation for axial display.
+# `angle_col` is the angle column (radians). `negate` names independent coordinate
+# columns (e.g. x_inner/y_inner) that must be point-reflected through the origin on
+# the mirrored copy; columns whose plotted position is derived from `angle_col` at
+# render time need no entry here. All other columns are carried verbatim onto both
+# copies so colour/group/weight mappings are unaffected.
+.mirror_axial <- function(df, angle_col, negate = character()) {
+  if (nrow(df) == 0L) return(df)
+  mirrored <- df
+  mirrored[[angle_col]] <- (df[[angle_col]] + pi) %% (2 * pi)
+  for (col in negate)
+    if (col %in% names(mirrored)) mirrored[[col]] <- -df[[col]]
+  rbind(df, mirrored)
+}
+
 #' Add heading endpoint markers on the unit circle
 #'
 #' Draws a hollow circle at `(cos(heading), sin(heading))` for each row of a
