@@ -20,7 +20,8 @@ add_heading_density(
   alpha = 0.2,
   linewidth = 0.8,
   ci_fill = "grey70",
-  ci_alpha = 0.3
+  ci_alpha = 0.3,
+  axial = FALSE
 )
 }
 \arguments{
@@ -70,6 +71,10 @@ manually). Default `"grey70"`.}
 
 \item{ci_alpha}{Alpha transparency for the confidence band polygon. Default
 `0.3`.}
+
+\item{axial}{Logical; when `TRUE`, mirror each observation to
+`heading_col + pi` before density estimation, producing a period-pi
+(bidirectional/axial) density. Default `FALSE`.}
 }
 \value{
 A list of one or two ggplot2 layers.

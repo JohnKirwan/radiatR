@@ -686,6 +686,9 @@ assign_cycle_colours <- function(data, id_col, n, panel_col = NULL,
 #'   and `"histogram"`.
 #' @param boot_alpha Significance level for the bootstrap band. Default `0.05`
 #'   produces a 95\% interval.
+#' @param axial Logical; when `TRUE`, mirror each observation to
+#'   `heading_col + pi` before density estimation, producing a period-pi
+#'   (bidirectional/axial) density. Default `FALSE`.
 #'
 #' @return A data frame with columns `theta` (radians, -pi to pi) and `density`
 #'   (non-negative), plus `colour_col` if supplied. When `boot_reps > 0` and
@@ -719,12 +722,15 @@ compute_circular_density <- function(headings_df,
                                      bins        = 36L,
                                      bw          = NULL,
                                      boot_reps   = 0L,
-                                     boot_alpha  = 0.05) {
+                                     boot_alpha  = 0.05,
+                                     axial       = FALSE) {
   method     <- match.arg(method)
   use_colour <- !is.null(colour_col) && colour_col %in% names(headings_df)
 
   if (!heading_col %in% names(headings_df))
     stop("`heading_col` '", heading_col, "' not found in headings_df.")
+
+  if (isTRUE(axial)) headings_df <- .mirror_axial(headings_df, heading_col)
 
   groups    <- if (use_colour) split(headings_df, headings_df[[colour_col]]) else list(headings_df)
   dens_list <- lapply(seq_along(groups), function(i) {
@@ -753,6 +759,11 @@ compute_circular_density <- function(headings_df,
 #' density was produced. To compute from raw headings use
 #' [compute_circular_density()] first, or call the convenience wrapper
 #' [add_heading_density()] which combines both steps.
+#'
+#' @details For an **axial** (bidirectional) density, do not mirror this
+#'   pre-computed frame (that would double-count a full-circle density). Instead
+#'   estimate it with [compute_circular_density()]`(..., axial = TRUE)`, which
+#'   augments the raw sample before estimation, then pass the result here.
 #'
 #' @param density_df Data frame with columns named by `theta_col` and
 #'   `density_col` (and, optionally, `colour_col`). Each row represents one
@@ -944,12 +955,14 @@ add_heading_density <- function(headings_df,
                                 alpha       = 0.2,
                                 linewidth   = 0.8,
                                 ci_fill     = "grey70",
-                                ci_alpha    = 0.3) {
+                                ci_alpha    = 0.3,
+                                axial       = FALSE) {
   method  <- match.arg(method)
   dens_df <- compute_circular_density(headings_df, heading_col = heading_col,
                                       colour_col = colour_col, method = method,
                                       n_theta = n_theta, bins = bins, bw = bw,
-                                      boot_reps = boot_reps, boot_alpha = boot_alpha)
+                                      boot_reps = boot_reps, boot_alpha = boot_alpha,
+                                      axial = axial)
   add_circular_density(dens_df, colour_col = colour_col,
                        scale = scale, colour = colour,
                        fill = fill, alpha = alpha, linewidth = linewidth,

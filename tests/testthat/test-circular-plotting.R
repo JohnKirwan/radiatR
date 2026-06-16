@@ -1735,3 +1735,41 @@ test_that("add_circular_kde(axial = TRUE) produces a point-symmetric ring", {
   refl <- cbind(-d$x, -d$y)
   expect_true(all(key(refl) %in% key(pts)))
 })
+
+test_that("compute_circular_density(axial = TRUE) yields a period-pi symmetric density", {
+  set.seed(2)
+  hd   <- data.frame(heading = rnorm(60, 0.4, 0.3))
+  # Fixed bw keeps the kernel density non-degenerate (the auto bandwidth on a
+  # bimodal mirrored sample collapses to a flat density, which is trivially
+  # symmetric and would not actually test anything).
+  dens <- compute_circular_density(hd, method = "kernel", bw = 20, axial = TRUE)
+  th   <- dens$theta
+  d    <- dens$density
+  # The (genuinely symmetric) density is sampled on an even grid whose origin
+  # is not pi-aligned, so theta + pi lands half a grid step off the nearest
+  # vertex. Asserting symmetry by nearest-neighbour snapping is therefore
+  # brittle (~5e-3 error). Compare instead against a wrap-aware linear
+  # interpolation of the density at theta + pi, which recovers symmetry to the
+  # interpolation residual of a smooth curve.
+  o   <- order(th); th <- th[o]; d <- d[o]
+  wrap   <- function(a) ((a + pi) %% (2 * pi)) - pi
+  thx    <- c(th - 2 * pi, th, th + 2 * pi)
+  dx     <- c(d, d, d)
+  keep   <- !duplicated(thx)
+  anti   <- stats::approx(thx[keep], dx[keep], xout = wrap(th + pi))$y
+  expect_equal(d, anti, tolerance = 1e-3)
+})
+
+test_that("add_heading_density(axial = TRUE) forwards to the estimator", {
+  set.seed(3)
+  hd       <- data.frame(heading = rnorm(60, 0.4, 0.3))
+  # Forwarding is verified by equivalence: estimating with axial = TRUE must be
+  # identical to pre-mirroring the raw sample and estimating without it. (A
+  # geometric reflection assertion on the rendered polygon is unreliable here
+  # because the kernel's even grid interleaves antipodal vertices.)
+  mirrored <- rbind(hd, data.frame(heading = (hd$heading + pi) %% (2 * pi)))
+  lyr_ax   <- add_heading_density(hd,       method = "kernel", bw = 20, axial = TRUE)
+  lyr_man  <- add_heading_density(mirrored, method = "kernel", bw = 20)
+  expect_equal(lyr_ax[[length(lyr_ax)]]$data,
+               lyr_man[[length(lyr_man)]]$data)
+})
