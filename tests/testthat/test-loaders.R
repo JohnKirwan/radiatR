@@ -426,3 +426,32 @@ test_that("TrajSet_read still honours present id/time/x/y columns (parity)", {
   ts <- suppressMessages(TrajSet_read(tmp, normalize_xy = FALSE))
   expect_setequal(as.character(ids(ts)), c("a", "b"))   # real id used, not synthesized
 })
+
+test_that(".guess_delim detects the separator and decimal mark", {
+  mk <- function(lines) { p <- tempfile(fileext = ".csv"); writeLines(lines, p); p }
+
+  comma <- mk(c("x,y,frame", "0.1,0.2,1", "0.3,0.4,2"))
+  expect_equal(radiatR:::.guess_delim(comma), list(delim = ",", decimal = "."))
+
+  # semicolon export with comma decimals (European convention)
+  semi <- mk(c("x;y;frame", "0,1;0,2;1", "0,3;0,4;2"))
+  expect_equal(radiatR:::.guess_delim(semi), list(delim = ";", decimal = ","))
+
+  tab <- mk(c("x\ty\tframe", "0.1\t0.2\t1", "0.3\t0.4\t2"))
+  expect_equal(radiatR:::.guess_delim(tab), list(delim = "\t", decimal = "."))
+
+  pipe <- mk(c("x|y|frame", "0.1|0.2|1", "0.3|0.4|2"))
+  expect_equal(radiatR:::.guess_delim(pipe), list(delim = "|", decimal = "."))
+})
+
+test_that(".guess_delim ignores a stray comma in one header and stays consistent", {
+  # tab-delimited, but the header has a comma in a label; tab is consistent
+  p <- tempfile(fileext = ".csv")
+  writeLines(c("x\ty\tlabel, note", "0.1\t0.2\ta", "0.3\t0.4\tb"), p)
+  expect_equal(radiatR:::.guess_delim(p)$delim, "\t")
+})
+
+test_that(".guess_delim falls back to comma on an unreadable/empty file", {
+  p <- tempfile(fileext = ".csv"); file.create(p)
+  expect_equal(radiatR:::.guess_delim(p), list(delim = ",", decimal = "."))
+})

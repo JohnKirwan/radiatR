@@ -322,6 +322,34 @@ guess_columns <- function(data, mapping = list()) {
   }
 }
 
+# Sniff the field separator (and, for ';', the decimal mark) from a delimited
+# file's first non-empty lines. Returns list(delim, decimal). Chooses the
+# candidate that appears most often AND consistently across lines; ties or no
+# signal fall back to comma + dot. ';' implies the European decimal comma.
+.guess_delim <- function(path) {
+  default <- list(delim = ",", decimal = ".")
+  lines <- tryCatch(
+    readLines(path, n = 20L, warn = FALSE, encoding = "UTF-8"),
+    error = function(e) character(0))
+  lines <- lines[nzchar(trimws(lines))]
+  lines <- utils::head(lines, 5L)
+  if (!length(lines)) return(default)
+
+  cands <- c(",", ";", "\t", "|")
+  counts <- vapply(cands, function(d) {
+    vapply(lines, function(ln) lengths(regmatches(ln, gregexpr(d, ln, fixed = TRUE))),
+           integer(1))
+  }, integer(length(lines)))
+  if (is.null(dim(counts))) counts <- matrix(counts, nrow = length(lines))
+
+  # a separator is viable only if it appears at least once and the same number
+  # of times on every line we looked at (consistency guard)
+  viable <- apply(counts, 2L, function(col) col[1L] > 0 && length(unique(col)) == 1L)
+  if (!any(viable)) return(default)
+  best <- cands[which(viable)][which.max(counts[1L, viable])]
+  list(delim = best, decimal = if (best == ";") "," else ".")
+}
+
 # read file with soft dependencies
 .read_any <- function(path, ...) {
   ext <- tolower(sub(".*\\.", "", path))
