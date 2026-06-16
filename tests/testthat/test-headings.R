@@ -486,3 +486,49 @@ test_that("derive_headings does not warn when every trial yields a heading", {
   expect_silent(hd <- derive_headings(ts, rule = "distal"))
   expect_equal(attr(hd, "n_missing"), 0L)
 })
+
+test_that("velocity_axis returns the axial mean of step directions", {
+  set.seed(1)
+  ang <- c(rnorm(30, 30, 4), rnorm(30, 210, 4)) * pi/180   # back-and-forth ~30 deg
+  x <- cumsum(c(0, cos(ang))); y <- cumsum(c(0, sin(ang)))
+  ts <- TrajSet(data.frame(id = "t", time = seq_along(x), x = x, y = y),
+                id = "id", time = "time", x = "x", y = "y", normalize_xy = FALSE)
+  hd <- derive_headings(ts, rule = "velocity_axis")
+  manual <- (Arg(mean(exp(1i * 2 * ang))) / 2) %% pi
+  expect_equal(nrow(hd), 1L)
+  expect_equal(as.numeric(hd$heading), manual, tolerance = 1e-8)
+  expect_true(hd$heading >= 0 && hd$heading < pi)
+})
+
+test_that("velocity_axis differs from velocity_mean on bidirectional data", {
+  set.seed(2)
+  ang <- c(rnorm(30, 40, 4), rnorm(30, 220, 4)) * pi/180
+  x <- cumsum(c(0, cos(ang))); y <- cumsum(c(0, sin(ang)))
+  ts <- TrajSet(data.frame(id = "t", time = seq_along(x), x = x, y = y),
+                id = "id", time = "time", x = "x", y = "y", normalize_xy = FALSE)
+  ax <- derive_headings(ts, rule = "velocity_axis")$heading
+  dm <- derive_headings(ts, rule = "velocity_mean")$heading
+  expect_false(isTRUE(all.equal(as.numeric(ax), as.numeric(dm))))
+})
+
+test_that("velocity_axis weight_by changes the result on unequal steps", {
+  ts <- TrajSet(data.frame(id = "t", time = 1:3, x = c(0, 10, 10), y = c(0, 0, 1)),
+                id = "id", time = "time", x = "x", y = "y", normalize_xy = FALSE)
+  a <- derive_headings(ts, rule = "velocity_axis", weight_by = "step_length")$heading
+  b <- derive_headings(ts, rule = "velocity_axis", weight_by = "uniform")$heading
+  expect_false(isTRUE(all.equal(as.numeric(a), as.numeric(b))))
+})
+
+test_that("velocity_axis on a single-point trajectory yields NA", {
+  ts <- TrajSet(data.frame(id = "t", time = 1, x = 0.2, y = 0.1),
+                id = "id", time = "time", x = "x", y = "y", normalize_xy = FALSE)
+  hd <- suppressWarnings(derive_headings(ts, rule = "velocity_axis"))
+  expect_true(is.na(hd$heading))
+})
+
+test_that("velocity_axis on cpunctatus yields one axis per trial in [0, pi)", {
+  hd <- suppressWarnings(derive_headings(cpunctatus, rule = "velocity_axis"))
+  expect_equal(nrow(hd), length(ids(cpunctatus)))
+  fin <- hd$heading[is.finite(hd$heading)]
+  expect_true(length(fin) > 0 && all(fin >= 0 & fin < pi))
+})
