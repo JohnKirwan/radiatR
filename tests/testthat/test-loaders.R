@@ -500,3 +500,37 @@ test_that("TrajSet_read forwards read_opts$delim to the reader", {
                                   read_opts = list(delim = ";"))),
     regexp = NULL)   # forcing ';' yields one column -> no x/y -> a load error
 })
+
+# ---- Excel (.xlsx) input -----------------------------------------------------
+
+test_that(".read_any reads an Excel workbook: first sheet by default, sheet by name", {
+  skip_if_not_installed("readxl")
+  skip_if_not_installed("writexl")
+  p <- tempfile(fileext = ".xlsx")
+  writexl::write_xlsx(list(
+    Sheet1 = data.frame(x = c(0.1, 0.3, 0.5), y = c(0.2, 0.4, 0.6), frame = 1:3),
+    Other  = data.frame(x = c(0.9, 0.8),      y = c(0.7, 0.6),      frame = 1:2)
+  ), p)
+
+  d1 <- as.data.frame(radiatR:::.read_any(p))
+  expect_equal(nrow(d1), 3L)               # first sheet
+  expect_true(is.numeric(d1$x))
+
+  d2 <- as.data.frame(radiatR:::.read_any(p, sheet = "Other"))
+  expect_equal(nrow(d2), 2L)               # chosen sheet
+})
+
+test_that("TrajSet_read forwards read_opts$sheet to the Excel reader", {
+  skip_if_not_installed("readxl")
+  skip_if_not_installed("writexl")
+  p <- tempfile(fileext = ".xlsx")
+  writexl::write_xlsx(list(
+    Sheet1 = data.frame(x = c(0.1, 0.3, 0.5), y = c(0.2, 0.4, 0.6), frame = 1:3),
+    Other  = data.frame(x = c(0.9, 0.8),      y = c(0.7, 0.6),      frame = 1:2)
+  ), p)
+  ts1 <- suppressMessages(TrajSet_read(p, normalize_xy = FALSE))
+  ts2 <- suppressMessages(
+    TrajSet_read(p, normalize_xy = FALSE, read_opts = list(sheet = "Other")))
+  expect_equal(nrow(as.data.frame(ts1)), 3L)
+  expect_equal(nrow(as.data.frame(ts2)), 2L)
+})
