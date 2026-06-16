@@ -490,3 +490,13 @@ test_that(".read_any still reads a plain comma CSV unchanged", {
   expect_equal(ncol(df), 3L)
   expect_true(is.numeric(df$x))
 })
+
+test_that("TrajSet_read forwards read_opts$delim to the reader", {
+  # comma-looking content but we force semicolon: the row stays one whole column
+  p <- tempfile(fileext = ".csv")
+  writeLines(c("x,y,frame", "0.1,0.2,1", "0.3,0.4,2"), p)
+  expect_error(
+    suppressMessages(TrajSet_read(p, normalize_xy = FALSE,
+                                  read_opts = list(delim = ";"))),
+    regexp = NULL)   # forcing ';' yields one column -> no x/y -> a load error
+})

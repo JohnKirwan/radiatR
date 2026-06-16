@@ -470,6 +470,9 @@ TrajSet_read_format <- function(x, format, ...) {
 #' @param tz timezone for POSIX times (default "UTC")
 #' @param fps frames-per-second when time_type = "frames"
 #' @param normalize_xy TRUE to normalize (x,y) to unit circle when both provided
+#' @param read_opts list of file-reading overrides: `delim` (field separator),
+#'   `decimal` (decimal mark), and `sheet` (Excel worksheet name or number).
+#'   Any `NULL` element is auto-detected. Defaults to all-auto.
 #' @param dialect optional registered dialect name to pre-process raw input
 #' @param dialect_args named list of extra arguments forwarded to the dialect
 #'   function (e.g. \code{list(bodypart = c("head","thorax"))})
@@ -488,6 +491,7 @@ TrajSet_read <- function(x,
                          normalize_xy = TRUE,
                          dialect = NULL,
                          dialect_args = list(),
+                         read_opts = list(delim = NULL, decimal = NULL, sheet = NULL),
                          mutate = NULL,
                          keep = NULL, drop = NULL,
                          id_from_filename = TRUE,
@@ -520,11 +524,13 @@ TrajSet_read <- function(x,
     df <- x
     src <- NULL
   } else if (is.character(x) && length(x) == 1L && file.exists(x)) {
-    df <- .read_any(x)
+    df <- .read_any(x, delim = read_opts$delim,
+                    decimal = read_opts$decimal, sheet = read_opts$sheet)
     src <- basename(x)
   } else if (is.character(x) && length(x) > 1L) {
     dfl <- lapply(x, function(p) {
-      d <- .read_any(p)
+      d <- .read_any(p, delim = read_opts$delim,
+                     decimal = read_opts$decimal, sheet = read_opts$sheet)
       if (id_from_filename && !is.null(mapping$id) && !(mapping$id %in% names(d))) {
         d[[mapping$id]] <- tools::file_path_sans_ext(basename(p))
       }
