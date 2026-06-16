@@ -15,6 +15,7 @@ TrajSet_read(
   normalize_xy = TRUE,
   dialect = NULL,
   dialect_args = list(),
+  read_opts = list(delim = NULL, decimal = NULL, sheet = NULL),
   mutate = NULL,
   keep = NULL,
   drop = NULL,
@@ -63,6 +64,12 @@ TrajSet_read(
 
   named list of extra arguments forwarded to the dialect function (e.g.
   `list(bodypart = c("head","thorax"))`)
+
+- read_opts:
+
+  list of file-reading overrides: \`delim\` (field separator),
+  \`decimal\` (decimal mark), and \`sheet\` (Excel worksheet name or
+  number). Any \`NULL\` element is auto-detected. Defaults to all-auto.
 
 - mutate:
 
