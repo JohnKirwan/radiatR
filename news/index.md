@@ -120,6 +120,12 @@
 
 ### Statistics and headings
 
+- New `velocity_axis` heading rule:
+  `derive_headings(ts, rule = "velocity_axis")` reduces each trajectory
+  to its movement axis (the axial mean of step directions, in \[0,
+  180)), the bidirectional counterpart of `velocity_mean`. Pair it with
+  the axial statistics and plots (`axial = TRUE`). Available in the
+  Shiny app’s heading-method dropdown.
 - [`derive_headings()`](https://johnkirwan.github.io/radiatR/reference/derive_headings.md)
   gains an `on_missing` argument (`"warn"` (default), `"error"`, or
   `"quiet"`) and now reports how many trials produced no heading. Failed

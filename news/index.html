@@ -79,7 +79,8 @@
 </ul></div>
 <div class="section level3">
 <h3 id="statistics-and-headings-development-version">Statistics and headings<a class="anchor" aria-label="anchor" href="#statistics-and-headings-development-version"></a></h3>
-<ul><li>
+<ul><li>New <code>velocity_axis</code> heading rule: <code>derive_headings(ts, rule = "velocity_axis")</code> reduces each trajectory to its movement axis (the axial mean of step directions, in [0, 180)), the bidirectional counterpart of <code>velocity_mean</code>. Pair it with the axial statistics and plots (<code>axial = TRUE</code>). Available in the Shiny app’s heading-method dropdown.</li>
+<li>
 <code><a href="../reference/derive_headings.html">derive_headings()</a></code> gains an <code>on_missing</code> argument (<code>"warn"</code> (default), <code>"error"</code>, or <code>"quiet"</code>) and now reports how many trials produced no heading. Failed trials are always retained as <code>NA</code> rows, and the result carries <code>n_total</code>, <code>n_missing</code>, and <code>missing_ids</code> attributes. Rule-based failures are often non-random and can bias circular statistics, so they are surfaced by default.</li>
 <li>
 <code><a href="../reference/circ_summarise.html">circ_summarise()</a></code> gains requestable <code>n_total</code> and <code>n_missing</code> stats so the excluded-trial denominator can travel with the summary (default output unchanged).</li>
