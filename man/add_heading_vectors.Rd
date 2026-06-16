@@ -8,7 +8,8 @@ add_heading_vectors(
   headings_df,
   colour_col = NULL,
   colour = NULL,
-  linetype = "dotted"
+  linetype = "dotted",
+  axial = FALSE
 )
 }
 \arguments{
@@ -25,6 +26,10 @@ plot when that attribute is present. Ignored when `colour` is supplied.}
 when `NULL` and no `colour_col` resolves, defaults to `"black"`.}
 
 \item{linetype}{Line type string or integer passed to `geom_segment`.}
+
+\item{axial}{Logical; when `TRUE`, draw each vector at both `heading` and
+`heading + pi`, with the inner start point reflected through the origin.
+Default `FALSE`.}
 }
 \value{
 A `geom_segment()` layer.

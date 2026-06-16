@@ -1519,6 +1519,9 @@ add_heading_points <- function(headings_df, colour_col = NULL, colour = NULL,
 #' @param colour Fixed colour string. Overrides `colour_col` when supplied;
 #'   when `NULL` and no `colour_col` resolves, defaults to `"black"`.
 #' @param linetype Line type string or integer passed to `geom_segment`.
+#' @param axial Logical; when `TRUE`, draw each vector at both `heading` and
+#'   `heading + pi`, with the inner start point reflected through the origin.
+#'   Default `FALSE`.
 #'
 #' @return A `geom_segment()` layer.
 #'
@@ -1533,7 +1536,7 @@ add_heading_points <- function(headings_df, colour_col = NULL, colour = NULL,
 #'                  x_inner = 0.15, y_inner = 0.15)
 #' ggplot() + coord_fixed() + add_heading_vectors(hd)
 add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
-                               linetype = "dotted") {
+                               linetype = "dotted", axial = FALSE) {
   if (is.null(colour_col)) colour_col <- attr(headings_df, "colour_col")
   required <- c("heading", "x_inner", "y_inner")
   missing_cols <- setdiff(required, names(headings_df))
@@ -1546,6 +1549,9 @@ add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
   }
 
   disp <- attr(headings_df, "display", exact = TRUE) %||% circ_display()
+  if (isTRUE(axial))
+    headings_df <- .mirror_axial(headings_df, "heading",
+                                 negate = c("x_inner", "y_inner"))
 
   end_xy   <- .uc_to_display_coords(cos(headings_df$heading),
                                      sin(headings_df$heading), disp)

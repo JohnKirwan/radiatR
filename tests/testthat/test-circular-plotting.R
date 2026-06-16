@@ -1682,3 +1682,15 @@ test_that("add_heading_points(axial = FALSE) is unchanged", {
   expect_equal(nrow(add_heading_points(hd)$data), 2L)
   expect_equal(nrow(add_heading_points(hd, axial = FALSE)$data), 2L)
 })
+
+test_that("add_heading_vectors(axial = TRUE) mirrors endpoints and inner start coords", {
+  hd  <- data.frame(heading = c(0, pi / 2),
+                    x_inner = c(0.1, 0.0), y_inner = c(0.0, 0.2))
+  lyr <- add_heading_vectors(hd, axial = TRUE)
+  d   <- lyr$data
+  expect_equal(nrow(d), 4L)
+  expect_equal(d[[".x_head"]][3:4],  -d[[".x_head"]][1:2],  tolerance = 1e-12)
+  expect_equal(d[[".y_head"]][3:4],  -d[[".y_head"]][1:2],  tolerance = 1e-12)
+  expect_equal(d[[".x_inner"]][3:4], -d[[".x_inner"]][1:2], tolerance = 1e-12)
+  expect_equal(d[[".y_inner"]][3:4], -d[[".y_inner"]][1:2], tolerance = 1e-12)
+})
