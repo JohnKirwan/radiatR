@@ -8,8 +8,8 @@
 derive_headings(
   x,
   rule = c("crossing", "distal", "straight", "origin_mean", "net", "velocity_mean",
-    "window_net", "goal_bias", "pca_axis", "ransac_straight", "maxspeed_window",
-    "vm_fit", "exit", "entry", "ring_tangent"),
+    "velocity_axis", "window_net", "goal_bias", "pca_axis", "ransac_straight",
+    "maxspeed_window", "vm_fit", "exit", "entry", "ring_tangent"),
   ...,
   coords = c("absolute", "relative")
 )
@@ -17,8 +17,8 @@ derive_headings(
 \S4method{derive_headings}{TrajSet}(
   x,
   rule = c("crossing", "distal", "straight", "origin_mean", "net", "velocity_mean",
-    "window_net", "goal_bias", "pca_axis", "ransac_straight", "maxspeed_window",
-    "vm_fit", "exit", "entry", "ring_tangent"),
+    "velocity_axis", "window_net", "goal_bias", "pca_axis", "ransac_straight",
+    "maxspeed_window", "vm_fit", "exit", "entry", "ring_tangent"),
   ...,
   first_only = FALSE,
   carry = NULL,
