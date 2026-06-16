@@ -103,6 +103,13 @@
 <h3 id="tests">Tests<a class="anchor" aria-label="anchor" href="#tests"></a></h3>
 <p><code>tests/testthat/</code> has one file per module. <code>cpunctatus.rda</code> / <code>cpunctatus_tracks.rda</code> (in <code>data/</code>) are the bundled example datasets (a <em>Cylindroiulus punctatus</em> millipede visual-orientation experiment).</p>
 </div>
+<div class="section level3">
+<h3 id="shinytest2">shinytest2<a class="anchor" aria-label="anchor" href="#shinytest2"></a></h3>
+<ul><li>Prefer shiny::testServer over shinytest2 for app logic. It needs no browser, runs in seconds, and reliably exercises the server reactives (it proved the column-mapping panel renders and the load wiring works in this very project, after shinytest2 hung on the same scenario). Reserve shinytest2 for genuinely DOM/browser-only behavior.</li>
+<li>Avoid app<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>u</mi><mi>p</mi><mi>l</mi><mi>o</mi><mi>a</mi><msub><mi>d</mi><mi>f</mi></msub><mi>i</mi><mi>l</mi><mi>e</mi><mi>e</mi><mi>n</mi><mi>t</mi><mi>i</mi><mi>r</mi><mi>e</mi><mi>l</mi><mi>y</mi><mi>—</mi><mi>b</mi><mi>r</mi><mi>o</mi><mi>w</mi><mi>s</mi><mi>e</mi><mi>r</mi><mi>f</mi><mi>i</mi><mi>l</mi><mi>e</mi><mi>u</mi><mi>p</mi><mi>l</mi><mi>o</mi><mi>a</mi><mi>d</mi><mi>i</mi><mi>s</mi><mi>t</mi><mi>h</mi><mi>e</mi><mi>f</mi><mi>l</mi><mi>a</mi><mi>k</mi><mi>i</mi><mi>e</mi><mi>s</mi><mi>t</mi><mi>p</mi><mi>a</mi><mi>t</mi><mi>h</mi><mo>;</mo><mi>s</mi><mi>i</mi><mi>m</mi><mi>u</mi><mi>l</mi><mi>a</mi><mi>t</mi><mi>e</mi><mi>u</mi><mi>p</mi><mi>l</mi><mi>o</mi><mi>a</mi><mi>d</mi><mi>s</mi><mi>w</mi><mi>i</mi><mi>t</mi><mi>h</mi><mi>s</mi><mi>e</mi><mi>s</mi><mi>s</mi><mi>i</mi><mi>o</mi><mi>n</mi></mrow><annotation encoding="application/x-tex">upload_file entirely — browser file upload is the flakiest path; simulate uploads with session</annotation></semantics></math>setInputs(file = list(datapath=…, name=…)) under testServer instead.</li>
+<li>Each shinytest2 test costs an install + Chromium launch (minutes), and the runner does it twice per TDD task (red then green) — expensive even when it doesn’t hang.</li>
+<li>If you must use shinytest2, run it in the background or with a hard timeout, never inline, and check git state rather than trusting a possibly-lost result.</li>
+</ul></div>
 </div>
 </div>
 

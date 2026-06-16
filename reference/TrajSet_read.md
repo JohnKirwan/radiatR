@@ -2,29 +2,9 @@
 
 Construct a TrajSet from a data.frame or file(s)
 
-Construct a TrajSet from a data.frame or file(s)
-
 ## Usage
 
 ``` r
-TrajSet_read(
-  x,
-  mapping = list(id = NULL, time = NULL, x = NULL, y = NULL, angle = NULL, weight = NULL),
-  angle_unit = c("radians", "degrees", "auto"),
-  time_type = c("auto", "posix", "seconds", "frames"),
-  tz = "UTC",
-  fps = NULL,
-  normalize_xy = TRUE,
-  dialect = NULL,
-  dialect_args = list(),
-  mutate = NULL,
-  keep = NULL,
-  drop = NULL,
-  id_from_filename = TRUE,
-  validate = TRUE,
-  format = NULL
-)
-
 TrajSet_read(
   x,
   mapping = list(id = NULL, time = NULL, x = NULL, y = NULL, angle = NULL, weight = NULL),
@@ -112,7 +92,5 @@ TrajSet_read(
   \[register_loader_format()\]
 
 ## Value
-
-TrajSet
 
 TrajSet
