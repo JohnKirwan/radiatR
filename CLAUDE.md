@@ -76,3 +76,16 @@ All public API is documented with Roxygen2. `man/` is auto-generated — edit `@
 ### Tests
 
 `tests/testthat/` has one file per module. `cpunctatus.rda` / `cpunctatus_tracks.rda` (in `data/`) are the bundled example datasets (a *Cylindroiulus punctatus* millipede visual-orientation experiment).
+
+
+### shinytest2
+
+- Prefer shiny::testServer over shinytest2 for app logic. It needs no browser, runs in seconds, and reliably exercises the
+server reactives (it proved the column-mapping panel renders and the load wiring works in this very project, after shinytest2
+hung on the same scenario). Reserve shinytest2 for genuinely DOM/browser-only behavior.
+- Avoid app$upload_file entirely — browser file upload is the flakiest path; simulate uploads with session$setInputs(file = 
+list(datapath=..., name=...)) under testServer instead.
+- Each shinytest2 test costs an install + Chromium launch (minutes), and the runner does it twice per TDD task (red then
+green) — expensive even when it doesn't hang.
+- If you must use shinytest2, run it in the background or with a hard timeout, never inline, and check git state rather than
+trusting a possibly-lost result.
