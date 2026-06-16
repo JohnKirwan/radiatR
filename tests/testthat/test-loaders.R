@@ -455,3 +455,38 @@ test_that(".guess_delim falls back to comma on an unreadable/empty file", {
   p <- tempfile(fileext = ".csv"); file.create(p)
   expect_equal(radiatR:::.guess_delim(p), list(delim = ",", decimal = "."))
 })
+
+test_that(".read_any parses a semicolon + comma-decimal file into numeric columns", {
+  p <- tempfile(fileext = ".csv")
+  writeLines(c("x;y;frame",
+               "0,10;0,20;1", "0,30;0,40;2", "0,50;0,60;3"), p)
+  df <- as.data.frame(radiatR:::.read_any(p))
+  expect_equal(ncol(df), 3L)                      # split into x / y / frame
+  expect_true(is.numeric(df$x))
+  expect_equal(round(range(df$x), 2), c(0.10, 0.50))
+})
+
+test_that(".read_any sniffs a tab-delimited file that carries a .csv extension", {
+  p <- tempfile(fileext = ".csv")
+  writeLines(c("x\ty\tframe", "0.1\t0.2\t1", "0.3\t0.4\t2"), p)
+  df <- as.data.frame(radiatR:::.read_any(p))
+  expect_equal(ncol(df), 3L)
+  expect_true(is.numeric(df$x))
+  expect_equal(round(range(df$x), 2), c(0.1, 0.3))
+})
+
+test_that(".read_any honours an explicit delim/decimal override over the sniffer", {
+  # genuinely semicolon, but force comma -> should NOT split into x/y/frame
+  p <- tempfile(fileext = ".csv")
+  writeLines(c("x;y;frame", "0,1;0,2;1", "0,3;0,4;2"), p)
+  forced <- as.data.frame(radiatR:::.read_any(p, delim = ",", decimal = "."))
+  expect_equal(ncol(forced), 1L)            # comma reading sees a single column
+})
+
+test_that(".read_any still reads a plain comma CSV unchanged", {
+  p <- tempfile(fileext = ".csv")
+  writeLines(c("x,y,frame", "0.1,0.2,1", "0.3,0.4,2"), p)
+  df <- as.data.frame(radiatR:::.read_any(p))
+  expect_equal(ncol(df), 3L)
+  expect_true(is.numeric(df$x))
+})

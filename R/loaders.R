@@ -350,24 +350,42 @@ guess_columns <- function(data, mapping = list()) {
   list(delim = best, decimal = if (best == ";") "," else ".")
 }
 
-# read file with soft dependencies
-.read_any <- function(path, ...) {
+# read file with soft dependencies. Delimited formats are content-sniffed
+# (separator + decimal mark) unless delim/decimal are supplied; Excel and
+# Arrow formats dispatch by extension. `sheet` selects an Excel worksheet.
+.read_any <- function(path, delim = NULL, decimal = NULL, sheet = NULL, ...) {
   ext <- tolower(sub(".*\\.", "", path))
-  if (.is_installed("readr") && ext %in% c("csv","tsv","txt")) {
-    if (ext == "tsv") return(readr::read_tsv(path, show_col_types = FALSE, progress = FALSE, ...))
-    return(readr::read_csv(path, show_col_types = FALSE, progress = FALSE, ...))
+
+  if (ext %in% c("xlsx", "xls")) {
+    if (!.is_installed("readxl"))
+      stop("Reading Excel files requires the 'readxl' package; ",
+           "install it with install.packages(\"readxl\").")
+    return(readxl::read_excel(path, sheet = sheet %||% 1L, ...))
   }
-  if (.is_installed("data.table") && ext %in% c("csv","tsv","txt")) {
-    sep <- if (ext == "tsv") "\t" else ","
-    return(data.table::fread(path, sep = sep, showProgress = FALSE, ...))
-  }
-  if (.is_installed("arrow") && ext %in% c("parquet","feather")) {
+
+  if (.is_installed("arrow") && ext %in% c("parquet", "feather")) {
     if (ext == "parquet") return(arrow::read_parquet(path, ...))
     return(arrow::read_feather(path, ...))
   }
-  # base fallback
-  if (ext == "tsv") return(utils::read.table(path, header = TRUE, sep = "\t", stringsAsFactors = FALSE, ...))
-  utils::read.table(path, header = TRUE, sep = if (ext=="csv") "," else " ", stringsAsFactors = FALSE, ...)
+
+  # delimited: sniff separator + decimal mark unless overridden
+  if (is.null(delim) || is.null(decimal)) {
+    g <- .guess_delim(path)
+    if (is.null(delim))   delim   <- g$delim
+    if (is.null(decimal)) decimal <- g$decimal
+  }
+
+  if (.is_installed("readr"))
+    return(readr::read_delim(
+      path, delim = delim,
+      locale = readr::locale(decimal_mark = decimal),
+      show_col_types = FALSE, progress = FALSE, ...))
+  if (.is_installed("data.table"))
+    return(data.table::fread(
+      path, sep = delim, dec = decimal, showProgress = FALSE, ...))
+  utils::read.table(
+    path, header = TRUE, sep = delim, dec = decimal,
+    stringsAsFactors = FALSE, ...)
 }
 
 # ---- core: TrajSet_read ------------------------------------------------------
