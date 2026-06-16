@@ -1667,3 +1667,18 @@ test_that(".mirror_axial on an empty frame returns an empty frame", {
   expect_equal(nrow(out), 0L)
   expect_equal(names(out), names(df))
 })
+
+test_that("add_heading_points(axial = TRUE) draws each datum at both poles", {
+  hd  <- data.frame(heading = c(0, pi / 2))
+  lyr <- add_heading_points(hd, axial = TRUE)
+  d   <- lyr$data
+  expect_equal(nrow(d), 4L)
+  expect_equal(d[[".x_head"]][3:4], -d[[".x_head"]][1:2], tolerance = 1e-12)
+  expect_equal(d[[".y_head"]][3:4], -d[[".y_head"]][1:2], tolerance = 1e-12)
+})
+
+test_that("add_heading_points(axial = FALSE) is unchanged", {
+  hd <- data.frame(heading = c(0, pi / 2))
+  expect_equal(nrow(add_heading_points(hd)$data), 2L)
+  expect_equal(nrow(add_heading_points(hd, axial = FALSE)$data), 2L)
+})

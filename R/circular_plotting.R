@@ -1458,6 +1458,8 @@ add_heading_arrow <- function(headings_df,
 #'   when `NULL` and no `colour_col` resolves, defaults to `"black"`.
 #' @param size Point size passed to `geom_point`.
 #' @param alpha Point alpha transparency.
+#' @param axial Logical; when `TRUE`, draw each observation at both `heading`
+#'   and `heading + pi` (bidirectional/axial display). Default `FALSE`.
 #'
 #' @return A `geom_point()` layer (shape = 1, hollow circle).
 #'
@@ -1473,11 +1475,12 @@ add_heading_arrow <- function(headings_df,
 #' ggplot() + coord_fixed() + add_heading_points(hd)
 #' ggplot() + coord_fixed() + add_heading_points(hd, colour = "steelblue")
 add_heading_points <- function(headings_df, colour_col = NULL, colour = NULL,
-                               size = 2, alpha = 1) {
+                               size = 2, alpha = 1, axial = FALSE) {
   if (!("heading" %in% names(headings_df)))
     stop("`headings_df` must contain a `heading` column (radians).")
   if (is.null(colour_col)) colour_col <- attr(headings_df, "colour_col")
   disp <- attr(headings_df, "display", exact = TRUE) %||% circ_display()
+  if (isTRUE(axial)) headings_df <- .mirror_axial(headings_df, "heading")
 
   xy <- .uc_to_display_coords(cos(headings_df$heading),
                                sin(headings_df$heading), disp)
