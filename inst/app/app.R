@@ -143,10 +143,15 @@ detect_cond_col <- function(ts) {
   if (length(hits)) hits[1L] else NULL
 }
 
-load_ts <- function(path, dialect, mapping = list()) {
+load_ts <- function(path, dialect, mapping = list(), read_opts = list(delim = NULL)) {
   if (is.null(dialect) || dialect %in% c("auto", "generic"))
-    return(TrajSet_read(path, mapping = mapping))
-  TrajSet_read(path, dialect = dialect, mapping = mapping)
+    return(TrajSet_read(path, mapping = mapping, read_opts = read_opts))
+  TrajSet_read(path, dialect = dialect, mapping = mapping, read_opts = read_opts)
+}
+
+# Map the app's delimiter dropdown to a read_opts override. "auto" -> sniff.
+delim_read_opts <- function(sel) {
+  if (is.null(sel) || identical(sel, "auto")) list(delim = NULL) else list(delim = sel)
 }
 
 # The bundled Cylindroiulus punctatus millipede example, as a TrajSet, so
@@ -447,7 +452,9 @@ server <- function(input, output, session) {
            time = pick(input$map_time), id = pick(input$map_id))
     } else list()
     ts <- tryCatch(
-      suppressMessages(suppressWarnings(load_ts(rv$path, d, mapping = map))),
+      suppressMessages(suppressWarnings(
+        load_ts(rv$path, d, mapping = map,
+                read_opts = delim_read_opts(input$delim_sel)))),
       error = function(e) {
         rv$error <- plain_error(e)
         NULL
@@ -654,7 +661,7 @@ server <- function(input, output, session) {
         ),
         fileInput(
           "file", NULL,
-          accept      = c(".csv", ".txt", ".tsv", ".mat"),
+          accept      = c(".csv", ".CSV", ".tsv", ".txt", ".xlsx", ".xls", ".mat"),
           buttonLabel = "Browse…",
           placeholder = "No file selected"
         ),
@@ -672,6 +679,7 @@ server <- function(input, output, session) {
               " (Cylindroiulus punctatus, 235 trials).")
         },
         uiOutput("format_box"),
+        uiOutput("delim_box"),
         uiOutput("mapping_box"),
         uiOutput("preview_section"),
         err_box
@@ -937,6 +945,18 @@ server <- function(input, output, session) {
     )
   })
 
+  # Delimiter override for delimited (non-Excel) uploads. Own renderUI so a
+  # wizard re-render does not reset the choice.
+  output$delim_box <- renderUI({
+    req(rv$path)
+    ext <- tolower(sub(".*\\.", "", rv$path))
+    if (ext %in% c("xlsx", "xls")) return(NULL)
+    selectInput("delim_sel", "Delimiter",
+                choices = c("Auto-detect" = "auto", "Comma" = ",",
+                            "Semicolon" = ";", "Tab" = "\t"),
+                selected = "auto")
+  })
+
   # Column mapping for a Generic CSV upload. Kept in its OWN renderUI (not in
   # format_box) so that reading input$dialect_sel here does not re-render and
   # reset the dialect selector.
@@ -946,10 +966,10 @@ server <- function(input, output, session) {
       input$dialect_sel else rv$dialect
     if (!identical(d, "generic")) return(NULL)
     df <- tryCatch(
-      utils::read.csv(rv$path, nrows = 200, check.names = TRUE,
-                      stringsAsFactors = FALSE),
+      radiatR:::.read_any(rv$path, delim = delim_read_opts(input$delim_sel)$delim),
       error = function(e) NULL)
     if (is.null(df) || !ncol(df)) return(NULL)
+    df   <- utils::head(as.data.frame(df), 200L)
     cols <- names(df)
     g    <- tryCatch(radiatR:::guess_columns(df), error = function(e) list())
     sel  <- function(v) if (is.null(v)) "" else v
@@ -978,15 +998,11 @@ server <- function(input, output, session) {
   output$preview_tbl <- renderTable({
     req(rv$path)
     df <- tryCatch(
-      utils::read.csv(
-        rv$path, nrows = 5L,
-        check.names = FALSE, stringsAsFactors = FALSE
-      ),
-      error = function(e) NULL
-    )
+      radiatR:::.read_any(rv$path, delim = delim_read_opts(input$delim_sel)$delim),
+      error = function(e) NULL)
     if (is.null(df))
       return(data.frame(Note = "Could not preview this file"))
-    df
+    utils::head(as.data.frame(df), 5L)
   }, striped = TRUE, caption = "First 5 rows",
      caption.placement = "top")
 

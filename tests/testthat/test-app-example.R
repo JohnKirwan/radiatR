@@ -272,3 +272,49 @@ test_that("the velocity_axis method renders the example trajectory without error
   expect_false(grepl("track_plot render failed",
     paste(utils::capture.output(print(app$get_logs())), collapse = "\n")))
 })
+
+test_that("a semicolon CSV maps split columns (preview/mapping read via .read_any)", {
+  skip_if_not_installed("shiny")
+  app_dir <- system.file("app", package = "radiatR")
+  if (!nzchar(app_dir)) app_dir <- testthat::test_path("..", "..", "inst", "app")
+  skip_if(!dir.exists(app_dir), "radiatR app directory not found")
+
+  csv <- tempfile(fileext = ".csv")
+  writeLines(c("Track1_X;Track1_Y;Frame",
+               "0,10;0,20;1", "0,30;0,40;2", "0,50;0,60;3"), csv)
+
+  shiny::testServer(app_dir, {
+    session$setInputs(file = list(datapath = csv, name = basename(csv)))
+    session$setInputs(dialect_sel = "generic", delim_sel = "auto")
+
+    map <- paste(unlist(output$mapping_box), collapse = " ")
+    # Discriminating: when correctly split, each column is its own selectable
+    # option, so the quoted token "Track1_Y" appears. A comma-misread of a ';'
+    # file yields ONE column literally named "Track1_X;Track1_Y;Frame", in which
+    # the quoted token "Track1_Y" never appears (no quote precedes it).
+    expect_true(grepl('"Track1_Y"', map, fixed = TRUE))
+    expect_true(grepl('"Frame"',    map, fixed = TRUE))
+  })
+})
+
+test_that("the delimiter override forces the reader and loads a semicolon file", {
+  skip_if_not_installed("shiny")
+  app_dir <- system.file("app", package = "radiatR")
+  if (!nzchar(app_dir)) app_dir <- testthat::test_path("..", "..", "inst", "app")
+  skip_if(!dir.exists(app_dir), "radiatR app directory not found")
+
+  csv <- tempfile(fileext = ".csv")
+  writeLines(c("Track1_X;Track1_Y;Frame",
+               "0,10;0,20;1", "0,30;0,40;2", "0,50;0,60;3"), csv)
+
+  shiny::testServer(app_dir, {
+    session$setInputs(file = list(datapath = csv, name = basename(csv)))
+    session$setInputs(dialect_sel = "generic", delim_sel = ";")
+    session$setInputs(map_x = "Track1_X", map_y = "Track1_Y",
+                      map_time = "Frame", map_id = "")
+    session$setInputs(go2 = 1)
+    expect_equal(rv$step, 2L)
+    expect_false(is.null(rv$ts))
+    expect_equal(length(ids(rv$ts)), 1L)
+  })
+})
