@@ -143,10 +143,10 @@ detect_cond_col <- function(ts) {
   if (length(hits)) hits[1L] else NULL
 }
 
-load_ts <- function(path, dialect) {
+load_ts <- function(path, dialect, mapping = list()) {
   if (is.null(dialect) || dialect %in% c("auto", "generic"))
-    return(TrajSet_read(path))
-  TrajSet_read(path, dialect = dialect)
+    return(TrajSet_read(path, mapping = mapping))
+  TrajSet_read(path, dialect = dialect, mapping = mapping)
 }
 
 # The bundled Cylindroiulus punctatus millipede example, as a TrajSet, so
@@ -440,8 +440,13 @@ server <- function(input, output, session) {
       rv$dialect
     }
     ensure_pkgs()   # first point that needs radiatR/ggplot2 for a file upload
+    map <- if (identical(d, "generic")) {
+      pick <- function(v) if (!is.null(v) && nzchar(v)) v else NULL
+      list(x = pick(input$map_x), y = pick(input$map_y),
+           time = pick(input$map_time), id = pick(input$map_id))
+    } else list()
     ts <- tryCatch(
-      suppressMessages(suppressWarnings(load_ts(rv$path, d))),
+      suppressMessages(suppressWarnings(load_ts(rv$path, d, mapping = map))),
       error = function(e) {
         rv$error <- plain_error(e)
         NULL
@@ -666,6 +671,7 @@ server <- function(input, output, session) {
               " (Cylindroiulus punctatus, 235 trials).")
         },
         uiOutput("format_box"),
+        uiOutput("mapping_box"),
         uiOutput("preview_section"),
         err_box
       )
@@ -926,6 +932,39 @@ server <- function(input, output, session) {
         choices  = DIALECT_CHOICES,
         selected = if (!is.null(d)) d else "auto"
       )
+    )
+  })
+
+  # Column mapping for a Generic CSV upload. Kept in its OWN renderUI (not in
+  # format_box) so that reading input$dialect_sel here does not re-render and
+  # reset the dialect selector.
+  output$mapping_box <- renderUI({
+    req(rv$path)
+    d <- if (!is.null(input$dialect_sel) && input$dialect_sel != "auto")
+      input$dialect_sel else rv$dialect
+    if (!identical(d, "generic")) return(NULL)
+    df <- tryCatch(
+      utils::read.csv(rv$path, nrows = 200, check.names = TRUE,
+                      stringsAsFactors = FALSE),
+      error = function(e) NULL)
+    if (is.null(df) || !ncol(df)) return(NULL)
+    cols <- names(df)
+    g    <- tryCatch(radiatR:::guess_columns(df), error = function(e) list())
+    sel  <- function(v) if (is.null(v)) "" else v
+    xy   <- stats::setNames(cols, cols)
+    tagList(
+      tags$hr(),
+      div(class = "small text-muted mb-1", "Map columns:"),
+      layout_columns(
+        col_widths = c(6, 6),
+        selectInput("map_x", "X", choices = xy, selected = sel(g$x)),
+        selectInput("map_y", "Y", choices = xy, selected = sel(g$y))),
+      layout_columns(
+        col_widths = c(6, 6),
+        selectInput("map_time", "Time",
+                    choices = c("(row order)" = "", xy), selected = sel(g$time)),
+        selectInput("map_id", "ID",
+                    choices = c("(single track)" = "", xy), selected = sel(g$id)))
     )
   })
 

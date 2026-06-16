@@ -214,3 +214,41 @@ test_that("the axial toggle renders example headings without error", {
   expect_false(grepl("track_plot render failed",
     paste(utils::capture.output(print(app$get_logs())), collapse = "\n")))
 })
+
+# Server-level test (no browser): a Generic CSV upload renders the column-mapping
+# dropdowns pre-filled from guess_columns(), and the chosen mapping loads a
+# single-track TrajSet through the go2 handler. (Driven via shiny::testServer
+# rather than shinytest2 because browser file-upload is flaky in CI.)
+test_that("a generic CSV maps columns and loads through the server", {
+  skip_if_not_installed("shiny")
+  app_dir <- system.file("app", package = "radiatR")
+  if (!nzchar(app_dir)) app_dir <- testthat::test_path("..", "..", "inst", "app")
+  skip_if(!dir.exists(app_dir), "radiatR app directory not found")
+
+  csv <- tempfile(fileext = ".csv")
+  set.seed(1)
+  utils::write.csv(data.frame(Frame = 1:30,
+                              Track1_X = cumsum(rnorm(30)),
+                              Track1_Y = cumsum(rnorm(30))),
+                   csv, row.names = FALSE)
+
+  shiny::testServer(app_dir, {
+    session$setInputs(file = list(datapath = csv, name = basename(csv)))
+    session$setInputs(dialect_sel = "generic")
+
+    # the mapping panel renders with the guessed columns and the single-track option
+    html <- paste(unlist(output$mapping_box), collapse = " ")
+    expect_match(html, "map_x")
+    expect_match(html, "Track1_X")
+    expect_match(html, "single track")
+
+    # supply the (pre-filled) mapping and load
+    session$setInputs(map_x = "Track1_X", map_y = "Track1_Y",
+                      map_time = "Frame", map_id = "")
+    session$setInputs(go2 = 1)
+
+    expect_equal(rv$step, 2L)               # advanced to Configure
+    expect_false(is.null(rv$ts))            # a TrajSet was built
+    expect_equal(length(ids(rv$ts)), 1L)    # treated as a single trajectory
+  })
+})
