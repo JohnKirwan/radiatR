@@ -2743,6 +2743,9 @@ build_label_data <- function(data, label_col, x_col, y_col, colour_col = NULL, p
 #' @param display A `circ_display()` controlling rotation, matching the parent
 #'   `radiate()` plot. Default `NULL` uses the input's `display` attribute when
 #'   present, otherwise the identity display.
+#' @param axial Logical; when `TRUE`, mirror each observation to `angle_col + pi`
+#'   before estimation, yielding a period-pi (bidirectional) result. Default
+#'   `FALSE`.
 #' @return A \code{geom_polygon} layer that can be added to a \code{radiate()}
 #'   plot with \code{+}.
 #' @export
@@ -2750,15 +2753,16 @@ add_angle_rose <- function(hd, bins = 12L, angle_col = "heading",
                             group_col = NULL, scale = 0.4, inner_r = 0,
                             normalize = TRUE, fill = "steelblue",
                             colour = NA, alpha = 0.5, arc_pts = 20L,
-                            display = NULL) {
+                            display = NULL, axial = FALSE) {
   stopifnot(is.data.frame(hd), angle_col %in% names(hd))
+  disp  <- display %||% attr(hd, "display", exact = TRUE) %||% circ_display()
+  if (isTRUE(axial)) hd <- .mirror_axial(hd, angle_col)
   ss    <- sector_summary(hd, sectors = bins, group_col = group_col,
                           angle_col = angle_col)
   y_col <- if (normalize) "proportion" else "count"
   y_max <- max(ss[[y_col]], na.rm = TRUE)
   if (y_max <= 0) y_max <- 1
   hw    <- pi / bins   # half sector width in radians
-  disp  <- display %||% attr(hd, "display", exact = TRUE) %||% circ_display()
 
   .wedge <- function(mid, val, grp_label) {
     r_out  <- inner_r + scale * val / y_max
@@ -2912,18 +2916,23 @@ add_vonmises_density <- function(fit, scale = 0.4, inner_r = 0,
 #' @param display A `circ_display()` controlling rotation, matching the parent
 #'   `radiate()` plot. Default `NULL` uses the input's `display` attribute when
 #'   present, otherwise the identity display.
+#' @param axial Logical; when `TRUE`, mirror each observation to `angle_col + pi`
+#'   before estimation, yielding a period-pi (bidirectional) result. Default
+#'   `FALSE`.
 #' @return A \code{geom_polygon} layer, or \code{NULL} if estimation fails.
 #' @export
 add_circular_kde <- function(hd, angle_col = "heading", group_col = NULL,
                               bw = NULL, scale = 0.4, inner_r = 0,
                               n_pts = 512L, kernel = "vonmises",
                               colour = "tomato", linewidth = 0.8,
-                              fill = NA, alpha = 0.8, display = NULL) {
+                              fill = NA, alpha = 0.8, display = NULL,
+                              axial = FALSE) {
   stopifnot(is.data.frame(hd))
   if (!angle_col %in% names(hd))
     stop("add_circular_kde: column '", angle_col, "' not found")
 
   disp <- display %||% attr(hd, "display", exact = TRUE) %||% circ_display()
+  if (isTRUE(axial)) hd <- .mirror_axial(hd, angle_col)
 
   .kde_ring <- function(sub, grp) {
     a <- as.numeric(sub[[angle_col]])

@@ -1707,3 +1707,31 @@ test_that("add_stacked_headings(axial = FALSE) is unchanged", {
   hd <- data.frame(heading = c(0, 0))
   expect_equal(nrow(add_stacked_headings(hd)$data), 2L)
 })
+
+test_that("add_angle_rose(axial = TRUE) produces a point-symmetric rose", {
+  hd  <- data.frame(heading = c(0.1, 0.2, 0.3, 0.15))
+  lyr <- add_angle_rose(hd, bins = 12L, axial = TRUE)
+  d   <- lyr$data
+  pts  <- unique(round(cbind(d$x, d$y), 6))
+  refl <- unique(round(cbind(-d$x, -d$y), 6))
+  expect_setequal(
+    apply(pts,  1L, paste, collapse = ","),
+    apply(refl, 1L, paste, collapse = ",")
+  )
+})
+
+test_that("add_circular_kde(axial = TRUE) produces a point-symmetric ring", {
+  set.seed(1)
+  hd  <- data.frame(heading = rnorm(40, 0.3, 0.2))
+  # Use an odd n_pts so the density grid seq(0, 2*pi, length.out = n) has a
+  # vertex exactly at theta + pi for every vertex at theta; this lets axial
+  # symmetry be asserted at the vertex level. The even default grid samples
+  # the (genuinely symmetric) curve at pi-misaligned points, so its vertices
+  # interleave rather than reflect onto each other.
+  lyr <- add_circular_kde(hd, axial = TRUE, n_pts = 513L)
+  d   <- lyr$data
+  key  <- function(m) apply(round(m, 4), 1L, paste, collapse = ",")
+  pts  <- cbind(d$x, d$y)
+  refl <- cbind(-d$x, -d$y)
+  expect_true(all(key(refl) %in% key(pts)))
+})
