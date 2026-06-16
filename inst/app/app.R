@@ -271,9 +271,10 @@ circ_summary_table <- function(hd, by_col, axial = FALSE) {
   groups <- unique(hd[[by_col]])
   p_vals <- vapply(groups, function(g)
     rayleigh_p_fmt(hd$heading[hd[[by_col]] == g], axial = axial), character(1L))
+  rayleigh_label <- if (isTRUE(axial)) "Rayleigh (axial) p" else "Rayleigh p"
   p_df <- stats::setNames(
     data.frame(groups, p_vals, stringsAsFactors = FALSE),
-    c(by_col, "Rayleigh p"))
+    c(by_col, rayleigh_label))
   cm <- merge(cm, p_df, by = by_col, sort = FALSE)
   names(cm)[names(cm) == by_col]         <- "Group"
   names(cm)[names(cm) == "n_missing"]    <- "Excluded"
