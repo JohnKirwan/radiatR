@@ -51,6 +51,13 @@
 
 ## Loaders
 
+* `TrajSet_read()` now loads single-track CSVs with custom column names: column
+  guessing is case-insensitive and matches separator-suffixed coordinates
+  (e.g. `Track1_X`/`Track1_Y`); a missing id column is treated as a single
+  trajectory and a missing time/frame column falls back to row order (each with
+  a message), and rows with non-finite coordinates are dropped. New exported
+  `guess_columns()` reports the guessed role of each column. The Shiny app shows
+  pre-filled X/Y/Time/ID dropdowns for Generic CSV uploads.
 * `load_tracks()` and `get_trial_limits()` now carry every column from the
   manifest / `file_tbl` onto trials (and into the resulting `TrajSet`), rather
   than a fixed `arc`/`type`/`obstacle`/`id` list left over from one experiment.
