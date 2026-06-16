@@ -1607,6 +1607,10 @@ add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
 #' @param size Point size passed to \code{geom_point()}.
 #' @param alpha Fixed alpha. Ignored when \code{shade = TRUE}.
 #' @param ... Additional arguments passed to \code{ggplot2::geom_point()}.
+#' @param axial Logical; when `TRUE`, mirror each observation to `col + pi`
+#'   before stacking, so the figure reads as bidirectional. Stacking is computed
+#'   after mirroring, so each antipodal cluster stacks within itself. Default
+#'   `FALSE`.
 #'
 #' @return A \code{geom_point()} layer.
 #'
@@ -1629,6 +1633,7 @@ add_stacked_headings <- function(data,
                                  colour_col = NULL,
                                  size       = 2,
                                  alpha      = 1,
+                                 axial      = FALSE,
                                  ...) {
   if (is.null(col))
     col <- if (!is.null(attr(data, "heading_col"))) attr(data, "heading_col")
@@ -1637,6 +1642,8 @@ add_stacked_headings <- function(data,
     stop(sprintf("column '%s' not found in data.", col))
 
   disp_opts <- attr(data, "display", exact = TRUE) %||% circ_display()
+
+  if (isTRUE(axial)) data <- .mirror_axial(data, col)
 
   if (!"stack_r" %in% names(data))
     data <- stack_headings(data, col = col, step = step, start_sep = start_sep,

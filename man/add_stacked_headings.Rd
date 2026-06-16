@@ -19,6 +19,7 @@ add_stacked_headings(
   colour_col = NULL,
   size = 2,
   alpha = 1,
+  axial = FALSE,
   ...
 )
 }
@@ -54,6 +55,11 @@ Mapped to ggplot2 shape integers: 1 = hollow, 16 = filled,
 \item{size}{Point size passed to \code{geom_point()}.}
 
 \item{alpha}{Fixed alpha. Ignored when \code{shade = TRUE}.}
+
+\item{axial}{Logical; when `TRUE`, mirror each observation to `col + pi`
+before stacking, so the figure reads as bidirectional. Stacking is computed
+after mirroring, so each antipodal cluster stacks within itself. Default
+`FALSE`.}
 
 \item{...}{Additional arguments passed to \code{ggplot2::geom_point()}.}
 }

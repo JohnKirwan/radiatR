@@ -1694,3 +1694,16 @@ test_that("add_heading_vectors(axial = TRUE) mirrors endpoints and inner start c
   expect_equal(d[[".x_inner"]][3:4], -d[[".x_inner"]][1:2], tolerance = 1e-12)
   expect_equal(d[[".y_inner"]][3:4], -d[[".y_inner"]][1:2], tolerance = 1e-12)
 })
+
+test_that("add_stacked_headings(axial = TRUE) stacks each antipodal cluster within itself", {
+  hd  <- data.frame(heading = c(0, 0))
+  lyr <- add_stacked_headings(hd, axial = TRUE)
+  d   <- lyr$data
+  expect_equal(nrow(d), 4L)
+  expect_equal(length(unique(round(d$stack_r, 6))), 2L)
+})
+
+test_that("add_stacked_headings(axial = FALSE) is unchanged", {
+  hd <- data.frame(heading = c(0, 0))
+  expect_equal(nrow(add_stacked_headings(hd)$data), 2L)
+})
