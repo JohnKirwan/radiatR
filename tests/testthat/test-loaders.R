@@ -479,7 +479,10 @@ test_that(".read_any honours an explicit delim/decimal override over the sniffer
   # genuinely semicolon, but force comma -> should NOT split into x/y/frame
   p <- tempfile(fileext = ".csv")
   writeLines(c("x;y;frame", "0,1;0,2;1", "0,3;0,4;2"), p)
-  forced <- as.data.frame(radiatR:::.read_any(p, delim = ",", decimal = "."))
+  # forcing the wrong delimiter parses the row as one column; the resulting
+  # vroom parse notice is expected here, so silence it.
+  forced <- suppressWarnings(
+    as.data.frame(radiatR:::.read_any(p, delim = ",", decimal = ".")))
   expect_equal(ncol(forced), 1L)            # comma reading sees a single column
 })
 
