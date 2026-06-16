@@ -570,6 +570,8 @@ Any remaining exported topics.
   : Summarise per-trial metadata for a single video.
 - [`gg_traj()`](https://johnkirwan.github.io/radiatR/reference/gg_traj.md)
   : Plot trajectories from a TrajSet (overlay or faceted)
+- [`guess_columns()`](https://johnkirwan.github.io/radiatR/reference/guess_columns.md)
+  : Guess the role of each column in a track table
 - [`headings_frame()`](https://johnkirwan.github.io/radiatR/reference/headings_frame.md)
   : Construct a headings frame from a data frame of angles
 - [`import_info()`](https://johnkirwan.github.io/radiatR/reference/import_info.md)

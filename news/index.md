@@ -78,6 +78,16 @@
 
 ### Loaders
 
+- [`TrajSet_read()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read.md)
+  now loads single-track CSVs with custom column names: column guessing
+  is case-insensitive and matches separator-suffixed coordinates
+  (e.g. `Track1_X`/`Track1_Y`); a missing id column is treated as a
+  single trajectory and a missing time/frame column falls back to row
+  order (each with a message), and rows with non-finite coordinates are
+  dropped. New exported
+  [`guess_columns()`](https://johnkirwan.github.io/radiatR/reference/guess_columns.md)
+  reports the guessed role of each column. The Shiny app shows
+  pre-filled X/Y/Time/ID dropdowns for Generic CSV uploads.
 - [`load_tracks()`](https://johnkirwan.github.io/radiatR/reference/load_tracks.md)
   and
   [`get_trial_limits()`](https://johnkirwan.github.io/radiatR/reference/get_trial_limits.md)

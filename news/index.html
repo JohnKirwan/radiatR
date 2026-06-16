@@ -65,6 +65,8 @@
 <div class="section level3">
 <h3 id="loaders-development-version">Loaders<a class="anchor" aria-label="anchor" href="#loaders-development-version"></a></h3>
 <ul><li>
+<code><a href="../reference/TrajSet_read.html">TrajSet_read()</a></code> now loads single-track CSVs with custom column names: column guessing is case-insensitive and matches separator-suffixed coordinates (e.g. <code>Track1_X</code>/<code>Track1_Y</code>); a missing id column is treated as a single trajectory and a missing time/frame column falls back to row order (each with a message), and rows with non-finite coordinates are dropped. New exported <code><a href="../reference/guess_columns.html">guess_columns()</a></code> reports the guessed role of each column. The Shiny app shows pre-filled X/Y/Time/ID dropdowns for Generic CSV uploads.</li>
+<li>
 <code><a href="../reference/load_tracks.html">load_tracks()</a></code> and <code><a href="../reference/get_trial_limits.html">get_trial_limits()</a></code> now carry every column from the manifest / <code>file_tbl</code> onto trials (and into the resulting <code>TrajSet</code>), rather than a fixed <code>arc</code>/<code>type</code>/<code>obstacle</code>/<code>id</code> list left over from one experiment. Structural file-reference columns (<code>basename</code>/<code>landmark</code>/<code>track</code>) are excluded. Use <code>load_tracks2(colnames = )</code> to rename or restrict the columns carried.</li>
 </ul></div>
 <div class="section level3">
