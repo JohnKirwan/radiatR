@@ -16,6 +16,12 @@
   coarse significance level, so it is shown as a bracket (`< 0.05`, `> 0.10`, …),
   computed on raw angles regardless of the Data model.
 
+* `test_uniformity()` gains `test = "hermans_rasson"`, the Hermans-Rasson omnibus
+  test of circular uniformity (Landler, Ruxton & Malkemper 2019) — far more
+  powerful than Rayleigh against multimodal / non-symmetric alternatives. Its
+  p-value is by Monte-Carlo simulation (`n_sim`, default 9999; seed via
+  `set.seed()`), and it honours `group_col`, `p_adjust`, and `axial`.
+
 * `vonmises_fit()`, `wrappedcauchy_fit()`, `add_vonmises_density()`, and
   `add_wrappedcauchy_density()` gain `axial = TRUE` to fit and draw axial
   (bidirectional, mod-pi) distributions via the doubled-angle method: the mean is

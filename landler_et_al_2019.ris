@@ -1,0 +1,17 @@
+TY  - JOUR
+AU  - Landler, Lukas
+AU  - Ruxton, Graeme D.
+AU  - Malkemper, E. Pascal
+PY  - 2019
+DA  - 2019/08/07
+TI  - The Hermans–Rasson test as a powerful alternative to the Rayleigh test for circular statistics in biology
+JO  - BMC Ecology
+SP  - 30
+VL  - 19
+IS  - 1
+AB  - Circular data are gathered in diverse fields of science where measured traits are cyclical in nature: such as compass directions or times of day. The most common statistical question asked of a sample of circular data is whether the data seems to be drawn from a uniform distribution or one that is concentrated around one or more preferred directions. The overwhelmingly most-popular test of the null hypothesis of uniformity is the Rayleigh test, even though this test is known to have very low power in some circumstances. Here we present simulation studies evaluating the performance of tests developed as alternatives to the Rayleigh test.
+SN  - 1472-6785
+UR  - https://doi.org/10.1186/s12898-019-0246-8
+DO  - 10.1186/s12898-019-0246-8
+ID  - Landler2019
+ER  - 
