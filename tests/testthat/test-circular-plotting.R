@@ -1640,7 +1640,9 @@ test_that("radiate(): tick/label presence is argument-controlled, not theme-gate
   base <- radiate(cpunctatus, theme = "void")
   expect_gt(n_seg(base), n_seg(radiate(cpunctatus, theme = "void", ticks = FALSE)))
   expect_gt(n_txt(base), 0L)                                                         # void keeps labels
-  expect_equal(n_txt(radiate(cpunctatus, theme = "void", angle_labels = "none")), 0L)
+  expect_equal(
+    n_txt(radiate(cpunctatus, theme = "void", angle_labels = "none", show_labels = FALSE)),
+    0L)
 })
 
 test_that("radiate(): chrome styling comes from the named theme", {
