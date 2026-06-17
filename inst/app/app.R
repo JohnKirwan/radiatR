@@ -279,25 +279,63 @@ rao_spacing_fmt <- function(angles) {
   }, error = function(e) "—")
 }
 
+# Omnibus Hermans-Rasson test p-value, formatted for the summary. Monte-Carlo, so
+# a fixed seed is set per call for render stability (identical inputs -> identical
+# p across re-renders). A modest n_sim keeps the reactive responsive. n < 3 or any
+# error -> "—".
+hermans_p_fmt <- function(angles, n_sim = 999L) {
+  tryCatch({
+    a <- angles[is.finite(angles)]
+    if (length(a) < 3L) return("—")
+    set.seed(20260617L)
+    p <- test_uniformity(data.frame(heading = a),
+                         test = "hermans_rasson", n_sim = n_sim)$p_value
+    if (is.na(p))  return("—")
+    if (p < 0.001) return("< 0.001")
+    sprintf("%.3f", p)
+  }, error = function(e) "—")
+}
+
 # Display-ready circular summary (n, mean direction, resultant R, Rayleigh p) for
 # a headings frame, grouped by `by_col`. Returns a data frame with the group
 # column renamed to "Group"; callers may append trajectory-only columns
 # (e.g. Straightness) keyed on the returned "Group" values.
-circ_summary_table <- function(hd, by_col, axial = FALSE) {
+circ_summary_table <- function(hd, by_col, axial = FALSE,
+                               omnibus = "rao", model_sel = NULL) {
   cm <- circ_summarise(
     hd, "heading", units = "radians", .by = by_col,
     stats = c("n", "n_missing", "mean_dir_deg", "resultant_R"),
     display = circ_display(zero = 0), axial = axial
   )
   groups <- unique(hd[[by_col]])
-  p_vals   <- vapply(groups, function(g)
+  p_vals <- vapply(groups, function(g)
     rayleigh_p_fmt(hd$heading[hd[[by_col]] == g], axial = axial), character(1L))
-  rao_vals <- vapply(groups, function(g)
-    rao_spacing_fmt(hd$heading[hd[[by_col]] == g]), character(1L))
+  if (identical(omnibus, "hermans_rasson")) {
+    omni_label <- "Hermans-Rasson p"
+    omni_vals  <- vapply(groups, function(g)
+      hermans_p_fmt(hd$heading[hd[[by_col]] == g]), character(1L))
+  } else {
+    omni_label <- "Rao spacing"
+    omni_vals  <- vapply(groups, function(g)
+      rao_spacing_fmt(hd$heading[hd[[by_col]] == g]), character(1L))
+  }
   rayleigh_label <- if (isTRUE(axial)) "Rayleigh (axial) p" else "Rayleigh p"
   p_df <- stats::setNames(
-    data.frame(groups, p_vals, rao_vals, stringsAsFactors = FALSE),
-    c(by_col, rayleigh_label, "Rao spacing"))
+    data.frame(groups, p_vals, omni_vals, stringsAsFactors = FALSE),
+    c(by_col, rayleigh_label, omni_label))
+
+  if (!is.null(model_sel) && nrow(model_sel) > 0L && by_col %in% names(model_sel)) {
+    parts <- lapply(split(model_sel, model_sel[[by_col]]), function(x) {
+      best <- x[1L, ]                              # circ_model_select sorts best-first
+      data.frame(g = best[[by_col]],
+                 bm = sprintf("%s (%.2f)", best$model, best$weight),
+                 stringsAsFactors = FALSE)
+    })
+    bm <- do.call(rbind, parts)
+    bm <- stats::setNames(bm, c(by_col, "Best model"))
+    p_df <- merge(p_df, bm, by = by_col, sort = FALSE)
+  }
+
   cm <- merge(cm, p_df, by = by_col, sort = FALSE)
   names(cm)[names(cm) == by_col]         <- "Group"
   names(cm)[names(cm) == "n_missing"]    <- "Excluded"
@@ -906,7 +944,14 @@ server <- function(input, output, session) {
             ),
             accordion_panel(
               "Summary",
-              tableOutput("summary_tbl")
+              selectInput("omnibus_test", "Omnibus test",
+                          choices  = c("Rao spacing" = "rao",
+                                       "Hermans-Rasson" = "hermans_rasson"),
+                          selected = "rao"),
+              tableOutput("summary_tbl"),
+              tags$hr(class = "my-2"),
+              tags$strong("Model selection (AICc)"),
+              tableOutput("model_sel_tbl")
             ),
             accordion_panel(
               "Download",
@@ -1221,72 +1266,97 @@ server <- function(input, output, session) {
         note)
   })
 
-  output$summary_tbl <- renderTable({
+  # Single source of truth for the summary's headings frame + group column, used
+  # by output$summary_tbl, model_sel(), and output$model_sel_tbl so they cannot
+  # drift. has_hd = FALSE means no headings (none-mode / not yet loaded).
+  summary_ctx <- reactive({
     if (identical(rv$mode, "headings")) {
-      req(rv$hd)
+      if (is.null(rv$hd)) return(list(has_hd = FALSE, mode = "none"))
       grp    <- (rv$hd_map %||% list(group = NULL))$group
       hd     <- rv$hd
       by_col <- grp
       pooled <- is.null(by_col)
-      # No group column: inject a dummy single-level column so circ_summarise /
-      # the per-group rayleigh loop run uniformly; the dummy is dropped below.
       if (pooled) { hd[[".all"]] <- "All"; by_col <- ".all" }
-      out <- tryCatch({
-        cm <- circ_summary_table(hd, by_col, axial = is_axial())
-        if (pooled) cm[["Group"]] <- NULL    # single pooled row: drop the dummy group col
-        cm
-      }, error = function(e) data.frame(Note = "Summary not available"))
-      return(out)
+      return(list(has_hd = TRUE, mode = "headings", hd = hd, by_col = by_col,
+                  pooled = pooled, gc = NULL))
     }
-    req(rv$ts)
-    gc <- if (!is.null(input$cond_col) && nzchar(input$cond_col))
-      input$cond_col else NULL
+    if (is.null(rv$ts)) return(list(has_hd = FALSE, mode = "none"))
+    gc <- if (!is.null(input$cond_col) && nzchar(input$cond_col)) input$cond_col else NULL
+    if (is.null(rv$hd)) return(list(has_hd = FALSE, mode = "none_traj", gc = gc))
+    by_col <- if (!is.null(gc)) gc else "id"
+    list(has_hd = TRUE, mode = "traj", hd = rv$hd, by_col = by_col,
+         pooled = FALSE, gc = gc)
+  })
 
-    # None mode: no headings -> show Group + Straightness only.
-    if (is.null(rv$hd)) {
-      st  <- straightness_index(rv$ts)
-      idc <- rv$ts@cols$id
-      if (!is.null(gc)) {
-        cond_map <- unique(as.data.frame(rv$ts)[, c(idc, gc), drop = FALSE])
-        st  <- merge(st, cond_map, by = idc)
-        agg <- tapply(st$straightness, as.character(st[[gc]]),
-                      function(v) mean(v, na.rm = TRUE))
-        return(data.frame(Group = names(agg),
-                          Straightness = round(as.numeric(agg), 3),
+  # Candidate-model ranking (detection): all three models, independent of the
+  # Data model selector. NULL when there are no headings.
+  model_sel <- reactive({
+    ctx <- summary_ctx()
+    if (!isTRUE(ctx$has_hd)) return(NULL)
+    tryCatch(circ_model_select(ctx$hd, group_col = ctx$by_col),
+             error = function(e) NULL)
+  })
+
+  output$summary_tbl <- renderTable({
+    ctx <- summary_ctx()
+
+    # No headings frame: trajectory Straightness-only, or nothing yet.
+    if (!isTRUE(ctx$has_hd)) {
+      if (identical(ctx$mode, "none_traj")) {
+        req(rv$ts)
+        st  <- straightness_index(rv$ts); idc <- rv$ts@cols$id; gc <- ctx$gc
+        if (!is.null(gc)) {
+          cond_map <- unique(as.data.frame(rv$ts)[, c(idc, gc), drop = FALSE])
+          st  <- merge(st, cond_map, by = idc)
+          agg <- tapply(st$straightness, as.character(st[[gc]]),
+                        function(v) mean(v, na.rm = TRUE))
+          return(data.frame(Group = names(agg),
+                            Straightness = round(as.numeric(agg), 3),
+                            stringsAsFactors = FALSE))
+        }
+        return(data.frame(Group = as.character(st[[idc]]),
+                          Straightness = round(st$straightness, 3),
                           stringsAsFactors = FALSE))
       }
-      return(data.frame(Group = as.character(st[[idc]]),
-                        Straightness = round(st$straightness, 3),
-                        stringsAsFactors = FALSE))
+      req(rv$hd %||% rv$ts)
+      return(data.frame(Note = "Summary not available"))
     }
 
-    # rv$hd is a headings frame whose trial column is always "id".
-    by_col <- if (!is.null(gc)) gc else "id"
-
+    hd <- ctx$hd; by_col <- ctx$by_col
     tryCatch({
-      cm <- circ_summary_table(rv$hd, by_col, axial = is_axial())
-
-      # Mean path straightness per group: net displacement / path length per
-      # trial (0 = convoluted, 1 = straight), averaged over the group's trials.
-      # Join via a character-keyed lookup to avoid factor/character merge
-      # mismatches on the (possibly ordered-factor) condition column.
-      st  <- straightness_index(rv$ts)
-      idc <- rv$ts@cols$id
-      if (!is.null(gc)) {
-        cond_map <- unique(as.data.frame(rv$ts)[, c(idc, gc), drop = FALSE])
-        st  <- merge(st, cond_map, by = idc)
-        agg <- tapply(st$straightness, as.character(st[[gc]]),
-                      function(v) mean(v, na.rm = TRUE))
-      } else {
-        # No condition column: each group is a single trial.
-        agg <- stats::setNames(st$straightness, as.character(st[[idc]]))
+      cm <- circ_summary_table(hd, by_col, axial = is_axial(),
+                               omnibus = input$omnibus_test %||% "rao",
+                               model_sel = model_sel())
+      if (identical(ctx$mode, "traj")) {
+        st  <- straightness_index(rv$ts); idc <- rv$ts@cols$id; gc <- ctx$gc
+        if (!is.null(gc)) {
+          cond_map <- unique(as.data.frame(rv$ts)[, c(idc, gc), drop = FALSE])
+          st  <- merge(st, cond_map, by = idc)
+          agg <- tapply(st$straightness, as.character(st[[gc]]),
+                        function(v) mean(v, na.rm = TRUE))
+        } else {
+          agg <- stats::setNames(st$straightness, as.character(st[[idc]]))
+        }
+        cm[["Straightness"]] <- round(as.numeric(agg[as.character(cm[["Group"]])]), 3)
       }
-      cm[["Straightness"]] <-
-        round(as.numeric(agg[as.character(cm[["Group"]])]), 3)
+      if (isTRUE(ctx$pooled)) cm[["Group"]] <- NULL
       cm
-    }, error = function(e) {
-      data.frame(Note = "Summary not available")
-    })
+    }, error = function(e) data.frame(Note = "Summary not available"))
+  }, striped = TRUE, hover = TRUE, align = "c")
+
+  output$model_sel_tbl <- renderTable({
+    ms <- model_sel()
+    if (is.null(ms) || nrow(ms) == 0L)
+      return(data.frame(Note = "Model selection needs headings"))
+    ctx <- summary_ctx()
+    ms$AICc   <- round(ms$AICc, 1)
+    ms$dAICc  <- round(ms$dAICc, 1)
+    ms$weight <- round(ms$weight, 3)
+    keep <- c(ctx$by_col, "model", "k", "AICc", "dAICc", "weight")
+    ms <- ms[, intersect(keep, names(ms)), drop = FALSE]
+    names(ms)[names(ms) == ctx$by_col] <- "Group"
+    if (isTRUE(ctx$pooled)) ms[["Group"]] <- NULL
+    ms
   }, striped = TRUE, hover = TRUE, align = "c")
 
   # The radiatR script reproducing the current figure (shown, copied, downloaded).

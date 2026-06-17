@@ -452,3 +452,95 @@ test_that("the summary table carries a Rao spacing column for both data models",
     expect_true(grepl("Rayleigh (axial) p", html_ax, fixed = TRUE))   # focused row relabelled
   })
 })
+
+test_that("hermans_p_fmt formats a Monte-Carlo p and is render-stable", {
+  skip_if_not_installed("shiny")
+  app_file <- system.file("app", "app.R", package = "radiatR")
+  if (!nzchar(app_file))
+    app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
+  skip_if(!file.exists(app_file), "app.R not found")
+  e <- new.env()
+  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
+
+  set.seed(1)
+  clustered <- rnorm(40, 1, 0.3) %% (2 * pi)
+  p1 <- e$hermans_p_fmt(clustered, n_sim = 199)
+  p2 <- e$hermans_p_fmt(clustered, n_sim = 199)
+  expect_identical(p1, p2)                                   # fixed seed -> identical
+  expect_true(grepl("^(< 0\\.001|[01]\\.[0-9]{3})$", p1))    # bracket or 3dp
+  expect_identical(e$hermans_p_fmt(c(0.1, 0.2), n_sim = 199), "—")   # n < 3
+})
+
+test_that("circ_summary_table omnibus arg switches the omnibus column", {
+  skip_if_not_installed("shiny")
+  app_file <- system.file("app", "app.R", package = "radiatR")
+  if (!nzchar(app_file))
+    app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
+  skip_if(!file.exists(app_file), "app.R not found")
+  e <- new.env()
+  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
+
+  set.seed(2)
+  hd <- data.frame(heading = rnorm(40, 1, 0.3) %% (2 * pi), grp = "a")
+  r_rao <- e$circ_summary_table(hd, "grp", omnibus = "rao")
+  r_hr  <- e$circ_summary_table(hd, "grp", omnibus = "hermans_rasson")
+  expect_true("Rao spacing" %in% names(r_rao))
+  expect_true("Hermans-Rasson p" %in% names(r_hr))
+  expect_false("Rao spacing" %in% names(r_hr))
+})
+
+test_that("circ_summary_table adds a Best model column from model_sel", {
+  skip_if_not_installed("shiny")
+  app_file <- system.file("app", "app.R", package = "radiatR")
+  if (!nzchar(app_file))
+    app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
+  skip_if(!file.exists(app_file), "app.R not found")
+  e <- new.env()
+  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
+
+  set.seed(3)
+  hd <- data.frame(heading = rnorm(60, 1, 0.3) %% (2 * pi), grp = "a")
+  ms <- circ_model_select(hd, group_col = "grp")
+  r  <- e$circ_summary_table(hd, "grp", model_sel = ms)
+  expect_true("Best model" %in% names(r))
+  expect_match(r[["Best model"]][1], "^(uniform|unimodal|axial) \\([01]\\.[0-9]{2}\\)$")
+  expect_false("Best model" %in% names(e$circ_summary_table(hd, "grp")))
+})
+
+test_that("the omnibus selector switches the summary omnibus column", {
+  skip_if_not_installed("shiny")
+  app_dir <- system.file("app", package = "radiatR")
+  if (!nzchar(app_dir)) app_dir <- testthat::test_path("..", "..", "inst", "app")
+  skip_if(!dir.exists(app_dir), "radiatR app directory not found")
+  shiny::testServer(app_dir, {
+    session$setInputs(input_type = "headings")
+    session$setInputs(load_example_hd = 1)
+    session$setInputs(go3 = 1)
+    expect_equal(rv$step, 3L)
+    session$setInputs(omnibus_test = "rao")
+    h_rao <- paste(output$summary_tbl, collapse = " ")
+    expect_true(grepl("Rao spacing", h_rao, fixed = TRUE))
+    session$setInputs(omnibus_test = "hermans_rasson")
+    h_hr <- paste(output$summary_tbl, collapse = " ")
+    expect_true(grepl("Hermans-Rasson p", h_hr, fixed = TRUE))
+    expect_false(grepl("Rao spacing", h_hr, fixed = TRUE))
+  })
+})
+
+test_that("summary has a Best model column and the model-selection card renders", {
+  skip_if_not_installed("shiny")
+  app_dir <- system.file("app", package = "radiatR")
+  if (!nzchar(app_dir)) app_dir <- testthat::test_path("..", "..", "inst", "app")
+  skip_if(!dir.exists(app_dir), "radiatR app directory not found")
+  shiny::testServer(app_dir, {
+    session$setInputs(input_type = "headings")
+    session$setInputs(load_example_hd = 1)
+    session$setInputs(go3 = 1)
+    expect_equal(rv$step, 3L)
+    sm <- paste(output$summary_tbl, collapse = " ")
+    expect_true(grepl("Best model", sm, fixed = TRUE))
+    card <- paste(output$model_sel_tbl, collapse = " ")
+    expect_true(grepl("weight", card, fixed = TRUE))
+    expect_true(grepl("unimodal", card) || grepl("axial", card) || grepl("uniform", card))
+  })
+})
