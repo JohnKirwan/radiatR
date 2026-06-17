@@ -26,6 +26,15 @@
   a bracket (`< 0.05`, `> 0.10`, …), computed on raw angles regardless
   of the Data model.
 
+- [`test_uniformity()`](https://johnkirwan.github.io/radiatR/reference/test_uniformity.md)
+  gains `test = "hermans_rasson"`, the Hermans-Rasson omnibus test of
+  circular uniformity (Landler, Ruxton & Malkemper 2019) — far more
+  powerful than Rayleigh against multimodal / non-symmetric
+  alternatives. Its p-value is by Monte-Carlo simulation (`n_sim`,
+  default 9999; seed via
+  [`set.seed()`](https://rdrr.io/r/base/Random.html)), and it honours
+  `group_col`, `p_adjust`, and `axial`.
+
 - [`vonmises_fit()`](https://johnkirwan.github.io/radiatR/reference/vonmises_fit.md),
   [`wrappedcauchy_fit()`](https://johnkirwan.github.io/radiatR/reference/wrappedcauchy_fit.md),
   [`add_vonmises_density()`](https://johnkirwan.github.io/radiatR/reference/add_vonmises_density.md),

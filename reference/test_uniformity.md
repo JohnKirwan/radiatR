@@ -14,9 +14,10 @@ test_uniformity(
   hd,
   group_col = NULL,
   angle_col = "heading",
-  test = c("rayleigh", "kuiper", "rao", "watson"),
+  test = c("rayleigh", "kuiper", "rao", "watson", "hermans_rasson"),
   p_adjust = "none",
-  axial = FALSE
+  axial = FALSE,
+  n_sim = 9999L
 )
 ```
 
@@ -36,7 +37,11 @@ test_uniformity(
 
 - test:
 
-  One of `"rayleigh"` (default), `"kuiper"`, `"rao"`, or `"watson"`.
+  One of `"rayleigh"` (default), `"kuiper"`, `"rao"`, `"watson"`, or
+  `"hermans_rasson"`. The last is the Hermans-Rasson omnibus test
+  (Landler, Ruxton & Malkemper 2019), far more powerful than Rayleigh
+  against multimodal / non-symmetric alternatives; its `p_value` is
+  obtained by Monte-Carlo simulation.
 
 - p_adjust:
 
@@ -53,7 +58,22 @@ test_uniformity(
   uniformity test is run via the angle-doubling method (testing for an
   axis). Default \`FALSE\` (ordinary directional data).
 
+- n_sim:
+
+  Number of Monte-Carlo replicates for the `"hermans_rasson"` p-value.
+  Default `9999`. Ignored by the other tests. Set the RNG seed with
+  [`set.seed`](https://rdrr.io/r/base/Random.html) for reproducible
+  p-values.
+
 ## Value
 
 Tidy data frame with columns `group_col` (if supplied), `statistic`,
 `p_value`, `n`, `test`, and `p_value_adj` (when `p_adjust != "none"`).
+
+## References
+
+Landler, L., Ruxton, G.D. & Malkemper, E.P. (2019). The Hermans-Rasson
+test as a powerful alternative to the Rayleigh test for circular
+statistics in biology. BMC Ecology 19:30.
+[doi:10.1186/s12898-019-0246-8](https://doi.org/10.1186/s12898-019-0246-8)
+.

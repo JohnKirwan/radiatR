@@ -65,9 +65,10 @@ than a continuous p-value.</p>
 <span>  <span class="va">hd</span>,</span>
 <span>  group_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  angle_col <span class="op">=</span> <span class="st">"heading"</span>,</span>
-<span>  test <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rayleigh"</span>, <span class="st">"kuiper"</span>, <span class="st">"rao"</span>, <span class="st">"watson"</span><span class="op">)</span>,</span>
+<span>  test <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rayleigh"</span>, <span class="st">"kuiper"</span>, <span class="st">"rao"</span>, <span class="st">"watson"</span>, <span class="st">"hermans_rasson"</span><span class="op">)</span>,</span>
 <span>  p_adjust <span class="op">=</span> <span class="st">"none"</span>,</span>
-<span>  axial <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  axial <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  n_sim <span class="op">=</span> <span class="fl">9999L</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -90,7 +91,10 @@ as one group.</p></dd>
 
 <dt id="arg-test">test<a class="anchor" aria-label="anchor" href="#arg-test"></a></dt>
 <dd><p>One of <code>"rayleigh"</code> (default), <code>"kuiper"</code>,
-<code>"rao"</code>, or <code>"watson"</code>.</p></dd>
+<code>"rao"</code>, <code>"watson"</code>, or <code>"hermans_rasson"</code>. The last is the
+Hermans-Rasson omnibus test (Landler, Ruxton &amp; Malkemper 2019), far more
+powerful than Rayleigh against multimodal / non-symmetric alternatives; its
+<code>p_value</code> is obtained by Monte-Carlo simulation.</p></dd>
 
 
 <dt id="arg-p-adjust">p_adjust<a class="anchor" aria-label="anchor" href="#arg-p-adjust"></a></dt>
@@ -106,12 +110,26 @@ conditions.  Only meaningful for the Rayleigh test (exact p-values).</p></dd>
 data: the uniformity test is run via the angle-doubling method (testing for
 an axis). Default `FALSE` (ordinary directional data).</p></dd>
 
+
+<dt id="arg-n-sim">n_sim<a class="anchor" aria-label="anchor" href="#arg-n-sim"></a></dt>
+<dd><p>Number of Monte-Carlo replicates for the <code>"hermans_rasson"</code>
+p-value. Default <code>9999</code>. Ignored by the other tests. Set the RNG seed
+with <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></code> for reproducible p-values.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Tidy data frame with columns <code>group_col</code> (if supplied),
   <code>statistic</code>, <code>p_value</code>, <code>n</code>, <code>test</code>, and
   <code>p_value_adj</code> (when <code>p_adjust != "none"</code>).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
+    <p>Landler, L., Ruxton, G.D. &amp; Malkemper, E.P. (2019). The
+  Hermans-Rasson test as a powerful alternative to the Rayleigh test for
+  circular statistics in biology. BMC Ecology 19:30.
+  <a href="https://doi.org/10.1186/s12898-019-0246-8" class="external-link">doi:10.1186/s12898-019-0246-8</a>
+.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
