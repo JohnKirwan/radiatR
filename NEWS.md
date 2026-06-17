@@ -10,6 +10,12 @@
   standard angle-doubling method. The directional default (`axial = FALSE`) is
   unchanged.
 
+* New `circ_model_select()` ranks three candidate circular models -- uniform,
+  unimodal von Mises, and axial (symmetric bimodal) von Mises -- by AICc, with
+  Akaike weights, to identify whether a heading sample is best described as
+  uniform, directionally, or axially oriented. Reuses `vonmises_fit()` and
+  `circular`'s densities; no new dependency.
+
 * The app's statistical summary gains an always-on **Rao spacing** omnibus row
   alongside Rayleigh, flagging departures from uniformity (multimodal/clustered
   patterns) that the focused Rayleigh test misses. Rao spacing yields only a

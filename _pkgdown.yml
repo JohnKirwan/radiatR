@@ -112,6 +112,7 @@ reference:
     contents:
       - vonmises_fit
       - wrappedcauchy_fit
+      - circ_model_select
 
   - title: "Circular statistics -- correlation"
     desc: >
