@@ -12,7 +12,13 @@ uncertainty.
 ## Usage
 
 ``` r
-vonmises_fit(hd, group_col = NULL, angle_col = "heading", conf = 0.95)
+vonmises_fit(
+  hd,
+  group_col = NULL,
+  angle_col = "heading",
+  conf = 0.95,
+  axial = FALSE
+)
 ```
 
 ## Arguments
@@ -32,6 +38,15 @@ vonmises_fit(hd, group_col = NULL, angle_col = "heading", conf = 0.95)
 - conf:
 
   Confidence level for the interval on \\\mu\\. Default `0.95`.
+
+- axial:
+
+  Logical; when \`TRUE\`, fit an axial (bidirectional, mod-pi) von Mises
+  via the doubled-angle method: \`mu\`/\`mu_deg\` are the mean
+  \*\*axis\*\* in \[0, pi), \`kappa\` is the concentration about that
+  axis (estimated in the doubled-angle frame), and
+  \`se_mu\`/\`ci_lo\`/\`ci_hi\` are halved accordingly. Default
+  \`FALSE\` (directional).
 
 ## Value
 

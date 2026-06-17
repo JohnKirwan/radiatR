@@ -58,7 +58,7 @@ visually poor on a rose diagram.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">wrappedcauchy_fit</span><span class="op">(</span><span class="va">hd</span>, group_col <span class="op">=</span> <span class="cn">NULL</span>, angle_col <span class="op">=</span> <span class="st">"heading"</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">wrappedcauchy_fit</span><span class="op">(</span><span class="va">hd</span>, group_col <span class="op">=</span> <span class="cn">NULL</span>, angle_col <span class="op">=</span> <span class="st">"heading"</span>, axial <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -75,6 +75,13 @@ visually poor on a rose diagram.</p>
 
 <dt id="arg-angle-col">angle_col<a class="anchor" aria-label="anchor" href="#arg-angle-col"></a></dt>
 <dd><p>Name of the heading column.  Default <code>"heading"</code>.</p></dd>
+
+
+<dt id="arg-axial">axial<a class="anchor" aria-label="anchor" href="#arg-axial"></a></dt>
+<dd><p>Logical; when `TRUE`, fit an axial (bidirectional, mod-pi)
+wrapped Cauchy via the doubled-angle method: `mu`/`mu_deg` are the mean
+**axis** in [0, pi) and `rho` is the concentration about that axis
+(estimated in the doubled-angle frame). Default `FALSE` (directional).</p></dd>
 
 </dl></div>
     <div class="section level2">

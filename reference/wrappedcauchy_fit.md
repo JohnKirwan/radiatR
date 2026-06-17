@@ -9,7 +9,7 @@ looks visually poor on a rose diagram.
 ## Usage
 
 ``` r
-wrappedcauchy_fit(hd, group_col = NULL, angle_col = "heading")
+wrappedcauchy_fit(hd, group_col = NULL, angle_col = "heading", axial = FALSE)
 ```
 
 ## Arguments
@@ -25,6 +25,14 @@ wrappedcauchy_fit(hd, group_col = NULL, angle_col = "heading")
 - angle_col:
 
   Name of the heading column. Default `"heading"`.
+
+- axial:
+
+  Logical; when \`TRUE\`, fit an axial (bidirectional, mod-pi) wrapped
+  Cauchy via the doubled-angle method: \`mu\`/\`mu_deg\` are the mean
+  \*\*axis\*\* in \[0, pi) and \`rho\` is the concentration about that
+  axis (estimated in the doubled-angle frame). Default \`FALSE\`
+  (directional).
 
 ## Value
 

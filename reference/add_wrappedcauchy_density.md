@@ -23,7 +23,8 @@ add_wrappedcauchy_density(
   linewidth = 0.8,
   fill = NA,
   alpha = 0.8,
-  display = NULL
+  display = NULL,
+  axial = FALSE
 )
 ```
 
@@ -74,6 +75,13 @@ add_wrappedcauchy_density(
   A \`circ_display()\` controlling rotation, matching the parent
   \`radiate()\` plot. Default \`NULL\` uses the input's \`display\`
   attribute when present, otherwise the identity display.
+
+- axial:
+
+  Logical; when \`TRUE\`, draw the axial (bidirectional) density of an
+  axial fit (from \`wrappedcauchy_fit(axial = TRUE)\`): the curve is
+  evaluated on doubled angles, giving two equal peaks at \`mu\` and
+  \`mu + pi\`. Default \`FALSE\`.
 
 ## Value
 

@@ -26,6 +26,17 @@
   a bracket (`< 0.05`, `> 0.10`, …), computed on raw angles regardless
   of the Data model.
 
+- [`vonmises_fit()`](https://johnkirwan.github.io/radiatR/reference/vonmises_fit.md),
+  [`wrappedcauchy_fit()`](https://johnkirwan.github.io/radiatR/reference/wrappedcauchy_fit.md),
+  [`add_vonmises_density()`](https://johnkirwan.github.io/radiatR/reference/add_vonmises_density.md),
+  and
+  [`add_wrappedcauchy_density()`](https://johnkirwan.github.io/radiatR/reference/add_wrappedcauchy_density.md)
+  gain `axial = TRUE` to fit and draw axial (bidirectional, mod-pi)
+  distributions via the doubled-angle method: the mean is reported as an
+  axis in \[0, pi) (with the concentration estimated in the
+  doubled-angle frame) and the density curve shows two equal antipodal
+  peaks.
+
 ### Plotting
 
 - The mean-direction and interval overlays gain `axial = TRUE` for
