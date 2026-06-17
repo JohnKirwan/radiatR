@@ -216,6 +216,14 @@
 
 ### Shiny app
 
+- The Summary panel gains a selectable **omnibus test** (Rao spacing or
+  Hermans-Rasson) and a **model-selection readout** – a “Best model”
+  column plus a full AICc comparison card
+  ([`circ_model_select()`](https://johnkirwan.github.io/radiatR/reference/circ_model_select.md):
+  uniform / unimodal / axial with Akaike weights) – so the data, not
+  just a declared model, indicates whether a sample is uniform,
+  directional, or axial.
+
 - The Results screen now shows an attrition banner when trials were
   excluded – loud, with a bias caveat, for headings derived from
   trajectories, and a neutral note for provided headings. The summary
