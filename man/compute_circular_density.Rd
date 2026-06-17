@@ -13,7 +13,8 @@ compute_circular_density(
   bins = 36L,
   bw = NULL,
   boot_reps = 0L,
-  boot_alpha = 0.05
+  boot_alpha = 0.05,
+  axial = FALSE
 )
 }
 \arguments{
@@ -42,6 +43,10 @@ and `"histogram"`.}
 
 \item{boot_alpha}{Significance level for the bootstrap band. Default `0.05`
 produces a 95\% interval.}
+
+\item{axial}{Logical; when `TRUE`, mirror each observation to
+`heading_col + pi` before density estimation, producing a period-pi
+(bidirectional/axial) density. Default `FALSE`.}
 }
 \value{
 A data frame with columns `theta` (radians, -pi to pi) and `density`

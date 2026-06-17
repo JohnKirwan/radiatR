@@ -69,6 +69,11 @@ Because this function only handles rendering, it is agnostic to how the
 density was produced. To compute from raw headings use
 [compute_circular_density()] first, or call the convenience wrapper
 [add_heading_density()] which combines both steps.
+
+For an **axial** (bidirectional) density, do not mirror this
+  pre-computed frame (that would double-count a full-circle density). Instead
+  estimate it with [compute_circular_density()]`(..., axial = TRUE)`, which
+  augments the raw sample before estimation, then pass the result here.
 }
 \examples{
 library(ggplot2)

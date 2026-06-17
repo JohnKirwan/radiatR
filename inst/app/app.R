@@ -162,6 +162,11 @@ example_ts <- function() {
   e$cpunctatus
 }
 
+# Heading methods that are inherently axial (per-track movement axis, not a
+# single direction). Selecting one soft-syncs the Data model to "axial".
+# Extend here when the modality piece adds more axial methods.
+AXIAL_METHODS <- c("velocity_axis", "pca_axis", "ransac_straight")
+
 # A compact inline on/off toggle for a results-plot layer. Wraps a standard
 # Shiny checkbox (so it registers as input[[id]]) and styles it as a switch.
 .layer_switch <- function(id, label, value) {
@@ -266,9 +271,10 @@ circ_summary_table <- function(hd, by_col, axial = FALSE) {
   groups <- unique(hd[[by_col]])
   p_vals <- vapply(groups, function(g)
     rayleigh_p_fmt(hd$heading[hd[[by_col]] == g], axial = axial), character(1L))
+  rayleigh_label <- if (isTRUE(axial)) "Rayleigh (axial) p" else "Rayleigh p"
   p_df <- stats::setNames(
     data.frame(groups, p_vals, stringsAsFactors = FALSE),
-    c(by_col, "Rayleigh p"))
+    c(by_col, rayleigh_label))
   cm <- merge(cm, p_df, by = by_col, sort = FALSE)
   names(cm)[names(cm) == by_col]         <- "Group"
   names(cm)[names(cm) == "n_missing"]    <- "Excluded"
@@ -357,6 +363,17 @@ server <- function(input, output, session) {
     raw_hd    = NULL,
     hd_map    = NULL    # list(col, units, convention, group) for the headings spec
   )
+
+  # Single source of truth for axial mode, resolved from the Data model selector.
+  is_axial <- reactive(identical(input$data_model, "axial"))
+
+  # Soft default: choosing an inherently axial heading method pre-selects the
+  # Axial data model. Overridable -- the user may switch back afterwards, and a
+  # directional method does not force it back.
+  observeEvent(input$method, {
+    if (!is.null(input$method) && input$method %in% AXIAL_METHODS)
+      updateSelectInput(session, "data_model", selected = "axial")
+  }, ignoreInit = TRUE)
 
   # ---- step pills ------------------------------------------------------------
   output$step_pills <- renderUI({
@@ -698,6 +715,11 @@ server <- function(input, output, session) {
           selectInput("hd_group", "Facet by (optional)",
                       choices  = c("(none)" = "", stats::setNames(choices, choices)),
                       selected = cur),
+          selectInput(
+            "data_model", "Data model",
+            choices  = c("Directional" = "directional", "Axial" = "axial"),
+            selected = "directional"
+          ),
           err_box
         )
       } else {
@@ -717,6 +739,11 @@ server <- function(input, output, session) {
           selectInput("hd_group", "Group column (optional)",
                       choices = c("(none)" = "", stats::setNames(all_cols, all_cols)),
                       selected = ""),
+          selectInput(
+            "data_model", "Data model",
+            choices  = c("Directional" = "directional", "Axial" = "axial"),
+            selected = "directional"
+          ),
           err_box
         )
       }
@@ -750,6 +777,11 @@ server <- function(input, output, session) {
               selected = "distal"
             ),
             uiOutput("method_help"),
+            selectInput(
+              "data_model", "Data model",
+              choices  = c("Directional" = "directional", "Axial" = "axial"),
+              selected = "directional"
+            ),
             conditionalPanel(
               "input.method == 'crossing'",
               tags$hr(),
@@ -834,8 +866,6 @@ server <- function(input, output, session) {
               .layer_switch("show_tracks",   "Trajectories",       TRUE),
               .layer_switch("show_arrow",   "Directedness arrow", TRUE),
               .layer_switch("show_ci",      "Mean-direction CI",  FALSE),
-              if (identical(rv$mode, "headings"))
-                .layer_switch("axial", "Axial (bidirectional)", FALSE),
               .layer_switch("show_vectors", "Heading vectors",    FALSE),
               .layer_switch("show_rayleigh", "Rayleigh circle",    FALSE),
               .layer_switch("show_vtest",   "V-test line",        FALSE),
@@ -1076,7 +1106,7 @@ server <- function(input, output, session) {
           show_vectors = tog(input$show_vectors, FALSE),
           show_rayleigh = tog(input$show_rayleigh, FALSE),
           show_ci = tog(input$show_ci, FALSE),
-          axial = tog(input$axial, FALSE),
+          axial = is_axial(),
           show_vtest = tog(input$show_vtest, FALSE),
           show_quadrants = tog(input$show_quadrants, FALSE),
           show_rings = tog(input$show_rings, FALSE))))
@@ -1104,7 +1134,7 @@ server <- function(input, output, session) {
         show_vectors = tog(input$show_vectors, FALSE),
         show_rayleigh = tog(input$show_rayleigh, FALSE),
         show_ci    = tog(input$show_ci,    FALSE),
-        axial      = tog(input$axial,      FALSE),
+        axial      = is_axial(),
         show_vtest = tog(input$show_vtest, FALSE),
         show_quadrants = tog(input$show_quadrants, FALSE),
         show_rings     = tog(input$show_rings,     FALSE)))
@@ -1179,7 +1209,7 @@ server <- function(input, output, session) {
       # the per-group rayleigh loop run uniformly; the dummy is dropped below.
       if (pooled) { hd[[".all"]] <- "All"; by_col <- ".all" }
       out <- tryCatch({
-        cm <- circ_summary_table(hd, by_col, axial = tog(input$axial, FALSE))
+        cm <- circ_summary_table(hd, by_col, axial = is_axial())
         if (pooled) cm[["Group"]] <- NULL    # single pooled row: drop the dummy group col
         cm
       }, error = function(e) data.frame(Note = "Summary not available"))
@@ -1211,7 +1241,7 @@ server <- function(input, output, session) {
     by_col <- if (!is.null(gc)) gc else "id"
 
     tryCatch({
-      cm <- circ_summary_table(rv$hd, by_col)
+      cm <- circ_summary_table(rv$hd, by_col, axial = is_axial())
 
       # Mean path straightness per group: net displacement / path length per
       # trial (0 = convoluted, 1 = straight), averaged over the group's trials.

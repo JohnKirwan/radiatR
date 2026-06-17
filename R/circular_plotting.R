@@ -686,6 +686,9 @@ assign_cycle_colours <- function(data, id_col, n, panel_col = NULL,
 #'   and `"histogram"`.
 #' @param boot_alpha Significance level for the bootstrap band. Default `0.05`
 #'   produces a 95\% interval.
+#' @param axial Logical; when `TRUE`, mirror each observation to
+#'   `heading_col + pi` before density estimation, producing a period-pi
+#'   (bidirectional/axial) density. Default `FALSE`.
 #'
 #' @return A data frame with columns `theta` (radians, -pi to pi) and `density`
 #'   (non-negative), plus `colour_col` if supplied. When `boot_reps > 0` and
@@ -719,12 +722,15 @@ compute_circular_density <- function(headings_df,
                                      bins        = 36L,
                                      bw          = NULL,
                                      boot_reps   = 0L,
-                                     boot_alpha  = 0.05) {
+                                     boot_alpha  = 0.05,
+                                     axial       = FALSE) {
   method     <- match.arg(method)
   use_colour <- !is.null(colour_col) && colour_col %in% names(headings_df)
 
   if (!heading_col %in% names(headings_df))
     stop("`heading_col` '", heading_col, "' not found in headings_df.")
+
+  if (isTRUE(axial)) headings_df <- .mirror_axial(headings_df, heading_col)
 
   groups    <- if (use_colour) split(headings_df, headings_df[[colour_col]]) else list(headings_df)
   dens_list <- lapply(seq_along(groups), function(i) {
@@ -753,6 +759,11 @@ compute_circular_density <- function(headings_df,
 #' density was produced. To compute from raw headings use
 #' [compute_circular_density()] first, or call the convenience wrapper
 #' [add_heading_density()] which combines both steps.
+#'
+#' @details For an **axial** (bidirectional) density, do not mirror this
+#'   pre-computed frame (that would double-count a full-circle density). Instead
+#'   estimate it with [compute_circular_density()]`(..., axial = TRUE)`, which
+#'   augments the raw sample before estimation, then pass the result here.
 #'
 #' @param density_df Data frame with columns named by `theta_col` and
 #'   `density_col` (and, optionally, `colour_col`). Each row represents one
@@ -944,12 +955,14 @@ add_heading_density <- function(headings_df,
                                 alpha       = 0.2,
                                 linewidth   = 0.8,
                                 ci_fill     = "grey70",
-                                ci_alpha    = 0.3) {
+                                ci_alpha    = 0.3,
+                                axial       = FALSE) {
   method  <- match.arg(method)
   dens_df <- compute_circular_density(headings_df, heading_col = heading_col,
                                       colour_col = colour_col, method = method,
                                       n_theta = n_theta, bins = bins, bw = bw,
-                                      boot_reps = boot_reps, boot_alpha = boot_alpha)
+                                      boot_reps = boot_reps, boot_alpha = boot_alpha,
+                                      axial = axial)
   add_circular_density(dens_df, colour_col = colour_col,
                        scale = scale, colour = colour,
                        fill = fill, alpha = alpha, linewidth = linewidth,
@@ -1426,6 +1439,21 @@ add_heading_arrow <- function(headings_df,
 
 # ---- heading overlay layers --------------------------------------------------
 
+# Row-bind the antipodal (theta + pi) copy of each observation for axial display.
+# `angle_col` is the angle column (radians). `negate` names independent coordinate
+# columns (e.g. x_inner/y_inner) that must be point-reflected through the origin on
+# the mirrored copy; columns whose plotted position is derived from `angle_col` at
+# render time need no entry here. All other columns are carried verbatim onto both
+# copies so colour/group/weight mappings are unaffected.
+.mirror_axial <- function(df, angle_col, negate = character()) {
+  if (nrow(df) == 0L) return(df)
+  mirrored <- df
+  mirrored[[angle_col]] <- (df[[angle_col]] + pi) %% (2 * pi)
+  for (col in negate)
+    if (col %in% names(mirrored)) mirrored[[col]] <- -df[[col]]
+  rbind(df, mirrored)
+}
+
 #' Add heading endpoint markers on the unit circle
 #'
 #' Draws a hollow circle at `(cos(heading), sin(heading))` for each row of a
@@ -1443,6 +1471,8 @@ add_heading_arrow <- function(headings_df,
 #'   when `NULL` and no `colour_col` resolves, defaults to `"black"`.
 #' @param size Point size passed to `geom_point`.
 #' @param alpha Point alpha transparency.
+#' @param axial Logical; when `TRUE`, draw each observation at both `heading`
+#'   and `heading + pi` (bidirectional/axial display). Default `FALSE`.
 #'
 #' @return A `geom_point()` layer (shape = 1, hollow circle).
 #'
@@ -1458,11 +1488,12 @@ add_heading_arrow <- function(headings_df,
 #' ggplot() + coord_fixed() + add_heading_points(hd)
 #' ggplot() + coord_fixed() + add_heading_points(hd, colour = "steelblue")
 add_heading_points <- function(headings_df, colour_col = NULL, colour = NULL,
-                               size = 2, alpha = 1) {
+                               size = 2, alpha = 1, axial = FALSE) {
   if (!("heading" %in% names(headings_df)))
     stop("`headings_df` must contain a `heading` column (radians).")
   if (is.null(colour_col)) colour_col <- attr(headings_df, "colour_col")
   disp <- attr(headings_df, "display", exact = TRUE) %||% circ_display()
+  if (isTRUE(axial)) headings_df <- .mirror_axial(headings_df, "heading")
 
   xy <- .uc_to_display_coords(cos(headings_df$heading),
                                sin(headings_df$heading), disp)
@@ -1501,6 +1532,9 @@ add_heading_points <- function(headings_df, colour_col = NULL, colour = NULL,
 #' @param colour Fixed colour string. Overrides `colour_col` when supplied;
 #'   when `NULL` and no `colour_col` resolves, defaults to `"black"`.
 #' @param linetype Line type string or integer passed to `geom_segment`.
+#' @param axial Logical; when `TRUE`, draw each vector at both `heading` and
+#'   `heading + pi`, with the inner start point reflected through the origin.
+#'   Default `FALSE`.
 #'
 #' @return A `geom_segment()` layer.
 #'
@@ -1515,7 +1549,7 @@ add_heading_points <- function(headings_df, colour_col = NULL, colour = NULL,
 #'                  x_inner = 0.15, y_inner = 0.15)
 #' ggplot() + coord_fixed() + add_heading_vectors(hd)
 add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
-                               linetype = "dotted") {
+                               linetype = "dotted", axial = FALSE) {
   if (is.null(colour_col)) colour_col <- attr(headings_df, "colour_col")
   required <- c("heading", "x_inner", "y_inner")
   missing_cols <- setdiff(required, names(headings_df))
@@ -1528,6 +1562,9 @@ add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
   }
 
   disp <- attr(headings_df, "display", exact = TRUE) %||% circ_display()
+  if (isTRUE(axial))
+    headings_df <- .mirror_axial(headings_df, "heading",
+                                 negate = c("x_inner", "y_inner"))
 
   end_xy   <- .uc_to_display_coords(cos(headings_df$heading),
                                      sin(headings_df$heading), disp)
@@ -1583,6 +1620,10 @@ add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
 #' @param size Point size passed to \code{geom_point()}.
 #' @param alpha Fixed alpha. Ignored when \code{shade = TRUE}.
 #' @param ... Additional arguments passed to \code{ggplot2::geom_point()}.
+#' @param axial Logical; when `TRUE`, mirror each observation to `col + pi`
+#'   before stacking, so the figure reads as bidirectional. Stacking is computed
+#'   after mirroring, so each antipodal cluster stacks within itself. Default
+#'   `FALSE`.
 #'
 #' @return A \code{geom_point()} layer.
 #'
@@ -1605,6 +1646,7 @@ add_stacked_headings <- function(data,
                                  colour_col = NULL,
                                  size       = 2,
                                  alpha      = 1,
+                                 axial      = FALSE,
                                  ...) {
   if (is.null(col))
     col <- if (!is.null(attr(data, "heading_col"))) attr(data, "heading_col")
@@ -1613,6 +1655,8 @@ add_stacked_headings <- function(data,
     stop(sprintf("column '%s' not found in data.", col))
 
   disp_opts <- attr(data, "display", exact = TRUE) %||% circ_display()
+
+  if (isTRUE(axial)) data <- .mirror_axial(data, col)
 
   if (!"stack_r" %in% names(data))
     data <- stack_headings(data, col = col, step = step, start_sep = start_sep,
@@ -2712,6 +2756,9 @@ build_label_data <- function(data, label_col, x_col, y_col, colour_col = NULL, p
 #' @param display A `circ_display()` controlling rotation, matching the parent
 #'   `radiate()` plot. Default `NULL` uses the input's `display` attribute when
 #'   present, otherwise the identity display.
+#' @param axial Logical; when `TRUE`, mirror each observation to `angle_col + pi`
+#'   before estimation, yielding a period-pi (bidirectional) result. Default
+#'   `FALSE`.
 #' @return A \code{geom_polygon} layer that can be added to a \code{radiate()}
 #'   plot with \code{+}.
 #' @export
@@ -2719,15 +2766,16 @@ add_angle_rose <- function(hd, bins = 12L, angle_col = "heading",
                             group_col = NULL, scale = 0.4, inner_r = 0,
                             normalize = TRUE, fill = "steelblue",
                             colour = NA, alpha = 0.5, arc_pts = 20L,
-                            display = NULL) {
+                            display = NULL, axial = FALSE) {
   stopifnot(is.data.frame(hd), angle_col %in% names(hd))
+  disp  <- display %||% attr(hd, "display", exact = TRUE) %||% circ_display()
+  if (isTRUE(axial)) hd <- .mirror_axial(hd, angle_col)
   ss    <- sector_summary(hd, sectors = bins, group_col = group_col,
                           angle_col = angle_col)
   y_col <- if (normalize) "proportion" else "count"
   y_max <- max(ss[[y_col]], na.rm = TRUE)
   if (y_max <= 0) y_max <- 1
   hw    <- pi / bins   # half sector width in radians
-  disp  <- display %||% attr(hd, "display", exact = TRUE) %||% circ_display()
 
   .wedge <- function(mid, val, grp_label) {
     r_out  <- inner_r + scale * val / y_max
@@ -2881,18 +2929,23 @@ add_vonmises_density <- function(fit, scale = 0.4, inner_r = 0,
 #' @param display A `circ_display()` controlling rotation, matching the parent
 #'   `radiate()` plot. Default `NULL` uses the input's `display` attribute when
 #'   present, otherwise the identity display.
+#' @param axial Logical; when `TRUE`, mirror each observation to `angle_col + pi`
+#'   before estimation, yielding a period-pi (bidirectional) result. Default
+#'   `FALSE`.
 #' @return A \code{geom_polygon} layer, or \code{NULL} if estimation fails.
 #' @export
 add_circular_kde <- function(hd, angle_col = "heading", group_col = NULL,
                               bw = NULL, scale = 0.4, inner_r = 0,
                               n_pts = 512L, kernel = "vonmises",
                               colour = "tomato", linewidth = 0.8,
-                              fill = NA, alpha = 0.8, display = NULL) {
+                              fill = NA, alpha = 0.8, display = NULL,
+                              axial = FALSE) {
   stopifnot(is.data.frame(hd))
   if (!angle_col %in% names(hd))
     stop("add_circular_kde: column '", angle_col, "' not found")
 
   disp <- display %||% attr(hd, "display", exact = TRUE) %||% circ_display()
+  if (isTRUE(axial)) hd <- .mirror_axial(hd, angle_col)
 
   .kde_ring <- function(sub, grp) {
     a <- as.numeric(sub[[angle_col]])

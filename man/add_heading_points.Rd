@@ -9,7 +9,8 @@ add_heading_points(
   colour_col = NULL,
   colour = NULL,
   size = 2,
-  alpha = 1
+  alpha = 1,
+  axial = FALSE
 )
 }
 \arguments{
@@ -27,6 +28,9 @@ when `NULL` and no `colour_col` resolves, defaults to `"black"`.}
 \item{size}{Point size passed to `geom_point`.}
 
 \item{alpha}{Point alpha transparency.}
+
+\item{axial}{Logical; when `TRUE`, draw each observation at both `heading`
+and `heading + pi` (bidirectional/axial display). Default `FALSE`.}
 }
 \value{
 A `geom_point()` layer (shape = 1, hollow circle).

@@ -326,3 +326,28 @@ test_that("emitted code reproduces spec_to_plot (axial: double-headed arrow + CI
                        vectors = FALSE, ci = TRUE, axial = TRUE)
   expect_roundtrip(rt)
 })
+
+# Axial individual-data round-trips: mirroring doubles the points/stacked rows,
+# so these only pass if spec_to_code emits axial = TRUE and the eval'd figure
+# mirrors identically. (Guard below asserts the fingerprint depends on the flag.)
+.axial_doubles_rows <- function(rt) {
+  on  <- rt
+  off <- rt; off$spec$axial <- FALSE
+  set.seed(1L); n_on  <- sum(vapply(ggplot2::ggplot_build(
+    spec_to_plot(on$spec,  on$ts,  on$hd))$data,  nrow, integer(1)))
+  set.seed(1L); n_off <- sum(vapply(ggplot2::ggplot_build(
+    spec_to_plot(off$spec, off$ts, off$hd))$data, nrow, integer(1)))
+  expect_gt(n_on, n_off)
+}
+
+test_that("emitted code reproduces spec_to_plot (points, axial)", {
+  rt <- roundtrip_spec("points", "trajectory", NULL, FALSE, FALSE, axial = TRUE)
+  .axial_doubles_rows(rt)   # mirroring must actually add rows (not vacuous)
+  expect_roundtrip(rt)
+})
+
+test_that("emitted code reproduces spec_to_plot (stacked, faceted, axial)", {
+  rt <- roundtrip_spec("stacked", "trajectory", "type", FALSE, FALSE, axial = TRUE)
+  .axial_doubles_rows(rt)   # mirroring must actually add rows (not vacuous)
+  expect_roundtrip(rt)
+})

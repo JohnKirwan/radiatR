@@ -194,7 +194,7 @@ test_that("the app exports a vector plot download", {
   expect_equal(rawToChar(readBin(out, "raw", 4L)), "%PDF")
 })
 
-test_that("the axial toggle renders example headings without error", {
+test_that("the Data model = Axial selection renders example headings without error", {
   skip_on_cran()
   skip_if_not_installed("shinytest2")
   skip_if_not_installed("chromote")
@@ -202,17 +202,44 @@ test_that("the axial toggle renders example headings without error", {
   app_dir <- system.file("app", package = "radiatR")
   skip_if(!nzchar(app_dir), "radiatR app directory not found (package installed?)")
 
-  app <- shinytest2::AppDriver$new(app_dir, name = "axial-toggle",
+  app <- shinytest2::AppDriver$new(app_dir, name = "axial-data-model",
                                    load_timeout = 60 * 1000, timeout = 30 * 1000)
   withr::defer(app$stop())
 
-  app$set_inputs(input_type = "headings"); app$wait_for_idle(timeout = 30 * 1000)
-  app$click("load_example_hd");            app$wait_for_idle(timeout = 30 * 1000)
-  app$click("go3");                        app$wait_for_idle(timeout = 30 * 1000)
-  app$set_inputs(axial = TRUE);            app$wait_for_idle(timeout = 30 * 1000)
-  expect_identical(app$get_value(input = "axial"), TRUE)
+  # The old headings-only `axial` checkbox was replaced by the `data_model`
+  # selector ("Directional"/"Axial"), which lives in the Configure step (step 2).
+  # It must be set BEFORE clicking go3 (which advances to Results).
+  app$set_inputs(input_type = "headings");  app$wait_for_idle(timeout = 30 * 1000)
+  app$click("load_example_hd");             app$wait_for_idle(timeout = 30 * 1000)
+  app$set_inputs(data_model = "axial");     app$wait_for_idle(timeout = 30 * 1000)
+  expect_identical(app$get_value(input = "data_model"), "axial")
+  app$click("go3");                         app$wait_for_idle(timeout = 30 * 1000)
   expect_false(grepl("track_plot render failed",
     paste(utils::capture.output(print(app$get_logs())), collapse = "\n")))
+})
+
+test_that("an axial heading method soft-syncs Data model, and the override sticks", {
+  skip_on_cran()
+  skip_if_not_installed("shinytest2")
+  skip_if_not_installed("chromote")
+  skip_if(is.null(chromote::find_chrome()), "no Chrome/Chromium binary found")
+  app_dir <- system.file("app", package = "radiatR")
+  skip_if(!nzchar(app_dir), "radiatR app directory not found (package installed?)")
+
+  app <- shinytest2::AppDriver$new(app_dir, name = "axial-method-softsync",
+                                   load_timeout = 60 * 1000, timeout = 30 * 1000)
+  withr::defer(app$stop())
+
+  # Trajectory mode: load_example lands on Configure (step 2) with both the
+  # `method` dropdown and the `data_model` selector present. The soft sync
+  # relies on updateSelectInput propagating to the client, so it is genuinely
+  # browser-only (testServer cannot exercise it).
+  app$click("load_example");                  app$wait_for_idle(timeout = 30 * 1000)  # trajectory mode, Configure
+  app$set_inputs(method = "velocity_axis");   app$wait_for_idle(timeout = 30 * 1000)
+  expect_identical(app$get_value(input = "data_model"), "axial")   # soft sync fired
+  app$set_inputs(data_model = "directional"); app$wait_for_idle(timeout = 30 * 1000)
+  app$set_inputs(method = "distal");          app$wait_for_idle(timeout = 30 * 1000)
+  expect_identical(app$get_value(input = "data_model"), "directional")  # not forced back
 })
 
 # Server-level test (no browser): a Generic CSV upload renders the column-mapping
@@ -316,5 +343,55 @@ test_that("the delimiter override forces the reader and loads a semicolon file",
     expect_equal(rv$step, 2L)
     expect_false(is.null(rv$ts))
     expect_equal(length(ids(rv$ts)), 1L)
+  })
+})
+
+# Server-level (no browser): the Data model selector is the single source of
+# truth for axial mode. testServer exercises the is_axial() resolver and that it
+# propagates into current_spec()$axial and the relabelled summary column. (The
+# method -> data_model soft sync relies on updateSelectInput reaching the client
+# and is covered by the shinytest2 test above, not here.)
+test_that("data_model selector drives the is_axial resolver", {
+  skip_if_not_installed("shiny")
+  app_dir <- system.file("app", package = "radiatR")
+  if (!nzchar(app_dir)) app_dir <- testthat::test_path("..", "..", "inst", "app")
+  skip_if(!dir.exists(app_dir), "radiatR app directory not found")
+
+  shiny::testServer(app_dir, {
+    session$setInputs(data_model = "axial")
+    expect_true(is_axial())
+    session$setInputs(data_model = "directional")
+    expect_false(is_axial())
+  })
+})
+
+test_that("data_model drives current_spec()$axial and the summary relabel (example headings)", {
+  skip_if_not_installed("shiny")
+  app_dir <- system.file("app", package = "radiatR")
+  if (!nzchar(app_dir)) app_dir <- testthat::test_path("..", "..", "inst", "app")
+  skip_if(!dir.exists(app_dir), "radiatR app directory not found")
+
+  shiny::testServer(app_dir, {
+    # Drive the documented example-headings load path to a real Results state.
+    session$setInputs(input_type = "headings")
+    session$setInputs(load_example_hd = 1)   # builds rv$hd, lands on Configure
+    expect_false(is.null(rv$hd))
+    session$setInputs(go3 = 1)                # advance to Results
+    expect_equal(rv$step, 3L)
+
+    # Axial: current_spec()$axial flips and the summary's Rayleigh column is
+    # relabelled. output$summary_tbl is the rendered renderTable HTML (a
+    # character string), so the relabelled header text appears in it.
+    session$setInputs(data_model = "axial")
+    expect_true(isTRUE(current_spec()$axial))
+    html_ax <- paste(output$summary_tbl, collapse = " ")
+    expect_true(grepl("Rayleigh (axial) p", html_ax, fixed = TRUE))
+
+    # Directional: axial off, header reverts to "Rayleigh p".
+    session$setInputs(data_model = "directional")
+    expect_false(isTRUE(current_spec()$axial))
+    html_dir <- paste(output$summary_tbl, collapse = " ")
+    expect_true(grepl("Rayleigh p", html_dir, fixed = TRUE))
+    expect_false(grepl("Rayleigh (axial) p", html_dir, fixed = TRUE))
   })
 })

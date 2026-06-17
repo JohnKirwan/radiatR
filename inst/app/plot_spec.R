@@ -207,10 +207,12 @@ spec_to_plot <- function(spec, ts, hd) {
       hd$heading <- bin_angles(hd$heading, width = SPEC_STACK_BIN_WIDTH)
       p <- p + add_stacked_headings(hd, colour_col = ".colour", group = spec$facet_by,
                  step = SPEC_STACK_STEP, start_sep = SPEC_STACK_START_SEP,
-                 size = SPEC_MARKER_SIZE, alpha = SPEC_MARKER_ALPHA)
+                 size = SPEC_MARKER_SIZE, alpha = SPEC_MARKER_ALPHA,
+                 axial = isTRUE(spec$axial))
     } else {
       p <- p + add_heading_points(hd, colour_col = ".colour",
-                 size = SPEC_MARKER_SIZE, alpha = SPEC_MARKER_ALPHA)
+                 size = SPEC_MARKER_SIZE, alpha = SPEC_MARKER_ALPHA,
+                 axial = isTRUE(spec$axial))
     }
   }
 
@@ -219,7 +221,8 @@ spec_to_plot <- function(spec, ts, hd) {
     p <- p + add_circ_mean(arrow_df, colour = "black", axial = isTRUE(spec$axial))
   }
   if (spec$show$vectors && all(c("x_inner", "y_inner") %in% names(hd)))
-    p <- p + add_heading_vectors(hd, colour_col = ".colour")
+    p <- p + add_heading_vectors(hd, colour_col = ".colour",
+               axial = isTRUE(spec$axial))
 
   # Mean-direction bootstrap CI arc (per facet group when faceted). hd already
   # carries the display attribute (set above) so the arc orients correctly.
@@ -367,14 +370,14 @@ spec_to_code <- function(spec) {
     grp <- if (is.null(spec$facet_by)) "" else paste0(", group = ", q(spec$facet_by))
     tail <- c(tail, paste0("add_stacked_headings(hd, colour_col = \".colour\"", grp,
                            ", step = ", SPEC_STACK_STEP, ", start_sep = ", SPEC_STACK_START_SEP,
-                           ", size = ", SPEC_MARKER_SIZE, ", alpha = ", SPEC_MARKER_ALPHA, ")"))
+                           ", size = ", SPEC_MARKER_SIZE, ", alpha = ", SPEC_MARKER_ALPHA, ax, ")"))
   }
   if (has_hd && identical(spec$heading_display, "points"))
-    tail <- c(tail, "add_heading_points(hd, colour_col = \".colour\", size = 2.5, alpha = 0.8)")
+    tail <- c(tail, paste0("add_heading_points(hd, colour_col = \".colour\", size = 2.5, alpha = 0.8", ax, ")"))
   if (has_hd && spec$show$arrow)
     tail <- c(tail, paste0("add_circ_mean(arrow_df, colour = \"black\"", ax, ")"))
   if (has_hd && spec$show$vectors && identical(spec$headings$rule, "crossing"))
-    tail <- c(tail, "add_heading_vectors(hd, colour_col = \".colour\")")
+    tail <- c(tail, paste0("add_heading_vectors(hd, colour_col = \".colour\"", ax, ")"))
   if (has_hd && isTRUE(spec$show$ci)) {
     cc <- if (is.null(spec$facet_by)) "" else paste0(", colour_col = ", q(spec$facet_by))
     tail <- c(tail, paste0(

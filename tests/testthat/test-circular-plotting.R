@@ -1638,3 +1638,138 @@ test_that("radiate(): chrome styling comes from the named theme", {
   lab <- Filter(function(l) inherits(l$geom, "GeomText"), dk$layers)[[1]]
   expect_equal(lab$aes_params$colour, "grey85")            # legibility guard on dark disc
 })
+
+test_that(".mirror_axial doubles rows and adds antipodal angles, preserving other columns", {
+  df <- data.frame(heading = c(0, pi / 2, 3), grp = c("a", "b", "a"),
+                   x_inner = c(0.1, 0.2, 0.3), stringsAsFactors = FALSE)
+  out <- radiatR:::.mirror_axial(df, "heading")
+
+  expect_equal(nrow(out), 2L * nrow(df))
+  expect_equal(out[seq_len(nrow(df)), , drop = FALSE], df)
+  mirrored <- out[(nrow(df) + 1L):nrow(out), , drop = FALSE]
+  expect_equal(mirrored$heading, (df$heading + pi) %% (2 * pi))
+  expect_equal(mirrored$grp, df$grp)
+  expect_equal(mirrored$x_inner, df$x_inner)
+})
+
+test_that(".mirror_axial negates requested coordinate columns on the mirrored copy", {
+  df  <- data.frame(heading = c(0, 1), x_inner = c(0.1, -0.2), y_inner = c(0.3, 0.4))
+  out <- radiatR:::.mirror_axial(df, "heading", negate = c("x_inner", "y_inner"))
+  mirrored <- out[3:4, , drop = FALSE]
+  expect_equal(mirrored$x_inner, -df$x_inner)
+  expect_equal(mirrored$y_inner, -df$y_inner)
+  expect_equal(out[1:2, "x_inner"], df$x_inner)
+})
+
+test_that(".mirror_axial on an empty frame returns an empty frame", {
+  df  <- data.frame(heading = numeric(0), grp = character(0))
+  out <- radiatR:::.mirror_axial(df, "heading")
+  expect_equal(nrow(out), 0L)
+  expect_equal(names(out), names(df))
+})
+
+test_that("add_heading_points(axial = TRUE) draws each datum at both poles", {
+  hd  <- data.frame(heading = c(0, pi / 2))
+  lyr <- add_heading_points(hd, axial = TRUE)
+  d   <- lyr$data
+  expect_equal(nrow(d), 4L)
+  expect_equal(d[[".x_head"]][3:4], -d[[".x_head"]][1:2], tolerance = 1e-12)
+  expect_equal(d[[".y_head"]][3:4], -d[[".y_head"]][1:2], tolerance = 1e-12)
+})
+
+test_that("add_heading_points(axial = FALSE) is unchanged", {
+  hd <- data.frame(heading = c(0, pi / 2))
+  expect_equal(nrow(add_heading_points(hd)$data), 2L)
+  expect_equal(nrow(add_heading_points(hd, axial = FALSE)$data), 2L)
+})
+
+test_that("add_heading_vectors(axial = TRUE) mirrors endpoints and inner start coords", {
+  hd  <- data.frame(heading = c(0, pi / 2),
+                    x_inner = c(0.1, 0.0), y_inner = c(0.0, 0.2))
+  lyr <- add_heading_vectors(hd, axial = TRUE)
+  d   <- lyr$data
+  expect_equal(nrow(d), 4L)
+  expect_equal(d[[".x_head"]][3:4],  -d[[".x_head"]][1:2],  tolerance = 1e-12)
+  expect_equal(d[[".y_head"]][3:4],  -d[[".y_head"]][1:2],  tolerance = 1e-12)
+  expect_equal(d[[".x_inner"]][3:4], -d[[".x_inner"]][1:2], tolerance = 1e-12)
+  expect_equal(d[[".y_inner"]][3:4], -d[[".y_inner"]][1:2], tolerance = 1e-12)
+})
+
+test_that("add_stacked_headings(axial = TRUE) stacks each antipodal cluster within itself", {
+  hd  <- data.frame(heading = c(0, 0))
+  lyr <- add_stacked_headings(hd, axial = TRUE)
+  d   <- lyr$data
+  expect_equal(nrow(d), 4L)
+  expect_equal(length(unique(round(d$stack_r, 6))), 2L)
+})
+
+test_that("add_stacked_headings(axial = FALSE) is unchanged", {
+  hd <- data.frame(heading = c(0, 0))
+  expect_equal(nrow(add_stacked_headings(hd)$data), 2L)
+})
+
+test_that("add_angle_rose(axial = TRUE) produces a point-symmetric rose", {
+  hd  <- data.frame(heading = c(0.1, 0.2, 0.3, 0.15))
+  lyr <- add_angle_rose(hd, bins = 12L, axial = TRUE)
+  d   <- lyr$data
+  pts  <- unique(round(cbind(d$x, d$y), 6))
+  refl <- unique(round(cbind(-d$x, -d$y), 6))
+  expect_setequal(
+    apply(pts,  1L, paste, collapse = ","),
+    apply(refl, 1L, paste, collapse = ",")
+  )
+})
+
+test_that("add_circular_kde(axial = TRUE) produces a point-symmetric ring", {
+  set.seed(1)
+  hd  <- data.frame(heading = rnorm(40, 0.3, 0.2))
+  # Use an odd n_pts so the density grid seq(0, 2*pi, length.out = n) has a
+  # vertex exactly at theta + pi for every vertex at theta; this lets axial
+  # symmetry be asserted at the vertex level. The even default grid samples
+  # the (genuinely symmetric) curve at pi-misaligned points, so its vertices
+  # interleave rather than reflect onto each other.
+  lyr <- add_circular_kde(hd, axial = TRUE, n_pts = 513L)
+  d   <- lyr$data
+  key  <- function(m) apply(round(m, 4), 1L, paste, collapse = ",")
+  pts  <- cbind(d$x, d$y)
+  refl <- cbind(-d$x, -d$y)
+  expect_true(all(key(refl) %in% key(pts)))
+})
+
+test_that("compute_circular_density(axial = TRUE) yields a period-pi symmetric density", {
+  set.seed(2)
+  hd   <- data.frame(heading = rnorm(60, 0.4, 0.3))
+  # Fixed bw keeps the kernel density non-degenerate (the auto bandwidth on a
+  # bimodal mirrored sample collapses to a flat density, which is trivially
+  # symmetric and would not actually test anything).
+  dens <- compute_circular_density(hd, method = "kernel", bw = 20, axial = TRUE)
+  th   <- dens$theta
+  d    <- dens$density
+  # The (genuinely symmetric) density is sampled on an even grid whose origin
+  # is not pi-aligned, so theta + pi lands half a grid step off the nearest
+  # vertex. Asserting symmetry by nearest-neighbour snapping is therefore
+  # brittle (~5e-3 error). Compare instead against a wrap-aware linear
+  # interpolation of the density at theta + pi, which recovers symmetry to the
+  # interpolation residual of a smooth curve.
+  o   <- order(th); th <- th[o]; d <- d[o]
+  wrap   <- function(a) ((a + pi) %% (2 * pi)) - pi
+  thx    <- c(th - 2 * pi, th, th + 2 * pi)
+  dx     <- c(d, d, d)
+  keep   <- !duplicated(thx)
+  anti   <- stats::approx(thx[keep], dx[keep], xout = wrap(th + pi))$y
+  expect_equal(d, anti, tolerance = 1e-3)
+})
+
+test_that("add_heading_density(axial = TRUE) forwards to the estimator", {
+  set.seed(3)
+  hd       <- data.frame(heading = rnorm(60, 0.4, 0.3))
+  # Forwarding is verified by equivalence: estimating with axial = TRUE must be
+  # identical to pre-mirroring the raw sample and estimating without it. (A
+  # geometric reflection assertion on the rendered polygon is unreliable here
+  # because the kernel's even grid interleaves antipodal vertices.)
+  mirrored <- rbind(hd, data.frame(heading = (hd$heading + pi) %% (2 * pi)))
+  lyr_ax   <- add_heading_density(hd,       method = "kernel", bw = 20, axial = TRUE)
+  lyr_man  <- add_heading_density(mirrored, method = "kernel", bw = 20)
+  expect_equal(lyr_ax[[length(lyr_ax)]]$data,
+               lyr_man[[length(lyr_man)]]$data)
+})

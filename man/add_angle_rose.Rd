@@ -16,7 +16,8 @@ add_angle_rose(
   colour = NA,
   alpha = 0.5,
   arc_pts = 20L,
-  display = NULL
+  display = NULL,
+  axial = FALSE
 )
 }
 \arguments{
@@ -51,6 +52,10 @@ for a donut style.}
 \item{display}{A `circ_display()` controlling rotation, matching the parent
 `radiate()` plot. Default `NULL` uses the input's `display` attribute when
 present, otherwise the identity display.}
+
+\item{axial}{Logical; when `TRUE`, mirror each observation to `angle_col + pi`
+before estimation, yielding a period-pi (bidirectional) result. Default
+`FALSE`.}
 }
 \value{
 A \code{geom_polygon} layer that can be added to a \code{radiate()}
