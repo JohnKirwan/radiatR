@@ -30,3 +30,28 @@
     stringsAsFactors = FALSE
   )
 }
+
+# Add information criteria + Akaike weights to a per-model logLik frame and sort by
+# AICc (best first). AICc is NA when n - k - 1 <= 0 (undefined at small n); those
+# rows get NA criteria/weight and sort last. Weights are normalised over the
+# finite-AICc rows so they sum to 1.
+.circ_model_criteria <- function(ll_df, n) {
+  k  <- ll_df$k
+  ll <- ll_df$logLik
+  aic   <- -2 * ll + 2 * k
+  denom <- n - k - 1
+  aicc  <- ifelse(denom > 0, aic + (2 * k * (k + 1)) / denom, NA_real_)
+  bic   <- -2 * ll + k * log(n)
+
+  min_aicc <- if (all(is.na(aicc))) NA_real_ else min(aicc, na.rm = TRUE)
+  d_aicc <- aicc - min_aicc
+  w_raw  <- exp(-d_aicc / 2)
+  weight <- w_raw / sum(w_raw, na.rm = TRUE)
+
+  out <- data.frame(
+    model = ll_df$model, n = n, k = k, logLik = ll,
+    AIC = aic, AICc = aicc, BIC = bic, dAICc = d_aicc, weight = weight,
+    stringsAsFactors = FALSE
+  )
+  out[order(out$AICc, na.last = TRUE), , drop = FALSE]
+}
