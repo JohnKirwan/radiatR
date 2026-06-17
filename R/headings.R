@@ -40,23 +40,6 @@
   fallback
 }
 
-# angle convention helpers
-.uc_to_clock <- function(uc_heading, coords) {
-  if (coords == "relative") {
-    (-uc_heading) %% (2 * pi)
-  } else {
-    (pi / 2 - uc_heading) %% (2 * pi)
-  }
-}
-
-.clock_to_uc <- function(clock_heading, coords) {
-  if (coords == "relative") {
-    (-clock_heading) %% (2 * pi)
-  } else {
-    rad_unclock(clock_heading)
-  }
-}
-
 # carry helper: add columns from nearest time per id
 .carry_nearest <- function(res, data, idc, tc, cols) {
   if (is.null(cols) || !length(cols)) return(res)
