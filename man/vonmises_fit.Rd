@@ -4,7 +4,13 @@
 \alias{vonmises_fit}
 \title{Fit a von Mises distribution to per-group heading data}
 \usage{
-vonmises_fit(hd, group_col = NULL, angle_col = "heading", conf = 0.95)
+vonmises_fit(
+  hd,
+  group_col = NULL,
+  angle_col = "heading",
+  conf = 0.95,
+  axial = FALSE
+)
 }
 \arguments{
 \item{hd}{Data frame containing headings in radians.}
@@ -16,6 +22,12 @@ all rows.}
 
 \item{conf}{Confidence level for the interval on \eqn{\mu}.
 Default \code{0.95}.}
+
+\item{axial}{Logical; when `TRUE`, fit an axial (bidirectional, mod-pi)
+von Mises via the doubled-angle method: `mu`/`mu_deg` are the mean **axis**
+in [0, pi), `kappa` is the concentration about that axis (estimated in the
+doubled-angle frame), and `se_mu`/`ci_lo`/`ci_hi` are halved accordingly.
+Default `FALSE` (directional).}
 }
 \value{
 Data frame with columns \code{group_col} (if supplied), \code{mu}
