@@ -258,6 +258,27 @@ rayleigh_p_fmt <- function(angles, axial = FALSE) {
   }, error = function(e) "—")
 }
 
+# Omnibus Rao spacing test, formatted as a coarse significance bracket. Unlike
+# the focused Rayleigh row this is model-agnostic: always computed on RAW angles
+# (never doubled), as an always-on departure-from-uniformity backstop.
+# rao.spacing.test only carries the bracket in its print method (the returned
+# object's $alpha is the input parameter, not the achieved level), so parse the
+# printed "P-value" line. Brackets: "< 0.001" / "< 0.01" / "< 0.05" / "< 0.10" /
+# "> 0.10". n < 4 (Rao's table floor) or any error -> "—".
+rao_spacing_fmt <- function(angles) {
+  tryCatch({
+    ang <- angles[is.finite(angles)]
+    if (length(ang) < 4L) return("—")
+    a   <- circular::circular(ang, units = "radians", type = "angles")
+    out <- utils::capture.output(suppressWarnings(circular::rao.spacing.test(a)))
+    line <- grep("P-value", out, value = TRUE)
+    if (length(line) == 0L) return("—")
+    m <- regmatches(line[1L], regexpr("[<>] ?0?\\.[0-9]+", line[1L]))
+    if (length(m) == 0L) return("—")
+    gsub("\\s+", " ", trimws(m))
+  }, error = function(e) "—")
+}
+
 # Display-ready circular summary (n, mean direction, resultant R, Rayleigh p) for
 # a headings frame, grouped by `by_col`. Returns a data frame with the group
 # column renamed to "Group"; callers may append trajectory-only columns
