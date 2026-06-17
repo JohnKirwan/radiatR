@@ -893,3 +893,24 @@ test_that("vonmises_fit(axial = FALSE) is unchanged on directional data", {
   expect_equal(vonmises_fit(hd, axial = FALSE), vonmises_fit(hd))
   expect_equal(names(vonmises_fit(hd, axial = TRUE)), names(vonmises_fit(hd)))
 })
+
+test_that("wrappedcauchy_fit(axial = TRUE) recovers an axis from antipodal data", {
+  set.seed(21)
+  hd <- data.frame(heading = c(rnorm(50, 0, 0.2), rnorm(50, pi, 0.2)) %% (2 * pi))
+
+  ax  <- wrappedcauchy_fit(hd, axial = TRUE)
+  dir <- wrappedcauchy_fit(hd, axial = FALSE)
+
+  expect_gt(ax$rho, 0.3)
+  expect_gte(ax$mu, 0)
+  expect_lt(ax$mu, pi)
+  expect_lt(min(abs(ax$mu - c(0, pi))), 0.15)
+  expect_lt(dir$rho, 0.2)
+})
+
+test_that("wrappedcauchy_fit(axial = FALSE) is unchanged on directional data", {
+  set.seed(22)
+  hd <- data.frame(heading = rnorm(60, 1, 0.3) %% (2 * pi))
+  expect_equal(wrappedcauchy_fit(hd, axial = FALSE), wrappedcauchy_fit(hd))
+  expect_equal(names(wrappedcauchy_fit(hd, axial = TRUE)), names(wrappedcauchy_fit(hd)))
+})

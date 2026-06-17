@@ -675,12 +675,17 @@ vonmises_fit <- function(hd, group_col = NULL, angle_col = "heading",
 #' @param hd Data frame containing headings in radians.
 #' @param group_col Column(s) to group by.  \code{NULL} fits a single model.
 #' @param angle_col Name of the heading column.  Default \code{"heading"}.
+#' @param axial Logical; when `TRUE`, fit an axial (bidirectional, mod-pi)
+#'   wrapped Cauchy via the doubled-angle method: `mu`/`mu_deg` are the mean
+#'   **axis** in [0, pi) and `rho` is the concentration about that axis
+#'   (estimated in the doubled-angle frame). Default `FALSE` (directional).
 #' @return Data frame with columns \code{group_col} (if supplied), \code{mu}
 #'   (MLE mean direction, radians), \code{mu_deg} (degrees), \code{rho}
 #'   (concentration, 0--1), \code{convergence} (0 = converged), \code{n}.
 #' @seealso \code{\link{vonmises_fit}}, \code{\link{add_wrappedcauchy_density}}
 #' @export
-wrappedcauchy_fit <- function(hd, group_col = NULL, angle_col = "heading") {
+wrappedcauchy_fit <- function(hd, group_col = NULL, angle_col = "heading",
+                              axial = FALSE) {
   stopifnot(is.data.frame(hd))
   if (!angle_col %in% names(hd))
     stop("wrappedcauchy_fit: column '", angle_col, "' not found")
@@ -690,14 +695,16 @@ wrappedcauchy_fit <- function(hd, group_col = NULL, angle_col = "heading") {
     na_row <- data.frame(mu = NA_real_, mu_deg = NA_real_, rho = NA_real_,
                          convergence = NA_integer_, n = n)
     if (n < 2L) return(na_row)
+    a_fit <- .fold_angles(a, axial)
     fit <- tryCatch(
       circular::mle.wrappedcauchy(
-        circular::circular(a, units = "radians", type = "angles")
+        circular::circular(a_fit, units = "radians", type = "angles")
       ),
       error = function(e) NULL
     )
     if (is.null(fit)) return(na_row)
-    mu <- as.numeric(fit$mu)
+    mu_d <- as.numeric(fit$mu)
+    mu   <- if (isTRUE(axial)) .unfold_mean(mu_d, axial = TRUE) else mu_d
     data.frame(mu          = mu,
                mu_deg      = mu * 180 / pi,
                rho         = as.numeric(fit$rho),
