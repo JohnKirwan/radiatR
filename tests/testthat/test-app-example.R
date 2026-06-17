@@ -452,3 +452,21 @@ test_that("the summary table carries a Rao spacing column for both data models",
     expect_true(grepl("Rayleigh (axial) p", html_ax, fixed = TRUE))   # focused row relabelled
   })
 })
+
+test_that("hermans_p_fmt formats a Monte-Carlo p and is render-stable", {
+  skip_if_not_installed("shiny")
+  app_file <- system.file("app", "app.R", package = "radiatR")
+  if (!nzchar(app_file))
+    app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
+  skip_if(!file.exists(app_file), "app.R not found")
+  e <- new.env()
+  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
+
+  set.seed(1)
+  clustered <- rnorm(40, 1, 0.3) %% (2 * pi)
+  p1 <- e$hermans_p_fmt(clustered, n_sim = 199)
+  p2 <- e$hermans_p_fmt(clustered, n_sim = 199)
+  expect_identical(p1, p2)                                   # fixed seed -> identical
+  expect_true(grepl("^(< 0\\.001|[01]\\.[0-9]{3})$", p1))    # bracket or 3dp
+  expect_identical(e$hermans_p_fmt(c(0.1, 0.2), n_sim = 199), "—")   # n < 3
+})

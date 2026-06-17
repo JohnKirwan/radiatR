@@ -279,6 +279,23 @@ rao_spacing_fmt <- function(angles) {
   }, error = function(e) "—")
 }
 
+# Omnibus Hermans-Rasson test p-value, formatted for the summary. Monte-Carlo, so
+# a fixed seed is set per call for render stability (identical inputs -> identical
+# p across re-renders). A modest n_sim keeps the reactive responsive. n < 3 or any
+# error -> "—".
+hermans_p_fmt <- function(angles, n_sim = 999L) {
+  tryCatch({
+    a <- angles[is.finite(angles)]
+    if (length(a) < 3L) return("—")
+    set.seed(20260617L)
+    p <- test_uniformity(data.frame(heading = a),
+                         test = "hermans_rasson", n_sim = n_sim)$p_value
+    if (is.na(p))  return("—")
+    if (p < 0.001) return("< 0.001")
+    sprintf("%.3f", p)
+  }, error = function(e) "—")
+}
+
 # Display-ready circular summary (n, mean direction, resultant R, Rayleigh p) for
 # a headings frame, grouped by `by_col`. Returns a data frame with the group
 # column renamed to "Group"; callers may append trajectory-only columns
