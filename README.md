@@ -1,4 +1,4 @@
-# radiatR
+# radiatR <a href="https://johnkirwan.github.io/radiatR"><img src="man/figures/logo.png" align="right" height="139" alt="radiatR website" /></a>
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/JohnKirwan/radiatR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/JohnKirwan/radiatR/actions/workflows/R-CMD-check.yaml)
