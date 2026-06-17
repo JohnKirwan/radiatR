@@ -76,6 +76,7 @@ Collate:
     'headings_frame.R'
     'launch_app.R'
     'loaders.R'
+    'model_selection.R'
     'radiatR-package.R'
     'simulate_tracks.R'
     'track_metrics.R'
