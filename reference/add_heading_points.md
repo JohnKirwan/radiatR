@@ -13,7 +13,8 @@ add_heading_points(
   colour_col = NULL,
   colour = NULL,
   size = 2,
-  alpha = 1
+  alpha = 1,
+  axial = FALSE
 )
 ```
 
@@ -43,6 +44,11 @@ add_heading_points(
 - alpha:
 
   Point alpha transparency.
+
+- axial:
+
+  Logical; when \`TRUE\`, draw each observation at both \`heading\` and
+  \`heading + pi\` (bidirectional/axial display). Default \`FALSE\`.
 
 ## Value
 

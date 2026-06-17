@@ -145,6 +145,10 @@ manually). Default `"grey70"`.</p></dd>
 density was produced. To compute from raw headings use
 [compute_circular_density()] first, or call the convenience wrapper
 [add_heading_density()] which combines both steps.</p>
+<p>For an **axial** (bidirectional) density, do not mirror this
+  pre-computed frame (that would double-count a full-circle density). Instead
+  estimate it with [compute_circular_density()]`(..., axial = TRUE)`, which
+  augments the raw sample before estimation, then pass the result here.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

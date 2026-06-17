@@ -23,7 +23,8 @@ add_angle_rose(
   colour = NA,
   alpha = 0.5,
   arc_pts = 20L,
-  display = NULL
+  display = NULL,
+  axial = FALSE
 )
 ```
 
@@ -84,6 +85,12 @@ add_angle_rose(
   A \`circ_display()\` controlling rotation, matching the parent
   \`radiate()\` plot. Default \`NULL\` uses the input's \`display\`
   attribute when present, otherwise the identity display.
+
+- axial:
+
+  Logical; when \`TRUE\`, mirror each observation to \`angle_col + pi\`
+  before estimation, yielding a period-pi (bidirectional) result.
+  Default \`FALSE\`.
 
 ## Value
 

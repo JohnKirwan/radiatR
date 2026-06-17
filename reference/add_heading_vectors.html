@@ -60,7 +60,8 @@ the dotted-line display in the original millipede tracking workflow.</p>
 <span>  <span class="va">headings_df</span>,</span>
 <span>  colour_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  colour <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  linetype <span class="op">=</span> <span class="st">"dotted"</span></span>
+<span>  linetype <span class="op">=</span> <span class="st">"dotted"</span>,</span>
+<span>  axial <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -88,6 +89,12 @@ when `NULL` and no `colour_col` resolves, defaults to `"black"`.</p></dd>
 
 <dt id="arg-linetype">linetype<a class="anchor" aria-label="anchor" href="#arg-linetype"></a></dt>
 <dd><p>Line type string or integer passed to `geom_segment`.</p></dd>
+
+
+<dt id="arg-axial">axial<a class="anchor" aria-label="anchor" href="#arg-axial"></a></dt>
+<dd><p>Logical; when `TRUE`, draw each vector at both `heading` and
+`heading + pi`, with the inner start point reflected through the origin.
+Default `FALSE`.</p></dd>
 
 </dl></div>
     <div class="section level2">

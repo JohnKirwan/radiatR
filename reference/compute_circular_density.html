@@ -71,7 +71,8 @@ modelling package.</p>
 <span>  bins <span class="op">=</span> <span class="fl">36L</span>,</span>
 <span>  bw <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  boot_reps <span class="op">=</span> <span class="fl">0L</span>,</span>
-<span>  boot_alpha <span class="op">=</span> <span class="fl">0.05</span></span>
+<span>  boot_alpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  axial <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -121,6 +122,12 @@ and `"histogram"`.</p></dd>
 <dt id="arg-boot-alpha">boot_alpha<a class="anchor" aria-label="anchor" href="#arg-boot-alpha"></a></dt>
 <dd><p>Significance level for the bootstrap band. Default `0.05`
 produces a 95% interval.</p></dd>
+
+
+<dt id="arg-axial">axial<a class="anchor" aria-label="anchor" href="#arg-axial"></a></dt>
+<dd><p>Logical; when `TRUE`, mirror each observation to
+`heading_col + pi` before density estimation, producing a period-pi
+(bidirectional/axial) density. Default `FALSE`.</p></dd>
 
 </dl></div>
     <div class="section level2">

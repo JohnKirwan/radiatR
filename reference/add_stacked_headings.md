@@ -24,6 +24,7 @@ add_stacked_headings(
   colour_col = NULL,
   size = 2,
   alpha = 1,
+  axial = FALSE,
   ...
 )
 ```
@@ -82,6 +83,13 @@ add_stacked_headings(
 - alpha:
 
   Fixed alpha. Ignored when `shade = TRUE`.
+
+- axial:
+
+  Logical; when \`TRUE\`, mirror each observation to \`col + pi\` before
+  stacking, so the figure reads as bidirectional. Stacking is computed
+  after mirroring, so each antipodal cluster stacks within itself.
+  Default \`FALSE\`.
 
 - ...:
 

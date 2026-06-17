@@ -13,7 +13,8 @@ add_heading_vectors(
   headings_df,
   colour_col = NULL,
   colour = NULL,
-  linetype = "dotted"
+  linetype = "dotted",
+  axial = FALSE
 )
 ```
 
@@ -40,6 +41,12 @@ add_heading_vectors(
 - linetype:
 
   Line type string or integer passed to \`geom_segment\`.
+
+- axial:
+
+  Logical; when \`TRUE\`, draw each vector at both \`heading\` and
+  \`heading + pi\`, with the inner start point reflected through the
+  origin. Default \`FALSE\`.
 
 ## Value
 

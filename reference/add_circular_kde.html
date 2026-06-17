@@ -75,7 +75,8 @@ multimodal data naturally.</p>
 <span>  linewidth <span class="op">=</span> <span class="fl">0.8</span>,</span>
 <span>  fill <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.8</span>,</span>
-<span>  display <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  display <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  axial <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -139,6 +140,12 @@ Default <code>0.4</code>.</p></dd>
 <dd><p>A `circ_display()` controlling rotation, matching the parent
 `radiate()` plot. Default `NULL` uses the input's `display` attribute when
 present, otherwise the identity display.</p></dd>
+
+
+<dt id="arg-axial">axial<a class="anchor" aria-label="anchor" href="#arg-axial"></a></dt>
+<dd><p>Logical; when `TRUE`, mirror each observation to `angle_col + pi`
+before estimation, yielding a period-pi (bidirectional) result. Default
+`FALSE`.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -28,7 +28,8 @@ add_circular_kde(
   linewidth = 0.8,
   fill = NA,
   alpha = 0.8,
-  display = NULL
+  display = NULL,
+  axial = FALSE
 )
 ```
 
@@ -91,6 +92,12 @@ add_circular_kde(
   A \`circ_display()\` controlling rotation, matching the parent
   \`radiate()\` plot. Default \`NULL\` uses the input's \`display\`
   attribute when present, otherwise the identity display.
+
+- axial:
+
+  Logical; when \`TRUE\`, mirror each observation to \`angle_col + pi\`
+  before estimation, yielding a period-pi (bidirectional) result.
+  Default \`FALSE\`.
 
 ## Value
 

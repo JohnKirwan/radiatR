@@ -28,9 +28,26 @@
   [`add_circ_interval()`](https://johnkirwan.github.io/radiatR/reference/add_circ_interval.md)/[`add_heading_interval()`](https://johnkirwan.github.io/radiatR/reference/add_heading_interval.md)
   draw the CI at both poles, and
   [`add_critical_v_line()`](https://johnkirwan.github.io/radiatR/reference/add_critical_v_line.md)
-  mirrors its boundary. The Shiny app gains an “Axial (bidirectional)”
-  toggle (headings input) that makes the figure, the summary table, and
-  the exported code axial together.
+  mirrors its boundary.
+
+- The empirical individual-data layers gain `axial = TRUE` to draw
+  bidirectional (period-pi) data at both ends:
+  [`add_heading_points()`](https://johnkirwan.github.io/radiatR/reference/add_heading_points.md),
+  [`add_heading_vectors()`](https://johnkirwan.github.io/radiatR/reference/add_heading_vectors.md),
+  and
+  [`add_stacked_headings()`](https://johnkirwan.github.io/radiatR/reference/add_stacked_headings.md)
+  plot each datum at both poles, and the empirical densities
+  ([`compute_circular_density()`](https://johnkirwan.github.io/radiatR/reference/compute_circular_density.md)
+  /
+  [`add_heading_density()`](https://johnkirwan.github.io/radiatR/reference/add_heading_density.md),
+  [`add_circular_kde()`](https://johnkirwan.github.io/radiatR/reference/add_circular_kde.md),
+  [`add_angle_rose()`](https://johnkirwan.github.io/radiatR/reference/add_angle_rose.md))
+  estimate on the both-ends-augmented sample. In the Shiny app the
+  headings-only “Axial” checkbox becomes a “Data model” (Directional /
+  Axial) selector in the Configure step that applies to both input
+  types, soft-syncs from inherently axial heading methods (movement-axis
+  / PCA / RANSAC), mirrors the whole figure, and relabels the summary’s
+  Rayleigh test as “Rayleigh (axial)”.
 
 ### Coordinates
 
