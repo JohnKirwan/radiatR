@@ -8,9 +8,10 @@ test_uniformity(
   hd,
   group_col = NULL,
   angle_col = "heading",
-  test = c("rayleigh", "kuiper", "rao", "watson"),
+  test = c("rayleigh", "kuiper", "rao", "watson", "hermans_rasson"),
   p_adjust = "none",
-  axial = FALSE
+  axial = FALSE,
+  n_sim = 9999L
 )
 }
 \arguments{
@@ -22,7 +23,10 @@ as one group.}
 \item{angle_col}{Heading column name.  Default \code{"heading"}.}
 
 \item{test}{One of \code{"rayleigh"} (default), \code{"kuiper"},
-\code{"rao"}, or \code{"watson"}.}
+\code{"rao"}, \code{"watson"}, or \code{"hermans_rasson"}. The last is the
+Hermans-Rasson omnibus test (Landler, Ruxton & Malkemper 2019), far more
+powerful than Rayleigh against multimodal / non-symmetric alternatives; its
+\code{p_value} is obtained by Monte-Carlo simulation.}
 
 \item{p_adjust}{Multiple-comparison correction method passed to
 \code{\link[stats]{p.adjust}}.  Default \code{"none"}.  Applies only when
@@ -33,6 +37,10 @@ conditions.  Only meaningful for the Rayleigh test (exact p-values).}
 \item{axial}{Logical. Treat the angles as axial (bidirectional, mod-pi)
 data: the uniformity test is run via the angle-doubling method (testing for
 an axis). Default `FALSE` (ordinary directional data).}
+
+\item{n_sim}{Number of Monte-Carlo replicates for the \code{"hermans_rasson"}
+p-value. Default \code{9999}. Ignored by the other tests. Set the RNG seed
+with \code{\link{set.seed}} for reproducible p-values.}
 }
 \value{
 Tidy data frame with columns \code{group_col} (if supplied),
@@ -46,4 +54,10 @@ preferred direction), using any of four classical tests.  The Rayleigh test
 three (\code{"kuiper"}, \code{"rao"}, \code{"watson"}) use look-up tables
 and the \code{p_value} column contains the tabled significance level rather
 than a continuous p-value.
+}
+\references{
+Landler, L., Ruxton, G.D. & Malkemper, E.P. (2019). The
+  Hermans-Rasson test as a powerful alternative to the Rayleigh test for
+  circular statistics in biology. BMC Ecology 19:30.
+  \doi{10.1186/s12898-019-0246-8}.
 }

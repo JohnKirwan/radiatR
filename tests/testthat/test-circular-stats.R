@@ -914,3 +914,59 @@ test_that("wrappedcauchy_fit(axial = FALSE) is unchanged on directional data", {
   expect_equal(wrappedcauchy_fit(hd, axial = FALSE), wrappedcauchy_fit(hd))
   expect_equal(names(wrappedcauchy_fit(hd, axial = TRUE)), names(wrappedcauchy_fit(hd)))
 })
+
+test_that(".hr_statistic matches the closed-form value and is order-invariant", {
+  th <- c(0, pi / 2, pi)
+  # Reference (Landler et al. 2019 / CircMLE HermansRasson2T) skewness term is
+  # subtracted: dispersion pi (pi/2 + 0 + pi/2) minus 2.895 * skew (1 + 0 + 1).
+  expect_equal(radiatR:::.hr_statistic(th), pi - 2.895 * 2, tolerance = 1e-4)
+  expect_equal(radiatR:::.hr_statistic(th),
+               radiatR:::.hr_statistic(rev(th)), tolerance = 1e-12)
+})
+
+test_that(".hr_statistic is larger for clustered than for spread data", {
+  set.seed(1)
+  clustered <- rnorm(30, 0, 0.15)
+  spread    <- seq(0, 2 * pi, length.out = 31)[-31]
+  expect_gt(radiatR:::.hr_statistic(clustered), radiatR:::.hr_statistic(spread))
+})
+
+test_that("test_uniformity(hermans_rasson) rejects clustered, not uniform data", {
+  set.seed(101)
+  clustered <- data.frame(heading = rnorm(40, 1, 0.3) %% (2 * pi))
+  uniform   <- data.frame(heading = seq(0, 2 * pi, length.out = 41)[-41])
+
+  rc <- test_uniformity(clustered, test = "hermans_rasson", n_sim = 499)
+  ru <- test_uniformity(uniform,   test = "hermans_rasson", n_sim = 499)
+
+  expect_equal(rc$test, "hermans_rasson")
+  expect_lt(rc$p_value, 0.05)
+  expect_gt(ru$p_value, 0.10)
+  expect_gt(rc$p_value, 0)
+  expect_lte(ru$p_value, 1)
+})
+
+test_that("test_uniformity(hermans_rasson) catches bimodal data the Rayleigh test misses", {
+  set.seed(102)
+  bimodal <- data.frame(heading = c(rnorm(30, 0, 0.2), rnorm(30, pi, 0.2)) %% (2 * pi))
+  ray <- test_uniformity(bimodal, test = "rayleigh")
+  hr  <- test_uniformity(bimodal, test = "hermans_rasson", n_sim = 499)
+  expect_gt(ray$p_value, 0.10)
+  expect_lt(hr$p_value, 0.05)
+})
+
+test_that("test_uniformity(hermans_rasson) is reproducible and integrates with grouping", {
+  set.seed(7); a <- test_uniformity(
+    data.frame(heading = rnorm(30, 1, 0.3)), test = "hermans_rasson", n_sim = 299)
+  set.seed(7); b <- test_uniformity(
+    data.frame(heading = rnorm(30, 1, 0.3)), test = "hermans_rasson", n_sim = 299)
+  expect_equal(a$p_value, b$p_value)
+
+  set.seed(8)
+  hd <- data.frame(heading = c(rnorm(25, 0, 0.3), rnorm(25, 2, 0.3)),
+                   grp = rep(c("a", "b"), each = 25))
+  g <- test_uniformity(hd, group_col = "grp", test = "hermans_rasson",
+                       n_sim = 299, p_adjust = "BH")
+  expect_equal(nrow(g), 2L)
+  expect_true(all(c("grp", "statistic", "p_value", "n", "test", "p_value_adj") %in% names(g)))
+})
