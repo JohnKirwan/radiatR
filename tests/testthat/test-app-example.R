@@ -470,3 +470,39 @@ test_that("hermans_p_fmt formats a Monte-Carlo p and is render-stable", {
   expect_true(grepl("^(< 0\\.001|[01]\\.[0-9]{3})$", p1))    # bracket or 3dp
   expect_identical(e$hermans_p_fmt(c(0.1, 0.2), n_sim = 199), "—")   # n < 3
 })
+
+test_that("circ_summary_table omnibus arg switches the omnibus column", {
+  skip_if_not_installed("shiny")
+  app_file <- system.file("app", "app.R", package = "radiatR")
+  if (!nzchar(app_file))
+    app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
+  skip_if(!file.exists(app_file), "app.R not found")
+  e <- new.env()
+  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
+
+  set.seed(2)
+  hd <- data.frame(heading = rnorm(40, 1, 0.3) %% (2 * pi), grp = "a")
+  r_rao <- e$circ_summary_table(hd, "grp", omnibus = "rao")
+  r_hr  <- e$circ_summary_table(hd, "grp", omnibus = "hermans_rasson")
+  expect_true("Rao spacing" %in% names(r_rao))
+  expect_true("Hermans-Rasson p" %in% names(r_hr))
+  expect_false("Rao spacing" %in% names(r_hr))
+})
+
+test_that("circ_summary_table adds a Best model column from model_sel", {
+  skip_if_not_installed("shiny")
+  app_file <- system.file("app", "app.R", package = "radiatR")
+  if (!nzchar(app_file))
+    app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
+  skip_if(!file.exists(app_file), "app.R not found")
+  e <- new.env()
+  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
+
+  set.seed(3)
+  hd <- data.frame(heading = rnorm(60, 1, 0.3) %% (2 * pi), grp = "a")
+  ms <- circ_model_select(hd, group_col = "grp")
+  r  <- e$circ_summary_table(hd, "grp", model_sel = ms)
+  expect_true("Best model" %in% names(r))
+  expect_match(r[["Best model"]][1], "^(uniform|unimodal|axial) \\([01]\\.[0-9]{2}\\)$")
+  expect_false("Best model" %in% names(e$circ_summary_table(hd, "grp")))
+})

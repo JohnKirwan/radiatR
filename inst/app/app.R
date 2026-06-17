@@ -300,21 +300,42 @@ hermans_p_fmt <- function(angles, n_sim = 999L) {
 # a headings frame, grouped by `by_col`. Returns a data frame with the group
 # column renamed to "Group"; callers may append trajectory-only columns
 # (e.g. Straightness) keyed on the returned "Group" values.
-circ_summary_table <- function(hd, by_col, axial = FALSE) {
+circ_summary_table <- function(hd, by_col, axial = FALSE,
+                               omnibus = "rao", model_sel = NULL) {
   cm <- circ_summarise(
     hd, "heading", units = "radians", .by = by_col,
     stats = c("n", "n_missing", "mean_dir_deg", "resultant_R"),
     display = circ_display(zero = 0), axial = axial
   )
   groups <- unique(hd[[by_col]])
-  p_vals   <- vapply(groups, function(g)
+  p_vals <- vapply(groups, function(g)
     rayleigh_p_fmt(hd$heading[hd[[by_col]] == g], axial = axial), character(1L))
-  rao_vals <- vapply(groups, function(g)
-    rao_spacing_fmt(hd$heading[hd[[by_col]] == g]), character(1L))
+  if (identical(omnibus, "hermans_rasson")) {
+    omni_label <- "Hermans-Rasson p"
+    omni_vals  <- vapply(groups, function(g)
+      hermans_p_fmt(hd$heading[hd[[by_col]] == g]), character(1L))
+  } else {
+    omni_label <- "Rao spacing"
+    omni_vals  <- vapply(groups, function(g)
+      rao_spacing_fmt(hd$heading[hd[[by_col]] == g]), character(1L))
+  }
   rayleigh_label <- if (isTRUE(axial)) "Rayleigh (axial) p" else "Rayleigh p"
   p_df <- stats::setNames(
-    data.frame(groups, p_vals, rao_vals, stringsAsFactors = FALSE),
-    c(by_col, rayleigh_label, "Rao spacing"))
+    data.frame(groups, p_vals, omni_vals, stringsAsFactors = FALSE),
+    c(by_col, rayleigh_label, omni_label))
+
+  if (!is.null(model_sel) && nrow(model_sel) > 0L && by_col %in% names(model_sel)) {
+    parts <- lapply(split(model_sel, model_sel[[by_col]]), function(x) {
+      best <- x[1L, ]                              # circ_model_select sorts best-first
+      data.frame(g = best[[by_col]],
+                 bm = sprintf("%s (%.2f)", best$model, best$weight),
+                 stringsAsFactors = FALSE)
+    })
+    bm <- do.call(rbind, parts)
+    bm <- stats::setNames(bm, c(by_col, "Best model"))
+    p_df <- merge(p_df, bm, by = by_col, sort = FALSE)
+  }
+
   cm <- merge(cm, p_df, by = by_col, sort = FALSE)
   names(cm)[names(cm) == by_col]         <- "Group"
   names(cm)[names(cm) == "n_missing"]    <- "Excluded"
