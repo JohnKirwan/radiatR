@@ -395,3 +395,60 @@ test_that("data_model drives current_spec()$axial and the summary relabel (examp
     expect_false(grepl("Rayleigh (axial) p", html_dir, fixed = TRUE))
   })
 })
+
+# rao_spacing_fmt: omnibus Rao spacing bracket, parsed from circular's print output.
+test_that("rao_spacing_fmt brackets clustered, uniform, and tiny samples", {
+  skip_if_not_installed("shiny")
+  app_file <- system.file("app", "app.R", package = "radiatR")
+  if (!nzchar(app_file))
+    app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
+  skip_if(!file.exists(app_file), "app.R not found")
+  e <- new.env()
+  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
+
+  set.seed(1)
+  clustered <- rnorm(40, 0, 0.2)                 # strongly non-uniform
+  uniform   <- seq(0, 2 * pi, length.out = 41)[-41]
+  tiny      <- c(0.1, 0.2, 0.3)                  # n < 4
+
+  expect_match(e$rao_spacing_fmt(clustered), "^< 0\\.")      # significant bracket
+  expect_identical(e$rao_spacing_fmt(uniform), "> 0.10")     # not significant
+  expect_identical(e$rao_spacing_fmt(tiny), "—")             # below Rao's n floor
+})
+
+test_that("rao_spacing_fmt is raw-angle (axial bimodal data reads as non-uniform)", {
+  skip_if_not_installed("shiny")
+  app_file <- system.file("app", "app.R", package = "radiatR")
+  if (!nzchar(app_file))
+    app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
+  skip_if(!file.exists(app_file), "app.R not found")
+  e <- new.env()
+  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
+
+  set.seed(2)
+  bimodal <- c(rnorm(20, 0, 0.15), rnorm(20, pi, 0.15))  # two antipodal clusters
+  expect_match(e$rao_spacing_fmt(bimodal), "^< 0\\.")
+})
+
+test_that("the summary table carries a Rao spacing column for both data models", {
+  skip_if_not_installed("shiny")
+  app_dir <- system.file("app", package = "radiatR")
+  if (!nzchar(app_dir)) app_dir <- testthat::test_path("..", "..", "inst", "app")
+  skip_if(!dir.exists(app_dir), "radiatR app directory not found")
+
+  shiny::testServer(app_dir, {
+    session$setInputs(input_type = "headings")
+    session$setInputs(load_example_hd = 1)
+    session$setInputs(go3 = 1)
+    expect_equal(rv$step, 3L)
+
+    html_dir <- paste(output$summary_tbl, collapse = " ")
+    expect_true(grepl("Rao spacing", html_dir, fixed = TRUE))
+    expect_true(grepl("Rayleigh p", html_dir, fixed = TRUE))
+
+    session$setInputs(data_model = "axial")
+    html_ax <- paste(output$summary_tbl, collapse = " ")
+    expect_true(grepl("Rao spacing", html_ax, fixed = TRUE))          # still present
+    expect_true(grepl("Rayleigh (axial) p", html_ax, fixed = TRUE))   # focused row relabelled
+  })
+})

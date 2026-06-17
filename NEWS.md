@@ -10,6 +10,12 @@
   standard angle-doubling method. The directional default (`axial = FALSE`) is
   unchanged.
 
+* The app's statistical summary gains an always-on **Rao spacing** omnibus row
+  alongside Rayleigh, flagging departures from uniformity (multimodal/clustered
+  patterns) that the focused Rayleigh test misses. Rao spacing yields only a
+  coarse significance level, so it is shown as a bracket (`< 0.05`, `> 0.10`, …),
+  computed on raw angles regardless of the Data model.
+
 ## Plotting
 
 * The mean-direction and interval overlays gain `axial = TRUE` for bidirectional

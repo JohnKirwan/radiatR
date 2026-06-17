@@ -258,6 +258,27 @@ rayleigh_p_fmt <- function(angles, axial = FALSE) {
   }, error = function(e) "—")
 }
 
+# Omnibus Rao spacing test, formatted as a coarse significance bracket. Unlike
+# the focused Rayleigh row this is model-agnostic: always computed on RAW angles
+# (never doubled), as an always-on departure-from-uniformity backstop.
+# rao.spacing.test only carries the bracket in its print method (the returned
+# object's $alpha is the input parameter, not the achieved level), so parse the
+# printed "P-value" line. Brackets: "< 0.001" / "< 0.01" / "< 0.05" / "< 0.10" /
+# "> 0.10". n < 4 (Rao's table floor) or any error -> "—".
+rao_spacing_fmt <- function(angles) {
+  tryCatch({
+    ang <- angles[is.finite(angles)]
+    if (length(ang) < 4L) return("—")
+    a   <- circular::circular(ang, units = "radians", type = "angles")
+    out <- utils::capture.output(suppressWarnings(circular::rao.spacing.test(a)))
+    line <- grep("P-value", out, value = TRUE)
+    if (length(line) == 0L) return("—")
+    m <- regmatches(line[1L], regexpr("[<>] ?0?\\.[0-9]+", line[1L]))
+    if (length(m) == 0L) return("—")
+    gsub("\\s+", " ", trimws(m))
+  }, error = function(e) "—")
+}
+
 # Display-ready circular summary (n, mean direction, resultant R, Rayleigh p) for
 # a headings frame, grouped by `by_col`. Returns a data frame with the group
 # column renamed to "Group"; callers may append trajectory-only columns
@@ -269,12 +290,14 @@ circ_summary_table <- function(hd, by_col, axial = FALSE) {
     display = circ_display(zero = 0), axial = axial
   )
   groups <- unique(hd[[by_col]])
-  p_vals <- vapply(groups, function(g)
+  p_vals   <- vapply(groups, function(g)
     rayleigh_p_fmt(hd$heading[hd[[by_col]] == g], axial = axial), character(1L))
+  rao_vals <- vapply(groups, function(g)
+    rao_spacing_fmt(hd$heading[hd[[by_col]] == g]), character(1L))
   rayleigh_label <- if (isTRUE(axial)) "Rayleigh (axial) p" else "Rayleigh p"
   p_df <- stats::setNames(
-    data.frame(groups, p_vals, stringsAsFactors = FALSE),
-    c(by_col, rayleigh_label))
+    data.frame(groups, p_vals, rao_vals, stringsAsFactors = FALSE),
+    c(by_col, rayleigh_label, "Rao spacing"))
   cm <- merge(cm, p_df, by = by_col, sort = FALSE)
   names(cm)[names(cm) == by_col]         <- "Group"
   names(cm)[names(cm) == "n_missing"]    <- "Excluded"
