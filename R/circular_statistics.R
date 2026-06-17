@@ -60,6 +60,28 @@ setGeneric("circ_summary", function(x, w = NULL, by = c("id","global"), axial = 
   if (isTRUE(axial)) (mu_folded / 2) %% pi else mu_folded %% (2 * pi)
 }
 
+# Hermans-Rasson skewness weight (Landler, Ruxton & Malkemper 2019, BMC Ecology
+# 19:30, doi:10.1186/s12898-019-0246-8).
+.HR_BETA <- 2.895
+
+# Hermans-Rasson T statistic of circular uniformity on a numeric radian vector.
+# Sums a dispersion term |pi - |dtheta|| and a beta-weighted skewness term
+# |sin(dtheta)| over unordered pairs. The skewness term is subtracted, matching
+# the reference's HermansRasson2T form (verified against the CircMLE
+# implementation of Landler et al. 2019). Per-pair and per-n centering constants
+# are omitted because they are constant given n and cancel in the Monte-Carlo
+# comparison; for fixed n this statistic is an exact affine transform of the
+# reference T (correlation 1), so it yields an identical permutation p-value.
+# More powerful than the Rayleigh test against multimodal / non-symmetric
+# alternatives.
+.hr_statistic <- function(theta) {
+  n <- length(theta)
+  if (n < 2L) return(0)
+  d  <- outer(theta, theta, "-")
+  dt <- d[upper.tri(d)]
+  sum(abs(pi - abs(dt)) - .HR_BETA * abs(sin(dt)))
+}
+
 #' @rdname circ_summary
 #' @export
 setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global"), axial = FALSE) {

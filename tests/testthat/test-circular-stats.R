@@ -914,3 +914,19 @@ test_that("wrappedcauchy_fit(axial = FALSE) is unchanged on directional data", {
   expect_equal(wrappedcauchy_fit(hd, axial = FALSE), wrappedcauchy_fit(hd))
   expect_equal(names(wrappedcauchy_fit(hd, axial = TRUE)), names(wrappedcauchy_fit(hd)))
 })
+
+test_that(".hr_statistic matches the closed-form value and is order-invariant", {
+  th <- c(0, pi / 2, pi)
+  # Reference (Landler et al. 2019 / CircMLE HermansRasson2T) skewness term is
+  # subtracted: dispersion pi (pi/2 + 0 + pi/2) minus 2.895 * skew (1 + 0 + 1).
+  expect_equal(radiatR:::.hr_statistic(th), pi - 2.895 * 2, tolerance = 1e-4)
+  expect_equal(radiatR:::.hr_statistic(th),
+               radiatR:::.hr_statistic(rev(th)), tolerance = 1e-12)
+})
+
+test_that(".hr_statistic is larger for clustered than for spread data", {
+  set.seed(1)
+  clustered <- rnorm(30, 0, 0.15)
+  spread    <- seq(0, 2 * pi, length.out = 31)[-31]
+  expect_gt(radiatR:::.hr_statistic(clustered), radiatR:::.hr_statistic(spread))
+})
