@@ -4,7 +4,7 @@
 \alias{wrappedcauchy_fit}
 \title{Fit a wrapped Cauchy distribution to per-group heading data}
 \usage{
-wrappedcauchy_fit(hd, group_col = NULL, angle_col = "heading")
+wrappedcauchy_fit(hd, group_col = NULL, angle_col = "heading", axial = FALSE)
 }
 \arguments{
 \item{hd}{Data frame containing headings in radians.}
@@ -12,6 +12,11 @@ wrappedcauchy_fit(hd, group_col = NULL, angle_col = "heading")
 \item{group_col}{Column(s) to group by.  \code{NULL} fits a single model.}
 
 \item{angle_col}{Name of the heading column.  Default \code{"heading"}.}
+
+\item{axial}{Logical; when `TRUE`, fit an axial (bidirectional, mod-pi)
+wrapped Cauchy via the doubled-angle method: `mu`/`mu_deg` are the mean
+**axis** in [0, pi) and `rho` is the concentration about that axis
+(estimated in the doubled-angle frame). Default `FALSE` (directional).}
 }
 \value{
 Data frame with columns \code{group_col} (if supplied), \code{mu}

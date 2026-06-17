@@ -16,6 +16,12 @@
   coarse significance level, so it is shown as a bracket (`< 0.05`, `> 0.10`, …),
   computed on raw angles regardless of the Data model.
 
+* `vonmises_fit()`, `wrappedcauchy_fit()`, `add_vonmises_density()`, and
+  `add_wrappedcauchy_density()` gain `axial = TRUE` to fit and draw axial
+  (bidirectional, mod-pi) distributions via the doubled-angle method: the mean is
+  reported as an axis in [0, pi) (with the concentration estimated in the
+  doubled-angle frame) and the density curve shows two equal antipodal peaks.
+
 ## Plotting
 
 * The mean-direction and interval overlays gain `axial = TRUE` for bidirectional

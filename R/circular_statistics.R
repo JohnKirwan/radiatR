@@ -582,6 +582,11 @@ sector_summary <- function(hd, sectors = 8L, group_col = NULL,
 #' @param angle_col Name of the heading column.  Default \code{"heading"}.
 #' @param conf Confidence level for the interval on \eqn{\mu}.
 #'   Default \code{0.95}.
+#' @param axial Logical; when `TRUE`, fit an axial (bidirectional, mod-pi)
+#'   von Mises via the doubled-angle method: `mu`/`mu_deg` are the mean **axis**
+#'   in [0, pi), `kappa` is the concentration about that axis (estimated in the
+#'   doubled-angle frame), and `se_mu`/`ci_lo`/`ci_hi` are halved accordingly.
+#'   Default `FALSE` (directional).
 #' @return Data frame with columns \code{group_col} (if supplied), \code{mu}
 #'   (MLE mean direction, radians), \code{mu_deg} (degrees), \code{kappa}
 #'   (MLE concentration), \code{se_mu}, \code{se_kappa} (asymptotic standard
@@ -589,7 +594,7 @@ sector_summary <- function(hd, sectors = 8L, group_col = NULL,
 #'   \eqn{\mu}, radians), \code{n}.
 #' @export
 vonmises_fit <- function(hd, group_col = NULL, angle_col = "heading",
-                          conf = 0.95) {
+                          conf = 0.95, axial = FALSE) {
   stopifnot(is.data.frame(hd))
   if (!angle_col %in% names(hd))
     stop("vonmises_fit: column '", angle_col, "' not found")
@@ -607,17 +612,20 @@ vonmises_fit <- function(hd, group_col = NULL, angle_col = "heading",
       ci_lo = NA_real_, ci_hi = NA_real_, n = n
     )
     if (n < 2L) return(na_row)
+    a_fit <- .fold_angles(a, axial)
     fit <- tryCatch(
       circular::mle.vonmises(
-        circular::circular(a, units = "radians", type = "angles")
+        circular::circular(a_fit, units = "radians", type = "angles")
       ),
       error = function(e) NULL
     )
     if (is.null(fit)) return(na_row)
-    mu    <- as.numeric(fit$mu)
-    kappa <- as.numeric(fit$kappa)
-    se_mu <- as.numeric(fit$se.mu)
-    se_k  <- as.numeric(fit$se.kappa)
+    mu_d    <- as.numeric(fit$mu)
+    kappa   <- as.numeric(fit$kappa)
+    se_mu_d <- as.numeric(fit$se.mu)
+    se_k    <- as.numeric(fit$se.kappa)
+    mu     <- if (isTRUE(axial)) .unfold_mean(mu_d, axial = TRUE) else mu_d
+    se_mu  <- if (isTRUE(axial)) se_mu_d / 2 else se_mu_d
     data.frame(
       mu       = mu,
       mu_deg   = mu * 180 / pi,
@@ -667,12 +675,17 @@ vonmises_fit <- function(hd, group_col = NULL, angle_col = "heading",
 #' @param hd Data frame containing headings in radians.
 #' @param group_col Column(s) to group by.  \code{NULL} fits a single model.
 #' @param angle_col Name of the heading column.  Default \code{"heading"}.
+#' @param axial Logical; when `TRUE`, fit an axial (bidirectional, mod-pi)
+#'   wrapped Cauchy via the doubled-angle method: `mu`/`mu_deg` are the mean
+#'   **axis** in [0, pi) and `rho` is the concentration about that axis
+#'   (estimated in the doubled-angle frame). Default `FALSE` (directional).
 #' @return Data frame with columns \code{group_col} (if supplied), \code{mu}
 #'   (MLE mean direction, radians), \code{mu_deg} (degrees), \code{rho}
 #'   (concentration, 0--1), \code{convergence} (0 = converged), \code{n}.
 #' @seealso \code{\link{vonmises_fit}}, \code{\link{add_wrappedcauchy_density}}
 #' @export
-wrappedcauchy_fit <- function(hd, group_col = NULL, angle_col = "heading") {
+wrappedcauchy_fit <- function(hd, group_col = NULL, angle_col = "heading",
+                              axial = FALSE) {
   stopifnot(is.data.frame(hd))
   if (!angle_col %in% names(hd))
     stop("wrappedcauchy_fit: column '", angle_col, "' not found")
@@ -682,14 +695,16 @@ wrappedcauchy_fit <- function(hd, group_col = NULL, angle_col = "heading") {
     na_row <- data.frame(mu = NA_real_, mu_deg = NA_real_, rho = NA_real_,
                          convergence = NA_integer_, n = n)
     if (n < 2L) return(na_row)
+    a_fit <- .fold_angles(a, axial)
     fit <- tryCatch(
       circular::mle.wrappedcauchy(
-        circular::circular(a, units = "radians", type = "angles")
+        circular::circular(a_fit, units = "radians", type = "angles")
       ),
       error = function(e) NULL
     )
     if (is.null(fit)) return(na_row)
-    mu <- as.numeric(fit$mu)
+    mu_d <- as.numeric(fit$mu)
+    mu   <- if (isTRUE(axial)) .unfold_mean(mu_d, axial = TRUE) else mu_d
     data.frame(mu          = mu,
                mu_deg      = mu * 180 / pi,
                rho         = as.numeric(fit$rho),
