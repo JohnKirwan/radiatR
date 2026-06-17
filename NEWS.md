@@ -15,9 +15,18 @@
 * The mean-direction and interval overlays gain `axial = TRUE` for bidirectional
   data: `add_circ_mean()`/`add_heading_arrow()` draw a double-headed axis through
   the centre, `add_circ_interval()`/`add_heading_interval()` draw the CI at both
-  poles, and `add_critical_v_line()` mirrors its boundary. The Shiny app gains an
-  "Axial (bidirectional)" toggle (headings input) that makes the figure, the
-  summary table, and the exported code axial together.
+  poles, and `add_critical_v_line()` mirrors its boundary.
+
+* The empirical individual-data layers gain `axial = TRUE` to draw bidirectional
+  (period-pi) data at both ends: `add_heading_points()`, `add_heading_vectors()`,
+  and `add_stacked_headings()` plot each datum at both poles, and the empirical
+  densities (`compute_circular_density()` / `add_heading_density()`,
+  `add_circular_kde()`, `add_angle_rose()`) estimate on the both-ends-augmented
+  sample. In the Shiny app the headings-only "Axial" checkbox becomes a "Data
+  model" (Directional / Axial) selector in the Configure step that applies to
+  both input types, soft-syncs from inherently axial heading methods
+  (movement-axis / PCA / RANSAC), mirrors the whole figure, and relabels the
+  summary's Rayleigh test as "Rayleigh (axial)".
 
 ## Coordinates
 
