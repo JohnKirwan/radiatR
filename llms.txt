@@ -315,6 +315,8 @@ objects to the density overlay functions for visual model comparison.
   : Fit a von Mises distribution to per-group heading data
 - [`wrappedcauchy_fit()`](https://johnkirwan.github.io/radiatR/reference/wrappedcauchy_fit.md)
   : Fit a wrapped Cauchy distribution to per-group heading data
+- [`circ_model_select()`](https://johnkirwan.github.io/radiatR/reference/circ_model_select.md)
+  : Select among candidate circular models by AICc
 
 ## Circular statistics – correlation
 
@@ -523,6 +525,8 @@ Any remaining exported topics.
   : Per-group circular dispersion statistics for a dense heading series
 - [`circ_display()`](https://johnkirwan.github.io/radiatR/reference/circ_display.md)
   : Circular display convention specification
+- [`circ_model_select()`](https://johnkirwan.github.io/radiatR/reference/circ_model_select.md)
+  : Select among candidate circular models by AICc
 - [`circ_summarise()`](https://johnkirwan.github.io/radiatR/reference/circ_summarise.md)
   : Tidy circular summary of a grouped data frame
 - [`circ_summary()`](https://johnkirwan.github.io/radiatR/reference/circ_summary.md)
