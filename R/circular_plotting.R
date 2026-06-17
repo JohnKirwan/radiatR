@@ -3041,13 +3041,18 @@ add_circular_kde <- function(hd, angle_col = "heading", group_col = NULL,
 #' @param display A `circ_display()` controlling rotation, matching the parent
 #'   `radiate()` plot. Default `NULL` uses the input's `display` attribute when
 #'   present, otherwise the identity display.
+#' @param axial Logical; when `TRUE`, draw the axial (bidirectional) density of an
+#'   axial fit (from `wrappedcauchy_fit(axial = TRUE)`): the curve is evaluated on
+#'   doubled angles, giving two equal peaks at `mu` and `mu + pi`. Default
+#'   `FALSE`.
 #' @return A \code{geom_polygon} layer, or \code{NULL} if estimation fails.
 #' @seealso \code{\link{add_vonmises_density}}, \code{\link{add_circular_kde}}
 #' @export
 add_wrappedcauchy_density <- function(fit, scale = 0.4, inner_r = 0,
                                        group_col = NULL, n_pts = 360L,
                                        colour = "darkorange", linewidth = 0.8,
-                                       fill = NA, alpha = 0.8, display = NULL) {
+                                       fill = NA, alpha = 0.8, display = NULL,
+                                       axial = FALSE) {
   stopifnot(is.data.frame(fit))
   miss <- setdiff(c("mu", "rho"), names(fit))
   if (length(miss))
@@ -3060,8 +3065,10 @@ add_wrappedcauchy_density <- function(fit, scale = 0.4, inner_r = 0,
 
   .ring <- function(mu, rho, grp) {
     if (is.na(mu) || is.na(rho) || rho < 0 || rho >= 1) return(NULL)
-    mu_c  <- circular::circular(mu,     units = "radians", type = "angles")
-    th_c  <- circular::circular(thetas, units = "radians", type = "angles")
+    th_eval <- if (isTRUE(axial)) 2 * thetas else thetas
+    mu_eval <- if (isTRUE(axial)) 2 * mu     else mu
+    mu_c  <- circular::circular(mu_eval, units = "radians", type = "angles")
+    th_c  <- circular::circular(th_eval, units = "radians", type = "angles")
     d     <- as.numeric(circular::dwrappedcauchy(th_c, mu = mu_c, rho = rho))
     d_max <- max(d, na.rm = TRUE)
     if (!is.finite(d_max) || d_max <= 0) return(NULL)

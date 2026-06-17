@@ -1790,3 +1790,20 @@ test_that("add_heading_density(axial = TRUE) forwards to the estimator", {
   expect_equal(lyr_ax[[length(lyr_ax)]]$data,
                lyr_man[[length(lyr_man)]]$data)
 })
+
+test_that("add_wrappedcauchy_density(axial = TRUE) draws a point-symmetric two-peak curve", {
+  fit <- data.frame(mu = 0.3, rho = 0.6)
+  lyr <- add_wrappedcauchy_density(fit, axial = TRUE)
+  d   <- lyr$data
+  key <- function(m) apply(round(m, 4), 1L, paste, collapse = ",")
+  expect_true(all(key(cbind(-d$x, -d$y)) %in% key(cbind(d$x, d$y))))
+})
+
+test_that("add_wrappedcauchy_density(axial = FALSE) is unchanged (single peak)", {
+  fit <- data.frame(mu = 0.3, rho = 0.6)
+  d_def <- add_wrappedcauchy_density(fit)$data
+  d_dir <- add_wrappedcauchy_density(fit, axial = FALSE)$data
+  expect_equal(d_def, d_dir)
+  key <- function(m) apply(round(m, 4), 1L, paste, collapse = ",")
+  expect_false(all(key(cbind(-d_dir$x, -d_dir$y)) %in% key(cbind(d_dir$x, d_dir$y))))
+})
