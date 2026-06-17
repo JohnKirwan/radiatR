@@ -57,3 +57,44 @@ test_that(".circ_model_criteria: small n makes 2-param AICc NA but uniform finit
   expect_true(is.na(cr$AICc[cr$model == "unimodal"]))
   expect_false(is.na(cr$AICc[cr$model == "uniform"]))
 })
+
+test_that("circ_model_select picks unimodal / axial / uniform on matching data", {
+  set.seed(11)
+  uni  <- data.frame(heading = rnorm(80, 1, 0.3) %% (2 * pi))
+  ax   <- data.frame(heading = c(rnorm(40, 0, 0.2), rnorm(40, pi, 0.2)) %% (2 * pi))
+  unif <- data.frame(heading = seq(0, 2 * pi, length.out = 81)[-81])
+
+  expect_equal(circ_model_select(uni)$model[1],  "unimodal")
+  expect_equal(circ_model_select(ax)$model[1],   "axial")
+  expect_equal(circ_model_select(unif)$model[1], "uniform")
+})
+
+test_that("circ_model_select returns the tidy table shape and a winning weight", {
+  set.seed(12)
+  d <- data.frame(heading = rnorm(60, 2, 0.3) %% (2 * pi))
+  r <- circ_model_select(d)
+  expect_equal(nrow(r), 3L)
+  expect_setequal(r$model, c("uniform", "unimodal", "axial"))
+  expect_true(all(c("model", "n", "k", "logLik", "AIC", "AICc", "BIC", "dAICc", "weight")
+                  %in% names(r)))
+  expect_equal(sum(r$weight, na.rm = TRUE), 1, tolerance = 1e-12)
+  expect_equal(r$dAICc[1], 0)
+})
+
+test_that("circ_model_select supports group_col", {
+  set.seed(13)
+  d <- rbind(
+    data.frame(heading = rnorm(50, 1, 0.3) %% (2 * pi), grp = "uni"),
+    data.frame(heading = c(rnorm(25, 0, 0.2), rnorm(25, pi, 0.2)) %% (2 * pi), grp = "ax"))
+  r <- circ_model_select(d, group_col = "grp")
+  expect_true("grp" %in% names(r))
+  expect_equal(nrow(r), 6L)
+  best <- vapply(split(r, r$grp), function(x) x$model[which.min(x$AICc)], character(1))
+  expect_equal(best[["uni"]], "unimodal")
+  expect_equal(best[["ax"]],  "axial")
+})
+
+test_that("circ_model_select errors on a missing angle column", {
+  expect_error(circ_model_select(data.frame(x = 1:5), angle_col = "heading"),
+               "not found")
+})

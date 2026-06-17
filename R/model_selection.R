@@ -18,8 +18,12 @@
 
   ax <- vonmises_fit(df, axial = TRUE)
   ll_ax <- if (is.na(ax$kappa)) NA_real_ else {
+    # daxialvonmises(l = 2) is a density on the half circle [0, pi): it
+    # integrates to 2 over [0, 2*pi). Divide by l so the axial model is a proper
+    # full-circle density (integral 1), on the same support as uniform/unimodal,
+    # otherwise the comparison gives axial a spurious n*log(l) likelihood boost.
     d <- as.numeric(circular::daxialvonmises(
-      th_c, mu = rad(ax$mu), kappa = ax$kappa, l = 2))
+      th_c, mu = rad(ax$mu), kappa = ax$kappa, l = 2)) / 2
     if (any(!is.finite(d)) || any(d <= 0)) NA_real_ else sum(log(d))
   }
 
@@ -54,4 +58,58 @@
     stringsAsFactors = FALSE
   )
   out[order(out$AICc, na.last = TRUE), , drop = FALSE]
+}
+
+#' Select among candidate circular models by AICc
+#'
+#' Fits three candidate models to a heading sample and ranks them by the
+#' small-sample-corrected Akaike information criterion (AICc): a \code{uniform}
+#' distribution (no preferred direction), a \code{unimodal} von Mises (one
+#' preferred direction), and an \code{axial} (symmetric bimodal) von Mises (a
+#' preferred axis, two equal antipodal modes). Answers whether a sample is best
+#' described as uniform, directionally, or axially oriented.
+#'
+#' Parameters are estimated with \code{\link{vonmises_fit}} (the axial model via
+#' its \code{axial = TRUE} doubled-angle fit) and likelihoods with the
+#' \code{circular} package densities. The table reports model comparison only;
+#' obtain the fitted parameters of a chosen model from \code{\link{vonmises_fit}}.
+#'
+#' @param hd Data frame with a heading column in radians.
+#' @param angle_col Heading column name. Default \code{"heading"}.
+#' @param group_col Column to group by. \code{NULL} (default) treats the whole
+#'   data frame as one sample.
+#' @return Tidy data frame, one row per candidate model (per group when
+#'   \code{group_col} is supplied), sorted by \code{AICc} ascending (best first;
+#'   \code{NA} last). Columns: \code{group_col} (if supplied), \code{model},
+#'   \code{n}, \code{k} (free parameters), \code{logLik}, \code{AIC}, \code{AICc},
+#'   \code{BIC}, \code{dAICc} (AICc minus the group minimum), and \code{weight}
+#'   (Akaike weight). \code{AICc}/\code{weight} are \code{NA} for a model whose
+#'   fit failed or when \code{n - k - 1 <= 0}; remaining weights sum to 1.
+#' @references Burnham, K.P. & Anderson, D.R. (2002). Model Selection and
+#'   Multimodel Inference, 2nd ed. Springer.
+#' @seealso \code{\link{vonmises_fit}}, \code{\link{test_uniformity}}
+#' @export
+circ_model_select <- function(hd, angle_col = "heading", group_col = NULL) {
+  stopifnot(is.data.frame(hd))
+  if (!angle_col %in% names(hd))
+    stop("circ_model_select: column '", angle_col, "' not found")
+
+  .one <- function(sub) {
+    a <- as.numeric(sub[[angle_col]]); a <- a[is.finite(a)]
+    if (length(a) < 1L) return(NULL)
+    .circ_model_criteria(.circ_model_loglik(a), n = length(a))
+  }
+
+  if (is.null(group_col)) return(.one(hd))
+  if (!group_col %in% names(hd))
+    stop("circ_model_select: '", group_col, "' not found")
+
+  groups <- unique(hd[[group_col]])
+  rows <- lapply(groups, function(g) {
+    r <- .one(hd[hd[[group_col]] == g, , drop = FALSE])
+    if (is.null(r)) return(NULL)
+    r[[group_col]] <- g
+    r[, c(group_col, setdiff(names(r), group_col))]
+  })
+  do.call(rbind, rows[!vapply(rows, is.null, logical(1L))])
 }
