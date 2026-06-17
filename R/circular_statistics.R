@@ -867,7 +867,10 @@ circ_cor <- function(hd, x_col, angle_col = "heading",
 #'   as one group.
 #' @param angle_col Heading column name.  Default \code{"heading"}.
 #' @param test One of \code{"rayleigh"} (default), \code{"kuiper"},
-#'   \code{"rao"}, or \code{"watson"}.
+#'   \code{"rao"}, \code{"watson"}, or \code{"hermans_rasson"}. The last is the
+#'   Hermans-Rasson omnibus test (Landler, Ruxton & Malkemper 2019), far more
+#'   powerful than Rayleigh against multimodal / non-symmetric alternatives; its
+#'   \code{p_value} is obtained by Monte-Carlo simulation.
 #' @param p_adjust Multiple-comparison correction method passed to
 #'   \code{\link[stats]{p.adjust}}.  Default \code{"none"}.  Applies only when
 #'   \code{group_col} is supplied; a \code{p_value_adj} column is added to the
@@ -879,10 +882,18 @@ circ_cor <- function(hd, x_col, angle_col = "heading",
 #' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
 #'   data: the uniformity test is run via the angle-doubling method (testing for
 #'   an axis). Default `FALSE` (ordinary directional data).
+#' @param n_sim Number of Monte-Carlo replicates for the \code{"hermans_rasson"}
+#'   p-value. Default \code{9999}. Ignored by the other tests. Set the RNG seed
+#'   with \code{\link{set.seed}} for reproducible p-values.
+#' @references Landler, L., Ruxton, G.D. & Malkemper, E.P. (2019). The
+#'   Hermans-Rasson test as a powerful alternative to the Rayleigh test for
+#'   circular statistics in biology. BMC Ecology 19:30.
+#'   \doi{10.1186/s12898-019-0246-8}.
 #' @export
 test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
-                             test = c("rayleigh", "kuiper", "rao", "watson"),
-                             p_adjust = "none", axial = FALSE) {
+                             test = c("rayleigh", "kuiper", "rao", "watson",
+                                      "hermans_rasson"),
+                             p_adjust = "none", axial = FALSE, n_sim = 9999L) {
   test <- match.arg(test)
   stopifnot(is.data.frame(hd))
   if (!angle_col %in% names(hd))
@@ -908,6 +919,14 @@ test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
         r <- circular::watson.test(a_circ)
         p <- if (!is.null(r$alpha) && r$alpha > 0) as.numeric(r$alpha) else NA_real_
         list(statistic = as.numeric(r$statistic), p_value = p)
+      },
+      hermans_rasson = {
+        a    <- as.numeric(a_circ)
+        t0   <- .hr_statistic(a)
+        sims <- replicate(n_sim,
+                  .hr_statistic(stats::runif(length(a), 0, 2 * pi)))
+        p    <- (1 + sum(sims >= t0)) / (n_sim + 1)
+        list(statistic = t0, p_value = p)
       }
     )
   }
