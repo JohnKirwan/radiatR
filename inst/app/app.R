@@ -577,6 +577,18 @@ server <- function(input, output, session) {
     }
   })
 
+  # When the circular-boxplot overlay is on but the current headings are not
+  # drawable (non-unique median or n < 4) the overlay silently no-ops; surface
+  # the reason so the empty result is not mysterious.
+  output$boxplot_note <- renderUI({
+    if (!isTRUE(input$show_boxplot) || is.null(rv$hd)) return(NULL)
+    s <- tryCatch(circ_boxplot_stats(rv$hd, axial = is_axial()),
+                  error = function(e) NULL)
+    if (is.null(s) || isTRUE(s$drawable)) return(NULL)
+    tags$div(class = "alert alert-secondary py-1 px-2 small mb-2",
+             paste0("Circular boxplot not drawn: ", s$reason, "."))
+  })
+
   # Live illustrative preview of the selected method on fixed demo tracks.
   output$method_preview <- renderPlot({
     method <- if (is.null(input$method)) "distal" else input$method
@@ -951,14 +963,21 @@ server <- function(input, output, session) {
               ),
               uiOutput("colour_by_ui"),
               tags$hr(class = "my-2"),
-              .layer_switch("show_tracks",   "Trajectories",       TRUE),
-              .layer_switch("show_arrow",   "Directedness arrow", TRUE),
-              .layer_switch("show_ci",      "Mean-direction CI",  FALSE),
-              .layer_switch("show_vectors", "Heading vectors",    FALSE),
-              .layer_switch("show_rayleigh", "Rayleigh circle",    FALSE),
-              .layer_switch("show_vtest",   "V-test line",        FALSE),
-              .layer_switch("show_quadrants", "Quadrant lines",   FALSE),
-              .layer_switch("show_rings",   "Guide rings",        FALSE),
+              div(
+                style = paste("display: grid;",
+                              "grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));",
+                              "column-gap: 0.75rem;"),
+                .layer_switch("show_tracks",    "Trajectories",       TRUE),
+                .layer_switch("show_arrow",     "Directedness arrow", TRUE),
+                .layer_switch("show_ci",        "Mean-direction CI",  FALSE),
+                .layer_switch("show_vectors",   "Heading vectors",    FALSE),
+                .layer_switch("show_rayleigh",  "Rayleigh circle",    FALSE),
+                .layer_switch("show_vtest",     "V-test line",        FALSE),
+                .layer_switch("show_boxplot",   "Circular boxplot",   FALSE),
+                .layer_switch("show_quadrants", "Quadrant lines",     FALSE),
+                .layer_switch("show_rings",     "Guide rings",        FALSE)
+              ),
+              uiOutput("boxplot_note"),
               tags$hr(class = "my-2"),
               sliderInput(
                 "preview_px", "Preview size (px)",
@@ -1203,6 +1222,7 @@ server <- function(input, output, session) {
           show_ci = tog(input$show_ci, FALSE),
           axial = is_axial(),
           show_vtest = tog(input$show_vtest, FALSE),
+          show_boxplot = tog(input$show_boxplot, FALSE),
           show_quadrants = tog(input$show_quadrants, FALSE),
           show_rings = tog(input$show_rings, FALSE))))
     }
@@ -1231,6 +1251,7 @@ server <- function(input, output, session) {
         show_ci    = tog(input$show_ci,    FALSE),
         axial      = is_axial(),
         show_vtest = tog(input$show_vtest, FALSE),
+        show_boxplot = tog(input$show_boxplot, FALSE),
         show_quadrants = tog(input$show_quadrants, FALSE),
         show_rings     = tog(input$show_rings,     FALSE)))
   }
