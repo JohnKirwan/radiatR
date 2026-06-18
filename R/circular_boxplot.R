@@ -89,6 +89,23 @@
        n = m, axial = axial, drawable = TRUE, reason = reason)
 }
 
+# Axial boxplot: double the axes (mod pi -> 2pi), run the core where the
+# distribution is unimodal (so the constant/kappa are taken there, per the
+# paper's 4.4), then halve every location back to [0, pi).
+.circ_boxplot_axial <- function(theta) {
+  s <- .circ_boxplot_core((2 * theta) %% (2 * pi), axial = TRUE)
+  if (!isTRUE(s$drawable)) return(s)
+  halve <- function(x) (x / 2) %% pi
+  s$median     <- halve(s$median)
+  s$antimedian <- halve(s$antimedian)
+  s$hinges     <- halve(s$hinges)
+  s$box_arc    <- halve(s$box_arc)
+  s$fences     <- halve(s$fences)
+  s$whiskers   <- halve(s$whiskers)
+  s$far_out    <- if (length(s$far_out)) halve(s$far_out) else numeric(0)
+  s
+}
+
 #' Circular boxplot statistics (Tukey-like, for circular and axial data)
 #'
 #' Computes the five-number summary and fences of a circular boxplot following

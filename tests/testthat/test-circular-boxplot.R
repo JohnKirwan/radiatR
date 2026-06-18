@@ -63,3 +63,42 @@ test_that("circ_boxplot_stats matches bpDir::CircularBoxplot as an oracle", {
                                 units = "radians", constant = "optimal")
   expect_equal(s$constant, as.numeric(ref$constant), tolerance = 1e-3)
 })
+
+test_that("axial boxplot recovers the median axis in [0, pi) from antipodal data", {
+  set.seed(6)
+  axis <- pi/3
+  half <- as.numeric(circular::rvonmises(150, mu = circular::circular(2*axis), kappa = 8)) / 2
+  ang  <- c(half, (half + pi) %% (2*pi))
+  s <- circ_boxplot_stats(data.frame(heading = ang), axial = TRUE)
+  expect_true(s$axial); expect_true(s$drawable)
+  expect_true(s$median >= 0 && s$median < pi)
+  daxis <- abs(((s$median - axis + pi/2) %% pi) - pi/2)
+  expect_lt(daxis, 0.2)
+  expect_true(all(s$far_out >= 0 & s$far_out < pi))
+})
+
+# NOTE on the bpDir::AxialBoxplot oracle: bpDir derives its "optimal" fence
+# constant from A1inv(rho.circular(A)) on the UNDOUBLED axial data. For axial
+# (antipodal) data that mean resultant length is ~0, so bpDir's constant
+# degenerates to the near-uniform value (~0.5) for essentially any axial
+# sample. radiatR instead estimates the constant on the DOUBLED (unimodal)
+# data, per Buttarazzi et al. (2018) section 4.4 -- this is the statistically
+# meaningful Tukey value (~1.5 when concentrated). The two therefore do NOT
+# match by design; this test pins that documented divergence rather than
+# asserting a (false) equality.
+test_that("axial constant is taken on the doubled data, diverging from bpDir's degenerate value", {
+  skip_if_not_installed("bpDir")
+  if (!"AxialBoxplot" %in% getNamespaceExports("bpDir")) skip("AxialBoxplot not exported")
+  set.seed(7)
+  half <- as.numeric(circular::rvonmises(120, mu = circular::circular(2), kappa = 5)) / 2
+  ang  <- c(half, (half + pi) %% (2*pi))
+  s <- circ_boxplot_stats(data.frame(heading = ang), axial = TRUE)
+  grDevices::pdf(tempfile(fileext = ".pdf")); on.exit(grDevices::dev.off())
+  ref <- try(bpDir::AxialBoxplot(circular::circular(ang, units = "radians", modulo = "2pi"),
+                                 units = "radians"), silent = TRUE)
+  if (inherits(ref, "try-error") || is.null(ref$constant)) skip("AxialBoxplot has no $constant")
+  # radiatR uses the concentrated, doubled data -> a meaningful Tukey-like constant.
+  expect_gt(s$constant, 1.3); expect_lt(s$constant, 1.9)
+  # bpDir's undoubled estimate degenerates to the near-uniform value.
+  expect_lt(as.numeric(ref$constant), 0.7)
+})
