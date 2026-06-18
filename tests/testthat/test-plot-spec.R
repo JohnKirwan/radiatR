@@ -143,3 +143,17 @@ test_that("attrition_note: returns NULL when there is no attrition", {
   expect_null(attrition_note(n_total = 100, n_missing = 0, derived = TRUE, rule = "distal"))
   expect_null(attrition_note(n_total = 100, n_missing = NULL, derived = FALSE))
 })
+
+test_that("build_plot_spec maps show_boxplot into spec$show$boxplot", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  ts <- cpunctatus
+  hd <- derive_headings(ts, rule = "distal")
+  inputs <- list(show_boxplot = TRUE, show_tracks = TRUE)
+  spec <- build_plot_spec(ts, hd, method = "distal",
+                          data = list(mode = "trajectories"), inputs = inputs)
+  expect_true(isTRUE(spec$show$boxplot))
+  inputs$show_boxplot <- NULL
+  spec2 <- build_plot_spec(ts, hd, method = "distal",
+                           data = list(mode = "trajectories"), inputs = inputs)
+  expect_false(isTRUE(spec2$show$boxplot))
+})
