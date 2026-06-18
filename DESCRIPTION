@@ -38,6 +38,7 @@ Imports:
     utils,
     stats
 Suggests:
+    bpDir,
     dplyr (>= 1.0.0),
     testthat (>= 3.0.0),
     knitr,
