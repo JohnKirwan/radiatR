@@ -46,9 +46,12 @@
 #' - `track_shape` (character): the *within-track* path shape. One of
 #'   `"directed"` (default) -- a single sweep towards `final_heading` -- or
 #'   `"oscillatory"` -- back-and-forth motion along the principal axis
-#'   `final_heading`. Oscillatory tracks are axial: directional heading methods
-#'   (e.g. `net`) cancel, while axial methods (`velocity_axis`, `pca_axis`)
-#'   recover the axis.
+#'   `final_heading`. Oscillatory tracks form a genuinely axial position cloud,
+#'   so the position-based axial methods (`pca_axis`, `ransac_straight`) recover
+#'   the axis at default settings; the directional methods (e.g. `net`) cancel.
+#'   The step-based `velocity_axis` recovers the axis only when sampling is
+#'   coarse enough that the per-step axial motion exceeds the perpendicular
+#'   line-width jitter (see the `line_width` note below).
 #' - `n_reversals` (integer): number of direction reversals in an oscillatory
 #'   track (default 3; ignored when `track_shape == "directed"`).
 #' - `amplitude` (numeric): peak excursion along the axis for an oscillatory
@@ -57,8 +60,12 @@
 #'   fraction of `amplitude`, controlling the perpendicular Gaussian jitter
 #'   (default 0.05, clamped to `[1e-4, 1]`; ignored when directed). The
 #'   line-width is intentionally independent of `tortuosity_*`, so the track is
-#'   a genuinely thin line and the principal axis is recoverable by step-based
-#'   methods (`velocity_axis`, `pca_axis`) at default settings.
+#'   a genuinely thin line and the principal axis is recoverable by the
+#'   position-based methods (`pca_axis`, `ransac_straight`) at default settings.
+#'   The step-based `velocity_axis` is sampling-density sensitive: because the
+#'   per-frame along-axis step shrinks with `n_points` while the perpendicular
+#'   jitter step does not, dense sampling lets the jitter dominate and the
+#'   estimate flips toward the perpendicular.
 #'
 #' The predictor can represent any continuous covariate (e.g. reference
 #' intensity). The final heading concentration increases with larger kappa,
@@ -79,7 +86,10 @@
 #' jitter perpendicular to the axis with standard deviation
 #' `amplitude * line_width`. This line-width is independent of the tortuosity
 #' settings, so the track stays a thin line and the axis remains recoverable by
-#' step-based methods (`velocity_axis`, `pca_axis`) at default tortuosity. The
+#' the position-based methods (`pca_axis`, `ransac_straight`) at default
+#' settings. The step-based `velocity_axis` recovers the same axis only at
+#' coarse sampling, since its per-step axial signal shrinks with `n_points`
+#' while the perpendicular jitter step does not. The
 #' `"directed"` branch is byte-identical to the historical geometry (and never
 #' draws the perpendicular jitter), so the default seeded output is unchanged.
 #'

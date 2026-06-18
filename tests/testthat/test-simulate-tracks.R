@@ -87,28 +87,59 @@ test_that(".sim_triangle_wave oscillates in [-1,1] with the requested reversals"
   expect_gte(turns, 3L)
 })
 
-test_that("oscillatory tracks are axial: velocity_axis recovers the axis, net cancels", {
-  # The oscillatory line-width is decoupled from tortuosity (a small fixed
-  # fraction of amplitude), so the step-wise velocity-axis estimator recovers
-  # the axis at the DEFAULT tortuosity -- no SNR hack required.
+test_that("oscillatory tracks are axial: pca_axis recovers the axis at default density, net cancels", {
+  # Oscillatory tracks form a genuinely axial position cloud, so the
+  # POSITION-based axial methods (pca_axis, ransac_straight) recover the axis at
+  # the FUNCTION DEFAULT n_points -- no n_points or SNR hack required. (The
+  # step-based velocity_axis is sampling-density sensitive; that is pinned in the
+  # separate test below.)
   cond <- tibble::tibble(condition = "osc", n_trials = 40L, ref_mean = 0.6,
                          concentration_base = 50, modality = "unimodal",
                          track_shape = "oscillatory", n_reversals = 4L, amplitude = 0.9)
-  s_df <- simulate_tracks(n_points = 120, conditions = cond, seed = 11)
+  # Use the default n_points -- recovery must hold at the function's defaults.
+  s_df <- simulate_tracks(conditions = cond, seed = 11)
   expect_true("line_width" %in% names(s_df))
-  ts <- simulate_tracks(n_points = 120, conditions = cond, output = "trajset", seed = 11)
+  ts <- simulate_tracks(conditions = cond, output = "trajset", seed = 11)
 
-  ax <- derive_headings(ts, rule = "velocity_axis")          # axis in [0, pi)
   # Compare in radians via mean_dir (mean_dir_deg applies the display convention,
   # which is not a raw degree conversion of the axis). Axis ~ 0.6 rad (mod pi).
-  ax_mean <- circ_summarise(ax, "heading", units = "radians", axial = TRUE,
-                            stats = "mean_dir")$mean_dir
-  d <- (ax_mean %% pi - 0.6) %% pi
-  expect_lt(min(d, pi - d), 20 * pi / 180)
+  axis_dist <- function(rule) {
+    m <- circ_summarise(derive_headings(ts, rule = rule), "heading",
+                        units = "radians", axial = TRUE, stats = "mean_dir")$mean_dir
+    d <- (m %% pi - 0.6) %% pi
+    min(d, pi - d)
+  }
+  expect_lt(axis_dist("pca_axis"),        20 * pi / 180)
+  expect_lt(axis_dist("ransac_straight"), 20 * pi / 180)
 
   net <- derive_headings(ts, rule = "net")
   R <- circ_summarise(net, "heading", units = "radians", stats = "resultant_R")$resultant_R
   expect_lt(R, 0.4)
+})
+
+test_that("velocity_axis recovers the oscillatory axis only at low sampling density", {
+  # The step-based velocity_axis estimator is density-sensitive: the per-frame
+  # along-axis step shrinks ~1/n_points, while the perpendicular line-width
+  # jitter step is density-independent. At coarse sampling (n_points = 80) the
+  # axial motion dominates and the axis is recovered (~35 deg vs target 34 deg);
+  # at the default-ish dense sampling (n_points = 200) jitter dominates and the
+  # estimate FLIPS ~90 deg toward the perpendicular (~125 deg). This test pins
+  # both regimes so a future change to either path is noticed.
+  cond <- tibble::tibble(condition = "osc", n_trials = 40L, ref_mean = 0.6,
+                         concentration_base = 50, modality = "unimodal",
+                         track_shape = "oscillatory", n_reversals = 4L, amplitude = 0.9)
+  va_dist <- function(np) {
+    ts <- simulate_tracks(n_points = np, conditions = cond,
+                          output = "trajset", seed = 11)
+    m <- circ_summarise(derive_headings(ts, rule = "velocity_axis"), "heading",
+                        units = "radians", axial = TRUE, stats = "mean_dir")$mean_dir
+    d <- (m %% pi - 0.6) %% pi
+    (min(d, pi - d)) * 180 / pi
+  }
+  d80  <- va_dist(80)
+  d200 <- va_dist(200)
+  expect_lt(d80,  20)   # recovered at coarse sampling
+  expect_gt(d200, 45)   # flipped toward the perpendicular at dense sampling
 })
 
 test_that("directed default is unchanged by adding the track_shape dimension", {

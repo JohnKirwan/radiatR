@@ -385,19 +385,19 @@ should when there is no preferred direction to fit.
 The `track_shape` of a condition sets the *within-track* geometry instead.
 A `track_shape = "oscillatory"` condition produces back-and-forth tracks along a
 principal axis — the bidirectional pattern the per-track axial methods are built
-for. The axial estimator `velocity_axis` recovers the axis, while a directional
-rule (`net`) sees the to-and-fro directions cancel:
+for. The oscillatory tracks form a genuinely axial position cloud, so the
+position-based estimator `pca_axis` recovers the axis at the default sampling
+density, while a directional rule (`net`) sees the to-and-fro directions cancel:
 
 ```{r oscillatory-axis}
 osc <- tibble::tibble(condition = "osc", n_trials = 40L, ref_mean = 0.6,
                       concentration_base = 50, track_shape = "oscillatory",
                       n_reversals = 4L)
-ts_osc <- simulate_tracks(conditions = osc, n_points = 80,
-                          output = "trajset", seed = 11)
+ts_osc <- simulate_tracks(conditions = osc, output = "trajset", seed = 11)
 
-# velocity_axis recovers the ~0.6 rad axis (read it as an axial mean)
-va <- derive_headings(ts_osc, rule = "velocity_axis")
-circ_summarise(va, "heading", axial = TRUE, units = "radians",
+# pca_axis recovers the ~0.6 rad axis (read it as an axial mean) at defaults
+pa <- derive_headings(ts_osc, rule = "pca_axis")
+circ_summarise(pa, "heading", axial = TRUE, units = "radians",
                stats = "mean_dir")
 
 # net cannot: the directions cancel to a tiny resultant length
@@ -407,7 +407,12 @@ circ_summarise(net, "heading", units = "radians", stats = "resultant_R")
 
 The oscillatory line-width (`line_width`) is a fixed fraction of the amplitude,
 independent of `tortuosity_base`, so the axis is recoverable at the default
-settings used here without any signal-to-noise tuning.
+settings used here without any signal-to-noise tuning. Note the position-based
+methods (`pca_axis`, `ransac_straight`) are the robust choice: the step-based
+`velocity_axis` recovers the same axis only at coarse sampling, because its
+per-step axial signal shrinks with `n_points` while the perpendicular jitter
+step does not, so dense sampling lets the jitter flip the estimate toward the
+perpendicular.
 
 ---
 
