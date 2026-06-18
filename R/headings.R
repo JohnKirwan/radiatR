@@ -14,31 +14,6 @@
 
 # ---- utilities ---------------------------------------------------------------
 `%||%` <- function(a, b) if (!is.null(a)) a else b
-.wrap_to_2pi <- function(x) x %% (2*pi)
-.as_circ <- function(theta) circular::circular(theta, units = "radians", type = "angles", modulo = "2pi", zero = 0)
-
-.kappa_from_Rbar <- function(R) {
-  out <- R
-  low  <- R < 0.53
-  mid  <- R >= 0.53 & R < 0.85
-  high <- R >= 0.85
-  out[low]  <- 2*R[low] + R[low]^3 + (5*R[low]^5)/6
-  out[mid]  <- -0.4 + 1.39*R[mid] + 0.43/(1 - R[mid])
-  out[high] <- 1/(R[high]^3 - 4*R[high]^2 + 3*R[high])
-  out
-}
-
-.est_kappa_safe <- function(tc, fallback = NA_real_, ...) {
-  if (exists("est.kappa", envir = asNamespace("circular"), inherits = FALSE)) {
-    fun <- get("est.kappa", envir = asNamespace("circular"), inherits = FALSE)
-    res <- tryCatch(fun(tc, ...), error = function(e) NA_real_)
-    if (is.numeric(res) && length(res)) {
-      res <- as.numeric(res)[1]
-      if (is.finite(res)) return(res)
-    }
-  }
-  fallback
-}
 
 # carry helper: add columns from nearest time per id
 .carry_nearest <- function(res, data, idc, tc, cols) {

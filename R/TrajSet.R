@@ -6,7 +6,7 @@
 #' @keywords internal
 
 ## ---- helpers -----------------------------------------------------------------
-.wrap_to_2pi <- function(x) wrap_to_2pi(x)
+.wrap_to_2pi <- function(x) x %% (2 * pi)
 .as_radians <- function(x, unit) as_radians(x, unit)
 
 # Fallback approximation for kappa from resultant length Rbar (Mardia & Jupp)

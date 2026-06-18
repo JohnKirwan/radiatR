@@ -35,18 +35,6 @@
 setGeneric("circ_summary", function(x, w = NULL, by = c("id","global"), axial = FALSE)
   standardGeneric("circ_summary"))
 
-.est_kappa_safe <- function(tc, fallback = NA_real_, ...) {
-  if (exists("est.kappa", envir = asNamespace("circular"), inherits = FALSE)) {
-    fun <- get("est.kappa", envir = asNamespace("circular"), inherits = FALSE)
-    res <- tryCatch(fun(tc, ...), error = function(e) NA_real_)
-    if (is.numeric(res) && length(res)) {
-      res <- as.numeric(res)[1]
-      if (is.finite(res)) return(res)
-    }
-  }
-  fallback
-}
-
 # Fold angles into the frame where a k-axial distribution becomes unimodal.
 # axial = TRUE multiplies by 2 (bidirectional / mod-pi data); FALSE is a no-op
 # (ordinary directional data). Internal; the public API exposes only `axial`.
