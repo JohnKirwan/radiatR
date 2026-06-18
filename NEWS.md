@@ -149,6 +149,11 @@
 
 ## Shiny app
 
+* The heading-method dropdown is now grouped into **Directional** and **Axial**
+  methods, and a contextual note flags a mismatch with the Data model -- folding a
+  directional heading to an axis (informational), or analysing an axial method as
+  Directional (a warning, since that biases the statistics).
+
 * The Summary panel gains a selectable **omnibus test** (Rao spacing or
   Hermans-Rasson) and a **model-selection readout** -- a "Best model" column plus
   a full AICc comparison card (`circ_model_select()`: uniform / unimodal / axial
