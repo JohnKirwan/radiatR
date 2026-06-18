@@ -116,7 +116,8 @@ test_that("axial add_circular_boxplot mirrors elements at theta and theta+pi", {
   set.seed(9)
   half <- as.numeric(circular::rvonmises(150, mu = circular::circular(2), kappa = 8)) / 2
   hd <- data.frame(heading = c(half, (half + pi) %% (2*pi)))
-  ld <- add_circular_boxplot(hd, axial = FALSE)
+  # the antipodal data has a non-unique median directionally (expected warning)
+  ld <- suppressWarnings(add_circular_boxplot(hd, axial = FALSE))
   la <- add_circular_boxplot(hd, axial = TRUE)
   poly_rows <- function(lyrs) sum(vapply(lyrs, function(L)
     if (inherits(L, "Layer") && inherits(L$geom, "GeomPolygon")) nrow(L$data) else 0L, integer(1)))
