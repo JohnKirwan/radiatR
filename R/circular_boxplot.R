@@ -145,7 +145,7 @@ circ_boxplot_stats <- function(hd, angle_col = "heading", axial = FALSE) {
   } else hd
   theta <- as.numeric(theta)
   theta <- theta[is.finite(theta)]
-  if (isTRUE(axial)) return(.circ_boxplot_axial(theta))   # implemented in Task 2
+  if (isTRUE(axial)) return(.circ_boxplot_axial(theta))
   .circ_boxplot_core(theta, axial = FALSE)
 }
 
