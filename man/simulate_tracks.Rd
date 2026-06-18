@@ -63,10 +63,32 @@ supplied when missing):
   per-trial predictor when explicit values are not supplied.
 - `predictor_values` (list-column): optional explicit predictor values (length
   `n_trials`) overriding the generated values.
+- `modality` (character): the sample modality from which per-trial principal
+  headings are drawn. One of `"unimodal"` (default), `"uniform"`, `"axial"`,
+  or `"multimodal"`. Controls the *distribution of headings across trials*,
+  not the within-trial path shape.
+- `n_modes` (integer): number of evenly spaced modes used when
+  `modality == "multimodal"` (default 1; ignored by other modalities).
 
 The predictor can represent any continuous covariate (e.g. reference
 intensity). The final heading concentration increases with larger kappa,
 whereas larger tortuosity values produce more sinuous paths.
+
+For each trial the principal (final) heading is drawn according to the
+condition's `modality`: `"unimodal"` draws from a single von Mises about
+`ref_mean`; `"uniform"` draws from a circular uniform distribution;
+`"axial"` draws from a von Mises about `ref_mean` or `ref_mean + pi` with
+equal probability; `"multimodal"` draws from one of `n_modes` von Mises
+components evenly spaced around the circle starting at `ref_mean`. The
+`"unimodal"` branch is identical to the historical draw, so seeded output is
+unchanged from earlier versions.
+
+Every simulated row records the ground-truth generating structure in four
+additional columns: `modality` (character), `n_modes` (integer), `mode_id`
+(integer index of the component the heading came from) and `mode_mean`
+(numeric radian mean of that component, `NA` for `"uniform"`). When a
+`TrajSet` is returned, the resolved generating conditions are stored in
+`meta$sim_conditions`.
 }
 \examples{
 sim <- simulate_tracks(seed = 1)
@@ -97,4 +119,8 @@ sim_four_levels <- simulate_tracks(
 aggregate(trial_id ~ condition, data = sim_four_levels$tibble, length)
 names(sim_four_levels)
 
+}
+\seealso{
+\code{\link{circ_model_select}}, \code{\link{test_uniformity}},
+  \code{\link{derive_headings}}
 }

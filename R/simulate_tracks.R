@@ -37,10 +37,32 @@
 #'   per-trial predictor when explicit values are not supplied.
 #' - `predictor_values` (list-column): optional explicit predictor values (length
 #'   `n_trials`) overriding the generated values.
+#' - `modality` (character): the sample modality from which per-trial principal
+#'   headings are drawn. One of `"unimodal"` (default), `"uniform"`, `"axial"`,
+#'   or `"multimodal"`. Controls the *distribution of headings across trials*,
+#'   not the within-trial path shape.
+#' - `n_modes` (integer): number of evenly spaced modes used when
+#'   `modality == "multimodal"` (default 1; ignored by other modalities).
 #'
 #' The predictor can represent any continuous covariate (e.g. reference
 #' intensity). The final heading concentration increases with larger kappa,
 #' whereas larger tortuosity values produce more sinuous paths.
+#'
+#' For each trial the principal (final) heading is drawn according to the
+#' condition's `modality`: `"unimodal"` draws from a single von Mises about
+#' `ref_mean`; `"uniform"` draws from a circular uniform distribution;
+#' `"axial"` draws from a von Mises about `ref_mean` or `ref_mean + pi` with
+#' equal probability; `"multimodal"` draws from one of `n_modes` von Mises
+#' components evenly spaced around the circle starting at `ref_mean`. The
+#' `"unimodal"` branch is identical to the historical draw, so seeded output is
+#' unchanged from earlier versions.
+#'
+#' Every simulated row records the ground-truth generating structure in four
+#' additional columns: `modality` (character), `n_modes` (integer), `mode_id`
+#' (integer index of the component the heading came from) and `mode_mean`
+#' (numeric radian mean of that component, `NA` for `"uniform"`). When a
+#' `TrajSet` is returned, the resolved generating conditions are stored in
+#' `meta$sim_conditions`.
 #'
 #' @return Depending on `output`, a tibble, a `TrajSet`, or a list containing
 #'   both. When `write_path` is supplied the data are also written to disk.
@@ -73,6 +95,8 @@
 #' aggregate(trial_id ~ condition, data = sim_four_levels$tibble, length)
 #' names(sim_four_levels)
 #'
+#' @seealso \code{\link{circ_model_select}}, \code{\link{test_uniformity}},
+#'   \code{\link{derive_headings}}
 #' @importFrom stats runif rnorm
 #' @importFrom circular rvonmises
 #' @importFrom utils write.csv
@@ -106,7 +130,7 @@ simulate_tracks <- function(n_points = 200,
   if (output == "tibble") {
     return(tracks_tbl)
   }
-  trajset <- .sim_as_trajset(tracks_tbl)
+  trajset <- .sim_as_trajset(tracks_tbl, cond_tbl)
   if (output == "trajset") {
     return(trajset)
   }
@@ -149,6 +173,14 @@ simulate_tracks <- function(n_points = 200,
       conditions[[nm]] <- defaults[[nm]]
     }
   }
+  if (!"modality" %in% names(conditions))    conditions$modality    <- "unimodal"
+  if (!"n_modes" %in% names(conditions))     conditions$n_modes     <- 1L
+  ok_mod <- conditions$modality %in% c("unimodal", "uniform", "axial", "multimodal")
+  if (!all(ok_mod))
+    stop("simulate_tracks: unknown modality value(s): ",
+         paste(unique(conditions$modality[!ok_mod]), collapse = ", "))
+  if (any(conditions$n_modes < 1L))
+    stop("simulate_tracks: n_modes must be >= 1.")
   conditions
 }
 
@@ -168,11 +200,41 @@ simulate_tracks <- function(n_points = 200,
       tortuosity_base = condition_row$tortuosity_base,
       tortuosity_slope = condition_row$tortuosity_slope,
       tortuosity_sd = condition_row$tortuosity_sd,
+      modality = condition_row$modality,
+      n_modes = condition_row$n_modes,
       radial_noise = radial_noise,
       phi = phi
     )
   })
   do.call(rbind, trials)
+}
+
+# Draw one principal angle per trial under the chosen sample modality, returning
+# the angle plus the true component it came from (ground truth). The "unimodal"
+# branch is byte-identical to the historical inline draw, so the default seeded
+# output is unchanged.
+.sim_principal_angle <- function(modality, ref_mean, kappa, n_modes) {
+  rvm <- function(mu) {
+    mu_c <- circular::circular(mu, units = "radians", type = "angles",
+                               modulo = "asis", zero = 0, rotation = "counter")
+    as.numeric(circular::rvonmises(1, mu = mu_c, kappa = kappa))
+  }
+  switch(modality,
+    unimodal   = list(angle = rvm(ref_mean), mode_id = 1L, mode_mean = ref_mean),
+    uniform    = list(angle = stats::runif(1, 0, 2 * pi), mode_id = 1L, mode_mean = NA_real_),
+    axial      = {
+      p  <- sample(c(0, pi), 1L)
+      mm <- ref_mean + p
+      list(angle = rvm(mm), mode_id = if (p == 0) 1L else 2L, mode_mean = mm)
+    },
+    multimodal = {
+      j  <- sample.int(n_modes, 1L)
+      mm <- ref_mean + (j - 1L) * 2 * pi / n_modes
+      list(angle = rvm(mm), mode_id = j, mode_mean = mm)
+    },
+    stop("simulate_tracks: unknown modality '", modality,
+         "'. Use unimodal, uniform, axial, or multimodal.")
+  )
 }
 
 .sim_predictor_values <- function(condition_row, n_trials) {
@@ -189,6 +251,7 @@ simulate_tracks <- function(n_points = 200,
 .sim_single_trial <- function(condition, trial_index, predictor, n_points,
                               ref_mean, concentration_base, concentration_slope,
                               tortuosity_base, tortuosity_slope, tortuosity_sd,
+                              modality, n_modes,
                               radial_noise, phi) {
   predictor <- as.numeric(predictor)
   kappa <- max(0.1, concentration_base + concentration_slope * predictor)
@@ -196,11 +259,8 @@ simulate_tracks <- function(n_points = 200,
   # Use modulo="asis" so rvonmises returns values in (-pi, pi], keeping
   # wrap_to_pi() downstream correct.  modulo="2pi" (from .as_circ) would
   # shift near-zero headings to near 2*pi, which wrap_to_pi maps to -pi.
-  mu_circ <- circular::circular(ref_theta, units = "radians",
-                                type = "angles", modulo = "asis",
-                                zero = 0, rotation = "counter")
-  final_heading <- as.numeric(circular::rvonmises(1, mu = mu_circ,
-                                                   kappa = kappa))
+  pa            <- .sim_principal_angle(modality, ref_mean, kappa, n_modes)
+  final_heading <- pa$angle
 
   sigma_mean <- tortuosity_base + tortuosity_slope * predictor
   sigma <- max(1e-4, sigma_mean + stats::rnorm(1, sd = tortuosity_sd))
@@ -233,7 +293,11 @@ simulate_tracks <- function(n_points = 200,
     abs_x = abs_x,
     abs_y = abs_y,
     rel_x = rel_x,
-    rel_y = rel_y
+    rel_y = rel_y,
+    modality  = modality,
+    n_modes   = as.integer(n_modes),
+    mode_id   = pa$mode_id,
+    mode_mean = pa$mode_mean
   )
 }
 
@@ -250,7 +314,7 @@ simulate_tracks <- function(n_points = 200,
   out - out[n]
 }
 
-.sim_as_trajset <- function(tracks_tbl) {
+.sim_as_trajset <- function(tracks_tbl, cond_tbl) {
   TrajSet(
     tracks_tbl,
     id = "trial_id",
@@ -260,7 +324,7 @@ simulate_tracks <- function(n_points = 200,
     angle = "abs_theta",
     angle_unit = "radians",
     normalize_xy = FALSE,
-    meta = list(source = "simulate_tracks")
+    meta = list(source = "simulate_tracks", sim_conditions = cond_tbl)
   )
 }
 
