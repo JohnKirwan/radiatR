@@ -113,6 +113,9 @@ dispersion.
   : Tidy circular summary of a grouped data frame
 - [`circ_dispersion()`](https://johnkirwan.github.io/radiatR/reference/circ_dispersion.md)
   : Per-group circular dispersion statistics for a dense heading series
+- [`circ_boxplot_stats()`](https://johnkirwan.github.io/radiatR/reference/circ_boxplot_stats.md)
+  : Circular boxplot statistics (Tukey-like, for circular and axial
+  data)
 - [`sector_summary()`](https://johnkirwan.github.io/radiatR/reference/sector_summary.md)
   : Proportion of time spent in angular sectors
 - [`compute_circ_mean()`](https://johnkirwan.github.io/radiatR/reference/compute_circ_mean.md)
@@ -236,6 +239,8 @@ darkorange, KDE tomato.
   radiate plot
 - [`add_circular_density()`](https://johnkirwan.github.io/radiatR/reference/add_circular_density.md)
   : Wrap a pre-computed circular density around the unit circle
+- [`add_circular_boxplot()`](https://johnkirwan.github.io/radiatR/reference/add_circular_boxplot.md)
+  : Add a circular boxplot layer to a radial plot
 - [`compute_circular_density()`](https://johnkirwan.github.io/radiatR/reference/compute_circular_density.md)
   : Compute a circular density data frame from heading observations
 
@@ -331,6 +336,8 @@ Any remaining exported topics.
   : Render a pre-computed circular interval arc on a radial plot
 - [`add_circ_mean()`](https://johnkirwan.github.io/radiatR/reference/add_circ_mean.md)
   : Render pre-computed circular mean arrows on a radial plot
+- [`add_circular_boxplot()`](https://johnkirwan.github.io/radiatR/reference/add_circular_boxplot.md)
+  : Add a circular boxplot layer to a radial plot
 - [`add_circular_density()`](https://johnkirwan.github.io/radiatR/reference/add_circular_density.md)
   : Wrap a pre-computed circular density around the unit circle
 - [`add_circular_kde()`](https://johnkirwan.github.io/radiatR/reference/add_circular_kde.md)
@@ -378,6 +385,9 @@ Any remaining exported topics.
   : Assign cycling colour indices to trajectories
 - [`bin_angles()`](https://johnkirwan.github.io/radiatR/reference/bin_angles.md)
   : Snap angles to fixed-width circular bin centres
+- [`circ_boxplot_stats()`](https://johnkirwan.github.io/radiatR/reference/circ_boxplot_stats.md)
+  : Circular boxplot statistics (Tukey-like, for circular and axial
+  data)
 - [`circ_cor()`](https://johnkirwan.github.io/radiatR/reference/circ_cor.md)
   : Circular correlation between headings and a covariate
 - [`circ_dispersion()`](https://johnkirwan.github.io/radiatR/reference/circ_dispersion.md)

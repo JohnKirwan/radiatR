@@ -364,6 +364,45 @@ p
 The arc at radius 1.05 spans the 95 % bootstrap confidence interval for
 the grand mean direction pooled across all arc conditions.
 
+## Circular Boxplot
+
+[`add_circular_boxplot()`](https://johnkirwan.github.io/radiatR/reference/add_circular_boxplot.md)
+overlays a Tukey-like boxplot for circular data (Buttarazzi, Pandolfo &
+Porzio, 2018): the box spans the central 50 % around the circular
+median, whiskers reach a concentration-adjusted fence, and far-out
+values are marked individually. It composes onto a
+[`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+plot like the other overlay helpers.
+
+``` r
+
+radiate(cpunctatus) + add_circular_boxplot(hd)
+```
+
+![](radiatR_files/figure-html/boxplot-1.png)
+
+[`circ_boxplot_stats()`](https://johnkirwan.github.io/radiatR/reference/circ_boxplot_stats.md)
+returns the underlying numeric summary — the circular median, box
+hinges, fences, far-out values, and the closed-form von Mises fence
+multiplier — so the boxplot can be inspected or reproduced independently
+of the plot:
+
+``` r
+
+circ_boxplot_stats(hd)$constant
+#> [1] 0.5995206
+```
+
+The boxplot is not recommended for uniform or multimodal data: with no
+clear central direction the box spans roughly half the circle and the
+summary is uninformative.
+[`circ_boxplot_stats()`](https://johnkirwan.github.io/radiatR/reference/circ_boxplot_stats.md)
+flags such cases via its `drawable` and `reason` fields, and
+[`add_circular_boxplot()`](https://johnkirwan.github.io/radiatR/reference/add_circular_boxplot.md)
+emits a warning rather than drawing a misleading box. Position-based
+axial data is supported via `axial = TRUE`, which draws the box and
+whiskers at both poles of the median axis.
+
 ## Colour Options
 
 Three strategies control how trajectories are coloured.
