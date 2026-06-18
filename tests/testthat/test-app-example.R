@@ -544,3 +544,20 @@ test_that("summary has a Best model column and the model-selection card renders"
     expect_true(grepl("unimodal", card) || grepl("axial", card) || grepl("uniform", card))
   })
 })
+
+test_that("the method dropdown is grouped into Directional and Axial optgroups", {
+  skip_if_not_installed("shiny")
+  app_dir <- system.file("app", package = "radiatR")
+  if (!nzchar(app_dir)) app_dir <- testthat::test_path("..", "..", "inst", "app")
+  skip_if(!dir.exists(app_dir), "radiatR app directory not found")
+
+  shiny::testServer(app_dir, {
+    session$setInputs(load_example = 1)
+    expect_equal(rv$step, 2L)
+    wiz <- paste(as.character(output$wizard), collapse = " ")
+    expect_true(grepl('optgroup label="Axial methods"', wiz, fixed = TRUE))
+    expect_true(grepl('optgroup label="Directional methods"', wiz, fixed = TRUE))
+    expect_true(grepl('value="velocity_axis"', wiz, fixed = TRUE))
+    expect_true(grepl('value="distal"', wiz, fixed = TRUE))
+  })
+})

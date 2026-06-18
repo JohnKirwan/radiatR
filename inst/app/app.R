@@ -819,21 +819,25 @@ server <- function(input, output, session) {
             h5("How should headings be measured?"),
             selectInput(
               "method", NULL,
-              choices = c(
-                "None (no headings)"                = "none",
-                "Direction at furthest point"       = "distal",
-                "Net displacement direction"        = "net",
-                "Exit direction (ring crossing)"    = "crossing",
-                "Longest straight segment"          = "straight",
-                "Smoothed (windowed) net direction" = "window_net",
-                "Mean direction from centre"        = "origin_mean",
-                "Mean velocity direction"           = "velocity_mean",
-                "Movement axis (velocity, axial)"   = "velocity_axis",
-                "Direction at peak speed"           = "maxspeed_window",
-                "Von Mises fit of step directions"  = "vm_fit",
-                "Principal axis (PCA)"              = "pca_axis",
-                "Robust straight-line fit (RANSAC)" = "ransac_straight",
-                "Goal-biased direction"             = "goal_bias"
+              choices = list(
+                "None (no headings)" = "none",
+                "Directional methods" = c(
+                  "Direction at furthest point"       = "distal",
+                  "Net displacement direction"        = "net",
+                  "Exit direction (ring crossing)"    = "crossing",
+                  "Longest straight segment"          = "straight",
+                  "Smoothed (windowed) net direction" = "window_net",
+                  "Mean direction from centre"        = "origin_mean",
+                  "Mean velocity direction"           = "velocity_mean",
+                  "Direction at peak speed"           = "maxspeed_window",
+                  "Von Mises fit of step directions"  = "vm_fit",
+                  "Goal-biased direction"             = "goal_bias"
+                ),
+                "Axial methods" = c(
+                  "Movement axis (velocity, axial)"   = "velocity_axis",
+                  "Principal axis (PCA)"              = "pca_axis",
+                  "Robust straight-line fit (RANSAC)" = "ransac_straight"
+                )
               ),
               selected = "distal"
             ),
