@@ -88,13 +88,14 @@ test_that(".sim_triangle_wave oscillates in [-1,1] with the requested reversals"
 })
 
 test_that("oscillatory tracks are axial: velocity_axis recovers the axis, net cancels", {
-  # tortuosity_base low so the within-track axial step dominates the
-  # perpendicular jitter (the step-wise velocity-axis estimator needs the axial
-  # signal > the per-frame jitter); the recovered-axis claim is unchanged.
+  # The oscillatory line-width is decoupled from tortuosity (a small fixed
+  # fraction of amplitude), so the step-wise velocity-axis estimator recovers
+  # the axis at the DEFAULT tortuosity -- no SNR hack required.
   cond <- tibble::tibble(condition = "osc", n_trials = 40L, ref_mean = 0.6,
                          concentration_base = 50, modality = "unimodal",
-                         track_shape = "oscillatory", n_reversals = 4L, amplitude = 0.9,
-                         tortuosity_base = 0.015, tortuosity_sd = 0.005)
+                         track_shape = "oscillatory", n_reversals = 4L, amplitude = 0.9)
+  s_df <- simulate_tracks(n_points = 120, conditions = cond, seed = 11)
+  expect_true("line_width" %in% names(s_df))
   ts <- simulate_tracks(n_points = 120, conditions = cond, output = "trajset", seed = 11)
 
   ax <- derive_headings(ts, rule = "velocity_axis")          # axis in [0, pi)

@@ -53,6 +53,12 @@
 #'   track (default 3; ignored when `track_shape == "directed"`).
 #' - `amplitude` (numeric): peak excursion along the axis for an oscillatory
 #'   track, clamped to `(0, 1]` (default 0.9; ignored when directed).
+#' - `line_width` (numeric): half-width of an oscillatory track expressed as a
+#'   fraction of `amplitude`, controlling the perpendicular Gaussian jitter
+#'   (default 0.05, clamped to `[1e-4, 1]`; ignored when directed). The
+#'   line-width is intentionally independent of `tortuosity_*`, so the track is
+#'   a genuinely thin line and the principal axis is recoverable by step-based
+#'   methods (`velocity_axis`, `pca_axis`) at default settings.
 #'
 #' The predictor can represent any continuous covariate (e.g. reference
 #' intensity). The final heading concentration increases with larger kappa,
@@ -70,15 +76,20 @@
 #' For an `"oscillatory"` track the position sweeps back and forth along the
 #' axis `final_heading` following a deterministic triangle wave of amplitude
 #' `amplitude` with `n_reversals` direction changes, plus a small Gaussian
-#' jitter perpendicular to the axis. The `"directed"` branch is byte-identical
-#' to the historical geometry, so the default seeded output is unchanged.
+#' jitter perpendicular to the axis with standard deviation
+#' `amplitude * line_width`. This line-width is independent of the tortuosity
+#' settings, so the track stays a thin line and the axis remains recoverable by
+#' step-based methods (`velocity_axis`, `pca_axis`) at default tortuosity. The
+#' `"directed"` branch is byte-identical to the historical geometry (and never
+#' draws the perpendicular jitter), so the default seeded output is unchanged.
 #'
 #' Every simulated row records the ground-truth generating structure in
 #' additional columns: `modality` (character), `n_modes` (integer), `mode_id`
 #' (integer index of the component the heading came from), `mode_mean`
 #' (numeric radian mean of that component, `NA` for `"uniform"`),
-#' `track_shape` (character), `n_reversals` (integer) and `amplitude`
-#' (numeric). When a `TrajSet` is returned, the resolved generating conditions
+#' `track_shape` (character), `n_reversals` (integer), `amplitude`
+#' (numeric) and `line_width` (numeric). When a `TrajSet` is returned, the
+#' resolved generating conditions
 #' are stored in `meta$sim_conditions`.
 #'
 #' @return Depending on `output`, a tibble, a `TrajSet`, or a list containing
@@ -206,6 +217,8 @@ simulate_tracks <- function(n_points = 200,
     stop("simulate_tracks: unknown track_shape value(s): ",
          paste(unique(conditions$track_shape[!ok_shape]), collapse = ", "))
   conditions$amplitude <- pmin(pmax(conditions$amplitude, 1e-3), 1)
+  if (!"line_width" %in% names(conditions))   conditions$line_width  <- 0.05
+  conditions$line_width <- pmin(pmax(conditions$line_width, 1e-4), 1)
   conditions
 }
 
@@ -237,6 +250,7 @@ simulate_tracks <- function(n_points = 200,
       track_shape = condition_row$track_shape,
       n_reversals = condition_row$n_reversals,
       amplitude = condition_row$amplitude,
+      line_width = condition_row$line_width,
       radial_noise = radial_noise,
       phi = phi
     )
@@ -287,7 +301,7 @@ simulate_tracks <- function(n_points = 200,
                               ref_mean, concentration_base, concentration_slope,
                               tortuosity_base, tortuosity_slope, tortuosity_sd,
                               modality, n_modes,
-                              track_shape, n_reversals, amplitude,
+                              track_shape, n_reversals, amplitude, line_width,
                               radial_noise, phi) {
   predictor <- as.numeric(predictor)
   kappa <- max(0.1, concentration_base + concentration_slope * predictor)
@@ -305,7 +319,7 @@ simulate_tracks <- function(n_points = 200,
     s_t <- amplitude * .sim_triangle_wave(n_points, n_reversals)
     ux  <- cos(final_heading); uy <- sin(final_heading)
     vx  <- -sin(final_heading); vy <- cos(final_heading)
-    w_t <- stats::rnorm(n_points, 0, sigma)
+    w_t <- stats::rnorm(n_points, 0, amplitude * line_width)
     abs_x <- s_t * ux + w_t * vx
     abs_y <- s_t * uy + w_t * vy
     abs_theta <- wrap_to_pi(atan2(abs_y, abs_x))
@@ -345,7 +359,8 @@ simulate_tracks <- function(n_points = 200,
     mode_mean   = pa$mode_mean,
     track_shape = track_shape,
     n_reversals = as.integer(n_reversals),
-    amplitude   = amplitude
+    amplitude   = amplitude,
+    line_width  = line_width
   )
 }
 

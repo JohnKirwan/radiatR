@@ -79,6 +79,12 @@ supplied when missing):
   track (default 3; ignored when `track_shape == "directed"`).
 - `amplitude` (numeric): peak excursion along the axis for an oscillatory
   track, clamped to `(0, 1]` (default 0.9; ignored when directed).
+- `line_width` (numeric): half-width of an oscillatory track expressed as a
+  fraction of `amplitude`, controlling the perpendicular Gaussian jitter
+  (default 0.05, clamped to `[1e-4, 1]`; ignored when directed). The
+  line-width is intentionally independent of `tortuosity_*`, so the track is
+  a genuinely thin line and the principal axis is recoverable by step-based
+  methods (`velocity_axis`, `pca_axis`) at default settings.
 
 The predictor can represent any continuous covariate (e.g. reference
 intensity). The final heading concentration increases with larger kappa,
@@ -96,15 +102,20 @@ unchanged from earlier versions.
 For an `"oscillatory"` track the position sweeps back and forth along the
 axis `final_heading` following a deterministic triangle wave of amplitude
 `amplitude` with `n_reversals` direction changes, plus a small Gaussian
-jitter perpendicular to the axis. The `"directed"` branch is byte-identical
-to the historical geometry, so the default seeded output is unchanged.
+jitter perpendicular to the axis with standard deviation
+`amplitude * line_width`. This line-width is independent of the tortuosity
+settings, so the track stays a thin line and the axis remains recoverable by
+step-based methods (`velocity_axis`, `pca_axis`) at default tortuosity. The
+`"directed"` branch is byte-identical to the historical geometry (and never
+draws the perpendicular jitter), so the default seeded output is unchanged.
 
 Every simulated row records the ground-truth generating structure in
 additional columns: `modality` (character), `n_modes` (integer), `mode_id`
 (integer index of the component the heading came from), `mode_mean`
 (numeric radian mean of that component, `NA` for `"uniform"`),
-`track_shape` (character), `n_reversals` (integer) and `amplitude`
-(numeric). When a `TrajSet` is returned, the resolved generating conditions
+`track_shape` (character), `n_reversals` (integer), `amplitude`
+(numeric) and `line_width` (numeric). When a `TrajSet` is returned, the
+resolved generating conditions
 are stored in `meta$sim_conditions`.
 }
 \examples{
