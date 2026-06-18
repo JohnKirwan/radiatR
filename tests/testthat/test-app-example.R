@@ -561,3 +561,36 @@ test_that("the method dropdown is grouped into Directional and Axial optgroups",
     expect_true(grepl('value="distal"', wiz, fixed = TRUE))
   })
 })
+
+test_that("method_model_note hints, warns, and stays silent appropriately", {
+  skip_if_not_installed("shiny")
+  app_dir <- system.file("app", package = "radiatR")
+  if (!nzchar(app_dir)) app_dir <- testthat::test_path("..", "..", "inst", "app")
+  skip_if(!dir.exists(app_dir), "radiatR app directory not found")
+
+  note <- function(out) paste(as.character(out), collapse = " ")
+
+  shiny::testServer(app_dir, {
+    session$setInputs(load_example = 1)
+    expect_equal(rv$step, 2L)
+
+    # Hint: axial model + directional method
+    session$setInputs(data_model = "axial", method = "distal")
+    expect_true(grepl("folded", note(output$method_model_note), fixed = TRUE))
+
+    # Warning: directional model + axial method
+    session$setInputs(data_model = "directional", method = "velocity_axis")
+    expect_true(grepl("biases the circular statistics",
+                      note(output$method_model_note), fixed = TRUE))
+
+    # Matched combos -> nothing
+    session$setInputs(data_model = "axial", method = "velocity_axis")
+    expect_false(grepl("folded|biases", note(output$method_model_note)))
+    session$setInputs(data_model = "directional", method = "distal")
+    expect_false(grepl("folded|biases", note(output$method_model_note)))
+
+    # None -> nothing
+    session$setInputs(data_model = "axial", method = "none")
+    expect_false(grepl("folded|biases", note(output$method_model_note)))
+  })
+})

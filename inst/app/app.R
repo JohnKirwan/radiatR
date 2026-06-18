@@ -555,6 +555,28 @@ server <- function(input, output, session) {
     tags$p(class = "text-muted small", txt)
   })
 
+  # Contextual note when the heading method and the Data model are mismatched.
+  # Hint (grey) for a directional method under the Axial model (directions are
+  # folded to axes -- valid but maybe unintended). Warning (amber) for an axial
+  # method under the Directional model (a per-track axis analysed as a direction
+  # biases the circular statistics). Nothing for matched combos / "none".
+  output$method_model_note <- renderUI({
+    m <- input$method
+    if (is.null(m) || identical(m, "none")) return(NULL)
+    axial_method <- m %in% AXIAL_METHODS
+    if (is_axial() && !axial_method) {
+      tags$div(class = "alert alert-secondary py-1 px-2 small mb-2",
+        "Axial model with a directional method: each track's direction is folded ",
+        "to an axis (mod-180°). For a per-track movement axis, pick an Axial method.")
+    } else if (!is_axial() && axial_method) {
+      tags$div(class = "alert alert-warning py-1 px-2 small mb-2",
+        "This method returns a per-track axis (0–180°); analysing it as ",
+        "Directional biases the circular statistics — set Data model to Axial.")
+    } else {
+      NULL
+    }
+  })
+
   # Live illustrative preview of the selected method on fixed demo tracks.
   output$method_preview <- renderPlot({
     method <- if (is.null(input$method)) "distal" else input$method
@@ -847,6 +869,7 @@ server <- function(input, output, session) {
               choices  = c("Directional" = "directional", "Axial" = "axial"),
               selected = "directional"
             ),
+            uiOutput("method_model_note"),
             conditionalPanel(
               "input.method == 'crossing'",
               tags$hr(),
