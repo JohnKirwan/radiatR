@@ -55,6 +55,7 @@ reference:
       - get_all_object_pos
       - get_trial_limits
       - get_tracked_object_pos
+      - guess_columns
 
   - title: "Loader registry"
     desc: >
@@ -91,6 +92,7 @@ reference:
       - headings_frame
       - register_heading_rule
       - list_heading_rules
+      - bin_angles
 
   - title: "Circular statistics -- summaries"
     desc: >
@@ -145,6 +147,11 @@ reference:
       - directedness_arrow
       - assign_cycle_colours
       - add_multiple_circles
+      - circ_display
+      - add_radial_grid
+      - add_origin_point
+      - assign_colour_key
+      - cycle_colours
 
   - title: "Visualisation -- heading overlays"
     desc: >
@@ -173,6 +180,7 @@ reference:
       - add_wrappedcauchy_density
       - add_circular_kde
       - add_circular_density
+      - compute_circular_density
 
   - title: "Visualisation -- arena guides"
     desc: >
@@ -190,6 +198,27 @@ reference:
       - line_circle_intercept
       - line_circle_intercept_df
       - line_circle_intercept_traj
+      - derive_coords
+
+  - title: "Reference frame & transforms"
+    desc: >
+      Read or change a TrajSet's per-trajectory reference direction, and apply
+      bespoke transformations (recorded in the transform history).
+    contents:
+      - reference
+      - set_reference
+      - apply_transform
+      - set_transform_history
+      - log_transform
+
+  - title: "Path metrics"
+    desc: >
+      Per-trajectory straightness and tortuosity of the movement path.
+    contents:
+      - straightness_index
+      - tortuosity_ratio
+      - path_straightness
+      - path_tortuosity
 
   - title: "Datasets"
     desc: >
