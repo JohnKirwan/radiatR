@@ -81,7 +81,7 @@ supplied when missing):
 - `n_reversals` (integer): number of direction reversals in an oscillatory
   track (default 3; ignored when `track_shape == "directed"`).
 - `amplitude` (numeric): peak excursion along the axis for an oscillatory
-  track, clamped to `(0, 1]` (default 0.9; ignored when directed).
+  track, clamped to `[1e-3, 1]` (default 0.9; ignored when directed).
 - `line_width` (numeric): half-width of an oscillatory track expressed as a
   fraction of `amplitude`, controlling the perpendicular Gaussian jitter
   (default 0.05, clamped to `[1e-4, 1]`; ignored when directed). The
@@ -122,7 +122,9 @@ draws the perpendicular jitter), so the default seeded output is unchanged.
 Every simulated row records the ground-truth generating structure in
 additional columns: `modality` (character), `n_modes` (integer), `mode_id`
 (integer index of the component the heading came from), `mode_mean`
-(numeric radian mean of that component, `NA` for `"uniform"`),
+(numeric radian mean of that component as the un-wrapped generating centre,
+e.g. `ref_mean + pi` for the second axial pole, versus `final_heading` which
+is the wrapped draw; `NA` for `"uniform"`),
 `track_shape` (character), `n_reversals` (integer), `amplitude`
 (numeric) and `line_width` (numeric). When a `TrajSet` is returned, the
 resolved generating conditions
