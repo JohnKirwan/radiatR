@@ -57,6 +57,34 @@ Register additional formats with `register_loader_dialect()` or the declarative 
 
 Register custom rules with `register_heading_rule()`.
 
+## Circular statistics
+
+Beyond summaries, radiatR covers the common circular-statistics workflow — all
+returning tidy data frames, and most accepting `axial = TRUE` for bidirectional
+(mod-180°) data such as orientation or polarization axes.
+
+- **Uniformity / modality tests** — `test_uniformity()` runs the Rayleigh
+  (default), Kuiper, Rao spacing, Watson, and **Hermans–Rasson** (Monte-Carlo,
+  powerful against multimodal alternatives) tests.
+- **Parametric fits** — `vonmises_fit()` and `wrappedcauchy_fit()` (each with an
+  `axial` mode), overlaid on plots with `add_vonmises_density()` /
+  `add_wrappedcauchy_density()`.
+- **Model selection** — `circ_model_select()` ranks *uniform* vs *unimodal* vs
+  *axial* von Mises by AICc with Akaike weights, so the data indicate the modality.
+- **Summaries & association** — `circ_summary()` / `circ_summarise()`,
+  `circ_dispersion()`, and `circ_cor()` (circular–linear and circular–circular).
+
+```r
+hd <- derive_headings(cpunctatus, rule = "distal")
+
+# Is the sample non-uniform, and how is it best described?
+test_uniformity(hd, test = "hermans_rasson")   # omnibus; catches multimodality
+circ_model_select(hd)                            # uniform / unimodal / axial by AICc
+```
+
+The graphical app surfaces these too: a selectable omnibus test and a
+model-selection readout alongside the summary table.
+
 ## Typical Workflow
 
 ```r
