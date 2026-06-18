@@ -344,6 +344,73 @@ p
 
 ---
 
+## Known Modality and Shape
+
+`simulate_tracks()` can also attach a known directional ground truth, which is
+handy for sanity-checking the circular statistics: you know what the analysis
+*should* recover. The `modality` of a condition sets how its per-trial principal
+headings are distributed — `uniform` (no preferred direction), `unimodal` (one
+von Mises mode), `axial` (two antipodal modes), or `multimodal` (`n_modes`
+evenly spaced modes). Here one condition per modality, fed through a directional
+heading rule (`net`) and `circ_model_select()`, recovers the generating model:
+
+```{r modality-recovery}
+conds <- tibble::tibble(
+  condition          = c("uniform", "unimodal", "axial"),
+  n_trials           = 60L,
+  ref_mean           = 0.4,
+  concentration_base = 6,
+  modality           = c("uniform", "unimodal", "axial")
+)
+sim <- simulate_tracks(conditions = conds, n_points = 80,
+                       output = "both", seed = 7)
+
+# net heading per trial, with the condition label joined back on
+hd <- derive_headings(sim$trajset, rule = "net")
+names(hd)[names(hd) == "id"] <- "trial_id"
+hd <- merge(hd, unique(sim$tibble[, c("trial_id", "condition")]),
+            by = "trial_id")
+
+# best-supported model per condition (AICc; lowest dAICc = best)
+ms <- circ_model_select(hd, group_col = "condition")
+do.call(rbind, lapply(split(ms, ms$condition), function(d) {
+  d[which.min(d$AICc), c("condition", "model", "weight")]
+}))
+```
+
+The `unimodal` and `axial` conditions are picked out cleanly (Akaike weight near
+1); the `uniform` condition leaves *uniform* and *unimodal* in a near-tie, as it
+should when there is no preferred direction to fit.
+
+The `track_shape` of a condition sets the *within-track* geometry instead.
+A `track_shape = "oscillatory"` condition produces back-and-forth tracks along a
+principal axis — the bidirectional pattern the per-track axial methods are built
+for. The axial estimator `velocity_axis` recovers the axis, while a directional
+rule (`net`) sees the to-and-fro directions cancel:
+
+```{r oscillatory-axis}
+osc <- tibble::tibble(condition = "osc", n_trials = 40L, ref_mean = 0.6,
+                      concentration_base = 50, track_shape = "oscillatory",
+                      n_reversals = 4L)
+ts_osc <- simulate_tracks(conditions = osc, n_points = 80,
+                          output = "trajset", seed = 11)
+
+# velocity_axis recovers the ~0.6 rad axis (read it as an axial mean)
+va <- derive_headings(ts_osc, rule = "velocity_axis")
+circ_summarise(va, "heading", axial = TRUE, units = "radians",
+               stats = "mean_dir")
+
+# net cannot: the directions cancel to a tiny resultant length
+net <- derive_headings(ts_osc, rule = "net")
+circ_summarise(net, "heading", units = "radians", stats = "resultant_R")
+```
+
+The oscillatory line-width (`line_width`) is a fixed fraction of the amplitude,
+independent of `tortuosity_base`, so the axis is recoverable at the default
+settings used here without any signal-to-noise tuning.
+
+---
+
 ## Reproducibility and Saving
 
 Pass `seed` for exact reproducibility. Pass `write_path` to write the tibble

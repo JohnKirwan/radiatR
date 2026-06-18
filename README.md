@@ -140,6 +140,29 @@ conds <- data.frame(
 ts2 <- simulate_tracks(conditions = conds, seed = 1, output = "trajset")
 ```
 
+Each condition can also carry a known directional **ground truth**. Set a
+**modality** (`uniform` / `unimodal` / `axial` / `multimodal`, with `n_modes`)
+to control the distribution of per-track headings, and a **track shape**
+(`directed` or `oscillatory`) to control within-track geometry — `oscillatory`
+tracks move back and forth along an axis, the kind of data the per-track axial
+heading methods are built for:
+
+```r
+# Oscillatory axial tracks: each moves back-and-forth along a ~0.6 rad axis
+osc <- data.frame(condition = "axial_osc", n_trials = 40L, ref_mean = 0.6,
+                  concentration_base = 50, track_shape = "oscillatory",
+                  n_reversals = 4L)
+ts <- simulate_tracks(conditions = osc, n_points = 80, output = "trajset", seed = 1)
+
+# velocity_axis recovers the ~0.6 rad axis (read as an axial mean):
+ax <- derive_headings(ts, rule = "velocity_axis")
+circ_summarise(ax, "heading", axial = TRUE, units = "radians", stats = "mean_dir")
+
+# a directional rule cannot: the back-and-forth directions cancel
+net <- derive_headings(ts, rule = "net")
+circ_summarise(net, "heading", units = "radians", stats = "resultant_R")
+```
+
 ## Installation
 
 ```r
