@@ -11,6 +11,14 @@
   settings. The ground truth is recorded in new output columns and in the
   `TrajSet` `meta$sim_conditions`. The default output is unchanged.
 
+## Visualisation
+
+* New `circ_boxplot_stats()` and `add_circular_boxplot()` implement the
+  Tukey-like circular boxplot of Buttarazzi, Pandolfo & Porzio (2018) for
+  circular and axial heading data: a depth-ranked box around the circular
+  median, a closed-form von Mises fence multiplier, whiskers, and far-out
+  values. Validated against the bpDir reference implementation.
+
 # radiatR 0.4.0
 
 ## Statistics

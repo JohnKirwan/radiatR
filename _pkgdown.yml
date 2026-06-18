@@ -102,6 +102,7 @@ reference:
       - circ_summary
       - circ_summarise
       - circ_dispersion
+      - circ_boxplot_stats
       - sector_summary
       - compute_circ_mean
       - compute_circ_interval
@@ -180,6 +181,7 @@ reference:
       - add_wrappedcauchy_density
       - add_circular_kde
       - add_circular_density
+      - add_circular_boxplot
       - compute_circular_density
 
   - title: "Visualisation -- arena guides"

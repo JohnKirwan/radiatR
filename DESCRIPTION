@@ -38,6 +38,7 @@ Imports:
     utils,
     stats
 Suggests:
+    bpDir,
     dplyr (>= 1.0.0),
     testthat (>= 3.0.0),
     knitr,
@@ -65,6 +66,7 @@ Config/testthat/edition: 3
 VignetteBuilder: knitr
 Collate: 
     'TrajSet.R'
+    'circular_boxplot.R'
     'circular_mapping.R'
     'coords.R'
     'circular_plotting.R'

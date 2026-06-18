@@ -19,3 +19,6 @@ Rplots.pdf
 
 # brainstorming visual-companion artifacts
 .superpowers/
+
+# Reference materials for the circular boxplot (copyrighted supplements) — never commit/ship
+boxplot/
