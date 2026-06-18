@@ -121,6 +121,21 @@ radiate(ts,
 > any scaling to real-world units in your tracking pipeline (e.g. your tracker's
 > own calibration, or OpenCV `undistort`) before importing.
 
+### Circular boxplot
+
+A Tukey-like boxplot for circular data (Buttarazzi, Pandolfo & Porzio, 2018):
+the box spans the central 50% around the circular median, whiskers reach a
+concentration-adjusted fence, and far-out values are marked individually.
+Position-based axial data is supported via `axial = TRUE` (drawn at both poles).
+
+```r
+hd <- derive_headings(cpunctatus, rule = "crossing", circ0 = 0.2, circ1 = 0.4)
+radiate(cpunctatus) + add_circular_boxplot(hd)
+
+# the summary on its own (median, hinges, fences, far-out, fence multiplier)
+circ_boxplot_stats(hd)$constant
+```
+
 ## Simulate Data
 
 `simulate_tracks()` generates synthetic arena trajectories for testing pipelines and teaching:
