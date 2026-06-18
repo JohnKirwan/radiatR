@@ -78,3 +78,42 @@ test_that("simulate_tracks stores the generating conditions in TrajSet meta", {
   expect_true(!is.null(ts@meta$sim_conditions))
   expect_true("modality" %in% names(ts@meta$sim_conditions))
 })
+
+test_that(".sim_triangle_wave oscillates in [-1,1] with the requested reversals", {
+  w <- radiatR:::.sim_triangle_wave(101, n_reversals = 4)
+  expect_length(w, 101)
+  expect_true(max(w) <= 1 + 1e-9 && min(w) >= -1 - 1e-9)
+  turns <- sum(diff(sign(diff(w))) != 0)
+  expect_gte(turns, 3L)
+})
+
+test_that("oscillatory tracks are axial: velocity_axis recovers the axis, net cancels", {
+  # tortuosity_base low so the within-track axial step dominates the
+  # perpendicular jitter (the step-wise velocity-axis estimator needs the axial
+  # signal > the per-frame jitter); the recovered-axis claim is unchanged.
+  cond <- tibble::tibble(condition = "osc", n_trials = 40L, ref_mean = 0.6,
+                         concentration_base = 50, modality = "unimodal",
+                         track_shape = "oscillatory", n_reversals = 4L, amplitude = 0.9,
+                         tortuosity_base = 0.015, tortuosity_sd = 0.005)
+  ts <- simulate_tracks(n_points = 120, conditions = cond, output = "trajset", seed = 11)
+
+  ax <- derive_headings(ts, rule = "velocity_axis")          # axis in [0, pi)
+  # Compare in radians via mean_dir (mean_dir_deg applies the display convention,
+  # which is not a raw degree conversion of the axis). Axis ~ 0.6 rad (mod pi).
+  ax_mean <- circ_summarise(ax, "heading", units = "radians", axial = TRUE,
+                            stats = "mean_dir")$mean_dir
+  d <- (ax_mean %% pi - 0.6) %% pi
+  expect_lt(min(d, pi - d), 20 * pi / 180)
+
+  net <- derive_headings(ts, rule = "net")
+  R <- circ_summarise(net, "heading", units = "radians", stats = "resultant_R")$resultant_R
+  expect_lt(R, 0.4)
+})
+
+test_that("directed default is unchanged by adding the track_shape dimension", {
+  s  <- simulate_tracks(n_points = 50, seed = 99)
+  fh <- s$final_heading[!duplicated(s$trial_id)]
+  expect_equal(head(fh, 3),
+               c(5.9589157262, 0.0305034215, 5.5213237187), tolerance = 1e-8)
+  expect_true(all(s$track_shape == "directed"))
+})

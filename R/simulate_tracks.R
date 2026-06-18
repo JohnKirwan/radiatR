@@ -43,6 +43,16 @@
 #'   not the within-trial path shape.
 #' - `n_modes` (integer): number of evenly spaced modes used when
 #'   `modality == "multimodal"` (default 1; ignored by other modalities).
+#' - `track_shape` (character): the *within-track* path shape. One of
+#'   `"directed"` (default) -- a single sweep towards `final_heading` -- or
+#'   `"oscillatory"` -- back-and-forth motion along the principal axis
+#'   `final_heading`. Oscillatory tracks are axial: directional heading methods
+#'   (e.g. `net`) cancel, while axial methods (`velocity_axis`, `pca_axis`)
+#'   recover the axis.
+#' - `n_reversals` (integer): number of direction reversals in an oscillatory
+#'   track (default 3; ignored when `track_shape == "directed"`).
+#' - `amplitude` (numeric): peak excursion along the axis for an oscillatory
+#'   track, clamped to `(0, 1]` (default 0.9; ignored when directed).
 #'
 #' The predictor can represent any continuous covariate (e.g. reference
 #' intensity). The final heading concentration increases with larger kappa,
@@ -57,12 +67,19 @@
 #' `"unimodal"` branch is identical to the historical draw, so seeded output is
 #' unchanged from earlier versions.
 #'
-#' Every simulated row records the ground-truth generating structure in four
+#' For an `"oscillatory"` track the position sweeps back and forth along the
+#' axis `final_heading` following a deterministic triangle wave of amplitude
+#' `amplitude` with `n_reversals` direction changes, plus a small Gaussian
+#' jitter perpendicular to the axis. The `"directed"` branch is byte-identical
+#' to the historical geometry, so the default seeded output is unchanged.
+#'
+#' Every simulated row records the ground-truth generating structure in
 #' additional columns: `modality` (character), `n_modes` (integer), `mode_id`
-#' (integer index of the component the heading came from) and `mode_mean`
-#' (numeric radian mean of that component, `NA` for `"uniform"`). When a
-#' `TrajSet` is returned, the resolved generating conditions are stored in
-#' `meta$sim_conditions`.
+#' (integer index of the component the heading came from), `mode_mean`
+#' (numeric radian mean of that component, `NA` for `"uniform"`),
+#' `track_shape` (character), `n_reversals` (integer) and `amplitude`
+#' (numeric). When a `TrajSet` is returned, the resolved generating conditions
+#' are stored in `meta$sim_conditions`.
 #'
 #' @return Depending on `output`, a tibble, a `TrajSet`, or a list containing
 #'   both. When `write_path` is supplied the data are also written to disk.
@@ -181,7 +198,22 @@ simulate_tracks <- function(n_points = 200,
          paste(unique(conditions$modality[!ok_mod]), collapse = ", "))
   if (any(conditions$n_modes < 1L))
     stop("simulate_tracks: n_modes must be >= 1.")
+  if (!"track_shape" %in% names(conditions)) conditions$track_shape <- "directed"
+  if (!"n_reversals" %in% names(conditions))  conditions$n_reversals <- 3L
+  if (!"amplitude" %in% names(conditions))    conditions$amplitude   <- 0.9
+  ok_shape <- conditions$track_shape %in% c("directed", "oscillatory")
+  if (!all(ok_shape))
+    stop("simulate_tracks: unknown track_shape value(s): ",
+         paste(unique(conditions$track_shape[!ok_shape]), collapse = ", "))
+  conditions$amplitude <- pmin(pmax(conditions$amplitude, 1e-3), 1)
   conditions
+}
+
+# Deterministic triangle wave in [-1, 1] over n points with `n_reversals`
+# direction changes (no RNG, so it never perturbs the directed path's seed).
+.sim_triangle_wave <- function(n, n_reversals) {
+  t <- seq(0, 1, length.out = n)
+  (2 / pi) * asin(sin(pi * n_reversals * t))
 }
 
 .sim_condition_trials <- function(condition_row, n_points, radial_noise, phi) {
@@ -202,6 +234,9 @@ simulate_tracks <- function(n_points = 200,
       tortuosity_sd = condition_row$tortuosity_sd,
       modality = condition_row$modality,
       n_modes = condition_row$n_modes,
+      track_shape = condition_row$track_shape,
+      n_reversals = condition_row$n_reversals,
+      amplitude = condition_row$amplitude,
       radial_noise = radial_noise,
       phi = phi
     )
@@ -252,6 +287,7 @@ simulate_tracks <- function(n_points = 200,
                               ref_mean, concentration_base, concentration_slope,
                               tortuosity_base, tortuosity_slope, tortuosity_sd,
                               modality, n_modes,
+                              track_shape, n_reversals, amplitude,
                               radial_noise, phi) {
   predictor <- as.numeric(predictor)
   kappa <- max(0.1, concentration_base + concentration_slope * predictor)
@@ -265,17 +301,26 @@ simulate_tracks <- function(n_points = 200,
   sigma_mean <- tortuosity_base + tortuosity_slope * predictor
   sigma <- max(1e-4, sigma_mean + stats::rnorm(1, sd = tortuosity_sd))
 
-  angle_noise <- .sim_angle_series(n_points, sigma = sigma, phi = phi)
-  abs_theta <- wrap_to_pi(final_heading + angle_noise)
-  rel_theta <- wrap_to_pi(abs_theta - final_heading)
-
-  rho <- seq(0, 1, length.out = n_points) + stats::rnorm(n_points, sd = radial_noise)
-  rho <- pmin(pmax(rho, 0), 1)
-
-  abs_x <- rho * cos(abs_theta)
-  abs_y <- rho * sin(abs_theta)
-  rel_x <- rho * cos(rel_theta)
-  rel_y <- rho * sin(rel_theta)
+  if (identical(track_shape, "oscillatory")) {
+    s_t <- amplitude * .sim_triangle_wave(n_points, n_reversals)
+    ux  <- cos(final_heading); uy <- sin(final_heading)
+    vx  <- -sin(final_heading); vy <- cos(final_heading)
+    w_t <- stats::rnorm(n_points, 0, sigma)
+    abs_x <- s_t * ux + w_t * vx
+    abs_y <- s_t * uy + w_t * vy
+    abs_theta <- wrap_to_pi(atan2(abs_y, abs_x))
+    rho <- pmin(sqrt(abs_x^2 + abs_y^2), 1)
+    rel_theta <- wrap_to_pi(abs_theta - final_heading)
+    rel_x <- rho * cos(rel_theta); rel_y <- rho * sin(rel_theta)
+  } else {
+    angle_noise <- .sim_angle_series(n_points, sigma = sigma, phi = phi)
+    abs_theta <- wrap_to_pi(final_heading + angle_noise)
+    rel_theta <- wrap_to_pi(abs_theta - final_heading)
+    rho <- seq(0, 1, length.out = n_points) + stats::rnorm(n_points, sd = radial_noise)
+    rho <- pmin(pmax(rho, 0), 1)
+    abs_x <- rho * cos(abs_theta); abs_y <- rho * sin(abs_theta)
+    rel_x <- rho * cos(rel_theta); rel_y <- rho * sin(rel_theta)
+  }
 
   tibble::tibble(
     condition = condition,
@@ -294,10 +339,13 @@ simulate_tracks <- function(n_points = 200,
     abs_y = abs_y,
     rel_x = rel_x,
     rel_y = rel_y,
-    modality  = modality,
-    n_modes   = as.integer(n_modes),
-    mode_id   = pa$mode_id,
-    mode_mean = pa$mode_mean
+    modality    = modality,
+    n_modes     = as.integer(n_modes),
+    mode_id     = pa$mode_id,
+    mode_mean   = pa$mode_mean,
+    track_shape = track_shape,
+    n_reversals = as.integer(n_reversals),
+    amplitude   = amplitude
   )
 }
 

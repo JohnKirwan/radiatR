@@ -69,6 +69,16 @@ supplied when missing):
   not the within-trial path shape.
 - `n_modes` (integer): number of evenly spaced modes used when
   `modality == "multimodal"` (default 1; ignored by other modalities).
+- `track_shape` (character): the *within-track* path shape. One of
+  `"directed"` (default) -- a single sweep towards `final_heading` -- or
+  `"oscillatory"` -- back-and-forth motion along the principal axis
+  `final_heading`. Oscillatory tracks are axial: directional heading methods
+  (e.g. `net`) cancel, while axial methods (`velocity_axis`, `pca_axis`)
+  recover the axis.
+- `n_reversals` (integer): number of direction reversals in an oscillatory
+  track (default 3; ignored when `track_shape == "directed"`).
+- `amplitude` (numeric): peak excursion along the axis for an oscillatory
+  track, clamped to `(0, 1]` (default 0.9; ignored when directed).
 
 The predictor can represent any continuous covariate (e.g. reference
 intensity). The final heading concentration increases with larger kappa,
@@ -83,12 +93,19 @@ components evenly spaced around the circle starting at `ref_mean`. The
 `"unimodal"` branch is identical to the historical draw, so seeded output is
 unchanged from earlier versions.
 
-Every simulated row records the ground-truth generating structure in four
+For an `"oscillatory"` track the position sweeps back and forth along the
+axis `final_heading` following a deterministic triangle wave of amplitude
+`amplitude` with `n_reversals` direction changes, plus a small Gaussian
+jitter perpendicular to the axis. The `"directed"` branch is byte-identical
+to the historical geometry, so the default seeded output is unchanged.
+
+Every simulated row records the ground-truth generating structure in
 additional columns: `modality` (character), `n_modes` (integer), `mode_id`
-(integer index of the component the heading came from) and `mode_mean`
-(numeric radian mean of that component, `NA` for `"uniform"`). When a
-`TrajSet` is returned, the resolved generating conditions are stored in
-`meta$sim_conditions`.
+(integer index of the component the heading came from), `mode_mean`
+(numeric radian mean of that component, `NA` for `"uniform"`),
+`track_shape` (character), `n_reversals` (integer) and `amplitude`
+(numeric). When a `TrajSet` is returned, the resolved generating conditions
+are stored in `meta$sim_conditions`.
 }
 \examples{
 sim <- simulate_tracks(seed = 1)
