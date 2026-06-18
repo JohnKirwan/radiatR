@@ -72,6 +72,50 @@ dispatches to any of the built-in rules or a registered custom rule:
 Register custom rules with
 [`register_heading_rule()`](https://johnkirwan.github.io/radiatR/reference/register_heading_rule.md).
 
+## Circular statistics
+
+Beyond summaries, radiatR covers the common circular-statistics workflow
+— all returning tidy data frames, and most accepting `axial = TRUE` for
+bidirectional (mod-180°) data such as orientation or polarization axes.
+
+- **Uniformity / modality tests** —
+  [`test_uniformity()`](https://johnkirwan.github.io/radiatR/reference/test_uniformity.md)
+  runs the Rayleigh (default), Kuiper, Rao spacing, Watson, and
+  **Hermans–Rasson** (Monte-Carlo, powerful against multimodal
+  alternatives) tests.
+- **Parametric fits** —
+  [`vonmises_fit()`](https://johnkirwan.github.io/radiatR/reference/vonmises_fit.md)
+  and
+  [`wrappedcauchy_fit()`](https://johnkirwan.github.io/radiatR/reference/wrappedcauchy_fit.md)
+  (each with an `axial` mode), overlaid on plots with
+  [`add_vonmises_density()`](https://johnkirwan.github.io/radiatR/reference/add_vonmises_density.md)
+  /
+  [`add_wrappedcauchy_density()`](https://johnkirwan.github.io/radiatR/reference/add_wrappedcauchy_density.md).
+- **Model selection** —
+  [`circ_model_select()`](https://johnkirwan.github.io/radiatR/reference/circ_model_select.md)
+  ranks *uniform* vs *unimodal* vs *axial* von Mises by AICc with Akaike
+  weights, so the data indicate the modality.
+- **Summaries & association** —
+  [`circ_summary()`](https://johnkirwan.github.io/radiatR/reference/circ_summary.md)
+  /
+  [`circ_summarise()`](https://johnkirwan.github.io/radiatR/reference/circ_summarise.md),
+  [`circ_dispersion()`](https://johnkirwan.github.io/radiatR/reference/circ_dispersion.md),
+  and
+  [`circ_cor()`](https://johnkirwan.github.io/radiatR/reference/circ_cor.md)
+  (circular–linear and circular–circular).
+
+``` r
+
+hd <- derive_headings(cpunctatus, rule = "distal")
+
+# Is the sample non-uniform, and how is it best described?
+test_uniformity(hd, test = "hermans_rasson")   # omnibus; catches multimodality
+circ_model_select(hd)                            # uniform / unimodal / axial by AICc
+```
+
+The graphical app surfaces these too: a selectable omnibus test and a
+model-selection readout alongside the summary table.
+
 ## Typical Workflow
 
 ``` r

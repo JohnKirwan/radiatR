@@ -10,13 +10,13 @@ Source:
 [`DESCRIPTION`](https://github.com/JohnKirwan/radiatR/blob/master/DESCRIPTION)
 
 Kirwan J (2026). *radiatR: Analysis and Visualisation of Headings and
-Trajectories in Circular Space*. R package version 0.3.1.9000,
+Trajectories in Circular Space*. R package version 0.4.0,
 <https://johnkirwan.github.io/radiatR>.
 
     @Manual{,
       title = {radiatR: Analysis and Visualisation of Headings and Trajectories in Circular Space},
       author = {John D. Kirwan},
       year = {2026},
-      note = {R package version 0.3.1.9000},
+      note = {R package version 0.4.0},
       url = {https://johnkirwan.github.io/radiatR},
     }

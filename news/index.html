@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">radiatR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,9 +40,9 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="radiatr-development-version">radiatR (development version)<a class="anchor" aria-label="anchor" href="#radiatr-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.4.0" id="radiatr-040">radiatR 0.4.0<a class="anchor" aria-label="anchor" href="#radiatr-040"></a></h2>
 <div class="section level3">
-<h3 id="statistics-development-version">Statistics<a class="anchor" aria-label="anchor" href="#statistics-development-version"></a></h3>
+<h3 id="statistics-0-4-0">Statistics<a class="anchor" aria-label="anchor" href="#statistics-0-4-0"></a></h3>
 <ul><li><p>The circular-statistics core gains an <code>axial = TRUE</code> option for bidirectional (mod-pi) data: <code><a href="../reference/circ_summary.html">circ_summary()</a></code>, <code><a href="../reference/circ_summarise.html">circ_summarise()</a></code>, <code><a href="../reference/circ_dispersion.html">circ_dispersion()</a></code>, <code><a href="../reference/test_uniformity.html">test_uniformity()</a></code>, <code><a href="../reference/test_mean_directions.html">test_mean_directions()</a></code>, <code><a href="../reference/test_concentration.html">test_concentration()</a></code>, <code><a href="../reference/compute_circ_mean.html">compute_circ_mean()</a></code>, and <code><a href="../reference/compute_circ_interval.html">compute_circ_interval()</a></code> compute the axial mean (an axis in [0, 180)), axial resultant length, and the corresponding tests via the standard angle-doubling method. The directional default (<code>axial = FALSE</code>) is unchanged.</p></li>
 <li><p>New <code><a href="../reference/circ_model_select.html">circ_model_select()</a></code> ranks three candidate circular models – uniform, unimodal von Mises, and axial (symmetric bimodal) von Mises – by AICc, with Akaike weights, to identify whether a heading sample is best described as uniform, directionally, or axially oriented. Reuses <code><a href="../reference/vonmises_fit.html">vonmises_fit()</a></code> and <code>circular</code>’s densities; no new dependency.</p></li>
 <li><p>The app’s statistical summary gains an always-on <strong>Rao spacing</strong> omnibus row alongside Rayleigh, flagging departures from uniformity (multimodal/clustered patterns) that the focused Rayleigh test misses. Rao spacing yields only a coarse significance level, so it is shown as a bracket (<code>&lt; 0.05</code>, <code>&gt; 0.10</code>, …), computed on raw angles regardless of the Data model.</p></li>
@@ -50,12 +50,12 @@
 <li><p><code><a href="../reference/vonmises_fit.html">vonmises_fit()</a></code>, <code><a href="../reference/wrappedcauchy_fit.html">wrappedcauchy_fit()</a></code>, <code><a href="../reference/add_vonmises_density.html">add_vonmises_density()</a></code>, and <code><a href="../reference/add_wrappedcauchy_density.html">add_wrappedcauchy_density()</a></code> gain <code>axial = TRUE</code> to fit and draw axial (bidirectional, mod-pi) distributions via the doubled-angle method: the mean is reported as an axis in [0, pi) (with the concentration estimated in the doubled-angle frame) and the density curve shows two equal antipodal peaks.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="plotting-development-version">Plotting<a class="anchor" aria-label="anchor" href="#plotting-development-version"></a></h3>
+<h3 id="plotting-0-4-0">Plotting<a class="anchor" aria-label="anchor" href="#plotting-0-4-0"></a></h3>
 <ul><li><p>The mean-direction and interval overlays gain <code>axial = TRUE</code> for bidirectional data: <code><a href="../reference/add_circ_mean.html">add_circ_mean()</a></code>/<code><a href="../reference/add_heading_arrow.html">add_heading_arrow()</a></code> draw a double-headed axis through the centre, <code><a href="../reference/add_circ_interval.html">add_circ_interval()</a></code>/<code><a href="../reference/add_heading_interval.html">add_heading_interval()</a></code> draw the CI at both poles, and <code><a href="../reference/add_critical_v_line.html">add_critical_v_line()</a></code> mirrors its boundary.</p></li>
 <li><p>The empirical individual-data layers gain <code>axial = TRUE</code> to draw bidirectional (period-pi) data at both ends: <code><a href="../reference/add_heading_points.html">add_heading_points()</a></code>, <code><a href="../reference/add_heading_vectors.html">add_heading_vectors()</a></code>, and <code><a href="../reference/add_stacked_headings.html">add_stacked_headings()</a></code> plot each datum at both poles, and the empirical densities (<code><a href="../reference/compute_circular_density.html">compute_circular_density()</a></code> / <code><a href="../reference/add_heading_density.html">add_heading_density()</a></code>, <code><a href="../reference/add_circular_kde.html">add_circular_kde()</a></code>, <code><a href="../reference/add_angle_rose.html">add_angle_rose()</a></code>) estimate on the both-ends-augmented sample. In the Shiny app the headings-only “Axial” checkbox becomes a “Data model” (Directional / Axial) selector in the Configure step that applies to both input types, soft-syncs from inherently axial heading methods (movement-axis / PCA / RANSAC), mirrors the whole figure, and relabels the summary’s Rayleigh test as “Rayleigh (axial)”.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="coordinates-development-version">Coordinates<a class="anchor" aria-label="anchor" href="#coordinates-development-version"></a></h3>
+<h3 id="coordinates-0-4-0">Coordinates<a class="anchor" aria-label="anchor" href="#coordinates-0-4-0"></a></h3>
 <ul><li>The per-trajectory reference direction is now first-class: <code><a href="../reference/reference.html">reference()</a></code> reads it and <code><a href="../reference/set_reference.html">set_reference()</a></code> changes it, re-deriving the relative frame (<code>rel_theta</code>/<code>rel_x</code>/<code>rel_y</code>) consistently so it cannot drift. New exported <code><a href="../reference/derive_coords.html">derive_coords()</a></code> is the single source of the unit-circle -&gt; polar/relative math (also used internally by the loader mapping). For a reference-frame offset, prefer <code><a href="../reference/set_reference.html">set_reference()</a></code> over a manual <code><a href="../reference/apply_transform.html">apply_transform()</a></code>.</li>
 <li>
 <code>as.data.frame(ts)</code> now returns the full frame even when derived coordinate columns (<code>rel_theta</code>/<code>rel_x</code>/<code>rel_y</code>/<code>radius</code>/<code>trans_rho</code>/<code>abs_theta</code>) are not stored, computing any missing ones from the canonical position and the trajectory reference. Internal analyses read through it, so they no longer depend on those columns being physically present.</li>
@@ -63,11 +63,11 @@
 <code>TrajSet</code> objects built by the loader pipeline no longer store the redundant derived coordinate columns (<code>trans_rho</code>/<code>abs_theta</code>/<code>rel_x</code>/<code>rel_y</code>), and no construction path stores a <code>rho</code>/<code>radius</code> column; <code>as.data.frame(ts)</code> computes them on demand from the canonical position and the trajectory reference. The canonical <code>trans_x</code>/<code>trans_y</code>/<code>raw_*</code> and the analysis angle <code>rel_theta</code> are kept. Storage of the derived frame is now an implementation detail; existing data (e.g. the bundled <code>cpunctatus</code>) that still carries the columns behaves identically.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="terminology-development-version">Terminology<a class="anchor" aria-label="anchor" href="#terminology-development-version"></a></h3>
+<h3 id="terminology-0-4-0">Terminology<a class="anchor" aria-label="anchor" href="#terminology-0-4-0"></a></h3>
 <ul><li>The exported <code>animal_track</code> parameter of <code><a href="../reference/get_trial_limits.html">get_trial_limits()</a></code>, <code><a href="../reference/get_tracked_object_pos.html">get_tracked_object_pos()</a></code>, and <code><a href="../reference/get_all_object_pos.html">get_all_object_pos()</a></code> is renamed to <code>track</code> (breaking). Residual animal-specific framing in the documentation is generalised to “subject”. Example references to the bundled millipede/urchin datasets and the column-name guesses used by importers are unchanged.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="loaders-development-version">Loaders<a class="anchor" aria-label="anchor" href="#loaders-development-version"></a></h3>
+<h3 id="loaders-0-4-0">Loaders<a class="anchor" aria-label="anchor" href="#loaders-0-4-0"></a></h3>
 <ul><li>
 <code><a href="../reference/TrajSet_read.html">TrajSet_read()</a></code> and <code><a href="../reference/TrajSet_read_dir.html">TrajSet_read_dir()</a></code> now auto-detect the field separator (comma, semicolon, tab, or pipe) and decimal mark from file <em>content</em> rather than the extension, so semicolon-separated and European decimal-comma exports, and tab-delimited files saved as <code>.csv</code>, load correctly. A new <code>read_opts</code> argument (<code>delim</code>, <code>decimal</code>, <code>sheet</code>) overrides detection when needed. Excel workbooks (<code>.xlsx</code>/<code>.xls</code>) can be read directly (first sheet by default, or <code>read_opts$sheet</code>), via the soft-dependency <code>readxl</code>. In the Shiny app the first-rows preview now reflects the actual detected parse, and a new Delimiter control lets you correct a misdetected separator in place.</li>
 <li>
@@ -76,17 +76,17 @@
 <code><a href="../reference/load_tracks.html">load_tracks()</a></code> and <code><a href="../reference/get_trial_limits.html">get_trial_limits()</a></code> now carry every column from the manifest / <code>file_tbl</code> onto trials (and into the resulting <code>TrajSet</code>), rather than a fixed <code>arc</code>/<code>type</code>/<code>obstacle</code>/<code>id</code> list left over from one experiment. Structural file-reference columns (<code>basename</code>/<code>landmark</code>/<code>track</code>) are excluded. Use <code>load_tracks2(colnames = )</code> to rename or restrict the columns carried.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="transformations-development-version">Transformations<a class="anchor" aria-label="anchor" href="#transformations-development-version"></a></h3>
+<h3 id="transformations-0-4-0">Transformations<a class="anchor" aria-label="anchor" href="#transformations-0-4-0"></a></h3>
 <ul><li>New <code><a href="../reference/apply_transform.html">apply_transform()</a></code> applies a user-supplied transformation to a loaded <code>TrajSet</code> (per-trajectory or whole-frame), returning a modified <code>TrajSet</code> and recording the step in its <code>transform_history</code>. Two worked recipes are documented: an edge-referenced -&gt; centre-referenced reference offset (a per-trial offset read from stimulus-width metadata) and a polarization direction -&gt; axis (angle-doubling) remap.</li>
 <li>Removed the hard-coded 1st-Hermitian (<code>type == "Herm"</code>) reference-angle adjustment and the now-unused <code>midpoint</code> argument from <code><a href="../reference/get_trial_limits.html">get_trial_limits()</a></code>; experiment-specific reference corrections are now expressed via <code><a href="../reference/apply_transform.html">apply_transform()</a></code>. The bundled <code>cpunctatus</code> data is unchanged.</li>
 <li>The <code>TrajSet</code> row-order validity check no longer requires a global sort by id (which depended on string collation / locale); it now checks the actual invariant – each trajectory’s rows form a contiguous, time-ordered block.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="documentation-development-version">Documentation<a class="anchor" aria-label="anchor" href="#documentation-development-version"></a></h3>
+<h3 id="documentation-0-4-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-4-0"></a></h3>
 <ul><li>Repositioned the package documentation from “animal movement in circular arenas” toward the general case – analysis and visualisation of headings and trajectories in circular space – reflecting that angles can be supplied directly (not only reconstructed from tracking data). Animal-movement tracking remains a primary supported application. No code or API changes.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="statistics-and-headings-development-version">Statistics and headings<a class="anchor" aria-label="anchor" href="#statistics-and-headings-development-version"></a></h3>
+<h3 id="statistics-and-headings-0-4-0">Statistics and headings<a class="anchor" aria-label="anchor" href="#statistics-and-headings-0-4-0"></a></h3>
 <ul><li>New <code>velocity_axis</code> heading rule: <code>derive_headings(ts, rule = "velocity_axis")</code> reduces each trajectory to its movement axis (the axial mean of step directions, in [0, 180)), the bidirectional counterpart of <code>velocity_mean</code>. Pair it with the axial statistics and plots (<code>axial = TRUE</code>). Available in the Shiny app’s heading-method dropdown.</li>
 <li>
 <code><a href="../reference/derive_headings.html">derive_headings()</a></code> gains an <code>on_missing</code> argument (<code>"warn"</code> (default), <code>"error"</code>, or <code>"quiet"</code>) and now reports how many trials produced no heading. Failed trials are always retained as <code>NA</code> rows, and the result carries <code>n_total</code>, <code>n_missing</code>, and <code>missing_ids</code> attributes. Rule-based failures are often non-random and can bias circular statistics, so they are surfaced by default.</li>
@@ -94,17 +94,17 @@
 <code><a href="../reference/circ_summarise.html">circ_summarise()</a></code> gains requestable <code>n_total</code> and <code>n_missing</code> stats so the excluded-trial denominator can travel with the summary (default output unchanged).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="shiny-app-development-version">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-development-version"></a></h3>
+<h3 id="shiny-app-0-4-0">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-0-4-0"></a></h3>
 <ul><li><p>The Summary panel gains a selectable <strong>omnibus test</strong> (Rao spacing or Hermans-Rasson) and a <strong>model-selection readout</strong> – a “Best model” column plus a full AICc comparison card (<code><a href="../reference/circ_model_select.html">circ_model_select()</a></code>: uniform / unimodal / axial with Akaike weights) – so the data, not just a declared model, indicates whether a sample is uniform, directional, or axial.</p></li>
 <li><p>The Results screen now shows an attrition banner when trials were excluded – loud, with a bias caveat, for headings derived from trajectories, and a neutral note for provided headings. The summary table gains an <code>Excluded</code> column.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="plotting-development-version-1">Plotting<a class="anchor" aria-label="anchor" href="#plotting-development-version-1"></a></h3>
+<h3 id="plotting-0-4-0-1">Plotting<a class="anchor" aria-label="anchor" href="#plotting-0-4-0-1"></a></h3>
 <ul><li>
 <code><a href="../reference/radiate.html">radiate.headings_frame()</a></code> now draws the same theme-responsive radial chrome as <code><a href="../reference/radiate.html">radiate()</a></code> for trajectories (circumference, ticks, degree labels, radial grid, origin) instead of a fixed bold circle, and gains <code>show_markers</code>, <code>colour_col</code>, <code>legend</code>, <code>display</code>, <code>grid</code>, <code>grid_colour</code>, <code>circumference</code>, and <code>origin</code> arguments. <code>show_markers = FALSE</code> returns the radial frame only, so callers can layer their own marker and statistic overlays.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="shiny-app-development-version-1">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-development-version-1"></a></h3>
+<h3 id="shiny-app-0-4-0-1">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-0-4-0-1"></a></h3>
 <ul><li>The app now accepts a dataset of pre-computed headings (one angle per trial) in place of trajectories. Choose the input type on the upload screen, map the angle column, units, and convention (unit-circle or compass) plus an optional grouping column, and the Results figure draws the stacked dots / points, mean arrow, confidence interval, and Rayleigh / V-test from the angles directly. A “Load example headings” link derives a demonstration set from the bundled millipede data.</li>
 </ul></div>
 </div>

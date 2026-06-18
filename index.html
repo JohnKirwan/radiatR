@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="index.html">radiatR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -232,9 +232,31 @@
 <p>Register custom rules with <code><a href="reference/register_heading_rule.html">register_heading_rule()</a></code>.</p>
 </div>
 <div class="section level2">
+<h2 id="circular-statistics">Circular statistics<a class="anchor" aria-label="anchor" href="#circular-statistics"></a>
+</h2>
+<p>Beyond summaries, radiatR covers the common circular-statistics workflow — all returning tidy data frames, and most accepting <code>axial = TRUE</code> for bidirectional (mod-180°) data such as orientation or polarization axes.</p>
+<ul>
+<li>
+<strong>Uniformity / modality tests</strong> — <code><a href="reference/test_uniformity.html">test_uniformity()</a></code> runs the Rayleigh (default), Kuiper, Rao spacing, Watson, and <strong>Hermans–Rasson</strong> (Monte-Carlo, powerful against multimodal alternatives) tests.</li>
+<li>
+<strong>Parametric fits</strong> — <code><a href="reference/vonmises_fit.html">vonmises_fit()</a></code> and <code><a href="reference/wrappedcauchy_fit.html">wrappedcauchy_fit()</a></code> (each with an <code>axial</code> mode), overlaid on plots with <code><a href="reference/add_vonmises_density.html">add_vonmises_density()</a></code> / <code><a href="reference/add_wrappedcauchy_density.html">add_wrappedcauchy_density()</a></code>.</li>
+<li>
+<strong>Model selection</strong> — <code><a href="reference/circ_model_select.html">circ_model_select()</a></code> ranks <em>uniform</em> vs <em>unimodal</em> vs <em>axial</em> von Mises by AICc with Akaike weights, so the data indicate the modality.</li>
+<li>
+<strong>Summaries &amp; association</strong> — <code><a href="reference/circ_summary.html">circ_summary()</a></code> / <code><a href="reference/circ_summarise.html">circ_summarise()</a></code>, <code><a href="reference/circ_dispersion.html">circ_dispersion()</a></code>, and <code><a href="reference/circ_cor.html">circ_cor()</a></code> (circular–linear and circular–circular).</li>
+</ul>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">hd</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/derive_headings.html">derive_headings</a></span><span class="op">(</span><span class="va">cpunctatus</span>, rule <span class="op">=</span> <span class="st">"distal"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Is the sample non-uniform, and how is it best described?</span></span>
+<span><span class="fu"><a href="reference/test_uniformity.html">test_uniformity</a></span><span class="op">(</span><span class="va">hd</span>, test <span class="op">=</span> <span class="st">"hermans_rasson"</span><span class="op">)</span>   <span class="co"># omnibus; catches multimodality</span></span>
+<span><span class="fu"><a href="reference/circ_model_select.html">circ_model_select</a></span><span class="op">(</span><span class="va">hd</span><span class="op">)</span>                            <span class="co"># uniform / unimodal / axial by AICc</span></span></code></pre></div>
+<p>The graphical app surfaces these too: a selectable omnibus test and a model-selection readout alongside the summary table.</p>
+</div>
+<div class="section level2">
 <h2 id="typical-workflow">Typical Workflow<a class="anchor" aria-label="anchor" href="#typical-workflow"></a>
 </h2>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://johnkirwan.github.io/radiatR">radiatR</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 1. Load tracking data (example: DeepLabCut with head + thorax bodyparts)</span></span>
@@ -268,7 +290,7 @@
 <h2 id="simulate-data">Simulate Data<a class="anchor" aria-label="anchor" href="#simulate-data"></a>
 </h2>
 <p><code><a href="reference/simulate_tracks.html">simulate_tracks()</a></code> generates synthetic arena trajectories for testing pipelines and teaching:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Three default conditions differing in concentration and tortuosity</span></span>
 <span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/simulate_tracks.html">simulate_tracks</a></span><span class="op">(</span>seed <span class="op">=</span> <span class="fl">42</span>, output <span class="op">=</span> <span class="st">"trajset"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">ts</span>, group_col <span class="op">=</span> <span class="st">"trial_id"</span>, panel_by <span class="op">=</span> <span class="st">"condition"</span>, show_arrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -285,7 +307,7 @@
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># From GitHub</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"JohnKirwan/radiatR"</span><span class="op">)</span></span>
 <span></span>
@@ -297,10 +319,10 @@
 </h2>
 <p>A browser-based interface covers the common workflow — upload a tracking file, choose a heading method, and view circular plots and summary statistics — with no R coding required. There are three ways to reach it:</p>
 <p><strong>1. Run locally</strong> (works after installing the package):</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">radiatR</span><span class="fu">::</span><span class="fu"><a href="reference/launch_app.html">launch_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><strong>2. Hosted on the web</strong> — the bundled app deploys to a Shiny host without modification, giving a clickable link for collaborators who do not use R:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">rsconnect</span><span class="fu">::</span><span class="fu">deployApp</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"app"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><strong>3. Static site (no server)</strong> — a <code>shinylive</code> build runs the app entirely in the browser via WebAssembly, so uploaded files never leave the user’s machine (which suits sensitive data). The GitHub Actions workflow in <code>.github/workflows/shinylive.yaml</code> publishes it to GitHub Pages alongside the documentation, at <a href="https://johnkirwan.github.io/radiatR/app/" class="uri">https://johnkirwan.github.io/radiatR/app/</a>. The build runs on each <strong>published GitHub Release</strong>: it compiles radiatR into a webR WebAssembly image (attached to the release), then exports and deploys the app. Publish or re-publish a release to refresh the hosted app.</p>
 </div>

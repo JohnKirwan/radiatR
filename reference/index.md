@@ -39,6 +39,8 @@ likelihood thresholds, zone selection, etc.).
   : Summarise per-trial metadata for a single video.
 - [`get_tracked_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_tracked_object_pos.md)
   : Derive trial-level track positions in polar coordinates.
+- [`guess_columns()`](https://johnkirwan.github.io/radiatR/reference/guess_columns.md)
+  : Guess the role of each column in a track table
 
 ## Loader registry
 
@@ -97,6 +99,8 @@ data using built-in rules or custom functions.
   : Register a custom heading derivation rule
 - [`list_heading_rules()`](https://johnkirwan.github.io/radiatR/reference/list_heading_rules.md)
   : List registered custom heading rules
+- [`bin_angles()`](https://johnkirwan.github.io/radiatR/reference/bin_angles.md)
+  : Snap angles to fixed-width circular bin centres
 
 ## Circular statistics – summaries
 
@@ -175,6 +179,16 @@ The main radiate() function and its building blocks.
   : Assign cycling colour indices to trajectories
 - [`add_multiple_circles()`](https://johnkirwan.github.io/radiatR/reference/add_multiple_circles.md)
   : Add multiple concentric circles to a ggplot object
+- [`circ_display()`](https://johnkirwan.github.io/radiatR/reference/circ_display.md)
+  : Circular display convention specification
+- [`add_radial_grid()`](https://johnkirwan.github.io/radiatR/reference/add_radial_grid.md)
+  : Radial grid layers (the radial analogue of a Cartesian grid)
+- [`add_origin_point()`](https://johnkirwan.github.io/radiatR/reference/add_origin_point.md)
+  : Mark the centre of a radial plot
+- [`assign_colour_key()`](https://johnkirwan.github.io/radiatR/reference/assign_colour_key.md)
+  : Assign a shared colour-key column to a TrajSet or data frame
+- [`cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/cycle_colours.md)
+  : Cycle a bounded set of colour indices over the values of a key
 
 ## Visualisation – heading overlays
 
@@ -222,6 +236,8 @@ darkorange, KDE tomato.
   radiate plot
 - [`add_circular_density()`](https://johnkirwan.github.io/radiatR/reference/add_circular_density.md)
   : Wrap a pre-computed circular density around the unit circle
+- [`compute_circular_density()`](https://johnkirwan.github.io/radiatR/reference/compute_circular_density.md)
+  : Compute a circular density data frame from heading observations
 
 ## Visualisation – arena guides
 
@@ -246,6 +262,38 @@ Angle-convention conversions and geometric helpers.
   : Intersection helper using track rows
 - [`line_circle_intercept_traj()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept_traj.md)
   : Intersection helper for TrajSet trajectories
+- [`derive_coords()`](https://johnkirwan.github.io/radiatR/reference/derive_coords.md)
+  : Derive polar and reference-relative coordinates from unit-circle
+  position
+
+## Reference frame & transforms
+
+Read or change a TrajSet’s per-trajectory reference direction, and apply
+bespoke transformations (recorded in the transform history).
+
+- [`reference()`](https://johnkirwan.github.io/radiatR/reference/reference.md)
+  : Per-trajectory reference direction of a TrajSet
+- [`set_reference()`](https://johnkirwan.github.io/radiatR/reference/set_reference.md)
+  : Set the per-trajectory reference and re-derive the relative frame
+- [`apply_transform()`](https://johnkirwan.github.io/radiatR/reference/apply_transform.md)
+  : Apply a bespoke transformation to a TrajSet
+- [`transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
+  [`log_transform()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
+  [`set_transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
+  : Transform history helpers for TrajSet objects
+
+## Path metrics
+
+Per-trajectory straightness and tortuosity of the movement path.
+
+- [`straightness_index()`](https://johnkirwan.github.io/radiatR/reference/straightness_index.md)
+  : Per-trajectory straightness index for a TrajSet
+- [`tortuosity_ratio()`](https://johnkirwan.github.io/radiatR/reference/tortuosity_ratio.md)
+  : Per-trajectory tortuosity ratio for a TrajSet
+- [`path_straightness()`](https://johnkirwan.github.io/radiatR/reference/path_straightness.md)
+  : Path straightness index for a single trajectory
+- [`path_tortuosity()`](https://johnkirwan.github.io/radiatR/reference/path_tortuosity.md)
+  : Tortuosity ratio for a single trajectory
 
 ## Datasets
 

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">radiatR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -147,6 +147,13 @@
 
         </dt>
         <dd>Derive trial-level track positions in polar coordinates.</dd>
+
+        <dt>
+
+          <code><a href="guess_columns.html">guess_columns()</a></code>
+
+        </dt>
+        <dd>Guess the role of each column in a track table</dd>
       </dl></div><div class="section level2">
       <h2 id="loader-registry">Loader registry<a class="anchor" aria-label="anchor" href="#loader-registry"></a></h2>
 
@@ -274,6 +281,13 @@
 
         </dt>
         <dd>List registered custom heading rules</dd>
+
+        <dt>
+
+          <code><a href="bin_angles.html">bin_angles()</a></code>
+
+        </dt>
+        <dd>Snap angles to fixed-width circular bin centres</dd>
       </dl></div><div class="section level2">
       <h2 id="circular-statistics-summaries">Circular statistics – summaries<a class="anchor" aria-label="anchor" href="#circular-statistics-summaries"></a></h2>
 
@@ -480,6 +494,41 @@
 
         </dt>
         <dd>Add multiple concentric circles to a ggplot object</dd>
+
+        <dt>
+
+          <code><a href="circ_display.html">circ_display()</a></code>
+
+        </dt>
+        <dd>Circular display convention specification</dd>
+
+        <dt>
+
+          <code><a href="add_radial_grid.html">add_radial_grid()</a></code>
+
+        </dt>
+        <dd>Radial grid layers (the radial analogue of a Cartesian grid)</dd>
+
+        <dt>
+
+          <code><a href="add_origin_point.html">add_origin_point()</a></code>
+
+        </dt>
+        <dd>Mark the centre of a radial plot</dd>
+
+        <dt>
+
+          <code><a href="assign_colour_key.html">assign_colour_key()</a></code>
+
+        </dt>
+        <dd>Assign a shared colour-key column to a TrajSet or data frame</dd>
+
+        <dt>
+
+          <code><a href="cycle_colours.html">cycle_colours()</a></code>
+
+        </dt>
+        <dd>Cycle a bounded set of colour indices over the values of a key</dd>
       </dl></div><div class="section level2">
       <h2 id="visualisation-heading-overlays">Visualisation – heading overlays<a class="anchor" aria-label="anchor" href="#visualisation-heading-overlays"></a></h2>
 
@@ -610,6 +659,13 @@
 
         </dt>
         <dd>Wrap a pre-computed circular density around the unit circle</dd>
+
+        <dt>
+
+          <code><a href="compute_circular_density.html">compute_circular_density()</a></code>
+
+        </dt>
+        <dd>Compute a circular density data frame from heading observations</dd>
       </dl></div><div class="section level2">
       <h2 id="visualisation-arena-guides">Visualisation – arena guides<a class="anchor" aria-label="anchor" href="#visualisation-arena-guides"></a></h2>
 
@@ -677,6 +733,87 @@
 
         </dt>
         <dd>Intersection helper for TrajSet trajectories</dd>
+
+        <dt>
+
+          <code><a href="derive_coords.html">derive_coords()</a></code>
+
+        </dt>
+        <dd>Derive polar and reference-relative coordinates from unit-circle position</dd>
+      </dl></div><div class="section level2">
+      <h2 id="reference-frame-transforms">Reference frame &amp; transforms<a class="anchor" aria-label="anchor" href="#reference-frame-transforms"></a></h2>
+
+      <div class="section-desc"><p>Read or change a TrajSet’s per-trajectory reference direction, and apply bespoke transformations (recorded in the transform history).</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="reference.html">reference()</a></code>
+
+        </dt>
+        <dd>Per-trajectory reference direction of a TrajSet</dd>
+
+        <dt>
+
+          <code><a href="set_reference.html">set_reference()</a></code>
+
+        </dt>
+        <dd>Set the per-trajectory reference and re-derive the relative frame</dd>
+
+        <dt>
+
+          <code><a href="apply_transform.html">apply_transform()</a></code>
+
+        </dt>
+        <dd>Apply a bespoke transformation to a TrajSet</dd>
+
+        <dt>
+
+          <code><a href="transform_history.html">transform_history()</a></code> <code><a href="transform_history.html">log_transform()</a></code> <code><a href="transform_history.html">set_transform_history()</a></code>
+
+        </dt>
+        <dd>Transform history helpers for TrajSet objects</dd>
+      </dl></div><div class="section level2">
+      <h2 id="path-metrics">Path metrics<a class="anchor" aria-label="anchor" href="#path-metrics"></a></h2>
+
+      <div class="section-desc"><p>Per-trajectory straightness and tortuosity of the movement path.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="straightness_index.html">straightness_index()</a></code>
+
+        </dt>
+        <dd>Per-trajectory straightness index for a TrajSet</dd>
+
+        <dt>
+
+          <code><a href="tortuosity_ratio.html">tortuosity_ratio()</a></code>
+
+        </dt>
+        <dd>Per-trajectory tortuosity ratio for a TrajSet</dd>
+
+        <dt>
+
+          <code><a href="path_straightness.html">path_straightness()</a></code>
+
+        </dt>
+        <dd>Path straightness index for a single trajectory</dd>
+
+        <dt>
+
+          <code><a href="path_tortuosity.html">path_tortuosity()</a></code>
+
+        </dt>
+        <dd>Tortuosity ratio for a single trajectory</dd>
       </dl></div><div class="section level2">
       <h2 id="datasets">Datasets<a class="anchor" aria-label="anchor" href="#datasets"></a></h2>
 
