@@ -66,6 +66,7 @@ Config/testthat/edition: 3
 VignetteBuilder: knitr
 Collate: 
     'TrajSet.R'
+    'circular_boxplot.R'
     'circular_mapping.R'
     'coords.R'
     'circular_plotting.R'

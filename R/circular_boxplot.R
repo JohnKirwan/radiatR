@@ -8,6 +8,14 @@
 # concentration, the factor c such that Q3 + c*IQR lands on the 99.65% quantile.
 .circ_box_constant <- function(tc) {
   conc <- as.numeric(circular::A1inv(circular::rho.circular(tc)))
+  # As kappa -> Inf the von Mises quantile ratio converges to the Gaussian
+  # Tukey value (~1.5). Cap concentration at a large finite value so tightly
+  # clustered data (rho rounding to 1, A1inv = Inf) does not yield NaN. The cap
+  # is 1e3 rather than 1e4 because circular::qvonmises loses accuracy past ~5e3
+  # (its quantiles saturate, collapsing the constant to ~0); at 1e3 the constant
+  # is a clean ~1.4997.
+  if (!is.finite(conc)) conc <- 1e3
+  conc <- min(conc, 1e3)
   qk <- function(p) {
     q <- as.numeric(circular::qvonmises(p, mu = circular::circular(0), kappa = conc))
     ((q + pi) %% (2 * pi)) - pi               # signed arc from 0
@@ -66,7 +74,7 @@
 
   # advisory: near-uniform / antipodally symmetric (box ~ half-circle, c ~ 0.5)
   reason <- NA_character_
-  if (d >= 0.95 * pi || cc$constant <= 0.55)
+  if (is.finite(cc$constant) && (d >= 0.95 * pi || cc$constant <= 0.55))
     reason <- "near-uniform or antipodal: box spans ~half the circle; interpretation not recommended"
 
   list(median     = M,

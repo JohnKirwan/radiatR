@@ -42,6 +42,17 @@ test_that("not-drawable cases are flagged (uniform median, too few points)", {
   expect_match(few$reason, "4")
 })
 
+test_that("highly concentrated / near-identical data does not crash and gives ~1.5 constant", {
+  s8 <- circ_boxplot_stats(data.frame(heading = rep(1, 8)))
+  expect_true(s8$drawable)
+  expect_true(is.finite(s8$constant))
+  expect_gt(s8$constant, 1.3); expect_lt(s8$constant, 1.8)
+  expect_true(all(is.finite(s8$fences)))
+  expect_true(is.na(s8$reason))                # not flagged near-uniform
+  tight <- 1 + c(-1e-3, 1e-3, rep(0, 6))
+  expect_silent(circ_boxplot_stats(data.frame(heading = tight)))
+})
+
 test_that("circ_boxplot_stats matches bpDir::CircularBoxplot as an oracle", {
   skip_if_not_installed("bpDir")
   set.seed(5)
