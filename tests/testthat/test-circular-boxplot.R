@@ -101,3 +101,43 @@ test_that("axial constant matches bpDir's directional boxplot on the doubled dat
   # and it is the meaningful Tukey-like value, not the degenerate near-uniform one
   expect_gt(s$constant, 1.3)
 })
+
+test_that("add_circular_boxplot returns ggplot layers that compose with radiate", {
+  set.seed(8)
+  hd <- data.frame(heading = as.numeric(circular::rvonmises(150, mu = circular::circular(1), kappa = 5)))
+  lyr <- add_circular_boxplot(hd)
+  expect_true(is.list(lyr))
+  expect_true(all(vapply(lyr, function(x) inherits(x, "Layer"), logical(1))))
+  p <- ggplot2::ggplot() + ggplot2::coord_fixed() + lyr
+  expect_s3_class(ggplot2::ggplot_build(p), "ggplot_built")
+})
+
+test_that("axial add_circular_boxplot mirrors elements at theta and theta+pi", {
+  set.seed(9)
+  half <- as.numeric(circular::rvonmises(150, mu = circular::circular(2), kappa = 8)) / 2
+  hd <- data.frame(heading = c(half, (half + pi) %% (2*pi)))
+  ld <- add_circular_boxplot(hd, axial = FALSE)
+  la <- add_circular_boxplot(hd, axial = TRUE)
+  poly_rows <- function(lyrs) sum(vapply(lyrs, function(L)
+    if (inherits(L, "Layer") && inherits(L$geom, "GeomPolygon")) nrow(L$data) else 0L, integer(1)))
+  expect_gt(poly_rows(la), poly_rows(ld))
+})
+
+test_that("not-drawable input warns and adds no boxplot geoms", {
+  hd <- data.frame(heading = c(0.1, 0.2, 0.3))   # n < 4
+  expect_warning(out <- add_circular_boxplot(hd), "not drawn|4")
+  expect_null(out)
+  p <- ggplot2::ggplot() + out
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("axial boxplot draws correctly when the axis sits on the 0/pi seam", {
+  set.seed(42)
+  half <- (as.numeric(circular::rvonmises(200, mu = circular::circular(2*0.05), kappa = 10))/2) %% pi
+  la <- add_circular_boxplot(data.frame(heading = half), axial = TRUE)
+  poly <- la[[which(vapply(la, function(L) inherits(L$geom, "GeomPolygon"), logical(1)))[1]]]$data
+  ang <- atan2(poly$.y - 0, poly$.x - 0)
+  expect_true(is.data.frame(poly) && nrow(poly) > 0)
+  p <- ggplot2::ggplot() + ggplot2::coord_fixed() + la
+  expect_s3_class(ggplot2::ggplot_build(p), "ggplot_built")
+})

@@ -148,3 +148,120 @@ circ_boxplot_stats <- function(hd, angle_col = "heading", axial = FALSE) {
   if (isTRUE(axial)) return(.circ_boxplot_axial(theta))   # implemented in Task 2
   .circ_boxplot_core(theta, axial = FALSE)
 }
+
+#' Add a circular boxplot layer to a radial plot
+#'
+#' Renders the [circ_boxplot_stats()] summary onto a [radiate()] polar plot in
+#' the Buttarazzi et al. (2018) style: a filled box band between the hinges,
+#' whisker arcs, short crossbars at the median and hinges, far-out points, and
+#' an optional median arrow. For `axial = TRUE` every element is drawn at both
+#' poles of the axis (offsets are computed with mod-pi arithmetic so the box is
+#' a short band even when the axis sits on the 0/pi seam). Composable with `+`.
+#'
+#' @inheritParams circ_boxplot_stats
+#' @param radius Perimeter radius for the box/whiskers. Default `1`.
+#' @param width Radial thickness of the box band. Default `0.1`.
+#' @param colour Outline colour for box, whiskers, crossbars, far-out. Default
+#'   `"black"`.
+#' @param box_fill Fill colour of the box band. Default `"grey80"`.
+#' @param farout_shape Point shape for far-out values. Default `8` (star).
+#' @param show_median_arrow Draw a radial arrow at the median. Default `TRUE`.
+#' @param linewidth Line width for arcs/crossbars. Default `0.8`.
+#' @param n_theta Points per arc. Default `200`.
+#' @param display A [circ_display()] object; when `NULL` (default), taken from
+#'   `attr(hd, "display")`, falling back to `circ_display()`.
+#' @return A list of ggplot2 layers, or `NULL` when the boxplot is not drawable
+#'   (a `warning()` is emitted with the reason).
+#' @references Buttarazzi, D., Pandolfo, G. & Porzio, G. C. (2018). A boxplot
+#'   for circular data. \emph{Biometrics} 74(4), 1492--1501.
+#'   \doi{10.1111/biom.12889}
+#' @seealso [circ_boxplot_stats()], [radiate()]
+#' @importFrom ggplot2 geom_polygon geom_path geom_segment geom_point aes
+#' @importFrom rlang .data
+#' @importFrom grid arrow unit
+#' @export
+add_circular_boxplot <- function(hd, angle_col = "heading", axial = FALSE,
+                                 radius = 1, width = 0.1,
+                                 colour = "black", box_fill = "grey80",
+                                 farout_shape = 8, show_median_arrow = TRUE,
+                                 linewidth = 0.8, n_theta = 200L, display = NULL) {
+  s <- circ_boxplot_stats(hd, angle_col = angle_col, axial = axial)
+  if (is.null(display))
+    display <- (if (is.data.frame(hd)) attr(hd, "display", exact = TRUE) else NULL) %||% circ_display()
+
+  if (!isTRUE(s$drawable)) {
+    warning("add_circular_boxplot: ", s$reason, call. = FALSE)
+    return(NULL)
+  }
+  if (!is.na(s$reason)) warning("add_circular_boxplot: ", s$reason, call. = FALSE)
+
+  r_in  <- radius - width / 2
+  r_out <- radius + width / 2
+
+  # Signed offset of an angle from the median. For axial data the locations live
+  # on a mod-pi circle, so offsets must be taken mod pi (range (-pi/2, pi/2]) and
+  # each element mirrored at the axis and its antipode (+pi); using mod-2pi here
+  # would draw arcs the long way around the 0/pi seam.
+  M   <- s$median
+  off <- if (axial) function(a) ((a - M + pi/2) %% pi)     - pi/2
+         else        function(a) ((a - M + pi)   %% (2*pi)) - pi
+  h   <- sort(off(s$hinges)); w <- sort(off(s$whiskers))
+  fo  <- off(s$far_out)
+  offs <- if (axial) c(0, pi) else 0
+
+  arc_xy <- function(a0, a1, r, gid) {
+    th <- seq(a0, a1, length.out = n_theta)
+    xy <- .uc_to_display_coords(r * cos(th), r * sin(th), display)
+    data.frame(.x = xy$x, .y = xy$y, .g = gid)
+  }
+  radial_xy <- function(a, r0, r1) {
+    p0 <- .uc_to_display_coords(r0 * cos(a), r0 * sin(a), display)
+    p1 <- .uc_to_display_coords(r1 * cos(a), r1 * sin(a), display)
+    data.frame(.x = p0$x, .y = p0$y, .xend = p1$x, .yend = p1$y)
+  }
+
+  box_df <- whisk_df <- cross_df <- arrow_df <- fo_df <- NULL
+  for (k in seq_along(offs)) {
+    base <- M + offs[k]
+    # box band: outer arc forward + inner arc back -> one closed ring per pole
+    outer <- arc_xy(base + h[1], base + h[2], r_out, k)
+    inner <- arc_xy(base + h[2], base + h[1], r_in,  k)
+    box_df <- rbind(box_df, outer, inner)
+    # whiskers: hinge -> whisker end on each side, along the perimeter
+    whisk_df <- rbind(whisk_df,
+      arc_xy(base + h[2], base + w[2], radius, 2*k - 1),
+      arc_xy(base + w[1], base + h[1], radius, 2*k))
+    # crossbars at median + hinges (short radial segments)
+    cross_df <- rbind(cross_df,
+      radial_xy(base + 0,    r_in, r_out),
+      radial_xy(base + h[1], r_in, r_out),
+      radial_xy(base + h[2], r_in, r_out))
+    if (show_median_arrow) arrow_df <- rbind(arrow_df, radial_xy(base, 0, radius))
+    if (length(fo)) {
+      xy <- .uc_to_display_coords(radius * cos(base + fo), radius * sin(base + fo), display)
+      fo_df <- rbind(fo_df, data.frame(.x = xy$x, .y = xy$y))
+    }
+  }
+
+  layers <- list(
+    ggplot2::geom_polygon(data = box_df,
+      ggplot2::aes(x = .data$.x, y = .data$.y, group = .data$.g),
+      fill = box_fill, colour = colour, linewidth = linewidth, inherit.aes = FALSE),
+    ggplot2::geom_path(data = whisk_df,
+      ggplot2::aes(x = .data$.x, y = .data$.y, group = .data$.g),
+      colour = colour, linewidth = linewidth, inherit.aes = FALSE),
+    ggplot2::geom_segment(data = cross_df,
+      ggplot2::aes(x = .data$.x, y = .data$.y, xend = .data$.xend, yend = .data$.yend),
+      colour = colour, linewidth = linewidth, inherit.aes = FALSE)
+  )
+  if (show_median_arrow)
+    layers <- c(layers, list(ggplot2::geom_segment(data = arrow_df,
+      ggplot2::aes(x = .data$.x, y = .data$.y, xend = .data$.xend, yend = .data$.yend),
+      colour = colour, linewidth = linewidth,
+      arrow = grid::arrow(length = grid::unit(0.2, "cm")), inherit.aes = FALSE)))
+  if (!is.null(fo_df))
+    layers <- c(layers, list(ggplot2::geom_point(data = fo_df,
+      ggplot2::aes(x = .data$.x, y = .data$.y),
+      shape = farout_shape, colour = colour, inherit.aes = FALSE)))
+  layers
+}
