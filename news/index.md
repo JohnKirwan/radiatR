@@ -1,5 +1,20 @@
 # Changelog
 
+## radiatR (development version)
+
+### Statistics
+
+- [`simulate_tracks()`](https://johnkirwan.github.io/radiatR/reference/simulate_tracks.md)
+  is now modality- and shape-aware. Per-condition `modality` (`uniform`
+  / `unimodal` / `axial` / `multimodal` with `n_modes`) sets the
+  distribution of per-track headings, and `track_shape` (`directed` or
+  `oscillatory`) sets within-track geometry — `oscillatory` produces
+  back-and-forth axial tracks whose line-width (`line_width`) is
+  independent of tortuosity, so the per-track axial methods recover the
+  axis at default settings. The ground truth is recorded in new output
+  columns and in the `TrajSet` `meta$sim_conditions`. The default output
+  is unchanged.
+
 ## radiatR 0.4.0
 
 ### Statistics

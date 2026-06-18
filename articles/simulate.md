@@ -37,12 +37,14 @@ returns a tibble of three conditions (60 trials total, 200 frames each):
 
 sim <- simulate_tracks(seed = 1)
 dim(sim)
-#> [1] 12000    16
+#> [1] 12000    24
 names(sim)
 #>  [1] "condition"     "trial_id"      "trial_num"     "frame"        
 #>  [5] "predictor"     "concentration" "tortuosity"    "ref_heading"  
 #>  [9] "final_heading" "rho"           "abs_theta"     "rel_theta"    
-#> [13] "abs_x"         "abs_y"         "rel_x"         "rel_y"
+#> [13] "abs_x"         "abs_y"         "rel_x"         "rel_y"        
+#> [17] "modality"      "n_modes"       "mode_id"       "mode_mean"    
+#> [21] "track_shape"   "n_reversals"   "amplitude"     "line_width"
 ```
 
 Each row is one frame. The key columns are:
@@ -371,6 +373,96 @@ p
 ```
 
 ![](simulate_files/figure-html/analysis-plot-1.png)
+
+------------------------------------------------------------------------
+
+## Known Modality and Shape
+
+[`simulate_tracks()`](https://johnkirwan.github.io/radiatR/reference/simulate_tracks.md)
+can also attach a known directional ground truth, which is handy for
+sanity-checking the circular statistics: you know what the analysis
+*should* recover. The `modality` of a condition sets how its per-trial
+principal headings are distributed — `uniform` (no preferred direction),
+`unimodal` (one von Mises mode), `axial` (two antipodal modes), or
+`multimodal` (`n_modes` evenly spaced modes). Here one condition per
+modality, fed through a directional heading rule (`net`) and
+[`circ_model_select()`](https://johnkirwan.github.io/radiatR/reference/circ_model_select.md),
+recovers the generating model:
+
+``` r
+
+conds <- tibble::tibble(
+  condition          = c("uniform", "unimodal", "axial"),
+  n_trials           = 60L,
+  ref_mean           = 0.4,
+  concentration_base = 6,
+  modality           = c("uniform", "unimodal", "axial")
+)
+sim <- simulate_tracks(conditions = conds, n_points = 80,
+                       output = "both", seed = 7)
+
+# net heading per trial, with the condition label joined back on
+hd <- derive_headings(sim$trajset, rule = "net")
+names(hd)[names(hd) == "id"] <- "trial_id"
+hd <- merge(hd, unique(sim$tibble[, c("trial_id", "condition")]),
+            by = "trial_id")
+
+# best-supported model per condition (AICc; lowest dAICc = best)
+ms <- circ_model_select(hd, group_col = "condition")
+do.call(rbind, lapply(split(ms, ms$condition), function(d) {
+  d[which.min(d$AICc), c("condition", "model", "weight")]
+}))
+#>          condition    model    weight
+#> axial        axial    axial 1.0000000
+#> uniform    uniform unimodal 0.4775205
+#> unimodal  unimodal unimodal 1.0000000
+```
+
+The `unimodal` and `axial` conditions are picked out cleanly (Akaike
+weight near 1); the `uniform` condition leaves *uniform* and *unimodal*
+in a near-tie, as it should when there is no preferred direction to fit.
+
+The `track_shape` of a condition sets the *within-track* geometry
+instead. A `track_shape = "oscillatory"` condition produces
+back-and-forth tracks along a principal axis — the bidirectional pattern
+the per-track axial methods are built for. The oscillatory tracks form a
+genuinely axial position cloud, so the position-based estimator
+`pca_axis` recovers the axis at the default sampling density, while a
+directional rule (`net`) sees the to-and-fro directions cancel:
+
+``` r
+
+osc <- tibble::tibble(condition = "osc", n_trials = 40L, ref_mean = 0.6,
+                      concentration_base = 50, track_shape = "oscillatory",
+                      n_reversals = 4L)
+ts_osc <- simulate_tracks(conditions = osc, output = "trajset", seed = 11)
+
+# pca_axis recovers the ~0.6 rad axis (read it as an axial mean) at defaults
+pa <- derive_headings(ts_osc, rule = "pca_axis")
+circ_summarise(pa, "heading", axial = TRUE, units = "radians",
+               stats = "mean_dir")
+#> # A tibble: 1 × 1
+#>   mean_dir
+#>      <dbl>
+#> 1    0.611
+
+# net cannot: the directions cancel to a tiny resultant length
+net <- derive_headings(ts_osc, rule = "net")
+circ_summarise(net, "heading", units = "radians", stats = "resultant_R")
+#> # A tibble: 1 × 1
+#>   resultant_R
+#>         <dbl>
+#> 1       0.152
+```
+
+The oscillatory line-width (`line_width`) is a fixed fraction of the
+amplitude, independent of `tortuosity_base`, so the axis is recoverable
+at the default settings used here without any signal-to-noise tuning.
+Note the position-based methods (`pca_axis`, `ransac_straight`) are the
+robust choice: the step-based `velocity_axis` recovers the same axis
+only at coarse sampling, because its per-step axial signal shrinks with
+`n_points` while the perpendicular jitter step does not, so dense
+sampling lets the jitter flip the estimate toward the perpendicular.
 
 ------------------------------------------------------------------------
 

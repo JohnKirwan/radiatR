@@ -77,18 +77,89 @@ predictor. - \`tortuosity_sd\` (numeric): additional random variation
 per trial. - \`predictor_mean\`, \`predictor_sd\` (numeric): parameters
 used to sample the per-trial predictor when explicit values are not
 supplied. - \`predictor_values\` (list-column): optional explicit
-predictor values (length \`n_trials\`) overriding the generated values.
+predictor values (length \`n_trials\`) overriding the generated
+values. - \`modality\` (character): the sample modality from which
+per-trial principal headings are drawn. One of \`"unimodal"\` (default),
+\`"uniform"\`, \`"axial"\`, or \`"multimodal"\`. Controls the
+\*distribution of headings across trials\*, not the within-trial path
+shape. - \`n_modes\` (integer): number of evenly spaced modes used when
+\`modality == "multimodal"\` (default 1; ignored by other modalities). -
+\`track_shape\` (character): the \*within-track\* path shape. One of
+\`"directed"\` (default) – a single sweep towards \`final_heading\` – or
+\`"oscillatory"\` – back-and-forth motion along the principal axis
+\`final_heading\`. Oscillatory tracks form a genuinely axial position
+cloud, so the position-based axial methods (\`pca_axis\`,
+\`ransac_straight\`) recover the axis at default settings; the
+directional methods (e.g. \`net\`) cancel. The step-based
+\`velocity_axis\` recovers the axis only when sampling is coarse enough
+that the per-step axial motion exceeds the perpendicular line-width
+jitter (see the \`line_width\` note below). - \`n_reversals\` (integer):
+number of direction reversals in an oscillatory track (default 3;
+ignored when \`track_shape == "directed"\`). - \`amplitude\` (numeric):
+peak excursion along the axis for an oscillatory track, clamped to
+\`\[1e-3, 1\]\` (default 0.9; ignored when directed). - \`line_width\`
+(numeric): half-width of an oscillatory track expressed as a fraction of
+\`amplitude\`, controlling the perpendicular Gaussian jitter (default
+0.05, clamped to \`\[1e-4, 1\]\`; ignored when directed). The line-width
+is intentionally independent of \`tortuosity\_\*\`, so the track is a
+genuinely thin line and the principal axis is recoverable by the
+position-based methods (\`pca_axis\`, \`ransac_straight\`) at default
+settings. The step-based \`velocity_axis\` is sampling-density
+sensitive: because the per-frame along-axis step shrinks with
+\`n_points\` while the perpendicular jitter step does not, dense
+sampling lets the jitter dominate and the estimate flips toward the
+perpendicular.
 
 The predictor can represent any continuous covariate (e.g. reference
 intensity). The final heading concentration increases with larger kappa,
 whereas larger tortuosity values produce more sinuous paths.
+
+For each trial the principal (final) heading is drawn according to the
+condition's \`modality\`: \`"unimodal"\` draws from a single von Mises
+about \`ref_mean\`; \`"uniform"\` draws from a circular uniform
+distribution; \`"axial"\` draws from a von Mises about \`ref_mean\` or
+\`ref_mean + pi\` with equal probability; \`"multimodal"\` draws from
+one of \`n_modes\` von Mises components evenly spaced around the circle
+starting at \`ref_mean\`. The \`"unimodal"\` branch is identical to the
+historical draw, so seeded output is unchanged from earlier versions.
+
+For an \`"oscillatory"\` track the position sweeps back and forth along
+the axis \`final_heading\` following a deterministic triangle wave of
+amplitude \`amplitude\` with \`n_reversals\` direction changes, plus a
+small Gaussian jitter perpendicular to the axis with standard deviation
+\`amplitude \* line_width\`. This line-width is independent of the
+tortuosity settings, so the track stays a thin line and the axis remains
+recoverable by the position-based methods (\`pca_axis\`,
+\`ransac_straight\`) at default settings. The step-based
+\`velocity_axis\` recovers the same axis only at coarse sampling, since
+its per-step axial signal shrinks with \`n_points\` while the
+perpendicular jitter step does not. The \`"directed"\` branch is
+byte-identical to the historical geometry (and never draws the
+perpendicular jitter), so the default seeded output is unchanged.
+
+Every simulated row records the ground-truth generating structure in
+additional columns: \`modality\` (character), \`n_modes\` (integer),
+\`mode_id\` (integer index of the component the heading came from),
+\`mode_mean\` (numeric radian mean of that component as the un-wrapped
+generating centre, e.g. \`ref_mean + pi\` for the second axial pole,
+versus \`final_heading\` which is the wrapped draw; \`NA\` for
+\`"uniform"\`), \`track_shape\` (character), \`n_reversals\` (integer),
+\`amplitude\` (numeric) and \`line_width\` (numeric). When a \`TrajSet\`
+is returned, the resolved generating conditions are stored in
+\`meta\$sim_conditions\`.
+
+## See also
+
+[`circ_model_select`](https://johnkirwan.github.io/radiatR/reference/circ_model_select.md),
+[`test_uniformity`](https://johnkirwan.github.io/radiatR/reference/test_uniformity.md),
+[`derive_headings`](https://johnkirwan.github.io/radiatR/reference/derive_headings.md)
 
 ## Examples
 
 ``` r
 sim <- simulate_tracks(seed = 1)
 head(sim)
-#> # A tibble: 6 × 16
+#> # A tibble: 6 × 24
 #>   condition trial_id    trial_num frame predictor concentration tortuosity
 #>   <chr>     <chr>           <int> <int>     <dbl>         <dbl>      <dbl>
 #> 1 control   control_001         1     1    -0.125          7.87     0.0407
@@ -97,9 +168,10 @@ head(sim)
 #> 4 control   control_001         1     4    -0.125          7.87     0.0407
 #> 5 control   control_001         1     5    -0.125          7.87     0.0407
 #> 6 control   control_001         1     6    -0.125          7.87     0.0407
-#> # ℹ 9 more variables: ref_heading <dbl>, final_heading <dbl>, rho <dbl>,
+#> # ℹ 17 more variables: ref_heading <dbl>, final_heading <dbl>, rho <dbl>,
 #> #   abs_theta <dbl>, rel_theta <dbl>, abs_x <dbl>, abs_y <dbl>, rel_x <dbl>,
-#> #   rel_y <dbl>
+#> #   rel_y <dbl>, modality <chr>, n_modes <int>, mode_id <int>, mode_mean <dbl>,
+#> #   track_shape <chr>, n_reversals <int>, amplitude <dbl>, line_width <dbl>
 
 # Request both tibble and TrajSet representations
 sim_both <- simulate_tracks(output = "both", seed = 123)

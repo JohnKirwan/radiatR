@@ -126,17 +126,81 @@ supplied when missing):</p>
 - `predictor_mean`, `predictor_sd` (numeric): parameters used to sample the
   per-trial predictor when explicit values are not supplied.
 - `predictor_values` (list-column): optional explicit predictor values (length
-  `n_trials`) overriding the generated values.</p>
+  `n_trials`) overriding the generated values.
+- `modality` (character): the sample modality from which per-trial principal
+  headings are drawn. One of `"unimodal"` (default), `"uniform"`, `"axial"`,
+  or `"multimodal"`. Controls the *distribution of headings across trials*,
+  not the within-trial path shape.
+- `n_modes` (integer): number of evenly spaced modes used when
+  `modality == "multimodal"` (default 1; ignored by other modalities).
+- `track_shape` (character): the *within-track* path shape. One of
+  `"directed"` (default) – a single sweep towards `final_heading` – or
+  `"oscillatory"` – back-and-forth motion along the principal axis
+  `final_heading`. Oscillatory tracks form a genuinely axial position cloud,
+  so the position-based axial methods (`pca_axis`, `ransac_straight`) recover
+  the axis at default settings; the directional methods (e.g. `net`) cancel.
+  The step-based `velocity_axis` recovers the axis only when sampling is
+  coarse enough that the per-step axial motion exceeds the perpendicular
+  line-width jitter (see the `line_width` note below).
+- `n_reversals` (integer): number of direction reversals in an oscillatory
+  track (default 3; ignored when `track_shape == "directed"`).
+- `amplitude` (numeric): peak excursion along the axis for an oscillatory
+  track, clamped to `[1e-3, 1]` (default 0.9; ignored when directed).
+- `line_width` (numeric): half-width of an oscillatory track expressed as a
+  fraction of `amplitude`, controlling the perpendicular Gaussian jitter
+  (default 0.05, clamped to `[1e-4, 1]`; ignored when directed). The
+  line-width is intentionally independent of `tortuosity_*`, so the track is
+  a genuinely thin line and the principal axis is recoverable by the
+  position-based methods (`pca_axis`, `ransac_straight`) at default settings.
+  The step-based `velocity_axis` is sampling-density sensitive: because the
+  per-frame along-axis step shrinks with `n_points` while the perpendicular
+  jitter step does not, dense sampling lets the jitter dominate and the
+  estimate flips toward the perpendicular.</p>
 <p>The predictor can represent any continuous covariate (e.g. reference
 intensity). The final heading concentration increases with larger kappa,
 whereas larger tortuosity values produce more sinuous paths.</p>
+<p>For each trial the principal (final) heading is drawn according to the
+condition's `modality`: `"unimodal"` draws from a single von Mises about
+`ref_mean`; `"uniform"` draws from a circular uniform distribution;
+`"axial"` draws from a von Mises about `ref_mean` or `ref_mean + pi` with
+equal probability; `"multimodal"` draws from one of `n_modes` von Mises
+components evenly spaced around the circle starting at `ref_mean`. The
+`"unimodal"` branch is identical to the historical draw, so seeded output is
+unchanged from earlier versions.</p>
+<p>For an `"oscillatory"` track the position sweeps back and forth along the
+axis `final_heading` following a deterministic triangle wave of amplitude
+`amplitude` with `n_reversals` direction changes, plus a small Gaussian
+jitter perpendicular to the axis with standard deviation
+`amplitude * line_width`. This line-width is independent of the tortuosity
+settings, so the track stays a thin line and the axis remains recoverable by
+the position-based methods (`pca_axis`, `ransac_straight`) at default
+settings. The step-based `velocity_axis` recovers the same axis only at
+coarse sampling, since its per-step axial signal shrinks with `n_points`
+while the perpendicular jitter step does not. The
+`"directed"` branch is byte-identical to the historical geometry (and never
+draws the perpendicular jitter), so the default seeded output is unchanged.</p>
+<p>Every simulated row records the ground-truth generating structure in
+additional columns: `modality` (character), `n_modes` (integer), `mode_id`
+(integer index of the component the heading came from), `mode_mean`
+(numeric radian mean of that component as the un-wrapped generating centre,
+e.g. `ref_mean + pi` for the second axial pole, versus `final_heading` which
+is the wrapped draw; `NA` for `"uniform"`),
+`track_shape` (character), `n_reversals` (integer), `amplitude`
+(numeric) and `line_width` (numeric). When a `TrajSet` is returned, the
+resolved generating conditions
+are stored in `meta$sim_conditions`.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="circ_model_select.html">circ_model_select</a></code>, <code><a href="test_uniformity.html">test_uniformity</a></code>,
+  <code><a href="derive_headings.html">derive_headings</a></code></p></div>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu">simulate_tracks</span><span class="op">(</span>seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">sim</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 6 × 16</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 6 × 24</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   condition trial_id    trial_num frame predictor concentration tortuosity</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> control   control_001         1     1    -<span style="color: #BB0000;">0.125</span>          7.87     0.040<span style="text-decoration: underline;">7</span></span>
@@ -145,9 +209,10 @@ whereas larger tortuosity values produce more sinuous paths.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> control   control_001         1     4    -<span style="color: #BB0000;">0.125</span>          7.87     0.040<span style="text-decoration: underline;">7</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> control   control_001         1     5    -<span style="color: #BB0000;">0.125</span>          7.87     0.040<span style="text-decoration: underline;">7</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> control   control_001         1     6    -<span style="color: #BB0000;">0.125</span>          7.87     0.040<span style="text-decoration: underline;">7</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 9 more variables: ref_heading &lt;dbl&gt;, final_heading &lt;dbl&gt;, rho &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 17 more variables: ref_heading &lt;dbl&gt;, final_heading &lt;dbl&gt;, rho &lt;dbl&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   abs_theta &lt;dbl&gt;, rel_theta &lt;dbl&gt;, abs_x &lt;dbl&gt;, abs_y &lt;dbl&gt;, rel_x &lt;dbl&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   rel_y &lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   rel_y &lt;dbl&gt;, modality &lt;chr&gt;, n_modes &lt;int&gt;, mode_id &lt;int&gt;, mode_mean &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   track_shape &lt;chr&gt;, n_reversals &lt;int&gt;, amplitude &lt;dbl&gt;, line_width &lt;dbl&gt;</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Request both tibble and TrajSet representations</span></span></span>
 <span class="r-in"><span><span class="va">sim_both</span> <span class="op">&lt;-</span> <span class="fu">simulate_tracks</span><span class="op">(</span>output <span class="op">=</span> <span class="st">"both"</span>, seed <span class="op">=</span> <span class="fl">123</span><span class="op">)</span></span></span>
