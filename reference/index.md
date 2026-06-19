@@ -95,6 +95,13 @@ data using built-in rules or custom functions.
   : Derive per-frame headings from pose data without a TrajSet
 - [`headings_frame()`](https://johnkirwan.github.io/radiatR/reference/headings_frame.md)
   : Construct a headings frame from a data frame of angles
+- [`new_headings_frame()`](https://johnkirwan.github.io/radiatR/reference/new_headings_frame.md)
+  : Low-level headings_frame constructor
+- [`hf_display()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  [`hf_heading_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  [`hf_colour_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  [`hf_coords()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  : Read the canonical attributes of a heading frame
 - [`register_heading_rule()`](https://johnkirwan.github.io/radiatR/reference/register_heading_rule.md)
   : Register a custom heading derivation rule
 - [`list_heading_rules()`](https://johnkirwan.github.io/radiatR/reference/list_heading_rules.md)
@@ -460,6 +467,11 @@ Any remaining exported topics.
   : Guess the role of each column in a track table
 - [`headings_frame()`](https://johnkirwan.github.io/radiatR/reference/headings_frame.md)
   : Construct a headings frame from a data frame of angles
+- [`hf_display()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  [`hf_heading_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  [`hf_colour_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  [`hf_coords()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  : Read the canonical attributes of a heading frame
 - [`import_info()`](https://johnkirwan.github.io/radiatR/reference/import_info.md)
   : Import landmark coordinates from text files
 - [`import_tracks()`](https://johnkirwan.github.io/radiatR/reference/import_tracks.md)
@@ -483,6 +495,8 @@ Any remaining exported topics.
   : Legacy helper to merge manifest metadata with a track table
 - [`load_tracks2()`](https://johnkirwan.github.io/radiatR/reference/load_tracks2.md)
   : Flexible metadata join for track tables
+- [`new_headings_frame()`](https://johnkirwan.github.io/radiatR/reference/new_headings_frame.md)
+  : Low-level headings_frame constructor
 - [`path_straightness()`](https://johnkirwan.github.io/radiatR/reference/path_straightness.md)
   : Path straightness index for a single trajectory
 - [`path_tortuosity()`](https://johnkirwan.github.io/radiatR/reference/path_tortuosity.md)

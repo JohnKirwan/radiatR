@@ -23,6 +23,7 @@
     <li><a class="dropdown-item" href="../articles/loaders.html">Loaders</a></li>
     <li><a class="dropdown-item" href="../articles/circular-statistics.html">Circular statistics &amp; distribution overlays</a></li>
     <li><a class="dropdown-item" href="../articles/simulate.html">Simulating trajectories</a></li>
+    <li><a class="dropdown-item" href="../articles/design.html">Design contract</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -41,6 +42,11 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="radiatr-development-version">radiatR (development version)<a class="anchor" aria-label="anchor" href="#radiatr-development-version"></a></h2>
+<div class="section level3">
+<h3 id="infrastructure-development-version">Infrastructure<a class="anchor" aria-label="anchor" href="#infrastructure-development-version"></a></h3>
+<ul><li>
+<code>headings_frame</code> is now a tibble subclass whose class and display convention survive dplyr verbs (<code>mutate</code>/<code>filter</code>/<code>select</code>/<code>bind_rows</code>) via the <code>dplyr_reconstruct</code> contract, so the orientation no longer leaks. New exported <code><a href="../reference/hf_accessors.html">hf_display()</a></code>/<code><a href="../reference/hf_accessors.html">hf_heading_col()</a></code>/<code><a href="../reference/hf_accessors.html">hf_colour_col()</a></code>/<code><a href="../reference/hf_accessors.html">hf_coords()</a></code> accessors read the metadata (and work on a plain data frame). <code><a href="../reference/derive_headings.html">derive_headings()</a></code> now returns a <code>headings_frame</code>; orientation is consolidated into a single <code>display</code> attribute (the vestigial <code>display_convention</code>/<code>angle_convention</code> strings are removed). See <code><a href="../articles/design.html">vignette("design")</a></code>.</li>
+</ul></div>
 <div class="section level3">
 <h3 id="statistics-development-version">Statistics<a class="anchor" aria-label="anchor" href="#statistics-development-version"></a></h3>
 <ul><li><p>New <code><a href="../reference/circ_regression.html">circ_regression()</a></code> fits Fisher-Lee circular-linear regression of a heading on linear covariates (formula interface over <code><a href="https://rdrr.io/pkg/circular/man/lm.circular.html" class="external-link">circular::lm.circular</a></code>), with <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> (tidy coefficients), <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>/<code><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted()</a></code>, and <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> methods. <code><a href="../reference/simulate_tracks.html">simulate_tracks()</a></code> gains a per-condition <code>mean_slope</code> so the predictor shifts the mean heading, enabling end-to-end recovery.</p></li>

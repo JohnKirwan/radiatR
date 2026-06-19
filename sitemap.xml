@@ -3,6 +3,7 @@
 <url><loc>https://johnkirwan.github.io/radiatR/CLAUDE.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/LICENSE.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/articles/circular-statistics.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/articles/design.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/articles/index.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/articles/loaders.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/articles/radiatR.html</loc></url>
@@ -73,6 +74,7 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/gg_traj.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/guess_columns.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/headings_frame.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/hf_accessors.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/import_info.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/import_tracks.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/index.html</loc></url>
@@ -85,6 +87,7 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/list_loader_formats.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/load_tracks.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/load_tracks2.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/new_headings_frame.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/path_straightness.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/path_tortuosity.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/pose_to_headings.html</loc></url>

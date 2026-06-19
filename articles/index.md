@@ -4,6 +4,8 @@
 
 - [Circular Statistics and Distribution
   Overlays](https://johnkirwan.github.io/radiatR/articles/circular-statistics.md):
+- [radiatR design
+  contract](https://johnkirwan.github.io/radiatR/articles/design.md):
 - [Working with
   Loaders](https://johnkirwan.github.io/radiatR/articles/loaders.md):
 - [radiatR](https://johnkirwan.github.io/radiatR/articles/radiatR.md):

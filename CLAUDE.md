@@ -75,6 +75,19 @@ Understand this class before touching any other module.
     functions (`add_ticks`, `add_circ`, `degree_labs`, etc.) return
     ggplot2 layers and are designed to be added with `+`.
 
+### Object contract
+
+Rich objects only for irreducible structure: `TrajSet` (trajectories +
+geometry + transform history), `circ_display` (orientation convention),
+`circ_regression` (fitted model). Everything else is a plain tibble in
+and out, addressed by a column-name argument. `circular`-package objects
+are internal only — never in a public signature or return.
+`headings_frame` is a tibble subclass that carries the display
+convention durably through dplyr verbs (`dplyr_reconstruct`); read it
+via the `hf_*` accessors. A plain data frame with a heading column is
+always an acceptable input. See
+[`vignette("design")`](https://johnkirwan.github.io/radiatR/articles/design.md).
+
 ### Extension points
 
 - **New file formats**: use `register_loader_read_function` /
