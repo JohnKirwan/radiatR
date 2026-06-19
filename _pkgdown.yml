@@ -117,12 +117,14 @@ reference:
       - wrappedcauchy_fit
       - circ_model_select
 
-  - title: "Circular statistics -- correlation"
+  - title: "Circular statistics -- correlation & regression"
     desc: >
       Measure the association between heading directions and a continuous
-      covariate (circular-linear) or a second set of angles (circular-circular).
+      covariate (circular-linear) or a second set of angles (circular-circular),
+      and model a heading on linear covariates (Fisher-Lee regression).
     contents:
       - circ_cor
+      - circ_regression
 
   - title: "Circular statistics -- hypothesis tests"
     desc: >
