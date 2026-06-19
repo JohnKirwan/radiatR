@@ -27,6 +27,14 @@
   whiskers, and far-out values. Validated against the bpDir reference
   implementation.
 
+### Shiny app
+
+- The Results figure gains a **Circular boxplot** overlay toggle
+  (directional and axial), wired through the figure-code export so the
+  emitted script reproduces it. The layer toggles now reflow into two
+  columns when space allows, and a note explains when the boxplot is not
+  drawn (near-uniform data or too few points).
+
 ## radiatR 0.4.0
 
 ### Statistics
