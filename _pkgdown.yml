@@ -29,6 +29,8 @@ navbar:
           href: articles/circular-statistics.html
         - text: "Simulating trajectories"
           href: articles/simulate.html
+        - text: "Design contract"
+          href: articles/design.html
 
 reference:
   - title: "Launch the app"
@@ -90,6 +92,8 @@ reference:
       - circ_summary_headings
       - pose_to_headings
       - headings_frame
+      - new_headings_frame
+      - hf_accessors
       - register_heading_rule
       - list_heading_rules
       - bin_angles
