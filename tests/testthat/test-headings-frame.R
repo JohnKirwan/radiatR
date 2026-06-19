@@ -386,7 +386,9 @@ test_that("new_headings_frame is a tibble subclass carrying the canonical attrib
 test_that("the class and display attribute survive dplyr verbs and base subsetting", {
   hd <- new_headings_frame(tibble::tibble(heading = seq(0, 1, length.out = 6), g = rep(c("a","b"), 3)),
                            display = circ_display(zero = 0, clockwise = FALSE))
+  # class (incl. tbl_df, so it stays a real tibble) AND display must both survive
   keeps <- function(x) expect_true(inherits(x, "headings_frame") &&
+                                   inherits(x, "tbl_df") &&
                                    identical(hf_display(x)$zero, 0))
   keeps(dplyr::mutate(hd, h2 = heading * 2))
   keeps(dplyr::filter(hd, heading > 0.1))
@@ -395,6 +397,11 @@ test_that("the class and display attribute survive dplyr verbs and base subsetti
   keeps(dplyr::slice(hd, 1:3))
   keeps(dplyr::bind_rows(hd, hd))
   keeps(hd[1:3, ])
+  # group_by is dplyr's special case: it returns a grouped_df (the headings_frame
+  # subclass reverts) but the display attribute still survives, so re-plotting a
+  # grouped/summarised result keeps its orientation.
+  g <- dplyr::group_by(hd, g)
+  expect_true(inherits(g, "grouped_df") && identical(hf_display(g)$zero, 0))
 })
 
 test_that("hf_* accessors fall back sensibly on a plain data frame", {
