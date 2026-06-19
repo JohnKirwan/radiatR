@@ -532,3 +532,21 @@ test_that("velocity_axis on cpunctatus yields one axis per trial in [0, pi)", {
   fin <- hd$heading[is.finite(hd$heading)]
   expect_true(length(fin) > 0 && all(fin >= 0 & fin < pi))
 })
+
+test_that("derive_headings returns a headings_frame that survives a dplyr pipe", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  hd <- derive_headings(cpunctatus, rule = "distal")
+  expect_s3_class(hd, "headings_frame")
+  expect_s3_class(hf_display(hd), "circ_display")
+  hd2 <- dplyr::filter(hd, is.finite(heading))
+  expect_s3_class(hd2, "headings_frame")
+  expect_equal(hf_display(hd2)$zero, hf_display(hd)$zero)
+})
+
+test_that("a plain data frame with a heading column still flows through the API", {
+  df <- data.frame(id = "a", time = 1:5, heading = seq(0.1, 0.5, length.out = 5))
+  expect_s3_class(circ_summarise(df, "heading", units = "radians"), "data.frame")
+  expect_silent(circ_boxplot_stats(df))
+  lyr <- add_heading_points(df)
+  expect_true(inherits(lyr, "Layer"))
+})

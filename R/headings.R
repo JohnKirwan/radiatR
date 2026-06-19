@@ -627,9 +627,7 @@ setMethod("derive_headings", "TrajSet", function(
   n_total     <- nrow(res)
   miss        <- is.na(res$heading)
   n_missing   <- sum(miss)
-  attr(res, "n_total")     <- n_total
-  attr(res, "n_missing")   <- n_missing
-  attr(res, "missing_ids") <- res$id[miss]
+  missing_ids <- res$id[miss]
 
   if (n_missing > 0L && on_missing != "quiet") {
     pct <- round(100 * n_missing / n_total, 1)
@@ -644,8 +642,21 @@ setMethod("derive_headings", "TrajSet", function(
     warning(msg, call. = FALSE)
   }
 
-  attr(res, "coords") <- coords
-  res
+  # Return a durable headings_frame instead of a plain df + loose attrs. The
+  # canonical display/heading metadata rides through dplyr verbs; the attrition
+  # attributes (n_total/n_missing/missing_ids) are re-attached for downstream
+  # used-vs-total reporting.
+  out <- new_headings_frame(
+    res,
+    display     = attr(res, "display", exact = TRUE) %||% circ_display(),
+    heading_col = "heading",
+    colour_col  = attr(res, "colour_col", exact = TRUE),
+    coords      = coords
+  )
+  attr(out, "n_total")     <- n_total
+  attr(out, "n_missing")   <- n_missing
+  attr(out, "missing_ids") <- missing_ids
+  out
 })
 
 # ---- circular summaries over headings ----------------------------------------

@@ -1,5 +1,16 @@
 # radiatR (development version)
 
+## Infrastructure
+
+* `headings_frame` is now a tibble subclass whose class and display convention
+  survive dplyr verbs (`mutate`/`filter`/`select`/`bind_rows`) via the
+  `dplyr_reconstruct` contract, so the orientation no longer leaks. New exported
+  `hf_display()`/`hf_heading_col()`/`hf_colour_col()`/`hf_coords()` accessors read
+  the metadata (and work on a plain data frame). `derive_headings()` now returns
+  a `headings_frame`; orientation is consolidated into a single `display`
+  attribute (the vestigial `display_convention`/`angle_convention` strings are
+  removed). See `vignette("design")`.
+
 ## Statistics
 
 * New `circ_regression()` fits Fisher-Lee circular-linear regression of a heading
