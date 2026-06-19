@@ -830,7 +830,7 @@ add_circular_density <- function(density_df,
       stop("`density_df` is missing column '", col, "'.")
   }
 
-  disp_opts <- attr(density_df, "display", exact = TRUE) %||% circ_display()
+  disp_opts <- hf_display(density_df)
 
   # Normalise density within each group and compute Cartesian coordinates.
   # CI bounds use the same max_d so the band is on the same scale as the curve.
@@ -1143,7 +1143,7 @@ add_circ_interval <- function(interval_df,
   has_group_col <- !is.null(colour_col) && colour_col %in% names(interval_df)
   map_colour    <- has_group_col && is.null(colour)
   has_wraps     <- "wraps" %in% names(interval_df)
-  disp_opts     <- attr(interval_df, "display", exact = TRUE) %||% circ_display()
+  disp_opts     <- hf_display(interval_df)
 
   valid_rows <- which(!is.na(interval_df$lower) & !is.na(interval_df$upper))
 
@@ -1223,7 +1223,7 @@ add_heading_interval <- function(headings_df,
                                  n_theta     = 500L,
                                  axial       = FALSE) {
   if (is.null(display))
-    display <- attr(headings_df, "display", exact = TRUE) %||% circ_display()
+    display <- hf_display(headings_df)
   stat <- match.arg(stat)
   iv   <- compute_circ_interval(headings_df, heading_col = heading_col,
                                 colour_col = colour_col,
@@ -1361,7 +1361,7 @@ add_circ_mean <- function(summary_df,
 
   summary_df <- summary_df[valid_rows, , drop = FALSE]
 
-  disp <- attr(summary_df, "display", exact = TRUE) %||% circ_display()
+  disp <- hf_display(summary_df)
   tip  <- .uc_to_display_coords(summary_df$resultant_R * cos(summary_df$mean_dir),
                                  summary_df$resultant_R * sin(summary_df$mean_dir),
                                  disp)
@@ -1428,7 +1428,7 @@ add_heading_arrow <- function(headings_df,
                               axial           = FALSE,
                               ...) {
   if (is.null(display))
-    display <- attr(headings_df, "display", exact = TRUE) %||% circ_display()
+    display <- hf_display(headings_df)
   sm <- compute_circ_mean(headings_df, heading_col = heading_col,
                           colour_col = colour_col, axial = axial)
   attr(sm, "display") <- display
@@ -1491,8 +1491,8 @@ add_heading_points <- function(headings_df, colour_col = NULL, colour = NULL,
                                size = 2, alpha = 1, axial = FALSE) {
   if (!("heading" %in% names(headings_df)))
     stop("`headings_df` must contain a `heading` column (radians).")
-  if (is.null(colour_col)) colour_col <- attr(headings_df, "colour_col")
-  disp <- attr(headings_df, "display", exact = TRUE) %||% circ_display()
+  if (is.null(colour_col)) colour_col <- hf_colour_col(headings_df)
+  disp <- hf_display(headings_df)
   if (isTRUE(axial)) headings_df <- .mirror_axial(headings_df, "heading")
 
   xy <- .uc_to_display_coords(cos(headings_df$heading),
@@ -1550,7 +1550,7 @@ add_heading_points <- function(headings_df, colour_col = NULL, colour = NULL,
 #' ggplot() + coord_fixed() + add_heading_vectors(hd)
 add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
                                linetype = "dotted", axial = FALSE) {
-  if (is.null(colour_col)) colour_col <- attr(headings_df, "colour_col")
+  if (is.null(colour_col)) colour_col <- hf_colour_col(headings_df)
   required <- c("heading", "x_inner", "y_inner")
   missing_cols <- setdiff(required, names(headings_df))
   if (length(missing_cols)) {
@@ -1561,7 +1561,7 @@ add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
     ))
   }
 
-  disp <- attr(headings_df, "display", exact = TRUE) %||% circ_display()
+  disp <- hf_display(headings_df)
   if (isTRUE(axial))
     headings_df <- .mirror_axial(headings_df, "heading",
                                  negate = c("x_inner", "y_inner"))
@@ -1649,12 +1649,11 @@ add_stacked_headings <- function(data,
                                  axial      = FALSE,
                                  ...) {
   if (is.null(col))
-    col <- if (!is.null(attr(data, "heading_col"))) attr(data, "heading_col")
-           else "heading"
+    col <- hf_heading_col(data)
   if (!col %in% names(data))
     stop(sprintf("column '%s' not found in data.", col))
 
-  disp_opts <- attr(data, "display", exact = TRUE) %||% circ_display()
+  disp_opts <- hf_display(data)
 
   if (isTRUE(axial)) data <- .mirror_axial(data, col)
 
@@ -2768,7 +2767,7 @@ add_angle_rose <- function(hd, bins = 12L, angle_col = "heading",
                             colour = NA, alpha = 0.5, arc_pts = 20L,
                             display = NULL, axial = FALSE) {
   stopifnot(is.data.frame(hd), angle_col %in% names(hd))
-  disp  <- display %||% attr(hd, "display", exact = TRUE) %||% circ_display()
+  disp  <- display %||% hf_display(hd)
   if (isTRUE(axial)) hd <- .mirror_axial(hd, angle_col)
   ss    <- sector_summary(hd, sectors = bins, group_col = group_col,
                           angle_col = angle_col)
@@ -2856,7 +2855,7 @@ add_vonmises_density <- function(fit, scale = 0.4, inner_r = 0,
          " -- generate with vonmises_fit()")
 
   thetas <- seq(-pi, pi, length.out = n_pts + 1L)[seq_len(n_pts)]
-  disp   <- display %||% attr(fit, "display", exact = TRUE) %||% circ_display()
+  disp   <- display %||% hf_display(fit)
 
   .ring <- function(mu, kappa, grp) {
     if (is.na(mu) || is.na(kappa) || kappa < 0) return(NULL)
@@ -2951,7 +2950,7 @@ add_circular_kde <- function(hd, angle_col = "heading", group_col = NULL,
   if (!angle_col %in% names(hd))
     stop("add_circular_kde: column '", angle_col, "' not found")
 
-  disp <- display %||% attr(hd, "display", exact = TRUE) %||% circ_display()
+  disp <- display %||% hf_display(hd)
   if (isTRUE(axial)) hd <- .mirror_axial(hd, angle_col)
 
   .kde_ring <- function(sub, grp) {
@@ -3061,7 +3060,7 @@ add_wrappedcauchy_density <- function(fit, scale = 0.4, inner_r = 0,
          " -- generate with wrappedcauchy_fit()")
 
   thetas <- seq(-pi, pi, length.out = n_pts + 1L)[seq_len(n_pts)]
-  disp   <- display %||% attr(fit, "display", exact = TRUE) %||% circ_display()
+  disp   <- display %||% hf_display(fit)
 
   .ring <- function(mu, rho, grp) {
     if (is.na(mu) || is.na(rho) || rho < 0 || rho >= 1) return(NULL)

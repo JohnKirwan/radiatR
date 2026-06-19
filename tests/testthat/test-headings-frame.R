@@ -3,9 +3,9 @@ test_that("headings_frame returns correct classes and attributes", {
   hf <- headings_frame(df, col = "bearing", units = "radians")
   expect_s3_class(hf, "headings_frame")
   expect_s3_class(hf, "data.frame")
-  expect_equal(attr(hf, "heading_col"),      "bearing")
-  expect_equal(attr(hf, "angle_convention"), "unit_circle")
-  expect_equal(attr(hf, "coords"),           "absolute")
+  expect_equal(hf_heading_col(hf), "bearing")
+  expect_s3_class(hf_display(hf),  "circ_display")
+  expect_equal(hf_coords(hf),      "absolute")
 })
 
 test_that("headings_frame converts degrees to radians in place", {
@@ -18,9 +18,9 @@ test_that("headings_frame accepts non-default angle_convention and coords", {
   df <- data.frame(h = c(0, pi/4))
   hf <- headings_frame(df, col = "h", units = "radians",
                        angle_convention = "clock", coords = "relative")
-  expect_equal(attr(hf, "angle_convention"),   "unit_circle")
-  expect_equal(attr(hf, "display_convention"), "clock")
-  expect_equal(attr(hf, "coords"),             "relative")
+  # orientation is consolidated into a single display attribute now
+  expect_s3_class(hf_display(hf), "circ_display")
+  expect_equal(hf_coords(hf),     "relative")
 })
 
 test_that("headings_frame errors informatively when col not found", {
@@ -54,8 +54,8 @@ test_that("headings_frame converts clock angles to unit-circle internally", {
                        angle_convention = "clock")
   # After conversion: clock 0° → UC pi/2, clock 90° → UC 0, clock 180° → UC 3pi/2
   expect_equal(hf$h, c(pi/2, 0, 3*pi/2), tolerance = 1e-10)
-  expect_equal(attr(hf, "angle_convention"),   "unit_circle")
-  expect_equal(attr(hf, "display_convention"), "clock")
+  # data is normalised to unit-circle radians; orientation carried as display
+  expect_s3_class(hf_display(hf), "circ_display")
 })
 
 # ---- stack_headings -----------------------------------------------------------
@@ -366,4 +366,53 @@ test_that("radiate.headings_frame markers honour a non-default display", {
                        display = circ_display(zero = pi / 2))
   # A different zero direction must move the marker coordinates.
   expect_false(isTRUE(all.equal(pts(g_default), pts(g_rot))))
+})
+
+# ---- new_headings_frame durable tibble subclass ------------------------------
+
+test_that("new_headings_frame is a tibble subclass carrying the canonical attributes", {
+  hd <- new_headings_frame(tibble::tibble(heading = c(0.1, 0.2, 0.3)),
+                           display = circ_display(zero = 0, clockwise = FALSE),
+                           heading_col = "heading", colour_col = NULL, coords = "absolute")
+  expect_s3_class(hd, "headings_frame")
+  expect_s3_class(hd, "tbl_df")
+  expect_s3_class(hf_display(hd), "circ_display")
+  expect_equal(hf_display(hd)$zero, 0)
+  expect_equal(hf_heading_col(hd), "heading")
+  expect_equal(hf_coords(hd), "absolute")
+  expect_null(hf_colour_col(hd))
+})
+
+test_that("the class and display attribute survive dplyr verbs and base subsetting", {
+  hd <- new_headings_frame(tibble::tibble(heading = seq(0, 1, length.out = 6), g = rep(c("a","b"), 3)),
+                           display = circ_display(zero = 0, clockwise = FALSE))
+  keeps <- function(x) expect_true(inherits(x, "headings_frame") &&
+                                   identical(hf_display(x)$zero, 0))
+  keeps(dplyr::mutate(hd, h2 = heading * 2))
+  keeps(dplyr::filter(hd, heading > 0.1))
+  keeps(dplyr::select(hd, heading))
+  keeps(dplyr::arrange(hd, dplyr::desc(heading)))
+  keeps(dplyr::slice(hd, 1:3))
+  keeps(dplyr::bind_rows(hd, hd))
+  keeps(hd[1:3, ])
+})
+
+test_that("hf_* accessors fall back sensibly on a plain data frame", {
+  df <- data.frame(heading = c(0.1, 0.2))
+  expect_s3_class(hf_display(df), "circ_display")     # circ_display() default
+  expect_equal(hf_heading_col(df), "heading")
+  expect_null(hf_colour_col(df))
+  expect_equal(hf_coords(df), "absolute")
+})
+
+test_that("headings_frame() constructor consolidates orientation to a single display attribute", {
+  d  <- data.frame(theta = c(10, 20, 350))
+  hf <- headings_frame(d, theta, units = "degrees", angle_convention = "clock")
+  expect_s3_class(hf, "headings_frame")
+  expect_s3_class(hf_display(hf), "circ_display")
+  # the vestigial string attributes are gone
+  expect_null(attr(hf, "display_convention"))
+  expect_null(attr(hf, "angle_convention"))
+  # data still normalised to unit-circle radians (clock 10deg -> (pi/2 - 10deg) wrapped)
+  expect_equal(hf$theta[1], wrap_to_2pi(pi/2 - 10 * pi/180), tolerance = 1e-9)
 })

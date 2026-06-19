@@ -44,13 +44,82 @@ headings_frame <- function(data,
   if (angle_convention == "clock")
     data[[col_name]] <- wrap_to_2pi((pi / 2) - data[[col_name]])
 
-  attr(data, "display_convention") <- angle_convention
-  attr(data, "angle_convention")   <- "unit_circle"
-  attr(data, "coords")             <- coords
-  attr(data, "heading_col")        <- col_name
-  class(data) <- c("headings_frame", "data.frame")
+  # Orientation is carried once, as a circ_display object. The previous
+  # display_convention/angle_convention string attributes were vestigial
+  # (never read for rendering), so dropping them and defaulting display to
+  # circ_display() preserves the rendered orientation.
+  new_headings_frame(data, display = circ_display(), heading_col = col_name,
+                     colour_col = NULL, coords = coords)
+}
+
+# The canonical attributes a headings_frame carries. Kept durable across dplyr
+# verbs via dplyr_reconstruct() and base `[` below; read via the hf_* accessors.
+.HF_ATTRS <- c("display", "heading_col", "colour_col", "coords")
+
+#' Low-level headings_frame constructor
+#'
+#' Wraps a data frame as a `headings_frame` (a tibble subclass) carrying the
+#' canonical display/heading metadata. Most users call [headings_frame()] (which
+#' validates and normalises angles) or get one from [derive_headings()].
+#'
+#' @param data A data frame / tibble with the heading column already in
+#'   unit-circle radians.
+#' @param display A [circ_display()] object (orientation convention).
+#' @param heading_col Name of the heading column. Default `"heading"`.
+#' @param colour_col Optional grouping/colour column name, or `NULL`.
+#' @param coords `"absolute"` or `"relative"`.
+#' @return A `headings_frame`.
+#' @export
+new_headings_frame <- function(data, display = circ_display(),
+                               heading_col = "heading", colour_col = NULL,
+                               coords = "absolute") {
+  data <- tibble::as_tibble(data)
+  attr(data, "display")     <- display
+  attr(data, "heading_col") <- heading_col
+  attr(data, "colour_col")  <- colour_col
+  attr(data, "coords")      <- coords
+  class(data) <- c("headings_frame", setdiff(class(data), "headings_frame"))
   data
 }
+
+# Restore the headings_frame class + canonical attributes after a dplyr verb.
+#' @exportS3Method dplyr::dplyr_reconstruct
+dplyr_reconstruct.headings_frame <- function(data, template) {
+  for (a in .HF_ATTRS) attr(data, a) <- attr(template, a, exact = TRUE)
+  class(data) <- c("headings_frame", setdiff(class(data), "headings_frame"))
+  data
+}
+
+#' @export
+`[.headings_frame` <- function(x, ...) {
+  out <- NextMethod()
+  if (is.data.frame(out)) dplyr::dplyr_reconstruct(out, x) else out
+}
+
+#' Read the canonical attributes of a heading frame
+#'
+#' Accessors for the metadata a [headings_frame] carries. They also work on a
+#' plain data frame, returning sensible defaults, so any function can read the
+#' display convention without assuming the input is classed.
+#'
+#' @param x A `headings_frame` or plain data frame.
+#' @return `hf_display()` a [circ_display()] object; `hf_heading_col()` /
+#'   `hf_coords()` a string; `hf_colour_col()` a string or `NULL`.
+#' @name hf_accessors
+#' @export
+hf_display <- function(x) attr(x, "display", exact = TRUE) %||% circ_display()
+
+#' @rdname hf_accessors
+#' @export
+hf_heading_col <- function(x) attr(x, "heading_col", exact = TRUE) %||% "heading"
+
+#' @rdname hf_accessors
+#' @export
+hf_colour_col <- function(x) attr(x, "colour_col", exact = TRUE)
+
+#' @rdname hf_accessors
+#' @export
+hf_coords <- function(x) attr(x, "coords", exact = TRUE) %||% "absolute"
 
 #' Snap angles to fixed-width circular bin centres
 #'
