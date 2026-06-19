@@ -65,7 +65,7 @@ test_that("circ_regression recovers a simulated mean_slope (sign + significance)
   expect_lt(sm$p_value, 0.05)
 })
 
-test_that("a null mean_slope yields a non-significant regression slope", {
+test_that("a null mean_slope yields a slope not distinguishable from zero", {
   cond <- tibble::tibble(condition = "null", n_trials = 150L, ref_mean = 0.0,
                          concentration_base = 12, mean_slope = 0,
                          predictor_mean = 0, predictor_sd = 1)
@@ -73,6 +73,8 @@ test_that("a null mean_slope yields a non-significant regression slope", {
   hd <- s[!duplicated(s$trial_id), c("predictor", "final_heading")]
   names(hd)[2] <- "heading"
   fit <- circ_regression(hd, heading ~ predictor)
-  if (fit$converged) expect_gt(summary(fit)$p_value, 0.05)
-  else succeed("non-convergence under the null is acceptable")
+  if (fit$converged) {
+    sm <- summary(fit)                       # CI brackets 0 (robust vs a tight p-threshold)
+    expect_lt(sm$conf.low, 0); expect_gt(sm$conf.high, 0)
+  } else succeed("non-convergence under the null is acceptable")
 })
