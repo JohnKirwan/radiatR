@@ -2,6 +2,12 @@
 
 ## Statistics
 
+* New `circ_regression()` fits Fisher-Lee circular-linear regression of a heading
+  on linear covariates (formula interface over `circular::lm.circular`), with
+  `summary()` (tidy coefficients), `predict()`/`fitted()`, and `print()` methods.
+  `simulate_tracks()` gains a per-condition `mean_slope` so the predictor shifts
+  the mean heading, enabling end-to-end recovery.
+
 * `simulate_tracks()` is now modality- and shape-aware. Per-condition `modality`
   (`uniform` / `unimodal` / `axial` / `multimodal` with `n_modes`) sets the
   distribution of per-track headings, and `track_shape` (`directed` or

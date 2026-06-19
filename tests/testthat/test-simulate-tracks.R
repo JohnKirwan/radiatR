@@ -149,3 +149,17 @@ test_that("directed default is unchanged by adding the track_shape dimension", {
                c(5.9589157262, 0.0305034215, 5.5213237187), tolerance = 1e-8)
   expect_true(all(s$track_shape == "directed"))
 })
+
+test_that("mean_slope shifts the per-trial mean with the predictor; default leaves output unchanged", {
+  s0 <- simulate_tracks(n_points = 50, seed = 99)
+  fh <- s0$final_heading[!duplicated(s0$trial_id)]
+  expect_equal(head(fh, 3), c(5.9589157262, 0.0305034215, 5.5213237187), tolerance = 1e-8)
+  ts0 <- simulate_tracks(n_points = 30, output = "trajset", seed = 3)
+  expect_true("mean_slope" %in% names(ts0@meta$sim_conditions))
+  cond <- tibble::tibble(condition = "ms", n_trials = 60L, ref_mean = 0.2,
+                         concentration_base = 12, mean_slope = 0.7,
+                         predictor_mean = 0, predictor_sd = 1)
+  s <- simulate_tracks(n_points = 10, conditions = cond, seed = 5)
+  tr <- s[!duplicated(s$trial_id), c("predictor", "ref_heading")]
+  expect_equal(tr$ref_heading, 0.2 + 0.7 * tr$predictor, tolerance = 1e-9)
+})

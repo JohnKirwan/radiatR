@@ -28,6 +28,10 @@
 #' - `condition` (character): condition label.
 #' - `n_trials` (integer): number of trajectories to simulate for the condition.
 #' - `ref_mean` (numeric radian): baseline reference heading (default 0).
+#' - `mean_slope` (numeric, default 0): per-condition slope shifting the mean
+#'   heading with the predictor. The effective per-trial mean is
+#'   `ref_mean + mean_slope * predictor` and is recorded in `ref_heading`. A
+#'   default of 0 reproduces the historical seeded output byte-for-byte.
 #' - `concentration_base` (numeric): baseline von Mises concentration (kappa).
 #' - `concentration_slope` (numeric): optional slope applied to the predictor.
 #' - `tortuosity_base` (numeric): baseline angular noise scale.
@@ -213,6 +217,9 @@ simulate_tracks <- function(n_points = 200,
       conditions[[nm]] <- defaults[[nm]]
     }
   }
+  if (!"mean_slope" %in% names(conditions))  conditions$mean_slope <- 0
+  if (!is.numeric(conditions$mean_slope))
+    stop("simulate_tracks: mean_slope must be numeric.")
   if (!"modality" %in% names(conditions))    conditions$modality    <- "unimodal"
   if (!"n_modes" %in% names(conditions))     conditions$n_modes     <- 1L
   ok_mod <- conditions$modality %in% c("unimodal", "uniform", "axial", "multimodal")
@@ -252,6 +259,7 @@ simulate_tracks <- function(n_points = 200,
       predictor = predictor_vals[idx],
       n_points = n_points,
       ref_mean = condition_row$ref_mean,
+      mean_slope = condition_row$mean_slope,
       concentration_base = condition_row$concentration_base,
       concentration_slope = condition_row$concentration_slope,
       tortuosity_base = condition_row$tortuosity_base,
@@ -310,18 +318,18 @@ simulate_tracks <- function(n_points = 200,
 }
 
 .sim_single_trial <- function(condition, trial_index, predictor, n_points,
-                              ref_mean, concentration_base, concentration_slope,
+                              ref_mean, mean_slope, concentration_base, concentration_slope,
                               tortuosity_base, tortuosity_slope, tortuosity_sd,
                               modality, n_modes,
                               track_shape, n_reversals, amplitude, line_width,
                               radial_noise, phi) {
   predictor <- as.numeric(predictor)
   kappa <- max(0.1, concentration_base + concentration_slope * predictor)
-  ref_theta <- ref_mean
+  ref_theta <- ref_mean + mean_slope * predictor
   # Use modulo="asis" so rvonmises returns values in (-pi, pi], keeping
   # wrap_to_pi() downstream correct.  modulo="2pi" (from .as_circ) would
   # shift near-zero headings to near 2*pi, which wrap_to_pi maps to -pi.
-  pa            <- .sim_principal_angle(modality, ref_mean, kappa, n_modes)
+  pa            <- .sim_principal_angle(modality, ref_theta, kappa, n_modes)
   final_heading <- pa$angle
 
   sigma_mean <- tortuosity_base + tortuosity_slope * predictor
