@@ -54,8 +54,8 @@ test_that("straightness_index orders points by time before measuring", {
   )
 })
 
-test_that("straightness_index rejects non-TrajSet input", {
-  expect_error(straightness_index(data.frame(x = 1, y = 1)), "TrajSet")
+test_that("straightness_index rejects non-Tracks input", {
+  expect_error(straightness_index(data.frame(x = 1, y = 1)), "Tracks")
 })
 
 test_that("path_tortuosity is the reciprocal of straightness; straight = 1", {
@@ -102,6 +102,6 @@ test_that("tortuosity_ratio returns one value >= 1 per trajectory", {
                tolerance = 1e-9)
 })
 
-test_that("tortuosity_ratio rejects non-TrajSet input", {
-  expect_error(tortuosity_ratio(data.frame(x = 1, y = 1)), "TrajSet")
+test_that("tortuosity_ratio rejects non-Tracks input", {
+  expect_error(tortuosity_ratio(data.frame(x = 1, y = 1)), "Tracks")
 })

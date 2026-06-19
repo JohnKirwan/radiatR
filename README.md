@@ -109,7 +109,7 @@ predict(fit, data.frame(predictor = c(-1, 0, 1)))
 library(radiatR)
 
 # 1. Load tracking data (example: DeepLabCut with head + thorax bodyparts)
-ts <- TrajSet_read(
+ts <- read_tracks(
   "my_tracks.csv",
   dialect      = "deeplabcut",
   dialect_args = list(bodypart = c("head", "thorax"))

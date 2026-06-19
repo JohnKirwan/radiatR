@@ -5,12 +5,12 @@ test_that("simulate_tracks returns tibble by default", {
   expect_true(all(c("condition", "trial_id", "predictor") %in% names(sim)))
 })
 
-test_that("simulate_tracks can return TrajSet and write file", {
+test_that("simulate_tracks can return Tracks and write file", {
   tmp <- tempfile(fileext = ".csv")
   res <- simulate_tracks(n_points = 40, output = "both", write_path = tmp, seed = 2)
   expect_true(file.exists(tmp))
   expect_s3_class(res$tibble, "tbl_df")
-  expect_s4_class(res$trajset, "TrajSet")
+  expect_s4_class(res$trajset, "Tracks")
   expect_equal(nrow(as.data.frame(res$trajset)), nrow(res$tibble))
 })
 
@@ -73,7 +73,7 @@ test_that("modality drives recovered sample structure (directed tracks)", {
   expect_lt(hr$p_value, 0.05)
 })
 
-test_that("simulate_tracks stores the generating conditions in TrajSet meta", {
+test_that("simulate_tracks stores the generating conditions in Tracks meta", {
   ts <- simulate_tracks(n_points = 30, output = "trajset", seed = 3)
   expect_true(!is.null(ts@meta$sim_conditions))
   expect_true("modality" %in% names(ts@meta$sim_conditions))

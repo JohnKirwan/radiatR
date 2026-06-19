@@ -32,13 +32,13 @@ devtools::install_local(".")
 
 ## Architecture
 
-### Core data structure: `TrajSet` (S4 class)
+### Core data structure: `Tracks` (S4 class)
 
-`R/TrajSet.R` defines the central container. A `TrajSet` holds a list of trajectory tibbles plus metadata (arena geometry, transform history). Almost every downstream function either accepts or returns a `TrajSet`. Understand this class before touching any other module.
+`R/Tracks.R` defines the central container. A `Tracks` holds a list of trajectory tibbles plus metadata (arena geometry, transform history). Almost every downstream function either accepts or returns a `Tracks`. Understand this class before touching any other module.
 
 ### Pipeline stages
 
-1. **Import** (`R/loaders.R`) — the largest module. Reads manifest files that describe where track data lives, then dispatches to format-specific readers (`TrajSet_read_*`). The loader format registry (`register_loader_*`) lets callers add new file formats without modifying core code.
+1. **Import** (`R/loaders.R`) — the largest module. Reads manifest files that describe where track data lives, then dispatches to format-specific readers (`read_tracks_*`). The loader format registry (`register_loader_*`) lets callers add new file formats without modifying core code.
 
 2. **Coordinate transformation** (`R/circular_trials.R`, `R/circular_mapping.R`) — converts Cartesian pixel coordinates to unit-circle angles. `circular_trials.R` extracts per-trial segments and normalises them to a unit arena; `circular_mapping.R` handles pixel→angle arithmetic. (radiatR analyses normalised, unit-arena tracks; correcting lens distortion or scaling to metric units is left to the upstream tracking pipeline.)
 
@@ -50,7 +50,7 @@ devtools::install_local(".")
 
 ### Object contract
 
-Rich objects only for irreducible structure: `TrajSet` (trajectories + geometry
+Rich objects only for irreducible structure: `Tracks` (trajectories + geometry
 + transform history), `circ_display` (orientation convention), `circ_regression`
 (fitted model). Everything else is a plain tibble in and out, addressed by a
 column-name argument. `circular`-package objects are internal only — never in a

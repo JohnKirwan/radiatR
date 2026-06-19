@@ -59,7 +59,7 @@ SPEC_VTEST_COLOUR    <- "steelblue"
 SPEC_VTEST_LWD       <- 0.8
 
 # Resolve the figure choices into a spec list.
-#   ts     : the loaded TrajSet.
+#   ts     : the loaded Tracks.
 #   hd     : the headings frame, or NULL (rule "none").
 #   method : the heading rule name (or "none").
 #   data   : list(source = "file"|"example", path, dialect).
@@ -306,7 +306,7 @@ spec_to_code <- function(spec) {
     } else {
       dia <- if (!is.null(spec$data$dialect))
         paste0(", dialect = ", q(spec$data$dialect)) else ""
-      add("ts <- TrajSet_read(", q(spec$data$path), dia, ")")
+      add("ts <- read_tracks(", q(spec$data$path), dia, ")")
     }
 
     if (has_hd) {

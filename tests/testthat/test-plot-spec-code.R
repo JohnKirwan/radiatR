@@ -20,7 +20,7 @@ example_spec <- function(heading_display = "stacked", facet = "type",
 test_that("spec_to_code emits a runnable, exported-only script", {
   code <- spec_to_code(example_spec())
   expect_true(grepl("library(radiatR)", code, fixed = TRUE))
-  expect_true(grepl('TrajSet_read("tracks.csv", dialect = "ethovision")', code, fixed = TRUE))
+  expect_true(grepl('read_tracks("tracks.csv", dialect = "ethovision")', code, fixed = TRUE))
   expect_true(grepl('derive_headings(ts, rule = "crossing", circ0 = 0.3, circ1 = 0.6)', code, fixed = TRUE))
   expect_true(grepl('by.x = "id"', code, fixed = TRUE))                       # facet merge onto hd
   expect_true(grepl('assign_colour_key(ts, by = "trajectory")', code, fixed = TRUE))
@@ -35,7 +35,7 @@ test_that("spec_to_code: example source emits data(cpunctatus)", {
   sp <- example_spec(); sp$data <- list(source = "example", path = NULL, dialect = NULL)
   code <- spec_to_code(sp)
   expect_true(grepl("data(cpunctatus)", code, fixed = TRUE))
-  expect_false(grepl("TrajSet_read", code, fixed = TRUE))
+  expect_false(grepl("read_tracks", code, fixed = TRUE))
 })
 
 test_that("spec_to_code: points display, distinct colour + legend, no facet", {

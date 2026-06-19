@@ -8,7 +8,7 @@ test_that("apply_transform by='trajectory' modifies the angle and keeps structur
   ts  <- cpunctatus
   out <- apply_transform(ts, .add_const, k = 0.3, by = "trajectory",
                          step = "add_const")
-  expect_s4_class(out, "TrajSet")
+  expect_s4_class(out, "Tracks")
   expect_equal(nrow(out@data), nrow(ts@data))
   expect_identical(out@data[[ts@cols$id]], ts@data[[ts@cols$id]])      # ids unchanged
   expect_identical(out@data[[ts@cols$time]], ts@data[[ts@cols$time]])  # row order/time unchanged
@@ -37,8 +37,8 @@ test_that("apply_transform appends one transform_history step across all traject
 test_that("apply_transform handles a transform with no extra arguments", {
   ts  <- cpunctatus
   flip <- function(df, cols) { df[[cols$angle]] <- (df[[cols$angle]] + pi) %% (2 * pi); df }
-  expect_s4_class(apply_transform(ts, flip, by = "all"), "TrajSet")
-  expect_s4_class(apply_transform(ts, flip, by = "trajectory"), "TrajSet")
+  expect_s4_class(apply_transform(ts, flip, by = "all"), "Tracks")
+  expect_s4_class(apply_transform(ts, flip, by = "trajectory"), "Tracks")
 })
 
 test_that("apply_transform errors when fn changes the row count", {

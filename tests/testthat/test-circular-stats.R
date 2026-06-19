@@ -5,7 +5,7 @@ test_that("circ_summary matches circular package statistics", {
     angle = c(0, pi / 6, pi / 3, pi / 2, pi, 5 * pi / 4, 3 * pi / 2, 11 * pi / 6)
   )
 
-  ts <- TrajSet(df, id = "id", time = "time", angle = "angle", angle_unit = "radians")
+  ts <- tracks(df, id = "id", time = "time", angle = "angle", angle_unit = "radians")
   summary_by_id <- circ_summary(ts, by = "id")
 
   wrap_to_2pi_local <- function(theta) {
@@ -65,7 +65,7 @@ test_that("zone_dwell assigns points to correct quadrant and ring", {
   # (0.9, 0)  -> r=0.90, R3, angle=0    -> Q1  => Q1.R3
   # (0.0, 0.6)-> r=0.60, R2, angle=pi/2 -> Q2  => Q2.R2
   # (-0.9, 0) -> r=0.90, R3, angle=pi   -> Q3  => Q3.R3
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y",
                 normalize_xy = FALSE)
   dw <- zone_dwell(ts, target_angle = 0)
 
@@ -84,7 +84,7 @@ test_that("zone_dwell gives proportion 1 when all points in same zone", {
     y    = c(0.00, 0.00, 0.05)
   )
   # All r < 0.5 (R1), all angle near 0 (Q1) with target_angle = 0
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y",
                 normalize_xy = FALSE)
   dw <- zone_dwell(ts, target_angle = 0)
 
@@ -101,7 +101,7 @@ test_that("zone_dwell excludes out-of-range points from proportion denominator",
     x    = c(0.3, 1.5, 0.4),   # point 2: r=1.5 > max ring_break
     y    = c(0.0, 0.0, 0.0)
   )
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y",
                 normalize_xy = FALSE)
   dw <- zone_dwell(ts, target_angle = 0, ring_breaks = c(0, 0.5, 0.8, 1))
 
@@ -120,7 +120,7 @@ test_that("zone_dwell handles multiple trials independently", {
   )
   # t1: Q1.R1 (x=0.3) and Q3.R1 (x=-0.3) -> each 0.5
   # t2: both Q1.R2 (x=0.6)               -> proportion 1.0
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y",
                 normalize_xy = FALSE)
   dw <- zone_dwell(ts, target_angle = 0)
 
@@ -143,7 +143,7 @@ test_that("zone_dwell uses rel_x/rel_y when coords='relative'", {
     rel_x = c(0.3, 0.6),      # relative coords in unit circle
     rel_y = c(0.0, 0.0)
   )
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y",
                 rel_x = "rel_x", rel_y = "rel_y", normalize_xy = FALSE)
 
   dw <- zone_dwell(ts, target_angle = 0, coords = "relative")
@@ -165,7 +165,7 @@ test_that("count_goal_entries counts a single entry correctly", {
     y    = c(0.0, 0.0, 0.00, 0.0)
   )
   # distances from (1,0): 0.5, 0.1, 0.15, 0.5
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y",
                 normalize_xy = FALSE)
   res <- count_goal_entries(ts, target_angle = 0, target_radius = 1,
                             crossing_radius = 0.2)
@@ -180,7 +180,7 @@ test_that("count_goal_entries counts multiple entries", {
     x    = c(0.5, 0.9, 0.5, 0.9),
     y    = c(0.0, 0.0, 0.0, 0.0)
   )
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y",
                 normalize_xy = FALSE)
   res <- count_goal_entries(ts, target_angle = 0, target_radius = 1,
                             crossing_radius = 0.2)
@@ -196,7 +196,7 @@ test_that("count_goal_entries counts initial inside-zone position as one entry",
     y    = c(0.0, 0.0, 0.0)
   )
   # distances from (1,0): 0.0, 0.5, 0.7 -> inside=T,F,F -> prepend F -> diff=1,-1,0 -> 1 entry
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y",
                 normalize_xy = FALSE)
   res <- count_goal_entries(ts, target_angle = 0, target_radius = 1,
                             crossing_radius = 0.2)
@@ -211,7 +211,7 @@ test_that("count_goal_entries returns zero when path never enters zone", {
     y    = c(0.0,  0.0, 0.5)
   )
   # all distances from (1,0) > 0.2
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y",
                 normalize_xy = FALSE)
   res <- count_goal_entries(ts, target_angle = 0, target_radius = 1,
                             crossing_radius = 0.2)
@@ -226,7 +226,7 @@ test_that("count_goal_entries handles multiple trials", {
     y    = c(0.0, 0.0, 0.0, 0.0)
   )
   # t1: 1 entry (enters zone at x=0.9); t2: 0 entries (far from (1,0))
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y",
                 normalize_xy = FALSE)
   res <- count_goal_entries(ts, target_angle = 0, target_radius = 1,
                             crossing_radius = 0.2)
@@ -244,7 +244,7 @@ test_that("count_goal_entries uses rel_x/rel_y when coords='relative'", {
     rel_x = c(0.5, 0.9, 0.5),      # relative: enters goal zone at frame 2
     rel_y = c(0.0, 0.0, 0.0)
   )
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y",
                 rel_x = "rel_x", rel_y = "rel_y", normalize_xy = FALSE)
   res <- count_goal_entries(ts, target_angle = 0, target_radius = 1,
                             crossing_radius = 0.2, coords = "relative")

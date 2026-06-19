@@ -2,7 +2,7 @@
 # Sourced by app.R; also unit-tested directly. Depends only on the radiatR
 # package (assumed attached) and ggplot2.
 
-# Session cache for the demo TrajSet so it is built at most once.
+# Session cache for the demo Tracks so it is built at most once.
 .preview_env <- new.env(parent = emptyenv())
 
 # A small, fixed subset of the bundled cpunctatus example: a handful of trials

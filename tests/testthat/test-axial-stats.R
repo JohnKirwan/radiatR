@@ -48,7 +48,7 @@ test_that("circ_summarise(axial=FALSE) is unchanged", {
                               axial = FALSE))
 })
 
-test_that("circ_summary(TrajSet, axial=TRUE) equals doubled-angle summary, mean halved", {
+test_that("circ_summary(Tracks, axial=TRUE) equals doubled-angle summary, mean halved", {
   ts  <- simulate_tracks(n_points = 30, seed = 8, output = "trajset")
   dir <- circ_summary(ts, by = "global")
   ax  <- circ_summary(ts, by = "global", axial = TRUE)

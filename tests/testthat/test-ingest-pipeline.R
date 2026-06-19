@@ -66,11 +66,11 @@ test_that("file-based ingest pipeline produces normalised tracks", {
   expect_true(all(trial_limits$r_px > 0))
 
   track_ts <- get_tracked_object_pos(trial_limits, tracks_df)
-  expect_s4_class(track_ts, "TrajSet")
+  expect_s4_class(track_ts, "Tracks")
   expect_true(all(track_ts@meta$trial_limits$valid_track %in% c(TRUE, FALSE)))
 
   combined <- get_all_object_pos(landmarks_df, tracks_df, file_tbl_aug, tmp_dir)
-  expect_s4_class(combined, "TrajSet")
+  expect_s4_class(combined, "Tracks")
   combined_df <- as.data.frame(combined)
   expect_gt(nrow(combined_df), 0)
   expect_true(all(abs(combined_df$rel_x) <= 1.5 + 1e-8))

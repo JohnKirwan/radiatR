@@ -244,7 +244,7 @@ test_that("an axial heading method soft-syncs Data model, and the override stick
 
 # Server-level test (no browser): a Generic CSV upload renders the column-mapping
 # dropdowns pre-filled from guess_columns(), and the chosen mapping loads a
-# single-track TrajSet through the go2 handler. (Driven via shiny::testServer
+# single-track Tracks through the go2 handler. (Driven via shiny::testServer
 # rather than shinytest2 because browser file-upload is flaky in CI.)
 test_that("a generic CSV maps columns and loads through the server", {
   skip_if_not_installed("shiny")
@@ -275,7 +275,7 @@ test_that("a generic CSV maps columns and loads through the server", {
     session$setInputs(go2 = 1)
 
     expect_equal(rv$step, 2L)               # advanced to Configure
-    expect_false(is.null(rv$ts))            # a TrajSet was built
+    expect_false(is.null(rv$ts))            # a Tracks was built
     expect_equal(length(ids(rv$ts)), 1L)    # treated as a single trajectory
   })
 })
