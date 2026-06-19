@@ -50,3 +50,29 @@ test_that("too few rows returns a converged = FALSE NA object without error", {
   expect_true(is.na(summary(fit)$estimate))
   expect_true(all(is.na(predict(fit))))
 })
+
+test_that("circ_regression recovers a simulated mean_slope (sign + significance)", {
+  cond <- tibble::tibble(condition = "ms", n_trials = 150L, ref_mean = 0.0,
+                         concentration_base = 12, mean_slope = 0.6,
+                         predictor_mean = 0, predictor_sd = 1)
+  s  <- simulate_tracks(n_points = 8, conditions = cond, seed = 11)
+  hd <- s[!duplicated(s$trial_id), c("predictor", "final_heading")]
+  names(hd)[2] <- "heading"
+  fit <- circ_regression(hd, heading ~ predictor)
+  expect_true(fit$converged)
+  sm <- summary(fit)
+  expect_gt(sm$estimate, 0)
+  expect_lt(sm$p_value, 0.05)
+})
+
+test_that("a null mean_slope yields a non-significant regression slope", {
+  cond <- tibble::tibble(condition = "null", n_trials = 150L, ref_mean = 0.0,
+                         concentration_base = 12, mean_slope = 0,
+                         predictor_mean = 0, predictor_sd = 1)
+  s  <- simulate_tracks(n_points = 8, conditions = cond, seed = 12)
+  hd <- s[!duplicated(s$trial_id), c("predictor", "final_heading")]
+  names(hd)[2] <- "heading"
+  fit <- circ_regression(hd, heading ~ predictor)
+  if (fit$converged) expect_gt(summary(fit)$p_value, 0.05)
+  else succeed("non-convergence under the null is acceptable")
+})
