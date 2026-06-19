@@ -24,7 +24,7 @@
 #'   (2000). \emph{Directional Statistics}. Wiley.
 #' @seealso \code{\link{circ_cor}}, \code{\link{vonmises_fit}},
 #'   \code{\link{simulate_tracks}}
-#' @importFrom stats model.frame model.matrix model.response terms delete.response qnorm na.omit .getXlevels
+#' @importFrom stats model.frame model.matrix model.response terms delete.response qnorm na.omit .getXlevels predict fitted
 #' @importFrom circular circular lm.circular
 #' @export
 circ_regression <- function(data, formula, init = NULL) {
