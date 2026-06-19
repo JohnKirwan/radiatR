@@ -121,3 +121,50 @@ print.circ_regression <- function(x, ...) {
   print(summary(x))
   invisible(x)
 }
+
+#' Fitted mean directions from a circular regression, for plotting
+#'
+#' Shapes the predictions of a [circ_regression()] model into the `summary_df`
+#' that [add_circ_mean()] draws, so a fitted mean-direction (rho) arrow can be
+#' drawn for each covariate value and colour-coded by the covariate -- showing
+#' how the mean heading sweeps with the predictor. The arrow length is the
+#' model's implied resultant length \code{circular::A1(kappa)}, the same for
+#' every arrow, so direction and colour carry the signal.
+#'
+#' @param fit A `circ_regression` object.
+#' @param at Numeric (or factor) values for the model's single right-hand-side
+#'   variable -- a convenience for one-predictor models. Supply exactly one of
+#'   `at` or `newdata`.
+#' @param newdata A data frame of covariate values, one row per arrow (for
+#'   multi-predictor models, or full control). Supply exactly one of `at`/`newdata`.
+#' @param display A [circ_display()] object stored on the result so the arrows
+#'   orient with the panel. Default [circ_display()].
+#' @return A data frame with `mean_dir` (fitted heading, radians, unit-circle
+#'   convention), `resultant_R` (= `circular::A1(fit$kappa)`, constant), and the
+#'   covariate column(s) from `newdata`, with a `display` attribute. Pass it to
+#'   `add_circ_mean(colour_col = "<predictor>")`. A non-converged fit yields `NA`
+#'   `mean_dir` rows, which `add_circ_mean()` skips.
+#' @seealso [circ_regression()], [add_circ_mean()], [compute_circ_mean()]
+#' @importFrom circular A1
+#' @export
+fitted_directions <- function(fit, at = NULL, newdata = NULL, display = NULL) {
+  if (!inherits(fit, "circ_regression"))
+    stop("`fit` must be a circ_regression object.")
+  if (is.null(at) == is.null(newdata))
+    stop("supply exactly one of `at` or `newdata`.")
+  if (!is.null(at)) {
+    rhs <- all.vars(fit$formula[[3L]])
+    if (length(rhs) != 1L)
+      stop("model has multiple predictors; pass `newdata` instead of `at`.")
+    newdata <- stats::setNames(data.frame(at, stringsAsFactors = FALSE), rhs)
+  }
+  mean_dir <- predict(fit, newdata = newdata)
+  out <- cbind(
+    data.frame(mean_dir = mean_dir,
+               resultant_R = as.numeric(circular::A1(fit$kappa)),
+               stringsAsFactors = FALSE),
+    newdata
+  )
+  attr(out, "display") <- display %||% circ_display()
+  out
+}
