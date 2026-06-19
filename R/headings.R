@@ -1,8 +1,8 @@
-# Heading extraction rules and circular summaries for TrajSet
+# Heading extraction rules and circular summaries for Tracks
 #
 # Provides:
-#   - derive_headings(TrajSet, rule=..., ...): per-trajectory (and optionally multi-event) headings
-#   - circ_summary_headings(TrajSet, rule=..., group_by=...): circular summaries (mean direction, resultant length, etc.)
+#   - derive_headings(Tracks, rule=..., ...): per-trajectory (and optionally multi-event) headings
+#   - circ_summary_headings(Tracks, rule=..., group_by=...): circular summaries (mean direction, resultant length, etc.)
 #   - gg helpers to overlay mean direction arrows with length equal to resultant R on polar plots
 #   - rule registry & user-defined rules
 #
@@ -48,11 +48,11 @@
 # ---- generic -----------------------------------------------------------------
 #' Derive heading angle(s) from trajectories using specified rule
 #'
-#' @param x TrajSet
+#' @param x Tracks
 #' @param rule one of "crossing", "distal", "straight"
 #' @param ... rule-specific parameters, including `return_coords` (see below)
 #' @param coords Character. Which Cartesian columns to use: `"absolute"` (default,
-#'   uses `x`/`y` from `TrajSet@@cols`) or `"relative"` (uses `rel_x`/`rel_y`;
+#'   uses `x`/`y` from `Tracks@@cols`) or `"relative"` (uses `rel_x`/`rel_y`;
 #'   errors if not registered).
 #' @param on_missing One of `"warn"` (default), `"error"`, or `"quiet"`,
 #'   controlling what happens when a rule produces no heading (`NA`) for one or
@@ -470,12 +470,12 @@ setGeneric(
              heading = axis)
 }
 
-# ---- method for TrajSet ------------------------------------------------------
+# ---- method for Tracks ------------------------------------------------------
 #' @param first_only logical; if TRUE, return only the first matching heading per trajectory
 #' @param carry optional character vector of columns from the source data to append via nearest time
 #' @rdname derive_headings
 #' @export
-setMethod("derive_headings", "TrajSet", function(
+setMethod("derive_headings", "Tracks", function(
     x,
     rule = c("crossing","distal","straight","origin_mean","net","velocity_mean",
              "velocity_axis","window_net","goal_bias","pca_axis","ransac_straight",
@@ -496,7 +496,7 @@ setMethod("derive_headings", "TrajSet", function(
 
   if (coords == "relative") {
     if (is.null(x@cols$rel_x) || is.null(x@cols$rel_y))
-      stop("coords='relative' requires rel_x and rel_y registered in TrajSet@cols.")
+      stop("coords='relative' requires rel_x and rel_y registered in Tracks@cols.")
     xc <- x@cols$rel_x
     yc <- x@cols$rel_y
   } else {
@@ -505,7 +505,7 @@ setMethod("derive_headings", "TrajSet", function(
   }
 
   if (is.null(xc) || is.null(yc))
-    stop("derive_headings: TrajSet needs x/y columns for these rules.")
+    stop("derive_headings: Tracks needs x/y columns for these rules.")
 
   d <- as.data.frame(x)
   sp <- split(seq_len(nrow(d)), d[[id]])
@@ -666,7 +666,7 @@ setMethod("derive_headings", "TrajSet", function(
 #' circular summary statistics (mean direction, resultant length, concentration)
 #' optionally grouped by one or more metadata columns.
 #'
-#' @param x A [`TrajSet`] object.
+#' @param x A [`Tracks`] object.
 #' @param rule Character. Heading derivation rule passed to [derive_headings()].
 #'   One of `"crossing"`, `"distal"`, `"straight"`, `"origin_mean"`, `"net"`,
 #'   or `"velocity_mean"`.
@@ -789,7 +789,7 @@ register_heading_rule <- function(name, fun, overwrite = FALSE) {
 list_heading_rules <- function() sort(ls(envir = .heading_registry))
 
 # Heading from a rigid body axis defined by two tracked bodypart points.
-# Requires the TrajSet to carry <anterior>_x, <anterior>_y, <posterior>_x,
+# Requires the Tracks to carry <anterior>_x, <anterior>_y, <posterior>_x,
 # <posterior>_y columns — load data with dialect = "deeplabcut" and
 # bodypart = c("<anterior>", "<posterior>") to ensure they are present.
 #
@@ -843,7 +843,7 @@ register_heading_rule("bodypart_axis", function(df, cols, anterior, posterior,
 # Heading from a pre-computed orientation angle column (e.g. Ctrax theta).
 # Use when the tool has already fitted a body-axis angle per frame — no separate
 # anterior/posterior point columns are needed.
-# theta_col: name of the angle column in the TrajSet data (default "theta").
+# theta_col: name of the angle column in the Tracks data (default "theta").
 # frame_select: same semantics as bodypart_axis.
 register_heading_rule("ellipse_axis", function(df, cols, theta_col = "theta",
                                                frame_select = c("distal", "mean", "last", "all")) {
@@ -882,7 +882,7 @@ register_heading_rule("ellipse_axis", function(df, cols, theta_col = "theta",
 
 # ---- pose_to_headings --------------------------------------------------------
 
-#' Derive per-frame headings from pose data without a TrajSet
+#' Derive per-frame headings from pose data without a Tracks
 #'
 #' Computes a heading angle for every row in \code{df} from either two
 #' bodypart keypoint columns or a pre-computed orientation angle column.

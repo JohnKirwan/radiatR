@@ -17,12 +17,12 @@ A named list with elements `id`, `time`, `x`, `y`, `angle`, `weight`
 }
 \description{
 Inspects a data frame's column names and returns the best guess for each
-`TrajSet` role (`id`, `time`, `x`, `y`, `angle`, `weight`), honouring any
+`Tracks` role (`id`, `time`, `x`, `y`, `angle`, `weight`), honouring any
 explicit `mapping` overrides. Matching is case-insensitive; `x`/`y` also match
 separator-suffixed names such as `Track1_X`. A role with no match is `NULL`.
-This is the same logic [TrajSet_read()] uses internally; call it to see or
+This is the same logic [read_tracks()] uses internally; call it to see or
 pre-fill a column mapping. It does not synthesize missing `id`/`time` columns
-(a `NULL` signals that `TrajSet_read()` will apply its single-track / row-order
+(a `NULL` signals that `read_tracks()` will apply its single-track / row-order
 fallback).
 }
 \examples{

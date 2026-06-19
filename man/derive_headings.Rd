@@ -2,7 +2,7 @@
 % Please edit documentation in R/headings.R
 \name{derive_headings}
 \alias{derive_headings}
-\alias{derive_headings,TrajSet-method}
+\alias{derive_headings,Tracks-method}
 \title{Derive heading angle(s) from trajectories using specified rule}
 \usage{
 derive_headings(
@@ -14,7 +14,7 @@ derive_headings(
   coords = c("absolute", "relative")
 )
 
-\S4method{derive_headings}{TrajSet}(
+\S4method{derive_headings}{Tracks}(
   x,
   rule = c("crossing", "distal", "straight", "origin_mean", "net", "velocity_mean",
     "velocity_axis", "window_net", "goal_bias", "pca_axis", "ransac_straight",
@@ -27,14 +27,14 @@ derive_headings(
 )
 }
 \arguments{
-\item{x}{TrajSet}
+\item{x}{Tracks}
 
 \item{rule}{one of "crossing", "distal", "straight"}
 
 \item{...}{rule-specific parameters, including `return_coords` (see below)}
 
 \item{coords}{Character. Which Cartesian columns to use: `"absolute"` (default,
-uses `x`/`y` from `TrajSet@cols`) or `"relative"` (uses `rel_x`/`rel_y`;
+uses `x`/`y` from `Tracks@cols`) or `"relative"` (uses `rel_x`/`rel_y`;
 errors if not registered).}
 
 \item{first_only}{logical; if TRUE, return only the first matching heading per trajectory}

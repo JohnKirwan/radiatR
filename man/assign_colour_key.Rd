@@ -2,18 +2,18 @@
 % Please edit documentation in R/circular_plotting.R
 \name{assign_colour_key}
 \alias{assign_colour_key}
-\title{Assign a shared colour-key column to a TrajSet or data frame}
+\title{Assign a shared colour-key column to a Tracks or data frame}
 \usage{
 assign_colour_key(x, by, n = 20, reference = NULL, into = ".colour")
 }
 \arguments{
-\item{x}{A `TrajSet` or data frame to annotate.}
+\item{x}{A `Tracks` or data frame to annotate.}
 
 \item{by}{`"trajectory"` (the trajectory id column) or a grouping column name.}
 
 \item{n}{Colour cap / cycle length (positive integer). Default 20.}
 
-\item{reference}{Optional `TrajSet`/frame whose key order to reuse. Default
+\item{reference}{Optional `Tracks`/frame whose key order to reuse. Default
 `NULL` uses `x` itself.}
 
 \item{into}{Name of the key column to add. Default `".colour"`.}
@@ -32,7 +32,7 @@ chosen automatically by cardinality:
   column's raw values (as a factor), so a legend is meaningful.
 }
 \details{
-Pass `reference` (another TrajSet or frame sharing the key) to borrow its level
+Pass `reference` (another Tracks or frame sharing the key) to borrow its level
 order, so a given key value gets the same colour in both -- e.g. tracks and
 their heading markers. If `by` names a column absent from `x` but present on
 `reference`, it is borrowed by matching trajectory id.

@@ -1,6 +1,6 @@
 #' *Cylindroiulus punctatus* visual orientation trajectory dataset
 #'
-#' Pre-processed `TrajSet` of 235 millipede trajectories from a visual-acuity
+#' Pre-processed `Tracks` of 235 millipede trajectories from a visual-acuity
 #' experiment. *Cylindroiulus punctatus* individuals were placed at the centre
 #' of a cylindrical arena under bright, downwelling light, with a dark target
 #' of varying angular half-width on the arena wall, and their path tracked to
@@ -22,7 +22,7 @@
 #' `inst/extdata/millipede_trials.csv`, so the full import pipeline can be
 #' reproduced with [get_all_object_pos()]. See `data-raw/millipede_example.R`.
 #'
-#' @format A [`TrajSet`] object (44,331 observations) whose data columns include:
+#' @format A [`Tracks`] object (44,331 observations) whose data columns include:
 #'   \describe{
 #'     \item{trial_id}{Character. Unique trial identifier.}
 #'     \item{frame}{Integer. Video frame number.}
@@ -50,7 +50,7 @@
 #' from the same millipede experiment as \code{\link{cpunctatus}}, with the
 #' trial condition metadata (`arc`, `type`, `individual`) joined onto every
 #' frame. Convenient for analyses that prefer a plain data frame to the
-#' `TrajSet` container. A subset of the published dataset.
+#' `Tracks` container. A subset of the published dataset.
 #'
 #' @format A tibble with 18 columns including \code{trial_id}, \code{frame},
 #'   \code{trans_x}, \code{trans_y}, \code{rel_x}, \code{rel_y},

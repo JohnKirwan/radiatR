@@ -2,12 +2,12 @@
 % Please edit documentation in R/circular_plotting.R
 \name{line_circle_intercept_traj}
 \alias{line_circle_intercept_traj}
-\title{Intersection helper for TrajSet trajectories}
+\title{Intersection helper for Tracks trajectories}
 \usage{
 line_circle_intercept_traj(traj, id, range)
 }
 \arguments{
-\item{traj}{TrajSet}
+\item{traj}{Tracks}
 
 \item{id}{Identifier of the trajectory}
 

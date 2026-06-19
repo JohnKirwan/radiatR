@@ -7,10 +7,10 @@
 get_trial_limits(landmarks, track, file_tbl, vid_num)
 }
 \arguments{
-\item{landmarks}{Data frame or `TrajSet` (two rows per trial) containing frame
+\item{landmarks}{Data frame or `Tracks` (two rows per trial) containing frame
 numbers and landmark coordinates.}
 
-\item{track}{Data frame or `TrajSet` of Cartesian coordinates for all
+\item{track}{Data frame or `Tracks` of Cartesian coordinates for all
 frames in the video.}
 
 \item{file_tbl}{Tibble returned by [import_tracks()] (optionally enriched by
@@ -26,5 +26,5 @@ A tibble with one row per trial containing trial limits and reference
 Uses paired landmark coordinates to determine the temporal bounds of each
 trial, the origin, and the reference heading. Additional metadata from
 `file_tbl` is merged into the result. Accepts landmark and track data either
-as data frames or as `TrajSet` objects.
+as data frames or as `Tracks` objects.
 }

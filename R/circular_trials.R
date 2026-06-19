@@ -3,13 +3,13 @@
 
 .coerce_xy_frame <- function(obj, role = c("track", "landmark")) {
   role <- match.arg(role)
-  if (inherits(obj, "TrajSet")) {
+  if (inherits(obj, "Tracks")) {
     df <- as.data.frame(obj)
     time_col <- obj@cols$time
     x_col <- obj@cols$x
     y_col <- obj@cols$y
     if (is.null(time_col) || is.null(x_col) || is.null(y_col)) {
-      stop("TrajSet object must define time/x/y columns for ", role, ".")
+      stop("Tracks object must define time/x/y columns for ", role, ".")
     }
     out <- df[, c(time_col, x_col, y_col)]
   } else if (is.data.frame(obj)) {
@@ -21,7 +21,7 @@
     }
     out <- obj[, c(cand_time[1], cand_x[1], cand_y[1])]
   } else {
-    stop("Unsupported ", role, " input: must be data frame or TrajSet.")
+    stop("Unsupported ", role, " input: must be data frame or Tracks.")
   }
   names(out) <- c("frame", "x", "y")
   out
@@ -32,11 +32,11 @@
 #' Uses paired landmark coordinates to determine the temporal bounds of each
 #' trial, the origin, and the reference heading. Additional metadata from
 #' `file_tbl` is merged into the result. Accepts landmark and track data either
-#' as data frames or as `TrajSet` objects.
+#' as data frames or as `Tracks` objects.
 #'
-#' @param landmarks Data frame or `TrajSet` (two rows per trial) containing frame
+#' @param landmarks Data frame or `Tracks` (two rows per trial) containing frame
 #'   numbers and landmark coordinates.
-#' @param track Data frame or `TrajSet` of Cartesian coordinates for all
+#' @param track Data frame or `Tracks` of Cartesian coordinates for all
 #'   frames in the video.
 #' @param file_tbl Tibble returned by [import_tracks()] (optionally enriched by
 #'   [load_tracks()] or [load_tracks2()]).
@@ -115,20 +115,20 @@ get_trial_limits <- function(landmarks, track, file_tbl, vid_num) {
 #' Derive trial-level track positions in polar coordinates.
 #'
 #' Using the trial limits returned by [get_trial_limits()], this helper extracts
-#' the corresponding rows from a track data frame or `TrajSet`, centres and
+#' the corresponding rows from a track data frame or `Tracks`, centres and
 #' scales the coordinates, and computes angles in both absolute and
 #' reference-relative frames. The function optionally controls how inner/outer
 #' radius crossings are selected.
 #'
 #' @param trial_limits Data frame produced by [get_trial_limits()].
-#' @param track Data frame or `TrajSet` of Cartesian coordinates for the
+#' @param track Data frame or `Tracks` of Cartesian coordinates for the
 #'   entire video.
 #' @param circ0 Inner radius threshold (default `0.1`).
 #' @param circ1 Outer radius threshold (default `0.2`).
 #' @param radius_criterion Strategy for choosing the radius landmarks. `"first_past"`
 #'   selects the first point beyond each threshold, while `"closest"` chooses the
 #'   closest sample to the specified radius.
-#' @return A `TrajSet` containing all valid trial observations. The corresponding
+#' @return A `Tracks` containing all valid trial observations. The corresponding
 #'   trial limits (including `valid_track` flags) are stored in
 #'   `meta$trial_limits`.
 #'
@@ -262,7 +262,7 @@ get_tracked_object_pos <- function(
     .before = "frame"
   )
 
-  trajset <- TrajSet(
+  trajset <- tracks(
     combined,
     id = "trial_id",
     time = "frame",
@@ -295,14 +295,14 @@ get_tracked_object_pos <- function(
 #' coordinates. The per-trial outputs are combined into a single tibble, and
 #' the augmented trial limits are returned alongside it.
 #'
-#' @param landmarks Optional data frame or `TrajSet` for the first entry. Retained
+#' @param landmarks Optional data frame or `Tracks` for the first entry. Retained
 #'   for backwards compatibility; values are overwritten internally.
-#' @param track Optional data frame or `TrajSet` for the first entry.
+#' @param track Optional data frame or `Tracks` for the first entry.
 #' @param file_tbl Tibble produced by [import_tracks()], optionally enriched via
 #'   [load_tracks()] or [load_tracks2()].
 #' @param track_dir Directory containing the landmark and track text files.
 #'
-#' @return A `TrajSet` combining the normalised observations for all valid
+#' @return A `Tracks` combining the normalised observations for all valid
 #'   trials in the manifest. The aggregated trial limits are available via
 #'   `meta$trial_limits`.
 #'

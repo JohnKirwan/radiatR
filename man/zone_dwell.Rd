@@ -13,7 +13,7 @@ zone_dwell(
 )
 }
 \arguments{
-\item{x}{A [`TrajSet`] object with x/y (or rel_x/rel_y) columns registered.}
+\item{x}{A [`Tracks`] object with x/y (or rel_x/rel_y) columns registered.}
 
 \item{target_angle}{Numeric. Radians. Direction of the target zone from the
 origin. Q1 spans +/-45degrees around this angle.}

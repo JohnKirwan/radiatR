@@ -43,7 +43,7 @@ output of [derive_headings()].
 }
 \examples{
 library(ggplot2)
-# headings from a TrajSet via derive_headings(ts, rule = "crossing", ...)
+# headings from a Tracks via derive_headings(ts, rule = "crossing", ...)
 hd <- data.frame(id = "A", time = 1, heading = pi / 4)
 ggplot() + coord_fixed() + add_heading_points(hd)
 ggplot() + coord_fixed() + add_heading_points(hd, colour = "steelblue")

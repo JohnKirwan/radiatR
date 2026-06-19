@@ -2,8 +2,8 @@
 % Please edit documentation in R/circular_plotting.R
 \name{gg_traj}
 \alias{gg_traj}
-\alias{gg_traj,TrajSet-method}
-\title{Plot trajectories from a TrajSet (overlay or faceted)}
+\alias{gg_traj,Tracks-method}
+\title{Plot trajectories from a Tracks (overlay or faceted)}
 \usage{
 gg_traj(
   x,
@@ -18,7 +18,7 @@ gg_traj(
   ncol = NULL
 )
 
-\S4method{gg_traj}{TrajSet}(
+\S4method{gg_traj}{Tracks}(
   x,
   color = NULL,
   linetype = NULL,
@@ -32,7 +32,7 @@ gg_traj(
 )
 }
 \arguments{
-\item{x}{TrajSet}
+\item{x}{Tracks}
 
 \item{color, linetype, alpha, size}{Optional column names (strings) mapped to aesthetics}
 
@@ -50,5 +50,5 @@ gg_traj(
 ggplot object
 }
 \description{
-Plot trajectories from a TrajSet (overlay or faceted)
+Plot trajectories from a Tracks (overlay or faceted)
 }

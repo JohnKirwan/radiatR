@@ -22,7 +22,7 @@ derive_coords <- function(trans_x, trans_y, reference = 0) {
   trans_rho       <- sqrt(trans_x^2 + trans_y^2)
   abs_theta_clock <- rad2clock(atan2(trans_y, trans_x))
   abs_theta_unit  <- rad_unclock(abs_theta_clock)
-  # Relative angle in the canonical [0, 2*pi) convention (the TrajSet angle
+  # Relative angle in the canonical [0, 2*pi) convention (the Tracks angle
   # column requires it). wrap_to_2pi(rad_shepherd(t)) == wrap_to_2pi(t), so this
   # matches the value the loader pipeline ultimately stores.
   rel_theta_unit  <- wrap_to_2pi(abs_theta_unit - reference)
@@ -36,13 +36,13 @@ derive_coords <- function(trans_x, trans_y, reference = 0) {
   )
 }
 
-#' Per-trajectory reference direction of a TrajSet
+#' Per-trajectory reference direction of a Tracks
 #'
 #' The reference direction (unit-circle radians) against which each trajectory's
 #' relative frame (`rel_theta`/`rel_x`/`rel_y`) is defined. Trajectories with no
 #' recorded reference default to `0` (relative frame equals absolute frame).
 #'
-#' @param x A [`TrajSet`].
+#' @param x A [`Tracks`].
 #' @return For `reference()`, a data frame with `id` and `ref_theta` (or `NULL`
 #'   when none is set).
 #' @seealso [set_reference()], [derive_coords()]
@@ -52,7 +52,7 @@ setGeneric("reference", function(x) standardGeneric("reference"))
 
 #' @rdname reference
 #' @export
-setMethod("reference", "TrajSet", function(x) x@meta$reference)
+setMethod("reference", "Tracks", function(x) x@meta$reference)
 
 # Named id -> ref_theta vector covering every trajectory; absent ids default 0.
 .reference_lookup <- function(x) {
@@ -73,12 +73,12 @@ setMethod("reference", "TrajSet", function(x) x@meta$reference)
 #' recorded in [transform_history()]. This is the drift-safe way to change the
 #' reference frame -- prefer it over a manual [apply_transform()].
 #'
-#' @param x A [`TrajSet`] with position roles (`cols$x`/`cols$y`) and relative
+#' @param x A [`Tracks`] with position roles (`cols$x`/`cols$y`) and relative
 #'   roles (`cols$angle`/`cols$rel_x`/`cols$rel_y`) registered.
 #' @param value Reference direction(s) in unit-circle radians: a scalar applied
 #'   to all trajectories, or a named numeric vector / two-column
 #'   (`id`,`ref_theta`) data frame setting them per trajectory.
-#' @return The updated [`TrajSet`].
+#' @return The updated [`Tracks`].
 #' @seealso [reference()], [derive_coords()]
 #' @rdname set_reference
 #' @export
@@ -86,7 +86,7 @@ setGeneric("set_reference", function(x, value) standardGeneric("set_reference"))
 
 #' @rdname set_reference
 #' @export
-setMethod("set_reference", "TrajSet", function(x, value) {
+setMethod("set_reference", "Tracks", function(x, value) {
   ids0 <- as.character(ids(x))
   if (is.data.frame(value)) {
     stopifnot(all(c("id", "ref_theta") %in% names(value)))

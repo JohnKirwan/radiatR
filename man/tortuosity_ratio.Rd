@@ -2,23 +2,23 @@
 % Please edit documentation in R/track_metrics.R
 \name{tortuosity_ratio}
 \alias{tortuosity_ratio}
-\title{Per-trajectory tortuosity ratio for a TrajSet}
+\title{Per-trajectory tortuosity ratio for a Tracks}
 \usage{
 tortuosity_ratio(ts, x_col = ts@cols$x, y_col = ts@cols$y)
 }
 \arguments{
-\item{ts}{A `TrajSet`.}
+\item{ts}{A `Tracks`.}
 
 \item{x_col, y_col}{Names of the coordinate columns to use. Default to the
-`TrajSet`'s recorded x/y columns (the real recorded positions), so the metric
+`Tracks`'s recorded x/y columns (the real recorded positions), so the metric
 reflects the physical path rather than any display transform.}
 }
 \value{
-A `data.frame` with one row per trajectory: the `TrajSet`'s id column
+A `data.frame` with one row per trajectory: the `Tracks`'s id column
   and a numeric `tortuosity` column (`>= 1`, possibly `Inf`).
 }
 \description{
-Computes [path_tortuosity()] for each trajectory in a `TrajSet`, ordering
+Computes [path_tortuosity()] for each trajectory in a `Tracks`, ordering
 each trajectory's points by its time column when one is recorded.
 }
 \seealso{

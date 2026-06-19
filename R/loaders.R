@@ -1,4 +1,4 @@
-# Loader utilities for radiatR: manifest importers, track discovery, and generic TrajSet readers
+# Loader utilities for radiatR: manifest importers, track discovery, and generic Tracks readers
 #
 
 # import_info
@@ -106,7 +106,7 @@ import_tracks <- function(dir, landmark_suffix = NULL, track_suffix = NULL){
   return(file_tbl)
 }
 
-#' Read a dtrack trajectory file into a TrajSet
+#' Read a dtrack trajectory file into a Tracks
 #'
 #' Reads a tab-separated, headerless file produced by dtrack
 #' (\url{https://bitbucket.org/jochensmolka/dtrack}). The file is expected to
@@ -115,10 +115,10 @@ import_tracks <- function(dir, landmark_suffix = NULL, track_suffix = NULL){
 #' dropped.
 #'
 #' @param path Path to a dtrack \code{_point02.txt} trajectory file.
-#' @param normalize_xy Logical; passed to [TrajSet_read()]. Default \code{FALSE}
+#' @param normalize_xy Logical; passed to [read_tracks()]. Default \code{FALSE}
 #'   because dtrack files are in pixel space.
-#' @param ... Additional arguments passed to [TrajSet_read()].
-#' @return A \code{TrajSet}.
+#' @param ... Additional arguments passed to [read_tracks()].
+#' @return A \code{Tracks}.
 #' @seealso [import_tracks()] for discovering dtrack file pairs in a directory.
 #' @export
 dtrack_read <- function(path, normalize_xy = FALSE, ...) {
@@ -128,7 +128,7 @@ dtrack_read <- function(path, normalize_xy = FALSE, ...) {
   df <- df[, 1:3, drop = FALSE]
   names(df) <- c("frame", "x", "y")
   df$id <- tools::file_path_sans_ext(basename(path))
-  TrajSet_read(
+  read_tracks(
     df,
     mapping = list(id = "id", time = "frame", x = "x", y = "y"),
     normalize_xy = normalize_xy,
@@ -139,11 +139,11 @@ dtrack_read <- function(path, normalize_xy = FALSE, ...) {
 escape_specials <- function(x) {
   gsub("([.|()\\^{}+$*?]|\\[|\\]|\\\\)", "\\\\\\1", x)
 }
-# Generic loaders for TrajSet (no video-specific assumptions)
+# Generic loaders for Tracks (no video-specific assumptions)
 #
 # Provides:
-#   - TrajSet_read(x, mapping=..., angle_unit=..., ...): construct TrajSet from data.frame or file path(s)
-#   - TrajSet_read_dir(dir, pattern, ...): bind multiple files
+#   - read_tracks(x, mapping=..., angle_unit=..., ...): construct Tracks from data.frame or file path(s)
+#   - read_tracks_dir(dir, pattern, ...): bind multiple files
 #   - register_loader_dialect(name, fun), list_loader_dialects(): pluggable dialects for known exporters
 #
 # Dependencies kept soft: base R by default; uses readr/data.table/arrow if installed.
@@ -161,7 +161,7 @@ escape_specials <- function(x) {
 .loader_format_registry <- new.env(parent = emptyenv())
 
 #' Register a declarative loader *format* (list or YAML/JSON file)
-#' The spec maps cleanly onto TrajSet_read() args and supports regex-based column finding.
+#' The spec maps cleanly onto read_tracks() args and supports regex-based column finding.
 #' @param name A unique name
 #' @param spec A named list, or a path to a YAML/JSON file defining the spec
 #' @param overwrite Overwrite an existing format of the same name
@@ -234,12 +234,12 @@ list_loader_dialects <- function() sort(ls(envir = .loader_registry))
 #' Guess the role of each column in a track table
 #'
 #' Inspects a data frame's column names and returns the best guess for each
-#' `TrajSet` role (`id`, `time`, `x`, `y`, `angle`, `weight`), honouring any
+#' `Tracks` role (`id`, `time`, `x`, `y`, `angle`, `weight`), honouring any
 #' explicit `mapping` overrides. Matching is case-insensitive; `x`/`y` also match
 #' separator-suffixed names such as `Track1_X`. A role with no match is `NULL`.
-#' This is the same logic [TrajSet_read()] uses internally; call it to see or
+#' This is the same logic [read_tracks()] uses internally; call it to see or
 #' pre-fill a column mapping. It does not synthesize missing `id`/`time` columns
-#' (a `NULL` signals that `TrajSet_read()` will apply its single-track / row-order
+#' (a `NULL` signals that `read_tracks()` will apply its single-track / row-order
 #' fallback).
 #'
 #' @param data A data frame (or anything with `names()`).
@@ -388,13 +388,13 @@ guess_columns <- function(data, mapping = list()) {
     stringsAsFactors = FALSE, ...)
 }
 
-# ---- core: TrajSet_read ------------------------------------------------------
-#' Construct a TrajSet from a *format* spec (registered name or inline list)
+# ---- core: read_tracks ------------------------------------------------------
+#' Construct a Tracks from a *format* spec (registered name or inline list)
 #' @param x data.frame or path(s)
 #' @param format registered format name or list spec
 #' @param ... extra args override spec fields
 #' @export
-TrajSet_read_format <- function(x, format, ...) {
+read_tracks_format <- function(x, format, ...) {
   spec <- if (is.character(format) && exists(format, envir = .loader_format_registry, inherits = FALSE)) {
     get(format, envir = .loader_format_registry, inherits = FALSE)
   } else if (is.list(format)) {
@@ -436,7 +436,7 @@ TrajSet_read_format <- function(x, format, ...) {
   dialect <- spec$dialect %||% NULL
   if (!is.null(dialect) && !is.null(spec$dialect_args)) {
     dots$dialect <- dialect
-    # dial args handled by TrajSet_read via dialect=... and will pass along ...
+    # dial args handled by read_tracks via dialect=... and will pass along ...
     for (nm in names(spec$dialect_args)) if (is.null(dots[[nm]])) dots[[nm]] <- spec$dialect_args[[nm]]
   } else if (!is.null(dialect)) {
     dots$dialect <- dialect
@@ -458,10 +458,10 @@ TrajSet_read_format <- function(x, format, ...) {
 
   # Allow explicit overrides via ...
   args <- modifyList(args, dots)
-  do.call(TrajSet_read, c(list(x = x), args))
+  do.call(read_tracks, c(list(x = x), args))
 }
 
-#' Construct a TrajSet from a data.frame or file(s)
+#' Construct a Tracks from a data.frame or file(s)
 #'
 #' @param x data.frame, file path, or character vector of file paths
 #' @param mapping named list for column mapping: id, time, x, y, angle, weight. Any missing will be guessed when possible.
@@ -482,9 +482,9 @@ TrajSet_read_format <- function(x, format, ...) {
 #' @param id_from_filename if TRUE and id missing, derive id from file stem when reading multiple files
 #' @param validate if TRUE run S4 validity checks
 #' @param format Optional loader format name or list spec registered via [register_loader_format()]
-#' @return TrajSet
+#' @return Tracks
 #' @export
-TrajSet_read <- function(x,
+read_tracks <- function(x,
                          mapping = list(id=NULL, time=NULL, x=NULL, y=NULL, angle=NULL, weight=NULL),
                          angle_unit = c("radians","degrees","auto"),
                          time_type = c("auto","posix","seconds","frames"), tz = "UTC", fps = NULL,
@@ -501,7 +501,7 @@ TrajSet_read <- function(x,
   time_type  <- match.arg(time_type)
 
   if (!is.null(format)) {
-    return(TrajSet_read_format(
+    return(read_tracks_format(
       x,
       format,
       mapping = mapping,
@@ -543,7 +543,7 @@ TrajSet_read <- function(x,
     dialect <- x
     df <- NULL
   } else {
-    stop("TrajSet_read: 'x' must be a data.frame or path(s) to files")
+    stop("read_tracks: 'x' must be a data.frame or path(s) to files")
   }
 
   # dialect preprocessing if requested
@@ -615,8 +615,8 @@ TrajSet_read <- function(x,
     }
   }
 
-  # Hand off to TrajSet constructor
-  ts <- TrajSet(df,
+  # Hand off to Tracks constructor
+  ts <- tracks(df,
                 id = id, time = time, angle = angle,
                 x = xcol, y = ycol,
                 angle_unit = ang_unit,
@@ -628,17 +628,17 @@ TrajSet_read <- function(x,
   ts
 }
 
-#' Read all matching files from a directory and bind into a TrajSet
+#' Read all matching files from a directory and bind into a Tracks
 #' @param dir Directory to scan for files
 #' @param pattern Regex passed to `list.files()` to select files
 #' @param recursive Recurse into subdirectories when TRUE
-#' @param ... Additional arguments passed to `TrajSet_read()`
+#' @param ... Additional arguments passed to `read_tracks()`
 #' @export
-TrajSet_read_dir <- function(dir, pattern = "\\.(csv|tsv|txt|parquet|feather)$", recursive = FALSE, ...) {
+read_tracks_dir <- function(dir, pattern = "\\.(csv|tsv|txt|parquet|feather)$", recursive = FALSE, ...) {
   stopifnot(dir.exists(dir))
   files <- list.files(dir, pattern = pattern, full.names = TRUE, recursive = recursive)
   if (!length(files)) stop("No files matched in ", dir)
-  TrajSet_read(files, ...)
+  read_tracks(files, ...)
 }
 
 .is_absolute_path <- function(path) {
@@ -708,12 +708,12 @@ TrajSet_read_dir <- function(dir, pattern = "\\.(csv|tsv|txt|parquet|feather)$",
   out
 }
 
-#' Load trajectories listed in a file table into a TrajSet
+#' Load trajectories listed in a file table into a Tracks
 #'
 #' This high-level helper combines the file discovery tibble returned by
 #' [import_tracks()] with optional metadata from an experiment manifest, reads
-#' each track file using [TrajSet_read()], and merges the results into a single
-#' `TrajSet`.
+#' each track file using [read_tracks()], and merges the results into a single
+#' `Tracks`.
 #'
 #' @param file_tbl Tibble returned by [import_tracks()], containing at least the
 #'   columns `basename` and `track`.
@@ -723,16 +723,16 @@ TrajSet_read_dir <- function(dir, pattern = "\\.(csv|tsv|txt|parquet|feather)$",
 #' @param manifest_cols Optional named character vector (or list) mapping new
 #'   column names in `file_tbl` to column names present in `manifest`. When
 #'   `NULL`, all columns aside from `file` are carried over with the same names.
-#' @param mapping Optional explicit column mapping passed to [TrajSet_read()].
-#' @param angle_unit,time_type,tz,fps Passed to [TrajSet_read()].
+#' @param mapping Optional explicit column mapping passed to [read_tracks()].
+#' @param angle_unit,time_type,tz,fps Passed to [read_tracks()].
 #' @param normalize_xy Logical; normalise x/y to unit circle. Default \code{TRUE}.
-#' @param dialect Optional dialect name; passed to [TrajSet_read()].
-#' @param keep,drop Column selection vectors passed to [TrajSet_read()].
-#' @param ... Additional arguments forwarded to [TrajSet_read()].
+#' @param dialect Optional dialect name; passed to [read_tracks()].
+#' @param keep,drop Column selection vectors passed to [read_tracks()].
+#' @param ... Additional arguments forwarded to [read_tracks()].
 #'
-#' @return A `TrajSet` with metadata columns replicated for each observation.
+#' @return A `Tracks` with metadata columns replicated for each observation.
 #' @export
-TrajSet_load_manifest <- function(file_tbl, track_dir, manifest = NULL,
+load_manifest <- function(file_tbl, track_dir, manifest = NULL,
                                   manifest_cols = NULL,
                                   mapping = NULL,
                                   angle_unit = c("radians","degrees","auto"),
@@ -769,7 +769,7 @@ TrajSet_load_manifest <- function(file_tbl, track_dir, manifest = NULL,
   for (i in seq_len(nrow(augmented_tbl))) {
     path <- resolved_paths[i]
     args <- c(list(x = path), reader_args, list(...))
-    ts <- do.call(TrajSet_read, args)
+    ts <- do.call(read_tracks, args)
 
     n_rows <- nrow(ts@data)
     row_vals <- augmented_tbl[i, metadata_cols, drop = FALSE]
@@ -834,7 +834,7 @@ load_tracks2 <- function(file_tbl, df, track_dir, colnames) {
 }
 
 # ---- example dialects (opt-in) -----------------------------------------------
-# Declarative *format* examples (YAML/JSON). Users can register a spec and then call TrajSet_read_format(...).
+# Declarative *format* examples (YAML/JSON). Users can register a spec and then call read_tracks_format(...).
 # YAML example:
 # ---
 # mapping:
@@ -855,7 +855,7 @@ load_tracks2 <- function(file_tbl, df, track_dir, colnames) {
 #
 # R usage:
 #   register_loader_format("my_frames_spec", "/path/to/spec.yaml")
-#   ts <- TrajSet_read_format("/data/dir/run1.csv", format = "my_frames_spec")
+#   ts <- read_tracks_format("/data/dir/run1.csv", format = "my_frames_spec")
 
 # Users can register lightweight mappers here without adding heavy deps.
 # Example: a common "wide" layout with prefixed columns per animal: x_<id>, y_<id>
@@ -1418,7 +1418,7 @@ register_loader_dialect("motchallenge", function(x, fps = NULL, headerless = TRU
     if ("h" %in% names(df)) y0 <- y0 + df$h/2
   }
   out <- data.frame(id = df$id, time = df$frame, x = x0, y = y0, stringsAsFactors = FALSE)
-  # NOTE: call TrajSet_read(..., time_type="frames", fps=...) afterwards to convert to seconds
+  # NOTE: call read_tracks(..., time_type="frames", fps=...) afterwards to convert to seconds
   out
 })
 

@@ -7,10 +7,10 @@
 get_all_object_pos(landmarks = NULL, track = NULL, file_tbl, track_dir)
 }
 \arguments{
-\item{landmarks}{Optional data frame or `TrajSet` for the first entry. Retained
+\item{landmarks}{Optional data frame or `Tracks` for the first entry. Retained
 for backwards compatibility; values are overwritten internally.}
 
-\item{track}{Optional data frame or `TrajSet` for the first entry.}
+\item{track}{Optional data frame or `Tracks` for the first entry.}
 
 \item{file_tbl}{Tibble produced by [import_tracks()], optionally enriched via
 [load_tracks()] or [load_tracks2()].}
@@ -18,7 +18,7 @@ for backwards compatibility; values are overwritten internally.}
 \item{track_dir}{Directory containing the landmark and track text files.}
 }
 \value{
-A `TrajSet` combining the normalised observations for all valid
+A `Tracks` combining the normalised observations for all valid
   trials in the manifest. The aggregated trial limits are available via
   `meta$trial_limits`.
 }

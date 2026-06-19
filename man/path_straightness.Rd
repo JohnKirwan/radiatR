@@ -31,5 +31,5 @@ path_straightness(x = c(0, 1, 2), y = c(0, 0, 0))   # straight -> 1
 path_straightness(x = c(0, 1, 0), y = c(0, 1, 0))   # returns to start -> 0
 }
 \seealso{
-[straightness_index()] for a whole `TrajSet`; [path_tortuosity()].
+[straightness_index()] for a whole `Tracks`; [path_tortuosity()].
 }

@@ -5,7 +5,7 @@
 \alias{cpunctatus}
 \title{*Cylindroiulus punctatus* visual orientation trajectory dataset}
 \format{
-A [`TrajSet`] object (44,331 observations) whose data columns include:
+A [`Tracks`] object (44,331 observations) whose data columns include:
   \describe{
     \item{trial_id}{Character. Unique trial identifier.}
     \item{frame}{Integer. Video frame number.}
@@ -28,7 +28,7 @@ Behavioural experiment from Kirwan & Nilsson (2019); raw tracks
 cpunctatus
 }
 \description{
-Pre-processed `TrajSet` of 235 millipede trajectories from a visual-acuity
+Pre-processed `Tracks` of 235 millipede trajectories from a visual-acuity
 experiment. *Cylindroiulus punctatus* individuals were placed at the centre
 of a cylindrical arena under bright, downwelling light, with a dark target
 of varying angular half-width on the arena wall, and their path tracked to

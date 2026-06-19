@@ -1,4 +1,4 @@
-# TrajSet: an S4 container for sets of circular trajectories
+# Tracks: an S4 container for sets of circular trajectories
 # Stores long-form observations (id, time, angle [radians], optional x, y, weight, covariates)
 
 #' @importFrom methods setClass setValidity setGeneric setMethod new setAs slot
@@ -52,7 +52,7 @@
   if (is.null(history)) {
     return(.empty_transform_history())
   }
-  if (inherits(history, "TrajSet")) {
+  if (inherits(history, "Tracks")) {
     history <- transform_history(history)
   } else if (is.list(history) && !inherits(history, "data.frame")) {
     history <- tibble::as_tibble(history)
@@ -137,16 +137,16 @@
 }
 
 ## ---- class -------------------------------------------------------------------
-#' TrajSet container for circular trajectories
+#' Tracks container for circular trajectories
 #'
 #' @slot data data.frame of trajectory observations in long form
 #' @slot cols list mapping required column names (id/time/angle/optional x,y,weight)
 #' @slot angle_unit character describing the original angle unit supplied
 #' @slot meta list of additional metadata attached to the set
-#' @rdname TrajSet-class
-#' @exportClass TrajSet
+#' @rdname Tracks-class
+#' @exportClass Tracks
 setClass(
-  "TrajSet",
+  "Tracks",
   slots = c(
     data       = "data.frame",   # long: id, time, angle(rad), optional x,y,weight,covars
     cols       = "list",         # list(id=, time=, angle=, x=NULL, y=NULL, weight=NULL)
@@ -155,7 +155,7 @@ setClass(
   )
 )
 
-setValidity("TrajSet", function(object) {
+setValidity("Tracks", function(object) {
   d  <- object@data
   cl <- object@cols
   req <- c("id","time","angle")
@@ -213,7 +213,7 @@ setValidity("TrajSet", function(object) {
 
 # Per-trajectory affine map into the unit arena: centre each trajectory on its
 # bounding-box midpoint and scale so the furthest point sits at radius 1. Used by
-# the TrajSet constructor when normalize_xy = TRUE. Preserves trajectory shape and
+# the Tracks constructor when normalize_xy = TRUE. Preserves trajectory shape and
 # places the arena centre at the origin (what the radius-based heading rules
 # assume). Degenerate (zero-extent or all-NA) trajectories map to the origin.
 .normalize_to_unit_arena <- function(x, y, id) {
@@ -239,7 +239,7 @@ setValidity("TrajSet", function(object) {
   list(x = xo, y = yo)
 }
 
-#' Construct a TrajSet
+#' Construct a Tracks
 #'
 #' @param df data.frame in long form
 #' @param id,time Columns naming trajectory id and time
@@ -261,10 +261,10 @@ setValidity("TrajSet", function(object) {
 #' @param transform_history Optional tibble describing transformation steps applied to the
 #'   trajectories. Must contain columns `step`, `order`, `id`, `implementation`, `params`,
 #'   and `depends_on`.
-#' @return A TrajSet S4 object
-#' @rdname TrajSet-class
+#' @return A Tracks S4 object
+#' @rdname Tracks-class
 #' @export
-TrajSet <- function(df,
+tracks <- function(df,
                     id = "id", time = "time",
                     angle = NULL,
                     x = NULL, y = NULL,
@@ -398,7 +398,7 @@ TrajSet <- function(df,
   }
   meta$transform_history <- .ensure_transform_history(transform_history)
 
-  new("TrajSet",
+  new("Tracks",
       data = d,
       cols = list(id = id, time = time, angle = angle_col,
                   x = if (!is.null(x)) x else NULL,
@@ -415,14 +415,14 @@ TrajSet <- function(df,
 
 ## ---- accessors & show --------------------------------------------------------
 setGeneric("ids", function(x) standardGeneric("ids"))
-setMethod("ids", "TrajSet", function(x) unique(x@data[[x@cols$id]]))
+setMethod("ids", "Tracks", function(x) unique(x@data[[x@cols$id]]))
 
-#' @rdname TrajSet-class
+#' @rdname Tracks-class
 #' @export
-setMethod("length", "TrajSet", function(x) length(ids(x)))
+setMethod("length", "Tracks", function(x) length(ids(x)))
 
 setGeneric("angles", function(x, as = c("numeric","circular"), unit = c("radians","degrees")) standardGeneric("angles"))
-setMethod("angles", "TrajSet", function(x, as = c("numeric","circular"), unit = c("radians","degrees")) {
+setMethod("angles", "Tracks", function(x, as = c("numeric","circular"), unit = c("radians","degrees")) {
   as <- match.arg(as); unit <- match.arg(unit)
   th <- x@data[[x@cols$angle]]
   if (unit == "degrees") th <- th * 180/pi
@@ -430,12 +430,12 @@ setMethod("angles", "TrajSet", function(x, as = c("numeric","circular"), unit = 
   th
 })
 
-setMethod("show", "TrajSet", function(object) {
+setMethod("show", "Tracks", function(object) {
   id <- object@cols$id; tm <- object@cols$time; th <- object@cols$angle
   xy <- if (!is.null(object@cols$x)) paste0(", x='", object@cols$x, "', y='", object@cols$y, "'") else ""
   rel_xy <- if (!is.null(object@cols$rel_x)) paste0(", rel_x='", object@cols$rel_x, "', rel_y='", object@cols$rel_y, "'") else ""
   raw_xy <- if (!is.null(object@cols$raw_x)) paste0(", raw_x='", object@cols$raw_x, "', raw_y='", object@cols$raw_y, "'") else ""
-  cat(sprintf("TrajSet: %d trajectories, %d observations\n", length(ids(object)), nrow(object@data)))
+  cat(sprintf("Tracks: %d trajectories, %d observations\n", length(ids(object)), nrow(object@data)))
   cat(sprintf("Columns: id='%s', time='%s', angle='%s' (radians)%s%s%s\n", id, tm, th, xy, rel_xy, raw_xy))
   hist <- transform_history(object)
   if (nrow(hist)) {
@@ -446,9 +446,9 @@ setMethod("show", "TrajSet", function(object) {
 })
 
 ## ---- transform history helpers ----------------------------------------------
-#' Transform history helpers for TrajSet objects
+#' Transform history helpers for Tracks objects
 #'
-#' @param x A `TrajSet` object.
+#' @param x A `Tracks` object.
 #' @param step Character identifier for the transform step.
 #' @param traj_ids Character vector of trajectory identifiers affected by the step.
 #'   Defaults to all trajectories in `x` when `NULL`.
@@ -463,7 +463,7 @@ setMethod("show", "TrajSet", function(object) {
 #'   replace.
 #'
 #' @return For `transform_history`, a tibble describing the recorded steps. For
-#'   `log_transform` and `set_transform_history`, the updated `TrajSet` object.
+#'   `log_transform` and `set_transform_history`, the updated `Tracks` object.
 #' @name transform_history
 NULL
 
@@ -473,7 +473,7 @@ setGeneric("transform_history", function(x) standardGeneric("transform_history")
 
 #' @rdname transform_history
 #' @export
-setMethod("transform_history", "TrajSet", function(x) {
+setMethod("transform_history", "Tracks", function(x) {
   .ensure_transform_history(x@meta$transform_history)
 })
 
@@ -486,7 +486,7 @@ setGeneric("log_transform", function(x, step, traj_ids = NULL,
 
 #' @rdname transform_history
 #' @export
-setMethod("log_transform", "TrajSet", function(x, step, traj_ids = NULL,
+setMethod("log_transform", "Tracks", function(x, step, traj_ids = NULL,
                                                implementation = step, params = NULL,
                                                order = NULL, depends_on = NULL) {
   if (is.null(traj_ids)) {
@@ -512,7 +512,7 @@ setGeneric("set_transform_history", function(x, history) standardGeneric("set_tr
 
 #' @rdname transform_history
 #' @export
-setMethod("set_transform_history", "TrajSet", function(x, history) {
+setMethod("set_transform_history", "Tracks", function(x, history) {
   x@meta$transform_history <- .ensure_transform_history(history)
   methods::validObject(x)
   x
@@ -520,11 +520,11 @@ setMethod("set_transform_history", "TrajSet", function(x, history) {
 
 ## ---- subsetting & extraction -------------------------------------------------
 #' @param i Trajectory identifiers (character ids, numeric indices, or logical vector)
-#' @rdname TrajSet-class
+#' @rdname Tracks-class
 #' @export
 setMethod(
   f = "[",
-  signature = c(x="TrajSet", i="ANY", j="missing", drop="missing"),
+  signature = c(x="Tracks", i="ANY", j="missing", drop="missing"),
   definition = function(x, i) {
     idcol <- x@cols$id
     all_ids <- ids(x)
@@ -540,16 +540,16 @@ setMethod(
       if (length(miss)) stop("unknown id(s): ", paste(miss, collapse=", "))
       keep <- x@data[[idcol]] %in% i
     } else {
-      stop("unsupported index type for TrajSet")
+      stop("unsupported index type for Tracks")
     }
 
-    new("TrajSet", data = x@data[keep, , drop=FALSE],
+    new("Tracks", data = x@data[keep, , drop=FALSE],
         cols = x@cols, angle_unit = x@angle_unit, meta = x@meta)
   }
 )
 
 setGeneric("trajectory", function(x, id) standardGeneric("trajectory"))
-setMethod("trajectory", "TrajSet", function(x, id) {
+setMethod("trajectory", "Tracks", function(x, id) {
   idcol <- x@cols$id
   d <- x@data[x@data[[idcol]] == id, , drop = FALSE]
   if (!nrow(d)) stop("id not found: ", id)
@@ -558,13 +558,13 @@ setMethod("trajectory", "TrajSet", function(x, id) {
 
 ## ---- summaries ---------------------------------------------------------------
 #' Circular summaries per trajectory
-#' @param x TrajSet
+#' @param x Tracks
 #' @param w Optional weight column name (defaults to x@cols$weight if present)
 #' @return data.frame(id, n, t_start, t_end, mean_dir, resultant_R, kappa)
 #' @export
 setGeneric("circ_summary", function(x, w = NULL) standardGeneric("circ_summary"))
 
-setMethod("circ_summary", "TrajSet", function(x, w = NULL) {
+setMethod("circ_summary", "Tracks", function(x, w = NULL) {
   id <- x@cols$id; tm <- x@cols$time; th <- x@cols$angle
   wcol <- if (is.null(w)) x@cols$weight else w
   if (!is.null(wcol) && !wcol %in% names(x@data)) stop("weight column '", wcol, "' not found")
@@ -599,21 +599,21 @@ setMethod("circ_summary", "TrajSet", function(x, w = NULL) {
 
 ## ---- coercions ---------------------------------------------------------------
 
-#' Coerce a TrajSet to a data frame
+#' Coerce a Tracks to a data frame
 #'
-#' Returns the long-form trajectory table held in the TrajSet's `data` slot.
+#' Returns the long-form trajectory table held in the Tracks's `data` slot.
 #'
 #' Registered as an S3 method so that `as.data.frame(ts)` dispatches correctly
 #' from any caller. (A bare S4 method on the base S3 generic is only reached
 #' from within the package's own namespace, not from user code using the
 #' installed package.)
 #'
-#' @param x A [TrajSet-class] object.
+#' @param x A [Tracks-class] object.
 #' @param row.names,optional Accepted for S3 generic consistency; ignored.
 #' @param ... Ignored.
-#' @return A data frame: the TrajSet's `data` slot.
+#' @return A data frame: the Tracks's `data` slot.
 #' @exportS3Method base::as.data.frame
-as.data.frame.TrajSet <- function(x, row.names = NULL, optional = FALSE, ...) {
+as.data.frame.Tracks <- function(x, row.names = NULL, optional = FALSE, ...) {
   d    <- x@data
   cols <- x@cols
   if (is.null(cols$x) || is.null(cols$y)) return(d)   # no position -> cannot derive
@@ -643,7 +643,7 @@ as.data.frame.TrajSet <- function(x, row.names = NULL, optional = FALSE, ...) {
   d
 }
 
-setAs("data.frame", "TrajSet", function(from) {
+setAs("data.frame", "Tracks", function(from) {
   guess <- function(nms, candidates) {
     hit <- intersect(candidates, nms)
     if (length(hit)) hit[1] else NULL
@@ -658,26 +658,26 @@ setAs("data.frame", "TrajSet", function(from) {
   if (is.null(th) && (is.null(xx) || is.null(yy)))
     stop("Provide angle OR both x and y in the data frame")
 
-  TrajSet(from, id = id, time = tm, angle = th, x = xx, y = yy, angle_unit = "radians")
+  tracks(from, id = id, time = tm, angle = th, x = xx, y = yy, angle_unit = "radians")
 })
 
 ## ---- combine -----------------------------------------------------------------
-#' @param ... Additional TrajSet objects to append
+#' @param ... Additional Tracks objects to append
 #' @param recursive Ignored; maintained for signature compatibility
-#' @rdname TrajSet-class
+#' @rdname Tracks-class
 #' @export
-setMethod("c", signature(x="TrajSet"), function(x, ..., recursive = FALSE) {
+setMethod("c", signature(x="Tracks"), function(x, ..., recursive = FALSE) {
   xs <- list(x, ...)
   same_map <- vapply(xs, function(z) identical(z@cols, x@cols) && identical(z@angle_unit, x@angle_unit), logical(1))
-  if (!all(same_map)) stop("All TrajSet objects must share identical column mapping")
+  if (!all(same_map)) stop("All Tracks objects must share identical column mapping")
   df <- do.call(rbind, lapply(xs, slot, "data"))
-  # TrajSet requires rows ordered by (id, time); inputs may be concatenated in
+  # Tracks requires rows ordered by (id, time); inputs may be concatenated in
   # any order, so sort the combined data before validation.
   df <- df[order(df[[x@cols$id]], df[[x@cols$time]]), , drop = FALSE]
   histories <- lapply(xs, transform_history)
   meta <- x@meta
   meta$transform_history <- .combine_transform_histories(histories)
-  new("TrajSet",
+  new("Tracks",
       data = df,
       cols = x@cols,
       angle_unit = x@angle_unit,

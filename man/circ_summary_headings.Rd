@@ -12,7 +12,7 @@ circ_summary_headings(
 )
 }
 \arguments{
-\item{x}{A [`TrajSet`] object.}
+\item{x}{A [`Tracks`] object.}
 
 \item{rule}{Character. Heading derivation rule passed to [derive_headings()].
 One of `"crossing"`, `"distal"`, `"straight"`, `"origin_mean"`, `"net"`,

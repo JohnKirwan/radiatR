@@ -33,5 +33,5 @@ path_tortuosity(x = c(0, 1, 2), y = c(0, 0, 0))     # straight -> 1
 path_tortuosity(x = c(0, 0, 1), y = c(0, 1, 1))     # L-shaped -> sqrt(2)
 }
 \seealso{
-[tortuosity_ratio()] for a whole `TrajSet`; [path_straightness()].
+[tortuosity_ratio()] for a whole `Tracks`; [path_straightness()].
 }
