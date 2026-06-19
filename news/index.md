@@ -4,6 +4,19 @@
 
 ### Statistics
 
+- New
+  [`circ_regression()`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  fits Fisher-Lee circular-linear regression of a heading on linear
+  covariates (formula interface over
+  [`circular::lm.circular`](https://rdrr.io/pkg/circular/man/lm.circular.html)),
+  with [`summary()`](https://rdrr.io/r/base/summary.html) (tidy
+  coefficients),
+  [`predict()`](https://rdrr.io/r/stats/predict.html)/[`fitted()`](https://rdrr.io/r/stats/fitted.values.html),
+  and [`print()`](https://rdrr.io/r/base/print.html) methods.
+  [`simulate_tracks()`](https://johnkirwan.github.io/radiatR/reference/simulate_tracks.md)
+  gains a per-condition `mean_slope` so the predictor shifts the mean
+  heading, enabling end-to-end recovery.
+
 - [`simulate_tracks()`](https://johnkirwan.github.io/radiatR/reference/simulate_tracks.md)
   is now modality- and shape-aware. Per-condition `modality` (`uniform`
   / `unimodal` / `axial` / `multimodal` with `n_modes`) sets the

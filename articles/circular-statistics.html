@@ -309,12 +309,51 @@ Fisher’s
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ρ</mi><mo>∈</mo><mo stretchy="false" form="prefix">[</mo><mi>−</mi><mn>1</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">\rho \in [-1, 1]</annotation></semantics></math>.</p>
 </div>
 <div class="section level2">
+<h2 id="circular-regression">Circular regression<a class="anchor" aria-label="anchor" href="#circular-regression"></a>
+</h2>
+<p>Where <code><a href="../reference/circ_cor.html">circ_cor()</a></code> measures the <em>strength</em> of an
+association, <code><a href="../reference/circ_regression.html">circ_regression()</a></code> <em>models</em> it: it fits
+the Fisher–Lee circular–linear regression of a heading on one or more
+linear covariates, via a formula interface over
+<code><a href="https://rdrr.io/pkg/circular/man/lm.circular.html" class="external-link">circular::lm.circular()</a></code>. To show that the fit recovers a
+known effect, we simulate trajectories whose mean heading shifts with a
+predictor — the per-condition <code>mean_slope</code> controls that
+shift — and then fit the model back:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">cond</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>condition <span class="op">=</span> <span class="st">"demo"</span>, n_trials <span class="op">=</span> <span class="fl">120</span>, ref_mean <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>                   concentration_base <span class="op">=</span> <span class="fl">12</span>, mean_slope <span class="op">=</span> <span class="fl">0.6</span>,</span>
+<span>                   predictor_mean <span class="op">=</span> <span class="fl">0</span>, predictor_sd <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">s</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/simulate_tracks.html">simulate_tracks</a></span><span class="op">(</span>conditions <span class="op">=</span> <span class="va">cond</span>, n_points <span class="op">=</span> <span class="fl">8</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">reg</span> <span class="op">&lt;-</span> <span class="va">s</span><span class="op">[</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/duplicated.html" class="external-link">duplicated</a></span><span class="op">(</span><span class="va">s</span><span class="op">$</span><span class="va">trial_id</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"predictor"</span>, <span class="st">"final_heading"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">reg</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"heading"</span></span>
+<span></span>
+<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/circ_regression.html">circ_regression</a></span><span class="op">(</span><span class="va">reg</span>, <span class="va">heading</span> <span class="op">~</span> <span class="va">predictor</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
+<span><span class="co">#&gt;        term  estimate         se statistic p_value  conf.low conf.high</span></span>
+<span><span class="co">#&gt; 1 predictor 0.3281699 0.02007503  16.34717       0 0.2888236 0.3675163</span></span></code></pre></div>
+<p>The coefficient table recovers a <strong>positive,
+significant</strong> slope for <code>predictor</code>, confirming the
+simulated effect. Note the magnitude: the Fisher–Lee model links the
+mean heading to the linear predictor through a
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>2</mn><mrow><mi mathvariant="normal">arctan</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>⋅</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">2\arctan(\cdot)</annotation></semantics></math>
+function, so the fitted slope is on that <strong>link scale</strong> and
+is attenuated relative to the plain <code>mean_slope</code> used to
+simulate. Interpret the <strong>sign and significance</strong> of the
+coefficients directly, and use <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> to read the effect
+back on the angular (heading) scale:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit</span>, <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>predictor <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 5.6202847 6.2544774 0.6054847</span></span></code></pre></div>
+<p>The predicted mean heading tracks the predictor — rotating with its
+value — exactly as the simulation set up.</p>
+</div>
+<div class="section level2">
 <h2 id="distribution-overlays">Distribution overlays<a class="anchor" aria-label="anchor" href="#distribution-overlays"></a>
 </h2>
 <p>The overlay layers draw an angular distribution in the same Cartesian
 unit-disc space as <code><a href="../reference/radiate.html">radiate()</a></code>, so they compose onto a bare
 circular canvas with <code>+</code>. We build that canvas once:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">canvas</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/coord_fixed.html" class="external-link">coord_fixed</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="../reference/add_circ.html">add_circ</a></span><span class="op">(</span>radius <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_void</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
@@ -322,7 +361,7 @@ circular canvas with <code>+</code>. We build that canvas once:</p>
 parametric and non-parametric density curves overlay on top. Giving
 every layer the same <code>scale</code> aligns their radii, so the
 shapes can be compared directly:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">vm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vonmises_fit.html">vonmises_fit</a></span><span class="op">(</span><span class="va">hd</span><span class="op">)</span>        <span class="co"># pooled fit (group_col = NULL)</span></span>
 <span><span class="va">wc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/wrappedcauchy_fit.html">wrappedcauchy_fit</a></span><span class="op">(</span><span class="va">hd</span><span class="op">)</span></span>
 <span></span>
@@ -350,7 +389,7 @@ mean-direction <strong>arrow</strong> (<code><a href="../reference/add_heading_a
 and its bootstrap <strong>confidence interval</strong>
 (<code><a href="../reference/add_heading_interval.html">add_heading_interval()</a></code>) are split by target half-width
 (<code>arc</code>):</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">canvas</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="../reference/add_heading_arrow.html">add_heading_arrow</a></span><span class="op">(</span><span class="va">hd</span>,    colour_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="../reference/add_heading_interval.html">add_heading_interval</a></span><span class="op">(</span><span class="va">hd</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, stat <span class="op">=</span> <span class="st">"bootstrap_ci"</span><span class="op">)</span></span></code></pre></div>
@@ -360,7 +399,7 @@ matching colour. The grouping is independent of any faceting, so you can
 (for example) colour by cohort while faceting <code><a href="../reference/radiate.html">radiate()</a></code> by
 treatment. <code><a href="../reference/radiate.html">radiate()</a></code>’s own built-in arrow follows the same
 idea via <code>arrow_colour_col</code>, drawing one arrow per group:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, group_col <span class="op">=</span> <span class="st">"trial_id"</span>,</span>
 <span>        show_arrow <span class="op">=</span> <span class="cn">TRUE</span>, arrow_colour_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -376,7 +415,7 @@ level <code>alpha</code>, namely
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>r</mi><mtext mathvariant="normal">crit</mtext></msub><mo>=</mo><msqrt><mrow><mi>−</mi><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>α</mi><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mi>n</mi></mrow></msqrt></mrow><annotation encoding="application/x-tex">r_\text{crit} = \sqrt{-\log(\alpha)/n}</annotation></semantics></math>.
 If the mean vector reaches past the circle, the headings are
 significantly non-uniform.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">disp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/circ_dispersion.html">circ_dispersion</a></span><span class="op">(</span><span class="va">hd</span><span class="op">)</span></span>
 <span><span class="va">mean_vec</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">disp</span><span class="op">$</span><span class="va">resultant_R</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">cos</a></span><span class="op">(</span><span class="va">disp</span><span class="op">$</span><span class="va">mean_dir</span><span class="op">)</span>,</span>
 <span>                       y <span class="op">=</span> <span class="va">disp</span><span class="op">$</span><span class="va">resultant_R</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">sin</a></span><span class="op">(</span><span class="va">disp</span><span class="op">$</span><span class="va">mean_dir</span><span class="op">)</span><span class="op">)</span></span>
@@ -388,7 +427,7 @@ significantly non-uniform.</p>
 <span>               arrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grid/arrow.html" class="external-link">arrow</a></span><span class="op">(</span>length <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grid/unit.html" class="external-link">unit</a></span><span class="op">(</span><span class="fl">0.15</span>, <span class="st">"inches"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>               linewidth <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
 <p><img src="circular-statistics_files/figure-html/critical-r-1.png" class="r-plt" alt="" width="624" style="display: block; margin: auto;"></p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/test_uniformity.html">test_uniformity</a></span><span class="op">(</span><span class="va">hd</span>, test <span class="op">=</span> <span class="st">"rayleigh"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   statistic    p_value   n     test</span></span>
 <span><span class="co">#&gt; 1 0.1298181 0.02217652 226 rayleigh</span></span></code></pre></div>
@@ -402,7 +441,7 @@ line perpendicular to <code>mu0</code>: significance requires the mean
 vector’s projection onto <code>mu0</code> to exceed
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo>=</mo><msub><mi>z</mi><mi>α</mi></msub><mi>/</mi><msqrt><mrow><mn>2</mn><mi>n</mi></mrow></msqrt></mrow><annotation encoding="application/x-tex">c = z_\alpha / \sqrt{2n}</annotation></semantics></math>.
 Set <code>show_region = TRUE</code> to shade the rejection side.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">canvas</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="../reference/add_critical_v_line.html">add_critical_v_line</a></span><span class="op">(</span><span class="va">hd</span>, mu0 <span class="op">=</span> <span class="fl">0</span>, alpha <span class="op">=</span> <span class="fl">0.05</span>, show_region <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_segment.html" class="external-link">geom_segment</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">mean_vec</span>,</span>

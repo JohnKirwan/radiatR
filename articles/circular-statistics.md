@@ -262,6 +262,52 @@ statistic $`n r^2`$ is approximately $`\chi^2_2`$. For two angular
 variables, pass `x_type = "circular"` to get Fisher’s
 $`\rho \in [-1, 1]`$.
 
+## Circular regression
+
+Where
+[`circ_cor()`](https://johnkirwan.github.io/radiatR/reference/circ_cor.md)
+measures the *strength* of an association,
+[`circ_regression()`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+*models* it: it fits the Fisher–Lee circular–linear regression of a
+heading on one or more linear covariates, via a formula interface over
+[`circular::lm.circular()`](https://rdrr.io/pkg/circular/man/lm.circular.html).
+To show that the fit recovers a known effect, we simulate trajectories
+whose mean heading shifts with a predictor — the per-condition
+`mean_slope` controls that shift — and then fit the model back:
+
+``` r
+
+cond <- data.frame(condition = "demo", n_trials = 120, ref_mean = 0,
+                   concentration_base = 12, mean_slope = 0.6,
+                   predictor_mean = 0, predictor_sd = 1)
+s   <- simulate_tracks(conditions = cond, n_points = 8, seed = 1)
+reg <- s[!duplicated(s$trial_id), c("predictor", "final_heading")]
+names(reg)[2] <- "heading"
+
+fit <- circ_regression(reg, heading ~ predictor)
+summary(fit)
+#>        term  estimate         se statistic p_value  conf.low conf.high
+#> 1 predictor 0.3281699 0.02007503  16.34717       0 0.2888236 0.3675163
+```
+
+The coefficient table recovers a **positive, significant** slope for
+`predictor`, confirming the simulated effect. Note the magnitude: the
+Fisher–Lee model links the mean heading to the linear predictor through
+a $`2\arctan(\cdot)`$ function, so the fitted slope is on that **link
+scale** and is attenuated relative to the plain `mean_slope` used to
+simulate. Interpret the **sign and significance** of the coefficients
+directly, and use [`predict()`](https://rdrr.io/r/stats/predict.html) to
+read the effect back on the angular (heading) scale:
+
+``` r
+
+predict(fit, data.frame(predictor = c(-1, 0, 1)))
+#> [1] 5.6202847 6.2544774 0.6054847
+```
+
+The predicted mean heading tracks the predictor — rotating with its
+value — exactly as the simulation set up.
+
 ## Distribution overlays
 
 The overlay layers draw an angular distribution in the same Cartesian

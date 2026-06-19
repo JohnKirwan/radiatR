@@ -116,6 +116,26 @@ circ_model_select(hd)                            # uniform / unimodal / axial by
 The graphical app surfaces these too: a selectable omnibus test and a
 model-selection readout alongside the summary table.
 
+### Circular regression
+
+Model a heading on linear covariates (Fisher-Lee circular-linear
+regression):
+
+``` r
+
+# simulate a known predictor -> mean-heading effect, then recover it
+cond <- data.frame(condition = "demo", n_trials = 150, ref_mean = 0,
+                   concentration_base = 12, mean_slope = 0.6,
+                   predictor_mean = 0, predictor_sd = 1)
+s  <- simulate_tracks(conditions = cond, n_points = 8, seed = 1)
+hd <- s[!duplicated(s$trial_id), c("predictor", "final_heading")]
+names(hd)[2] <- "heading"
+
+fit <- circ_regression(hd, heading ~ predictor)
+summary(fit)            # tidy coefficient table (recovers the positive slope)
+predict(fit, data.frame(predictor = c(-1, 0, 1)))
+```
+
 ## Typical Workflow
 
 ``` r

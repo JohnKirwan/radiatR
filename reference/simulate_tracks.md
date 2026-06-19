@@ -69,18 +69,22 @@ The \`conditions\` data frame can contain the following columns
 \- \`condition\` (character): condition label. - \`n_trials\` (integer):
 number of trajectories to simulate for the condition. - \`ref_mean\`
 (numeric radian): baseline reference heading (default 0). -
-\`concentration_base\` (numeric): baseline von Mises concentration
-(kappa). - \`concentration_slope\` (numeric): optional slope applied to
-the predictor. - \`tortuosity_base\` (numeric): baseline angular noise
-scale. - \`tortuosity_slope\` (numeric): slope applied to the
-predictor. - \`tortuosity_sd\` (numeric): additional random variation
-per trial. - \`predictor_mean\`, \`predictor_sd\` (numeric): parameters
-used to sample the per-trial predictor when explicit values are not
-supplied. - \`predictor_values\` (list-column): optional explicit
-predictor values (length \`n_trials\`) overriding the generated
-values. - \`modality\` (character): the sample modality from which
-per-trial principal headings are drawn. One of \`"unimodal"\` (default),
-\`"uniform"\`, \`"axial"\`, or \`"multimodal"\`. Controls the
+\`mean_slope\` (numeric, default 0): per-condition slope shifting the
+mean heading with the predictor. The effective per-trial mean is
+\`ref_mean + mean_slope \* predictor\` and is recorded in
+\`ref_heading\`. A default of 0 reproduces the historical seeded output
+byte-for-byte. - \`concentration_base\` (numeric): baseline von Mises
+concentration (kappa). - \`concentration_slope\` (numeric): optional
+slope applied to the predictor. - \`tortuosity_base\` (numeric):
+baseline angular noise scale. - \`tortuosity_slope\` (numeric): slope
+applied to the predictor. - \`tortuosity_sd\` (numeric): additional
+random variation per trial. - \`predictor_mean\`, \`predictor_sd\`
+(numeric): parameters used to sample the per-trial predictor when
+explicit values are not supplied. - \`predictor_values\` (list-column):
+optional explicit predictor values (length \`n_trials\`) overriding the
+generated values. - \`modality\` (character): the sample modality from
+which per-trial principal headings are drawn. One of \`"unimodal"\`
+(default), \`"uniform"\`, \`"axial"\`, or \`"multimodal"\`. Controls the
 \*distribution of headings across trials\*, not the within-trial path
 shape. - \`n_modes\` (integer): number of evenly spaced modes used when
 \`modality == "multimodal"\` (default 1; ignored by other modalities). -

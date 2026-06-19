@@ -118,6 +118,10 @@ supplied when missing):</p>
 <p>- `condition` (character): condition label.
 - `n_trials` (integer): number of trajectories to simulate for the condition.
 - `ref_mean` (numeric radian): baseline reference heading (default 0).
+- `mean_slope` (numeric, default 0): per-condition slope shifting the mean
+  heading with the predictor. The effective per-trial mean is
+  `ref_mean + mean_slope * predictor` and is recorded in `ref_heading`. A
+  default of 0 reproduces the historical seeded output byte-for-byte.
 - `concentration_base` (numeric): baseline von Mises concentration (kappa).
 - `concentration_slope` (numeric): optional slope applied to the predictor.
 - `tortuosity_base` (numeric): baseline angular noise scale.

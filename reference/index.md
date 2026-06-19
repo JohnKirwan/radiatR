@@ -136,14 +136,21 @@ objects to the density overlay functions for visual model comparison.
 - [`circ_model_select()`](https://johnkirwan.github.io/radiatR/reference/circ_model_select.md)
   : Select among candidate circular models by AICc
 
-## Circular statistics – correlation
+## Circular statistics – correlation & regression
 
 Measure the association between heading directions and a continuous
 covariate (circular-linear) or a second set of angles
-(circular-circular).
+(circular-circular), and model a heading on linear covariates
+(Fisher-Lee regression).
 
 - [`circ_cor()`](https://johnkirwan.github.io/radiatR/reference/circ_cor.md)
   : Circular correlation between headings and a covariate
+- [`circ_regression()`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  [`summary(`*`<circ_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  [`predict(`*`<circ_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  [`fitted(`*`<circ_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  [`print(`*`<circ_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  : Circular-linear regression of a heading on linear covariates
 
 ## Circular statistics – hypothesis tests
 
@@ -396,6 +403,12 @@ Any remaining exported topics.
   : Circular display convention specification
 - [`circ_model_select()`](https://johnkirwan.github.io/radiatR/reference/circ_model_select.md)
   : Select among candidate circular models by AICc
+- [`circ_regression()`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  [`summary(`*`<circ_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  [`predict(`*`<circ_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  [`fitted(`*`<circ_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  [`print(`*`<circ_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  : Circular-linear regression of a heading on linear covariates
 - [`circ_summarise()`](https://johnkirwan.github.io/radiatR/reference/circ_summarise.md)
   : Tidy circular summary of a grouped data frame
 - [`circ_summary()`](https://johnkirwan.github.io/radiatR/reference/circ_summary.md)
