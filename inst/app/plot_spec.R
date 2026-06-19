@@ -121,7 +121,8 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
                 ci        = isTRUE(inputs$show_ci),
                 vtest     = isTRUE(inputs$show_vtest),
                 quadrants = isTRUE(inputs$show_quadrants),
-                rings     = isTRUE(inputs$show_rings))
+                rings     = isTRUE(inputs$show_rings),
+                boxplot   = isTRUE(inputs$show_boxplot))
   )
 }
 
@@ -246,6 +247,11 @@ spec_to_plot <- function(spec, ts, hd) {
            axial = isTRUE(spec$axial))
     if (!is.null(v)) p <- p + v
   }
+
+  # Circular boxplot overlay (Buttarazzi et al. 2018), drawn last. NULL (no-op
+  # under +) and a warning when the data is not drawable.
+  if (isTRUE(spec$show$boxplot))
+    p <- p + add_circular_boxplot(hd, axial = isTRUE(spec$axial))
 
   p
 }
@@ -398,6 +404,8 @@ spec_to_code <- function(spec) {
       "add_critical_v_line(hd, mu0 = pi / 2, angle_col = \"heading\"", gpg,
       ", colour = ", q(SPEC_VTEST_COLOUR), ", linewidth = ", SPEC_VTEST_LWD, ax, ")"))
   }
+  if (has_hd && isTRUE(spec$show$boxplot))
+    tail <- c(tail, paste0("add_circular_boxplot(hd", ax, ")"))
   lab_parts <- character(0)
   if (!is.null(spec$subtitle) && nzchar(spec$subtitle))
     lab_parts <- c(lab_parts, paste0("subtitle = ", q(spec$subtitle)))

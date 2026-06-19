@@ -25,7 +25,8 @@ source(.p, local = TRUE)
 roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
                            rayleigh = FALSE, ci = FALSE, vtest = FALSE,
                            subtitle = NULL, caption = NULL,
-                           quadrants = FALSE, rings = FALSE, axial = FALSE) {
+                           quadrants = FALSE, rings = FALSE, axial = FALSE,
+                           boxplot = FALSE) {
   data(cpunctatus, package = "radiatR", envir = environment())
   ts <- cpunctatus
   hd <- derive_headings(ts, rule = "distal")
@@ -46,7 +47,7 @@ roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
     subtitle = subtitle, caption = caption,
     show = list(tracks = TRUE, arrow = arrow, vectors = vectors,
                 rayleigh = rayleigh, ci = ci, vtest = vtest,
-                quadrants = quadrants, rings = rings))
+                quadrants = quadrants, rings = rings, boxplot = boxplot))
   list(spec = spec, ts = ts, hd = hd)
 }
 
@@ -350,4 +351,22 @@ test_that("emitted code reproduces spec_to_plot (stacked, faceted, axial)", {
   rt <- roundtrip_spec("stacked", "trajectory", "type", FALSE, FALSE, axial = TRUE)
   .axial_doubles_rows(rt)   # mirroring must actually add rows (not vacuous)
   expect_roundtrip(rt)
+})
+
+test_that("circular boxplot overlay round-trips (directional)", {
+  rt <- roundtrip_spec("points", by = "trajectory", facet = NULL,
+                       arrow = FALSE, vectors = FALSE, boxplot = TRUE)
+  live <- suppressWarnings(spec_to_plot(rt$spec, rt$ts, rt$hd))
+  expect_true(any(vapply(live$layers, function(l) inherits(l$geom, "GeomPolygon"), logical(1))))
+  code <- spec_to_code(rt$spec)
+  expect_match(code, "add_circular_boxplot(hd)", fixed = TRUE)
+  suppressWarnings(expect_roundtrip(rt))
+})
+
+test_that("circular boxplot overlay round-trips (axial) and emits axial = TRUE", {
+  rt <- roundtrip_spec("points", by = "trajectory", facet = NULL,
+                       arrow = FALSE, vectors = FALSE, axial = TRUE, boxplot = TRUE)
+  code <- spec_to_code(rt$spec)
+  expect_match(code, "add_circular_boxplot(hd, axial = TRUE)", fixed = TRUE)
+  suppressWarnings(expect_roundtrip(rt))
 })
