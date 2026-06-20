@@ -589,6 +589,18 @@ server <- function(input, output, session) {
              paste0("Circular boxplot not drawn: ", s$reason, "."))
   })
 
+  # "By elapsed time" colours by a real time axis, which needs a valid frame
+  # rate (the package hard-errors otherwise). When time-mode is selected with an
+  # unset/invalid fps the figure falls back to sequence colouring; surface why.
+  output$track_time_note <- renderUI({
+    if (!identical(input$track_colour, "time")) return(NULL)
+    fps <- input$frame_rate
+    ok  <- is.numeric(fps) && length(fps) == 1L && is.finite(fps) && fps > 0
+    if (ok) return(NULL)
+    tags$div(class = "alert alert-secondary py-1 px-2 small mb-2",
+             "Enter a positive frame rate to colour by elapsed time (showing sequence position instead).")
+  })
+
   # Live illustrative preview of the selected method on fixed demo tracks.
   output$method_preview <- renderPlot({
     method <- if (is.null(input$method)) "distal" else input$method
@@ -964,8 +976,14 @@ server <- function(input, output, session) {
               selectInput(
                 "track_colour", "Track colour",
                 choices = c("By trajectory"                = "trajectory",
-                            "By sequence (start → finish)" = "sequence"),
+                            "By sequence (start → finish)" = "sequence",
+                            "By elapsed time"              = "time"),
                 selected = "trajectory"
+              ),
+              conditionalPanel(
+                condition = "input.track_colour == 'time'",
+                numericInput("frame_rate", "Frame rate (fps)", value = 30, min = 0, step = 1),
+                uiOutput("track_time_note")
               ),
               uiOutput("colour_by_ui"),
               tags$hr(class = "my-2"),
@@ -1223,6 +1241,7 @@ server <- function(input, output, session) {
           plot_theme = input$plot_theme, angle_labels = input$angle_labels,
           heading_display = input$heading_display,
           track_colour = input$track_colour %||% "trajectory",
+          frame_rate = input$frame_rate,
           show_arrow = tog(input$show_arrow, TRUE),
           show_vectors = tog(input$show_vectors, FALSE),
           show_rayleigh = tog(input$show_rayleigh, FALSE),
@@ -1249,6 +1268,7 @@ server <- function(input, output, session) {
         plot_theme = input$plot_theme, angle_labels = input$angle_labels,
         heading_display = input$heading_display,
         track_colour = input$track_colour %||% "trajectory",
+        frame_rate = input$frame_rate,
         # Path-metrics caption, none mode only (no headings). spec_to_plot and
         # spec_to_code render and reproduce it.
         caption  = if (is.null(rv$hd)) straightness_caption(rv$ts, gc) else NULL,

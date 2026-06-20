@@ -5,6 +5,26 @@
 
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
+# Resolve the effective track-colour mode for the Results figure. "time" colours
+# by elapsed time but needs a valid frame rate (the package hard-errors otherwise),
+# so an unset/invalid fps falls back to "sequence" -- the app never asks radiate()
+# for time-mode without a usable frame rate. Returns the effective mode, whether it
+# is a continuous gradient (owns the colour scale), the validity flag, and the fps.
+.resolve_track_colour <- function(spec, headings_mode) {
+  tc  <- spec$track_colour %||% "trajectory"
+  if (headings_mode) tc <- "trajectory"          # no tracks to colour in headings mode
+  fps <- spec$frame_rate
+  time_ok <- identical(tc, "time") && is.numeric(fps) && length(fps) == 1L &&
+             is.finite(fps) && fps > 0
+  effective <- if (time_ok) "time"
+               else if (tc %in% c("time", "sequence")) "sequence"   # time-but-invalid -> sequence
+               else "trajectory"
+  list(effective = effective,
+       gradient  = effective %in% c("sequence", "time"),
+       time_ok   = time_ok,
+       fps       = fps)
+}
+
 # Normalise an app-provided data frame of angles into a `headings_frame` whose
 # angle column is named "heading". `col` is the (string) angle column; `units`
 # and `convention` feed headings_frame()'s validation/conversion (convention
@@ -108,6 +128,7 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
                      cap = SPEC_CYCLE_N, legend = legend),
     theme        = inputs$plot_theme %||% "void",
     track_colour = inputs$track_colour %||% "trajectory",
+    frame_rate = inputs$frame_rate,
     angle_labels = inputs$angle_labels %||% "degrees",
     display      = list(zero = 0),
     heading_display = inputs$heading_display %||% "points",
@@ -137,7 +158,8 @@ spec_to_plot <- function(spec, ts, hd) {
   # Sequence track colouring owns the continuous colour scale, so it cannot
   # share it with the discrete `.colour` key or contest it with coloured
   # heading overlays. Gate it off in headings mode (no tracks to colour).
-  seq_track <- identical(spec$track_colour, "sequence") && !headings_mode
+  rtc            <- .resolve_track_colour(spec, headings_mode)
+  gradient_track <- rtc$gradient
 
   if (headings_mode) {
     # No group column -> "trajectory" sentinel means a single colour. An uploaded
@@ -163,11 +185,12 @@ spec_to_plot <- function(spec, ts, hd) {
     )
   } else {
     ts <- assign_colour_key(ts, by = by, n = cap)
+    if (identical(rtc$effective, "time")) ts <- set_frame_rate(ts, rtc$fps)
     p <- radiate(
       ts,
       group_col    = spec$group_col,
-      colour_col   = if (seq_track) NULL else ".colour",
-      track_colour = if (seq_track) "sequence" else "trajectory",
+      colour_col   = if (gradient_track) NULL else ".colour",
+      track_colour = rtc$effective,
       panel_by     = spec$facet_by,
       colour_cycle = NULL,
       legend       = spec$colour$legend,
@@ -212,8 +235,8 @@ spec_to_plot <- function(spec, ts, hd) {
   if (!identical(spec$heading_display, "none")) {
     # In sequence track mode the continuous scale owns the colour aesthetic, so
     # heading overlays render in a fixed colour rather than the discrete key.
-    pt_colour_col <- if (seq_track) NULL else ".colour"
-    pt_colour     <- if (seq_track) "grey20" else NULL
+    pt_colour_col <- if (gradient_track) NULL else ".colour"
+    pt_colour     <- if (gradient_track) "grey20" else NULL
     if (identical(spec$heading_display, "stacked")) {
       hd$heading <- bin_angles(hd$heading, width = SPEC_STACK_BIN_WIDTH)
       p <- p + add_stacked_headings(hd, colour_col = pt_colour_col,
@@ -283,8 +306,12 @@ spec_to_code <- function(spec) {
   headings_mode <- identical(spec$mode, "headings")
   # Sequence track colouring owns the continuous colour scale (see spec_to_plot);
   # emit it on the radiate() call and render heading overlays in a fixed colour.
-  seq_track <- identical(spec$track_colour, "sequence") && !headings_mode
-  tc <- if (seq_track) ", track_colour = \"sequence\"" else ""
+  rtc            <- .resolve_track_colour(spec, headings_mode)
+  gradient_track <- rtc$gradient
+  tc <- switch(rtc$effective,
+               time     = ", track_colour = \"time\"",
+               sequence = ", track_colour = \"sequence\"",
+               "")
   # Headings mode always has a headings frame; trajectory mode has one unless the
   # heading rule is "none". Used to gate both the trajectory-branch derive_headings
   # emission and the shared overlay/tail emission below.
@@ -342,6 +369,8 @@ spec_to_code <- function(spec) {
 
     add("")
     add("ts <- assign_colour_key(ts, by = ", q(spec$colour$by), ")")
+    if (identical(rtc$effective, "time"))
+      add("ts <- set_frame_rate(ts, ", rtc$fps, ")")
     if (has_hd)
       add("hd <- assign_colour_key(hd, by = ", q(spec$colour$by), ", reference = ts)")
   }
@@ -377,7 +406,7 @@ spec_to_code <- function(spec) {
         ", angle_labels = ", q(spec$angle_labels), qr,
         ", display = disp)")
   } else {
-    cc <- if (seq_track) ", colour_col = NULL" else ", colour_col = \".colour\""
+    cc <- if (gradient_track) ", colour_col = NULL" else ", colour_col = \".colour\""
     add("radiate(ts, group_col = ", q(spec$group_col),
         cc, tc, pby,
         ", legend = ", if (spec$colour$legend) "TRUE" else "FALSE",
@@ -391,7 +420,7 @@ spec_to_code <- function(spec) {
     tail <- c(tail, paste0("labs(colour = ", q(spec$colour$by), ")"))
   # In sequence track mode the heading overlays drop the discrete colour key and
   # render in a fixed grey (mirrors spec_to_plot's pt_colour_col/pt_colour).
-  pt_cc <- if (seq_track) "colour = \"grey20\"" else "colour_col = \".colour\""
+  pt_cc <- if (gradient_track) "colour = \"grey20\"" else "colour_col = \".colour\""
   if (has_hd && identical(spec$heading_display, "stacked")) {
     grp <- if (is.null(spec$facet_by)) "" else paste0(", group = ", q(spec$facet_by))
     tail <- c(tail, paste0("add_stacked_headings(hd, ", pt_cc, grp,
