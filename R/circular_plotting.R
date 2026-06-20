@@ -2546,7 +2546,7 @@ function(
       guide = ggplot2::guide_colourbar(title = unit_lab))
   } else if (seq_track) {
     g <- g + ggplot2::scale_colour_viridis_c(
-      guide = ggplot2::guide_colourbar(title = "start → finish"))
+      guide = ggplot2::guide_colourbar(title = "start \u2192 finish"))
   } else if (is.character(colour_cycle)) {
     scale_vals <- stats::setNames(colour_cycle, as.character(seq_along(colour_cycle)))
     g <- g + ggplot2::scale_colour_manual(values = scale_vals)
