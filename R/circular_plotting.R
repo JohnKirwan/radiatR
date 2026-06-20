@@ -1909,6 +1909,22 @@ setMethod("gg_traj", "Tracks",
       ggplot2::theme(panel.grid.minor = ggplot2::element_blank())
 })
 
+# Per-track normalized sequence position: 0 at the first point of a track, 1 at
+# the last, ranked on `time_col` within each `id_col`. n == 1 -> 0. With no
+# usable time column, falls back to row order within each track.
+.seq_position <- function(data, id_col, time_col = NULL) {
+  have_time <- !is.null(time_col) && time_col %in% names(data)
+  if (!have_time)
+    message("track_colour = 'sequence': no usable time column; using row order within each track.")
+  ord <- if (have_time) data[[time_col]] else seq_len(nrow(data))
+  norm <- function(o) {
+    r <- rank(o, ties.method = "first")
+    if (length(r) <= 1L) rep(0, length(r)) else (r - 1) / (length(r) - 1)
+  }
+  data[[".seq"]] <- stats::ave(ord, data[[id_col]], FUN = norm)
+  data
+}
+
 #' Create geom layers for Cartesian track coordinates
 #'
 #' @param data Data frame that will be plotted.
@@ -2142,6 +2158,14 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   every `n` trajectories) or a character vector of colour values (e.g.
 #'   `c("red","blue","green")`). When `panel_by` is set the cycle restarts
 #'   independently within each panel. Mutually exclusive with `colour_col`.
+#' @param track_colour How trajectory paths are coloured. `"trajectory"`
+#'   (default) keeps the existing per-track colouring. `"sequence"` colours each
+#'   path by its point's normalized position from start (0) to finish (1) within
+#'   the track, applying a continuous viridis scale with a `"start -> finish"`
+#'   colourbar. Sequence mode owns the colour aesthetic and so cannot be combined
+#'   with `colour_col`/`colour_cycle`; overlays render in a fixed colour. The
+#'   per-track order is taken from the `Tracks` time column, falling back to row
+#'   order (with a message) when no usable time column is present.
 #' @param theme Plot appearance, named for the ggplot2 base themes: one of
 #'   `"void"` (default), `"minimal"`, `"classic"`, `"bw"`, `"grey"`, `"light"`,
 #'   `"dark"`, or `"linedraw"`. See [radial_theme()].
@@ -2211,6 +2235,7 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   Label styling (colour, size, family) follows the chosen `theme`'s `axis.text`.
 #' @param ... Additional arguments forwarded to [draw_tracks()].
 #' @return A `ggplot2` object.
+#' @importFrom ggplot2 scale_colour_viridis_c guide_colourbar
 #' @examples
 #' tracks_demo <- simulate_tracks(conditions = data.frame(n_trials = 1L),
 #'                                n_points = 200, seed = 1)
@@ -2233,6 +2258,7 @@ function(
   group_col = NULL,
   colour_col = NULL,
   colour_cycle = NULL,
+  track_colour = c("trajectory", "sequence"),
   panel_by = NULL,
   ncol = NULL,
   strip_labels = NULL,
@@ -2268,6 +2294,8 @@ function(
   if (is.null(axes)) {axes = FALSE}
   angle_labels <- match.arg(angle_labels)
   grid <- match.arg(grid)
+  track_colour <- match.arg(track_colour)
+  seq_track <- identical(track_colour, "sequence")
   # Back-compat: an explicit `degrees = FALSE` hides the angle labels.
   if (isFALSE(degrees)) angle_labels <- "none"
   theme <- match.arg(theme)
@@ -2330,6 +2358,13 @@ function(
     colour_col <- ".cycle_colour"
   }
 
+  if (seq_track) {
+    if (!is.null(colour_col) || !is.null(colour_cycle))
+      stop("`track_colour = 'sequence'` colours tracks by position and cannot be ",
+           "combined with `colour_col`/`colour_cycle`.")
+    data <- .seq_position(data, id_col = group_col, time_col = ts@cols$time)
+  }
+
   x_sym <- rlang::sym(x_col)
   y_sym <- rlang::sym(y_col)
 
@@ -2338,7 +2373,9 @@ function(
     ggplot2::coord_fixed()
 
   layer_mapping <- NULL
-  if (!is.null(group_col) || !is.null(colour_col)) {
+  if (seq_track) {
+    layer_mapping <- ggplot2::aes(group = !!rlang::sym(group_col), colour = .data$.seq)
+  } else if (!is.null(group_col) || !is.null(colour_col)) {
     mapping_list <- list()
     if (!is.null(group_col)) mapping_list$group <- rlang::sym(group_col)
     if (!is.null(colour_col)) mapping_list$colour <- rlang::sym(colour_col)
@@ -2462,7 +2499,10 @@ function(
       }
 
       if (!is.null(arrow_df) && nrow(arrow_df) > 0L) {
-        use_arrow_colour_col <- !is.null(arrow_colour_col) &&
+        # In sequence mode the continuous .seq scale owns the colour aesthetic,
+        # so the arrow uses a fixed colour rather than mapping a discrete column.
+        use_arrow_colour_col <- !seq_track &&
+                                !is.null(arrow_colour_col) &&
                                 arrow_colour_col %in% names(arrow_df)
         arrow_map <- ggplot2::aes(x = x, y = y, xend = xend, yend = yend)
         if (use_arrow_colour_col)
@@ -2484,7 +2524,10 @@ function(
     }
   }
 
-  if (is.character(colour_cycle)) {
+  if (seq_track) {
+    g <- g + ggplot2::scale_colour_viridis_c(
+      guide = ggplot2::guide_colourbar(title = "start → finish"))
+  } else if (is.character(colour_cycle)) {
     scale_vals <- stats::setNames(colour_cycle, as.character(seq_along(colour_cycle)))
     g <- g + ggplot2::scale_colour_manual(values = scale_vals)
   }
