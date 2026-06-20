@@ -163,3 +163,13 @@ test_that("mean_slope shifts the per-trial mean with the predictor; default leav
   tr <- s[!duplicated(s$trial_id), c("predictor", "ref_heading")]
   expect_equal(tr$ref_heading, 0.2 + 0.7 * tr$predictor, tolerance = 1e-9)
 })
+
+test_that("simulate_tracks(frame_rate=) sets the frame rate; default leaves output unchanged", {
+  ts <- simulate_tracks(n_points = 20, output = "trajset", seed = 3, frame_rate = 30)
+  expect_equal(frame_rate(ts), 30)
+  ts0 <- simulate_tracks(n_points = 20, output = "trajset", seed = 3)
+  expect_null(frame_rate(ts0))
+  s <- simulate_tracks(n_points = 50, seed = 99)
+  expect_equal(head(s$final_heading[!duplicated(s$trial_id)], 3),
+               c(5.9589157262, 0.0305034215, 5.5213237187), tolerance = 1e-8)
+})

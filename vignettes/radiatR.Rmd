@@ -74,6 +74,34 @@ radiate(cpunctatus,
         display    = circ_display(zero = 0))
 ```
 
+### Colour tracks by position
+
+Setting `track_colour = "sequence"` shades each path along its own length, so the
+direction of travel reads at a glance: a per-track gradient from start (dark) to
+finish (bright), with a continuous "start → finish" colourbar. This mode owns the
+colour aesthetic, so it is not combined with `colour_col`/`colour_cycle`.
+
+```{r plot-sequence}
+# colour each track from start (dark) to finish (bright)
+radiate(cpunctatus, show_tracks = TRUE, track_colour = "sequence")
+```
+
+### Representing time
+
+Attach a capture **frame rate** (frames per second) to a `Tracks` object and the
+time aspect of frame-indexed tracks can be reported in real seconds and shown on
+the plot. The frame rate is stored in the object's metadata; the time/frame
+column itself is never altered. `track_duration()` reports the elapsed seconds of
+each trajectory, and `track_colour = "time"` colours each path by elapsed time
+(POSIXct time works without a frame rate).
+
+```{r plot-time}
+# attach a capture rate, then represent the time aspect
+ts <- set_frame_rate(cpunctatus, fps = 30)
+head(track_duration(ts))                                 # seconds per track
+radiate(ts, show_tracks = TRUE, track_colour = "time")   # colour by elapsed time
+```
+
 ## Heading Overlays
 
 The **crossing method** — projecting the vector between two concentric-ring crossings to the unit circle — assigns one directional heading per trial. `derive_headings()` with `return_coords = TRUE` returns both the heading angle and the inner-ring crossing position.

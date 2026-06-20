@@ -20,6 +20,9 @@
 #'   radius profile.
 #' @param phi Autocorrelation parameter (0-1) used when generating angular noise
 #'   series; higher values produce smoother paths.
+#' @param frame_rate Optional capture frame rate (frames per second) attached to
+#'   the returned [Tracks] via [set_frame_rate()] when `output` is `"trajset"` or
+#'   `"both"`. The default `NULL` leaves the output unchanged.
 #'
 #' @details
 #' The `conditions` data frame can contain the following columns (defaults are
@@ -151,7 +154,8 @@ simulate_tracks <- function(n_points = 200,
                             write_path = NULL,
                             seed = NULL,
                             radial_noise = 0.02,
-                            phi = 0.85) {
+                            phi = 0.85,
+                            frame_rate = NULL) {
   stopifnot(n_points > 1)
   if (!is.null(seed)) {
     stopifnot(is.numeric(seed), length(seed) == 1)
@@ -175,6 +179,7 @@ simulate_tracks <- function(n_points = 200,
     return(tracks_tbl)
   }
   trajset <- .sim_as_trajset(tracks_tbl, cond_tbl)
+  if (!is.null(frame_rate)) trajset <- set_frame_rate(trajset, frame_rate)
   if (output == "trajset") {
     return(trajset)
   }

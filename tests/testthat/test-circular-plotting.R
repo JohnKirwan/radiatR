@@ -1809,3 +1809,70 @@ test_that("add_wrappedcauchy_density(axial = FALSE) is unchanged (single peak)",
   key <- function(m) apply(round(m, 4), 1L, paste, collapse = ",")
   expect_false(all(key(cbind(-d_dir$x, -d_dir$y)) %in% key(cbind(d_dir$x, d_dir$y))))
 })
+
+test_that(".seq_position gives 0 at the first and 1 at the last point per track", {
+  d <- data.frame(id = rep(c("a", "b"), c(4, 1)), t = c(1, 2, 3, 4, 9))
+  out <- radiatR:::.seq_position(d, id_col = "id", time_col = "t")
+  expect_equal(out$.seq[out$id == "a"], c(0, 1/3, 2/3, 1))
+  expect_equal(out$.seq[out$id == "b"], 0)            # n == 1 -> 0
+})
+
+test_that(".seq_position falls back to row order with a message when no time column", {
+  d <- data.frame(id = rep("a", 3))
+  expect_message(out <- radiatR:::.seq_position(d, id_col = "id", time_col = NULL),
+                 "row order")
+  expect_equal(out$.seq, c(0, 0.5, 1))
+})
+
+test_that("radiate track_colour = 'sequence' uses a continuous colour scale on .seq", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  p <- radiate(cpunctatus, show_tracks = TRUE, track_colour = "sequence")
+  b <- ggplot2::ggplot_build(p)
+  # there is a continuous colour scale (not a discrete/manual one)
+  col_scale <- p$scales$get_scales("colour")
+  expect_true(inherits(col_scale, "ScaleContinuous"))
+  # the track path layer carries a numeric colour (the gradient), not a constant
+  path_data <- b$data[[which(vapply(p$layers, function(l) inherits(l$geom, "GeomPath"), logical(1)))[1]]]
+  expect_true("colour" %in% names(path_data))
+  expect_gt(length(unique(path_data$colour)), 1L)     # a gradient, not one colour
+})
+
+test_that("radiate track_colour = 'trajectory' is unchanged (no .seq, discrete colours)", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  p <- radiate(cpunctatus, show_tracks = TRUE)         # default trajectory mode
+  expect_false(".seq" %in% names(p$layers[[which(vapply(p$layers,
+    function(l) inherits(l$geom, "GeomPath"), logical(1)))[1]]]$data))
+})
+
+test_that("track_colour = 'sequence' cannot combine with colour_col/colour_cycle", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  expect_error(radiate(cpunctatus, show_tracks = TRUE, track_colour = "sequence",
+                       colour_cycle = 4), "cannot be combined")
+})
+
+test_that("a faceted sequence plot builds", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  df <- as.data.frame(cpunctatus)
+  facet <- intersect(c("arc", "type", "obstacle"), names(df))[1]
+  skip_if(is.na(facet), "no facet column in cpunctatus")
+  p <- radiate(cpunctatus, show_tracks = TRUE, track_colour = "sequence", panel_by = facet)
+  expect_s3_class(ggplot2::ggplot_build(p), "ggplot_built")
+})
+
+test_that("radiate track_colour = 'time' colours by elapsed seconds with a frame rate", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  ts <- set_frame_rate(cpunctatus, 30)
+  p <- radiate(ts, show_tracks = TRUE, track_colour = "time")
+  cs <- p$scales$get_scales("colour")
+  expect_true(inherits(cs, "ScaleContinuous"))
+  b <- ggplot2::ggplot_build(p)
+  path_data <- b$data[[which(vapply(p$layers,
+    function(l) inherits(l$geom, "GeomPath"), logical(1)))[1]]]
+  expect_gt(length(unique(path_data$colour)), 1L)
+})
+
+test_that("radiate track_colour = 'time' errors on numeric frames without a frame rate", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  expect_error(radiate(cpunctatus, show_tracks = TRUE, track_colour = "time"),
+               "frame rate")
+})

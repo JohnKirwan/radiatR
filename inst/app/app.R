@@ -961,6 +961,12 @@ server <- function(input, output, session) {
                             "None"                  = "none"),
                 selected = "points"
               ),
+              selectInput(
+                "track_colour", "Track colour",
+                choices = c("By trajectory"                = "trajectory",
+                            "By sequence (start → finish)" = "sequence"),
+                selected = "trajectory"
+              ),
               uiOutput("colour_by_ui"),
               tags$hr(class = "my-2"),
               div(
@@ -1216,6 +1222,7 @@ server <- function(input, output, session) {
           cond_col = grp, colour_by = input$colour_by,
           plot_theme = input$plot_theme, angle_labels = input$angle_labels,
           heading_display = input$heading_display,
+          track_colour = input$track_colour %||% "trajectory",
           show_arrow = tog(input$show_arrow, TRUE),
           show_vectors = tog(input$show_vectors, FALSE),
           show_rayleigh = tog(input$show_rayleigh, FALSE),
@@ -1241,6 +1248,7 @@ server <- function(input, output, session) {
         circ0 = input$circ0, circ1 = input$circ1,
         plot_theme = input$plot_theme, angle_labels = input$angle_labels,
         heading_display = input$heading_display,
+        track_colour = input$track_colour %||% "trajectory",
         # Path-metrics caption, none mode only (no headings). spec_to_plot and
         # spec_to_code render and reproduce it.
         caption  = if (is.null(rv$hd)) straightness_caption(rv$ts, gc) else NULL,

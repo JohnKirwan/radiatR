@@ -82,6 +82,7 @@ Collate:
     'model_selection.R'
     'radiatR-package.R'
     'simulate_tracks.R'
+    'time.R'
     'track_metrics.R'
     'transforms.R'
 Config/roxygen2/version: 8.0.0

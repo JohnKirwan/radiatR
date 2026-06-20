@@ -125,3 +125,37 @@ setMethod("set_reference", "Tracks", function(x, value) {
   methods::validObject(x)
   log_transform(x, step = "set_reference", params = list(value = value))
 })
+
+#' Frame rate of a Tracks object
+#'
+#' Attach a capture frame rate (frames per second) to a [Tracks] so the time
+#' aspect of frame-indexed tracks can be represented in real seconds. Stored in
+#' the object's metadata; the time/frame column is not altered.
+#'
+#' @param x A [Tracks] object.
+#' @param fps A single positive number, frames per second.
+#' @return `frame_rate()` the stored fps (or `NULL`); `set_frame_rate()` the
+#'   modified `Tracks`.
+#' @seealso [elapsed_seconds()], [track_duration()]
+#' @name frame_rate
+#' @export
+setGeneric("frame_rate", function(x) standardGeneric("frame_rate"))
+
+#' @rdname frame_rate
+#' @export
+setMethod("frame_rate", "Tracks", function(x) x@meta$frame_rate)
+
+#' @rdname frame_rate
+#' @export
+setGeneric("set_frame_rate", function(x, fps) standardGeneric("set_frame_rate"))
+
+#' @rdname frame_rate
+#' @export
+setMethod("set_frame_rate", "Tracks", function(x, fps) {
+  if (!is.numeric(fps) || length(fps) != 1L)
+    stop("`fps` must be a single number (frames per second).")
+  if (!is.finite(fps) || fps <= 0)
+    stop("`fps` must be a positive, finite number (frames per second).")
+  x@meta$frame_rate <- as.numeric(fps)
+  x
+})

@@ -396,6 +396,25 @@ test_that("data_model drives current_spec()$axial and the summary relabel (examp
   })
 })
 
+# Track-colour selector threads through current_spec() in trajectory mode.
+test_that("track_colour selector drives current_spec()$track_colour", {
+  skip_if_not_installed("shiny")
+  app_dir <- system.file("app", package = "radiatR")
+  if (!nzchar(app_dir)) app_dir <- testthat::test_path("..", "..", "inst", "app")
+  skip_if(!dir.exists(app_dir), "radiatR app directory not found")
+
+  shiny::testServer(app_dir, {
+    session$setInputs(load_example = 1)   # trajectory example, lands on Configure
+    session$setInputs(go3 = 1)            # advance to Results
+    expect_false(is.null(rv$ts))
+
+    session$setInputs(track_colour = "sequence")
+    expect_equal(current_spec()$track_colour, "sequence")
+    session$setInputs(track_colour = "trajectory")
+    expect_equal(current_spec()$track_colour, "trajectory")
+  })
+})
+
 # rao_spacing_fmt: omnibus Rao spacing bracket, parsed from circular's print output.
 test_that("rao_spacing_fmt brackets clustered, uniform, and tiny samples", {
   skip_if_not_installed("shiny")
