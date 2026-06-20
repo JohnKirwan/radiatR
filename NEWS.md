@@ -43,6 +43,11 @@
 
 ## Visualisation
 
+* `radiate()` gains `track_colour = "sequence"` to colour each trajectory path by
+  its point's position from start to finish (a per-track normalized gradient with
+  a continuous "start -> finish" colourbar). The Shiny app's Results figure gains
+  a matching **Track colour** selector.
+
 * New `circ_boxplot_stats()` and `add_circular_boxplot()` implement the
   Tukey-like circular boxplot of Buttarazzi, Pandolfo & Porzio (2018) for
   circular and axial heading data: a depth-ranked box around the circular

@@ -144,6 +144,17 @@ radiate(ts,
 > any scaling to real-world units in your tracking pipeline (e.g. your tracker's
 > own calibration, or OpenCV `undistort`) before importing.
 
+### Colour tracks by position
+
+`track_colour = "sequence"` shades each trajectory along its own length, so the
+direction of travel is visible at a glance — a per-track gradient from start
+(dark) to finish (bright), with a continuous "start → finish" colourbar:
+
+```r
+# colour each track from start (dark) to finish (bright)
+radiate(cpunctatus, show_tracks = TRUE, track_colour = "sequence")
+```
+
 ### Circular boxplot
 
 A Tukey-like boxplot for circular data (Buttarazzi, Pandolfo & Porzio, 2018):

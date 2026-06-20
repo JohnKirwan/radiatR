@@ -74,6 +74,18 @@ radiate(cpunctatus,
         display    = circ_display(zero = 0))
 ```
 
+### Colour tracks by position
+
+Setting `track_colour = "sequence"` shades each path along its own length, so the
+direction of travel reads at a glance: a per-track gradient from start (dark) to
+finish (bright), with a continuous "start → finish" colourbar. This mode owns the
+colour aesthetic, so it is not combined with `colour_col`/`colour_cycle`.
+
+```{r plot-sequence}
+# colour each track from start (dark) to finish (bright)
+radiate(cpunctatus, show_tracks = TRUE, track_colour = "sequence")
+```
+
 ## Heading Overlays
 
 The **crossing method** — projecting the vector between two concentric-ring crossings to the unit circle — assigns one directional heading per trial. `derive_headings()` with `return_coords = TRUE` returns both the heading angle and the inner-ring crossing position.
