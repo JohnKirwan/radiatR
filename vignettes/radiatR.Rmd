@@ -122,6 +122,19 @@ ts <- set_frame_rate(cpunctatus, fps = 30)
 radiate(ts, show_tracks = TRUE, track_colour = "speed")
 ```
 
+If you know a physical scale, calibrate distances so lengths and speeds report
+in real units. The scale is physical units per coordinate unit (e.g. mm per
+arena radius); unset, everything stays in arena/coordinate units.
+
+```{r distance-calibration}
+# calibrate distance (optional): 50 mm per coordinate unit (e.g. arena radius)
+ts <- set_distance_scale(set_frame_rate(cpunctatus, 30), 50, unit = "mm")
+head(track_length(ts))      # path length per track, in mm
+head(track_speed(ts))       # mean speed per track, in mm/s
+# or from two measured landmarks:
+# ts <- calibrate_distance(ts, coord_distance = 0.8, real_distance = 40, unit = "mm")
+```
+
 ## Heading Overlays
 
 The **crossing method** — projecting the vector between two concentric-ring crossings to the unit circle — assigns one directional heading per trial. `derive_headings()` with `return_coords = TRUE` returns both the heading angle and the inner-ring crossing position.
