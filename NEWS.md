@@ -41,6 +41,12 @@
   settings. The ground truth is recorded in new output columns and in the
   `TrajSet` `meta$sim_conditions`. The default output is unchanged.
 
+## Track metrics
+
+* `track_speed()` and `step_speed()` report trajectory speed in real units
+  (distance per second), using the track's frame rate / timestamps. With the
+  default unit-arena coordinates that is arena-units (radii) per second.
+
 ## Visualisation
 
 * American spellings are now accepted throughout: every `colour...` argument and

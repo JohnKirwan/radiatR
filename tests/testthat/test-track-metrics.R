@@ -105,3 +105,59 @@ test_that("tortuosity_ratio returns one value >= 1 per trajectory", {
 test_that("tortuosity_ratio rejects non-Tracks input", {
   expect_error(tortuosity_ratio(data.frame(x = 1, y = 1)), "Tracks")
 })
+
+test_that("step_speed: constant 1 unit/frame at 30 fps -> 30 units/s", {
+  x <- 0:4; y <- rep(0, 5); secs <- (0:4) / 30
+  expect_equal(radiatR::step_speed(x, y, secs), rep(30, 4))
+})
+
+test_that("step_speed: L-shaped move and POSIXct-style seconds", {
+  expect_equal(radiatR::step_speed(c(0, 0, 3), c(0, 4, 4), c(0, 1, 2)), c(4, 3))
+  expect_equal(length(radiatR::step_speed(1, 1, 0)), 0L)          # n < 2 -> empty
+})
+
+test_that("step_speed: dt<=0 or non-finite endpoint -> NA in that step", {
+  expect_equal(radiatR::step_speed(c(0, 1, 2), c(0, 0, 0), c(0, 0, 1)), c(NA, 1))      # dt=0
+  expect_equal(radiatR::step_speed(c(0, NA, 2), c(0, 0, 0), c(0, 1, 2)), c(NA_real_, NA_real_))    # non-finite
+})
+
+# --- Tracks-level fixture: two tracks, known constant speeds, numeric frames ---
+mk_speed_ts <- function() {
+  d <- rbind(
+    data.frame(id = "a", frame = 0:3, x = (0:3) * 2, y = 0, angle = 0),  # 2 units/frame
+    data.frame(id = "b", frame = 0:2, x = 0:2,       y = 0, angle = 0)   # 1 unit/frame
+  )
+  methods::new("Tracks", data = d,
+               cols = list(id = "id", time = "frame", angle = "angle", x = "x", y = "y"),
+               angle_unit = "radians", meta = list())
+}
+
+test_that("track_speed needs a frame rate for numeric frames; then gives real units", {
+  ts <- mk_speed_ts()
+  expect_error(track_speed(ts), "frame rate")
+  ts <- set_frame_rate(ts, 30)
+  s <- track_speed(ts)                                   # mean, default
+  expect_named(s, c("id", "speed"))
+  expect_equal(s$speed[s$id == "a"], 60)                 # 2 units/frame * 30 fps
+  expect_equal(s$speed[s$id == "b"], 30)
+})
+
+test_that("track_speed stat arg selects the reduction; <2-point track -> NA", {
+  ts <- set_frame_rate(mk_speed_ts(), 30)
+  expect_equal(track_speed(ts, stat = "max")$speed[1], 60)
+  expect_equal(track_speed(ts, stat = "median")$speed[1], 60)
+  one <- methods::new("Tracks",
+    data = data.frame(id = "z", frame = 0L, x = 0, y = 0, angle = 0),
+    cols = list(id = "id", time = "frame", angle = "angle", x = "x", y = "y"),
+    angle_unit = "radians", meta = list(frame_rate = 30))
+  expect_true(is.na(track_speed(one)$speed))
+})
+
+test_that("track_speed: POSIXct time works without a frame rate", {
+  t0 <- as.POSIXct("2020-01-01", tz = "UTC")
+  d <- data.frame(id = "a", frame = t0 + c(0, 1, 2), x = c(0, 3, 6), y = 0, angle = 0)
+  ts <- methods::new("Tracks", data = d,
+    cols = list(id = "id", time = "frame", angle = "angle", x = "x", y = "y"),
+    angle_unit = "radians", meta = list())
+  expect_equal(track_speed(ts)$speed, 3)                 # 3 units / 1 s
+})
