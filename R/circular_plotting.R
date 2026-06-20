@@ -56,7 +56,8 @@ circ_display <- function(zero = pi / 2,
 #' around the unit circle, each spanning a radial distance of `length`
 #' straddling radius 1. The layer can be added to any ggplot.
 #'
-#' @param colour Tick colour. Default `"black"`.
+#' @param colour,color Tick colour. Default `"black"`. `color` is the
+#'   American-spelling alias.
 #' @param linewidth Tick line width. Default `0.5`.
 #' @param length Radial length of each tick, in data units. Default `0.1`.
 #' @param n Number of evenly spaced ticks. Default `8L`.
@@ -69,7 +70,9 @@ circ_display <- function(zero = pi / 2,
 #'   coord_fixed() +
 #'   add_ticks()
 #' @export
-add_ticks <- function(colour = "black", linewidth = 0.5, length = 0.1, n = 8L) {
+add_ticks <- function(colour = "black", linewidth = 0.5, length = 0.1, n = 8L,
+                      color = NULL) {
+  .apply_spelling_aliases()
   th    <- 2 * pi * (seq_len(n) - 1L) / n
   r_in  <- 1 - length / 2
   r_out <- 1 + length / 2
@@ -98,12 +101,13 @@ add_ticks <- function(colour = "black", linewidth = 0.5, length = 0.1, n = 8L) {
 #' radius and appearance. The returned list can be added directly to a ggplot.
 #'
 #' @param radius Radius of the circle, expressed in the same units as the plot coordinates.
-#' @param circle_color Line colour for the circle.
+#' @param circle_colour,circle_color Line colour for the circle. `circle_color`
+#'   is the American-spelling alias.
 #' @param circle_alpha Alpha transparency for the circle.
 #' @param circle_size Line width for the circle.
 #' @param linetype Line type for the circle.
-#' @param colour ggplot-style alias for `circle_color`. If supplied, takes
-#'   precedence over `circle_color`.
+#' @param colour,color ggplot-style alias for `circle_colour`. If supplied, takes
+#'   precedence over `circle_colour`. `color` is the American-spelling alias.
 #' @param linewidth ggplot-style alias for `circle_size`. If supplied, takes
 #'   precedence over `circle_size`.
 #'
@@ -117,17 +121,19 @@ add_ticks <- function(colour = "black", linewidth = 0.5, length = 0.1, n = 8L) {
 #' ggplot() +
 #'   coord_fixed() +
 #'   add_circ(radius = 1)
-add_circ <- function(radius = 1, circle_color = "grey60", circle_alpha = 1,
+add_circ <- function(radius = 1, circle_colour = "grey60", circle_alpha = 1,
                      circle_size = 1, linetype = "solid",
-                     colour = NULL, linewidth = NULL) {
-  if (!is.null(colour))    circle_color <- colour      # ggplot-style aliases
+                     colour = NULL, linewidth = NULL, circle_color = NULL,
+                     color = NULL) {
+  .apply_spelling_aliases()
+  if (!is.null(colour))    circle_colour <- colour     # ggplot-style aliases
   if (!is.null(linewidth)) circle_size  <- linewidth
   list(
     ggplot2::annotate(
       "path",
       x = radius * cos(seq(0, 2 * pi, length.out = 1000)),
       y = radius * sin(seq(0, 2 * pi, length.out = 1000)),
-      color = circle_color, alpha = circle_alpha,
+      color = circle_colour, alpha = circle_alpha,
       linewidth = circle_size, linetype = linetype
     )
   )
@@ -139,7 +145,8 @@ add_circ <- function(radius = 1, circle_color = "grey60", circle_alpha = 1,
 #' The function takes optional arguments to customize the appearance of the circles.
 #'
 #' @param radii A vector of radii for the concentric circles (default is c(0.25, 0.5, 0.75))
-#' @param circle_color The color of the circles (default is "grey40")
+#' @param circle_colour,circle_color The colour of the circles (default is
+#'   "grey20"). `circle_color` is the American-spelling alias.
 #' @param circle_alpha The transparency of the circles (default is 1)
 #' @param circle_size The size of the circle lines (default is 1)
 #' @return A list of layers for concentric circles
@@ -150,10 +157,12 @@ add_circ <- function(radius = 1, circle_color = "grey60", circle_alpha = 1,
 #'
 #' @export
 add_multiple_circles <- function(radii = c(0.25, 0.5, 0.75),
-                                 circle_color = "grey20",
+                                 circle_colour = "grey20",
                                  circle_alpha = 1,
-                                 circle_size = 0.5) {
-  lapply(radii, function(radius) add_circ(radius, circle_color, circle_alpha, circle_size))
+                                 circle_size = 0.5,
+                                 circle_color = NULL) {
+  .apply_spelling_aliases()
+  lapply(radii, function(radius) add_circ(radius, circle_colour, circle_alpha, circle_size))
 }
 
 #' Add quadrant lines to a radial plot
@@ -162,7 +171,8 @@ add_multiple_circles <- function(radii = c(0.25, 0.5, 0.75),
 #' horizontal (0degrees/180degrees) and one vertical (90degrees/270degrees) -- dividing the unit circle into
 #' four quadrants. The lines extend to the circumference (unit circle).
 #'
-#' @param colour Line colour. Default `"grey60"`.
+#' @param colour,color Line colour. Default `"grey60"`. `color` is the
+#'   American-spelling alias.
 #' @param linewidth Line width. Default `0.5`.
 #' @param linetype Line type. Default `"dashed"`.
 #'
@@ -172,7 +182,9 @@ add_multiple_circles <- function(radii = c(0.25, 0.5, 0.75),
 #' library(ggplot2)
 #' ggplot() + coord_fixed() + add_quadrant_lines()
 #' @export
-add_quadrant_lines <- function(colour = "grey60", linewidth = 0.5, linetype = "dashed") {
+add_quadrant_lines <- function(colour = "grey60", linewidth = 0.5, linetype = "dashed",
+                               color = NULL) {
+  .apply_spelling_aliases()
   seg_df <- data.frame(
     x    = c(-1,  0),
     y    = c( 0, -1),
@@ -195,7 +207,8 @@ add_quadrant_lines <- function(colour = "grey60", linewidth = 0.5, linetype = "d
 #' Adds a single point at the origin `(0, 0)` -- a centre reference for sparse
 #' themes where no crosshairs meet at the middle.
 #'
-#' @param colour Point colour. Default `"grey50"`.
+#' @param colour,color Point colour. Default `"grey50"`. `color` is the
+#'   American-spelling alias.
 #' @param size Point size. Default `1.5`.
 #' @param shape Point shape. Default `16` (filled circle).
 #' @param ... Further arguments passed to [ggplot2::geom_point()].
@@ -205,7 +218,9 @@ add_quadrant_lines <- function(colour = "grey60", linewidth = 0.5, linetype = "d
 #' ggplot() + coord_fixed() + add_circ() + add_origin_point()
 #' @importFrom ggplot2 geom_point aes
 #' @export
-add_origin_point <- function(colour = "grey50", size = 1.5, shape = 16, ...) {
+add_origin_point <- function(colour = "grey50", size = 1.5, shape = 16, ...,
+                             color = NULL) {
+  .apply_spelling_aliases()
   ggplot2::geom_point(
     data        = data.frame(x = 0, y = 0),
     mapping     = ggplot2::aes(x = .data$x, y = .data$y),
@@ -243,8 +258,9 @@ add_origin_point <- function(colour = "grey50", size = 1.5, shape = 16, ...) {
 #'   as 45-degree diagonals. Minor spokes are offset from major by half the major
 #'   spacing (`pi / spokes_major`), so their placement is defined relative to the
 #'   major count.
-#' @param colour,colour_minor Spoke/ring colour. `colour_minor` defaults to
-#'   `colour`.
+#' @param colour,colour_minor,color,color_minor Spoke/ring colour. `colour_minor`
+#'   defaults to `colour`. `color` and `color_minor` are the American-spelling
+#'   aliases.
 #' @param linewidth,linewidth_minor Line widths. `linewidth_minor` defaults to
 #'   `0.5 * linewidth`.
 #' @param linetype Line type for the spokes. Default `"solid"`.
@@ -252,7 +268,8 @@ add_origin_point <- function(colour = "grey50", size = 1.5, shape = 16, ...) {
 #'   disc.
 #' @param origin Logical; add a centre dot ([add_origin_point()]). Default
 #'   `FALSE`.
-#' @param origin_colour,origin_size Centre-dot style.
+#' @param origin_colour,origin_size,origin_color Centre-dot style. `origin_color`
+#'   is the American-spelling alias.
 #' @param n_pts Points used to approximate the disc outline. Default `200L`.
 #' @return A list of ggplot2 layers.
 #' @seealso [add_multiple_circles()], [add_quadrant_lines()], [add_origin_point()]
@@ -269,7 +286,10 @@ add_radial_grid <- function(rings_major = 0.5, rings_minor = c(0.25, 0.75),
                             linewidth = 0.5, linewidth_minor = NULL,
                             linetype = "solid", disc_fill = NA,
                             origin = FALSE, origin_colour = "grey50",
-                            origin_size = 1.5, n_pts = 200L) {
+                            origin_size = 1.5, n_pts = 200L,
+                            color = NULL, color_minor = NULL,
+                            origin_color = NULL) {
+  .apply_spelling_aliases()
   if (is.null(colour_minor))    colour_minor    <- colour
   if (is.null(linewidth_minor)) linewidth_minor <- 0.5 * linewidth
   layers <- list()
@@ -278,7 +298,7 @@ add_radial_grid <- function(rings_major = 0.5, rings_minor = c(0.25, 0.75),
   # list-of-lists; flatten one level so `layers` is a flat list of layers.
   ring_layers <- function(radii, col, lw) {
     if (!length(radii)) return(list())
-    do.call(c, add_multiple_circles(radii = radii, circle_color = col, circle_size = lw))
+    do.call(c, add_multiple_circles(radii = radii, circle_colour = col, circle_size = lw))
   }
 
   if (!is.null(disc_fill) && !is.na(disc_fill)) {
@@ -315,7 +335,8 @@ add_radial_grid <- function(rings_major = 0.5, rings_minor = c(0.25, 0.75),
 #'
 #' @param display A [`circ_display`] object. Default `circ_display()`. Supplies
 #'   the label units when `units` is `NULL`.
-#' @param colour Label colour. Default `"black"`.
+#' @param colour,color Label colour. Default `"black"`. `color` is the
+#'   American-spelling alias.
 #' @param units `"degrees"` (e.g. `45°`) or `"radians"` (e.g. `π/4`). When
 #'   `NULL` (default) the units are taken from `display`.
 #' @param size Label text size, in mm. Default `3.88` (ggplot2's default
@@ -330,7 +351,9 @@ add_radial_grid <- function(rings_major = 0.5, rings_minor = c(0.25, 0.75),
 #'   degree_labs()
 #' @export
 degree_labs <- function(display = circ_display(), colour = "black",
-                        units = NULL, size = 3.88, family = "") {
+                        units = NULL, size = 3.88, family = "",
+                        color = NULL) {
+  .apply_spelling_aliases()
   if (is.null(units)) units <- display$units
   units <- match.arg(units, c("degrees", "radians"))
   diag_r      <- 0.85
@@ -380,7 +403,8 @@ degree_labs <- function(display = circ_display(), colour = "black",
 #' @param data Data frame containing the angle column.
 #' @param angle_col Column containing angles in radians.
 #' @param arrow_head_cm Length of the arrowhead in centimetres.
-#' @param colour Colour of the arrow.
+#' @param colour,color Colour of the arrow. `color` is the American-spelling
+#'   alias.
 #' @param size Width of the arrow segment (applied to the geom's `linewidth`).
 #' @return A `geom_segment()` layer.
 #' @export
@@ -391,7 +415,8 @@ degree_labs <- function(display = circ_display(), colour = "black",
 #' @importFrom tibble tibble
 #' @importFrom ggplot2 aes
 directedness_arrow <- function(data, angle_col, arrow_head_cm = 0.2,
-                               colour = "gray", size = 2) {
+                               colour = "gray", size = 2, color = NULL) {
+  .apply_spelling_aliases()
   if (missing(angle_col)) {
     stop("`angle_col` must be supplied and should reference a column of angles in radians.")
   }
@@ -465,6 +490,11 @@ cycle_colours <- function(x, n, levels = NULL) {
   factor(idx, levels = seq_len(n_int))
 }
 
+#' @rdname cycle_colours
+#' @usage cycle_colors(x, n, levels = NULL)
+#' @export
+cycle_colors <- cycle_colours
+
 #' Assign a shared colour-key column to a Tracks or data frame
 #'
 #' Writes a colour-key column (`into`, default `".colour"`) keyed on `by`, so the
@@ -488,6 +518,7 @@ cycle_colours <- function(x, n, levels = NULL) {
 #'   `NULL` uses `x` itself.
 #' @param into Name of the key column to add. Default `".colour"`.
 #' @return `x` with the `into` column added.
+#' @inheritSection radiatR-package American spellings
 #' @seealso [cycle_colours()]
 #' @examples
 #' ts <- simulate_tracks(n_points = 10, output = "trajset")
@@ -522,6 +553,11 @@ assign_colour_key <- function(x, by, n = 20, reference = NULL, into = ".colour")
   if (is_ts(x)) x@data[[into]] <- key else x[[into]] <- key
   x
 }
+
+#' @rdname assign_colour_key
+#' @usage assign_color_key(x, by, n = 20, reference = NULL, into = ".colour")
+#' @export
+assign_color_key <- assign_colour_key
 
 #' Assign cycling colour indices to trajectories
 #'
@@ -579,6 +615,11 @@ assign_cycle_colours <- function(data, id_col, n, panel_col = NULL,
   }
   data
 }
+
+#' @rdname assign_cycle_colours
+#' @usage assign_cycle_colors(data, id_col, n, panel_col = NULL, out_col = "cycle_colour")
+#' @export
+assign_cycle_colors <- assign_cycle_colours
 
 # ---- circular density overlay ------------------------------------------------
 
@@ -671,8 +712,9 @@ assign_cycle_colours <- function(data, id_col, n, panel_col = NULL,
 #'
 #' @param headings_df Data frame containing heading angles.
 #' @param heading_col Name of the heading column (radians). Default `"heading"`.
-#' @param colour_col Optional grouping column. When set, one density is
-#'   computed per group and the column is included in the output.
+#' @param colour_col,color_col Optional grouping column. When set, one density is
+#'   computed per group and the column is included in the output. `color_col` is
+#'   the American-spelling alias.
 #' @param method Estimation method: `"vonmises"` (default), `"kernel"`, or
 #'   `"histogram"`.
 #' @param n_theta Number of angular evaluation points for smooth methods.
@@ -723,7 +765,9 @@ compute_circular_density <- function(headings_df,
                                      bw          = NULL,
                                      boot_reps   = 0L,
                                      boot_alpha  = 0.05,
-                                     axial       = FALSE) {
+                                     axial       = FALSE,
+                                     color_col   = NULL) {
+  .apply_spelling_aliases()
   method     <- match.arg(method)
   use_colour <- !is.null(colour_col) && colour_col %in% names(headings_df)
 
@@ -771,12 +815,13 @@ compute_circular_density <- function(headings_df,
 #' @param theta_col Name of the angle column (radians, -pi to pi). Default
 #'   `"theta"`.
 #' @param density_col Name of the density/count column. Default `"density"`.
-#' @param colour_col Optional grouping column. When set, separate paths are
-#'   drawn per group, enabling ggplot2 faceting.
+#' @param colour_col,color_col Optional grouping column. When set, separate paths
+#'   are drawn per group, enabling ggplot2 faceting. `color_col` is the
+#'   American-spelling alias.
 #' @param scale Maximum radial extension above the unit circle. Default `0.4`
 #'   (peak at r = 1.4). Density is normalised within each group before scaling.
-#' @param colour Fixed line colour used when `colour_col` is `NULL`. Default
-#'   `"black"`.
+#' @param colour,color Fixed line colour used when `colour_col` is `NULL`.
+#'   Default `"black"`. `color` is the American-spelling alias.
 #' @param fill Colour for the region between the unit circle and the density
 #'   curve. `NA` (default) draws no fill.
 #' @param alpha Alpha transparency for the filled polygon. Default `0.2`.
@@ -821,7 +866,10 @@ add_circular_density <- function(density_df,
                                  alpha       = 0.2,
                                  linewidth   = 0.8,
                                  ci_fill     = "grey70",
-                                 ci_alpha    = 0.3) {
+                                 ci_alpha    = 0.3,
+                                 color_col   = NULL,
+                                 color       = NULL) {
+  .apply_spelling_aliases()
   use_colour <- !is.null(colour_col) && colour_col %in% names(density_df)
   has_ci     <- all(c("density_lower", "density_upper") %in% names(density_df))
 
@@ -956,7 +1004,10 @@ add_heading_density <- function(headings_df,
                                 linewidth   = 0.8,
                                 ci_fill     = "grey70",
                                 ci_alpha    = 0.3,
-                                axial       = FALSE) {
+                                axial       = FALSE,
+                                color_col   = NULL,
+                                color       = NULL) {
+  .apply_spelling_aliases()
   method  <- match.arg(method)
   dens_df <- compute_circular_density(headings_df, heading_col = heading_col,
                                       colour_col = colour_col, method = method,
@@ -1042,8 +1093,9 @@ add_heading_density <- function(headings_df,
 #'
 #' @param headings_df Data frame containing heading angles.
 #' @param heading_col Name of the heading column (radians). Default `"heading"`.
-#' @param colour_col Optional grouping column. When set, one row is returned per
-#'   group and the column is preserved in the output.
+#' @param colour_col,color_col Optional grouping column. When set, one row is
+#'   returned per group and the column is preserved in the output. `color_col` is
+#'   the American-spelling alias.
 #' @param stat Statistic: `"bootstrap_ci"` (default) or `"sd"`.
 #' @param boot_reps Integer. Bootstrap replicates for `stat = "bootstrap_ci"`.
 #'   Default `1000L`. Ignored when `stat = "sd"`.
@@ -1067,7 +1119,9 @@ compute_circ_interval <- function(headings_df,
                                   stat        = c("bootstrap_ci", "sd"),
                                   boot_reps   = 1000L,
                                   boot_alpha  = 0.05,
-                                  axial       = FALSE) {
+                                  axial       = FALSE,
+                                  color_col   = NULL) {
+  .apply_spelling_aliases()
   stat <- match.arg(stat)
   if (!heading_col %in% names(headings_df))
     stop("`heading_col` '", heading_col, "' not found in headings_df.")
@@ -1108,13 +1162,15 @@ compute_circ_interval <- function(headings_df,
 #' @param interval_df Data frame with columns `mean_dir`, `lower`, `upper`
 #'   (radians, `[-pi, pi]`), and optionally `wraps` (logical). Typically the
 #'   output of [compute_circ_interval()].
-#' @param colour_col Optional column name to map to the colour aesthetic.
-#'   Ignored when `colour` is also supplied.
+#' @param colour_col,color_col Optional column name to map to the colour
+#'   aesthetic. Ignored when `colour` is also supplied. `color_col` is the
+#'   American-spelling alias.
 #' @param radius Radial position of the arc. Default `1.05`.
 #' @param linewidth Line width. Default `1.5`.
-#' @param colour Fixed colour. When `NULL` (default) and `colour_col` is set,
-#'   colour is mapped from that column; when `NULL` and no `colour_col`, draws
-#'   in `"black"`. Supplying any colour string always overrides `colour_col`.
+#' @param colour,color Fixed colour. When `NULL` (default) and `colour_col` is
+#'   set, colour is mapped from that column; when `NULL` and no `colour_col`,
+#'   draws in `"black"`. Supplying any colour string always overrides
+#'   `colour_col`. `color` is the American-spelling alias.
 #' @param linetype Line type. Default `"solid"`.
 #' @param n_theta Number of points along the arc. Default `500L`.
 #'
@@ -1134,7 +1190,10 @@ add_circ_interval <- function(interval_df,
                               colour     = NULL,
                               linetype   = "solid",
                               n_theta    = 500L,
-                              axial      = FALSE) {
+                              axial      = FALSE,
+                              color_col  = NULL,
+                              color      = NULL) {
+  .apply_spelling_aliases()
   for (col in c("lower", "upper")) {
     if (!col %in% names(interval_df))
       stop("`interval_df` is missing required column '", col, "'.")
@@ -1221,7 +1280,10 @@ add_heading_interval <- function(headings_df,
                                  colour      = NULL,
                                  linetype    = "solid",
                                  n_theta     = 500L,
-                                 axial       = FALSE) {
+                                 axial       = FALSE,
+                                 color_col   = NULL,
+                                 color       = NULL) {
+  .apply_spelling_aliases()
   if (is.null(display))
     display <- hf_display(headings_df)
   stat <- match.arg(stat)
@@ -1252,8 +1314,9 @@ add_heading_interval <- function(headings_df,
 #'   `attr(headings_df, "coords")` automatically.
 #' @param heading_col Name of the column containing heading angles. Default
 #'   `"heading"`.
-#' @param colour_col Optional. Name of a column to group by. One row is
+#' @param colour_col,color_col Optional. Name of a column to group by. One row is
 #'   returned per group. The same column maps to colour in [add_circ_mean()].
+#'   `color_col` is the American-spelling alias.
 #' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
 #'   data: `mean_dir` is the axis in `[0, pi)` and `resultant_R` is the axial
 #'   resultant length, both via the angle-doubling method. Default `FALSE`.
@@ -1267,7 +1330,9 @@ add_heading_interval <- function(headings_df,
 compute_circ_mean <- function(headings_df,
                               heading_col = "heading",
                               colour_col  = NULL,
-                              axial       = FALSE) {
+                              axial       = FALSE,
+                              color_col   = NULL) {
+  .apply_spelling_aliases()
   if (!heading_col %in% names(headings_df))
     stop("`heading_col` '", heading_col, "' not found in headings_df.")
 
@@ -1313,12 +1378,14 @@ compute_circ_mean <- function(headings_df,
 #'
 #' @param summary_df Data frame with columns `mean_dir` (UC radians, 0 to 2pi)
 #'   and `resultant_R` (0--1). Typically the output of [compute_circ_mean()].
-#' @param colour_col Optional. Name of a column in `summary_df` to map to the
-#'   colour aesthetic. Ignored when `colour` is also supplied.
+#' @param colour_col,color_col Optional. Name of a column in `summary_df` to map
+#'   to the colour aesthetic. Ignored when `colour` is also supplied. `color_col`
+#'   is the American-spelling alias.
 #' @param linewidth Line width of the arrow segment. Default `1`.
-#' @param colour Fixed colour. When `NULL` (default) and `colour_col` is set,
-#'   colour is mapped from that column; when `NULL` and no `colour_col`, draws
-#'   in `"black"`. Supplying any colour string always overrides `colour_col`.
+#' @param colour,color Fixed colour. When `NULL` (default) and `colour_col` is
+#'   set, colour is mapped from that column; when `NULL` and no `colour_col`,
+#'   draws in `"black"`. Supplying any colour string always overrides
+#'   `colour_col`. `color` is the American-spelling alias.
 #' @param arrow_length_cm Arrowhead length in cm. Default `0.2`.
 #' @param ... Additional arguments forwarded to `geom_segment` (e.g.
 #'   `linetype`, `alpha`, or a custom `arrow` spec that overrides the default).
@@ -1339,7 +1406,10 @@ add_circ_mean <- function(summary_df,
                           colour          = NULL,
                           arrow_length_cm = 0.2,
                           axial           = FALSE,
-                          ...) {
+                          ...,
+                          color_col       = NULL,
+                          color           = NULL) {
+  .apply_spelling_aliases()
   for (col in c("mean_dir", "resultant_R")) {
     if (!col %in% names(summary_df))
       stop("`summary_df` is missing required column '", col, "'.")
@@ -1426,7 +1496,10 @@ add_heading_arrow <- function(headings_df,
                               colour          = NULL,
                               arrow_length_cm = 0.2,
                               axial           = FALSE,
-                              ...) {
+                              ...,
+                              color_col       = NULL,
+                              color           = NULL) {
+  .apply_spelling_aliases()
   if (is.null(display))
     display <- hf_display(headings_df)
   sm <- compute_circ_mean(headings_df, heading_col = heading_col,
@@ -1462,13 +1535,15 @@ add_heading_arrow <- function(headings_df,
 #' output of [derive_headings()].
 #'
 #' @param headings_df Data frame with a `heading` column (angles in radians).
-#' @param colour_col Name of a column in `headings_df` to map to the colour
-#'   aesthetic. When `NULL` (default), the value of
+#' @param colour_col,color_col Name of a column in `headings_df` to map to the
+#'   colour aesthetic. When `NULL` (default), the value of
 #'   `attr(headings_df, "colour_col")` is used if set -- so heading markers
 #'   automatically inherit the colour mapping from the associated trajectory
 #'   plot when that attribute is present. Ignored when `colour` is supplied.
-#' @param colour Fixed colour string. Overrides `colour_col` when supplied;
-#'   when `NULL` and no `colour_col` resolves, defaults to `"black"`.
+#'   `color_col` is the American-spelling alias.
+#' @param colour,color Fixed colour string. Overrides `colour_col` when supplied;
+#'   when `NULL` and no `colour_col` resolves, defaults to `"black"`. `color` is
+#'   the American-spelling alias.
 #' @param size Point size passed to `geom_point`.
 #' @param alpha Point alpha transparency.
 #' @param axial Logical; when `TRUE`, draw each observation at both `heading`
@@ -1476,6 +1551,7 @@ add_heading_arrow <- function(headings_df,
 #'
 #' @return A `geom_point()` layer (shape = 1, hollow circle).
 #'
+#' @inheritSection radiatR-package American spellings
 #' @seealso [add_heading_vectors()], [derive_headings()]
 #' @importFrom ggplot2 geom_point aes
 #' @importFrom rlang .data sym
@@ -1488,7 +1564,9 @@ add_heading_arrow <- function(headings_df,
 #' ggplot() + coord_fixed() + add_heading_points(hd)
 #' ggplot() + coord_fixed() + add_heading_points(hd, colour = "steelblue")
 add_heading_points <- function(headings_df, colour_col = NULL, colour = NULL,
-                               size = 2, alpha = 1, axial = FALSE) {
+                               size = 2, alpha = 1, axial = FALSE,
+                               color_col = NULL, color = NULL) {
+  .apply_spelling_aliases()
   if (!("heading" %in% names(headings_df)))
     stop("`headings_df` must contain a `heading` column (radians).")
   if (is.null(colour_col)) colour_col <- hf_colour_col(headings_df)
@@ -1524,13 +1602,15 @@ add_heading_points <- function(headings_df, colour_col = NULL, colour = NULL,
 #'
 #' @param headings_df Data frame with columns `heading` (radians), `x_inner`,
 #'   and `y_inner`.
-#' @param colour_col Name of a column in `headings_df` to map to the colour
-#'   aesthetic. When `NULL` (default), the value of
+#' @param colour_col,color_col Name of a column in `headings_df` to map to the
+#'   colour aesthetic. When `NULL` (default), the value of
 #'   `attr(headings_df, "colour_col")` is used if set -- so vectors
 #'   automatically inherit the colour mapping from the associated trajectory
 #'   plot when that attribute is present. Ignored when `colour` is supplied.
-#' @param colour Fixed colour string. Overrides `colour_col` when supplied;
-#'   when `NULL` and no `colour_col` resolves, defaults to `"black"`.
+#'   `color_col` is the American-spelling alias.
+#' @param colour,color Fixed colour string. Overrides `colour_col` when supplied;
+#'   when `NULL` and no `colour_col` resolves, defaults to `"black"`. `color` is
+#'   the American-spelling alias.
 #' @param linetype Line type string or integer passed to `geom_segment`.
 #' @param axial Logical; when `TRUE`, draw each vector at both `heading` and
 #'   `heading + pi`, with the inner start point reflected through the origin.
@@ -1549,7 +1629,9 @@ add_heading_points <- function(headings_df, colour_col = NULL, colour = NULL,
 #'                  x_inner = 0.15, y_inner = 0.15)
 #' ggplot() + coord_fixed() + add_heading_vectors(hd)
 add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
-                               linetype = "dotted", axial = FALSE) {
+                               linetype = "dotted", axial = FALSE,
+                               color_col = NULL, color = NULL) {
+  .apply_spelling_aliases()
   if (is.null(colour_col)) colour_col <- hf_colour_col(headings_df)
   required <- c("heading", "x_inner", "y_inner")
   missing_cols <- setdiff(required, names(headings_df))
@@ -1615,8 +1697,10 @@ add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
 #'   21 = filled with ring.
 #' @param group Optional column name; stack within each group independently
 #'   (e.g. one stacking per facet). Default \code{NULL}.
-#' @param colour Fixed point colour (ignored when \code{colour_col} is set).
-#' @param colour_col Optional column name to map to the colour aesthetic.
+#' @param colour,color Fixed point colour (ignored when \code{colour_col} is
+#'   set). \code{color} is the American-spelling alias.
+#' @param colour_col,color_col Optional column name to map to the colour
+#'   aesthetic. \code{color_col} is the American-spelling alias.
 #' @param size Point size passed to \code{geom_point()}.
 #' @param alpha Fixed alpha. Ignored when \code{shade = TRUE}.
 #' @param ... Additional arguments passed to \code{ggplot2::geom_point()}.
@@ -1647,7 +1731,10 @@ add_stacked_headings <- function(data,
                                  size       = 2,
                                  alpha      = 1,
                                  axial      = FALSE,
-                                 ...) {
+                                 ...,
+                                 color      = NULL,
+                                 color_col  = NULL) {
+  .apply_spelling_aliases()
   if (is.null(col))
     col <- hf_heading_col(data)
   if (!col %in% names(data))
@@ -1835,7 +1922,8 @@ RADIAL_THEMES <- c("void", "minimal", "classic", "bw", "grey", "gray",
 #' Plot trajectories from a Tracks (overlay or faceted)
 #'
 #' @param x Tracks
-#' @param color,linetype,alpha,size Optional column names (strings) mapped to aesthetics
+#' @param colour,color,linetype,alpha,size Optional column names (strings) mapped
+#'   to aesthetics. `color` is the American-spelling alias for `colour`.
 #' @param panel_by NULL, a single string, or a character vector of columns to facet by
 #' @param coord "polar" (unit circle) or "cartesian"
 #' @param geom "path" or "point" (or both, as c("path","point"))
@@ -1844,16 +1932,24 @@ RADIAL_THEMES <- c("void", "minimal", "classic", "bw", "grey", "gray",
 #' @return ggplot object
 #' @importFrom stats ave
 #' @export
-setGeneric("gg_traj", function(x, color = NULL, linetype = NULL, alpha = NULL, size = 0.6,
+setGeneric("gg_traj", function(x, colour = NULL, linetype = NULL, alpha = NULL, size = 0.6,
                                panel_by = NULL, coord = c("polar", "cartesian"),
-                               geom = c("path"), thin = 1L, ncol = NULL) standardGeneric("gg_traj"))
+                               geom = c("path"), thin = 1L, ncol = NULL,
+                               color = NULL) standardGeneric("gg_traj"))
 
 #' @rdname gg_traj
 #' @export
 setMethod("gg_traj", "Tracks",
-  function(x, color = NULL, linetype = NULL, alpha = NULL, size = 0.6,
+  function(x, colour = NULL, linetype = NULL, alpha = NULL, size = 0.6,
            panel_by = NULL, coord = c("polar", "cartesian"),
-           geom = c("path"), thin = 1L, ncol = NULL) {
+           geom = c("path"), thin = 1L, ncol = NULL, color = NULL) {
+    # S4 dispatch hides the user call from sys.call(-1L), so resolve the
+    # color/colour alias inline rather than via .apply_spelling_aliases().
+    if (!is.null(color)) {
+      if (!is.null(colour))
+        stop("Supply only one of `colour` / `color`, not both.", call. = FALSE)
+      colour <- color
+    }
 
     coord <- match.arg(coord)
     geom  <- match.arg(geom, several.ok = TRUE)
@@ -1882,7 +1978,7 @@ setMethod("gg_traj", "Tracks",
       ggplot2::aes(x = .data[[xc]], y = .data[[yc]], group = .data[[idc]])
     )
 
-    if (!is.null(color)    && color    %in% names(d)) p <- p + ggplot2::aes(color    = .data[[color]])
+    if (!is.null(colour)   && colour   %in% names(d)) p <- p + ggplot2::aes(colour   = .data[[colour]])
     if (!is.null(linetype) && linetype %in% names(d)) p <- p + ggplot2::aes(linetype = .data[[linetype]])
     if (!is.null(alpha)    && alpha    %in% names(d)) p <- p + ggplot2::aes(alpha    = .data[[alpha]])
 
@@ -2118,7 +2214,7 @@ line_circle_intercept_traj <- function(traj, id, range) {
   }
   if (!style$draw_radial_grid) {                # a-la-carte overlays only when no radial grid
     if (rings)
-      g <- g + add_multiple_circles(circle_color = style$guide_col,
+      g <- g + add_multiple_circles(circle_colour = style$guide_col,
                                     circle_size  = style$gs$major$linewidth)
     if (quadrants)
       g <- g + add_quadrant_lines(colour    = style$guide_col,
@@ -2127,7 +2223,7 @@ line_circle_intercept_traj <- function(traj, id, range) {
   # Circumference: fallback boundary only when the grid doesn't already mark it.
   if (isTRUE(circumference) && !style$draw_radial_grid) {
     circ_lw <- if (isTRUE(style$ax$line$present)) style$ax$line$linewidth else 0.5
-    g <- g + add_circ(circle_color = style$col_of(style$ax$line), circle_size = circ_lw)
+    g <- g + add_circ(circle_colour = style$col_of(style$ax$line), circle_size = circ_lw)
   }
   if (isTRUE(ticks))
     g <- g + add_ticks(colour = style$col_of(style$ax$ticks),
@@ -2151,14 +2247,15 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #' @param data Data frame or `Tracks`.
 #' @param geom Geom specification passed to [draw_tracks()].
 #' @param group_col Optional column for grouping aesthetics.
-#' @param colour_col Optional column for colour aesthetics. Mutually exclusive
-#'   with `colour_cycle`.
-#' @param colour_cycle Optional cycling colour specification. Either a positive
+#' @param colour_col,color_col Optional column for colour aesthetics. Mutually
+#'   exclusive with `colour_cycle`. `color_col` is the American-spelling alias.
+#' @param colour_cycle,color_cycle Optional cycling colour specification. Either a positive
 #'   integer `n` (trajectories are assigned colours 1--n, cycling back to 1 after
 #'   every `n` trajectories) or a character vector of colour values (e.g.
 #'   `c("red","blue","green")`). When `panel_by` is set the cycle restarts
 #'   independently within each panel. Mutually exclusive with `colour_col`.
-#' @param track_colour How trajectory paths are coloured. `"trajectory"`
+#'   `color_cycle` is the American-spelling alias.
+#' @param track_colour,track_color How trajectory paths are coloured. `"trajectory"`
 #'   (default) keeps the existing per-track colouring. `"sequence"` colours each
 #'   path by its point's normalized position from start (0) to finish (1) within
 #'   the track, applying a continuous viridis scale with a `"start -> finish"`
@@ -2169,7 +2266,8 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   and `"time"` own the colour aesthetic and so cannot be combined with
 #'   `colour_col`/`colour_cycle`; overlays render in a fixed colour. The
 #'   per-track order is taken from the `Tracks` time column, falling back to row
-#'   order (with a message) when no usable time column is present.
+#'   order (with a message) when no usable time column is present. `track_color`
+#'   is the American-spelling alias.
 #' @param time_units Units for `track_colour = "time"`: `"seconds"` (default),
 #'   `"minutes"`, or `"milliseconds"`. Sets the colourbar title and scale.
 #' @param theme Plot appearance, named for the ggplot2 base themes: one of
@@ -2180,7 +2278,8 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   (circular disc + major/minor crosshairs and rings) for grid-bearing themes,
 #'   and draws nothing for grid-less themes (`void`, `classic`). `"cartesian"`
 #'   keeps the theme's square grid; `"none"` removes all gridlines.
-#' @param grid_colour Optional colour overriding the theme-derived guide colour.
+#' @param grid_colour,grid_color Optional colour overriding the theme-derived
+#'   guide colour. `grid_color` is the American-spelling alias.
 #' @param origin Logical; draw a centre point. Default `FALSE`. When drawn it
 #'   takes the theme's axis ink colour.
 #' @param circumference Logical; draw the unit-circle circumference as a fallback
@@ -2206,13 +2305,14 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   without the track geometry.
 #' @param show_arrow Whether to draw a mean resultant arrow from the centre.
 #' @param arrow_angle_col Column containing angles (radians) to summarise for the arrow.
-#' @param arrow_colour Arrow colour (a single fixed colour). Ignored when
-#'   `arrow_colour_col` is set.
-#' @param arrow_colour_col Optional grouping column. When supplied, one mean
-#'   resultant arrow is drawn per level of this column (within each panel, if
-#'   `panel_by` is also set) and mapped to the colour aesthetic, so the arrow can
-#'   follow a colour grouping independently of faceting. Default `NULL` draws a
-#'   single arrow in `arrow_colour`.
+#' @param arrow_colour,arrow_color Arrow colour (a single fixed colour). Ignored
+#'   when `arrow_colour_col` is set. `arrow_color` is the American-spelling alias.
+#' @param arrow_colour_col,arrow_color_col Optional grouping column. When
+#'   supplied, one mean resultant arrow is drawn per level of this column (within
+#'   each panel, if `panel_by` is also set) and mapped to the colour aesthetic, so
+#'   the arrow can follow a colour grouping independently of faceting. Default
+#'   `NULL` draws a single arrow in `arrow_colour`. `arrow_color_col` is the
+#'   American-spelling alias.
 #' @param arrow_size Arrow linewidth.
 #' @param panel_by NULL, a column name, or a character vector of column names
 #'   to facet by (via [ggplot2::facet_wrap()]). The named column(s) must be
@@ -2241,6 +2341,7 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   Label styling (colour, size, family) follows the chosen `theme`'s `axis.text`.
 #' @param ... Additional arguments forwarded to [draw_tracks()].
 #' @return A `ggplot2` object.
+#' @inheritSection radiatR-package American spellings
 #' @importFrom ggplot2 scale_colour_viridis_c guide_colourbar
 #' @examples
 #' tracks_demo <- simulate_tracks(conditions = data.frame(n_trials = 1L),
@@ -2295,7 +2396,14 @@ function(
   arrow_colour_col = NULL,
   arrow_size = 2,
   display = circ_display(),
-  ...){
+  ...,
+  color_col = NULL,
+  color_cycle = NULL,
+  track_color = NULL,
+  grid_color = NULL,
+  arrow_color = NULL,
+  arrow_color_col = NULL){
+  .apply_spelling_aliases()
   if (is.null(ticks)) {ticks = TRUE}
   if (is.null(legend)) {legend = FALSE}
   if (is.null(axes)) {axes = FALSE}
@@ -2812,7 +2920,8 @@ build_label_data <- function(data, label_col, x_col, y_col, colour_col = NULL, p
 #' @param normalize \code{TRUE} (default) scales wedges by proportion;
 #'   \code{FALSE} uses raw counts.
 #' @param fill Wedge fill colour.  Default \code{"steelblue"}.
-#' @param colour Wedge border colour.  Default \code{NA} (no border).
+#' @param colour,color Wedge border colour.  Default \code{NA} (no border).
+#'   \code{color} is the American-spelling alias.
 #' @param alpha Opacity.  Default \code{0.5}.
 #' @param arc_pts Points used to approximate each wedge arc.  Default \code{20L}.
 #' @param display A `circ_display()` controlling rotation, matching the parent
@@ -2828,7 +2937,8 @@ add_angle_rose <- function(hd, bins = 12L, angle_col = "heading",
                             group_col = NULL, scale = 0.4, inner_r = 0,
                             normalize = TRUE, fill = "steelblue",
                             colour = NA, alpha = 0.5, arc_pts = 20L,
-                            display = NULL, axial = FALSE) {
+                            display = NULL, axial = FALSE, color = NULL) {
+  .apply_spelling_aliases()
   stopifnot(is.data.frame(hd), angle_col %in% names(hd))
   disp  <- display %||% hf_display(hd)
   if (isTRUE(axial)) hd <- .mirror_axial(hd, angle_col)
@@ -2891,7 +3001,8 @@ add_angle_rose <- function(hd, bins = 12L, angle_col = "heading",
 #' @param group_col Column in \code{fit} for faceting; must match the
 #'   \code{panel_by} argument of the parent \code{radiate()} call.
 #' @param n_pts Angular evaluation points.  Default \code{360L}.
-#' @param colour Outline colour.  Default \code{"steelblue"}.
+#' @param colour,color Outline colour.  Default \code{"steelblue"}. \code{color}
+#'   is the American-spelling alias.
 #' @param linewidth Outline width.  Default \code{0.8}.
 #' @param fill Fill colour.  Default \code{NA} (outline only).
 #' @param alpha Opacity.  Default \code{0.8}.
@@ -2909,7 +3020,8 @@ add_vonmises_density <- function(fit, scale = 0.4, inner_r = 0,
                                   group_col = NULL, n_pts = 360L,
                                   colour = "steelblue", linewidth = 0.8,
                                   fill = NA, alpha = 0.8, display = NULL,
-                                  axial = FALSE) {
+                                  axial = FALSE, color = NULL) {
+  .apply_spelling_aliases()
   stopifnot(is.data.frame(fit))
   miss <- setdiff(c("mu", "kappa"), names(fit))
   if (length(miss))
@@ -2991,7 +3103,8 @@ add_vonmises_density <- function(fit, scale = 0.4, inner_r = 0,
 #' @param n_pts Number of evaluation points.  Default \code{512L}.
 #' @param kernel Kernel name passed to \code{density.circular}.  Default
 #'   \code{"vonmises"} (the kernel shape, not a model assumption).
-#' @param colour Outline colour.  Default \code{"tomato"}.
+#' @param colour,color Outline colour.  Default \code{"tomato"}. \code{color} is
+#'   the American-spelling alias.
 #' @param linewidth Outline width.  Default \code{0.8}.
 #' @param fill Fill colour.  Default \code{NA} (outline only).
 #' @param alpha Opacity.  Default \code{0.8}.
@@ -3008,7 +3121,8 @@ add_circular_kde <- function(hd, angle_col = "heading", group_col = NULL,
                               n_pts = 512L, kernel = "vonmises",
                               colour = "tomato", linewidth = 0.8,
                               fill = NA, alpha = 0.8, display = NULL,
-                              axial = FALSE) {
+                              axial = FALSE, color = NULL) {
+  .apply_spelling_aliases()
   stopifnot(is.data.frame(hd))
   if (!angle_col %in% names(hd))
     stop("add_circular_kde: column '", angle_col, "' not found")
@@ -3096,7 +3210,8 @@ add_circular_kde <- function(hd, angle_col = "heading", group_col = NULL,
 #' @param group_col Column for faceting; must match \code{panel_by} in the
 #'   parent \code{radiate()} call.
 #' @param n_pts Angular evaluation points.  Default \code{360L}.
-#' @param colour Outline colour.  Default \code{"darkorange"}.
+#' @param colour,color Outline colour.  Default \code{"darkorange"}. \code{color}
+#'   is the American-spelling alias.
 #' @param linewidth Outline width.  Default \code{0.8}.
 #' @param fill Fill colour.  Default \code{NA} (outline only).
 #' @param alpha Opacity.  Default \code{0.8}.
@@ -3114,7 +3229,8 @@ add_wrappedcauchy_density <- function(fit, scale = 0.4, inner_r = 0,
                                        group_col = NULL, n_pts = 360L,
                                        colour = "darkorange", linewidth = 0.8,
                                        fill = NA, alpha = 0.8, display = NULL,
-                                       axial = FALSE) {
+                                       axial = FALSE, color = NULL) {
+  .apply_spelling_aliases()
   stopifnot(is.data.frame(fit))
   miss <- setdiff(c("mu", "rho"), names(fit))
   if (length(miss))
@@ -3207,15 +3323,16 @@ add_wrappedcauchy_density <- function(fit, scale = 0.4, inner_r = 0,
 #' @param per_group Logical.  When \code{group_col} is set but the plot is not
 #'   faceted, draw one circle per group (\code{TRUE}) or a single conservative
 #'   circle (\code{FALSE}, default).  Ignored when faceting (always per panel).
-#' @param colour Circle colour.  Default \code{"firebrick"}.  When
+#' @param colour,color Circle colour.  Default \code{"firebrick"}.  When
 #'   \code{per_group = TRUE} and \code{colour_by_group = TRUE} this is overridden
-#'   by the colour scale.
-#' @param colour_by_group Logical.  When \code{per_group = TRUE}, map each
-#'   circle's colour to its group (\code{TRUE}, default) or draw every circle in
-#'   the fixed \code{colour} while still attaching the group column so the
-#'   circles facet (\code{FALSE}).  Use \code{FALSE} to keep per-panel circles a
-#'   single colour without injecting the grouping levels into the parent plot's
-#'   colour scale.  Ignored unless \code{per_group = TRUE}.
+#'   by the colour scale.  \code{color} is the American-spelling alias.
+#' @param colour_by_group,color_by_group Logical.  When \code{per_group = TRUE},
+#'   map each circle's colour to its group (\code{TRUE}, default) or draw every
+#'   circle in the fixed \code{colour} while still attaching the group column so
+#'   the circles facet (\code{FALSE}).  Use \code{FALSE} to keep per-panel
+#'   circles a single colour without injecting the grouping levels into the
+#'   parent plot's colour scale.  Ignored unless \code{per_group = TRUE}.
+#'   \code{color_by_group} is the American-spelling alias.
 #' @param linetype Line type.  Default \code{"dashed"}.
 #' @param linewidth Line width.  Default \code{0.6}.
 #' @param n_pts Points used to approximate each circle.  Default \code{200L}.
@@ -3228,7 +3345,9 @@ add_critical_r <- function(hd, alpha = 0.05,
                             per_group = FALSE, colour = "firebrick",
                             colour_by_group = TRUE,
                             linetype = "dashed", linewidth = 0.6,
-                            n_pts = 200L) {
+                            n_pts = 200L, color = NULL,
+                            color_by_group = NULL) {
+  .apply_spelling_aliases()
   test <- match.arg(test)
   stopifnot(is.data.frame(hd), alpha > 0, alpha < 1)
   if (!angle_col %in% names(hd))
@@ -3346,7 +3465,8 @@ add_critical_r <- function(hd, alpha = 0.05,
 #'   faceting, where each panel gets its own boundary.
 #' @param show_region Logical; shade the rejection segment.  Default
 #'   \code{FALSE}.
-#' @param colour Line colour.  Default \code{"firebrick"}.
+#' @param colour,color Line colour.  Default \code{"firebrick"}. \code{color} is
+#'   the American-spelling alias.
 #' @param linetype Line type.  Default \code{"dashed"}.
 #' @param linewidth Line width.  Default \code{0.6}.
 #' @param region_fill Fill colour for the rejection region.  Default
@@ -3364,7 +3484,9 @@ add_critical_v_line <- function(hd, mu0, alpha = 0.05,
                                  per_group = FALSE, show_region = FALSE,
                                  colour = "firebrick", linetype = "dashed",
                                  linewidth = 0.6, region_fill = "firebrick",
-                                 region_alpha = 0.08, axial = FALSE, n_pts = 100L) {
+                                 region_alpha = 0.08, axial = FALSE, n_pts = 100L,
+                                 color = NULL) {
+  .apply_spelling_aliases()
   stopifnot(is.data.frame(hd), alpha > 0, alpha < 1)
   if (missing(mu0)) stop("add_critical_v_line: 'mu0' (hypothesised direction) is required")
   if (!angle_col %in% names(hd))

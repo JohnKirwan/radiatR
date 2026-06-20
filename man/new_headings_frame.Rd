@@ -9,7 +9,8 @@ new_headings_frame(
   display = circ_display(),
   heading_col = "heading",
   colour_col = NULL,
-  coords = "absolute"
+  coords = "absolute",
+  color_col = NULL
 )
 }
 \arguments{
@@ -20,7 +21,8 @@ unit-circle radians.}
 
 \item{heading_col}{Name of the heading column. Default `"heading"`.}
 
-\item{colour_col}{Optional grouping/colour column name, or `NULL`.}
+\item{colour_col, color_col}{Optional grouping/colour column name, or `NULL`.
+`color_col` is the American-spelling alias.}
 
 \item{coords}{`"absolute"` or `"relative"`.}
 }

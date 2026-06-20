@@ -11,7 +11,8 @@ compute_circ_interval(
   stat = c("bootstrap_ci", "sd"),
   boot_reps = 1000L,
   boot_alpha = 0.05,
-  axial = FALSE
+  axial = FALSE,
+  color_col = NULL
 )
 }
 \arguments{
@@ -19,8 +20,9 @@ compute_circ_interval(
 
 \item{heading_col}{Name of the heading column (radians). Default `"heading"`.}
 
-\item{colour_col}{Optional grouping column. When set, one row is returned per
-group and the column is preserved in the output.}
+\item{colour_col, color_col}{Optional grouping column. When set, one row is
+returned per group and the column is preserved in the output. `color_col` is
+the American-spelling alias.}
 
 \item{stat}{Statistic: `"bootstrap_ci"` (default) or `"sd"`.}
 

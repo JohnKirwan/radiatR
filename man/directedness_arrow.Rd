@@ -9,7 +9,8 @@ directedness_arrow(
   angle_col,
   arrow_head_cm = 0.2,
   colour = "gray",
-  size = 2
+  size = 2,
+  color = NULL
 )
 }
 \arguments{
@@ -19,7 +20,8 @@ directedness_arrow(
 
 \item{arrow_head_cm}{Length of the arrowhead in centimetres.}
 
-\item{colour}{Colour of the arrow.}
+\item{colour, color}{Colour of the arrow. `color` is the American-spelling
+alias.}
 
 \item{size}{Width of the arrow segment (applied to the geom's `linewidth`).}
 }

@@ -54,7 +54,13 @@ radiate(data, ...)
   arrow_colour_col = NULL,
   arrow_size = 2,
   display = circ_display(),
-  ...
+  ...,
+  color_col = NULL,
+  color_cycle = NULL,
+  track_color = NULL,
+  grid_color = NULL,
+  arrow_color = NULL,
+  arrow_color_col = NULL
 )
 
 \method{radiate}{headings_frame}(
@@ -100,16 +106,17 @@ radiate(data, ...)
 
 \item{group_col}{Optional column for grouping aesthetics.}
 
-\item{colour_col}{Optional column for colour aesthetics. Mutually exclusive
-with `colour_cycle`.}
+\item{colour_col, color_col}{Optional column for colour aesthetics. Mutually
+exclusive with `colour_cycle`. `color_col` is the American-spelling alias.}
 
-\item{colour_cycle}{Optional cycling colour specification. Either a positive
+\item{colour_cycle, color_cycle}{Optional cycling colour specification. Either a positive
 integer `n` (trajectories are assigned colours 1--n, cycling back to 1 after
 every `n` trajectories) or a character vector of colour values (e.g.
 `c("red","blue","green")`). When `panel_by` is set the cycle restarts
-independently within each panel. Mutually exclusive with `colour_col`.}
+independently within each panel. Mutually exclusive with `colour_col`.
+`color_cycle` is the American-spelling alias.}
 
-\item{track_colour}{How trajectory paths are coloured. `"trajectory"`
+\item{track_colour, track_color}{How trajectory paths are coloured. `"trajectory"`
 (default) keeps the existing per-track colouring. `"sequence"` colours each
 path by its point's normalized position from start (0) to finish (1) within
 the track, applying a continuous viridis scale with a `"start -> finish"`
@@ -120,7 +127,8 @@ with an `"elapsed (s)"` colourbar; numeric (frame) time requires a
 and `"time"` own the colour aesthetic and so cannot be combined with
 `colour_col`/`colour_cycle`; overlays render in a fixed colour. The
 per-track order is taken from the `Tracks` time column, falling back to row
-order (with a message) when no usable time column is present.}
+order (with a message) when no usable time column is present. `track_color`
+is the American-spelling alias.}
 
 \item{time_units}{Units for `track_colour = "time"`: `"seconds"` (default),
 `"minutes"`, or `"milliseconds"`. Sets the colourbar title and scale.}
@@ -171,7 +179,8 @@ replaces the theme's Cartesian grid with theme-styled radial guides
 and draws nothing for grid-less themes (`void`, `classic`). `"cartesian"`
 keeps the theme's square grid; `"none"` removes all gridlines.}
 
-\item{grid_colour}{Optional colour overriding the theme-derived guide colour.}
+\item{grid_colour, grid_color}{Optional colour overriding the theme-derived
+guide colour. `grid_color` is the American-spelling alias.}
 
 \item{origin}{Logical; draw a centre point. Default `FALSE`. When drawn it
 takes the theme's axis ink colour.}
@@ -200,14 +209,15 @@ without the track geometry.}
 
 \item{arrow_angle_col}{Column containing angles (radians) to summarise for the arrow.}
 
-\item{arrow_colour}{Arrow colour (a single fixed colour). Ignored when
-`arrow_colour_col` is set.}
+\item{arrow_colour, arrow_color}{Arrow colour (a single fixed colour). Ignored
+when `arrow_colour_col` is set. `arrow_color` is the American-spelling alias.}
 
-\item{arrow_colour_col}{Optional grouping column. When supplied, one mean
-resultant arrow is drawn per level of this column (within each panel, if
-`panel_by` is also set) and mapped to the colour aesthetic, so the arrow can
-follow a colour grouping independently of faceting. Default `NULL` draws a
-single arrow in `arrow_colour`.}
+\item{arrow_colour_col, arrow_color_col}{Optional grouping column. When
+supplied, one mean resultant arrow is drawn per level of this column (within
+each panel, if `panel_by` is also set) and mapped to the colour aesthetic, so
+the arrow can follow a colour grouping independently of faceting. Default
+`NULL` draws a single arrow in `arrow_colour`. `arrow_color_col` is the
+American-spelling alias.}
 
 \item{arrow_size}{Arrow linewidth.}
 
@@ -235,6 +245,14 @@ Accepts either a precomputed data frame of polar/cartesian coordinates or a
 `Tracks`. When a `Tracks` is supplied, column mappings are inferred from
 the object and handed off to the plotting helpers.
 }
+\section{American spellings}{
+
+Every `colour...` argument and the `assign_colour_*` / `cycle_colours` /
+`hf_colour_col` functions accept the American `color...` spelling as an alias
+(e.g. `color`, `color_col`, `track_color`). British spelling is canonical;
+supplying both spellings of a pair is an error.
+}
+
 \examples{
 tracks_demo <- simulate_tracks(conditions = data.frame(n_trials = 1L),
                                n_points = 200, seed = 1)

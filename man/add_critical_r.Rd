@@ -15,7 +15,9 @@ add_critical_r(
   colour_by_group = TRUE,
   linetype = "dashed",
   linewidth = 0.6,
-  n_pts = 200L
+  n_pts = 200L,
+  color = NULL,
+  color_by_group = NULL
 )
 }
 \arguments{
@@ -33,16 +35,17 @@ add_critical_r(
 faceted, draw one circle per group (\code{TRUE}) or a single conservative
 circle (\code{FALSE}, default).  Ignored when faceting (always per panel).}
 
-\item{colour}{Circle colour.  Default \code{"firebrick"}.  When
+\item{colour, color}{Circle colour.  Default \code{"firebrick"}.  When
 \code{per_group = TRUE} and \code{colour_by_group = TRUE} this is overridden
-by the colour scale.}
+by the colour scale.  \code{color} is the American-spelling alias.}
 
-\item{colour_by_group}{Logical.  When \code{per_group = TRUE}, map each
-circle's colour to its group (\code{TRUE}, default) or draw every circle in
-the fixed \code{colour} while still attaching the group column so the
-circles facet (\code{FALSE}).  Use \code{FALSE} to keep per-panel circles a
-single colour without injecting the grouping levels into the parent plot's
-colour scale.  Ignored unless \code{per_group = TRUE}.}
+\item{colour_by_group, color_by_group}{Logical.  When \code{per_group = TRUE},
+map each circle's colour to its group (\code{TRUE}, default) or draw every
+circle in the fixed \code{colour} while still attaching the group column so
+the circles facet (\code{FALSE}).  Use \code{FALSE} to keep per-panel
+circles a single colour without injecting the grouping levels into the
+parent plot's colour scale.  Ignored unless \code{per_group = TRUE}.
+\code{color_by_group} is the American-spelling alias.}
 
 \item{linetype}{Line type.  Default \code{"dashed"}.}
 

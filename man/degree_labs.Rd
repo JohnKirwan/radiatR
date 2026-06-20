@@ -9,14 +9,16 @@ degree_labs(
   colour = "black",
   units = NULL,
   size = 3.88,
-  family = ""
+  family = "",
+  color = NULL
 )
 }
 \arguments{
 \item{display}{A [`circ_display`] object. Default `circ_display()`. Supplies
 the label units when `units` is `NULL`.}
 
-\item{colour}{Label colour. Default `"black"`.}
+\item{colour, color}{Label colour. Default `"black"`. `color` is the
+American-spelling alias.}
 
 \item{units}{`"degrees"` (e.g. `45°`) or `"radians"` (e.g. `π/4`). When
 `NULL` (default) the units are taken from `display`.}

@@ -6,15 +6,17 @@
 \usage{
 add_multiple_circles(
   radii = c(0.25, 0.5, 0.75),
-  circle_color = "grey20",
+  circle_colour = "grey20",
   circle_alpha = 1,
-  circle_size = 0.5
+  circle_size = 0.5,
+  circle_color = NULL
 )
 }
 \arguments{
 \item{radii}{A vector of radii for the concentric circles (default is c(0.25, 0.5, 0.75))}
 
-\item{circle_color}{The color of the circles (default is "grey40")}
+\item{circle_colour, circle_color}{The colour of the circles (default is
+"grey20"). `circle_color` is the American-spelling alias.}
 
 \item{circle_alpha}{The transparency of the circles (default is 1)}
 

@@ -7,7 +7,7 @@
 \usage{
 gg_traj(
   x,
-  color = NULL,
+  colour = NULL,
   linetype = NULL,
   alpha = NULL,
   size = 0.6,
@@ -15,12 +15,13 @@ gg_traj(
   coord = c("polar", "cartesian"),
   geom = c("path"),
   thin = 1L,
-  ncol = NULL
+  ncol = NULL,
+  color = NULL
 )
 
 \S4method{gg_traj}{Tracks}(
   x,
-  color = NULL,
+  colour = NULL,
   linetype = NULL,
   alpha = NULL,
   size = 0.6,
@@ -28,13 +29,15 @@ gg_traj(
   coord = c("polar", "cartesian"),
   geom = c("path"),
   thin = 1L,
-  ncol = NULL
+  ncol = NULL,
+  color = NULL
 )
 }
 \arguments{
 \item{x}{Tracks}
 
-\item{color, linetype, alpha, size}{Optional column names (strings) mapped to aesthetics}
+\item{colour, color, linetype, alpha, size}{Optional column names (strings) mapped
+to aesthetics. `color` is the American-spelling alias for `colour`.}
 
 \item{panel_by}{NULL, a single string, or a character vector of columns to facet by}
 

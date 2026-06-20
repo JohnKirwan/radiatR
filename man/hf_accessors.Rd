@@ -5,6 +5,7 @@
 \alias{hf_display}
 \alias{hf_heading_col}
 \alias{hf_colour_col}
+\alias{hf_color_col}
 \alias{hf_coords}
 \title{Read the canonical attributes of a heading frame}
 \usage{
@@ -13,6 +14,8 @@ hf_display(x)
 hf_heading_col(x)
 
 hf_colour_col(x)
+
+hf_color_col(x)
 
 hf_coords(x)
 }

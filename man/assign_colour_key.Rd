@@ -2,9 +2,12 @@
 % Please edit documentation in R/circular_plotting.R
 \name{assign_colour_key}
 \alias{assign_colour_key}
+\alias{assign_color_key}
 \title{Assign a shared colour-key column to a Tracks or data frame}
 \usage{
 assign_colour_key(x, by, n = 20, reference = NULL, into = ".colour")
+
+assign_color_key(x, by, n = 20, reference = NULL, into = ".colour")
 }
 \arguments{
 \item{x}{A `Tracks` or data frame to annotate.}
@@ -37,6 +40,14 @@ order, so a given key value gets the same colour in both -- e.g. tracks and
 their heading markers. If `by` names a column absent from `x` but present on
 `reference`, it is borrowed by matching trajectory id.
 }
+\section{American spellings}{
+
+Every `colour...` argument and the `assign_colour_*` / `cycle_colours` /
+`hf_colour_col` functions accept the American `color...` spelling as an alias
+(e.g. `color`, `color_col`, `track_color`). British spelling is canonical;
+supplying both spellings of a pair is an error.
+}
+
 \examples{
 ts <- simulate_tracks(n_points = 10, output = "trajset")
 ts <- assign_colour_key(ts, by = "trajectory")

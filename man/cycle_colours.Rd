@@ -2,9 +2,12 @@
 % Please edit documentation in R/circular_plotting.R
 \name{cycle_colours}
 \alias{cycle_colours}
+\alias{cycle_colors}
 \title{Cycle a bounded set of colour indices over the values of a key}
 \usage{
 cycle_colours(x, n, levels = NULL)
+
+cycle_colors(x, n, levels = NULL)
 }
 \arguments{
 \item{x}{A vector of key values (e.g. trajectory ids or a grouping column).}

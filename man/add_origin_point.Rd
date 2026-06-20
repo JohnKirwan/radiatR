@@ -4,10 +4,11 @@
 \alias{add_origin_point}
 \title{Mark the centre of a radial plot}
 \usage{
-add_origin_point(colour = "grey50", size = 1.5, shape = 16, ...)
+add_origin_point(colour = "grey50", size = 1.5, shape = 16, ..., color = NULL)
 }
 \arguments{
-\item{colour}{Point colour. Default `"grey50"`.}
+\item{colour, color}{Point colour. Default `"grey50"`. `color` is the
+American-spelling alias.}
 
 \item{size}{Point size. Default `1.5`.}
 

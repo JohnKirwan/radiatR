@@ -4,10 +4,16 @@
 \alias{add_quadrant_lines}
 \title{Add quadrant lines to a radial plot}
 \usage{
-add_quadrant_lines(colour = "grey60", linewidth = 0.5, linetype = "dashed")
+add_quadrant_lines(
+  colour = "grey60",
+  linewidth = 0.5,
+  linetype = "dashed",
+  color = NULL
+)
 }
 \arguments{
-\item{colour}{Line colour. Default `"grey60"`.}
+\item{colour, color}{Line colour. Default `"grey60"`. `color` is the
+American-spelling alias.}
 
 \item{linewidth}{Line width. Default `0.5`.}
 

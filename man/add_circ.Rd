@@ -6,18 +6,21 @@
 \usage{
 add_circ(
   radius = 1,
-  circle_color = "grey60",
+  circle_colour = "grey60",
   circle_alpha = 1,
   circle_size = 1,
   linetype = "solid",
   colour = NULL,
-  linewidth = NULL
+  linewidth = NULL,
+  circle_color = NULL,
+  color = NULL
 )
 }
 \arguments{
 \item{radius}{Radius of the circle, expressed in the same units as the plot coordinates.}
 
-\item{circle_color}{Line colour for the circle.}
+\item{circle_colour, circle_color}{Line colour for the circle. `circle_color`
+is the American-spelling alias.}
 
 \item{circle_alpha}{Alpha transparency for the circle.}
 
@@ -25,8 +28,8 @@ add_circ(
 
 \item{linetype}{Line type for the circle.}
 
-\item{colour}{ggplot-style alias for `circle_color`. If supplied, takes
-precedence over `circle_color`.}
+\item{colour, color}{ggplot-style alias for `circle_colour`. If supplied, takes
+precedence over `circle_colour`. `color` is the American-spelling alias.}
 
 \item{linewidth}{ggplot-style alias for `circle_size`. If supplied, takes
 precedence over `circle_size`.}

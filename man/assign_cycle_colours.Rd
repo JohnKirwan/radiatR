@@ -2,6 +2,7 @@
 % Please edit documentation in R/circular_plotting.R
 \name{assign_cycle_colours}
 \alias{assign_cycle_colours}
+\alias{assign_cycle_colors}
 \title{Assign cycling colour indices to trajectories}
 \usage{
 assign_cycle_colours(
@@ -11,6 +12,8 @@ assign_cycle_colours(
   panel_col = NULL,
   out_col = "cycle_colour"
 )
+
+assign_cycle_colors(data, id_col, n, panel_col = NULL, out_col = "cycle_colour")
 }
 \arguments{
 \item{data}{A data frame containing at least `id_col` and, if supplied,

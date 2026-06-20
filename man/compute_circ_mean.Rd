@@ -8,7 +8,8 @@ compute_circ_mean(
   headings_df,
   heading_col = "heading",
   colour_col = NULL,
-  axial = FALSE
+  axial = FALSE,
+  color_col = NULL
 )
 }
 \arguments{
@@ -19,8 +20,9 @@ compute_circ_mean(
 \item{heading_col}{Name of the column containing heading angles. Default
 `"heading"`.}
 
-\item{colour_col}{Optional. Name of a column to group by. One row is
-returned per group. The same column maps to colour in [add_circ_mean()].}
+\item{colour_col, color_col}{Optional. Name of a column to group by. One row is
+returned per group. The same column maps to colour in [add_circ_mean()].
+`color_col` is the American-spelling alias.}
 
 \item{axial}{Logical. Treat the angles as axial (bidirectional, mod-pi)
 data: `mean_dir` is the axis in `[0, pi)` and `resultant_R` is the axial

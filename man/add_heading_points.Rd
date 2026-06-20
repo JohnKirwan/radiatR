@@ -10,20 +10,24 @@ add_heading_points(
   colour = NULL,
   size = 2,
   alpha = 1,
-  axial = FALSE
+  axial = FALSE,
+  color_col = NULL,
+  color = NULL
 )
 }
 \arguments{
 \item{headings_df}{Data frame with a `heading` column (angles in radians).}
 
-\item{colour_col}{Name of a column in `headings_df` to map to the colour
-aesthetic. When `NULL` (default), the value of
+\item{colour_col, color_col}{Name of a column in `headings_df` to map to the
+colour aesthetic. When `NULL` (default), the value of
 `attr(headings_df, "colour_col")` is used if set -- so heading markers
 automatically inherit the colour mapping from the associated trajectory
-plot when that attribute is present. Ignored when `colour` is supplied.}
+plot when that attribute is present. Ignored when `colour` is supplied.
+`color_col` is the American-spelling alias.}
 
-\item{colour}{Fixed colour string. Overrides `colour_col` when supplied;
-when `NULL` and no `colour_col` resolves, defaults to `"black"`.}
+\item{colour, color}{Fixed colour string. Overrides `colour_col` when supplied;
+when `NULL` and no `colour_col` resolves, defaults to `"black"`. `color` is
+the American-spelling alias.}
 
 \item{size}{Point size passed to `geom_point`.}
 
@@ -41,6 +45,14 @@ headings data frame, placing one marker per trajectory on the unit-circle
 boundary at the derived heading direction. The data frame is normally the
 output of [derive_headings()].
 }
+\section{American spellings}{
+
+Every `colour...` argument and the `assign_colour_*` / `cycle_colours` /
+`hf_colour_col` functions accept the American `color...` spelling as an alias
+(e.g. `color`, `color_col`, `track_color`). British spelling is canonical;
+supplying both spellings of a pair is an error.
+}
+
 \examples{
 library(ggplot2)
 # headings from a Tracks via derive_headings(ts, rule = "crossing", ...)
