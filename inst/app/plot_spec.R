@@ -107,6 +107,7 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
     colour    = list(by = if (by_traj) "trajectory" else cb,
                      cap = SPEC_CYCLE_N, legend = legend),
     theme        = inputs$plot_theme %||% "void",
+    track_colour = inputs$track_colour %||% "trajectory",
     angle_labels = inputs$angle_labels %||% "degrees",
     display      = list(zero = 0),
     heading_display = inputs$heading_display %||% "points",
@@ -133,6 +134,10 @@ spec_to_plot <- function(spec, ts, hd) {
   by   <- spec$colour$by
   cap  <- spec$colour$cap
   headings_mode <- identical(spec$mode, "headings")
+  # Sequence track colouring owns the continuous colour scale, so it cannot
+  # share it with the discrete `.colour` key or contest it with coloured
+  # heading overlays. Gate it off in headings mode (no tracks to colour).
+  seq_track <- identical(spec$track_colour, "sequence") && !headings_mode
 
   if (headings_mode) {
     # No group column -> "trajectory" sentinel means a single colour. An uploaded
@@ -161,7 +166,8 @@ spec_to_plot <- function(spec, ts, hd) {
     p <- radiate(
       ts,
       group_col    = spec$group_col,
-      colour_col   = ".colour",
+      colour_col   = if (seq_track) NULL else ".colour",
+      track_colour = if (seq_track) "sequence" else "trajectory",
       panel_by     = spec$facet_by,
       colour_cycle = NULL,
       legend       = spec$colour$legend,
@@ -204,14 +210,20 @@ spec_to_plot <- function(spec, ts, hd) {
   }
 
   if (!identical(spec$heading_display, "none")) {
+    # In sequence track mode the continuous scale owns the colour aesthetic, so
+    # heading overlays render in a fixed colour rather than the discrete key.
+    pt_colour_col <- if (seq_track) NULL else ".colour"
+    pt_colour     <- if (seq_track) "grey20" else NULL
     if (identical(spec$heading_display, "stacked")) {
       hd$heading <- bin_angles(hd$heading, width = SPEC_STACK_BIN_WIDTH)
-      p <- p + add_stacked_headings(hd, colour_col = ".colour", group = spec$facet_by,
+      p <- p + add_stacked_headings(hd, colour_col = pt_colour_col,
+                 colour = pt_colour, group = spec$facet_by,
                  step = SPEC_STACK_STEP, start_sep = SPEC_STACK_START_SEP,
                  size = SPEC_MARKER_SIZE, alpha = SPEC_MARKER_ALPHA,
                  axial = isTRUE(spec$axial))
     } else {
-      p <- p + add_heading_points(hd, colour_col = ".colour",
+      p <- p + add_heading_points(hd, colour_col = pt_colour_col,
+                 colour = pt_colour,
                  size = SPEC_MARKER_SIZE, alpha = SPEC_MARKER_ALPHA,
                  axial = isTRUE(spec$axial))
     }
@@ -269,6 +281,10 @@ spec_to_code <- function(spec) {
   add("")
 
   headings_mode <- identical(spec$mode, "headings")
+  # Sequence track colouring owns the continuous colour scale (see spec_to_plot);
+  # emit it on the radiate() call and render heading overlays in a fixed colour.
+  seq_track <- identical(spec$track_colour, "sequence") && !headings_mode
+  tc <- if (seq_track) ", track_colour = \"sequence\"" else ""
   # Headings mode always has a headings frame; trajectory mode has one unless the
   # heading rule is "none". Used to gate both the trajectory-branch derive_headings
   # emission and the shared overlay/tail emission below.
@@ -361,8 +377,9 @@ spec_to_code <- function(spec) {
         ", angle_labels = ", q(spec$angle_labels), qr,
         ", display = disp)")
   } else {
+    cc <- if (seq_track) ", colour_col = NULL" else ", colour_col = \".colour\""
     add("radiate(ts, group_col = ", q(spec$group_col),
-        ", colour_col = \".colour\"", pby,
+        cc, tc, pby,
         ", legend = ", if (spec$colour$legend) "TRUE" else "FALSE",
         ", theme = ", q(spec$theme),
         ", angle_labels = ", q(spec$angle_labels), qr,
@@ -372,14 +389,17 @@ spec_to_code <- function(spec) {
   tail <- character(0)
   if (spec$colour$legend)
     tail <- c(tail, paste0("labs(colour = ", q(spec$colour$by), ")"))
+  # In sequence track mode the heading overlays drop the discrete colour key and
+  # render in a fixed grey (mirrors spec_to_plot's pt_colour_col/pt_colour).
+  pt_cc <- if (seq_track) "colour = \"grey20\"" else "colour_col = \".colour\""
   if (has_hd && identical(spec$heading_display, "stacked")) {
     grp <- if (is.null(spec$facet_by)) "" else paste0(", group = ", q(spec$facet_by))
-    tail <- c(tail, paste0("add_stacked_headings(hd, colour_col = \".colour\"", grp,
+    tail <- c(tail, paste0("add_stacked_headings(hd, ", pt_cc, grp,
                            ", step = ", SPEC_STACK_STEP, ", start_sep = ", SPEC_STACK_START_SEP,
                            ", size = ", SPEC_MARKER_SIZE, ", alpha = ", SPEC_MARKER_ALPHA, ax, ")"))
   }
   if (has_hd && identical(spec$heading_display, "points"))
-    tail <- c(tail, paste0("add_heading_points(hd, colour_col = \".colour\", size = 2.5, alpha = 0.8", ax, ")"))
+    tail <- c(tail, paste0("add_heading_points(hd, ", pt_cc, ", size = 2.5, alpha = 0.8", ax, ")"))
   if (has_hd && spec$show$arrow)
     tail <- c(tail, paste0("add_circ_mean(arrow_df, colour = \"black\"", ax, ")"))
   if (has_hd && spec$show$vectors && identical(spec$headings$rule, "crossing"))

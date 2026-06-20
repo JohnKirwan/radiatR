@@ -43,6 +43,7 @@ roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
                            length(unique(as.data.frame(ts)[[by]])) <= 20),
     theme = "void", angle_labels = "degrees", display = list(zero = 0),
     axial = axial,
+    track_colour = "trajectory",
     heading_display = heading_display,
     subtitle = subtitle, caption = caption,
     show = list(tracks = TRUE, arrow = arrow, vectors = vectors,
@@ -360,6 +361,16 @@ test_that("circular boxplot overlay round-trips (directional)", {
   expect_true(any(vapply(live$layers, function(l) inherits(l$geom, "GeomPolygon"), logical(1))))
   code <- spec_to_code(rt$spec)
   expect_match(code, "add_circular_boxplot(hd)", fixed = TRUE)
+  suppressWarnings(expect_roundtrip(rt))
+})
+
+test_that("track_colour = 'sequence' round-trips and emits the radiate arg", {
+  rt <- roundtrip_spec("none", by = "trajectory", facet = NULL,
+                       arrow = FALSE, vectors = FALSE)
+  rt$spec$track_colour <- "sequence"
+  rt$spec$show$tracks <- TRUE
+  code <- spec_to_code(rt$spec)
+  expect_match(code, 'track_colour = "sequence"', fixed = TRUE)
   suppressWarnings(expect_roundtrip(rt))
 })
 
