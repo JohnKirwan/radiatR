@@ -179,6 +179,37 @@ radiate(ts,
 > tracking pipeline (e.g. your tracker’s own calibration, or OpenCV
 > `undistort`) before importing.
 
+### Colour tracks by position
+
+`track_colour = "sequence"` shades each trajectory along its own length,
+so the direction of travel is visible at a glance — a per-track gradient
+from start (dark) to finish (bright), with a continuous “start → finish”
+colourbar:
+
+``` r
+
+# colour each track from start (dark) to finish (bright)
+radiate(cpunctatus, show_tracks = TRUE, track_colour = "sequence")
+```
+
+### Representing time
+
+Attach a capture **frame rate** to a `Tracks` object and the time aspect
+of frame-indexed tracks can be reported in real seconds and shown on the
+plot.
+[`track_duration()`](https://johnkirwan.github.io/radiatR/reference/track_duration.md)
+gives the elapsed seconds per trajectory, and `track_colour = "time"`
+colours each path by elapsed time (POSIXct time works without a frame
+rate):
+
+``` r
+
+# attach a capture rate, then represent the time aspect
+ts <- set_frame_rate(cpunctatus, fps = 30)
+track_duration(ts)                                       # seconds per track
+radiate(ts, show_tracks = TRUE, track_colour = "time")   # colour by elapsed time
+```
+
 ### Circular boxplot
 
 A Tukey-like boxplot for circular data (Buttarazzi, Pandolfo & Porzio,

@@ -67,6 +67,8 @@ the object and handed off to the plotting helpers.</p>
 <span>  group_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  colour_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  colour_cycle <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  track_colour <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"trajectory"</span>, <span class="st">"sequence"</span>, <span class="st">"time"</span><span class="op">)</span>,</span>
+<span>  time_units <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"seconds"</span>, <span class="st">"minutes"</span>, <span class="st">"milliseconds"</span><span class="op">)</span>,</span>
 <span>  panel_by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  strip_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -174,6 +176,26 @@ integer `n` (trajectories are assigned colours 1–n, cycling back to 1 after
 every `n` trajectories) or a character vector of colour values (e.g.
 `c("red","blue","green")`). When `panel_by` is set the cycle restarts
 independently within each panel. Mutually exclusive with `colour_col`.</p></dd>
+
+
+<dt id="arg-track-colour">track_colour<a class="anchor" aria-label="anchor" href="#arg-track-colour"></a></dt>
+<dd><p>How trajectory paths are coloured. `"trajectory"`
+(default) keeps the existing per-track colouring. `"sequence"` colours each
+path by its point's normalized position from start (0) to finish (1) within
+the track, applying a continuous viridis scale with a `"start -&gt; finish"`
+colourbar. `"time"` colours each path by real elapsed time from its own
+track's start (see [elapsed_seconds()]), applying a continuous viridis scale
+with an `"elapsed (s)"` colourbar; numeric (frame) time requires a
+[frame_rate()] (set one with `set_frame_rate(ts, fps)`). Both `"sequence"`
+and `"time"` own the colour aesthetic and so cannot be combined with
+`colour_col`/`colour_cycle`; overlays render in a fixed colour. The
+per-track order is taken from the `Tracks` time column, falling back to row
+order (with a message) when no usable time column is present.</p></dd>
+
+
+<dt id="arg-time-units">time_units<a class="anchor" aria-label="anchor" href="#arg-time-units"></a></dt>
+<dd><p>Units for `track_colour = "time"`: `"seconds"` (default),
+`"minutes"`, or `"milliseconds"`. Sets the colourbar title and scale.</p></dd>
 
 
 <dt id="arg-panel-by">panel_by<a class="anchor" aria-label="anchor" href="#arg-panel-by"></a></dt>

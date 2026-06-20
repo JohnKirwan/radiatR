@@ -316,6 +316,19 @@ Per-trajectory straightness and tortuosity of the movement path.
 - [`path_tortuosity()`](https://johnkirwan.github.io/radiatR/reference/path_tortuosity.md)
   : Tortuosity ratio for a single trajectory
 
+## Track timing
+
+Attach a capture frame rate to a Tracks object and report real elapsed
+time per observation or per trajectory.
+
+- [`frame_rate()`](https://johnkirwan.github.io/radiatR/reference/frame_rate.md)
+  [`set_frame_rate()`](https://johnkirwan.github.io/radiatR/reference/frame_rate.md)
+  : Frame rate of a Tracks object
+- [`elapsed_seconds()`](https://johnkirwan.github.io/radiatR/reference/elapsed_seconds.md)
+  : Elapsed time per observation of a Tracks object
+- [`track_duration()`](https://johnkirwan.github.io/radiatR/reference/track_duration.md)
+  : Duration of each track
+
 ## Datasets
 
 Bundled example data from a Cylindroiulus punctatus (millipede) visual
@@ -448,8 +461,13 @@ Any remaining exported topics.
   : Create geom layers for Cartesian track coordinates
 - [`dtrack_read()`](https://johnkirwan.github.io/radiatR/reference/dtrack_read.md)
   : Read a dtrack trajectory file into a Tracks
+- [`elapsed_seconds()`](https://johnkirwan.github.io/radiatR/reference/elapsed_seconds.md)
+  : Elapsed time per observation of a Tracks object
 - [`fitted_directions()`](https://johnkirwan.github.io/radiatR/reference/fitted_directions.md)
   : Fitted mean directions from a circular regression, for plotting
+- [`frame_rate()`](https://johnkirwan.github.io/radiatR/reference/frame_rate.md)
+  [`set_frame_rate()`](https://johnkirwan.github.io/radiatR/reference/frame_rate.md)
+  : Frame rate of a Tracks object
 - [`get_all_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.md)
   : Aggregate track positions across all videos in a manifest.
 - [`get_tracked_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_tracked_object_pos.md)
@@ -543,6 +561,8 @@ Any remaining exported topics.
   : Per-group tests of circular uniformity
 - [`tortuosity_ratio()`](https://johnkirwan.github.io/radiatR/reference/tortuosity_ratio.md)
   : Per-trajectory tortuosity ratio for a Tracks
+- [`track_duration()`](https://johnkirwan.github.io/radiatR/reference/track_duration.md)
+  : Duration of each track
 - [`transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`log_transform()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`set_transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)

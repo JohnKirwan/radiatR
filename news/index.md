@@ -69,6 +69,24 @@
 
 ### Visualisation
 
+- Tracks can carry a capture **frame rate**:
+  [`set_frame_rate()`](https://johnkirwan.github.io/radiatR/reference/frame_rate.md)
+  /
+  [`frame_rate()`](https://johnkirwan.github.io/radiatR/reference/frame_rate.md)
+  store fps in the object,
+  [`elapsed_seconds()`](https://johnkirwan.github.io/radiatR/reference/elapsed_seconds.md)
+  and
+  [`track_duration()`](https://johnkirwan.github.io/radiatR/reference/track_duration.md)
+  report real time, and `radiate(track_colour = "time")` colours each
+  path by elapsed time (POSIXct time works without a frame rate).
+  `simulate_tracks(frame_rate=)` sets it.
+
+- [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  gains `track_colour = "sequence"` to colour each trajectory path by
+  its point’s position from start to finish (a per-track normalized
+  gradient with a continuous “start -\> finish” colourbar). The Shiny
+  app’s Results figure gains a matching **Track colour** selector.
+
 - New
   [`circ_boxplot_stats()`](https://johnkirwan.github.io/radiatR/reference/circ_boxplot_stats.md)
   and

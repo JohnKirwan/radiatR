@@ -64,7 +64,9 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/dot-heading_registry.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/draw_tracks.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/dtrack_read.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/elapsed_seconds.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/fitted_directions.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/frame_rate.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/get_tracked_object_pos.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/get_trial_limits.html</loc></url>
@@ -109,6 +111,7 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/test_mean_directions.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/test_uniformity.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/tortuosity_ratio.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/track_duration.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/transform_history.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/vonmises_fit.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/wrappedcauchy_fit.html</loc></url>

@@ -21,6 +21,8 @@ radiate(
   group_col = NULL,
   colour_col = NULL,
   colour_cycle = NULL,
+  track_colour = c("trajectory", "sequence", "time"),
+  time_units = c("seconds", "minutes", "milliseconds"),
   panel_by = NULL,
   ncol = NULL,
   strip_labels = NULL,
@@ -128,6 +130,29 @@ radiate(
   \`c("red","blue","green")\`). When \`panel_by\` is set the cycle
   restarts independently within each panel. Mutually exclusive with
   \`colour_col\`.
+
+- track_colour:
+
+  How trajectory paths are coloured. \`"trajectory"\` (default) keeps
+  the existing per-track colouring. \`"sequence"\` colours each path by
+  its point's normalized position from start (0) to finish (1) within
+  the track, applying a continuous viridis scale with a \`"start -\>
+  finish"\` colourbar. \`"time"\` colours each path by real elapsed time
+  from its own track's start (see \[elapsed_seconds()\]), applying a
+  continuous viridis scale with an \`"elapsed (s)"\` colourbar; numeric
+  (frame) time requires a \[frame_rate()\] (set one with
+  \`set_frame_rate(ts, fps)\`). Both \`"sequence"\` and \`"time"\` own
+  the colour aesthetic and so cannot be combined with
+  \`colour_col\`/\`colour_cycle\`; overlays render in a fixed colour.
+  The per-track order is taken from the \`Tracks\` time column, falling
+  back to row order (with a message) when no usable time column is
+  present.
+
+- time_units:
+
+  Units for \`track_colour = "time"\`: \`"seconds"\` (default),
+  \`"minutes"\`, or \`"milliseconds"\`. Sets the colourbar title and
+  scale.
 
 - panel_by:
 

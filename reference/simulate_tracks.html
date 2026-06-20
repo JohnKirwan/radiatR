@@ -63,7 +63,8 @@ without relying on large raw tracking files.</p>
 <span>  write_path <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  radial_noise <span class="op">=</span> <span class="fl">0.02</span>,</span>
-<span>  phi <span class="op">=</span> <span class="fl">0.85</span></span>
+<span>  phi <span class="op">=</span> <span class="fl">0.85</span>,</span>
+<span>  frame_rate <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -105,6 +106,12 @@ radius profile.</p></dd>
 <dt id="arg-phi">phi<a class="anchor" aria-label="anchor" href="#arg-phi"></a></dt>
 <dd><p>Autocorrelation parameter (0-1) used when generating angular noise
 series; higher values produce smoother paths.</p></dd>
+
+
+<dt id="arg-frame-rate">frame_rate<a class="anchor" aria-label="anchor" href="#arg-frame-rate"></a></dt>
+<dd><p>Optional capture frame rate (frames per second) attached to
+the returned [Tracks] via [set_frame_rate()] when `output` is `"trajset"` or
+`"both"`. The default `NULL` leaves the output unchanged.</p></dd>
 
 </dl></div>
     <div class="section level2">

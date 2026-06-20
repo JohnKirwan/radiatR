@@ -232,6 +232,50 @@ radiate(cpunctatus,
 
 ![](radiatR_files/figure-html/plot-all-1.png)
 
+### Colour tracks by position
+
+Setting `track_colour = "sequence"` shades each path along its own
+length, so the direction of travel reads at a glance: a per-track
+gradient from start (dark) to finish (bright), with a continuous “start
+→ finish” colourbar. This mode owns the colour aesthetic, so it is not
+combined with `colour_col`/`colour_cycle`.
+
+``` r
+
+# colour each track from start (dark) to finish (bright)
+radiate(cpunctatus, show_tracks = TRUE, track_colour = "sequence")
+```
+
+![](radiatR_files/figure-html/plot-sequence-1.png)
+
+### Representing time
+
+Attach a capture **frame rate** (frames per second) to a `Tracks` object
+and the time aspect of frame-indexed tracks can be reported in real
+seconds and shown on the plot. The frame rate is stored in the object’s
+metadata; the time/frame column itself is never altered.
+[`track_duration()`](https://johnkirwan.github.io/radiatR/reference/track_duration.md)
+reports the elapsed seconds of each trajectory, and
+`track_colour = "time"` colours each path by elapsed time (POSIXct time
+works without a frame rate).
+
+``` r
+
+# attach a capture rate, then represent the time aspect
+ts <- set_frame_rate(cpunctatus, fps = 30)
+head(track_duration(ts))                                 # seconds per track
+#>        id  duration
+#> 1  10_1_1 2.6666667
+#> 2 10_10_1 9.9333333
+#> 3 10_11_1 2.1333333
+#> 4 10_12_1 1.5666667
+#> 5 10_13_1 2.6333333
+#> 6 10_14_1 0.9666667
+radiate(ts, show_tracks = TRUE, track_colour = "time")   # colour by elapsed time
+```
+
+![](radiatR_files/figure-html/plot-time-1.png)
+
 ## Heading Overlays
 
 The **crossing method** — projecting the vector between two
