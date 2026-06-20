@@ -19,7 +19,7 @@ radiate(data, ...)
   group_col = NULL,
   colour_col = NULL,
   colour_cycle = NULL,
-  track_colour = c("trajectory", "sequence", "time"),
+  track_colour = c("trajectory", "sequence", "time", "speed"),
   time_units = c("seconds", "minutes", "milliseconds"),
   panel_by = NULL,
   ncol = NULL,
@@ -116,8 +116,11 @@ the track, applying a continuous viridis scale with a `"start -> finish"`
 colourbar. `"time"` colours each path by real elapsed time from its own
 track's start (see [elapsed_seconds()]), applying a continuous viridis scale
 with an `"elapsed (s)"` colourbar; numeric (frame) time requires a
-[frame_rate()] (set one with `set_frame_rate(ts, fps)`). Both `"sequence"`
-and `"time"` own the colour aesthetic and so cannot be combined with
+[frame_rate()] (set one with `set_frame_rate(ts, fps)`). `"speed"` colours
+each path by its instantaneous speed (see [instantaneous_speed()]), applying
+a continuous viridis scale with a `"speed (units/s)"` colourbar; numeric
+(frame) time likewise requires a [frame_rate()]. `"sequence"`, `"time"`, and
+`"speed"` own the colour aesthetic and so cannot be combined with
 `colour_col`/`colour_cycle`; overlays render in a fixed colour. The
 per-track order is taken from the `Tracks` time column, falling back to row
 order (with a message) when no usable time column is present.}

@@ -1925,6 +1925,18 @@ setMethod("gg_traj", "Tracks",
   data
 }
 
+# Fill each track's leading NA instantaneous speed with that track's first
+# finite step speed, so geom_path colours the whole path (the metric itself
+# keeps the honest leading NA).
+.speed_for_colour <- function(speed, id) {
+  for (i in unique(id)) {
+    sel <- which(id == i)
+    fin <- which(is.finite(speed[sel]))
+    if (length(fin)) speed[sel[seq_len(fin[1L] - 1L)]] <- speed[sel[fin[1L]]]
+  }
+  speed
+}
+
 #' Create geom layers for Cartesian track coordinates
 #'
 #' @param data Data frame that will be plotted.
@@ -2165,8 +2177,11 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   colourbar. `"time"` colours each path by real elapsed time from its own
 #'   track's start (see [elapsed_seconds()]), applying a continuous viridis scale
 #'   with an `"elapsed (s)"` colourbar; numeric (frame) time requires a
-#'   [frame_rate()] (set one with `set_frame_rate(ts, fps)`). Both `"sequence"`
-#'   and `"time"` own the colour aesthetic and so cannot be combined with
+#'   [frame_rate()] (set one with `set_frame_rate(ts, fps)`). `"speed"` colours
+#'   each path by its instantaneous speed (see [instantaneous_speed()]), applying
+#'   a continuous viridis scale with a `"speed (units/s)"` colourbar; numeric
+#'   (frame) time likewise requires a [frame_rate()]. `"sequence"`, `"time"`, and
+#'   `"speed"` own the colour aesthetic and so cannot be combined with
 #'   `colour_col`/`colour_cycle`; overlays render in a fixed colour. The
 #'   per-track order is taken from the `Tracks` time column, falling back to row
 #'   order (with a message) when no usable time column is present.
@@ -2264,7 +2279,7 @@ function(
   group_col = NULL,
   colour_col = NULL,
   colour_cycle = NULL,
-  track_colour = c("trajectory", "sequence", "time"),
+  track_colour = c("trajectory", "sequence", "time", "speed"),
   time_units = c("seconds", "minutes", "milliseconds"),
   panel_by = NULL,
   ncol = NULL,
@@ -2305,6 +2320,7 @@ function(
   time_units <- match.arg(time_units)
   seq_track  <- identical(track_colour, "sequence")
   time_track <- identical(track_colour, "time")
+  speed_track <- identical(track_colour, "speed")
   # Back-compat: an explicit `degrees = FALSE` hides the angle labels.
   if (isFALSE(degrees)) angle_labels <- "none"
   theme <- match.arg(theme)
@@ -2367,15 +2383,17 @@ function(
     colour_col <- ".cycle_colour"
   }
 
-  if (seq_track || time_track) {
+  if (seq_track || time_track || speed_track) {
     if (!is.null(colour_col) || !is.null(colour_cycle))
       stop("`track_colour = '", track_colour, "'` colours tracks by position/time ",
            "and cannot be combined with `colour_col`/`colour_cycle`.")
     if (seq_track)
       data <- .seq_position(data, id_col = group_col, time_col = ts@cols$time)
-    else
+    else if (time_track)
       data[[".elapsed"]] <- .elapsed_time(data[[ts@cols$time]], data[[group_col]],
                                           frame_rate(ts), time_units)
+    else
+      data[[".speed"]] <- .speed_for_colour(instantaneous_speed(ts), data[[group_col]])
   }
 
   x_sym <- rlang::sym(x_col)
@@ -2386,7 +2404,9 @@ function(
     ggplot2::coord_fixed()
 
   layer_mapping <- NULL
-  if (time_track) {
+  if (speed_track) {
+    layer_mapping <- ggplot2::aes(group = !!rlang::sym(group_col), colour = .data$.speed)
+  } else if (time_track) {
     layer_mapping <- ggplot2::aes(group = !!rlang::sym(group_col), colour = .data$.elapsed)
   } else if (seq_track) {
     layer_mapping <- ggplot2::aes(group = !!rlang::sym(group_col), colour = .data$.seq)
@@ -2516,7 +2536,7 @@ function(
       if (!is.null(arrow_df) && nrow(arrow_df) > 0L) {
         # In sequence mode the continuous .seq scale owns the colour aesthetic,
         # so the arrow uses a fixed colour rather than mapping a discrete column.
-        use_arrow_colour_col <- !(seq_track || time_track) &&
+        use_arrow_colour_col <- !(seq_track || time_track || speed_track) &&
                                 !is.null(arrow_colour_col) &&
                                 arrow_colour_col %in% names(arrow_df)
         arrow_map <- ggplot2::aes(x = x, y = y, xend = xend, yend = yend)
@@ -2539,7 +2559,10 @@ function(
     }
   }
 
-  if (time_track) {
+  if (speed_track) {
+    g <- g + ggplot2::scale_colour_viridis_c(
+      guide = ggplot2::guide_colourbar(title = "speed (units/s)"))
+  } else if (time_track) {
     unit_lab <- switch(time_units, seconds = "elapsed (s)",
                        minutes = "elapsed (min)", milliseconds = "elapsed (ms)")
     g <- g + ggplot2::scale_colour_viridis_c(
