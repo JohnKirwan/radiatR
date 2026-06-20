@@ -26,7 +26,7 @@ roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
                            rayleigh = FALSE, ci = FALSE, vtest = FALSE,
                            subtitle = NULL, caption = NULL,
                            quadrants = FALSE, rings = FALSE, axial = FALSE,
-                           boxplot = FALSE) {
+                           boxplot = FALSE, frame_rate = NULL) {
   data(cpunctatus, package = "radiatR", envir = environment())
   ts <- cpunctatus
   hd <- derive_headings(ts, rule = "distal")
@@ -44,6 +44,7 @@ roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
     theme = "void", angle_labels = "degrees", display = list(zero = 0),
     axial = axial,
     track_colour = "trajectory",
+    frame_rate = frame_rate,
     heading_display = heading_display,
     subtitle = subtitle, caption = caption,
     show = list(tracks = TRUE, arrow = arrow, vectors = vectors,
@@ -380,4 +381,40 @@ test_that("circular boxplot overlay round-trips (axial) and emits axial = TRUE",
   code <- spec_to_code(rt$spec)
   expect_match(code, "add_circular_boxplot(hd, axial = TRUE)", fixed = TRUE)
   suppressWarnings(expect_roundtrip(rt))
+})
+
+test_that("track_colour = 'time' with a valid frame rate emits set_frame_rate + the radiate arg and round-trips", {
+  rt <- roundtrip_spec("none", by = "trajectory", facet = NULL, arrow = FALSE, vectors = FALSE)
+  rt$spec$track_colour <- "time"
+  rt$spec$frame_rate   <- 30
+  rt$spec$show$tracks  <- TRUE
+  code <- spec_to_code(rt$spec)
+  expect_match(code, "set_frame_rate(ts, 30)", fixed = TRUE)
+  expect_match(code, 'track_colour = "time"', fixed = TRUE)
+  suppressWarnings(expect_roundtrip(rt))
+})
+
+test_that("track_colour = 'time' with an invalid frame rate falls back to sequence in BOTH paths", {
+  rt <- roundtrip_spec("none", by = "trajectory", facet = NULL, arrow = FALSE, vectors = FALSE)
+  rt$spec$track_colour <- "time"
+  rt$spec$show$tracks  <- TRUE
+  for (bad in list(NA_real_, 0, -5, NULL)) {
+    rt$spec$frame_rate <- bad
+    code <- spec_to_code(rt$spec)
+    expect_false(grepl("set_frame_rate", code, fixed = TRUE))
+    expect_match(code, 'track_colour = "sequence"', fixed = TRUE)   # graceful fallback
+    suppressWarnings(expect_roundtrip(rt))
+  }
+})
+
+test_that(".resolve_track_colour resolves effective mode and validity", {
+  mk <- function(tc, fps) list(track_colour = tc, frame_rate = fps)
+  expect_equal(.resolve_track_colour(mk("time", 30), FALSE)$effective, "time")
+  expect_true (.resolve_track_colour(mk("time", 30), FALSE)$gradient)
+  expect_equal(.resolve_track_colour(mk("time", NA), FALSE)$effective, "sequence")
+  expect_equal(.resolve_track_colour(mk("time", 0),  FALSE)$effective, "sequence")
+  expect_equal(.resolve_track_colour(mk("sequence", NULL), FALSE)$effective, "sequence")
+  expect_equal(.resolve_track_colour(mk("trajectory", NULL), FALSE)$effective, "trajectory")
+  expect_false(.resolve_track_colour(mk("trajectory", NULL), FALSE)$gradient)
+  expect_equal(.resolve_track_colour(mk("time", 30), TRUE)$effective, "trajectory")  # headings mode: no tracks
 })
