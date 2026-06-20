@@ -155,6 +155,21 @@ direction of travel is visible at a glance — a per-track gradient from start
 radiate(cpunctatus, show_tracks = TRUE, track_colour = "sequence")
 ```
 
+### Representing time
+
+Attach a capture **frame rate** to a `Tracks` object and the time aspect of
+frame-indexed tracks can be reported in real seconds and shown on the plot.
+`track_duration()` gives the elapsed seconds per trajectory, and
+`track_colour = "time"` colours each path by elapsed time (POSIXct time works
+without a frame rate):
+
+```r
+# attach a capture rate, then represent the time aspect
+ts <- set_frame_rate(cpunctatus, fps = 30)
+track_duration(ts)                                       # seconds per track
+radiate(ts, show_tracks = TRUE, track_colour = "time")   # colour by elapsed time
+```
+
 ### Circular boxplot
 
 A Tukey-like boxplot for circular data (Buttarazzi, Pandolfo & Porzio, 2018):

@@ -43,6 +43,11 @@
 
 ## Visualisation
 
+* Tracks can carry a capture **frame rate**: `set_frame_rate()` / `frame_rate()`
+  store fps in the object, `elapsed_seconds()` and `track_duration()` report real
+  time, and `radiate(track_colour = "time")` colours each path by elapsed time
+  (POSIXct time works without a frame rate). `simulate_tracks(frame_rate=)` sets it.
+
 * `radiate()` gains `track_colour = "sequence"` to colour each trajectory path by
   its point's position from start to finish (a per-track normalized gradient with
   a continuous "start -> finish" colourbar). The Shiny app's Results figure gains

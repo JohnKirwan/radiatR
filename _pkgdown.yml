@@ -229,6 +229,16 @@ reference:
       - path_straightness
       - path_tortuosity
 
+  - title: "Track timing"
+    desc: >
+      Attach a capture frame rate to a Tracks object and report real elapsed
+      time per observation or per trajectory.
+    contents:
+      - frame_rate
+      - set_frame_rate
+      - elapsed_seconds
+      - track_duration
+
   - title: "Datasets"
     desc: >
       Bundled example data from a Cylindroiulus punctatus (millipede) visual
