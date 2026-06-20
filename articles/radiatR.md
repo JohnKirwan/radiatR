@@ -276,6 +276,33 @@ radiate(ts, show_tracks = TRUE, track_colour = "time")   # colour by elapsed tim
 
 ![](radiatR_files/figure-html/plot-time-1.png)
 
+A frame rate also lets
+[`track_speed()`](https://johnkirwan.github.io/radiatR/reference/track_speed.md)
+report each trajectory’s speed in real units. With the default
+unit-arena coordinates that is arena-units (radii) per second.
+
+``` r
+
+# speed in real units (arena-units per second) once a frame rate is set
+ts <- set_frame_rate(cpunctatus, fps = 30)
+head(track_speed(ts))            # mean speed per track
+#>         trial_id     speed
+#> 10_1_1    10_1_1 0.5117093
+#> 10_10_1  10_10_1 0.8797423
+#> 10_11_1  10_11_1 0.5992307
+#> 10_12_1  10_12_1 0.7900211
+#> 10_13_1  10_13_1 0.6047888
+#> 10_14_1  10_14_1 0.9688229
+head(track_speed(ts, stat = "max"))
+#>         trial_id     speed
+#> 10_1_1    10_1_1 0.9965993
+#> 10_10_1  10_10_1 2.6559596
+#> 10_11_1  10_11_1 1.3979594
+#> 10_12_1  10_12_1 1.2717587
+#> 10_13_1  10_13_1 1.3794944
+#> 10_14_1  10_14_1 1.4268880
+```
+
 ## Heading Overlays
 
 The **crossing method** — projecting the vector between two

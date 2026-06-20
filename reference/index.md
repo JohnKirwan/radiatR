@@ -319,6 +319,10 @@ Per-trajectory straightness and tortuosity of the movement path.
   : Path straightness index for a single trajectory
 - [`path_tortuosity()`](https://johnkirwan.github.io/radiatR/reference/path_tortuosity.md)
   : Tortuosity ratio for a single trajectory
+- [`track_speed()`](https://johnkirwan.github.io/radiatR/reference/track_speed.md)
+  : Per-trajectory speed for a Tracks, in real units
+- [`step_speed()`](https://johnkirwan.github.io/radiatR/reference/step_speed.md)
+  : Per-step speed along a trajectory
 
 ## Track timing
 
@@ -559,6 +563,8 @@ Any remaining exported topics.
   : Simulate trajectory sets under configurable experimental conditions
 - [`stack_headings()`](https://johnkirwan.github.io/radiatR/reference/stack_headings.md)
   : Add stacking columns to a headings data frame
+- [`step_speed()`](https://johnkirwan.github.io/radiatR/reference/step_speed.md)
+  : Per-step speed along a trajectory
 - [`straightness_index()`](https://johnkirwan.github.io/radiatR/reference/straightness_index.md)
   : Per-trajectory straightness index for a Tracks
 - [`test_concentration()`](https://johnkirwan.github.io/radiatR/reference/test_concentration.md)
@@ -571,6 +577,8 @@ Any remaining exported topics.
   : Per-trajectory tortuosity ratio for a Tracks
 - [`track_duration()`](https://johnkirwan.github.io/radiatR/reference/track_duration.md)
   : Duration of each track
+- [`track_speed()`](https://johnkirwan.github.io/radiatR/reference/track_speed.md)
+  : Per-trajectory speed for a Tracks, in real units
 - [`transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`log_transform()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`set_transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
