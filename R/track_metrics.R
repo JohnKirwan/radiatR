@@ -129,3 +129,80 @@ straightness_index <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
 tortuosity_ratio <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
   .trajectory_metric(ts, x_col, y_col, "tortuosity", path_tortuosity)
 }
+
+#' Per-step speed along a trajectory
+#'
+#' Speed of each step as straight-line step distance divided by the elapsed time
+#' of that step: `sqrt(diff(x)^2 + diff(y)^2) / diff(seconds)`. The unit is the
+#' distance unit of `x`/`y` per second; for radiatR's unit-arena coordinates that
+#' is arena-units (radii) per second.
+#'
+#' @param x,y Numeric vectors of ordered (in time) coordinates for one trajectory.
+#' @param seconds Numeric vector, the elapsed time of each point in seconds (same
+#'   length as `x`/`y`).
+#' @return A numeric vector of per-step speeds, length `length(x) - 1`. A step is
+#'   `NA` when either endpoint is non-finite or its time increment is `<= 0`;
+#'   `numeric(0)` when fewer than two points are given.
+#' @seealso [track_speed()] for a whole `Tracks`; [elapsed_seconds()].
+#' @export
+#' @examples
+#' step_speed(x = 0:3, y = rep(0, 4), seconds = (0:3) / 30)   # 30 units/s
+step_speed <- function(x, y, seconds) {
+  n <- length(x)
+  if (n < 2L) return(numeric(0))
+  dist <- sqrt(diff(x)^2 + diff(y)^2)
+  dt   <- diff(seconds)
+  spd  <- dist / dt
+  bad  <- !is.finite(dt) | dt <= 0 |
+          !is.finite(x[-n]) | !is.finite(x[-1L]) |
+          !is.finite(y[-n]) | !is.finite(y[-1L])
+  spd[bad] <- NA_real_
+  spd
+}
+
+#' Per-trajectory speed for a Tracks, in real units
+#'
+#' Summarises each trajectory's speed (distance per second). Step speeds come
+#' from [step_speed()] using the track's elapsed time from [elapsed_seconds()];
+#' the per-track summary is the chosen `stat` of those step speeds.
+#'
+#' Numeric (frame) time requires a frame rate ([set_frame_rate()]); POSIXct time
+#' is used directly. With the default coordinate columns the unit is arena-units
+#' (radii) per second, because radiatR normalises trajectories to a unit arena.
+#'
+#' @param ts A `Tracks`.
+#' @param stat Per-track reduction of the step speeds: `"mean"` (default),
+#'   `"max"`, or `"median"`.
+#' @param x_col,y_col Names of the coordinate columns. Default to the `Tracks`'s
+#'   recorded x/y columns.
+#' @return A `data.frame` with one row per trajectory: the id column and a
+#'   numeric `speed` column (`NA` for tracks with fewer than two usable points).
+#' @seealso [step_speed()], [elapsed_seconds()], [track_duration()],
+#'   [straightness_index()]
+#' @export
+track_speed <- function(ts, stat = c("mean", "max", "median"),
+                        x_col = ts@cols$x, y_col = ts@cols$y) {
+  if (!methods::is(ts, "Tracks")) stop("'ts' must be a Tracks.")
+  stat <- match.arg(stat)
+  reduce <- switch(stat, mean = mean, max = max, median = stats::median)
+  d   <- ts@data
+  idc <- ts@cols$id
+  tc  <- ts@cols$time
+  for (cc in c(idc, x_col, y_col, tc)) {
+    if (is.null(cc) || !cc %in% names(d))
+      stop("column '", cc, "' not found in the Tracks.")
+  }
+  el  <- elapsed_seconds(ts)                 # validates frame rate / handles POSIXct
+  ids <- unique(d[[idc]])
+  vals <- vapply(ids, function(i) {
+    sel <- d[[idc]] == i
+    sub <- d[sel, , drop = FALSE]
+    ord <- order(sub[[tc]])
+    s   <- step_speed(sub[[x_col]][ord], sub[[y_col]][ord], el[sel][ord])
+    s   <- s[is.finite(s)]
+    if (!length(s)) NA_real_ else reduce(s)
+  }, numeric(1L))
+  out <- data.frame(ids, vals, stringsAsFactors = FALSE)
+  names(out) <- c(idc, "speed")
+  out
+}
