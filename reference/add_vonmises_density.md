@@ -23,7 +23,8 @@ add_vonmises_density(
   fill = NA,
   alpha = 0.8,
   display = NULL,
-  axial = FALSE
+  axial = FALSE,
+  color = NULL
 )
 ```
 
@@ -55,9 +56,10 @@ add_vonmises_density(
 
   Angular evaluation points. Default `360L`.
 
-- colour:
+- colour, color:
 
-  Outline colour. Default `"steelblue"`.
+  Outline colour. Default `"steelblue"`. `color` is the
+  American-spelling alias.
 
 - linewidth:
 

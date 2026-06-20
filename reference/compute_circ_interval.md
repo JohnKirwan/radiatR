@@ -18,7 +18,8 @@ compute_circ_interval(
   stat = c("bootstrap_ci", "sd"),
   boot_reps = 1000L,
   boot_alpha = 0.05,
-  axial = FALSE
+  axial = FALSE,
+  color_col = NULL
 )
 ```
 
@@ -32,10 +33,11 @@ compute_circ_interval(
 
   Name of the heading column (radians). Default \`"heading"\`.
 
-- colour_col:
+- colour_col, color_col:
 
   Optional grouping column. When set, one row is returned per group and
-  the column is preserved in the output.
+  the column is preserved in the output. \`color_col\` is the
+  American-spelling alias.
 
 - stat:
 

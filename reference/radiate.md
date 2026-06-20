@@ -56,7 +56,13 @@ radiate(
   arrow_colour_col = NULL,
   arrow_size = 2,
   display = circ_display(),
-  ...
+  ...,
+  color_col = NULL,
+  color_cycle = NULL,
+  track_color = NULL,
+  grid_color = NULL,
+  arrow_color = NULL,
+  arrow_color_col = NULL
 )
 
 # S3 method for class 'headings_frame'
@@ -117,21 +123,21 @@ radiate(
 
   Optional column for grouping aesthetics.
 
-- colour_col:
+- colour_col, color_col:
 
   Optional column for colour aesthetics. Mutually exclusive with
-  \`colour_cycle\`.
+  \`colour_cycle\`. \`color_col\` is the American-spelling alias.
 
-- colour_cycle:
+- colour_cycle, color_cycle:
 
   Optional cycling colour specification. Either a positive integer \`n\`
   (trajectories are assigned colours 1–n, cycling back to 1 after every
   \`n\` trajectories) or a character vector of colour values (e.g.
   \`c("red","blue","green")\`). When \`panel_by\` is set the cycle
   restarts independently within each panel. Mutually exclusive with
-  \`colour_col\`.
+  \`colour_col\`. \`color_cycle\` is the American-spelling alias.
 
-- track_colour:
+- track_colour, track_color:
 
   How trajectory paths are coloured. \`"trajectory"\` (default) keeps
   the existing per-track colouring. \`"sequence"\` colours each path by
@@ -146,7 +152,7 @@ radiate(
   \`colour_col\`/\`colour_cycle\`; overlays render in a fixed colour.
   The per-track order is taken from the \`Tracks\` time column, falling
   back to row order (with a message) when no usable time column is
-  present.
+  present. \`track_color\` is the American-spelling alias.
 
 - time_units:
 
@@ -224,9 +230,10 @@ radiate(
   \`classic\`). \`"cartesian"\` keeps the theme's square grid;
   \`"none"\` removes all gridlines.
 
-- grid_colour:
+- grid_colour, grid_color:
 
   Optional colour overriding the theme-derived guide colour.
+  \`grid_color\` is the American-spelling alias.
 
 - origin:
 
@@ -275,18 +282,20 @@ radiate(
 
   Column containing angles (radians) to summarise for the arrow.
 
-- arrow_colour:
+- arrow_colour, arrow_color:
 
   Arrow colour (a single fixed colour). Ignored when
-  \`arrow_colour_col\` is set.
+  \`arrow_colour_col\` is set. \`arrow_color\` is the American-spelling
+  alias.
 
-- arrow_colour_col:
+- arrow_colour_col, arrow_color_col:
 
   Optional grouping column. When supplied, one mean resultant arrow is
   drawn per level of this column (within each panel, if \`panel_by\` is
   also set) and mapped to the colour aesthetic, so the arrow can follow
   a colour grouping independently of faceting. Default \`NULL\` draws a
-  single arrow in \`arrow_colour\`.
+  single arrow in \`arrow_colour\`. \`arrow_color_col\` is the
+  American-spelling alias.
 
 - arrow_size:
 
@@ -321,6 +330,14 @@ radiate(
 ## Value
 
 A \`ggplot2\` object.
+
+## American spellings
+
+Every \`colour...\` argument and the \`assign_colour\_\*\` /
+\`cycle_colours\` / \`hf_colour_col\` functions accept the American
+\`color...\` spelling as an alias (e.g. \`color\`, \`color_col\`,
+\`track_color\`). British spelling is canonical; supplying both
+spellings of a pair is an error.
 
 ## Examples
 

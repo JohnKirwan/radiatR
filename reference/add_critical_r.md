@@ -22,7 +22,9 @@ add_critical_r(
   colour_by_group = TRUE,
   linetype = "dashed",
   linewidth = 0.6,
-  n_pts = 200L
+  n_pts = 200L,
+  color = NULL,
+  color_by_group = NULL
 )
 ```
 
@@ -54,19 +56,21 @@ add_critical_r(
   circle per group (`TRUE`) or a single conservative circle (`FALSE`,
   default). Ignored when faceting (always per panel).
 
-- colour:
+- colour, color:
 
   Circle colour. Default `"firebrick"`. When `per_group = TRUE` and
   `colour_by_group = TRUE` this is overridden by the colour scale.
+  `color` is the American-spelling alias.
 
-- colour_by_group:
+- colour_by_group, color_by_group:
 
   Logical. When `per_group = TRUE`, map each circle's colour to its
   group (`TRUE`, default) or draw every circle in the fixed `colour`
   while still attaching the group column so the circles facet (`FALSE`).
   Use `FALSE` to keep per-panel circles a single colour without
   injecting the grouping levels into the parent plot's colour scale.
-  Ignored unless `per_group = TRUE`.
+  Ignored unless `per_group = TRUE`. `color_by_group` is the
+  American-spelling alias.
 
 - linetype:
 

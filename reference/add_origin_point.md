@@ -6,14 +6,15 @@ sparse themes where no crosshairs meet at the middle.
 ## Usage
 
 ``` r
-add_origin_point(colour = "grey50", size = 1.5, shape = 16, ...)
+add_origin_point(colour = "grey50", size = 1.5, shape = 16, ..., color = NULL)
 ```
 
 ## Arguments
 
-- colour:
+- colour, color:
 
-  Point colour. Default \`"grey50"\`.
+  Point colour. Default \`"grey50"\`. \`color\` is the American-spelling
+  alias.
 
 - size:
 

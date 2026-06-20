@@ -17,6 +17,14 @@ radial plots with overlaid rose diagrams, parametric density curves, and
 non-parametric kernel density estimates. Includes a browser-based
 graphical interface requiring no R coding via launch_app().
 
+## American spellings
+
+Every \`colour...\` argument and the \`assign_colour\_\*\` /
+\`cycle_colours\` / \`hf_colour_col\` functions accept the American
+\`color...\` spelling as an alias (e.g. \`color\`, \`color_col\`,
+\`track_color\`). British spelling is canonical; supplying both
+spellings of a pair is an error.
+
 ## See also
 
 Useful links:

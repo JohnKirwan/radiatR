@@ -69,6 +69,11 @@
 
 ### Visualisation
 
+- American spellings are now accepted throughout: every `colour...`
+  argument and the `assign_colour_*` / `cycle_colours` / `hf_colour_col`
+  functions have `color...` aliases (British remains canonical;
+  supplying both errors).
+
 - Tracks can carry a capture **frame rate**:
   [`set_frame_rate()`](https://johnkirwan.github.io/radiatR/reference/frame_rate.md)
   /

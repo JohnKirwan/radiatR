@@ -22,7 +22,9 @@ add_heading_interval(
   colour = NULL,
   linetype = "solid",
   n_theta = 500L,
-  axial = FALSE
+  axial = FALSE,
+  color_col = NULL,
+  color = NULL
 )
 ```
 
@@ -36,10 +38,11 @@ add_heading_interval(
 
   Name of the heading column (radians). Default \`"heading"\`.
 
-- colour_col:
+- colour_col, color_col:
 
   Optional grouping column. When set, one row is returned per group and
-  the column is preserved in the output.
+  the column is preserved in the output. \`color_col\` is the
+  American-spelling alias.
 
 - display:
 
@@ -68,12 +71,13 @@ add_heading_interval(
 
   Line width. Default \`1.5\`.
 
-- colour:
+- colour, color:
 
   Fixed colour. When \`NULL\` (default) and \`colour_col\` is set,
   colour is mapped from that column; when \`NULL\` and no
   \`colour_col\`, draws in \`"black"\`. Supplying any colour string
-  always overrides \`colour_col\`.
+  always overrides \`colour_col\`. \`color\` is the American-spelling
+  alias.
 
 - linetype:
 

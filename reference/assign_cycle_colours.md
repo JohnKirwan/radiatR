@@ -16,6 +16,8 @@ assign_cycle_colours(
   panel_col = NULL,
   out_col = "cycle_colour"
 )
+
+assign_cycle_colors(data, id_col, n, panel_col = NULL, out_col = "cycle_colour")
 ```
 
 ## Arguments

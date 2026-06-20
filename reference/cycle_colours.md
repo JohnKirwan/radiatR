@@ -12,6 +12,8 @@ colour in both.
 
 ``` r
 cycle_colours(x, n, levels = NULL)
+
+cycle_colors(x, n, levels = NULL)
 ```
 
 ## Arguments

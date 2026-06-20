@@ -9,9 +9,10 @@ optional arguments to customize the appearance of the circles.
 ``` r
 add_multiple_circles(
   radii = c(0.25, 0.5, 0.75),
-  circle_color = "grey20",
+  circle_colour = "grey20",
   circle_alpha = 1,
-  circle_size = 0.5
+  circle_size = 0.5,
+  circle_color = NULL
 )
 ```
 
@@ -22,9 +23,10 @@ add_multiple_circles(
   A vector of radii for the concentric circles (default is c(0.25, 0.5,
   0.75))
 
-- circle_color:
+- circle_colour, circle_color:
 
-  The color of the circles (default is "grey40")
+  The colour of the circles (default is "grey20"). \`circle_color\` is
+  the American-spelling alias.
 
 - circle_alpha:
 

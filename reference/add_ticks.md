@@ -7,14 +7,21 @@ marks around the unit circle, each spanning a radial distance of
 ## Usage
 
 ``` r
-add_ticks(colour = "black", linewidth = 0.5, length = 0.1, n = 8L)
+add_ticks(
+  colour = "black",
+  linewidth = 0.5,
+  length = 0.1,
+  n = 8L,
+  color = NULL
+)
 ```
 
 ## Arguments
 
-- colour:
+- colour, color:
 
-  Tick colour. Default \`"black"\`.
+  Tick colour. Default \`"black"\`. \`color\` is the American-spelling
+  alias.
 
 - linewidth:
 

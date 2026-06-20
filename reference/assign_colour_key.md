@@ -13,6 +13,8 @@ the column's raw values (as a factor), so a legend is meaningful.
 
 ``` r
 assign_colour_key(x, by, n = 20, reference = NULL, into = ".colour")
+
+assign_color_key(x, by, n = 20, reference = NULL, into = ".colour")
 ```
 
 ## Arguments
@@ -49,6 +51,14 @@ its level order, so a given key value gets the same colour in both –
 e.g. tracks and their heading markers. If \`by\` names a column absent
 from \`x\` but present on \`reference\`, it is borrowed by matching
 trajectory id.
+
+## American spellings
+
+Every \`colour...\` argument and the \`assign_colour\_\*\` /
+\`cycle_colours\` / \`hf_colour_col\` functions accept the American
+\`color...\` spelling as an alias (e.g. \`color\`, \`color_col\`,
+\`track_color\`). British spelling is canonical; supplying both
+spellings of a pair is an error.
 
 ## See also
 

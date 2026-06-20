@@ -23,7 +23,8 @@ add_circular_boxplot(
   show_median_arrow = TRUE,
   linewidth = 0.8,
   n_theta = 200L,
-  display = NULL
+  display = NULL,
+  color = NULL
 )
 ```
 
@@ -54,10 +55,10 @@ add_circular_boxplot(
 
   Radial thickness of the box band. Default \`0.1\`.
 
-- colour:
+- colour, color:
 
   Outline colour for box, whiskers, crossbars, far-out. Default
-  \`"black"\`.
+  \`"black"\`. \`color\` is the American-spelling alias.
 
 - box_fill:
 

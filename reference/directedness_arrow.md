@@ -11,7 +11,8 @@ directedness_arrow(
   angle_col,
   arrow_head_cm = 0.2,
   colour = "gray",
-  size = 2
+  size = 2,
+  color = NULL
 )
 ```
 
@@ -29,9 +30,9 @@ directedness_arrow(
 
   Length of the arrowhead in centimetres.
 
-- colour:
+- colour, color:
 
-  Colour of the arrow.
+  Colour of the arrow. \`color\` is the American-spelling alias.
 
 - size:
 

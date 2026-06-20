@@ -16,7 +16,9 @@ add_heading_arrow(
   colour = NULL,
   arrow_length_cm = 0.2,
   axial = FALSE,
-  ...
+  ...,
+  color_col = NULL,
+  color = NULL
 )
 ```
 
@@ -32,10 +34,11 @@ add_heading_arrow(
 
   Name of the column containing heading angles. Default \`"heading"\`.
 
-- colour_col:
+- colour_col, color_col:
 
   Optional. Name of a column to group by. One row is returned per group.
-  The same column maps to colour in \[add_circ_mean()\].
+  The same column maps to colour in \[add_circ_mean()\]. \`color_col\`
+  is the American-spelling alias.
 
 - display:
 
@@ -46,12 +49,13 @@ add_heading_arrow(
 
   Line width of the arrow segment. Default \`1\`.
 
-- colour:
+- colour, color:
 
   Fixed colour. When \`NULL\` (default) and \`colour_col\` is set,
   colour is mapped from that column; when \`NULL\` and no
   \`colour_col\`, draws in \`"black"\`. Supplying any colour string
-  always overrides \`colour_col\`.
+  always overrides \`colour_col\`. \`color\` is the American-spelling
+  alias.
 
 - arrow_length_cm:
 

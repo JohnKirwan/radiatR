@@ -13,7 +13,8 @@ new_headings_frame(
   display = circ_display(),
   heading_col = "heading",
   colour_col = NULL,
-  coords = "absolute"
+  coords = "absolute",
+  color_col = NULL
 )
 ```
 
@@ -32,9 +33,10 @@ new_headings_frame(
 
   Name of the heading column. Default \`"heading"\`.
 
-- colour_col:
+- colour_col, color_col:
 
-  Optional grouping/colour column name, or \`NULL\`.
+  Optional grouping/colour column name, or \`NULL\`. \`color_col\` is
+  the American-spelling alias.
 
 - coords:
 

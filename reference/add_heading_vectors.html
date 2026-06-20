@@ -61,7 +61,9 @@ the dotted-line display in the original millipede tracking workflow.</p>
 <span>  colour_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  colour <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  linetype <span class="op">=</span> <span class="st">"dotted"</span>,</span>
-<span>  axial <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  axial <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  color_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  color <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -74,17 +76,19 @@ the dotted-line display in the original millipede tracking workflow.</p>
 and `y_inner`.</p></dd>
 
 
-<dt id="arg-colour-col">colour_col<a class="anchor" aria-label="anchor" href="#arg-colour-col"></a></dt>
-<dd><p>Name of a column in `headings_df` to map to the colour
-aesthetic. When `NULL` (default), the value of
+<dt id="arg-colour-col-color-col">colour_col, color_col<a class="anchor" aria-label="anchor" href="#arg-colour-col-color-col"></a></dt>
+<dd><p>Name of a column in `headings_df` to map to the
+colour aesthetic. When `NULL` (default), the value of
 `attr(headings_df, "colour_col")` is used if set – so vectors
 automatically inherit the colour mapping from the associated trajectory
-plot when that attribute is present. Ignored when `colour` is supplied.</p></dd>
+plot when that attribute is present. Ignored when `colour` is supplied.
+`color_col` is the American-spelling alias.</p></dd>
 
 
-<dt id="arg-colour">colour<a class="anchor" aria-label="anchor" href="#arg-colour"></a></dt>
+<dt id="arg-colour-color">colour, color<a class="anchor" aria-label="anchor" href="#arg-colour-color"></a></dt>
 <dd><p>Fixed colour string. Overrides `colour_col` when supplied;
-when `NULL` and no `colour_col` resolves, defaults to `"black"`.</p></dd>
+when `NULL` and no `colour_col` resolves, defaults to `"black"`. `color` is
+the American-spelling alias.</p></dd>
 
 
 <dt id="arg-linetype">linetype<a class="anchor" aria-label="anchor" href="#arg-linetype"></a></dt>

@@ -27,7 +27,8 @@ add_critical_v_line(
   region_fill = "firebrick",
   region_alpha = 0.08,
   axial = FALSE,
-  n_pts = 100L
+  n_pts = 100L,
+  color = NULL
 )
 ```
 
@@ -63,9 +64,10 @@ add_critical_v_line(
 
   Logical; shade the rejection segment. Default `FALSE`.
 
-- colour:
+- colour, color:
 
-  Line colour. Default `"firebrick"`.
+  Line colour. Default `"firebrick"`. `color` is the American-spelling
+  alias.
 
 - linetype:
 

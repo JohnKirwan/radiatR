@@ -14,7 +14,8 @@ compute_circ_mean(
   headings_df,
   heading_col = "heading",
   colour_col = NULL,
-  axial = FALSE
+  axial = FALSE,
+  color_col = NULL
 )
 ```
 
@@ -30,10 +31,11 @@ compute_circ_mean(
 
   Name of the column containing heading angles. Default \`"heading"\`.
 
-- colour_col:
+- colour_col, color_col:
 
   Optional. Name of a column to group by. One row is returned per group.
-  The same column maps to colour in \[add_circ_mean()\].
+  The same column maps to colour in \[add_circ_mean()\]. \`color_col\`
+  is the American-spelling alias.
 
 - axial:
 

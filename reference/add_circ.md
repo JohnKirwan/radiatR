@@ -9,12 +9,14 @@ to a ggplot.
 ``` r
 add_circ(
   radius = 1,
-  circle_color = "grey60",
+  circle_colour = "grey60",
   circle_alpha = 1,
   circle_size = 1,
   linetype = "solid",
   colour = NULL,
-  linewidth = NULL
+  linewidth = NULL,
+  circle_color = NULL,
+  color = NULL
 )
 ```
 
@@ -25,9 +27,10 @@ add_circ(
   Radius of the circle, expressed in the same units as the plot
   coordinates.
 
-- circle_color:
+- circle_colour, circle_color:
 
-  Line colour for the circle.
+  Line colour for the circle. \`circle_color\` is the American-spelling
+  alias.
 
 - circle_alpha:
 
@@ -41,10 +44,11 @@ add_circ(
 
   Line type for the circle.
 
-- colour:
+- colour, color:
 
-  ggplot-style alias for \`circle_color\`. If supplied, takes precedence
-  over \`circle_color\`.
+  ggplot-style alias for \`circle_colour\`. If supplied, takes
+  precedence over \`circle_colour\`. \`color\` is the American-spelling
+  alias.
 
 - linewidth:
 

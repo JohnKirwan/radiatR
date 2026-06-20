@@ -29,7 +29,8 @@ add_circular_kde(
   fill = NA,
   alpha = 0.8,
   display = NULL,
-  axial = FALSE
+  axial = FALSE,
+  color = NULL
 )
 ```
 
@@ -71,9 +72,10 @@ add_circular_kde(
   Kernel name passed to `density.circular`. Default `"vonmises"` (the
   kernel shape, not a model assumption).
 
-- colour:
+- colour, color:
 
-  Outline colour. Default `"tomato"`.
+  Outline colour. Default `"tomato"`. `color` is the American-spelling
+  alias.
 
 - linewidth:
 

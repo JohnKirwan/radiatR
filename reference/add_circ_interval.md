@@ -16,7 +16,9 @@ add_circ_interval(
   colour = NULL,
   linetype = "solid",
   n_theta = 500L,
-  axial = FALSE
+  axial = FALSE,
+  color_col = NULL,
+  color = NULL
 )
 ```
 
@@ -28,10 +30,11 @@ add_circ_interval(
   \`\[-pi, pi\]\`), and optionally \`wraps\` (logical). Typically the
   output of \[compute_circ_interval()\].
 
-- colour_col:
+- colour_col, color_col:
 
   Optional column name to map to the colour aesthetic. Ignored when
-  \`colour\` is also supplied.
+  \`colour\` is also supplied. \`color_col\` is the American-spelling
+  alias.
 
 - radius:
 
@@ -41,12 +44,13 @@ add_circ_interval(
 
   Line width. Default \`1.5\`.
 
-- colour:
+- colour, color:
 
   Fixed colour. When \`NULL\` (default) and \`colour_col\` is set,
   colour is mapped from that column; when \`NULL\` and no
   \`colour_col\`, draws in \`"black"\`. Supplying any colour string
-  always overrides \`colour_col\`.
+  always overrides \`colour_col\`. \`color\` is the American-spelling
+  alias.
 
 - linetype:
 

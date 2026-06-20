@@ -7,7 +7,7 @@ Plot trajectories from a Tracks (overlay or faceted)
 ``` r
 gg_traj(
   x,
-  color = NULL,
+  colour = NULL,
   linetype = NULL,
   alpha = NULL,
   size = 0.6,
@@ -15,13 +15,14 @@ gg_traj(
   coord = c("polar", "cartesian"),
   geom = c("path"),
   thin = 1L,
-  ncol = NULL
+  ncol = NULL,
+  color = NULL
 )
 
 # S4 method for class 'Tracks'
 gg_traj(
   x,
-  color = NULL,
+  colour = NULL,
   linetype = NULL,
   alpha = NULL,
   size = 0.6,
@@ -29,7 +30,8 @@ gg_traj(
   coord = c("polar", "cartesian"),
   geom = c("path"),
   thin = 1L,
-  ncol = NULL
+  ncol = NULL,
+  color = NULL
 )
 ```
 
@@ -39,9 +41,10 @@ gg_traj(
 
   Tracks
 
-- color, linetype, alpha, size:
+- colour, color, linetype, alpha, size:
 
-  Optional column names (strings) mapped to aesthetics
+  Optional column names (strings) mapped to aesthetics. \`color\` is the
+  American-spelling alias for \`colour\`.
 
 - panel_by:
 

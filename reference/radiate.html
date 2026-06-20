@@ -102,7 +102,13 @@ the object and handed off to the plotting helpers.</p>
 <span>  arrow_colour_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  arrow_size <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  display <span class="op">=</span> <span class="fu"><a href="circ_display.html">circ_display</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  <span class="va">...</span></span>
+<span>  <span class="va">...</span>,</span>
+<span>  color_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  color_cycle <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  track_color <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  grid_color <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  arrow_color <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  arrow_color_col <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'headings_frame'</span></span>
@@ -165,20 +171,21 @@ the object and handed off to the plotting helpers.</p>
 <dd><p>Optional column for grouping aesthetics.</p></dd>
 
 
-<dt id="arg-colour-col">colour_col<a class="anchor" aria-label="anchor" href="#arg-colour-col"></a></dt>
-<dd><p>Optional column for colour aesthetics. Mutually exclusive
-with `colour_cycle`.</p></dd>
+<dt id="arg-colour-col-color-col">colour_col, color_col<a class="anchor" aria-label="anchor" href="#arg-colour-col-color-col"></a></dt>
+<dd><p>Optional column for colour aesthetics. Mutually
+exclusive with `colour_cycle`. `color_col` is the American-spelling alias.</p></dd>
 
 
-<dt id="arg-colour-cycle">colour_cycle<a class="anchor" aria-label="anchor" href="#arg-colour-cycle"></a></dt>
+<dt id="arg-colour-cycle-color-cycle">colour_cycle, color_cycle<a class="anchor" aria-label="anchor" href="#arg-colour-cycle-color-cycle"></a></dt>
 <dd><p>Optional cycling colour specification. Either a positive
 integer `n` (trajectories are assigned colours 1–n, cycling back to 1 after
 every `n` trajectories) or a character vector of colour values (e.g.
 `c("red","blue","green")`). When `panel_by` is set the cycle restarts
-independently within each panel. Mutually exclusive with `colour_col`.</p></dd>
+independently within each panel. Mutually exclusive with `colour_col`.
+`color_cycle` is the American-spelling alias.</p></dd>
 
 
-<dt id="arg-track-colour">track_colour<a class="anchor" aria-label="anchor" href="#arg-track-colour"></a></dt>
+<dt id="arg-track-colour-track-color">track_colour, track_color<a class="anchor" aria-label="anchor" href="#arg-track-colour-track-color"></a></dt>
 <dd><p>How trajectory paths are coloured. `"trajectory"`
 (default) keeps the existing per-track colouring. `"sequence"` colours each
 path by its point's normalized position from start (0) to finish (1) within
@@ -190,7 +197,8 @@ with an `"elapsed (s)"` colourbar; numeric (frame) time requires a
 and `"time"` own the colour aesthetic and so cannot be combined with
 `colour_col`/`colour_cycle`; overlays render in a fixed colour. The
 per-track order is taken from the `Tracks` time column, falling back to row
-order (with a message) when no usable time column is present.</p></dd>
+order (with a message) when no usable time column is present. `track_color`
+is the American-spelling alias.</p></dd>
 
 
 <dt id="arg-time-units">time_units<a class="anchor" aria-label="anchor" href="#arg-time-units"></a></dt>
@@ -266,8 +274,9 @@ and draws nothing for grid-less themes (`void`, `classic`). `"cartesian"`
 keeps the theme's square grid; `"none"` removes all gridlines.</p></dd>
 
 
-<dt id="arg-grid-colour">grid_colour<a class="anchor" aria-label="anchor" href="#arg-grid-colour"></a></dt>
-<dd><p>Optional colour overriding the theme-derived guide colour.</p></dd>
+<dt id="arg-grid-colour-grid-color">grid_colour, grid_color<a class="anchor" aria-label="anchor" href="#arg-grid-colour-grid-color"></a></dt>
+<dd><p>Optional colour overriding the theme-derived
+guide colour. `grid_color` is the American-spelling alias.</p></dd>
 
 
 <dt id="arg-origin">origin<a class="anchor" aria-label="anchor" href="#arg-origin"></a></dt>
@@ -317,17 +326,18 @@ without the track geometry.</p></dd>
 <dd><p>Column containing angles (radians) to summarise for the arrow.</p></dd>
 
 
-<dt id="arg-arrow-colour">arrow_colour<a class="anchor" aria-label="anchor" href="#arg-arrow-colour"></a></dt>
-<dd><p>Arrow colour (a single fixed colour). Ignored when
-`arrow_colour_col` is set.</p></dd>
+<dt id="arg-arrow-colour-arrow-color">arrow_colour, arrow_color<a class="anchor" aria-label="anchor" href="#arg-arrow-colour-arrow-color"></a></dt>
+<dd><p>Arrow colour (a single fixed colour). Ignored
+when `arrow_colour_col` is set. `arrow_color` is the American-spelling alias.</p></dd>
 
 
-<dt id="arg-arrow-colour-col">arrow_colour_col<a class="anchor" aria-label="anchor" href="#arg-arrow-colour-col"></a></dt>
-<dd><p>Optional grouping column. When supplied, one mean
-resultant arrow is drawn per level of this column (within each panel, if
-`panel_by` is also set) and mapped to the colour aesthetic, so the arrow can
-follow a colour grouping independently of faceting. Default `NULL` draws a
-single arrow in `arrow_colour`.</p></dd>
+<dt id="arg-arrow-colour-col-arrow-color-col">arrow_colour_col, arrow_color_col<a class="anchor" aria-label="anchor" href="#arg-arrow-colour-col-arrow-color-col"></a></dt>
+<dd><p>Optional grouping column. When
+supplied, one mean resultant arrow is drawn per level of this column (within
+each panel, if `panel_by` is also set) and mapped to the colour aesthetic, so
+the arrow can follow a colour grouping independently of faceting. Default
+`NULL` draws a single arrow in `arrow_colour`. `arrow_color_col` is the
+American-spelling alias.</p></dd>
 
 
 <dt id="arg-arrow-size">arrow_size<a class="anchor" aria-label="anchor" href="#arg-arrow-size"></a></dt>
@@ -361,6 +371,15 @@ that layer their own marker and statistic overlays.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A `ggplot2` object.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="american-spellings">American spellings<a class="anchor" aria-label="anchor" href="#american-spellings"></a></h2>
+
+
+<p>Every `colour...` argument and the `assign_colour_*` / `cycle_colours` /
+`hf_colour_col` functions accept the American `color...` spelling as an alias
+(e.g. `color`, `color_col`, `track_color`). British spelling is canonical;
+supplying both spellings of a pair is an error.</p>
     </div>
 
     <div class="section level2">

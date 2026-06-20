@@ -13,6 +13,8 @@ hf_heading_col(x)
 
 hf_colour_col(x)
 
+hf_color_col(x)
+
 hf_coords(x)
 ```
 

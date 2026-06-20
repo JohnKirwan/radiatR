@@ -72,7 +72,9 @@ it is used as-is; otherwise stacking is computed internally.</p>
 <span>  size <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  axial <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  <span class="va">...</span></span>
+<span>  <span class="va">...</span>,</span>
+<span>  color <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  color_col <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -116,12 +118,14 @@ Mapped to ggplot2 shape integers: 1 = hollow, 16 = filled,
 (e.g. one stacking per facet). Default <code>NULL</code>.</p></dd>
 
 
-<dt id="arg-colour">colour<a class="anchor" aria-label="anchor" href="#arg-colour"></a></dt>
-<dd><p>Fixed point colour (ignored when <code>colour_col</code> is set).</p></dd>
+<dt id="arg-colour-color">colour, color<a class="anchor" aria-label="anchor" href="#arg-colour-color"></a></dt>
+<dd><p>Fixed point colour (ignored when <code>colour_col</code> is
+set). <code>color</code> is the American-spelling alias.</p></dd>
 
 
-<dt id="arg-colour-col">colour_col<a class="anchor" aria-label="anchor" href="#arg-colour-col"></a></dt>
-<dd><p>Optional column name to map to the colour aesthetic.</p></dd>
+<dt id="arg-colour-col-color-col">colour_col, color_col<a class="anchor" aria-label="anchor" href="#arg-colour-col-color-col"></a></dt>
+<dd><p>Optional column name to map to the colour
+aesthetic. <code>color_col</code> is the American-spelling alias.</p></dd>
 
 
 <dt id="arg-size">size<a class="anchor" aria-label="anchor" href="#arg-size"></a></dt>

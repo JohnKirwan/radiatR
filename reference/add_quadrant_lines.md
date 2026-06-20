@@ -8,14 +8,20 @@ circumference (unit circle).
 ## Usage
 
 ``` r
-add_quadrant_lines(colour = "grey60", linewidth = 0.5, linetype = "dashed")
+add_quadrant_lines(
+  colour = "grey60",
+  linewidth = 0.5,
+  linetype = "dashed",
+  color = NULL
+)
 ```
 
 ## Arguments
 
-- colour:
+- colour, color:
 
-  Line colour. Default \`"grey60"\`.
+  Line colour. Default \`"grey60"\`. \`color\` is the American-spelling
+  alias.
 
 - linewidth:
 

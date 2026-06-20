@@ -25,7 +25,9 @@ add_heading_density(
   linewidth = 0.8,
   ci_fill = "grey70",
   ci_alpha = 0.3,
-  axial = FALSE
+  axial = FALSE,
+  color_col = NULL,
+  color = NULL
 )
 ```
 
@@ -39,10 +41,11 @@ add_heading_density(
 
   Name of the heading column (radians). Default \`"heading"\`.
 
-- colour_col:
+- colour_col, color_col:
 
   Optional grouping column. When set, one density is computed per group
-  and the column is included in the output.
+  and the column is included in the output. \`color_col\` is the
+  American-spelling alias.
 
 - method:
 
@@ -80,10 +83,10 @@ add_heading_density(
   Maximum radial extension above the unit circle. Default \`0.4\` (peak
   at r = 1.4). Density is normalised within each group before scaling.
 
-- colour:
+- colour, color:
 
   Fixed line colour used when \`colour_col\` is \`NULL\`. Default
-  \`"black"\`.
+  \`"black"\`. \`color\` is the American-spelling alias.
 
 - fill:
 

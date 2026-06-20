@@ -62,7 +62,9 @@ or modify the summary data frame before rendering.</p>
 <span>  colour <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  arrow_length_cm <span class="op">=</span> <span class="fl">0.2</span>,</span>
 <span>  axial <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  <span class="va">...</span></span>
+<span>  <span class="va">...</span>,</span>
+<span>  color_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  color <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -81,9 +83,10 @@ or modify the summary data frame before rendering.</p>
 `"heading"`.</p></dd>
 
 
-<dt id="arg-colour-col">colour_col<a class="anchor" aria-label="anchor" href="#arg-colour-col"></a></dt>
+<dt id="arg-colour-col-color-col">colour_col, color_col<a class="anchor" aria-label="anchor" href="#arg-colour-col-color-col"></a></dt>
 <dd><p>Optional. Name of a column to group by. One row is
-returned per group. The same column maps to colour in [add_circ_mean()].</p></dd>
+returned per group. The same column maps to colour in [add_circ_mean()].
+`color_col` is the American-spelling alias.</p></dd>
 
 
 <dt id="arg-display">display<a class="anchor" aria-label="anchor" href="#arg-display"></a></dt>
@@ -95,10 +98,11 @@ returned per group. The same column maps to colour in [add_circ_mean()].</p></dd
 <dd><p>Line width of the arrow segment. Default `1`.</p></dd>
 
 
-<dt id="arg-colour">colour<a class="anchor" aria-label="anchor" href="#arg-colour"></a></dt>
-<dd><p>Fixed colour. When `NULL` (default) and `colour_col` is set,
-colour is mapped from that column; when `NULL` and no `colour_col`, draws
-in `"black"`. Supplying any colour string always overrides `colour_col`.</p></dd>
+<dt id="arg-colour-color">colour, color<a class="anchor" aria-label="anchor" href="#arg-colour-color"></a></dt>
+<dd><p>Fixed colour. When `NULL` (default) and `colour_col` is
+set, colour is mapped from that column; when `NULL` and no `colour_col`,
+draws in `"black"`. Supplying any colour string always overrides
+`colour_col`. `color` is the American-spelling alias.</p></dd>
 
 
 <dt id="arg-arrow-length-cm">arrow_length_cm<a class="anchor" aria-label="anchor" href="#arg-arrow-length-cm"></a></dt>

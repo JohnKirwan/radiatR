@@ -14,7 +14,9 @@ add_heading_vectors(
   colour_col = NULL,
   colour = NULL,
   linetype = "dotted",
-  axial = FALSE
+  axial = FALSE,
+  color_col = NULL,
+  color = NULL
 )
 ```
 
@@ -25,18 +27,20 @@ add_heading_vectors(
   Data frame with columns \`heading\` (radians), \`x_inner\`, and
   \`y_inner\`.
 
-- colour_col:
+- colour_col, color_col:
 
   Name of a column in \`headings_df\` to map to the colour aesthetic.
   When \`NULL\` (default), the value of \`attr(headings_df,
   "colour_col")\` is used if set – so vectors automatically inherit the
   colour mapping from the associated trajectory plot when that attribute
-  is present. Ignored when \`colour\` is supplied.
+  is present. Ignored when \`colour\` is supplied. \`color_col\` is the
+  American-spelling alias.
 
-- colour:
+- colour, color:
 
   Fixed colour string. Overrides \`colour_col\` when supplied; when
   \`NULL\` and no \`colour_col\` resolves, defaults to \`"black"\`.
+  \`color\` is the American-spelling alias.
 
 - linetype:
 

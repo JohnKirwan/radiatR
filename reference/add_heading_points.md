@@ -14,7 +14,9 @@ add_heading_points(
   colour = NULL,
   size = 2,
   alpha = 1,
-  axial = FALSE
+  axial = FALSE,
+  color_col = NULL,
+  color = NULL
 )
 ```
 
@@ -24,18 +26,20 @@ add_heading_points(
 
   Data frame with a \`heading\` column (angles in radians).
 
-- colour_col:
+- colour_col, color_col:
 
   Name of a column in \`headings_df\` to map to the colour aesthetic.
   When \`NULL\` (default), the value of \`attr(headings_df,
   "colour_col")\` is used if set – so heading markers automatically
   inherit the colour mapping from the associated trajectory plot when
   that attribute is present. Ignored when \`colour\` is supplied.
+  \`color_col\` is the American-spelling alias.
 
-- colour:
+- colour, color:
 
   Fixed colour string. Overrides \`colour_col\` when supplied; when
   \`NULL\` and no \`colour_col\` resolves, defaults to \`"black"\`.
+  \`color\` is the American-spelling alias.
 
 - size:
 
@@ -53,6 +57,14 @@ add_heading_points(
 ## Value
 
 A \`geom_point()\` layer (shape = 1, hollow circle).
+
+## American spellings
+
+Every \`colour...\` argument and the \`assign_colour\_\*\` /
+\`cycle_colours\` / \`hf_colour_col\` functions accept the American
+\`color...\` spelling as an alias (e.g. \`color\`, \`color_col\`,
+\`track_color\`). British spelling is canonical; supplying both
+spellings of a pair is an error.
 
 ## See also
 

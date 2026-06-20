@@ -11,7 +11,8 @@ degree_labs(
   colour = "black",
   units = NULL,
   size = 3.88,
-  family = ""
+  family = "",
+  color = NULL
 )
 ```
 
@@ -22,9 +23,10 @@ degree_labs(
   A \[\`circ_display\`\] object. Default \`circ_display()\`. Supplies
   the label units when \`units\` is \`NULL\`.
 
-- colour:
+- colour, color:
 
-  Label colour. Default \`"black"\`.
+  Label colour. Default \`"black"\`. \`color\` is the American-spelling
+  alias.
 
 - units:
 

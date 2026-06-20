@@ -70,7 +70,9 @@ unit circle boundary. At each angle theta the plotted radius is
 <span>  alpha <span class="op">=</span> <span class="fl">0.2</span>,</span>
 <span>  linewidth <span class="op">=</span> <span class="fl">0.8</span>,</span>
 <span>  ci_fill <span class="op">=</span> <span class="st">"grey70"</span>,</span>
-<span>  ci_alpha <span class="op">=</span> <span class="fl">0.3</span></span>
+<span>  ci_alpha <span class="op">=</span> <span class="fl">0.3</span>,</span>
+<span>  color_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  color <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -93,9 +95,10 @@ evaluated angle.</p></dd>
 <dd><p>Name of the density/count column. Default `"density"`.</p></dd>
 
 
-<dt id="arg-colour-col">colour_col<a class="anchor" aria-label="anchor" href="#arg-colour-col"></a></dt>
-<dd><p>Optional grouping column. When set, separate paths are
-drawn per group, enabling ggplot2 faceting.</p></dd>
+<dt id="arg-colour-col-color-col">colour_col, color_col<a class="anchor" aria-label="anchor" href="#arg-colour-col-color-col"></a></dt>
+<dd><p>Optional grouping column. When set, separate paths
+are drawn per group, enabling ggplot2 faceting. `color_col` is the
+American-spelling alias.</p></dd>
 
 
 <dt id="arg-scale">scale<a class="anchor" aria-label="anchor" href="#arg-scale"></a></dt>
@@ -103,9 +106,9 @@ drawn per group, enabling ggplot2 faceting.</p></dd>
 (peak at r = 1.4). Density is normalised within each group before scaling.</p></dd>
 
 
-<dt id="arg-colour">colour<a class="anchor" aria-label="anchor" href="#arg-colour"></a></dt>
-<dd><p>Fixed line colour used when `colour_col` is `NULL`. Default
-`"black"`.</p></dd>
+<dt id="arg-colour-color">colour, color<a class="anchor" aria-label="anchor" href="#arg-colour-color"></a></dt>
+<dd><p>Fixed line colour used when `colour_col` is `NULL`.
+Default `"black"`. `color` is the American-spelling alias.</p></dd>
 
 
 <dt id="arg-fill">fill<a class="anchor" aria-label="anchor" href="#arg-fill"></a></dt>

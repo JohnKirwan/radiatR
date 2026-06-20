@@ -70,7 +70,10 @@ circumference ([add_circ()]); grid rings are interior only.</p>
 <span>  origin <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  origin_colour <span class="op">=</span> <span class="st">"grey50"</span>,</span>
 <span>  origin_size <span class="op">=</span> <span class="fl">1.5</span>,</span>
-<span>  n_pts <span class="op">=</span> <span class="fl">200L</span></span>
+<span>  n_pts <span class="op">=</span> <span class="fl">200L</span>,</span>
+<span>  color <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  color_minor <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  origin_color <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -91,9 +94,10 @@ spacing (`pi / spokes_major`), so their placement is defined relative to the
 major count.</p></dd>
 
 
-<dt id="arg-colour-colour-minor">colour, colour_minor<a class="anchor" aria-label="anchor" href="#arg-colour-colour-minor"></a></dt>
-<dd><p>Spoke/ring colour. `colour_minor` defaults to
-`colour`.</p></dd>
+<dt id="arg-colour-colour-minor-color-color-minor">colour, colour_minor, color, color_minor<a class="anchor" aria-label="anchor" href="#arg-colour-colour-minor-color-color-minor"></a></dt>
+<dd><p>Spoke/ring colour. `colour_minor`
+defaults to `colour`. `color` and `color_minor` are the American-spelling
+aliases.</p></dd>
 
 
 <dt id="arg-linewidth-linewidth-minor">linewidth, linewidth_minor<a class="anchor" aria-label="anchor" href="#arg-linewidth-linewidth-minor"></a></dt>
@@ -115,8 +119,9 @@ disc.</p></dd>
 `FALSE`.</p></dd>
 
 
-<dt id="arg-origin-colour-origin-size">origin_colour, origin_size<a class="anchor" aria-label="anchor" href="#arg-origin-colour-origin-size"></a></dt>
-<dd><p>Centre-dot style.</p></dd>
+<dt id="arg-origin-colour-origin-size-origin-color">origin_colour, origin_size, origin_color<a class="anchor" aria-label="anchor" href="#arg-origin-colour-origin-size-origin-color"></a></dt>
+<dd><p>Centre-dot style. `origin_color`
+is the American-spelling alias.</p></dd>
 
 
 <dt id="arg-n-pts">n_pts<a class="anchor" aria-label="anchor" href="#arg-n-pts"></a></dt>

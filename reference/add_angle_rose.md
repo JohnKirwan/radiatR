@@ -24,7 +24,8 @@ add_angle_rose(
   alpha = 0.5,
   arc_pts = 20L,
   display = NULL,
-  axial = FALSE
+  axial = FALSE,
+  color = NULL
 )
 ```
 
@@ -68,9 +69,10 @@ add_angle_rose(
 
   Wedge fill colour. Default `"steelblue"`.
 
-- colour:
+- colour, color:
 
-  Wedge border colour. Default `NA` (no border).
+  Wedge border colour. Default `NA` (no border). `color` is the
+  American-spelling alias.
 
 - alpha:
 

@@ -63,7 +63,9 @@ as a `geom_segment()` arrow. `mean_dir` must be in unit-circle convention
 <span>  colour <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  arrow_length_cm <span class="op">=</span> <span class="fl">0.2</span>,</span>
 <span>  axial <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  <span class="va">...</span></span>
+<span>  <span class="va">...</span>,</span>
+<span>  color_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  color <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -76,19 +78,21 @@ as a `geom_segment()` arrow. `mean_dir` must be in unit-circle convention
 and `resultant_R` (0–1). Typically the output of [compute_circ_mean()].</p></dd>
 
 
-<dt id="arg-colour-col">colour_col<a class="anchor" aria-label="anchor" href="#arg-colour-col"></a></dt>
-<dd><p>Optional. Name of a column in `summary_df` to map to the
-colour aesthetic. Ignored when `colour` is also supplied.</p></dd>
+<dt id="arg-colour-col-color-col">colour_col, color_col<a class="anchor" aria-label="anchor" href="#arg-colour-col-color-col"></a></dt>
+<dd><p>Optional. Name of a column in `summary_df` to map
+to the colour aesthetic. Ignored when `colour` is also supplied. `color_col`
+is the American-spelling alias.</p></dd>
 
 
 <dt id="arg-linewidth">linewidth<a class="anchor" aria-label="anchor" href="#arg-linewidth"></a></dt>
 <dd><p>Line width of the arrow segment. Default `1`.</p></dd>
 
 
-<dt id="arg-colour">colour<a class="anchor" aria-label="anchor" href="#arg-colour"></a></dt>
-<dd><p>Fixed colour. When `NULL` (default) and `colour_col` is set,
-colour is mapped from that column; when `NULL` and no `colour_col`, draws
-in `"black"`. Supplying any colour string always overrides `colour_col`.</p></dd>
+<dt id="arg-colour-color">colour, color<a class="anchor" aria-label="anchor" href="#arg-colour-color"></a></dt>
+<dd><p>Fixed colour. When `NULL` (default) and `colour_col` is
+set, colour is mapped from that column; when `NULL` and no `colour_col`,
+draws in `"black"`. Supplying any colour string always overrides
+`colour_col`. `color` is the American-spelling alias.</p></dd>
 
 
 <dt id="arg-arrow-length-cm">arrow_length_cm<a class="anchor" aria-label="anchor" href="#arg-arrow-length-cm"></a></dt>

@@ -100,6 +100,7 @@ data using built-in rules or custom functions.
 - [`hf_display()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
   [`hf_heading_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
   [`hf_colour_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  [`hf_color_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
   [`hf_coords()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
   : Read the canonical attributes of a heading frame
 - [`register_heading_rule()`](https://johnkirwan.github.io/radiatR/reference/register_heading_rule.md)
@@ -195,6 +196,7 @@ The main radiate() function and its building blocks.
 - [`directedness_arrow()`](https://johnkirwan.github.io/radiatR/reference/directedness_arrow.md)
   : Make mean resultant length arrow
 - [`assign_cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.md)
+  [`assign_cycle_colors()`](https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.md)
   : Assign cycling colour indices to trajectories
 - [`add_multiple_circles()`](https://johnkirwan.github.io/radiatR/reference/add_multiple_circles.md)
   : Add multiple concentric circles to a ggplot object
@@ -205,8 +207,10 @@ The main radiate() function and its building blocks.
 - [`add_origin_point()`](https://johnkirwan.github.io/radiatR/reference/add_origin_point.md)
   : Mark the centre of a radial plot
 - [`assign_colour_key()`](https://johnkirwan.github.io/radiatR/reference/assign_colour_key.md)
+  [`assign_color_key()`](https://johnkirwan.github.io/radiatR/reference/assign_colour_key.md)
   : Assign a shared colour-key column to a Tracks or data frame
 - [`cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/cycle_colours.md)
+  [`cycle_colors()`](https://johnkirwan.github.io/radiatR/reference/cycle_colours.md)
   : Cycle a bounded set of colour indices over the values of a key
 
 ## Visualisation – heading overlays
@@ -400,8 +404,10 @@ Any remaining exported topics.
 - [`as.data.frame(`*`<Tracks>`*`)`](https://johnkirwan.github.io/radiatR/reference/as.data.frame.Tracks.md)
   : Coerce a Tracks to a data frame
 - [`assign_colour_key()`](https://johnkirwan.github.io/radiatR/reference/assign_colour_key.md)
+  [`assign_color_key()`](https://johnkirwan.github.io/radiatR/reference/assign_colour_key.md)
   : Assign a shared colour-key column to a Tracks or data frame
 - [`assign_cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.md)
+  [`assign_cycle_colors()`](https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.md)
   : Assign cycling colour indices to trajectories
 - [`bin_angles()`](https://johnkirwan.github.io/radiatR/reference/bin_angles.md)
   : Snap angles to fixed-width circular bin centres
@@ -444,6 +450,7 @@ Any remaining exported topics.
 - [`cpunctatus_tracks`](https://johnkirwan.github.io/radiatR/reference/cpunctatus_tracks.md)
   : \*Cylindroiulus punctatus\* trajectory tibble
 - [`cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/cycle_colours.md)
+  [`cycle_colors()`](https://johnkirwan.github.io/radiatR/reference/cycle_colours.md)
   : Cycle a bounded set of colour indices over the values of a key
 - [`degree_labs()`](https://johnkirwan.github.io/radiatR/reference/degree_labs.md)
   : Label the four diagonal directions.
@@ -483,6 +490,7 @@ Any remaining exported topics.
 - [`hf_display()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
   [`hf_heading_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
   [`hf_colour_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  [`hf_color_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
   [`hf_coords()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
   : Read the canonical attributes of a heading frame
 - [`import_info()`](https://johnkirwan.github.io/radiatR/reference/import_info.md)

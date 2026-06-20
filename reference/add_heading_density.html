@@ -85,7 +85,9 @@ add_circular_density(
 <span>  linewidth <span class="op">=</span> <span class="fl">0.8</span>,</span>
 <span>  ci_fill <span class="op">=</span> <span class="st">"grey70"</span>,</span>
 <span>  ci_alpha <span class="op">=</span> <span class="fl">0.3</span>,</span>
-<span>  axial <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  axial <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  color_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  color <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -101,9 +103,10 @@ add_circular_density(
 <dd><p>Name of the heading column (radians). Default `"heading"`.</p></dd>
 
 
-<dt id="arg-colour-col">colour_col<a class="anchor" aria-label="anchor" href="#arg-colour-col"></a></dt>
+<dt id="arg-colour-col-color-col">colour_col, color_col<a class="anchor" aria-label="anchor" href="#arg-colour-col-color-col"></a></dt>
 <dd><p>Optional grouping column. When set, one density is
-computed per group and the column is included in the output.</p></dd>
+computed per group and the column is included in the output. `color_col` is
+the American-spelling alias.</p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
@@ -142,9 +145,9 @@ produces a 95% interval.</p></dd>
 (peak at r = 1.4). Density is normalised within each group before scaling.</p></dd>
 
 
-<dt id="arg-colour">colour<a class="anchor" aria-label="anchor" href="#arg-colour"></a></dt>
-<dd><p>Fixed line colour used when `colour_col` is `NULL`. Default
-`"black"`.</p></dd>
+<dt id="arg-colour-color">colour, color<a class="anchor" aria-label="anchor" href="#arg-colour-color"></a></dt>
+<dd><p>Fixed line colour used when `colour_col` is `NULL`.
+Default `"black"`. `color` is the American-spelling alias.</p></dd>
 
 
 <dt id="arg-fill">fill<a class="anchor" aria-label="anchor" href="#arg-fill"></a></dt>

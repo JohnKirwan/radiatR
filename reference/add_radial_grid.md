@@ -23,7 +23,10 @@ add_radial_grid(
   origin = FALSE,
   origin_colour = "grey50",
   origin_size = 1.5,
-  n_pts = 200L
+  n_pts = 200L,
+  color = NULL,
+  color_minor = NULL,
+  origin_color = NULL
 )
 ```
 
@@ -42,9 +45,10 @@ add_radial_grid(
   spacing (\`pi / spokes_major\`), so their placement is defined
   relative to the major count.
 
-- colour, colour_minor:
+- colour, colour_minor, color, color_minor:
 
-  Spoke/ring colour. \`colour_minor\` defaults to \`colour\`.
+  Spoke/ring colour. \`colour_minor\` defaults to \`colour\`. \`color\`
+  and \`color_minor\` are the American-spelling aliases.
 
 - linewidth, linewidth_minor:
 
@@ -62,9 +66,9 @@ add_radial_grid(
 
   Logical; add a centre dot (\[add_origin_point()\]). Default \`FALSE\`.
 
-- origin_colour, origin_size:
+- origin_colour, origin_size, origin_color:
 
-  Centre-dot style.
+  Centre-dot style. \`origin_color\` is the American-spelling alias.
 
 - n_pts:
 
