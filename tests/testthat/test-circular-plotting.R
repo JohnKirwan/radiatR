@@ -1876,3 +1876,29 @@ test_that("radiate track_colour = 'time' errors on numeric frames without a fram
   expect_error(radiate(cpunctatus, show_tracks = TRUE, track_colour = "time"),
                "frame rate")
 })
+
+test_that("radiate track_colour = 'speed' colours by instantaneous speed with a frame rate", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  ts <- set_frame_rate(cpunctatus, 30)
+  p  <- radiate(ts, show_tracks = TRUE, track_colour = "speed")
+  cs <- p$scales$get_scales("colour")
+  expect_true(inherits(cs, "ScaleContinuous"))
+  expect_equal(sum(vapply(p$scales$scales,
+    function(s) "colour" %in% s$aesthetics, logical(1))), 1L)   # exactly one colour scale
+  b  <- ggplot2::ggplot_build(p)
+  pd <- b$data[[which(vapply(p$layers,
+    function(l) inherits(l$geom, "GeomPath"), logical(1)))[1]]]
+  expect_gt(length(unique(pd$colour)), 1L)                      # a gradient
+})
+
+test_that("radiate track_colour = 'speed' errors on numeric frames without a frame rate", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  expect_error(radiate(cpunctatus, show_tracks = TRUE, track_colour = "speed"), "frame rate")
+})
+
+test_that("radiate track_colour = 'speed' cannot combine with colour_cycle", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  ts <- set_frame_rate(cpunctatus, 30)
+  expect_error(radiate(ts, show_tracks = TRUE, track_colour = "speed", colour_cycle = 4),
+               "cannot be combined")
+})
