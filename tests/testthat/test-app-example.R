@@ -415,6 +415,30 @@ test_that("track_colour selector drives current_spec()$track_colour", {
   })
 })
 
+# Track colour "By elapsed time": the selection + frame rate flow into the spec,
+# and an invalid frame rate surfaces the not-drawable note (graceful fallback).
+test_that("track_colour = 'time' + frame rate flows into the spec; invalid fps shows the note", {
+  skip_if_not_installed("shiny")
+  app_dir <- system.file("app", package = "radiatR")
+  if (!nzchar(app_dir)) app_dir <- testthat::test_path("..", "..", "inst", "app")
+  skip_if(!dir.exists(app_dir), "radiatR app directory not found")
+
+  shiny::testServer(app_dir, {
+    session$setInputs(load_example = 1)              # trajectory example, lands on Configure
+    session$setInputs(go3 = 1)                        # advance to Results
+    expect_false(is.null(rv$ts))
+
+    session$setInputs(track_colour = "time", frame_rate = 30)
+    expect_equal(current_spec()$track_colour, "time")
+    expect_equal(current_spec()$frame_rate, 30)
+    # valid fps -> effective mode is "time" -> note is empty
+    expect_null(output$track_time_note)
+    # zero fps -> falls back to sequence, note appears
+    session$setInputs(frame_rate = 0)
+    expect_true(!is.null(output$track_time_note))
+  })
+})
+
 # rao_spacing_fmt: omnibus Rao spacing bracket, parsed from circular's print output.
 test_that("rao_spacing_fmt brackets clustered, uniform, and tiny samples", {
   skip_if_not_installed("shiny")
