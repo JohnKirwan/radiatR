@@ -1858,3 +1858,21 @@ test_that("a faceted sequence plot builds", {
   p <- radiate(cpunctatus, show_tracks = TRUE, track_colour = "sequence", panel_by = facet)
   expect_s3_class(ggplot2::ggplot_build(p), "ggplot_built")
 })
+
+test_that("radiate track_colour = 'time' colours by elapsed seconds with a frame rate", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  ts <- set_frame_rate(cpunctatus, 30)
+  p <- radiate(ts, show_tracks = TRUE, track_colour = "time")
+  cs <- p$scales$get_scales("colour")
+  expect_true(inherits(cs, "ScaleContinuous"))
+  b <- ggplot2::ggplot_build(p)
+  path_data <- b$data[[which(vapply(p$layers,
+    function(l) inherits(l$geom, "GeomPath"), logical(1)))[1]]]
+  expect_gt(length(unique(path_data$colour)), 1L)
+})
+
+test_that("radiate track_colour = 'time' errors on numeric frames without a frame rate", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  expect_error(radiate(cpunctatus, show_tracks = TRUE, track_colour = "time"),
+               "frame rate")
+})

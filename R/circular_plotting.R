@@ -2162,10 +2162,16 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   (default) keeps the existing per-track colouring. `"sequence"` colours each
 #'   path by its point's normalized position from start (0) to finish (1) within
 #'   the track, applying a continuous viridis scale with a `"start -> finish"`
-#'   colourbar. Sequence mode owns the colour aesthetic and so cannot be combined
-#'   with `colour_col`/`colour_cycle`; overlays render in a fixed colour. The
+#'   colourbar. `"time"` colours each path by real elapsed time from its own
+#'   track's start (see [elapsed_seconds()]), applying a continuous viridis scale
+#'   with an `"elapsed (s)"` colourbar; numeric (frame) time requires a
+#'   [frame_rate()] (set one with `set_frame_rate(ts, fps)`). Both `"sequence"`
+#'   and `"time"` own the colour aesthetic and so cannot be combined with
+#'   `colour_col`/`colour_cycle`; overlays render in a fixed colour. The
 #'   per-track order is taken from the `Tracks` time column, falling back to row
 #'   order (with a message) when no usable time column is present.
+#' @param time_units Units for `track_colour = "time"`: `"seconds"` (default),
+#'   `"minutes"`, or `"milliseconds"`. Sets the colourbar title and scale.
 #' @param theme Plot appearance, named for the ggplot2 base themes: one of
 #'   `"void"` (default), `"minimal"`, `"classic"`, `"bw"`, `"grey"`, `"light"`,
 #'   `"dark"`, or `"linedraw"`. See [radial_theme()].
@@ -2258,7 +2264,8 @@ function(
   group_col = NULL,
   colour_col = NULL,
   colour_cycle = NULL,
-  track_colour = c("trajectory", "sequence"),
+  track_colour = c("trajectory", "sequence", "time"),
+  time_units = c("seconds", "minutes", "milliseconds"),
   panel_by = NULL,
   ncol = NULL,
   strip_labels = NULL,
@@ -2295,7 +2302,9 @@ function(
   angle_labels <- match.arg(angle_labels)
   grid <- match.arg(grid)
   track_colour <- match.arg(track_colour)
-  seq_track <- identical(track_colour, "sequence")
+  time_units <- match.arg(time_units)
+  seq_track  <- identical(track_colour, "sequence")
+  time_track <- identical(track_colour, "time")
   # Back-compat: an explicit `degrees = FALSE` hides the angle labels.
   if (isFALSE(degrees)) angle_labels <- "none"
   theme <- match.arg(theme)
@@ -2358,11 +2367,15 @@ function(
     colour_col <- ".cycle_colour"
   }
 
-  if (seq_track) {
+  if (seq_track || time_track) {
     if (!is.null(colour_col) || !is.null(colour_cycle))
-      stop("`track_colour = 'sequence'` colours tracks by position and cannot be ",
-           "combined with `colour_col`/`colour_cycle`.")
-    data <- .seq_position(data, id_col = group_col, time_col = ts@cols$time)
+      stop("`track_colour = '", track_colour, "'` colours tracks by position/time ",
+           "and cannot be combined with `colour_col`/`colour_cycle`.")
+    if (seq_track)
+      data <- .seq_position(data, id_col = group_col, time_col = ts@cols$time)
+    else
+      data[[".elapsed"]] <- .elapsed_time(data[[ts@cols$time]], data[[group_col]],
+                                          frame_rate(ts), time_units)
   }
 
   x_sym <- rlang::sym(x_col)
@@ -2373,7 +2386,9 @@ function(
     ggplot2::coord_fixed()
 
   layer_mapping <- NULL
-  if (seq_track) {
+  if (time_track) {
+    layer_mapping <- ggplot2::aes(group = !!rlang::sym(group_col), colour = .data$.elapsed)
+  } else if (seq_track) {
     layer_mapping <- ggplot2::aes(group = !!rlang::sym(group_col), colour = .data$.seq)
   } else if (!is.null(group_col) || !is.null(colour_col)) {
     mapping_list <- list()
@@ -2501,7 +2516,7 @@ function(
       if (!is.null(arrow_df) && nrow(arrow_df) > 0L) {
         # In sequence mode the continuous .seq scale owns the colour aesthetic,
         # so the arrow uses a fixed colour rather than mapping a discrete column.
-        use_arrow_colour_col <- !seq_track &&
+        use_arrow_colour_col <- !(seq_track || time_track) &&
                                 !is.null(arrow_colour_col) &&
                                 arrow_colour_col %in% names(arrow_df)
         arrow_map <- ggplot2::aes(x = x, y = y, xend = xend, yend = yend)
@@ -2524,7 +2539,12 @@ function(
     }
   }
 
-  if (seq_track) {
+  if (time_track) {
+    unit_lab <- switch(time_units, seconds = "elapsed (s)",
+                       minutes = "elapsed (min)", milliseconds = "elapsed (ms)")
+    g <- g + ggplot2::scale_colour_viridis_c(
+      guide = ggplot2::guide_colourbar(title = unit_lab))
+  } else if (seq_track) {
     g <- g + ggplot2::scale_colour_viridis_c(
       guide = ggplot2::guide_colourbar(title = "start → finish"))
   } else if (is.character(colour_cycle)) {

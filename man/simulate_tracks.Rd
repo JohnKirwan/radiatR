@@ -11,7 +11,8 @@ simulate_tracks(
   write_path = NULL,
   seed = NULL,
   radial_noise = 0.02,
-  phi = 0.85
+  phi = 0.85,
+  frame_rate = NULL
 )
 }
 \arguments{
@@ -36,6 +37,10 @@ radius profile.}
 
 \item{phi}{Autocorrelation parameter (0-1) used when generating angular noise
 series; higher values produce smoother paths.}
+
+\item{frame_rate}{Optional capture frame rate (frames per second) attached to
+the returned [Tracks] via [set_frame_rate()] when `output` is `"trajset"` or
+`"both"`. The default `NULL` leaves the output unchanged.}
 }
 \value{
 Depending on `output`, a tibble, a `Tracks`, or a list containing
