@@ -71,6 +71,33 @@ path_tortuosity <- function(x, y) {
   total / net
 }
 
+# Total path length (sum of step distances) over the finite points; 0 for < 2 points.
+.path_length <- function(x, y) {
+  ok <- is.finite(x) & is.finite(y)
+  x <- x[ok]; y <- y[ok]
+  if (length(x) < 2L) return(0)
+  sum(sqrt(diff(x)^2 + diff(y)^2))
+}
+
+#' Per-trajectory path length for a Tracks
+#'
+#' Total distance travelled along each trajectory. With a distance calibration
+#' set ([set_distance_scale()]) the result is in physical units; otherwise in the
+#' units of the recorded `x`/`y` coordinates.
+#'
+#' @param ts A `Tracks`.
+#' @param x_col,y_col Names of the coordinate columns. Default to the `Tracks`'s
+#'   recorded x/y columns.
+#' @return A `data.frame` with one row per trajectory: the id column and a
+#'   numeric `length` column.
+#' @seealso [set_distance_scale()], [track_speed()], [straightness_index()]
+#' @export
+track_length <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
+  out <- .trajectory_metric(ts, x_col, y_col, "length", .path_length)
+  out$length <- out$length * (distance_scale(ts) %||% 1)
+  out
+}
+
 # Apply a per-trajectory scalar metric `fun(x, y)` to each trajectory in `ts`,
 # ordering each trajectory's points by the time column when one is recorded.
 # Returns a data.frame with the id column and a `value_name` column.
@@ -193,6 +220,7 @@ track_speed <- function(ts, stat = c("mean", "max", "median"),
       stop("column '", cc, "' not found in the Tracks.")
   }
   el  <- elapsed_seconds(ts)                 # validates frame rate / handles POSIXct
+  scl <- distance_scale(ts) %||% 1
   ids <- unique(d[[idc]])
   vals <- vapply(ids, function(i) {
     sel <- d[[idc]] == i
@@ -200,7 +228,7 @@ track_speed <- function(ts, stat = c("mean", "max", "median"),
     ord <- order(sub[[tc]])
     s   <- step_speed(sub[[x_col]][ord], sub[[y_col]][ord], el[sel][ord])
     s   <- s[is.finite(s)]
-    if (!length(s)) NA_real_ else reduce(s)
+    if (!length(s)) NA_real_ else reduce(s) * scl
   }, numeric(1L))
   out <- data.frame(ids, vals, stringsAsFactors = FALSE)
   names(out) <- c(idc, "speed")
@@ -242,5 +270,5 @@ instantaneous_speed <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
     if (length(sel) >= 2L)
       out[sel[-1L]] <- step_speed(d[[x_col]][sel], d[[y_col]][sel], el[sel])
   }
-  out
+  out * (distance_scale(ts) %||% 1)
 }
