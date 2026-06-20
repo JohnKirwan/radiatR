@@ -6,7 +6,7 @@ test_that("derive_headings crossing rule returns heading angle", {
   r <- seq(0, 0.8, length.out = n)
   df <- data.frame(id = "A", time = seq_len(n),
                    x = r * cos(theta), y = r * sin(theta))
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y",
                 normalize_xy = FALSE)
   hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4)
   expect_equal(nrow(hd), 1)
@@ -20,7 +20,7 @@ test_that("derive_headings crossing rule with return_coords adds inner/outer cro
   r <- seq(0, 0.8, length.out = n)
   df <- data.frame(id = "A", time = seq_len(n),
                    x = r * cos(theta), y = r * sin(theta))
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y",
                 normalize_xy = FALSE)
   hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
                         return_coords = TRUE)
@@ -40,7 +40,7 @@ test_that("crossing heading is the boundary projection, not the segment slope", 
   y0 <- 0.1
   xs <- seq(0.05, 0.7, length.out = 40)
   df <- data.frame(id = "A", time = seq_along(xs), x = xs, y = y0)
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y",
                 normalize_xy = FALSE)
   hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
                         return_coords = TRUE)
@@ -68,7 +68,7 @@ test_that("derive_headings crossing without crossing returns NA row", {
   # Trajectory that never leaves circ0=0.2; normalize_xy=FALSE keeps raw coords.
   df <- data.frame(id = "A", time = 1:5,
                    x = c(0, 0.05, 0.1, 0.05, 0), y = rep(0, 5))
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y",
                 normalize_xy = FALSE)
   hd <- derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
                         on_missing = "quiet")
@@ -78,7 +78,7 @@ test_that("derive_headings crossing without crossing returns NA row", {
 
 # ---- multi-trajectory crossing accuracy -------------------------------------
 
-# Helper: build a TrajSet of N straight-line trajectories, each heading at
+# Helper: build a Tracks of N straight-line trajectories, each heading at
 # a different angle.  normalize_xy=FALSE keeps raw coordinates intact.
 make_multi_crossing_ts <- function(angles, n = 20, r_max = 0.8) {
   r <- seq(0, r_max, length.out = n)
@@ -87,7 +87,7 @@ make_multi_crossing_ts <- function(angles, n = 20, r_max = 0.8) {
     data.frame(id = paste0("T", i), time = seq_len(n),
                x  = r * cos(th), y = r * sin(th))
   }))
-  TrajSet(rows, id = "id", time = "time", x = "x", y = "y",
+  tracks(rows, id = "id", time = "time", x = "x", y = "y",
           normalize_xy = FALSE)
 }
 
@@ -169,38 +169,38 @@ test_that("derive_headings computes simple net direction", {
     x = c(0, 0, 1),
     y = c(0, 1, 1)
   )
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y", angle = "time", angle_unit = "radians")
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y", angle = "time", angle_unit = "radians")
   headings <- derive_headings(ts, rule = "net")
   expect_equal(nrow(headings), 1)
   expect_equal(headings$heading, atan2(1, 1), tolerance = 1e-8)
 })
 
-test_that("TrajSet accepts rel_x/rel_y col pointers", {
+test_that("Tracks accepts rel_x/rel_y col pointers", {
   df <- data.frame(id = "A", time = 1:3,
                    x = c(0.1, 0.2, 0.3), y = c(0.0, 0.1, 0.2),
                    rx = c(-0.1, -0.2, -0.3), ry = c(0.0, -0.1, -0.2))
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y",
                 rel_x = "rx", rel_y = "ry", normalize_xy = FALSE)
   expect_equal(ts@cols$rel_x, "rx")
   expect_equal(ts@cols$rel_y, "ry")
 })
 
-test_that("TrajSet validator rejects rel_x without rel_y", {
+test_that("Tracks validator rejects rel_x without rel_y", {
   df <- data.frame(id = "A", time = 1:3,
                    x = c(0.1, 0.2, 0.3), y = c(0.0, 0.1, 0.2),
                    rx = c(-0.1, -0.2, -0.3))
   expect_error(
-    TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+    tracks(df, id = "id", time = "time", x = "x", y = "y",
             rel_x = "rx", normalize_xy = FALSE),
     "rel_y"
   )
 })
 
-test_that("TrajSet validator rejects rel_x pointing to absent column", {
+test_that("Tracks validator rejects rel_x pointing to absent column", {
   df <- data.frame(id = "A", time = 1:3,
                    x = c(0.1, 0.2, 0.3), y = c(0.0, 0.1, 0.2))
   expect_error(
-    TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+    tracks(df, id = "id", time = "time", x = "x", y = "y",
             rel_x = "no_such", rel_y = "y", normalize_xy = FALSE),
     "rel_x"
   )
@@ -219,7 +219,7 @@ test_that("custom heading rules can be registered and listed", {
   withr::defer(rm(list = "zero_heading", envir = registry), envir = parent.frame())
 
   df <- data.frame(id = "A", time = 0:1, x = c(0, 1), y = c(0, 0))
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y", angle = "time", angle_unit = "radians")
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y", angle = "time", angle_unit = "radians")
   res <- derive_headings(ts, rule = "zero_heading")
   expect_equal(res$heading, 0)
   expect_true("zero_heading" %in% list_heading_rules())
@@ -227,7 +227,7 @@ test_that("custom heading rules can be registered and listed", {
 
 # ---- coords parameter tests --------------------------------------------------
 
-# Helper: TrajSet with both abs and rel coord columns
+# Helper: Tracks with both abs and rel coord columns
 make_ts_with_rel <- function() {
   df <- data.frame(
     id = "A", time = 1:10,
@@ -236,7 +236,7 @@ make_ts_with_rel <- function() {
     rx = rep(0, 10),                     # heading North in relative
     ry = seq(0, 0.8, length.out = 10)
   )
-  TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+  tracks(df, id = "id", time = "time", x = "x", y = "y",
           rel_x = "rx", rel_y = "ry", normalize_xy = FALSE)
 }
 
@@ -257,7 +257,7 @@ test_that("derive_headings coords='relative' uses rel_x/rel_y columns", {
 test_that("derive_headings errors when coords='relative' but rel_x/rel_y not registered", {
   df <- data.frame(id = "A", time = 1:10,
                    x = seq(0, 0.8, length.out = 10), y = rep(0, 10))
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y",
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y",
                 normalize_xy = FALSE)
   expect_error(
     derive_headings(ts, rule = "crossing", circ0 = 0.2, circ1 = 0.4,
@@ -283,7 +283,7 @@ make_ts_with_bodyparts <- function() {
     thorax_x = seq(0, 0.4, by = 0.1),
     thorax_y = rep(0, 5)
   )
-  TrajSet_read(df, mapping = list(id = "id", time = "time", x = "x", y = "y"),
+  read_tracks(df, mapping = list(id = "id", time = "time", x = "x", y = "y"),
                keep = c("head_x", "head_y", "thorax_x", "thorax_y"),
                normalize_xy = FALSE)
 }
@@ -306,7 +306,7 @@ test_that("bodypart_axis frame_select='last' uses final frame", {
   df <- data.frame(id = "t1", time = 1:4, x = 1:4, y = rep(0,4),
                    head_x = c(1,2,3,4), head_y = rep(1, 4),
                    tail_x = c(1,2,3,4), tail_y = rep(0, 4))
-  ts <- TrajSet_read(df, mapping = list(id="id", time="time", x="x", y="y"),
+  ts <- read_tracks(df, mapping = list(id="id", time="time", x="x", y="y"),
                      keep = c("head_x","head_y","tail_x","tail_y"),
                      normalize_xy = FALSE)
   hd <- derive_headings(ts, rule = "bodypart_axis",
@@ -336,7 +336,7 @@ test_that("ellipse_axis returns theta at distal frame", {
   df <- data.frame(id = "t1", time = 1:5,
                    x = c(0, .2, .4, .6, .8), y = rep(0, 5),
                    theta = c(0, pi/6, pi/4, pi/3, pi/2))
-  ts <- TrajSet_read(df, mapping = list(id="id",time="time",x="x",y="y"),
+  ts <- read_tracks(df, mapping = list(id="id",time="time",x="x",y="y"),
                      normalize_xy = FALSE)
   hd <- derive_headings(ts, rule = "ellipse_axis",
                         coords = "absolute")
@@ -347,7 +347,7 @@ test_that("ellipse_axis returns theta at distal frame", {
 test_that("ellipse_axis frame_select='mean' gives circular mean of theta", {
   df <- data.frame(id = "t1", time = 1:4, x = rep(0.5, 4), y = rep(0, 4),
                    theta = c(0, 0, 0, 0))
-  ts <- TrajSet_read(df, mapping = list(id="id",time="time",x="x",y="y"),
+  ts <- read_tracks(df, mapping = list(id="id",time="time",x="x",y="y"),
                      normalize_xy = FALSE)
   hd <- derive_headings(ts, rule = "ellipse_axis", frame_select = "mean",
                         coords = "absolute")
@@ -356,7 +356,7 @@ test_that("ellipse_axis frame_select='mean' gives circular mean of theta", {
 
 test_that("ellipse_axis errors when theta column absent", {
   df <- data.frame(id = "t1", time = 1:3, x = 1:3, y = rep(0,3))
-  ts <- TrajSet_read(df, mapping = list(id="id",time="time",x="x",y="y"),
+  ts <- read_tracks(df, mapping = list(id="id",time="time",x="x",y="y"),
                      normalize_xy = FALSE)
   expect_error(
     derive_headings(ts, rule = "ellipse_axis",
@@ -371,7 +371,7 @@ test_that("bodypart_axis frame_select='all' returns one row per frame", {
   df <- data.frame(id = "t1", time = 1:5, x = seq(0, .4, .1), y = rep(0, 5),
                    head_x = seq(0, .4, .1), head_y = rep(.1, 5),
                    thorax_x = seq(0, .4, .1), thorax_y = rep(0, 5))
-  ts <- TrajSet_read(df, mapping = list(id="id",time="time",x="x",y="y"),
+  ts <- read_tracks(df, mapping = list(id="id",time="time",x="x",y="y"),
                      keep = c("head_x","head_y","thorax_x","thorax_y"),
                      normalize_xy = FALSE)
   hd <- derive_headings(ts, rule = "bodypart_axis",
@@ -386,7 +386,7 @@ test_that("bodypart_axis frame_select='all' returns one row per frame", {
 test_that("ellipse_axis frame_select='all' returns one row per frame", {
   df <- data.frame(id = "t1", time = 1:4, x = 1:4, y = rep(0,4),
                    theta = rep(pi/3, 4))
-  ts <- TrajSet_read(df, mapping = list(id="id",time="time",x="x",y="y"),
+  ts <- read_tracks(df, mapping = list(id="id",time="time",x="x",y="y"),
                      normalize_xy = FALSE)
   hd <- derive_headings(ts, rule = "ellipse_axis", frame_select = "all",
                         coords = "absolute")
@@ -434,7 +434,7 @@ test_that("pose_to_headings clock convention flips axis correctly", {
 
 # ---- attrition reporting (on_missing) ---------------------------------------
 
-# A TrajSet of 5 trials: 3 reach r=0.8 (cross circ0/circ1), 2 stay central
+# A Tracks of 5 trials: 3 reach r=0.8 (cross circ0/circ1), 2 stay central
 # (max r = 0.3 < circ1 = 0.4) so the crossing rule yields NA for them.
 make_attrition_ts <- function() {
   mk <- function(id, theta, r_max, n = 15) {
@@ -446,7 +446,7 @@ make_attrition_ts <- function() {
     mk("cross1", 0.3, 0.8), mk("cross2", 1.2, 0.8), mk("cross3", 2.5, 0.8),
     mk("central1", 0.5, 0.30), mk("central2", 1.8, 0.30)
   )
-  TrajSet(rows, id = "id", time = "time", x = "x", y = "y", normalize_xy = FALSE)
+  tracks(rows, id = "id", time = "time", x = "x", y = "y", normalize_xy = FALSE)
 }
 
 test_that("derive_headings warns and reports attrition by default", {
@@ -491,7 +491,7 @@ test_that("velocity_axis returns the axial mean of step directions", {
   set.seed(1)
   ang <- c(rnorm(30, 30, 4), rnorm(30, 210, 4)) * pi/180   # back-and-forth ~30 deg
   x <- cumsum(c(0, cos(ang))); y <- cumsum(c(0, sin(ang)))
-  ts <- TrajSet(data.frame(id = "t", time = seq_along(x), x = x, y = y),
+  ts <- tracks(data.frame(id = "t", time = seq_along(x), x = x, y = y),
                 id = "id", time = "time", x = "x", y = "y", normalize_xy = FALSE)
   hd <- derive_headings(ts, rule = "velocity_axis")
   manual <- (Arg(mean(exp(1i * 2 * ang))) / 2) %% pi
@@ -504,7 +504,7 @@ test_that("velocity_axis differs from velocity_mean on bidirectional data", {
   set.seed(2)
   ang <- c(rnorm(30, 40, 4), rnorm(30, 220, 4)) * pi/180
   x <- cumsum(c(0, cos(ang))); y <- cumsum(c(0, sin(ang)))
-  ts <- TrajSet(data.frame(id = "t", time = seq_along(x), x = x, y = y),
+  ts <- tracks(data.frame(id = "t", time = seq_along(x), x = x, y = y),
                 id = "id", time = "time", x = "x", y = "y", normalize_xy = FALSE)
   ax <- derive_headings(ts, rule = "velocity_axis")$heading
   dm <- derive_headings(ts, rule = "velocity_mean")$heading
@@ -512,7 +512,7 @@ test_that("velocity_axis differs from velocity_mean on bidirectional data", {
 })
 
 test_that("velocity_axis weight_by changes the result on unequal steps", {
-  ts <- TrajSet(data.frame(id = "t", time = 1:3, x = c(0, 10, 10), y = c(0, 0, 1)),
+  ts <- tracks(data.frame(id = "t", time = 1:3, x = c(0, 10, 10), y = c(0, 0, 1)),
                 id = "id", time = "time", x = "x", y = "y", normalize_xy = FALSE)
   a <- derive_headings(ts, rule = "velocity_axis", weight_by = "step_length")$heading
   b <- derive_headings(ts, rule = "velocity_axis", weight_by = "uniform")$heading
@@ -520,7 +520,7 @@ test_that("velocity_axis weight_by changes the result on unequal steps", {
 })
 
 test_that("velocity_axis on a single-point trajectory yields NA", {
-  ts <- TrajSet(data.frame(id = "t", time = 1, x = 0.2, y = 0.1),
+  ts <- tracks(data.frame(id = "t", time = 1, x = 0.2, y = 0.1),
                 id = "id", time = "time", x = "x", y = "y", normalize_xy = FALSE)
   hd <- suppressWarnings(derive_headings(ts, rule = "velocity_axis"))
   expect_true(is.na(hd$heading))

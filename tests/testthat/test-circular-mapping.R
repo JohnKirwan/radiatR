@@ -25,7 +25,7 @@ test_that("unit circle mapping normalises and inverts pixel coordinates", {
   expect_equal(recovered$y, origin[2], tolerance = 1e-6)
 })
 
-test_that("TrajSet retains raw coordinates when normalising", {
+test_that("Tracks retains raw coordinates when normalising", {
   df <- data.frame(
     id = c("a", "a"),
     time = c(0, 1),
@@ -33,8 +33,8 @@ test_that("TrajSet retains raw coordinates when normalising", {
     y = c(240, 220)
   )
 
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y", normalize_xy = TRUE)
-  expect_s4_class(ts, "TrajSet")
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y", normalize_xy = TRUE)
+  expect_s4_class(ts, "Tracks")
   expect_true(ts@meta$normalize_xy)
 
   expect_false(is.null(ts@cols$raw_x))
@@ -67,7 +67,7 @@ test_that("transform history propagates from mapping pipeline", {
 
   limits <- get_trial_limits(landmarks, tracks, file_tbl, vid_num = 1)
   res <- get_tracked_object_pos(limits, tracks)
-  expect_s4_class(res, "TrajSet")
+  expect_s4_class(res, "Tracks")
   history <- transform_history(res)
 
   expect_s3_class(history, "tbl_df")

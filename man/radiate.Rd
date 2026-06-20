@@ -2,14 +2,14 @@
 % Please edit documentation in R/circular_plotting.R
 \name{radiate}
 \alias{radiate}
-\alias{radiate.TrajSet}
+\alias{radiate.Tracks}
 \alias{radiate.default}
 \alias{radiate.headings_frame}
 \title{Make ggplot object of tracks radiating from circle centre.}
 \usage{
 radiate(data, ...)
 
-\method{radiate}{TrajSet}(data, ...)
+\method{radiate}{Tracks}(data, ...)
 
 \method{radiate}{default}(
   data,
@@ -86,7 +86,7 @@ radiate(data, ...)
 )
 }
 \arguments{
-\item{data}{Data frame or `TrajSet`.}
+\item{data}{Data frame or `Tracks`.}
 
 \item{...}{Additional arguments forwarded to [draw_tracks()].}
 
@@ -214,7 +214,7 @@ A `ggplot2` object.
 }
 \description{
 Accepts either a precomputed data frame of polar/cartesian coordinates or a
-`TrajSet`. When a `TrajSet` is supplied, column mappings are inferred from
+`Tracks`. When a `Tracks` is supplied, column mappings are inferred from
 the object and handed off to the plotting helpers.
 }
 \examples{

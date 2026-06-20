@@ -21,7 +21,7 @@ A tidy long-form tibble (44,331 rows) holding the per-frame observations
 from the same millipede experiment as \code{\link{cpunctatus}}, with the
 trial condition metadata (`arc`, `type`, `individual`) joined onto every
 frame. Convenient for analyses that prefer a plain data frame to the
-`TrajSet` container. A subset of the published dataset.
+`Tracks` container. A subset of the published dataset.
 }
 \references{
 Kirwan, J. D., & Nilsson, D.-E. (2019). A millipede compound eye

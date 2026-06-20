@@ -50,11 +50,11 @@ ts_demo <- suppressWarnings(get_all_object_pos(file_tbl = file_tbl, track_dir = 
 ts_demo
 ```
 
-`get_all_object_pos()` reads each landmark/track pair, normalises coordinates to a unit circle (arena radius = 1), and returns a `TrajSet`. Trial metadata (arena radius, target position, frame limits) is in `ts_demo@meta$trial_limits`.
+`get_all_object_pos()` reads each landmark/track pair, normalises coordinates to a unit circle (arena radius = 1), and returns a `Tracks`. Trial metadata (arena radius, target position, frame limits) is in `ts_demo@meta$trial_limits`.
 
 ## Full Millipede Dataset
 
-The package also provides `cpunctatus`, a pre-computed `TrajSet` of all 235 *Cylindroiulus punctatus* trajectories across the stimulus conditions (target half-widths of 5, 10, 15, 20, 30, 40, 50 degrees, plus a featureless control with `arc = 0`). Loading it is instant, and the per-trial target half-width is already attached as the `arc` column.
+The package also provides `cpunctatus`, a pre-computed `Tracks` of all 235 *Cylindroiulus punctatus* trajectories across the stimulus conditions (target half-widths of 5, 10, 15, 20, 30, 40, 50 degrees, plus a featureless control with `arc = 0`). Loading it is instant, and the per-trial target half-width is already attached as the `arc` column.
 
 ```{r load-full}
 data(cpunctatus)
@@ -442,7 +442,7 @@ sim_df <- simulate_tracks(
   n_points = 150,
   seed = 42
 )
-ts_sim <- TrajSet(
+ts_sim <- tracks(
   sim_df,
   id = "trial_id", time = "frame",
   angle = "rel_theta", x = "rel_x", y = "rel_y",

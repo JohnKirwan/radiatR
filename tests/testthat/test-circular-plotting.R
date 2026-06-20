@@ -309,7 +309,7 @@ test_that("trajectory helpers create ggplot objects", {
     x = c(0, 0.5, 1, 1.5),
     y = c(0, 0.1, 0.2, 0.3)
   )
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y", angle = "time", angle_unit = "radians")
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y", angle = "time", angle_unit = "radians")
   gp <- gg_traj(ts, geom = "path", coord = "cartesian")
   expect_s3_class(gp, "ggplot")
 
@@ -333,7 +333,7 @@ test_that("line-circle intercept utilities behave as expected", {
     y = c(0, 0),
     angle = c(0, 0)
   )
-  ts <- TrajSet(traj_df, id = "id", time = "time", x = "x", y = "y", angle = "angle", angle_unit = "radians",
+  ts <- tracks(traj_df, id = "id", time = "time", x = "x", y = "y", angle = "angle", angle_unit = "radians",
                 normalize_xy = FALSE)
   ints_traj <- line_circle_intercept_traj(ts, "A", 1:2)
   expect_equal(ints_traj$y_int, 0, tolerance = 1e-8)
@@ -674,7 +674,7 @@ test_that("add_heading_density works inside radiate context", {
   )
   hd <- suppressWarnings(
     derive_headings(
-      TrajSet(sim, id = "trial_id", time = "frame",
+      tracks(sim, id = "trial_id", time = "frame",
               angle = "rel_theta", x = "rel_x", y = "rel_y",
               angle_unit = "radians", normalize_xy = FALSE),
       rule = "crossing", circ0 = 0.2, circ1 = 0.4
@@ -914,7 +914,7 @@ test_that("add_heading_interval can be added to a radiate plot without error", {
   sim <- simulate_tracks(conditions = data.frame(n_trials = 5L), n_points = 20, seed = 1)
   hd  <- suppressWarnings(
     derive_headings(
-      TrajSet(sim, id = "trial_id", time = "frame",
+      tracks(sim, id = "trial_id", time = "frame",
               angle = "rel_theta", x = "rel_x", y = "rel_y",
               angle_unit = "radians", normalize_xy = FALSE),
       rule = "crossing", circ0 = 0.2, circ1 = 0.4
@@ -1059,7 +1059,7 @@ test_that("add_heading_arrow integrates with radiate() without error", {
   sim <- simulate_tracks(conditions = data.frame(n_trials = 5L), n_points = 20, seed = 1)
   hd  <- suppressWarnings(
     derive_headings(
-      TrajSet(sim, id = "trial_id", time = "frame",
+      tracks(sim, id = "trial_id", time = "frame",
               angle = "rel_theta", x = "rel_x", y = "rel_y",
               angle_unit = "radians", normalize_xy = FALSE),
       rule = "crossing", circ0 = 0.2, circ1 = 0.4
@@ -1108,7 +1108,7 @@ test_that("radiate applies display transform to track coordinates", {
   # With default circ_display (zero=pi/2, identity), the track stays East.
   df <- data.frame(trial_id = "A", frame = 1:3,
                    x = c(0, 0.5, 1), y = c(0, 0, 0))
-  ts <- TrajSet(df, id = "trial_id", time = "frame", x = "x", y = "y",
+  ts <- tracks(df, id = "trial_id", time = "frame", x = "x", y = "y",
                 normalize_xy = FALSE)
   p     <- radiate(ts, group_col = "trial_id", show_labels = FALSE,
                    show_arrow = FALSE, grid = "cartesian")
@@ -1122,7 +1122,7 @@ test_that("radiate with display zero=0 rotates East track to North on canvas", {
   library(ggplot2)
   df <- data.frame(trial_id = "A", frame = 1:2,
                    x = c(0, 1), y = c(0, 0))  # eastward track
-  ts <- TrajSet(df, id = "trial_id", time = "frame", x = "x", y = "y",
+  ts <- tracks(df, id = "trial_id", time = "frame", x = "x", y = "y",
                 normalize_xy = FALSE)
   d  <- circ_display(zero = 0)
   p  <- radiate(ts, group_col = "trial_id", show_labels = FALSE,
@@ -1447,7 +1447,7 @@ test_that("add_critical_v_line returns NULL when boundary exceeds unit circle", 
     rel_y   = c(0, 0, 0, 0, 0, 0),
     angle   = rep(0, 6)            # heading due East (unit circle 0)
   )
-  ts <- TrajSet(df, id = "id", time = "time", x = "trans_x", y = "trans_y",
+  ts <- tracks(df, id = "id", time = "time", x = "trans_x", y = "trans_y",
                 rel_x = "rel_x", rel_y = "rel_y", angle = "angle",
                 angle_unit = "radians", normalize_xy = FALSE)
   if (clock) {

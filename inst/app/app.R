@@ -119,7 +119,7 @@ colour_cols <- function(ts) {
   setdiff(cats, c("id", hc))
 }
 
-# Identify a candidate condition column in a loaded TrajSet.
+# Identify a candidate condition column in a loaded Tracks.
 # Looks for character columns with 2-12 unique values that are not
 # structural (id, time, position, derivatives).
 detect_cond_col <- function(ts) {
@@ -145,8 +145,8 @@ detect_cond_col <- function(ts) {
 
 load_ts <- function(path, dialect, mapping = list(), read_opts = list(delim = NULL)) {
   if (is.null(dialect) || dialect %in% c("auto", "generic"))
-    return(TrajSet_read(path, mapping = mapping, read_opts = read_opts))
-  TrajSet_read(path, dialect = dialect, mapping = mapping, read_opts = read_opts)
+    return(read_tracks(path, mapping = mapping, read_opts = read_opts))
+  read_tracks(path, dialect = dialect, mapping = mapping, read_opts = read_opts)
 }
 
 # Map the app's delimiter dropdown to a read_opts override. "auto" -> sniff.
@@ -154,7 +154,7 @@ delim_read_opts <- function(sel) {
   if (is.null(sel) || identical(sel, "auto")) list(delim = NULL) else list(delim = sel)
 }
 
-# The bundled Cylindroiulus punctatus millipede example, as a TrajSet, so
+# The bundled Cylindroiulus punctatus millipede example, as a Tracks, so
 # users can try the app without supplying their own tracking file.
 example_ts <- function() {
   e <- new.env()
@@ -490,7 +490,7 @@ server <- function(input, output, session) {
     updateRadioButtons(session, "input_type", selected = "trajectories")
   })
 
-  # Step 1 → 2: load TrajSet and detect condition column
+  # Step 1 → 2: load Tracks and detect condition column
   observeEvent(input$go2, {
     if (identical(rv$mode, "headings")) {
       if (is.null(rv$raw_hd)) {
@@ -662,7 +662,7 @@ server <- function(input, output, session) {
         df       <- as.data.frame(rv$ts)
         cond_map <- unique(df[, c(id_col, gc), drop = FALSE])
         # derive_headings() names its trial column "id"; join it to the
-        # TrajSet's own id column (which may be named anything, e.g. trial_id).
+        # Tracks's own id column (which may be named anything, e.g. trial_id).
         hd       <- merge(hd, cond_map, by.x = "id", by.y = id_col,
                           all.x = TRUE)
       }
@@ -696,7 +696,7 @@ server <- function(input, output, session) {
 
   # ---- example dataset -------------------------------------------------------
   observeEvent(input$load_example, {
-    ensure_pkgs()   # materialising the cpunctatus TrajSet needs radiatR's S4 class
+    ensure_pkgs()   # materialising the cpunctatus Tracks needs radiatR's S4 class
     ts <- tryCatch(
       example_ts(),
       error = function(e) NULL

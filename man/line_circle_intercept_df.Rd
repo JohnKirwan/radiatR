@@ -15,6 +15,6 @@ line_circle_intercept_df(df, row_in, row_out)
 Tibble with `x_int`/`y_int`.
 }
 \description{
-Convenience wrapper that accepts a data frame (or `TrajSet@data`) containing
+Convenience wrapper that accepts a data frame (or `Tracks@data`) containing
 coordinates and evaluates the intersection between two rows.
 }

@@ -23,7 +23,7 @@ test_that("trial utilities summarise and transform tracks", {
   expect_true(all(c("ref_theta", "r_px") %in% names(limits)))
 
   track_ts <- suppressWarnings(get_tracked_object_pos(limits, track))
-  expect_s4_class(track_ts, "TrajSet")
+  expect_s4_class(track_ts, "Tracks")
   expect_true(nrow(as.data.frame(track_ts)) > 0)
   expect_s3_class(track_ts@meta$trial_limits, "data.frame")
 
@@ -40,7 +40,7 @@ test_that("trial utilities summarise and transform tracks", {
   )
 
   agg <- suppressWarnings(get_all_object_pos(file_tbl = file_tbl_disk, track_dir = tmp))
-  expect_s4_class(agg, "TrajSet")
+  expect_s4_class(agg, "Tracks")
   df <- as.data.frame(agg)
   expect_true(all(c("rel_x", "rel_y") %in% names(df)))
   expect_s3_class(agg@meta$trial_limits, "data.frame")

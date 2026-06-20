@@ -18,7 +18,7 @@
 #'   trajectory.
 #' @return A single straightness value in `[0, 1]`, or `NA_real_` when fewer
 #'   than two finite points are available or the path has zero length.
-#' @seealso [straightness_index()] for a whole `TrajSet`; [path_tortuosity()].
+#' @seealso [straightness_index()] for a whole `Tracks`; [path_tortuosity()].
 #' @export
 #' @examples
 #' path_straightness(x = c(0, 1, 2), y = c(0, 0, 0))   # straight -> 1
@@ -53,7 +53,7 @@ path_straightness <- function(x, y) {
 #' @return A single tortuosity value `>= 1`, `Inf` when the net displacement is
 #'   zero, or `NA_real_` when fewer than two finite points are available or the
 #'   path has zero length.
-#' @seealso [tortuosity_ratio()] for a whole `TrajSet`; [path_straightness()].
+#' @seealso [tortuosity_ratio()] for a whole `Tracks`; [path_straightness()].
 #' @export
 #' @examples
 #' path_tortuosity(x = c(0, 1, 2), y = c(0, 0, 0))     # straight -> 1
@@ -75,14 +75,14 @@ path_tortuosity <- function(x, y) {
 # ordering each trajectory's points by the time column when one is recorded.
 # Returns a data.frame with the id column and a `value_name` column.
 .trajectory_metric <- function(ts, x_col, y_col, value_name, fun) {
-  if (!methods::is(ts, "TrajSet"))
-    stop("'ts' must be a TrajSet.")
+  if (!methods::is(ts, "Tracks"))
+    stop("'ts' must be a Tracks.")
   d   <- ts@data
   idc <- ts@cols$id
   tc  <- ts@cols$time
   for (cc in c(idc, x_col, y_col)) {
     if (is.null(cc) || !cc %in% names(d))
-      stop("column '", cc, "' not found in the TrajSet.")
+      stop("column '", cc, "' not found in the Tracks.")
   }
   ids <- unique(d[[idc]])
   vals <- vapply(ids, function(i) {
@@ -96,16 +96,16 @@ path_tortuosity <- function(x, y) {
   out
 }
 
-#' Per-trajectory straightness index for a TrajSet
+#' Per-trajectory straightness index for a Tracks
 #'
-#' Computes [path_straightness()] for each trajectory in a `TrajSet`, ordering
+#' Computes [path_straightness()] for each trajectory in a `Tracks`, ordering
 #' each trajectory's points by its time column when one is recorded.
 #'
-#' @param ts A `TrajSet`.
+#' @param ts A `Tracks`.
 #' @param x_col,y_col Names of the coordinate columns to use. Default to the
-#'   `TrajSet`'s recorded x/y columns (the real recorded positions), so the metric
+#'   `Tracks`'s recorded x/y columns (the real recorded positions), so the metric
 #'   reflects the physical path rather than any display transform.
-#' @return A `data.frame` with one row per trajectory: the `TrajSet`'s id column
+#' @return A `data.frame` with one row per trajectory: the `Tracks`'s id column
 #'   and a numeric `straightness` column.
 #' @seealso [path_straightness()], [tortuosity_ratio()]
 #' @export
@@ -113,16 +113,16 @@ straightness_index <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
   .trajectory_metric(ts, x_col, y_col, "straightness", path_straightness)
 }
 
-#' Per-trajectory tortuosity ratio for a TrajSet
+#' Per-trajectory tortuosity ratio for a Tracks
 #'
-#' Computes [path_tortuosity()] for each trajectory in a `TrajSet`, ordering
+#' Computes [path_tortuosity()] for each trajectory in a `Tracks`, ordering
 #' each trajectory's points by its time column when one is recorded.
 #'
-#' @param ts A `TrajSet`.
+#' @param ts A `Tracks`.
 #' @param x_col,y_col Names of the coordinate columns to use. Default to the
-#'   `TrajSet`'s recorded x/y columns (the real recorded positions), so the metric
+#'   `Tracks`'s recorded x/y columns (the real recorded positions), so the metric
 #'   reflects the physical path rather than any display transform.
-#' @return A `data.frame` with one row per trajectory: the `TrajSet`'s id column
+#' @return A `data.frame` with one row per trajectory: the `Tracks`'s id column
 #'   and a numeric `tortuosity` column (`>= 1`, possibly `Inf`).
 #' @seealso [path_tortuosity()], [straightness_index()]
 #' @export

@@ -13,7 +13,7 @@ count_goal_entries(
 )
 }
 \arguments{
-\item{x}{A [`TrajSet`] object with x/y (or rel_x/rel_y) columns registered.}
+\item{x}{A [`Tracks`] object with x/y (or rel_x/rel_y) columns registered.}
 
 \item{target_angle}{Numeric. Radians. Direction of the goal from the origin.}
 

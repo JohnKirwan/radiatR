@@ -1,12 +1,12 @@
-#' Apply a bespoke transformation to a TrajSet
+#' Apply a bespoke transformation to a Tracks
 #'
-#' Applies a user-supplied function to a loaded [`TrajSet`] -- for example a
+#' Applies a user-supplied function to a loaded [`Tracks`] -- for example a
 #' reference-frame correction or an angular remapping -- after loading and before
-#' summary or plotting, returning a modified `TrajSet` and recording the step in
-#' its [`transform_history`]. The function is written against the `TrajSet`'s
+#' summary or plotting, returning a modified `Tracks` and recording the step in
+#' its [`transform_history`]. The function is written against the `Tracks`'s
 #' column \emph{roles} (`x@cols`), not hard-coded column names.
 #'
-#' @param x A [`TrajSet`].
+#' @param x A [`Tracks`].
 #' @param fn A function. With `by = "trajectory"` (default) it is called once per
 #'   trajectory as `fn(df, cols, ...)`, where `df` is that trajectory's rows (all
 #'   columns, including metadata covariates) and `cols` is `x@cols`. With
@@ -19,7 +19,7 @@
 #' @param step Label recorded in `transform_history`. Defaults to the name of
 #'   `fn`, or `"apply_transform"` for anonymous functions.
 #'
-#' @return A [`TrajSet`] with `@data` replaced by the transformed result and one
+#' @return A [`Tracks`] with `@data` replaced by the transformed result and one
 #'   step appended to its `transform_history`.
 #'
 #' @seealso [transform_history()], [log_transform()]
@@ -48,7 +48,7 @@
 #'                             step = "direction_to_axis")
 #' @export
 apply_transform <- function(x, fn, ..., by = c("trajectory", "all"), step = NULL) {
-  if (!methods::is(x, "TrajSet")) stop("`x` must be a TrajSet.")
+  if (!methods::is(x, "Tracks")) stop("`x` must be a Tracks.")
   if (!is.function(fn))           stop("`fn` must be a function.")
   by <- match.arg(by)
 

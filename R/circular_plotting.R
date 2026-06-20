@@ -465,7 +465,7 @@ cycle_colours <- function(x, n, levels = NULL) {
   factor(idx, levels = seq_len(n_int))
 }
 
-#' Assign a shared colour-key column to a TrajSet or data frame
+#' Assign a shared colour-key column to a Tracks or data frame
 #'
 #' Writes a colour-key column (`into`, default `".colour"`) keyed on `by`, so the
 #' tracks and any overlays drawn on top share one colour scale. Two modes are
@@ -476,15 +476,15 @@ cycle_colours <- function(x, n, levels = NULL) {
 #' * **Distinct** -- a column with `n` or fewer levels: the key holds the
 #'   column's raw values (as a factor), so a legend is meaningful.
 #'
-#' Pass `reference` (another TrajSet or frame sharing the key) to borrow its level
+#' Pass `reference` (another Tracks or frame sharing the key) to borrow its level
 #' order, so a given key value gets the same colour in both -- e.g. tracks and
 #' their heading markers. If `by` names a column absent from `x` but present on
 #' `reference`, it is borrowed by matching trajectory id.
 #'
-#' @param x A `TrajSet` or data frame to annotate.
+#' @param x A `Tracks` or data frame to annotate.
 #' @param by `"trajectory"` (the trajectory id column) or a grouping column name.
 #' @param n Colour cap / cycle length (positive integer). Default 20.
-#' @param reference Optional `TrajSet`/frame whose key order to reuse. Default
+#' @param reference Optional `Tracks`/frame whose key order to reuse. Default
 #'   `NULL` uses `x` itself.
 #' @param into Name of the key column to add. Default `".colour"`.
 #' @return `x` with the `into` column added.
@@ -494,7 +494,7 @@ cycle_colours <- function(x, n, levels = NULL) {
 #' ts <- assign_colour_key(ts, by = "trajectory")
 #' @export
 assign_colour_key <- function(x, by, n = 20, reference = NULL, into = ".colour") {
-  is_ts <- function(o) methods::is(o, "TrajSet")
+  is_ts <- function(o) methods::is(o, "Tracks")
   df_of <- function(o) if (is_ts(o)) as.data.frame(o) else o
   id_of <- function(o) if (is_ts(o)) o@cols$id else "id"
 
@@ -1483,7 +1483,7 @@ add_heading_arrow <- function(headings_df,
 #'
 #' @examples
 #' library(ggplot2)
-#' # headings from a TrajSet via derive_headings(ts, rule = "crossing", ...)
+#' # headings from a Tracks via derive_headings(ts, rule = "crossing", ...)
 #' hd <- data.frame(id = "A", time = 1, heading = pi / 4)
 #' ggplot() + coord_fixed() + add_heading_points(hd)
 #' ggplot() + coord_fixed() + add_heading_points(hd, colour = "steelblue")
@@ -1832,9 +1832,9 @@ RADIAL_THEMES <- c("void", "minimal", "classic", "bw", "grey", "gray",
 
 # ---- trajectory plotting -----------------------------------------------------
 
-#' Plot trajectories from a TrajSet (overlay or faceted)
+#' Plot trajectories from a Tracks (overlay or faceted)
 #'
-#' @param x TrajSet
+#' @param x Tracks
 #' @param color,linetype,alpha,size Optional column names (strings) mapped to aesthetics
 #' @param panel_by NULL, a single string, or a character vector of columns to facet by
 #' @param coord "polar" (unit circle) or "cartesian"
@@ -1850,7 +1850,7 @@ setGeneric("gg_traj", function(x, color = NULL, linetype = NULL, alpha = NULL, s
 
 #' @rdname gg_traj
 #' @export
-setMethod("gg_traj", "TrajSet",
+setMethod("gg_traj", "Tracks",
   function(x, color = NULL, linetype = NULL, alpha = NULL, size = 0.6,
            panel_by = NULL, coord = c("polar", "cartesian"),
            geom = c("path"), thin = 1L, ncol = NULL) {
@@ -2011,7 +2011,7 @@ line_circle_intercept <- function(x0, y0, x1, y1) {
 
 #' Intersection helper using track rows
 #'
-#' Convenience wrapper that accepts a data frame (or `TrajSet@data`) containing
+#' Convenience wrapper that accepts a data frame (or `Tracks@data`) containing
 #' coordinates and evaluates the intersection between two rows.
 #'
 #' @param df Data frame with `x` and `y` columns.
@@ -2027,12 +2027,12 @@ line_circle_intercept_df <- function(df, row_in, row_out) {
   line_circle_intercept(start[["x"]], start[["y"]], end[["x"]], end[["y"]])
 }
 
-#' Intersection helper for TrajSet trajectories
+#' Intersection helper for Tracks trajectories
 #'
 #' Extracts the first/last rows for a given id/time range and computes the
 #' intersection with the unit circle.
 #'
-#' @param traj TrajSet
+#' @param traj Tracks
 #' @param id Identifier of the trajectory
 #' @param range Numeric index vector (e.g., rows within a trial)
 #' @return Tibble with `x_int`/`y_int`
@@ -2043,7 +2043,7 @@ line_circle_intercept_traj <- function(traj, id, range) {
   x_col <- traj@cols$x
   y_col <- traj@cols$y
   if (is.null(x_col) || is.null(y_col)) {
-    stop("TrajSet must encode x/y coordinates for intersection.")
+    stop("Tracks must encode x/y coordinates for intersection.")
   }
   subset <- df[df[[id_col]] == id, , drop = FALSE][range, , drop = FALSE]
   line_circle_intercept_df(
@@ -2129,10 +2129,10 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #' Make ggplot object of tracks radiating from circle centre.
 #'
 #' Accepts either a precomputed data frame of polar/cartesian coordinates or a
-#' `TrajSet`. When a `TrajSet` is supplied, column mappings are inferred from
+#' `Tracks`. When a `Tracks` is supplied, column mappings are inferred from
 #' the object and handed off to the plotting helpers.
 #'
-#' @param data Data frame or `TrajSet`.
+#' @param data Data frame or `Tracks`.
 #' @param geom Geom specification passed to [draw_tracks()].
 #' @param group_col Optional column for grouping aesthetics.
 #' @param colour_col Optional column for colour aesthetics. Mutually exclusive
@@ -2221,7 +2221,7 @@ radiate <- function(data, ...) UseMethod("radiate")
 
 #' @rdname radiate
 #' @exportS3Method
-radiate.TrajSet <- function(data, ...) radiate.default(data, ...)
+radiate.Tracks <- function(data, ...) radiate.default(data, ...)
 
 #' @rdname radiate
 #' @exportS3Method
@@ -2275,8 +2275,8 @@ function(
     show_labels <- TRUE
   }
 
-  # Coerce non-TrajSet inputs to TrajSet to keep a single canonical path
-  if (!inherits(data, "TrajSet")) {
+  # Coerce non-Tracks inputs to Tracks to keep a single canonical path
+  if (!inherits(data, "Tracks")) {
     if (!missing(x_col) && !missing(y_col) && all(c(x_col, y_col) %in% names(data))) {
       # Prefer explicit mapping if provided
       guessed_id <- if (!is.null(group_col) && group_col %in% names(data)) group_col else {
@@ -2286,7 +2286,7 @@ function(
         cand <- intersect(c("frame","time","t"), names(data)); if (length(cand)) cand[1] else stop("Could not infer time column (e.g., 'frame').")
       }
       angle_col_guess <- if ("rel_theta" %in% names(data)) "rel_theta" else if ("abs_theta" %in% names(data)) "abs_theta" else NULL
-      ts <- TrajSet(
+      ts <- tracks(
         data,
         id = guessed_id,
         time = guessed_time,
@@ -2298,7 +2298,7 @@ function(
       )
     } else {
       # Fall back to heuristic coercion
-      ts <- methods::as(data, "TrajSet")
+      ts <- methods::as(data, "Tracks")
     }
   } else {
     ts <- data

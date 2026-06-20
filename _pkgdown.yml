@@ -45,10 +45,10 @@ reference:
       Use dialect_args to pass tool-specific options (bodypart selection,
       likelihood thresholds, zone selection, etc.).
     contents:
-      - TrajSet_read
-      - TrajSet_read_dir
-      - TrajSet_read_format
-      - TrajSet_load_manifest
+      - read_tracks
+      - read_tracks_dir
+      - read_tracks_format
+      - load_manifest
       - dtrack_read
       - import_info
       - import_tracks
@@ -68,12 +68,12 @@ reference:
       - register_loader_format
       - list_loader_formats
 
-  - title: "The TrajSet class"
+  - title: "The Tracks class"
     desc: >
       S4 container holding a long-form trajectory data frame together
       with column mappings and metadata.
     contents:
-      - TrajSet-class
+      - Tracks-class
       - transform_history
 
   - title: "Simulation"
@@ -210,7 +210,7 @@ reference:
 
   - title: "Reference frame & transforms"
     desc: >
-      Read or change a TrajSet's per-trajectory reference direction, and apply
+      Read or change a Tracks's per-trajectory reference direction, and apply
       bespoke transformations (recorded in the transform history).
     contents:
       - reference

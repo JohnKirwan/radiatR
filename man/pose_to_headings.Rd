@@ -2,7 +2,7 @@
 % Please edit documentation in R/headings.R
 \name{pose_to_headings}
 \alias{pose_to_headings}
-\title{Derive per-frame headings from pose data without a TrajSet}
+\title{Derive per-frame headings from pose data without a Tracks}
 \usage{
 pose_to_headings(
   df,

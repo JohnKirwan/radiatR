@@ -15,7 +15,7 @@ get_tracked_object_pos(
 \arguments{
 \item{trial_limits}{Data frame produced by [get_trial_limits()].}
 
-\item{track}{Data frame or `TrajSet` of Cartesian coordinates for the
+\item{track}{Data frame or `Tracks` of Cartesian coordinates for the
 entire video.}
 
 \item{circ0}{Inner radius threshold (default `0.1`).}
@@ -27,13 +27,13 @@ selects the first point beyond each threshold, while `"closest"` chooses the
 closest sample to the specified radius.}
 }
 \value{
-A `TrajSet` containing all valid trial observations. The corresponding
+A `Tracks` containing all valid trial observations. The corresponding
   trial limits (including `valid_track` flags) are stored in
   `meta$trial_limits`.
 }
 \description{
 Using the trial limits returned by [get_trial_limits()], this helper extracts
-the corresponding rows from a track data frame or `TrajSet`, centres and
+the corresponding rows from a track data frame or `Tracks`, centres and
 scales the coordinates, and computes angles in both absolute and
 reference-relative frames. The function optionally controls how inner/outer
 radius crossings are selected.

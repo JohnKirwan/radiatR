@@ -10,9 +10,9 @@ for (.f in c("preview.R", "preview_constructions.R")) {
   source(.p, local = TRUE)
 }
 
-test_that("demo_tracks returns a cached TrajSet subset of cpunctatus", {
+test_that("demo_tracks returns a cached Tracks subset of cpunctatus", {
   d <- demo_tracks()
-  expect_s4_class(d, "TrajSet")
+  expect_s4_class(d, "Tracks")
 
   e <- new.env()
   utils::data("cpunctatus", package = "radiatR", envir = e)

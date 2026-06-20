@@ -2,15 +2,15 @@
 % Please edit documentation in R/coords.R
 \name{set_reference}
 \alias{set_reference}
-\alias{set_reference,TrajSet-method}
+\alias{set_reference,Tracks-method}
 \title{Set the per-trajectory reference and re-derive the relative frame}
 \usage{
 set_reference(x, value)
 
-\S4method{set_reference}{TrajSet}(x, value)
+\S4method{set_reference}{Tracks}(x, value)
 }
 \arguments{
-\item{x}{A [`TrajSet`] with position roles (`cols$x`/`cols$y`) and relative
+\item{x}{A [`Tracks`] with position roles (`cols$x`/`cols$y`) and relative
 roles (`cols$angle`/`cols$rel_x`/`cols$rel_y`) registered.}
 
 \item{value}{Reference direction(s) in unit-circle radians: a scalar applied
@@ -18,7 +18,7 @@ to all trajectories, or a named numeric vector / two-column
 (`id`,`ref_theta`) data frame setting them per trajectory.}
 }
 \value{
-The updated [`TrajSet`].
+The updated [`Tracks`].
 }
 \description{
 Updates each trajectory's reference direction and re-derives its relative

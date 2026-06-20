@@ -3,7 +3,7 @@
 \name{register_loader_format}
 \alias{register_loader_format}
 \title{Register a declarative loader *format* (list or YAML/JSON file)
-The spec maps cleanly onto TrajSet_read() args and supports regex-based column finding.}
+The spec maps cleanly onto read_tracks() args and supports regex-based column finding.}
 \usage{
 register_loader_format(name, spec, overwrite = FALSE)
 }
@@ -16,5 +16,5 @@ register_loader_format(name, spec, overwrite = FALSE)
 }
 \description{
 Register a declarative loader *format* (list or YAML/JSON file)
-The spec maps cleanly onto TrajSet_read() args and supports regex-based column finding.
+The spec maps cleanly onto read_tracks() args and supports regex-based column finding.
 }

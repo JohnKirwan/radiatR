@@ -257,7 +257,7 @@ test_that("add_stacked_headings errors when col not found", {
 
 # ---- radiate() backward compatibility ----------------------------------------
 
-test_that("radiate() still works on a TrajSet after S3 refactor", {
+test_that("radiate() still works on a Tracks after S3 refactor", {
   skip_if_not_installed("ggplot2")
   df <- data.frame(
     id      = rep("A", 4L),
@@ -265,7 +265,7 @@ test_that("radiate() still works on a TrajSet after S3 refactor", {
     x       = c(0.5, 0.7, 0.6, 0.8),
     y       = c(0.5, 0.6, 0.7, 0.5)
   )
-  ts <- TrajSet(df, id = "id", time = "time", x = "x", y = "y")
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y")
   p  <- radiate(ts)
   expect_s3_class(p, "ggplot")
 })

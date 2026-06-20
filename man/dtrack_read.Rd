@@ -2,20 +2,20 @@
 % Please edit documentation in R/loaders.R
 \name{dtrack_read}
 \alias{dtrack_read}
-\title{Read a dtrack trajectory file into a TrajSet}
+\title{Read a dtrack trajectory file into a Tracks}
 \usage{
 dtrack_read(path, normalize_xy = FALSE, ...)
 }
 \arguments{
 \item{path}{Path to a dtrack \code{_point02.txt} trajectory file.}
 
-\item{normalize_xy}{Logical; passed to [TrajSet_read()]. Default \code{FALSE}
+\item{normalize_xy}{Logical; passed to [read_tracks()]. Default \code{FALSE}
 because dtrack files are in pixel space.}
 
-\item{...}{Additional arguments passed to [TrajSet_read()].}
+\item{...}{Additional arguments passed to [read_tracks()].}
 }
 \value{
-A \code{TrajSet}.
+A \code{Tracks}.
 }
 \description{
 Reads a tab-separated, headerless file produced by dtrack

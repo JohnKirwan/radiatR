@@ -7,9 +7,9 @@
 #' Circular summary statistics for trajectories
 #'
 #' Computes per-trial or global circular statistics (mean direction, resultant
-#' length, concentration) from the step-angle column of a `TrajSet`.
+#' length, concentration) from the step-angle column of a `Tracks`.
 #'
-#' @param x A [`TrajSet`] object.
+#' @param x A [`Tracks`] object.
 #' @param w Character. Name of a weight column in `x@data`. When `NULL`
 #'   (default), all steps are weighted equally.
 #' @param by Character. `"id"` (default) returns one row per trial;
@@ -72,7 +72,7 @@ setGeneric("circ_summary", function(x, w = NULL, by = c("id","global"), axial = 
 
 #' @rdname circ_summary
 #' @export
-setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global"), axial = FALSE) {
+setMethod("circ_summary", "Tracks", function(x, w = NULL, by = c("id","global"), axial = FALSE) {
   by <- match.arg(by)
   id <- x@cols$id; tm <- x@cols$time; th <- x@cols$angle
   wcol <- if (is.null(w)) x@cols$weight else w
@@ -140,7 +140,7 @@ setMethod("circ_summary", "TrajSet", function(x, w = NULL, by = c("id","global")
 #' counter-clockwise. Observations outside `max(ring_breaks)` are excluded from
 #' both counts and the proportion denominator.
 #'
-#' @param x A [`TrajSet`] object with x/y (or rel_x/rel_y) columns registered.
+#' @param x A [`Tracks`] object with x/y (or rel_x/rel_y) columns registered.
 #' @param target_angle Numeric. Radians. Direction of the target zone from the
 #'   origin. Q1 spans +/-45degrees around this angle.
 #' @param target_radius Numeric. Accepted for API symmetry with
@@ -179,7 +179,7 @@ zone_dwell <- function(x, target_angle, target_radius = 1,
     stop("ring_breaks must be in increasing order.")
   if (coords == "relative") {
     if (is.null(x@cols$rel_x) || is.null(x@cols$rel_y))
-      stop("coords='relative' requires rel_x and rel_y registered in TrajSet@cols.")
+      stop("coords='relative' requires rel_x and rel_y registered in Tracks@cols.")
     xc <- x@cols$rel_x
     yc <- x@cols$rel_y
   } else {
@@ -187,7 +187,7 @@ zone_dwell <- function(x, target_angle, target_radius = 1,
     yc <- x@cols$y
   }
   if (is.null(xc) || is.null(yc))
-    stop("zone_dwell: TrajSet needs x/y columns.")
+    stop("zone_dwell: Tracks needs x/y columns.")
 
   id_col <- x@cols$id
   d      <- as.data.frame(x)
@@ -241,7 +241,7 @@ zone_dwell <- function(x, target_angle, target_radius = 1,
 #' sequence (ordered by time). A trajectory that starts inside the zone on the
 #' first frame counts as one entry.
 #'
-#' @param x A [`TrajSet`] object with x/y (or rel_x/rel_y) columns registered.
+#' @param x A [`Tracks`] object with x/y (or rel_x/rel_y) columns registered.
 #' @param target_angle Numeric. Radians. Direction of the goal from the origin.
 #' @param target_radius Numeric. Distance of the goal from the origin.
 #'   Default `1` (wall). Together with `target_angle` gives the goal position:
@@ -273,7 +273,7 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
     stop("crossing_radius must be a single positive number.")
   if (coords == "relative") {
     if (is.null(x@cols$rel_x) || is.null(x@cols$rel_y))
-      stop("coords='relative' requires rel_x and rel_y registered in TrajSet@cols.")
+      stop("coords='relative' requires rel_x and rel_y registered in Tracks@cols.")
     xc <- x@cols$rel_x
     yc <- x@cols$rel_y
   } else {
@@ -281,7 +281,7 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
     yc <- x@cols$y
   }
   if (is.null(xc) || is.null(yc))
-    stop("count_goal_entries: TrajSet needs x/y columns.")
+    stop("count_goal_entries: Tracks needs x/y columns.")
 
   id_col <- x@cols$id
   d      <- as.data.frame(x)

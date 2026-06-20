@@ -22,7 +22,7 @@ Details for column descriptions. When omitted, a three-condition template is
 used.}
 
 \item{output}{Character string controlling the return type: "tibble"
-(default) returns a long-form data frame, "trajset" returns a [TrajSet]
+(default) returns a long-form data frame, "trajset" returns a [Tracks]
 object, and "both" returns a list containing both representations.}
 
 \item{write_path}{Optional file path (CSV) to which the simulated data should
@@ -38,7 +38,7 @@ radius profile.}
 series; higher values produce smoother paths.}
 }
 \value{
-Depending on `output`, a tibble, a `TrajSet`, or a list containing
+Depending on `output`, a tibble, a `Tracks`, or a list containing
   both. When `write_path` is supplied the data are also written to disk.
 }
 \description{
@@ -130,7 +130,7 @@ additional columns: `modality` (character), `n_modes` (integer), `mode_id`
 e.g. `ref_mean + pi` for the second axial pole, versus `final_heading` which
 is the wrapped draw; `NA` for `"uniform"`),
 `track_shape` (character), `n_reversals` (integer), `amplitude`
-(numeric) and `line_width` (numeric). When a `TrajSet` is returned, the
+(numeric) and `line_width` (numeric). When a `Tracks` is returned, the
 resolved generating conditions
 are stored in `meta$sim_conditions`.
 }
@@ -138,7 +138,7 @@ are stored in `meta$sim_conditions`.
 sim <- simulate_tracks(seed = 1)
 head(sim)
 
-# Request both tibble and TrajSet representations
+# Request both tibble and Tracks representations
 sim_both <- simulate_tracks(output = "both", seed = 123)
 names(sim_both)
 

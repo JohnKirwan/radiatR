@@ -1,5 +1,14 @@
 # radiatR (development version)
 
+## Breaking changes
+
+* The central S4 class `TrajSet` is renamed to **`Tracks`**, its constructor to
+  the lowercase `tracks()`, and the loader functions to snake_case:
+  `TrajSet_read()` -> `read_tracks()`, `TrajSet_read_dir()` -> `read_tracks_dir()`,
+  `TrajSet_read_format()` -> `read_tracks_format()`, `TrajSet_load_manifest()` ->
+  `load_manifest()`. No behaviour, slot, or output changed. Bundled `cpunctatus`
+  is now a `Tracks` object.
+
 ## Infrastructure
 
 * `headings_frame` is now a tibble subclass whose class and display convention

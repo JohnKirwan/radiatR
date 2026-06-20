@@ -2,15 +2,15 @@
 % Please edit documentation in R/coords.R
 \name{reference}
 \alias{reference}
-\alias{reference,TrajSet-method}
-\title{Per-trajectory reference direction of a TrajSet}
+\alias{reference,Tracks-method}
+\title{Per-trajectory reference direction of a Tracks}
 \usage{
 reference(x)
 
-\S4method{reference}{TrajSet}(x)
+\S4method{reference}{Tracks}(x)
 }
 \arguments{
-\item{x}{A [`TrajSet`].}
+\item{x}{A [`Tracks`].}
 }
 \value{
 For `reference()`, a data frame with `id` and `ref_theta` (or `NULL`

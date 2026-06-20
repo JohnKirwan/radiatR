@@ -56,6 +56,17 @@ headings_frame <- function(data,
 # verbs via dplyr_reconstruct() and base `[` below; read via the hf_* accessors.
 .HF_ATTRS <- c("display", "heading_col", "colour_col", "coords")
 
+# Set the headings_frame class vector: subclass first, always tibble-backed, and
+# keep any dplyr classes a verb may have added (e.g. grouped_df from group_by).
+# dplyr hands dplyr_reconstruct() a bare data.frame, so tbl_df/tbl must be
+# re-ensured or the object would silently revert to a plain data.frame subclass.
+.hf_set_class <- function(data) {
+  cls <- setdiff(class(data), "headings_frame")
+  if (!"tbl_df" %in% cls) cls <- c("tbl_df", "tbl", cls)
+  class(data) <- c("headings_frame", cls)
+  data
+}
+
 #' Low-level headings_frame constructor
 #'
 #' Wraps a data frame as a `headings_frame` (a tibble subclass) carrying the
@@ -70,17 +81,6 @@ headings_frame <- function(data,
 #' @param coords `"absolute"` or `"relative"`.
 #' @return A `headings_frame`.
 #' @export
-# Set the headings_frame class vector: subclass first, always tibble-backed, and
-# keep any dplyr classes a verb may have added (e.g. grouped_df from group_by).
-# dplyr hands dplyr_reconstruct() a bare data.frame, so tbl_df/tbl must be
-# re-ensured or the object would silently revert to a plain data.frame subclass.
-.hf_set_class <- function(data) {
-  cls <- setdiff(class(data), "headings_frame")
-  if (!"tbl_df" %in% cls) cls <- c("tbl_df", "tbl", cls)
-  class(data) <- c("headings_frame", cls)
-  data
-}
-
 new_headings_frame <- function(data, display = circ_display(),
                                heading_col = "heading", colour_col = NULL,
                                coords = "absolute") {

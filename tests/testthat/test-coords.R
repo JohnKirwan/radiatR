@@ -146,7 +146,7 @@ test_that("consumers produce identical output without stored derived columns", {
   expect_equal(fp(p_drop), fp(p_full))
 })
 
-test_that("a TrajSet may register rel_x/rel_y/rho roles whose columns are absent", {
+test_that("a Tracks may register rel_x/rel_y/rho roles whose columns are absent", {
   df <- data.frame(
     id    = rep("a", 4),
     time  = 1:4,
@@ -154,7 +154,7 @@ test_that("a TrajSet may register rel_x/rel_y/rho roles whose columns are absent
     trans_y = c(0.2,  0.4, -0.1, 0.3),
     rel_theta = c(0.1, 0.2, 0.3, 0.4)
   )
-  ts <- TrajSet(df, id = "id", time = "time", angle = "rel_theta",
+  ts <- tracks(df, id = "id", time = "time", angle = "rel_theta",
                 x = "trans_x", y = "trans_y",
                 rel_x = "rel_x", rel_y = "rel_y",   # roles registered, columns absent
                 angle_unit = "radians", normalize_xy = FALSE)
@@ -167,7 +167,7 @@ test_that("a TrajSet may register rel_x/rel_y/rho roles whose columns are absent
   expect_true(is.numeric(d$rel_x))
 })
 
-test_that("a constructed TrajSet does not store a rho/radius column but materializes it", {
+test_that("a constructed Tracks does not store a rho/radius column but materializes it", {
   ts <- simulate_tracks(n_points = 20, seed = 3, output = "trajset")
   rho_role <- ts@cols$rho
   expect_false(is.null(rho_role))            # the role is still registered
@@ -180,7 +180,7 @@ test_that("a constructed TrajSet does not store a rho/radius column but material
                sqrt(d[[ts@cols$x]]^2 + d[[ts@cols$y]]^2))
 })
 
-test_that("the object-position pipeline builds a lean TrajSet (no stored derived columns)", {
+test_that("the object-position pipeline builds a lean Tracks (no stored derived columns)", {
   tmp_dir <- tempfile("radiatr_lean"); dir.create(tmp_dir)
   on.exit(unlink(tmp_dir, recursive = TRUE))
   landmarks <- data.frame(frame = c(1, 1, 101, 101),
@@ -224,7 +224,7 @@ test_that("set_reference on a lean object updates rel_theta without materializin
                                sin(seq(0, 2 * pi, length.out = 20)),
                                reference = 0)$rel_theta_unit
   )
-  ts <- TrajSet(df, id = "id", time = "time", angle = "rel_theta",
+  ts <- tracks(df, id = "id", time = "time", angle = "rel_theta",
                  x = "trans_x", y = "trans_y",
                  rel_x = "rel_x", rel_y = "rel_y",   # roles registered, columns absent
                  angle_unit = "radians", normalize_xy = FALSE)
@@ -257,7 +257,7 @@ test_that("consumers on a lean object equal the column-full path", {
   }
   expect_silent(methods::validObject(lean))
 
-  # stats parity (circ_summary accepts a TrajSet and reads through as.data.frame)
+  # stats parity (circ_summary accepts a Tracks and reads through as.data.frame)
   expect_equal(
     circ_summary(lean, by = "id"),
     circ_summary(full, by = "id")
