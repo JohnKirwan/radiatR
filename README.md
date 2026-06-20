@@ -187,6 +187,19 @@ ts <- set_frame_rate(cpunctatus, fps = 30)
 radiate(ts, show_tracks = TRUE, track_colour = "speed")
 ```
 
+If you know a physical scale, calibrate distances so lengths and speeds report
+in real units. The scale is physical units per coordinate unit (e.g. mm per
+arena radius); unset, everything stays in arena/coordinate units.
+
+```r
+# calibrate distance (optional): 50 mm per coordinate unit (e.g. arena radius)
+ts <- set_distance_scale(set_frame_rate(cpunctatus, 30), 50, unit = "mm")
+track_length(ts)            # path length per track, in mm
+track_speed(ts)             # mean speed per track, in mm/s
+# or from two measured landmarks:
+# ts <- calibrate_distance(ts, coord_distance = 0.8, real_distance = 40, unit = "mm")
+```
+
 ### Circular boxplot
 
 A Tukey-like boxplot for circular data (Buttarazzi, Pandolfo & Porzio, 2018):

@@ -232,6 +232,7 @@ reference:
       - path_straightness
       - path_tortuosity
       - track_speed
+      - track_length
       - step_speed
       - instantaneous_speed
 
@@ -244,6 +245,10 @@ reference:
       - set_frame_rate
       - elapsed_seconds
       - track_duration
+      - distance_scale
+      - set_distance_scale
+      - distance_unit
+      - calibrate_distance
 
   - title: "Datasets"
     desc: >
