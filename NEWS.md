@@ -47,6 +47,10 @@
   (distance per second), using the track's frame rate / timestamps. With the
   default unit-arena coordinates that is arena-units (radii) per second.
 
+* `instantaneous_speed()` gives per-observation speed (the per-row sibling of
+  `elapsed_seconds()`), and `radiate(track_colour = "speed")` colours each path
+  by it. Arena-units per second with the default coordinates.
+
 ## Visualisation
 
 * Tracks can carry a capture **frame rate**: `set_frame_rate()` / `frame_rate()`

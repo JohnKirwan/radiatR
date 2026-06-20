@@ -230,6 +230,7 @@ reference:
       - path_tortuosity
       - track_speed
       - step_speed
+      - instantaneous_speed
 
   - title: "Track timing"
     desc: >
