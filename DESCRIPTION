@@ -82,6 +82,7 @@ Collate:
     'model_selection.R'
     'radiatR-package.R'
     'simulate_tracks.R'
+    'spelling.R'
     'time.R'
     'track_metrics.R'
     'transforms.R'
