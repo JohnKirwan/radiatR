@@ -158,6 +158,8 @@ covariate (circular-linear) or a second set of angles
   [`fitted(`*`<circ_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
   [`print(`*`<circ_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
   : Circular-linear regression of a heading on linear covariates
+- [`fitted_directions()`](https://johnkirwan.github.io/radiatR/reference/fitted_directions.md)
+  : Fitted mean directions from a circular regression, for plotting
 
 ## Circular statistics – hypothesis tests
 
@@ -446,6 +448,8 @@ Any remaining exported topics.
   : Create geom layers for Cartesian track coordinates
 - [`dtrack_read()`](https://johnkirwan.github.io/radiatR/reference/dtrack_read.md)
   : Read a dtrack trajectory file into a Tracks
+- [`fitted_directions()`](https://johnkirwan.github.io/radiatR/reference/fitted_directions.md)
+  : Fitted mean directions from a circular regression, for plotting
 - [`get_all_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.md)
   : Aggregate track positions across all videos in a manifest.
 - [`get_tracked_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_tracked_object_pos.md)

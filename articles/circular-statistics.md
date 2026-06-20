@@ -308,6 +308,20 @@ predict(fit, data.frame(predictor = c(-1, 0, 1)))
 The predicted mean heading tracks the predictor — rotating with its
 value — exactly as the simulation set up.
 
+The fitted relationship can be drawn straight onto the circular panel:
+each covariate value becomes a mean-direction arrow, colour-graded by
+the predictor, so you see the mean heading sweep as the covariate
+increases.
+
+``` r
+
+radiate(headings_frame(hd, heading, units = "radians")) +
+  add_circ_mean(fitted_directions(fit, at = seq(-2, 2, length.out = 7)),
+                colour_col = "predictor")
+```
+
+![](circular-statistics_files/figure-html/reg-fitted-arrows-1.png)
+
 ## Distribution overlays
 
 The overlay layers draw an angular distribution in the same Cartesian

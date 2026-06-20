@@ -47,6 +47,15 @@
   gains a per-condition `mean_slope` so the predictor shifts the mean
   heading, enabling end-to-end recovery.
 
+- New
+  [`fitted_directions()`](https://johnkirwan.github.io/radiatR/reference/fitted_directions.md)
+  turns a
+  [`circ_regression()`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  fit into mean-direction arrows for
+  [`add_circ_mean()`](https://johnkirwan.github.io/radiatR/reference/add_circ_mean.md),
+  so the fitted heading-vs-covariate relationship can be drawn on the
+  circular panel, colour-graded by the predictor.
+
 - [`simulate_tracks()`](https://johnkirwan.github.io/radiatR/reference/simulate_tracks.md)
   is now modality- and shape-aware. Per-condition `modality` (`uniform`
   / `unimodal` / `axial` / `multimodal` with `n_modes`) sets the
