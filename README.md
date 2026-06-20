@@ -1,7 +1,8 @@
-# radiatR <a href="https://johnkirwan.github.io/radiatR"><img src="man/figures/logo.png" align="right" height="139" alt="radiatR website" /></a>
+# radiatR <a href="https://johnkirwan.github.io/radiatR/"><img src="man/figures/logo.png" align="right" height="139" alt="radiatR website" /></a>
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/JohnKirwan/radiatR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/JohnKirwan/radiatR/actions/workflows/R-CMD-check.yaml)
+[![r-universe](https://johnkirwan.r-universe.dev/badges/radiatR)](https://johnkirwan.r-universe.dev/radiatR)
 <!-- badges: end -->
 
 An R package for analysing and visualising **headings and trajectories in circular space** — directional (angular) data of any kind. It covers the full pipeline: angle/trajectory input → coordinate transformation → circular statistics → ggplot2 visualisation. Bring a table of headings directly, or reconstruct them from movement trajectories, with import from 20+ tracking tools.
@@ -205,6 +206,11 @@ circ_summarise(net, "heading", units = "radians", stats = "resultant_R")
 ## Installation
 
 ```r
+# From r-universe (pre-built binaries)
+install.packages("radiatR",
+                 repos = c("https://johnkirwan.r-universe.dev",
+                           "https://cloud.r-project.org"))
+
 # From GitHub
 remotes::install_github("JohnKirwan/radiatR")
 
