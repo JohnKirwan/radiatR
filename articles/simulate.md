@@ -73,7 +73,7 @@ The `output` argument controls what is returned.
 # Default: long-form tibble
 sim_tbl  <- simulate_tracks(seed = 1, output = "tibble")
 
-# TrajSet directly (ready for radiate(), derive_headings(), etc.)
+# Tracks directly (ready for radiate(), derive_headings(), etc.)
 sim_ts   <- simulate_tracks(seed = 1, output = "trajset")
 
 # Both representations in a named list
@@ -81,7 +81,7 @@ sim_both <- simulate_tracks(seed = 1, output = "both")
 names(sim_both)  # "tibble" "trajset"
 ```
 
-The `output = "trajset"` path wraps the tibble in a `TrajSet` (absolute
+The `output = "trajset"` path wraps the tibble in a `Tracks` (absolute
 coordinates, no normalisation). Use it whenever you want to plug
 straight into the plotting or analysis functions.
 
@@ -191,7 +191,7 @@ parts <- lapply(seq_along(phi_vals), function(i) {
   simulate_tracks(conditions = d, n_points = 200,
                   phi = phi_vals[i], seed = 7 + i)
 })
-ts_tort <- TrajSet(
+ts_tort <- tracks(
   do.call(rbind, parts),
   id = "trial_id", time = "frame",
   x = "abs_x", y = "abs_y", angle = "abs_theta",
@@ -320,7 +320,7 @@ ggplot(trial_summary, aes(predictor, concentration)) +
 
 ## Connecting to Circular Analysis
 
-Simulated `TrajSet` objects feed directly into
+Simulated `Tracks` objects feed directly into
 [`derive_headings()`](https://johnkirwan.github.io/radiatR/reference/derive_headings.md)
 and
 [`circ_summarise()`](https://johnkirwan.github.io/radiatR/reference/circ_summarise.md),

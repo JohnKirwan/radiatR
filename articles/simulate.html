@@ -176,14 +176,14 @@ tibble of three conditions (60 trials total, 200 frames each):</p>
 <code class="sourceCode R"><span><span class="co"># Default: long-form tibble</span></span>
 <span><span class="va">sim_tbl</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/simulate_tracks.html">simulate_tracks</a></span><span class="op">(</span>seed <span class="op">=</span> <span class="fl">1</span>, output <span class="op">=</span> <span class="st">"tibble"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># TrajSet directly (ready for radiate(), derive_headings(), etc.)</span></span>
+<span><span class="co"># Tracks directly (ready for radiate(), derive_headings(), etc.)</span></span>
 <span><span class="va">sim_ts</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/simulate_tracks.html">simulate_tracks</a></span><span class="op">(</span>seed <span class="op">=</span> <span class="fl">1</span>, output <span class="op">=</span> <span class="st">"trajset"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Both representations in a named list</span></span>
 <span><span class="va">sim_both</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/simulate_tracks.html">simulate_tracks</a></span><span class="op">(</span>seed <span class="op">=</span> <span class="fl">1</span>, output <span class="op">=</span> <span class="st">"both"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">sim_both</span><span class="op">)</span>  <span class="co"># "tibble" "trajset"</span></span></code></pre></div>
 <p>The <code>output = "trajset"</code> path wraps the tibble in a
-<code>TrajSet</code> (absolute coordinates, no normalisation). Use it
+<code>Tracks</code> (absolute coordinates, no normalisation). Use it
 whenever you want to plug straight into the plotting or analysis
 functions.</p>
 <hr>
@@ -341,7 +341,7 @@ table.</li>
 <span>  <span class="fu"><a href="../reference/simulate_tracks.html">simulate_tracks</a></span><span class="op">(</span>conditions <span class="op">=</span> <span class="va">d</span>, n_points <span class="op">=</span> <span class="fl">200</span>,</span>
 <span>                  phi <span class="op">=</span> <span class="va">phi_vals</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>, seed <span class="op">=</span> <span class="fl">7</span> <span class="op">+</span> <span class="va">i</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
-<span><span class="va">ts_tort</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/TrajSet-class.html">TrajSet</a></span><span class="op">(</span></span>
+<span><span class="va">ts_tort</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Tracks-class.html">tracks</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="va">parts</span><span class="op">)</span>,</span>
 <span>  id <span class="op">=</span> <span class="st">"trial_id"</span>, time <span class="op">=</span> <span class="st">"frame"</span>,</span>
 <span>  x <span class="op">=</span> <span class="st">"abs_x"</span>, y <span class="op">=</span> <span class="st">"abs_y"</span>, angle <span class="op">=</span> <span class="st">"abs_theta"</span>,</span>
@@ -453,7 +453,7 @@ relationship:</p>
 <div class="section level2">
 <h2 id="connecting-to-circular-analysis">Connecting to Circular Analysis<a class="anchor" aria-label="anchor" href="#connecting-to-circular-analysis"></a>
 </h2>
-<p>Simulated <code>TrajSet</code> objects feed directly into
+<p>Simulated <code>Tracks</code> objects feed directly into
 <code><a href="../reference/derive_headings.html">derive_headings()</a></code> and <code><a href="../reference/circ_summarise.html">circ_summarise()</a></code>, making
 it straightforward to run the same analysis pipeline on synthetic
 data.</p>

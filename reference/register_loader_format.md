@@ -1,7 +1,7 @@
-# Register a declarative loader \*format\* (list or YAML/JSON file) The spec maps cleanly onto TrajSet_read() args and supports regex-based column finding.
+# Register a declarative loader \*format\* (list or YAML/JSON file) The spec maps cleanly onto read_tracks() args and supports regex-based column finding.
 
 Register a declarative loader \*format\* (list or YAML/JSON file) The
-spec maps cleanly onto TrajSet_read() args and supports regex-based
+spec maps cleanly onto read_tracks() args and supports regex-based
 column finding.
 
 ## Usage

@@ -12,7 +12,7 @@ manual \[apply_transform()\].
 ``` r
 set_reference(x, value)
 
-# S4 method for class 'TrajSet'
+# S4 method for class 'Tracks'
 set_reference(x, value)
 ```
 
@@ -20,7 +20,7 @@ set_reference(x, value)
 
 - x:
 
-  A \[\`TrajSet\`\] with position roles (\`cols\$x\`/\`cols\$y\`) and
+  A \[\`Tracks\`\] with position roles (\`cols\$x\`/\`cols\$y\`) and
   relative roles (\`cols\$angle\`/\`cols\$rel_x\`/\`cols\$rel_y\`)
   registered.
 
@@ -32,7 +32,7 @@ set_reference(x, value)
 
 ## Value
 
-The updated \[\`TrajSet\`\].
+The updated \[\`Tracks\`\].
 
 ## See also
 

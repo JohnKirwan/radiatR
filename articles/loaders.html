@@ -73,13 +73,13 @@
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
 <p><code>radiatR</code> provides a flexible loader framework that turns
-tracking exports from a wide variety of systems into
-<code>TrajSet</code> objects. The helpers cover three typical tasks:</p>
+tracking exports from a wide variety of systems into <code>Tracks</code>
+objects. The helpers cover three typical tasks:</p>
 <ol style="list-style-type: decimal">
 <li>Reading experiment manifests (<code><a href="../reference/import_info.html">import_info()</a></code> and
 <code><a href="../reference/import_tracks.html">import_tracks()</a></code>).</li>
-<li>Ingesting trajectory tables with <code><a href="../reference/TrajSet_read.html">TrajSet_read()</a></code> or
-<code><a href="../reference/TrajSet_read_dir.html">TrajSet_read_dir()</a></code>.</li>
+<li>Ingesting trajectory tables with <code><a href="../reference/read_tracks.html">read_tracks()</a></code> or
+<code><a href="../reference/read_tracks_dir.html">read_tracks_dir()</a></code>.</li>
 <li>Extending the loader registry with
 <code><a href="../reference/register_loader_dialect.html">register_loader_dialect()</a></code> for custom formats.</li>
 </ol>
@@ -179,7 +179,7 @@ path.</p>
 </h3>
 <p><code><a href="../reference/get_all_object_pos.html">get_all_object_pos()</a></code> reads each file pair, uses the
 landmark rows to establish the unit-circle geometry, and returns a
-<code>TrajSet</code> with normalised unit-circle coordinates.</p>
+<code>Tracks</code> with normalised unit-circle coordinates.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_all_object_pos.html">get_all_object_pos</a></span><span class="op">(</span>file_tbl <span class="op">=</span> <span class="va">file_tbl</span>, track_dir <span class="op">=</span> <span class="va">track_dir</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; 1 point across 1 trial exceeded the arena boundary (radius &gt; 1); coordinates left unscaled.</span></span>
@@ -289,7 +289,7 @@ landmark rows to establish the unit-circle geometry, and returns a
 <span><span class="co">#&gt; 9 points across 1 trial exceeded the arena boundary (radius &gt; 1); coordinates left unscaled.</span></span>
 <span><span class="co">#&gt; 2 points across 1 trial exceeded the arena boundary (radius &gt; 1); coordinates left unscaled.</span></span>
 <span><span class="va">ts</span></span>
-<span><span class="co">#&gt; TrajSet: 235 trajectories, 44331 observations</span></span>
+<span><span class="co">#&gt; Tracks: 235 trajectories, 44331 observations</span></span>
 <span><span class="co">#&gt; Columns: id='trial_id', time='frame', angle='rel_theta' (radians), x='trans_x', y='trans_y', rel_x='rel_x', rel_y='rel_y'</span></span>
 <span><span class="co">#&gt; Transform steps: unit_circle_mapping </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 10</span></span></span>
@@ -340,9 +340,9 @@ specific to this experiment and is not a general dtrack convention.</p>
 </h2>
 <p><code>radiatR</code> reads tabular (CSV/TSV) exports from many
 tracking tools through named <em>dialects</em>. Each dialect maps a
-tool’s column conventions onto the <code>TrajSet</code> model of one
+tool’s column conventions onto the <code>Tracks</code> model of one
 position per individual per frame. Pass the dialect name to
-<code>TrajSet_read(path, dialect = "name")</code>; tool-specific options
+<code>read_tracks(path, dialect = "name")</code>; tool-specific options
 go through <code>dialect_args</code>.</p>
 <p>The table below summarises what is and is not currently handled. Two
 limitations are general:</p>
@@ -438,8 +438,8 @@ ellipse <code>theta</code>/<code>a</code>/<code>b</code>); needs
 </tbody>
 </table>
 <p>When a tool’s export is not directly supported, two escape hatches
-remain: convert to a tidy CSV and use <code><a href="../reference/TrajSet_read.html">TrajSet_read()</a></code> with
-an explicit <code>mapping</code>, or register a custom dialect (see
+remain: convert to a tidy CSV and use <code><a href="../reference/read_tracks.html">read_tracks()</a></code> with an
+explicit <code>mapping</code>, or register a custom dialect (see
 <em>Registering a Custom Dialect</em> below).</p>
 </div>
 <div class="section level2">
@@ -447,7 +447,7 @@ an explicit <code>mapping</code>, or register a custom dialect (see
 </h2>
 <p>The package ships small real exports from three tools so the dialects
 can be tried without any external data. Each loads with one
-<code><a href="../reference/TrajSet_read.html">TrajSet_read()</a></code> call, pointing the <code>dialect</code>
+<code><a href="../reference/read_tracks.html">read_tracks()</a></code> call, pointing the <code>dialect</code>
 argument at the matching tool.</p>
 <p><strong>DeepLabCut</strong> — a three-row scorer/bodypart/coord
 header; by default the position is the likelihood-weighted centroid of
@@ -456,7 +456,7 @@ the <code>bodypart_axis</code> rule.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dlc_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"dlc_CollectedData_Pranav.csv"</span>,</span>
 <span>                        package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span>
-<span><span class="va">ts_dlc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/TrajSet_read.html">TrajSet_read</a></span><span class="op">(</span><span class="va">dlc_path</span>, dialect <span class="op">=</span> <span class="st">"deeplabcut_multiheader"</span><span class="op">)</span></span>
+<span><span class="va">ts_dlc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_tracks.html">read_tracks</a></span><span class="op">(</span><span class="va">dlc_path</span>, dialect <span class="op">=</span> <span class="st">"deeplabcut_multiheader"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; New names:</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> `Pranav` -&gt; `Pranav...2`</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> `Pranav` -&gt; `Pranav...3`</span></span>
@@ -467,7 +467,7 @@ the <code>bodypart_axis</code> rule.</p>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> `Pranav` -&gt; `Pranav...8`</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> `Pranav` -&gt; `Pranav...9`</span></span>
 <span><span class="va">ts_dlc</span></span>
-<span><span class="co">#&gt; TrajSet: 1 trajectories, 116 observations</span></span>
+<span><span class="co">#&gt; Tracks: 1 trajectories, 116 observations</span></span>
 <span><span class="co">#&gt; Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'</span></span>
 <span><span class="co">#&gt;   id time          x           y snout_x snout_y leftear_x leftear_y rightear_x</span></span>
 <span><span class="co">#&gt; 1  1    1 -0.3997793 -0.12643666  21.521 265.428    33.819   265.941     19.984</span></span>
@@ -489,9 +489,9 @@ columns, <code>track</code> as the individual and <code>frame_idx</code>
 as time.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sleap_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sleap_example.csv"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span>
-<span><span class="va">ts_sleap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/TrajSet_read.html">TrajSet_read</a></span><span class="op">(</span><span class="va">sleap_path</span>, dialect <span class="op">=</span> <span class="st">"sleap"</span><span class="op">)</span></span>
+<span><span class="va">ts_sleap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_tracks.html">read_tracks</a></span><span class="op">(</span><span class="va">sleap_path</span>, dialect <span class="op">=</span> <span class="st">"sleap"</span><span class="op">)</span></span>
 <span><span class="va">ts_sleap</span></span>
-<span><span class="co">#&gt; TrajSet: 1 trajectories, 1 observations</span></span>
+<span><span class="co">#&gt; Tracks: 1 trajectories, 1 observations</span></span>
 <span><span class="co">#&gt; Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'</span></span>
 <span><span class="co">#&gt;     id time x y      a_x      a_y      b_x      b_y    x_raw    y_raw angle</span></span>
 <span><span class="co">#&gt; 1 &lt;NA&gt;    0 0 0 205.9301 187.8896 278.6352 203.3659 242.2826 195.6278     0</span></span></code></pre></div>
@@ -500,12 +500,12 @@ as time.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tracktor_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"tracktor_example.csv"</span>,</span>
 <span>                            package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span>
-<span><span class="va">ts_tracktor</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/TrajSet_read.html">TrajSet_read</a></span><span class="op">(</span><span class="va">tracktor_path</span>, dialect <span class="op">=</span> <span class="st">"tracktor"</span><span class="op">)</span></span>
+<span><span class="va">ts_tracktor</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_tracks.html">read_tracks</a></span><span class="op">(</span><span class="va">tracktor_path</span>, dialect <span class="op">=</span> <span class="st">"tracktor"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; New names:</span></span>
 <span><span class="co">#&gt; New names:</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> `` -&gt; `...1`</span></span>
 <span><span class="va">ts_tracktor</span></span>
-<span><span class="co">#&gt; TrajSet: 1 trajectories, 547 observations</span></span>
+<span><span class="co">#&gt; Tracks: 1 trajectories, 547 observations</span></span>
 <span><span class="co">#&gt; Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'</span></span>
 <span><span class="co">#&gt;   id time         x          y    x_raw    y_raw    angle</span></span>
 <span><span class="co">#&gt; 1  1    3 0.8793455 -0.4750115 1528.267 330.3940 5.787907</span></span>
@@ -520,7 +520,7 @@ as time.</p>
 <div class="section level2">
 <h2 id="reading-tabular-trajectories">Reading Tabular Trajectories<a class="anchor" aria-label="anchor" href="#reading-tabular-trajectories"></a>
 </h2>
-<p>For data already in a data frame or CSV, <code><a href="../reference/TrajSet_read.html">TrajSet_read()</a></code>
+<p>For data already in a data frame or CSV, <code><a href="../reference/read_tracks.html">read_tracks()</a></code>
 is the central entry point.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">example_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
@@ -530,9 +530,9 @@ is the central entry point.</p>
 <span>  y    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.1</span>, <span class="fl">0.3</span>, <span class="fl">0.4</span>, <span class="fl">1.0</span>, <span class="fl">1.1</span>, <span class="fl">1.3</span>, <span class="fl">1.5</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">ts_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/TrajSet_read.html">TrajSet_read</a></span><span class="op">(</span><span class="va">example_df</span>, mapping <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>id <span class="op">=</span> <span class="st">"id"</span>, time <span class="op">=</span> <span class="st">"time"</span>, x <span class="op">=</span> <span class="st">"x"</span>, y <span class="op">=</span> <span class="st">"y"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">ts_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_tracks.html">read_tracks</a></span><span class="op">(</span><span class="va">example_df</span>, mapping <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>id <span class="op">=</span> <span class="st">"id"</span>, time <span class="op">=</span> <span class="st">"time"</span>, x <span class="op">=</span> <span class="st">"x"</span>, y <span class="op">=</span> <span class="st">"y"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">ts_df</span></span>
-<span><span class="co">#&gt; TrajSet: 2 trajectories, 8 observations</span></span>
+<span><span class="co">#&gt; Tracks: 2 trajectories, 8 observations</span></span>
 <span><span class="co">#&gt; Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'</span></span>
 <span><span class="co">#&gt;   id time          x          y x_raw y_raw     angle</span></span>
 <span><span class="co">#&gt; 1  A    0 -0.7808688 -0.6246950   1.0   0.0 3.8163336</span></span>
@@ -541,8 +541,8 @@ is the central entry point.</p>
 <span><span class="co">#&gt; 4  A    3  0.7808688  0.6246950   1.5   0.4 0.6747409</span></span>
 <span><span class="co">#&gt; 5  B    0 -0.5734623 -0.8192319  -0.2   1.0 4.1016630</span></span>
 <span><span class="co">#&gt; 6  B    1 -0.2457696 -0.4915392  -0.1   1.1 4.2487414</span></span></code></pre></div>
-<p>To batch a directory of CSV files, <code><a href="../reference/TrajSet_read_dir.html">TrajSet_read_dir()</a></code>
-calls <code><a href="../reference/TrajSet_read.html">TrajSet_read()</a></code> for each match and row-binds the
+<p>To batch a directory of CSV files, <code><a href="../reference/read_tracks_dir.html">read_tracks_dir()</a></code>
+calls <code><a href="../reference/read_tracks.html">read_tracks()</a></code> for each match and row-binds the
 result.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">csv_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -552,7 +552,7 @@ result.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/transform.html" class="external-link">transform</a></span><span class="op">(</span><span class="va">example_df</span>, id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">id</span>, <span class="st">"_2"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>          <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">csv_dir</span>, <span class="st">"trial02.csv"</span><span class="op">)</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">dset</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/TrajSet_read_dir.html">TrajSet_read_dir</a></span><span class="op">(</span><span class="va">csv_dir</span>, pattern <span class="op">=</span> <span class="st">"\\.csv$"</span><span class="op">)</span></span>
+<span><span class="va">dset</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_tracks_dir.html">read_tracks_dir</a></span><span class="op">(</span><span class="va">csv_dir</span>, pattern <span class="op">=</span> <span class="st">"\\.csv$"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">dset</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 4</span></span>
 <span></span>
@@ -614,14 +614,14 @@ track is stored under an ID key with arrays of <code>timestamp</code>,
 <span><span class="op">}</span></span>
 <span><span class="fu"><a href="../reference/register_loader_dialect.html">register_loader_dialect</a></span><span class="op">(</span><span class="st">"json_tracks"</span>, <span class="va">json_tracks_fn</span><span class="op">)</span></span></code></pre></div>
 <p>After registration, call the dialect function directly on the file to
-get a tidy data frame, then pass it to <code><a href="../reference/TrajSet_read.html">TrajSet_read()</a></code>. (For
+get a tidy data frame, then pass it to <code><a href="../reference/read_tracks.html">read_tracks()</a></code>. (For
 standard tabular formats that R’s CSV/TSV readers handle natively,
-<code>TrajSet_read(path, dialect = "name")</code> works directly—but
+<code>read_tracks(path, dialect = "name")</code> works directly—but
 non-tabular formats such as JSON require this two-step approach.)</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ts_json</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/TrajSet_read.html">TrajSet_read</a></span><span class="op">(</span><span class="fu">json_tracks_fn</span><span class="op">(</span><span class="va">fake_json</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">ts_json</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_tracks.html">read_tracks</a></span><span class="op">(</span><span class="fu">json_tracks_fn</span><span class="op">(</span><span class="va">fake_json</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">ts_json</span></span>
-<span><span class="co">#&gt; TrajSet: 2 trajectories, 6 observations</span></span>
+<span><span class="co">#&gt; Tracks: 2 trajectories, 6 observations</span></span>
 <span><span class="co">#&gt; Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'</span></span>
 <span><span class="co">#&gt;     id time          x           y x_raw y_raw     angle</span></span>
 <span><span class="co">#&gt; A.1  A    0 -0.9701425 -0.24253563   0.0   0.0 3.3865713</span></span>

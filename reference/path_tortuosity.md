@@ -35,7 +35,7 @@ Like the straightness index it is scale-invariant.
 
 ## See also
 
-\[tortuosity_ratio()\] for a whole \`TrajSet\`; \[path_straightness()\].
+\[tortuosity_ratio()\] for a whole \`Tracks\`; \[path_straightness()\].
 
 ## Examples
 

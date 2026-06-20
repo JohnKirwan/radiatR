@@ -2,7 +2,7 @@
 
 Computes per-trial or global circular statistics (mean direction,
 resultant length, concentration) from the step-angle column of a
-\`TrajSet\`.
+\`Tracks\`.
 
 ## Usage
 
@@ -11,7 +11,7 @@ circ_summary(x, w = NULL, by = c("id", "global"), axial = FALSE)
 
 circ_summary(x, w = NULL, by = c("id", "global"), axial = FALSE)
 
-# S4 method for class 'TrajSet'
+# S4 method for class 'Tracks'
 circ_summary(x, w = NULL, by = c("id", "global"), axial = FALSE)
 ```
 
@@ -19,7 +19,7 @@ circ_summary(x, w = NULL, by = c("id", "global"), axial = FALSE)
 
 - x:
 
-  A \[\`TrajSet\`\] object.
+  A \[\`Tracks\`\] object.
 
 - w:
 

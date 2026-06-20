@@ -1,7 +1,7 @@
 # Make ggplot object of tracks radiating from circle centre.
 
 Accepts either a precomputed data frame of polar/cartesian coordinates
-or a \`TrajSet\`. When a \`TrajSet\` is supplied, column mappings are
+or a \`Tracks\`. When a \`Tracks\` is supplied, column mappings are
 inferred from the object and handed off to the plotting helpers.
 
 ## Usage
@@ -9,7 +9,7 @@ inferred from the object and handed off to the plotting helpers.
 ``` r
 radiate(data, ...)
 
-# S3 method for class 'TrajSet'
+# S3 method for class 'Tracks'
 radiate(data, ...)
 
 # Default S3 method
@@ -93,7 +93,7 @@ radiate(
 
 - data:
 
-  Data frame or \`TrajSet\`.
+  Data frame or \`Tracks\`.
 
 - ...:
 

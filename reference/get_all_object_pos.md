@@ -15,12 +15,12 @@ get_all_object_pos(landmarks = NULL, track = NULL, file_tbl, track_dir)
 
 - landmarks:
 
-  Optional data frame or \`TrajSet\` for the first entry. Retained for
+  Optional data frame or \`Tracks\` for the first entry. Retained for
   backwards compatibility; values are overwritten internally.
 
 - track:
 
-  Optional data frame or \`TrajSet\` for the first entry.
+  Optional data frame or \`Tracks\` for the first entry.
 
 - file_tbl:
 
@@ -33,6 +33,6 @@ get_all_object_pos(landmarks = NULL, track = NULL, file_tbl, track_dir)
 
 ## Value
 
-A \`TrajSet\` combining the normalised observations for all valid trials
+A \`Tracks\` combining the normalised observations for all valid trials
 in the manifest. The aggregated trial limits are available via
 \`meta\$trial_limits\`.

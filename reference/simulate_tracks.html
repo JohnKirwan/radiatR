@@ -83,7 +83,7 @@ used.</p></dd>
 
 <dt id="arg-output">output<a class="anchor" aria-label="anchor" href="#arg-output"></a></dt>
 <dd><p>Character string controlling the return type: "tibble"
-(default) returns a long-form data frame, "trajset" returns a [TrajSet]
+(default) returns a long-form data frame, "trajset" returns a [Tracks]
 object, and "both" returns a list containing both representations.</p></dd>
 
 
@@ -109,7 +109,7 @@ series; higher values produce smoother paths.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Depending on `output`, a tibble, a `TrajSet`, or a list containing
+    <p>Depending on `output`, a tibble, a `Tracks`, or a list containing
   both. When `write_path` is supplied the data are also written to disk.</p>
     </div>
     <div class="section level2">
@@ -191,7 +191,7 @@ additional columns: `modality` (character), `n_modes` (integer), `mode_id`
 e.g. `ref_mean + pi` for the second axial pole, versus `final_heading` which
 is the wrapped draw; `NA` for `"uniform"`),
 `track_shape` (character), `n_reversals` (integer), `amplitude`
-(numeric) and `line_width` (numeric). When a `TrajSet` is returned, the
+(numeric) and `line_width` (numeric). When a `Tracks` is returned, the
 resolved generating conditions
 are stored in `meta$sim_conditions`.</p>
     </div>
@@ -219,7 +219,7 @@ are stored in `meta$sim_conditions`.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   rel_y &lt;dbl&gt;, modality &lt;chr&gt;, n_modes &lt;int&gt;, mode_id &lt;int&gt;, mode_mean &lt;dbl&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   track_shape &lt;chr&gt;, n_reversals &lt;int&gt;, amplitude &lt;dbl&gt;, line_width &lt;dbl&gt;</span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Request both tibble and TrajSet representations</span></span></span>
+<span class="r-in"><span><span class="co"># Request both tibble and Tracks representations</span></span></span>
 <span class="r-in"><span><span class="va">sim_both</span> <span class="op">&lt;-</span> <span class="fu">simulate_tracks</span><span class="op">(</span>output <span class="op">=</span> <span class="st">"both"</span>, seed <span class="op">=</span> <span class="fl">123</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">sim_both</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "tibble"  "trajset"</span>

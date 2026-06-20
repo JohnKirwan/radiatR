@@ -1,10 +1,10 @@
-# Apply a bespoke transformation to a TrajSet
+# Apply a bespoke transformation to a Tracks
 
-Applies a user-supplied function to a loaded \[\`TrajSet\`\] – for
+Applies a user-supplied function to a loaded \[\`Tracks\`\] – for
 example a reference-frame correction or an angular remapping – after
-loading and before summary or plotting, returning a modified \`TrajSet\`
+loading and before summary or plotting, returning a modified \`Tracks\`
 and recording the step in its \[\`transform_history\`\]. The function is
-written against the \`TrajSet\`'s column *roles* (\`x@cols\`), not
+written against the \`Tracks\`'s column *roles* (\`x@cols\`), not
 hard-coded column names.
 
 ## Usage
@@ -17,7 +17,7 @@ apply_transform(x, fn, ..., by = c("trajectory", "all"), step = NULL)
 
 - x:
 
-  A \[\`TrajSet\`\].
+  A \[\`Tracks\`\].
 
 - fn:
 
@@ -45,7 +45,7 @@ apply_transform(x, fn, ..., by = c("trajectory", "all"), step = NULL)
 
 ## Value
 
-A \[\`TrajSet\`\] with \`@data\` replaced by the transformed result and
+A \[\`Tracks\`\] with \`@data\` replaced by the transformed result and
 one step appended to its \`transform_history\`.
 
 ## See also

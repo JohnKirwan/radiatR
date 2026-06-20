@@ -2,6 +2,22 @@
 
 ## radiatR (development version)
 
+### Breaking changes
+
+- The central S4 class `TrajSet` is renamed to **`Tracks`**, its
+  constructor to the lowercase
+  [`tracks()`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md),
+  and the loader functions to snake_case: `TrajSet_read()` -\>
+  [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md),
+  `TrajSet_read_dir()` -\>
+  [`read_tracks_dir()`](https://johnkirwan.github.io/radiatR/reference/read_tracks_dir.md),
+  `TrajSet_read_format()` -\>
+  [`read_tracks_format()`](https://johnkirwan.github.io/radiatR/reference/read_tracks_format.md),
+  `TrajSet_load_manifest()` -\>
+  [`load_manifest()`](https://johnkirwan.github.io/radiatR/reference/load_manifest.md).
+  No behaviour, slot, or output changed. Bundled `cpunctatus` is now a
+  `Tracks` object.
+
 ### Infrastructure
 
 - `headings_frame` is now a tibble subclass whose class and display
@@ -193,26 +209,23 @@
 
 ### Loaders
 
-- [`TrajSet_read()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read.md)
-  and
-  [`TrajSet_read_dir()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read_dir.md)
-  now auto-detect the field separator (comma, semicolon, tab, or pipe)
-  and decimal mark from file *content* rather than the extension, so
-  semicolon-separated and European decimal-comma exports, and
-  tab-delimited files saved as `.csv`, load correctly. A new `read_opts`
-  argument (`delim`, `decimal`, `sheet`) overrides detection when
-  needed. Excel workbooks (`.xlsx`/`.xls`) can be read directly (first
-  sheet by default, or `read_opts$sheet`), via the soft-dependency
-  `readxl`. In the Shiny app the first-rows preview now reflects the
-  actual detected parse, and a new Delimiter control lets you correct a
-  misdetected separator in place.
-- [`TrajSet_read()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read.md)
-  now loads single-track CSVs with custom column names: column guessing
-  is case-insensitive and matches separator-suffixed coordinates
-  (e.g. `Track1_X`/`Track1_Y`); a missing id column is treated as a
-  single trajectory and a missing time/frame column falls back to row
-  order (each with a message), and rows with non-finite coordinates are
-  dropped. New exported
+- `TrajSet_read()` and `TrajSet_read_dir()` now auto-detect the field
+  separator (comma, semicolon, tab, or pipe) and decimal mark from file
+  *content* rather than the extension, so semicolon-separated and
+  European decimal-comma exports, and tab-delimited files saved as
+  `.csv`, load correctly. A new `read_opts` argument (`delim`,
+  `decimal`, `sheet`) overrides detection when needed. Excel workbooks
+  (`.xlsx`/`.xls`) can be read directly (first sheet by default, or
+  `read_opts$sheet`), via the soft-dependency `readxl`. In the Shiny app
+  the first-rows preview now reflects the actual detected parse, and a
+  new Delimiter control lets you correct a misdetected separator in
+  place.
+- `TrajSet_read()` now loads single-track CSVs with custom column names:
+  column guessing is case-insensitive and matches separator-suffixed
+  coordinates (e.g. `Track1_X`/`Track1_Y`); a missing id column is
+  treated as a single trajectory and a missing time/frame column falls
+  back to row order (each with a message), and rows with non-finite
+  coordinates are dropped. New exported
   [`guess_columns()`](https://johnkirwan.github.io/radiatR/reference/guess_columns.md)
   reports the guessed role of each column. The Shiny app shows
   pre-filled X/Y/Time/ID dropdowns for Generic CSV uploads.
@@ -385,10 +398,7 @@
 
 ### Coordinate handling
 
-- **Fix:** `normalize_xy = TRUE` (the
-  [`TrajSet()`](https://johnkirwan.github.io/radiatR/reference/TrajSet-class.md)
-  and
-  [`TrajSet_read()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read.md)
+- **Fix:** `normalize_xy = TRUE` (the `TrajSet()` and `TrajSet_read()`
   default) now arena-scales each trajectory instead of collapsing every
   point onto the unit circle. Previously it replaced each point with its
   unit vector (radius → 1), destroying trajectory shape: radius- and

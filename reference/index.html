@@ -67,38 +67,38 @@
 
       <dl><dt>
 
-          <code><a href="TrajSet_read.html">TrajSet_read()</a></code>
+          <code><a href="read_tracks.html">read_tracks()</a></code>
 
         </dt>
-        <dd>Construct a TrajSet from a data.frame or file(s)</dd>
+        <dd>Construct a Tracks from a data.frame or file(s)</dd>
 
         <dt>
 
-          <code><a href="TrajSet_read_dir.html">TrajSet_read_dir()</a></code>
+          <code><a href="read_tracks_dir.html">read_tracks_dir()</a></code>
 
         </dt>
-        <dd>Read all matching files from a directory and bind into a TrajSet</dd>
+        <dd>Read all matching files from a directory and bind into a Tracks</dd>
 
         <dt>
 
-          <code><a href="TrajSet_read_format.html">TrajSet_read_format()</a></code>
+          <code><a href="read_tracks_format.html">read_tracks_format()</a></code>
 
         </dt>
-        <dd>Construct a TrajSet from a *format* spec (registered name or inline list)</dd>
+        <dd>Construct a Tracks from a *format* spec (registered name or inline list)</dd>
 
         <dt>
 
-          <code><a href="TrajSet_load_manifest.html">TrajSet_load_manifest()</a></code>
+          <code><a href="load_manifest.html">load_manifest()</a></code>
 
         </dt>
-        <dd>Load trajectories listed in a file table into a TrajSet</dd>
+        <dd>Load trajectories listed in a file table into a Tracks</dd>
 
         <dt>
 
           <code><a href="dtrack_read.html">dtrack_read()</a></code>
 
         </dt>
-        <dd>Read a dtrack trajectory file into a TrajSet</dd>
+        <dd>Read a dtrack trajectory file into a Tracks</dd>
 
         <dt>
 
@@ -184,7 +184,7 @@
           <code><a href="register_loader_format.html">register_loader_format()</a></code>
 
         </dt>
-        <dd>Register a declarative loader *format* (list or YAML/JSON file) The spec maps cleanly onto TrajSet_read() args and supports regex-based column finding.</dd>
+        <dd>Register a declarative loader *format* (list or YAML/JSON file) The spec maps cleanly onto read_tracks() args and supports regex-based column finding.</dd>
 
         <dt>
 
@@ -193,7 +193,7 @@
         </dt>
         <dd>List registered declarative formats</dd>
       </dl></div><div class="section level2">
-      <h2 id="the-trajset-class">The TrajSet class<a class="anchor" aria-label="anchor" href="#the-trajset-class"></a></h2>
+      <h2 id="the-tracks-class">The Tracks class<a class="anchor" aria-label="anchor" href="#the-tracks-class"></a></h2>
 
       <div class="section-desc"><p>S4 container holding a long-form trajectory data frame together with column mappings and metadata.</p></div>
 
@@ -204,17 +204,17 @@
 
       <dl><dt>
 
-          <code><a href="TrajSet-class.html">TrajSet()</a></code> <code><a href="TrajSet-class.html">length(<i>&lt;TrajSet&gt;</i>)</a></code> <code><a href="TrajSet-class.html">`[`(<i>&lt;TrajSet&gt;</i>,<i>&lt;ANY&gt;</i>,<i>&lt;missing&gt;</i>,<i>&lt;missing&gt;</i>)</a></code> <code><a href="TrajSet-class.html">c(<i>&lt;TrajSet&gt;</i>)</a></code>
+          <code><a href="Tracks-class.html">tracks()</a></code> <code><a href="Tracks-class.html">length(<i>&lt;Tracks&gt;</i>)</a></code> <code><a href="Tracks-class.html">`[`(<i>&lt;Tracks&gt;</i>,<i>&lt;ANY&gt;</i>,<i>&lt;missing&gt;</i>,<i>&lt;missing&gt;</i>)</a></code> <code><a href="Tracks-class.html">c(<i>&lt;Tracks&gt;</i>)</a></code>
 
         </dt>
-        <dd>TrajSet container for circular trajectories</dd>
+        <dd>Tracks container for circular trajectories</dd>
 
         <dt>
 
           <code><a href="transform_history.html">transform_history()</a></code> <code><a href="transform_history.html">log_transform()</a></code> <code><a href="transform_history.html">set_transform_history()</a></code>
 
         </dt>
-        <dd>Transform history helpers for TrajSet objects</dd>
+        <dd>Transform history helpers for Tracks objects</dd>
       </dl></div><div class="section level2">
       <h2 id="simulation">Simulation<a class="anchor" aria-label="anchor" href="#simulation"></a></h2>
 
@@ -260,7 +260,7 @@
           <code><a href="pose_to_headings.html">pose_to_headings()</a></code>
 
         </dt>
-        <dd>Derive per-frame headings from pose data without a TrajSet</dd>
+        <dd>Derive per-frame headings from pose data without a Tracks</dd>
 
         <dt>
 
@@ -466,7 +466,7 @@
           <code><a href="gg_traj.html">gg_traj()</a></code>
 
         </dt>
-        <dd>Plot trajectories from a TrajSet (overlay or faceted)</dd>
+        <dd>Plot trajectories from a Tracks (overlay or faceted)</dd>
 
         <dt>
 
@@ -550,7 +550,7 @@
           <code><a href="assign_colour_key.html">assign_colour_key()</a></code>
 
         </dt>
-        <dd>Assign a shared colour-key column to a TrajSet or data frame</dd>
+        <dd>Assign a shared colour-key column to a Tracks or data frame</dd>
 
         <dt>
 
@@ -768,7 +768,7 @@
           <code><a href="line_circle_intercept_traj.html">line_circle_intercept_traj()</a></code>
 
         </dt>
-        <dd>Intersection helper for TrajSet trajectories</dd>
+        <dd>Intersection helper for Tracks trajectories</dd>
 
         <dt>
 
@@ -779,7 +779,7 @@
       </dl></div><div class="section level2">
       <h2 id="reference-frame-transforms">Reference frame &amp; transforms<a class="anchor" aria-label="anchor" href="#reference-frame-transforms"></a></h2>
 
-      <div class="section-desc"><p>Read or change a TrajSet’s per-trajectory reference direction, and apply bespoke transformations (recorded in the transform history).</p></div>
+      <div class="section-desc"><p>Read or change a Tracks’s per-trajectory reference direction, and apply bespoke transformations (recorded in the transform history).</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -791,7 +791,7 @@
           <code><a href="reference.html">reference()</a></code>
 
         </dt>
-        <dd>Per-trajectory reference direction of a TrajSet</dd>
+        <dd>Per-trajectory reference direction of a Tracks</dd>
 
         <dt>
 
@@ -805,14 +805,14 @@
           <code><a href="apply_transform.html">apply_transform()</a></code>
 
         </dt>
-        <dd>Apply a bespoke transformation to a TrajSet</dd>
+        <dd>Apply a bespoke transformation to a Tracks</dd>
 
         <dt>
 
           <code><a href="transform_history.html">transform_history()</a></code> <code><a href="transform_history.html">log_transform()</a></code> <code><a href="transform_history.html">set_transform_history()</a></code>
 
         </dt>
-        <dd>Transform history helpers for TrajSet objects</dd>
+        <dd>Transform history helpers for Tracks objects</dd>
       </dl></div><div class="section level2">
       <h2 id="path-metrics">Path metrics<a class="anchor" aria-label="anchor" href="#path-metrics"></a></h2>
 
@@ -828,14 +828,14 @@
           <code><a href="straightness_index.html">straightness_index()</a></code>
 
         </dt>
-        <dd>Per-trajectory straightness index for a TrajSet</dd>
+        <dd>Per-trajectory straightness index for a Tracks</dd>
 
         <dt>
 
           <code><a href="tortuosity_ratio.html">tortuosity_ratio()</a></code>
 
         </dt>
-        <dd>Per-trajectory tortuosity ratio for a TrajSet</dd>
+        <dd>Per-trajectory tortuosity ratio for a Tracks</dd>
 
         <dt>
 
@@ -885,38 +885,10 @@
 
       <dl><dt>
 
-          <code><a href="TrajSet-class.html">TrajSet()</a></code> <code><a href="TrajSet-class.html">length(<i>&lt;TrajSet&gt;</i>)</a></code> <code><a href="TrajSet-class.html">`[`(<i>&lt;TrajSet&gt;</i>,<i>&lt;ANY&gt;</i>,<i>&lt;missing&gt;</i>,<i>&lt;missing&gt;</i>)</a></code> <code><a href="TrajSet-class.html">c(<i>&lt;TrajSet&gt;</i>)</a></code>
+          <code><a href="Tracks-class.html">tracks()</a></code> <code><a href="Tracks-class.html">length(<i>&lt;Tracks&gt;</i>)</a></code> <code><a href="Tracks-class.html">`[`(<i>&lt;Tracks&gt;</i>,<i>&lt;ANY&gt;</i>,<i>&lt;missing&gt;</i>,<i>&lt;missing&gt;</i>)</a></code> <code><a href="Tracks-class.html">c(<i>&lt;Tracks&gt;</i>)</a></code>
 
         </dt>
-        <dd>TrajSet container for circular trajectories</dd>
-
-        <dt>
-
-          <code><a href="TrajSet_load_manifest.html">TrajSet_load_manifest()</a></code>
-
-        </dt>
-        <dd>Load trajectories listed in a file table into a TrajSet</dd>
-
-        <dt>
-
-          <code><a href="TrajSet_read.html">TrajSet_read()</a></code>
-
-        </dt>
-        <dd>Construct a TrajSet from a data.frame or file(s)</dd>
-
-        <dt>
-
-          <code><a href="TrajSet_read_dir.html">TrajSet_read_dir()</a></code>
-
-        </dt>
-        <dd>Read all matching files from a directory and bind into a TrajSet</dd>
-
-        <dt>
-
-          <code><a href="TrajSet_read_format.html">TrajSet_read_format()</a></code>
-
-        </dt>
-        <dd>Construct a TrajSet from a *format* spec (registered name or inline list)</dd>
+        <dd>Tracks container for circular trajectories</dd>
 
         <dt>
 
@@ -1077,21 +1049,21 @@
           <code><a href="apply_transform.html">apply_transform()</a></code>
 
         </dt>
-        <dd>Apply a bespoke transformation to a TrajSet</dd>
+        <dd>Apply a bespoke transformation to a Tracks</dd>
 
         <dt>
 
-          <code><a href="as.data.frame.TrajSet.html">as.data.frame(<i>&lt;TrajSet&gt;</i>)</a></code>
+          <code><a href="as.data.frame.Tracks.html">as.data.frame(<i>&lt;Tracks&gt;</i>)</a></code>
 
         </dt>
-        <dd>Coerce a TrajSet to a data frame</dd>
+        <dd>Coerce a Tracks to a data frame</dd>
 
         <dt>
 
           <code><a href="assign_colour_key.html">assign_colour_key()</a></code>
 
         </dt>
-        <dd>Assign a shared colour-key column to a TrajSet or data frame</dd>
+        <dd>Assign a shared colour-key column to a Tracks or data frame</dd>
 
         <dt>
 
@@ -1273,7 +1245,7 @@
           <code><a href="dtrack_read.html">dtrack_read()</a></code>
 
         </dt>
-        <dd>Read a dtrack trajectory file into a TrajSet</dd>
+        <dd>Read a dtrack trajectory file into a Tracks</dd>
 
         <dt>
 
@@ -1301,7 +1273,7 @@
           <code><a href="gg_traj.html">gg_traj()</a></code>
 
         </dt>
-        <dd>Plot trajectories from a TrajSet (overlay or faceted)</dd>
+        <dd>Plot trajectories from a Tracks (overlay or faceted)</dd>
 
         <dt>
 
@@ -1364,7 +1336,7 @@
           <code><a href="line_circle_intercept_traj.html">line_circle_intercept_traj()</a></code>
 
         </dt>
-        <dd>Intersection helper for TrajSet trajectories</dd>
+        <dd>Intersection helper for Tracks trajectories</dd>
 
         <dt>
 
@@ -1386,6 +1358,13 @@
 
         </dt>
         <dd>List registered declarative formats</dd>
+
+        <dt>
+
+          <code><a href="load_manifest.html">load_manifest()</a></code>
+
+        </dt>
+        <dd>Load trajectories listed in a file table into a Tracks</dd>
 
         <dt>
 
@@ -1427,7 +1406,7 @@
           <code><a href="pose_to_headings.html">pose_to_headings()</a></code>
 
         </dt>
-        <dd>Derive per-frame headings from pose data without a TrajSet</dd>
+        <dd>Derive per-frame headings from pose data without a Tracks</dd>
 
         <dt>
 
@@ -1452,10 +1431,31 @@
 
         <dt>
 
+          <code><a href="read_tracks.html">read_tracks()</a></code>
+
+        </dt>
+        <dd>Construct a Tracks from a data.frame or file(s)</dd>
+
+        <dt>
+
+          <code><a href="read_tracks_dir.html">read_tracks_dir()</a></code>
+
+        </dt>
+        <dd>Read all matching files from a directory and bind into a Tracks</dd>
+
+        <dt>
+
+          <code><a href="read_tracks_format.html">read_tracks_format()</a></code>
+
+        </dt>
+        <dd>Construct a Tracks from a *format* spec (registered name or inline list)</dd>
+
+        <dt>
+
           <code><a href="reference.html">reference()</a></code>
 
         </dt>
-        <dd>Per-trajectory reference direction of a TrajSet</dd>
+        <dd>Per-trajectory reference direction of a Tracks</dd>
 
         <dt>
 
@@ -1476,7 +1476,7 @@
           <code><a href="register_loader_format.html">register_loader_format()</a></code>
 
         </dt>
-        <dd>Register a declarative loader *format* (list or YAML/JSON file) The spec maps cleanly onto TrajSet_read() args and supports regex-based column finding.</dd>
+        <dd>Register a declarative loader *format* (list or YAML/JSON file) The spec maps cleanly onto read_tracks() args and supports regex-based column finding.</dd>
 
         <dt>
 
@@ -1511,7 +1511,7 @@
           <code><a href="straightness_index.html">straightness_index()</a></code>
 
         </dt>
-        <dd>Per-trajectory straightness index for a TrajSet</dd>
+        <dd>Per-trajectory straightness index for a Tracks</dd>
 
         <dt>
 
@@ -1539,14 +1539,14 @@
           <code><a href="tortuosity_ratio.html">tortuosity_ratio()</a></code>
 
         </dt>
-        <dd>Per-trajectory tortuosity ratio for a TrajSet</dd>
+        <dd>Per-trajectory tortuosity ratio for a Tracks</dd>
 
         <dt>
 
           <code><a href="transform_history.html">transform_history()</a></code> <code><a href="transform_history.html">log_transform()</a></code> <code><a href="transform_history.html">set_transform_history()</a></code>
 
         </dt>
-        <dd>Transform history helpers for TrajSet objects</dd>
+        <dd>Transform history helpers for Tracks objects</dd>
 
         <dt>
 

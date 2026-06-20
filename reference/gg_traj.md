@@ -1,6 +1,6 @@
-# Plot trajectories from a TrajSet (overlay or faceted)
+# Plot trajectories from a Tracks (overlay or faceted)
 
-Plot trajectories from a TrajSet (overlay or faceted)
+Plot trajectories from a Tracks (overlay or faceted)
 
 ## Usage
 
@@ -18,7 +18,7 @@ gg_traj(
   ncol = NULL
 )
 
-# S4 method for class 'TrajSet'
+# S4 method for class 'Tracks'
 gg_traj(
   x,
   color = NULL,
@@ -37,7 +37,7 @@ gg_traj(
 
 - x:
 
-  TrajSet
+  Tracks
 
 - color, linetype, alpha, size:
 

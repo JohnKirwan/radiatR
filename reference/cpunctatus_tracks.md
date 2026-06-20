@@ -5,7 +5,7 @@ from the same millipede experiment as
 [`cpunctatus`](https://johnkirwan.github.io/radiatR/reference/cpunctatus.md),
 with the trial condition metadata (\`arc\`, \`type\`, \`individual\`)
 joined onto every frame. Convenient for analyses that prefer a plain
-data frame to the \`TrajSet\` container. A subset of the published
+data frame to the \`Tracks\` container. A subset of the published
 dataset.
 
 ## Usage

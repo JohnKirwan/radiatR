@@ -1,13 +1,13 @@
-# Transform history helpers for TrajSet objects
+# Transform history helpers for Tracks objects
 
-Transform history helpers for TrajSet objects
+Transform history helpers for Tracks objects
 
 ## Usage
 
 ``` r
 transform_history(x)
 
-# S4 method for class 'TrajSet'
+# S4 method for class 'Tracks'
 transform_history(x)
 
 log_transform(
@@ -20,7 +20,7 @@ log_transform(
   depends_on = NULL
 )
 
-# S4 method for class 'TrajSet'
+# S4 method for class 'Tracks'
 log_transform(
   x,
   step,
@@ -33,7 +33,7 @@ log_transform(
 
 set_transform_history(x, history)
 
-# S4 method for class 'TrajSet'
+# S4 method for class 'Tracks'
 set_transform_history(x, history)
 ```
 
@@ -41,7 +41,7 @@ set_transform_history(x, history)
 
 - x:
 
-  A \`TrajSet\` object.
+  A \`Tracks\` object.
 
 - step:
 
@@ -78,5 +78,5 @@ set_transform_history(x, history)
 ## Value
 
 For \`transform_history\`, a tibble describing the recorded steps. For
-\`log_transform\` and \`set_transform_history\`, the updated \`TrajSet\`
+\`log_transform\` and \`set_transform_history\`, the updated \`Tracks\`
 object.

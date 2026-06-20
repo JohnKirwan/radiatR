@@ -1,4 +1,4 @@
-# Intersection helper for TrajSet trajectories
+# Intersection helper for Tracks trajectories
 
 Extracts the first/last rows for a given id/time range and computes the
 intersection with the unit circle.
@@ -13,7 +13,7 @@ line_circle_intercept_traj(traj, id, range)
 
 - traj:
 
-  TrajSet
+  Tracks
 
 - id:
 

@@ -3,7 +3,7 @@
 ## Overview
 
 `radiatR` provides a flexible loader framework that turns tracking
-exports from a wide variety of systems into `TrajSet` objects. The
+exports from a wide variety of systems into `Tracks` objects. The
 helpers cover three typical tasks:
 
 1.  Reading experiment manifests
@@ -11,9 +11,9 @@ helpers cover three typical tasks:
     and
     [`import_tracks()`](https://johnkirwan.github.io/radiatR/reference/import_tracks.md)).
 2.  Ingesting trajectory tables with
-    [`TrajSet_read()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read.md)
+    [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
     or
-    [`TrajSet_read_dir()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read_dir.md).
+    [`read_tracks_dir()`](https://johnkirwan.github.io/radiatR/reference/read_tracks_dir.md).
 3.  Extending the loader registry with
     [`register_loader_dialect()`](https://johnkirwan.github.io/radiatR/reference/register_loader_dialect.md)
     for custom formats.
@@ -119,8 +119,8 @@ head(file_tbl[, c("basename", "arc", "type", "obstacle", "id")])
 
 [`get_all_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.md)
 reads each file pair, uses the landmark rows to establish the
-unit-circle geometry, and returns a `TrajSet` with normalised
-unit-circle coordinates.
+unit-circle geometry, and returns a `Tracks` with normalised unit-circle
+coordinates.
 
 ``` r
 
@@ -232,7 +232,7 @@ ts <- suppressWarnings(get_all_object_pos(file_tbl = file_tbl, track_dir = track
 #> 9 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
 #> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
 ts
-#> TrajSet: 235 trajectories, 44331 observations
+#> Tracks: 235 trajectories, 44331 observations
 #> Columns: id='trial_id', time='frame', angle='rel_theta' (radians), x='trans_x', y='trans_y', rel_x='rel_x', rel_y='rel_y'
 #> Transform steps: unit_circle_mapping 
 #> # A tibble: 6 × 10
@@ -286,9 +286,9 @@ experiment and is not a general dtrack convention.
 
 `radiatR` reads tabular (CSV/TSV) exports from many tracking tools
 through named *dialects*. Each dialect maps a tool’s column conventions
-onto the `TrajSet` model of one position per individual per frame. Pass
-the dialect name to `TrajSet_read(path, dialect = "name")`;
-tool-specific options go through `dialect_args`.
+onto the `Tracks` model of one position per individual per frame. Pass
+the dialect name to `read_tracks(path, dialect = "name")`; tool-specific
+options go through `dialect_args`.
 
 The table below summarises what is and is not currently handled. Two
 limitations are general:
@@ -318,7 +318,7 @@ limitations are general:
 
 When a tool’s export is not directly supported, two escape hatches
 remain: convert to a tidy CSV and use
-[`TrajSet_read()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read.md)
+[`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
 with an explicit `mapping`, or register a custom dialect (see
 *Registering a Custom Dialect* below).
 
@@ -326,7 +326,7 @@ with an explicit `mapping`, or register a custom dialect (see
 
 The package ships small real exports from three tools so the dialects
 can be tried without any external data. Each loads with one
-[`TrajSet_read()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read.md)
+[`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
 call, pointing the `dialect` argument at the matching tool.
 
 **DeepLabCut** — a three-row scorer/bodypart/coord header; by default
@@ -338,7 +338,7 @@ each bodypart’s coordinates are retained for use with the
 
 dlc_path <- system.file("extdata", "dlc_CollectedData_Pranav.csv",
                         package = "radiatR")
-ts_dlc <- TrajSet_read(dlc_path, dialect = "deeplabcut_multiheader")
+ts_dlc <- read_tracks(dlc_path, dialect = "deeplabcut_multiheader")
 #> New names:
 #> • `Pranav` -> `Pranav...2`
 #> • `Pranav` -> `Pranav...3`
@@ -349,7 +349,7 @@ ts_dlc <- TrajSet_read(dlc_path, dialect = "deeplabcut_multiheader")
 #> • `Pranav` -> `Pranav...8`
 #> • `Pranav` -> `Pranav...9`
 ts_dlc
-#> TrajSet: 1 trajectories, 116 observations
+#> Tracks: 1 trajectories, 116 observations
 #> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'
 #>   id time          x           y snout_x snout_y leftear_x leftear_y rightear_x
 #> 1  1    1 -0.3997793 -0.12643666  21.521 265.428    33.819   265.941     19.984
@@ -373,9 +373,9 @@ ts_dlc
 ``` r
 
 sleap_path <- system.file("extdata", "sleap_example.csv", package = "radiatR")
-ts_sleap <- TrajSet_read(sleap_path, dialect = "sleap")
+ts_sleap <- read_tracks(sleap_path, dialect = "sleap")
 ts_sleap
-#> TrajSet: 1 trajectories, 1 observations
+#> Tracks: 1 trajectories, 1 observations
 #> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'
 #>     id time x y      a_x      a_y      b_x      b_y    x_raw    y_raw angle
 #> 1 <NA>    0 0 0 205.9301 187.8896 278.6352 203.3659 242.2826 195.6278     0
@@ -388,12 +388,12 @@ here).
 
 tracktor_path <- system.file("extdata", "tracktor_example.csv",
                             package = "radiatR")
-ts_tracktor <- TrajSet_read(tracktor_path, dialect = "tracktor")
+ts_tracktor <- read_tracks(tracktor_path, dialect = "tracktor")
 #> New names:
 #> New names:
 #> • `` -> `...1`
 ts_tracktor
-#> TrajSet: 1 trajectories, 547 observations
+#> Tracks: 1 trajectories, 547 observations
 #> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'
 #>   id time         x          y    x_raw    y_raw    angle
 #> 1  1    3 0.8793455 -0.4750115 1528.267 330.3940 5.787907
@@ -410,7 +410,7 @@ The bundled dtrack example is larger and is shown in full in the
 ## Reading Tabular Trajectories
 
 For data already in a data frame or CSV,
-[`TrajSet_read()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read.md)
+[`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
 is the central entry point.
 
 ``` r
@@ -422,9 +422,9 @@ example_df <- data.frame(
   y    = c(0, 0.1, 0.3, 0.4, 1.0, 1.1, 1.3, 1.5)
 )
 
-ts_df <- TrajSet_read(example_df, mapping = list(id = "id", time = "time", x = "x", y = "y"))
+ts_df <- read_tracks(example_df, mapping = list(id = "id", time = "time", x = "x", y = "y"))
 ts_df
-#> TrajSet: 2 trajectories, 8 observations
+#> Tracks: 2 trajectories, 8 observations
 #> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'
 #>   id time          x          y x_raw y_raw     angle
 #> 1  A    0 -0.7808688 -0.6246950   1.0   0.0 3.8163336
@@ -436,9 +436,9 @@ ts_df
 ```
 
 To batch a directory of CSV files,
-[`TrajSet_read_dir()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read_dir.md)
+[`read_tracks_dir()`](https://johnkirwan.github.io/radiatR/reference/read_tracks_dir.md)
 calls
-[`TrajSet_read()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read.md)
+[`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
 for each match and row-binds the result.
 
 ``` r
@@ -450,7 +450,7 @@ write.csv(example_df, file.path(csv_dir, "trial01.csv"), row.names = FALSE)
 write.csv(transform(example_df, id = paste0(id, "_2")),
           file.path(csv_dir, "trial02.csv"), row.names = FALSE)
 
-dset <- TrajSet_read_dir(csv_dir, pattern = "\\.csv$")
+dset <- read_tracks_dir(csv_dir, pattern = "\\.csv$")
 length(dset)
 #> [1] 4
 
@@ -521,16 +521,16 @@ register_loader_dialect("json_tracks", json_tracks_fn)
 
 After registration, call the dialect function directly on the file to
 get a tidy data frame, then pass it to
-[`TrajSet_read()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read.md).
+[`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md).
 (For standard tabular formats that R’s CSV/TSV readers handle natively,
-`TrajSet_read(path, dialect = "name")` works directly—but non-tabular
+`read_tracks(path, dialect = "name")` works directly—but non-tabular
 formats such as JSON require this two-step approach.)
 
 ``` r
 
-ts_json <- TrajSet_read(json_tracks_fn(fake_json))
+ts_json <- read_tracks(json_tracks_fn(fake_json))
 ts_json
-#> TrajSet: 2 trajectories, 6 observations
+#> Tracks: 2 trajectories, 6 observations
 #> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'
 #>     id time          x           y x_raw y_raw     angle
 #> A.1  A    0 -0.9701425 -0.24253563   0.0   0.0 3.3865713

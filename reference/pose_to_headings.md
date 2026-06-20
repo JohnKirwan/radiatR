@@ -1,4 +1,4 @@
-# Derive per-frame headings from pose data without a TrajSet
+# Derive per-frame headings from pose data without a Tracks
 
 Computes a heading angle for every row in `df` from either two bodypart
 keypoint columns or a pre-computed orientation angle column. Intended

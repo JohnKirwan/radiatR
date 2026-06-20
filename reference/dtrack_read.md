@@ -1,4 +1,4 @@
-# Read a dtrack trajectory file into a TrajSet
+# Read a dtrack trajectory file into a Tracks
 
 Reads a tab-separated, headerless file produced by dtrack
 (<https://bitbucket.org/jochensmolka/dtrack>). The file is expected to
@@ -20,16 +20,16 @@ dtrack_read(path, normalize_xy = FALSE, ...)
 
 - normalize_xy:
 
-  Logical; passed to \[TrajSet_read()\]. Default `FALSE` because dtrack
+  Logical; passed to \[read_tracks()\]. Default `FALSE` because dtrack
   files are in pixel space.
 
 - ...:
 
-  Additional arguments passed to \[TrajSet_read()\].
+  Additional arguments passed to \[read_tracks()\].
 
 ## Value
 
-A `TrajSet`.
+A `Tracks`.
 
 ## See also
 

@@ -1,6 +1,6 @@
 # Intersection helper using track rows
 
-Convenience wrapper that accepts a data frame (or \`TrajSet@data\`)
+Convenience wrapper that accepts a data frame (or \`Tracks@data\`)
 containing coordinates and evaluates the intersection between two rows.
 
 ## Usage

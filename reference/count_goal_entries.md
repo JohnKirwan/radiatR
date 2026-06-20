@@ -22,7 +22,7 @@ count_goal_entries(
 
 - x:
 
-  A \[\`TrajSet\`\] object with x/y (or rel_x/rel_y) columns registered.
+  A \[\`Tracks\`\] object with x/y (or rel_x/rel_y) columns registered.
 
 - target_angle:
 

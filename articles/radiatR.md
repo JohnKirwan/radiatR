@@ -166,7 +166,7 @@ ts_demo <- suppressWarnings(get_all_object_pos(file_tbl = file_tbl, track_dir = 
 #> 9 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
 #> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
 ts_demo
-#> TrajSet: 235 trajectories, 44331 observations
+#> Tracks: 235 trajectories, 44331 observations
 #> Columns: id='trial_id', time='frame', angle='rel_theta' (radians), x='trans_x', y='trans_y', rel_x='rel_x', rel_y='rel_y'
 #> Transform steps: unit_circle_mapping 
 #> # A tibble: 6 × 10
@@ -182,13 +182,13 @@ ts_demo
 
 [`get_all_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.md)
 reads each landmark/track pair, normalises coordinates to a unit circle
-(arena radius = 1), and returns a `TrajSet`. Trial metadata (arena
+(arena radius = 1), and returns a `Tracks`. Trial metadata (arena
 radius, target position, frame limits) is in
 `ts_demo@meta$trial_limits`.
 
 ## Full Millipede Dataset
 
-The package also provides `cpunctatus`, a pre-computed `TrajSet` of all
+The package also provides `cpunctatus`, a pre-computed `Tracks` of all
 235 *Cylindroiulus punctatus* trajectories across the stimulus
 conditions (target half-widths of 5, 10, 15, 20, 30, 40, 50 degrees,
 plus a featureless control with `arc = 0`). Loading it is instant, and
@@ -198,7 +198,7 @@ the per-trial target half-width is already attached as the `arc` column.
 
 data(cpunctatus)
 cpunctatus
-#> TrajSet: 235 trajectories, 44331 observations
+#> Tracks: 235 trajectories, 44331 observations
 #> Columns: id='trial_id', time='frame', angle='rel_theta' (radians), x='trans_x', y='trans_y', rel_x='rel_x', rel_y='rel_y'
 #> Transform steps: unit_circle_mapping 
 #> # A tibble: 6 × 18
@@ -1031,7 +1031,7 @@ sim_df <- simulate_tracks(
   n_points = 150,
   seed = 42
 )
-ts_sim <- TrajSet(
+ts_sim <- tracks(
   sim_df,
   id = "trial_id", time = "frame",
   angle = "rel_theta", x = "rel_x", y = "rel_y",

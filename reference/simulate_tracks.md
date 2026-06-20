@@ -35,8 +35,8 @@ simulate_tracks(
 - output:
 
   Character string controlling the return type: "tibble" (default)
-  returns a long-form data frame, "trajset" returns a \[TrajSet\]
-  object, and "both" returns a list containing both representations.
+  returns a long-form data frame, "trajset" returns a \[Tracks\] object,
+  and "both" returns a list containing both representations.
 
 - write_path:
 
@@ -58,7 +58,7 @@ simulate_tracks(
 
 ## Value
 
-Depending on \`output\`, a tibble, a \`TrajSet\`, or a list containing
+Depending on \`output\`, a tibble, a \`Tracks\`, or a list containing
 both. When \`write_path\` is supplied the data are also written to disk.
 
 ## Details
@@ -148,7 +148,7 @@ additional columns: \`modality\` (character), \`n_modes\` (integer),
 generating centre, e.g. \`ref_mean + pi\` for the second axial pole,
 versus \`final_heading\` which is the wrapped draw; \`NA\` for
 \`"uniform"\`), \`track_shape\` (character), \`n_reversals\` (integer),
-\`amplitude\` (numeric) and \`line_width\` (numeric). When a \`TrajSet\`
+\`amplitude\` (numeric) and \`line_width\` (numeric). When a \`Tracks\`
 is returned, the resolved generating conditions are stored in
 \`meta\$sim_conditions\`.
 
@@ -177,7 +177,7 @@ head(sim)
 #> #   rel_y <dbl>, modality <chr>, n_modes <int>, mode_id <int>, mode_mean <dbl>,
 #> #   track_shape <chr>, n_reversals <int>, amplitude <dbl>, line_width <dbl>
 
-# Request both tibble and TrajSet representations
+# Request both tibble and Tracks representations
 sim_both <- simulate_tracks(output = "both", seed = 123)
 names(sim_both)
 #> [1] "tibble"  "trajset"

@@ -1,7 +1,7 @@
 # Derive trial-level track positions in polar coordinates.
 
 Using the trial limits returned by \[get_trial_limits()\], this helper
-extracts the corresponding rows from a track data frame or \`TrajSet\`,
+extracts the corresponding rows from a track data frame or \`Tracks\`,
 centres and scales the coordinates, and computes angles in both absolute
 and reference-relative frames. The function optionally controls how
 inner/outer radius crossings are selected.
@@ -26,7 +26,7 @@ get_tracked_object_pos(
 
 - track:
 
-  Data frame or \`TrajSet\` of Cartesian coordinates for the entire
+  Data frame or \`Tracks\` of Cartesian coordinates for the entire
   video.
 
 - circ0:
@@ -45,6 +45,6 @@ get_tracked_object_pos(
 
 ## Value
 
-A \`TrajSet\` containing all valid trial observations. The corresponding
+A \`Tracks\` containing all valid trial observations. The corresponding
 trial limits (including \`valid_track\` flags) are stored in
 \`meta\$trial_limits\`.

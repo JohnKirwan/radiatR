@@ -62,7 +62,7 @@ A \`geom_point()\` layer (shape = 1, hollow circle).
 
 ``` r
 library(ggplot2)
-# headings from a TrajSet via derive_headings(ts, rule = "crossing", ...)
+# headings from a Tracks via derive_headings(ts, rule = "crossing", ...)
 hd <- data.frame(id = "A", time = 1, heading = pi / 4)
 ggplot() + coord_fixed() + add_heading_points(hd)
 

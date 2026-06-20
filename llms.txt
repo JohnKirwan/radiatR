@@ -143,7 +143,7 @@ predict(fit, data.frame(predictor = c(-1, 0, 1)))
 library(radiatR)
 
 # 1. Load tracking data (example: DeepLabCut with head + thorax bodyparts)
-ts <- TrajSet_read(
+ts <- read_tracks(
   "my_tracks.csv",
   dialect      = "deeplabcut",
   dialect_args = list(bodypart = c("head", "thorax"))
@@ -309,17 +309,17 @@ Read and normalise trajectory files from 20+ tracking tools. Use
 dialect_args to pass tool-specific options (bodypart selection,
 likelihood thresholds, zone selection, etc.).
 
-- [`TrajSet_read()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read.md)
-  : Construct a TrajSet from a data.frame or file(s)
-- [`TrajSet_read_dir()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read_dir.md)
-  : Read all matching files from a directory and bind into a TrajSet
-- [`TrajSet_read_format()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read_format.md)
-  : Construct a TrajSet from a \*format\* spec (registered name or
-  inline list)
-- [`TrajSet_load_manifest()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_load_manifest.md)
-  : Load trajectories listed in a file table into a TrajSet
+- [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  : Construct a Tracks from a data.frame or file(s)
+- [`read_tracks_dir()`](https://johnkirwan.github.io/radiatR/reference/read_tracks_dir.md)
+  : Read all matching files from a directory and bind into a Tracks
+- [`read_tracks_format()`](https://johnkirwan.github.io/radiatR/reference/read_tracks_format.md)
+  : Construct a Tracks from a \*format\* spec (registered name or inline
+  list)
+- [`load_manifest()`](https://johnkirwan.github.io/radiatR/reference/load_manifest.md)
+  : Load trajectories listed in a file table into a Tracks
 - [`dtrack_read()`](https://johnkirwan.github.io/radiatR/reference/dtrack_read.md)
-  : Read a dtrack trajectory file into a TrajSet
+  : Read a dtrack trajectory file into a Tracks
 - [`import_info()`](https://johnkirwan.github.io/radiatR/reference/import_info.md)
   : Import landmark coordinates from text files
 - [`import_tracks()`](https://johnkirwan.github.io/radiatR/reference/import_tracks.md)
@@ -350,25 +350,25 @@ Register custom file formats or query which dialects are available.
   : List registered loader dialects
 - [`register_loader_format()`](https://johnkirwan.github.io/radiatR/reference/register_loader_format.md)
   : Register a declarative loader \*format\* (list or YAML/JSON file)
-  The spec maps cleanly onto TrajSet_read() args and supports
-  regex-based column finding.
+  The spec maps cleanly onto read_tracks() args and supports regex-based
+  column finding.
 - [`list_loader_formats()`](https://johnkirwan.github.io/radiatR/reference/list_loader_formats.md)
   : List registered declarative formats
 
-## The TrajSet class
+## The Tracks class
 
 S4 container holding a long-form trajectory data frame together with
 column mappings and metadata.
 
-- [`TrajSet()`](https://johnkirwan.github.io/radiatR/reference/TrajSet-class.md)
-  [`length(`*`<TrajSet>`*`)`](https://johnkirwan.github.io/radiatR/reference/TrajSet-class.md)
-  [`` `[`( ``*`<TrajSet>`*`,`*`<ANY>`*`,`*`<missing>`*`,`*`<missing>`*`)`](https://johnkirwan.github.io/radiatR/reference/TrajSet-class.md)
-  [`c(`*`<TrajSet>`*`)`](https://johnkirwan.github.io/radiatR/reference/TrajSet-class.md)
-  : TrajSet container for circular trajectories
+- [`tracks()`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md)
+  [`length(`*`<Tracks>`*`)`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md)
+  [`` `[`( ``*`<Tracks>`*`,`*`<ANY>`*`,`*`<missing>`*`,`*`<missing>`*`)`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md)
+  [`c(`*`<Tracks>`*`)`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md)
+  : Tracks container for circular trajectories
 - [`transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`log_transform()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`set_transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
-  : Transform history helpers for TrajSet objects
+  : Transform history helpers for Tracks objects
 
 ## Simulation
 
@@ -388,7 +388,7 @@ data using built-in rules or custom functions.
 - [`circ_summary_headings()`](https://johnkirwan.github.io/radiatR/reference/circ_summary_headings.md)
   : Circular statistics over derived headings
 - [`pose_to_headings()`](https://johnkirwan.github.io/radiatR/reference/pose_to_headings.md)
-  : Derive per-frame headings from pose data without a TrajSet
+  : Derive per-frame headings from pose data without a Tracks
 - [`headings_frame()`](https://johnkirwan.github.io/radiatR/reference/headings_frame.md)
   : Construct a headings frame from a data frame of angles
 - [`new_headings_frame()`](https://johnkirwan.github.io/radiatR/reference/new_headings_frame.md)
@@ -475,7 +475,7 @@ The main radiate() function and its building blocks.
 - [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   : Make ggplot object of tracks radiating from circle centre.
 - [`gg_traj()`](https://johnkirwan.github.io/radiatR/reference/gg_traj.md)
-  : Plot trajectories from a TrajSet (overlay or faceted)
+  : Plot trajectories from a Tracks (overlay or faceted)
 - [`draw_tracks()`](https://johnkirwan.github.io/radiatR/reference/draw_tracks.md)
   : Create geom layers for Cartesian track coordinates
 - [`add_ticks()`](https://johnkirwan.github.io/radiatR/reference/add_ticks.md)
@@ -499,7 +499,7 @@ The main radiate() function and its building blocks.
 - [`add_origin_point()`](https://johnkirwan.github.io/radiatR/reference/add_origin_point.md)
   : Mark the centre of a radial plot
 - [`assign_colour_key()`](https://johnkirwan.github.io/radiatR/reference/assign_colour_key.md)
-  : Assign a shared colour-key column to a TrajSet or data frame
+  : Assign a shared colour-key column to a Tracks or data frame
 - [`cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/cycle_colours.md)
   : Cycle a bounded set of colour indices over the values of a key
 
@@ -576,35 +576,35 @@ Angle-convention conversions and geometric helpers.
 - [`line_circle_intercept_df()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept_df.md)
   : Intersection helper using track rows
 - [`line_circle_intercept_traj()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept_traj.md)
-  : Intersection helper for TrajSet trajectories
+  : Intersection helper for Tracks trajectories
 - [`derive_coords()`](https://johnkirwan.github.io/radiatR/reference/derive_coords.md)
   : Derive polar and reference-relative coordinates from unit-circle
   position
 
 ## Reference frame & transforms
 
-Read or change a TrajSet’s per-trajectory reference direction, and apply
+Read or change a Tracks’s per-trajectory reference direction, and apply
 bespoke transformations (recorded in the transform history).
 
 - [`reference()`](https://johnkirwan.github.io/radiatR/reference/reference.md)
-  : Per-trajectory reference direction of a TrajSet
+  : Per-trajectory reference direction of a Tracks
 - [`set_reference()`](https://johnkirwan.github.io/radiatR/reference/set_reference.md)
   : Set the per-trajectory reference and re-derive the relative frame
 - [`apply_transform()`](https://johnkirwan.github.io/radiatR/reference/apply_transform.md)
-  : Apply a bespoke transformation to a TrajSet
+  : Apply a bespoke transformation to a Tracks
 - [`transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`log_transform()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`set_transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
-  : Transform history helpers for TrajSet objects
+  : Transform history helpers for Tracks objects
 
 ## Path metrics
 
 Per-trajectory straightness and tortuosity of the movement path.
 
 - [`straightness_index()`](https://johnkirwan.github.io/radiatR/reference/straightness_index.md)
-  : Per-trajectory straightness index for a TrajSet
+  : Per-trajectory straightness index for a Tracks
 - [`tortuosity_ratio()`](https://johnkirwan.github.io/radiatR/reference/tortuosity_ratio.md)
-  : Per-trajectory tortuosity ratio for a TrajSet
+  : Per-trajectory tortuosity ratio for a Tracks
 - [`path_straightness()`](https://johnkirwan.github.io/radiatR/reference/path_straightness.md)
   : Path straightness index for a single trajectory
 - [`path_tortuosity()`](https://johnkirwan.github.io/radiatR/reference/path_tortuosity.md)
@@ -624,20 +624,11 @@ orientation experiment (Kirwan & Nilsson 2019).
 
 Any remaining exported topics.
 
-- [`TrajSet()`](https://johnkirwan.github.io/radiatR/reference/TrajSet-class.md)
-  [`length(`*`<TrajSet>`*`)`](https://johnkirwan.github.io/radiatR/reference/TrajSet-class.md)
-  [`` `[`( ``*`<TrajSet>`*`,`*`<ANY>`*`,`*`<missing>`*`,`*`<missing>`*`)`](https://johnkirwan.github.io/radiatR/reference/TrajSet-class.md)
-  [`c(`*`<TrajSet>`*`)`](https://johnkirwan.github.io/radiatR/reference/TrajSet-class.md)
-  : TrajSet container for circular trajectories
-- [`TrajSet_load_manifest()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_load_manifest.md)
-  : Load trajectories listed in a file table into a TrajSet
-- [`TrajSet_read()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read.md)
-  : Construct a TrajSet from a data.frame or file(s)
-- [`TrajSet_read_dir()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read_dir.md)
-  : Read all matching files from a directory and bind into a TrajSet
-- [`TrajSet_read_format()`](https://johnkirwan.github.io/radiatR/reference/TrajSet_read_format.md)
-  : Construct a TrajSet from a \*format\* spec (registered name or
-  inline list)
+- [`tracks()`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md)
+  [`length(`*`<Tracks>`*`)`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md)
+  [`` `[`( ``*`<Tracks>`*`,`*`<ANY>`*`,`*`<missing>`*`,`*`<missing>`*`)`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md)
+  [`c(`*`<Tracks>`*`)`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md)
+  : Tracks container for circular trajectories
 - [`add_angle_rose()`](https://johnkirwan.github.io/radiatR/reference/add_angle_rose.md)
   : Add a rose diagram of heading angles to a radiate plot
 - [`add_circ()`](https://johnkirwan.github.io/radiatR/reference/add_circ.md)
@@ -686,11 +677,11 @@ Any remaining exported topics.
 - [`add_wrappedcauchy_density()`](https://johnkirwan.github.io/radiatR/reference/add_wrappedcauchy_density.md)
   : Overlay a fitted wrapped Cauchy density curve on a radiate plot
 - [`apply_transform()`](https://johnkirwan.github.io/radiatR/reference/apply_transform.md)
-  : Apply a bespoke transformation to a TrajSet
-- [`as.data.frame(`*`<TrajSet>`*`)`](https://johnkirwan.github.io/radiatR/reference/as.data.frame.TrajSet.md)
-  : Coerce a TrajSet to a data frame
+  : Apply a bespoke transformation to a Tracks
+- [`as.data.frame(`*`<Tracks>`*`)`](https://johnkirwan.github.io/radiatR/reference/as.data.frame.Tracks.md)
+  : Coerce a Tracks to a data frame
 - [`assign_colour_key()`](https://johnkirwan.github.io/radiatR/reference/assign_colour_key.md)
-  : Assign a shared colour-key column to a TrajSet or data frame
+  : Assign a shared colour-key column to a Tracks or data frame
 - [`assign_cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.md)
   : Assign cycling colour indices to trajectories
 - [`bin_angles()`](https://johnkirwan.github.io/radiatR/reference/bin_angles.md)
@@ -750,7 +741,7 @@ Any remaining exported topics.
 - [`draw_tracks()`](https://johnkirwan.github.io/radiatR/reference/draw_tracks.md)
   : Create geom layers for Cartesian track coordinates
 - [`dtrack_read()`](https://johnkirwan.github.io/radiatR/reference/dtrack_read.md)
-  : Read a dtrack trajectory file into a TrajSet
+  : Read a dtrack trajectory file into a Tracks
 - [`get_all_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.md)
   : Aggregate track positions across all videos in a manifest.
 - [`get_tracked_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_tracked_object_pos.md)
@@ -758,7 +749,7 @@ Any remaining exported topics.
 - [`get_trial_limits()`](https://johnkirwan.github.io/radiatR/reference/get_trial_limits.md)
   : Summarise per-trial metadata for a single video.
 - [`gg_traj()`](https://johnkirwan.github.io/radiatR/reference/gg_traj.md)
-  : Plot trajectories from a TrajSet (overlay or faceted)
+  : Plot trajectories from a Tracks (overlay or faceted)
 - [`guess_columns()`](https://johnkirwan.github.io/radiatR/reference/guess_columns.md)
   : Guess the role of each column in a track table
 - [`headings_frame()`](https://johnkirwan.github.io/radiatR/reference/headings_frame.md)
@@ -780,13 +771,15 @@ Any remaining exported topics.
 - [`line_circle_intercept_df()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept_df.md)
   : Intersection helper using track rows
 - [`line_circle_intercept_traj()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept_traj.md)
-  : Intersection helper for TrajSet trajectories
+  : Intersection helper for Tracks trajectories
 - [`list_heading_rules()`](https://johnkirwan.github.io/radiatR/reference/list_heading_rules.md)
   : List registered custom heading rules
 - [`list_loader_dialects()`](https://johnkirwan.github.io/radiatR/reference/list_loader_dialects.md)
   : List registered loader dialects
 - [`list_loader_formats()`](https://johnkirwan.github.io/radiatR/reference/list_loader_formats.md)
   : List registered declarative formats
+- [`load_manifest()`](https://johnkirwan.github.io/radiatR/reference/load_manifest.md)
+  : Load trajectories listed in a file table into a Tracks
 - [`load_tracks()`](https://johnkirwan.github.io/radiatR/reference/load_tracks.md)
   : Legacy helper to merge manifest metadata with a track table
 - [`load_tracks2()`](https://johnkirwan.github.io/radiatR/reference/load_tracks2.md)
@@ -798,15 +791,22 @@ Any remaining exported topics.
 - [`path_tortuosity()`](https://johnkirwan.github.io/radiatR/reference/path_tortuosity.md)
   : Tortuosity ratio for a single trajectory
 - [`pose_to_headings()`](https://johnkirwan.github.io/radiatR/reference/pose_to_headings.md)
-  : Derive per-frame headings from pose data without a TrajSet
+  : Derive per-frame headings from pose data without a Tracks
 - [`rad_shepherd()`](https://johnkirwan.github.io/radiatR/reference/rad_shepherd.md)
   : Wrap angles to the interval (-pi, pi\]
 - [`radial_theme()`](https://johnkirwan.github.io/radiatR/reference/radial_theme.md)
   : Themes for radial track plots, named for the ggplot2 base themes.
 - [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   : Make ggplot object of tracks radiating from circle centre.
+- [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  : Construct a Tracks from a data.frame or file(s)
+- [`read_tracks_dir()`](https://johnkirwan.github.io/radiatR/reference/read_tracks_dir.md)
+  : Read all matching files from a directory and bind into a Tracks
+- [`read_tracks_format()`](https://johnkirwan.github.io/radiatR/reference/read_tracks_format.md)
+  : Construct a Tracks from a \*format\* spec (registered name or inline
+  list)
 - [`reference()`](https://johnkirwan.github.io/radiatR/reference/reference.md)
-  : Per-trajectory reference direction of a TrajSet
+  : Per-trajectory reference direction of a Tracks
 - [`register_heading_rule()`](https://johnkirwan.github.io/radiatR/reference/register_heading_rule.md)
   : Register a custom heading derivation rule
 - [`register_loader_dialect()`](https://johnkirwan.github.io/radiatR/reference/register_loader_dialect.md)
@@ -815,8 +815,8 @@ Any remaining exported topics.
   one of (angle) or (x,y)
 - [`register_loader_format()`](https://johnkirwan.github.io/radiatR/reference/register_loader_format.md)
   : Register a declarative loader \*format\* (list or YAML/JSON file)
-  The spec maps cleanly onto TrajSet_read() args and supports
-  regex-based column finding.
+  The spec maps cleanly onto read_tracks() args and supports regex-based
+  column finding.
 - [`sector_summary()`](https://johnkirwan.github.io/radiatR/reference/sector_summary.md)
   : Proportion of time spent in angular sectors
 - [`set_reference()`](https://johnkirwan.github.io/radiatR/reference/set_reference.md)
@@ -826,7 +826,7 @@ Any remaining exported topics.
 - [`stack_headings()`](https://johnkirwan.github.io/radiatR/reference/stack_headings.md)
   : Add stacking columns to a headings data frame
 - [`straightness_index()`](https://johnkirwan.github.io/radiatR/reference/straightness_index.md)
-  : Per-trajectory straightness index for a TrajSet
+  : Per-trajectory straightness index for a Tracks
 - [`test_concentration()`](https://johnkirwan.github.io/radiatR/reference/test_concentration.md)
   : Test whether groups share the same concentration (dispersion)
 - [`test_mean_directions()`](https://johnkirwan.github.io/radiatR/reference/test_mean_directions.md)
@@ -834,11 +834,11 @@ Any remaining exported topics.
 - [`test_uniformity()`](https://johnkirwan.github.io/radiatR/reference/test_uniformity.md)
   : Per-group tests of circular uniformity
 - [`tortuosity_ratio()`](https://johnkirwan.github.io/radiatR/reference/tortuosity_ratio.md)
-  : Per-trajectory tortuosity ratio for a TrajSet
+  : Per-trajectory tortuosity ratio for a Tracks
 - [`transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`log_transform()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`set_transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
-  : Transform history helpers for TrajSet objects
+  : Transform history helpers for Tracks objects
 - [`vonmises_fit()`](https://johnkirwan.github.io/radiatR/reference/vonmises_fit.md)
   : Fit a von Mises distribution to per-group heading data
 - [`wrappedcauchy_fit()`](https://johnkirwan.github.io/radiatR/reference/wrappedcauchy_fit.md)

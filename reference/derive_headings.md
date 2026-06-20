@@ -14,7 +14,7 @@ derive_headings(
   coords = c("absolute", "relative")
 )
 
-# S4 method for class 'TrajSet'
+# S4 method for class 'Tracks'
 derive_headings(
   x,
   rule = c("crossing", "distal", "straight", "origin_mean", "net", "velocity_mean",
@@ -32,7 +32,7 @@ derive_headings(
 
 - x:
 
-  TrajSet
+  Tracks
 
 - rule:
 
@@ -45,7 +45,7 @@ derive_headings(
 - coords:
 
   Character. Which Cartesian columns to use: \`"absolute"\` (default,
-  uses \`x\`/\`y\` from \`TrajSet@cols\`) or \`"relative"\` (uses
+  uses \`x\`/\`y\` from \`Tracks@cols\`) or \`"relative"\` (uses
   \`rel_x\`/\`rel_y\`; errors if not registered).
 
 - first_only:

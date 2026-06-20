@@ -72,12 +72,12 @@
 <div class="section level2">
 <h2 id="architecture">Architecture<a class="anchor" aria-label="anchor" href="#architecture"></a></h2>
 <div class="section level3">
-<h3 id="core-data-structure-trajset-s4-class">Core data structure: <code>TrajSet</code> (S4 class)<a class="anchor" aria-label="anchor" href="#core-data-structure-trajset-s4-class"></a></h3>
-<p><code>R/TrajSet.R</code> defines the central container. A <code>TrajSet</code> holds a list of trajectory tibbles plus metadata (arena geometry, transform history). Almost every downstream function either accepts or returns a <code>TrajSet</code>. Understand this class before touching any other module.</p>
+<h3 id="core-data-structure-tracks-s4-class">Core data structure: <code>Tracks</code> (S4 class)<a class="anchor" aria-label="anchor" href="#core-data-structure-tracks-s4-class"></a></h3>
+<p><code>R/Tracks.R</code> defines the central container. A <code>Tracks</code> holds a list of trajectory tibbles plus metadata (arena geometry, transform history). Almost every downstream function either accepts or returns a <code>Tracks</code>. Understand this class before touching any other module.</p>
 </div>
 <div class="section level3">
 <h3 id="pipeline-stages">Pipeline stages<a class="anchor" aria-label="anchor" href="#pipeline-stages"></a></h3>
-<ol style="list-style-type: decimal"><li><p><strong>Import</strong> (<code>R/loaders.R</code>) — the largest module. Reads manifest files that describe where track data lives, then dispatches to format-specific readers (<code>TrajSet_read_*</code>). The loader format registry (<code>register_loader_*</code>) lets callers add new file formats without modifying core code.</p></li>
+<ol style="list-style-type: decimal"><li><p><strong>Import</strong> (<code>R/loaders.R</code>) — the largest module. Reads manifest files that describe where track data lives, then dispatches to format-specific readers (<code>read_tracks_*</code>). The loader format registry (<code>register_loader_*</code>) lets callers add new file formats without modifying core code.</p></li>
 <li><p><strong>Coordinate transformation</strong> (<code>R/circular_trials.R</code>, <code>R/circular_mapping.R</code>) — converts Cartesian pixel coordinates to unit-circle angles. <code>circular_trials.R</code> extracts per-trial segments and normalises them to a unit arena; <code>circular_mapping.R</code> handles pixel→angle arithmetic. (radiatR analyses normalised, unit-arena tracks; correcting lens distortion or scaling to metric units is left to the upstream tracking pipeline.)</p></li>
 <li><p><strong>Heading computation</strong> (<code>R/headings.R</code>) — derives directional headings from position sequences. Uses a rule registry pattern (analogous to the loader registry) so custom heading rules can be registered and applied by name.</p></li>
 <li><p><strong>Statistics</strong> (<code>R/circular_statistics.R</code>) — thin wrapper around the <code>circular</code> package. <code>circ_summary</code> is the main entry point.</p></li>
@@ -85,7 +85,7 @@
 </ol></div>
 <div class="section level3">
 <h3 id="object-contract">Object contract<a class="anchor" aria-label="anchor" href="#object-contract"></a></h3>
-<p>Rich objects only for irreducible structure: <code>TrajSet</code> (trajectories + geometry + transform history), <code>circ_display</code> (orientation convention), <code>circ_regression</code> (fitted model). Everything else is a plain tibble in and out, addressed by a column-name argument. <code>circular</code>-package objects are internal only — never in a public signature or return. <code>headings_frame</code> is a tibble subclass that carries the display convention durably through dplyr verbs (<code>dplyr_reconstruct</code>); read it via the <code>hf_*</code> accessors. A plain data frame with a heading column is always an acceptable input. See <code><a href="articles/design.html">vignette("design")</a></code>.</p>
+<p>Rich objects only for irreducible structure: <code>Tracks</code> (trajectories + geometry + transform history), <code>circ_display</code> (orientation convention), <code>circ_regression</code> (fitted model). Everything else is a plain tibble in and out, addressed by a column-name argument. <code>circular</code>-package objects are internal only — never in a public signature or return. <code>headings_frame</code> is a tibble subclass that carries the display convention durably through dplyr verbs (<code>dplyr_reconstruct</code>); read it via the <code>hf_*</code> accessors. A plain data frame with a heading column is always an acceptable input. See <code><a href="articles/design.html">vignette("design")</a></code>.</p>
 </div>
 <div class="section level3">
 <h3 id="extension-points">Extension points<a class="anchor" aria-label="anchor" href="#extension-points"></a></h3>

@@ -33,7 +33,7 @@ and y).
 
 ## See also
 
-\[straightness_index()\] for a whole \`TrajSet\`; \[path_tortuosity()\].
+\[straightness_index()\] for a whole \`Tracks\`; \[path_tortuosity()\].
 
 ## Examples
 

@@ -11,11 +11,7 @@
 <url><loc>https://johnkirwan.github.io/radiatR/authors.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/index.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/news/index.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/TrajSet-class.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/TrajSet_load_manifest.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/TrajSet_read.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/TrajSet_read_dir.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/TrajSet_read_format.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/Tracks-class.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/add_angle_rose.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/add_circ.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/add_circ_interval.html</loc></url>
@@ -39,7 +35,7 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/add_vonmises_density.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/add_wrappedcauchy_density.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/apply_transform.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/as.data.frame.TrajSet.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/as.data.frame.Tracks.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/assign_colour_key.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/bin_angles.html</loc></url>
@@ -85,6 +81,7 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/list_heading_rules.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/list_loader_dialects.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/list_loader_formats.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/load_manifest.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/load_tracks.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/load_tracks2.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/new_headings_frame.html</loc></url>
@@ -95,6 +92,9 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/radial_theme.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/radiatR-package.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/radiate.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/read_tracks.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/read_tracks_dir.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/read_tracks_format.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/reference.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/register_heading_rule.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/register_loader_dialect.html</loc></url>

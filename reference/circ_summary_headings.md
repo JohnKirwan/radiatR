@@ -19,7 +19,7 @@ circ_summary_headings(
 
 - x:
 
-  A \[\`TrajSet\`\] object.
+  A \[\`Tracks\`\] object.
 
 - rule:
 

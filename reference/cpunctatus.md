@@ -1,6 +1,6 @@
 # \*Cylindroiulus punctatus\* visual orientation trajectory dataset
 
-Pre-processed \`TrajSet\` of 235 millipede trajectories from a
+Pre-processed \`Tracks\` of 235 millipede trajectories from a
 visual-acuity experiment. \*Cylindroiulus punctatus\* individuals were
 placed at the centre of a cylindrical arena under bright, downwelling
 light, with a dark target of varying angular half-width on the arena
@@ -17,7 +17,7 @@ cpunctatus
 
 ## Format
 
-A \[\`TrajSet\`\] object (44,331 observations) whose data columns
+A \[\`Tracks\`\] object (44,331 observations) whose data columns
 include:
 
 - trial_id:

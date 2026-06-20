@@ -1,4 +1,4 @@
-# Per-trajectory reference direction of a TrajSet
+# Per-trajectory reference direction of a Tracks
 
 The reference direction (unit-circle radians) against which each
 trajectory's relative frame (\`rel_theta\`/\`rel_x\`/\`rel_y\`) is
@@ -10,7 +10,7 @@ defined. Trajectories with no recorded reference default to \`0\`
 ``` r
 reference(x)
 
-# S4 method for class 'TrajSet'
+# S4 method for class 'Tracks'
 reference(x)
 ```
 
@@ -18,7 +18,7 @@ reference(x)
 
 - x:
 
-  A \[\`TrajSet\`\].
+  A \[\`Tracks\`\].
 
 ## Value
 
