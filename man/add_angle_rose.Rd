@@ -17,7 +17,8 @@ add_angle_rose(
   alpha = 0.5,
   arc_pts = 20L,
   display = NULL,
-  axial = FALSE
+  axial = FALSE,
+  color = NULL
 )
 }
 \arguments{
@@ -43,7 +44,8 @@ for a donut style.}
 
 \item{fill}{Wedge fill colour.  Default \code{"steelblue"}.}
 
-\item{colour}{Wedge border colour.  Default \code{NA} (no border).}
+\item{colour, color}{Wedge border colour.  Default \code{NA} (no border).
+\code{color} is the American-spelling alias.}
 
 \item{alpha}{Opacity.  Default \code{0.5}.}
 

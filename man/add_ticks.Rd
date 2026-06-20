@@ -4,10 +4,17 @@
 \alias{add_ticks}
 \title{Create evenly spaced radial tick marks.}
 \usage{
-add_ticks(colour = "black", linewidth = 0.5, length = 0.1, n = 8L)
+add_ticks(
+  colour = "black",
+  linewidth = 0.5,
+  length = 0.1,
+  n = 8L,
+  color = NULL
+)
 }
 \arguments{
-\item{colour}{Tick colour. Default `"black"`.}
+\item{colour, color}{Tick colour. Default `"black"`. `color` is the
+American-spelling alias.}
 
 \item{linewidth}{Tick line width. Default `0.5`.}
 

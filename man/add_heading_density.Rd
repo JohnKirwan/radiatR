@@ -21,7 +21,9 @@ add_heading_density(
   linewidth = 0.8,
   ci_fill = "grey70",
   ci_alpha = 0.3,
-  axial = FALSE
+  axial = FALSE,
+  color_col = NULL,
+  color = NULL
 )
 }
 \arguments{
@@ -29,8 +31,9 @@ add_heading_density(
 
 \item{heading_col}{Name of the heading column (radians). Default `"heading"`.}
 
-\item{colour_col}{Optional grouping column. When set, one density is
-computed per group and the column is included in the output.}
+\item{colour_col, color_col}{Optional grouping column. When set, one density is
+computed per group and the column is included in the output. `color_col` is
+the American-spelling alias.}
 
 \item{method}{Estimation method: `"vonmises"` (default), `"kernel"`, or
 `"histogram"`.}
@@ -54,8 +57,8 @@ produces a 95\% interval.}
 \item{scale}{Maximum radial extension above the unit circle. Default `0.4`
 (peak at r = 1.4). Density is normalised within each group before scaling.}
 
-\item{colour}{Fixed line colour used when `colour_col` is `NULL`. Default
-`"black"`.}
+\item{colour, color}{Fixed line colour used when `colour_col` is `NULL`.
+Default `"black"`. `color` is the American-spelling alias.}
 
 \item{fill}{Colour for the region between the unit circle and the density
 curve. `NA` (default) draws no fill.}

@@ -15,7 +15,8 @@ add_vonmises_density(
   fill = NA,
   alpha = 0.8,
   display = NULL,
-  axial = FALSE
+  axial = FALSE,
+  color = NULL
 )
 }
 \arguments{
@@ -32,7 +33,8 @@ Default \code{0.4} matches \code{add_angle_rose}.}
 
 \item{n_pts}{Angular evaluation points.  Default \code{360L}.}
 
-\item{colour}{Outline colour.  Default \code{"steelblue"}.}
+\item{colour, color}{Outline colour.  Default \code{"steelblue"}. \code{color}
+is the American-spelling alias.}
 
 \item{linewidth}{Outline width.  Default \code{0.8}.}
 

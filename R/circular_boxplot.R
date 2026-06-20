@@ -161,8 +161,8 @@ circ_boxplot_stats <- function(hd, angle_col = "heading", axial = FALSE) {
 #' @inheritParams circ_boxplot_stats
 #' @param radius Perimeter radius for the box/whiskers. Default `1`.
 #' @param width Radial thickness of the box band. Default `0.1`.
-#' @param colour Outline colour for box, whiskers, crossbars, far-out. Default
-#'   `"black"`.
+#' @param colour,color Outline colour for box, whiskers, crossbars, far-out.
+#'   Default `"black"`. `color` is the American-spelling alias.
 #' @param box_fill Fill colour of the box band. Default `"grey80"`.
 #' @param farout_shape Point shape for far-out values. Default `8` (star).
 #' @param show_median_arrow Draw a radial arrow at the median. Default `TRUE`.
@@ -184,7 +184,9 @@ add_circular_boxplot <- function(hd, angle_col = "heading", axial = FALSE,
                                  radius = 1, width = 0.1,
                                  colour = "black", box_fill = "grey80",
                                  farout_shape = 8, show_median_arrow = TRUE,
-                                 linewidth = 0.8, n_theta = 200L, display = NULL) {
+                                 linewidth = 0.8, n_theta = 200L, display = NULL,
+                                 color = NULL) {
+  .apply_spelling_aliases()
   s <- circ_boxplot_stats(hd, angle_col = angle_col, axial = axial)
   if (is.null(display))
     display <- (if (is.data.frame(hd)) attr(hd, "display", exact = TRUE) else NULL) %||% circ_display()

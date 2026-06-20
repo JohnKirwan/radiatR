@@ -20,7 +20,9 @@ add_stacked_headings(
   size = 2,
   alpha = 1,
   axial = FALSE,
-  ...
+  ...,
+  color = NULL,
+  color_col = NULL
 )
 }
 \arguments{
@@ -48,9 +50,11 @@ Mapped to ggplot2 shape integers: 1 = hollow, 16 = filled,
 \item{group}{Optional column name; stack within each group independently
 (e.g. one stacking per facet). Default \code{NULL}.}
 
-\item{colour}{Fixed point colour (ignored when \code{colour_col} is set).}
+\item{colour, color}{Fixed point colour (ignored when \code{colour_col} is
+set). \code{color} is the American-spelling alias.}
 
-\item{colour_col}{Optional column name to map to the colour aesthetic.}
+\item{colour_col, color_col}{Optional column name to map to the colour
+aesthetic. \code{color_col} is the American-spelling alias.}
 
 \item{size}{Point size passed to \code{geom_point()}.}
 

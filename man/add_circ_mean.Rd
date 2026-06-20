@@ -11,21 +11,25 @@ add_circ_mean(
   colour = NULL,
   arrow_length_cm = 0.2,
   axial = FALSE,
-  ...
+  ...,
+  color_col = NULL,
+  color = NULL
 )
 }
 \arguments{
 \item{summary_df}{Data frame with columns `mean_dir` (UC radians, 0 to 2pi)
 and `resultant_R` (0--1). Typically the output of [compute_circ_mean()].}
 
-\item{colour_col}{Optional. Name of a column in `summary_df` to map to the
-colour aesthetic. Ignored when `colour` is also supplied.}
+\item{colour_col, color_col}{Optional. Name of a column in `summary_df` to map
+to the colour aesthetic. Ignored when `colour` is also supplied. `color_col`
+is the American-spelling alias.}
 
 \item{linewidth}{Line width of the arrow segment. Default `1`.}
 
-\item{colour}{Fixed colour. When `NULL` (default) and `colour_col` is set,
-colour is mapped from that column; when `NULL` and no `colour_col`, draws
-in `"black"`. Supplying any colour string always overrides `colour_col`.}
+\item{colour, color}{Fixed colour. When `NULL` (default) and `colour_col` is
+set, colour is mapped from that column; when `NULL` and no `colour_col`,
+draws in `"black"`. Supplying any colour string always overrides
+`colour_col`. `color` is the American-spelling alias.}
 
 \item{arrow_length_cm}{Arrowhead length in cm. Default `0.2`.}
 

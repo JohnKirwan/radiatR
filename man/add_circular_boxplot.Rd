@@ -16,7 +16,8 @@ add_circular_boxplot(
   show_median_arrow = TRUE,
   linewidth = 0.8,
   n_theta = 200L,
-  display = NULL
+  display = NULL,
+  color = NULL
 )
 }
 \arguments{
@@ -35,8 +36,8 @@ angles are doubled, the boxplot computed, and locations halved back to
 
 \item{width}{Radial thickness of the box band. Default `0.1`.}
 
-\item{colour}{Outline colour for box, whiskers, crossbars, far-out. Default
-`"black"`.}
+\item{colour, color}{Outline colour for box, whiskers, crossbars, far-out.
+Default `"black"`. `color` is the American-spelling alias.}
 
 \item{box_fill}{Fill colour of the box band. Default `"grey80"`.}
 

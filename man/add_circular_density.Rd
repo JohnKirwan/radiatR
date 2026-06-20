@@ -15,7 +15,9 @@ add_circular_density(
   alpha = 0.2,
   linewidth = 0.8,
   ci_fill = "grey70",
-  ci_alpha = 0.3
+  ci_alpha = 0.3,
+  color_col = NULL,
+  color = NULL
 )
 }
 \arguments{
@@ -28,14 +30,15 @@ evaluated angle.}
 
 \item{density_col}{Name of the density/count column. Default `"density"`.}
 
-\item{colour_col}{Optional grouping column. When set, separate paths are
-drawn per group, enabling ggplot2 faceting.}
+\item{colour_col, color_col}{Optional grouping column. When set, separate paths
+are drawn per group, enabling ggplot2 faceting. `color_col` is the
+American-spelling alias.}
 
 \item{scale}{Maximum radial extension above the unit circle. Default `0.4`
 (peak at r = 1.4). Density is normalised within each group before scaling.}
 
-\item{colour}{Fixed line colour used when `colour_col` is `NULL`. Default
-`"black"`.}
+\item{colour, color}{Fixed line colour used when `colour_col` is `NULL`.
+Default `"black"`. `color` is the American-spelling alias.}
 
 \item{fill}{Colour for the region between the unit circle and the density
 curve. `NA` (default) draws no fill.}

@@ -77,13 +77,15 @@ headings_frame <- function(data,
 #'   unit-circle radians.
 #' @param display A [circ_display()] object (orientation convention).
 #' @param heading_col Name of the heading column. Default `"heading"`.
-#' @param colour_col Optional grouping/colour column name, or `NULL`.
+#' @param colour_col,color_col Optional grouping/colour column name, or `NULL`.
+#'   `color_col` is the American-spelling alias.
 #' @param coords `"absolute"` or `"relative"`.
 #' @return A `headings_frame`.
 #' @export
 new_headings_frame <- function(data, display = circ_display(),
                                heading_col = "heading", colour_col = NULL,
-                               coords = "absolute") {
+                               coords = "absolute", color_col = NULL) {
+  .apply_spelling_aliases()
   data <- tibble::as_tibble(data)
   attr(data, "display")     <- display
   attr(data, "heading_col") <- heading_col

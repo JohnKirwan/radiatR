@@ -18,7 +18,8 @@ add_critical_v_line(
   region_fill = "firebrick",
   region_alpha = 0.08,
   axial = FALSE,
-  n_pts = 100L
+  n_pts = 100L,
+  color = NULL
 )
 }
 \arguments{
@@ -39,7 +40,8 @@ faceting, where each panel gets its own boundary.}
 \item{show_region}{Logical; shade the rejection segment.  Default
 \code{FALSE}.}
 
-\item{colour}{Line colour.  Default \code{"firebrick"}.}
+\item{colour, color}{Line colour.  Default \code{"firebrick"}. \code{color} is
+the American-spelling alias.}
 
 \item{linetype}{Line type.  Default \code{"dashed"}.}
 

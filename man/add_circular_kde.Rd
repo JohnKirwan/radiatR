@@ -18,7 +18,8 @@ add_circular_kde(
   fill = NA,
   alpha = 0.8,
   display = NULL,
-  axial = FALSE
+  axial = FALSE,
+  color = NULL
 )
 }
 \arguments{
@@ -42,7 +43,8 @@ Default \code{0.4}.}
 \item{kernel}{Kernel name passed to \code{density.circular}.  Default
 \code{"vonmises"} (the kernel shape, not a model assumption).}
 
-\item{colour}{Outline colour.  Default \code{"tomato"}.}
+\item{colour, color}{Outline colour.  Default \code{"tomato"}. \code{color} is
+the American-spelling alias.}
 
 \item{linewidth}{Outline width.  Default \code{0.8}.}
 
