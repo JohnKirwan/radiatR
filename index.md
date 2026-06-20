@@ -248,6 +248,11 @@ circ_summarise(net, "heading", units = "radians", stats = "resultant_R")
 
 ``` r
 
+# From r-universe (pre-built binaries)
+install.packages("radiatR",
+                 repos = c("https://johnkirwan.r-universe.dev",
+                           "https://cloud.r-project.org"))
+
 # From GitHub
 remotes::install_github("JohnKirwan/radiatR")
 

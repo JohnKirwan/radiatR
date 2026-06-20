@@ -280,7 +280,7 @@
 <h2 id="typical-workflow">Typical Workflow<a class="anchor" aria-label="anchor" href="#typical-workflow"></a>
 </h2>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://johnkirwan.github.io/radiatR">radiatR</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://johnkirwan.github.io/radiatR/">radiatR</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 1. Load tracking data (example: DeepLabCut with head + thorax bodyparts)</span></span>
 <span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/read_tracks.html">read_tracks</a></span><span class="op">(</span></span>
@@ -358,7 +358,12 @@
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># From GitHub</span></span>
+<code class="sourceCode R"><span><span class="co"># From r-universe (pre-built binaries)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"radiatR"</span>,</span>
+<span>                 repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"https://johnkirwan.r-universe.dev"</span>,</span>
+<span>                           <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># From GitHub</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"JohnKirwan/radiatR"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># From local clone</span></span>
@@ -450,6 +455,7 @@
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
 <li><a href="https://github.com/JohnKirwan/radiatR/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/JohnKirwan/radiatR/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
+<li><a href="https://johnkirwan.r-universe.dev/radiatR" class="external-link"><img src="https://johnkirwan.r-universe.dev/badges/radiatR" alt="r-universe"></a></li>
 </ul>
 </div>
 
