@@ -101,6 +101,11 @@ names(hd)[2] <- "heading"
 fit <- circ_regression(hd, heading ~ predictor)
 summary(fit)            # tidy coefficient table (recovers the positive slope)
 predict(fit, data.frame(predictor = c(-1, 0, 1)))
+
+# draw the fitted sweep on the circular panel
+radiate(headings_frame(hd, heading, units = "radians")) +
+  add_circ_mean(fitted_directions(fit, at = seq(-2, 2, length.out = 7)),
+                colour_col = "predictor")
 ```
 
 ## Typical Workflow

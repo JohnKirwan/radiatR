@@ -28,6 +28,10 @@
   `simulate_tracks()` gains a per-condition `mean_slope` so the predictor shifts
   the mean heading, enabling end-to-end recovery.
 
+* New `fitted_directions()` turns a `circ_regression()` fit into mean-direction
+  arrows for `add_circ_mean()`, so the fitted heading-vs-covariate relationship
+  can be drawn on the circular panel, colour-graded by the predictor.
+
 * `simulate_tracks()` is now modality- and shape-aware. Per-condition `modality`
   (`uniform` / `unimodal` / `axial` / `multimodal` with `n_modes`) sets the
   distribution of per-track headings, and `track_shape` (`directed` or

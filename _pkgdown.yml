@@ -129,6 +129,7 @@ reference:
     contents:
       - circ_cor
       - circ_regression
+      - fitted_directions
 
   - title: "Circular statistics -- hypothesis tests"
     desc: >
