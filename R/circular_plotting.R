@@ -490,6 +490,11 @@ cycle_colours <- function(x, n, levels = NULL) {
   factor(idx, levels = seq_len(n_int))
 }
 
+#' @rdname cycle_colours
+#' @usage cycle_colors(x, n, levels = NULL)
+#' @export
+cycle_colors <- cycle_colours
+
 #' Assign a shared colour-key column to a Tracks or data frame
 #'
 #' Writes a colour-key column (`into`, default `".colour"`) keyed on `by`, so the
@@ -513,6 +518,7 @@ cycle_colours <- function(x, n, levels = NULL) {
 #'   `NULL` uses `x` itself.
 #' @param into Name of the key column to add. Default `".colour"`.
 #' @return `x` with the `into` column added.
+#' @inheritSection radiatR-package American spellings
 #' @seealso [cycle_colours()]
 #' @examples
 #' ts <- simulate_tracks(n_points = 10, output = "trajset")
@@ -547,6 +553,11 @@ assign_colour_key <- function(x, by, n = 20, reference = NULL, into = ".colour")
   if (is_ts(x)) x@data[[into]] <- key else x[[into]] <- key
   x
 }
+
+#' @rdname assign_colour_key
+#' @usage assign_color_key(x, by, n = 20, reference = NULL, into = ".colour")
+#' @export
+assign_color_key <- assign_colour_key
 
 #' Assign cycling colour indices to trajectories
 #'
@@ -604,6 +615,11 @@ assign_cycle_colours <- function(data, id_col, n, panel_col = NULL,
   }
   data
 }
+
+#' @rdname assign_cycle_colours
+#' @usage assign_cycle_colors(data, id_col, n, panel_col = NULL, out_col = "cycle_colour")
+#' @export
+assign_cycle_colors <- assign_cycle_colours
 
 # ---- circular density overlay ------------------------------------------------
 
@@ -1535,6 +1551,7 @@ add_heading_arrow <- function(headings_df,
 #'
 #' @return A `geom_point()` layer (shape = 1, hollow circle).
 #'
+#' @inheritSection radiatR-package American spellings
 #' @seealso [add_heading_vectors()], [derive_headings()]
 #' @importFrom ggplot2 geom_point aes
 #' @importFrom rlang .data sym
@@ -2324,6 +2341,7 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   Label styling (colour, size, family) follows the chosen `theme`'s `axis.text`.
 #' @param ... Additional arguments forwarded to [draw_tracks()].
 #' @return A `ggplot2` object.
+#' @inheritSection radiatR-package American spellings
 #' @importFrom ggplot2 scale_colour_viridis_c guide_colourbar
 #' @examples
 #' tracks_demo <- simulate_tracks(conditions = data.frame(n_trials = 1L),

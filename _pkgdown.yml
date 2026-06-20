@@ -154,12 +154,15 @@ reference:
       - radial_theme
       - directedness_arrow
       - assign_cycle_colours
+      - assign_cycle_colors
       - add_multiple_circles
       - circ_display
       - add_radial_grid
       - add_origin_point
       - assign_colour_key
+      - assign_color_key
       - cycle_colours
+      - cycle_colors
 
   - title: "Visualisation -- heading overlays"
     desc: >

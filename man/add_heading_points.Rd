@@ -45,6 +45,14 @@ headings data frame, placing one marker per trajectory on the unit-circle
 boundary at the derived heading direction. The data frame is normally the
 output of [derive_headings()].
 }
+\section{American spellings}{
+
+Every `colour...` argument and the `assign_colour_*` / `cycle_colours` /
+`hf_colour_col` functions accept the American `color...` spelling as an alias
+(e.g. `color`, `color_col`, `track_color`). British spelling is canonical;
+supplying both spellings of a pair is an error.
+}
+
 \examples{
 library(ggplot2)
 # headings from a Tracks via derive_headings(ts, rule = "crossing", ...)

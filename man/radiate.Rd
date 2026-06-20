@@ -245,6 +245,14 @@ Accepts either a precomputed data frame of polar/cartesian coordinates or a
 `Tracks`. When a `Tracks` is supplied, column mappings are inferred from
 the object and handed off to the plotting helpers.
 }
+\section{American spellings}{
+
+Every `colour...` argument and the `assign_colour_*` / `cycle_colours` /
+`hf_colour_col` functions accept the American `color...` spelling as an alias
+(e.g. `color`, `color_col`, `track_color`). British spelling is canonical;
+supplying both spellings of a pair is an error.
+}
+
 \examples{
 tracks_demo <- simulate_tracks(conditions = data.frame(n_trials = 1L),
                                n_points = 200, seed = 1)

@@ -129,6 +129,11 @@ hf_heading_col <- function(x) attr(x, "heading_col", exact = TRUE) %||% "heading
 hf_colour_col <- function(x) attr(x, "colour_col", exact = TRUE)
 
 #' @rdname hf_accessors
+#' @usage hf_color_col(x)
+#' @export
+hf_color_col <- hf_colour_col
+
+#' @rdname hf_accessors
 #' @export
 hf_coords <- function(x) attr(x, "coords", exact = TRUE) %||% "absolute"
 

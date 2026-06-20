@@ -79,3 +79,16 @@ test_that("color aliases produce identical results to colour on real functions",
   # both spellings -> error
   expect_error(add_heading_points(hd, colour = "a", color = "b"), "only one")
 })
+
+test_that("function-name aliases are exported and identical to the British originals", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  ts <- cpunctatus
+  expect_identical(assign_color_key(ts, by = "trajectory"),
+                   assign_colour_key(ts, by = "trajectory"))
+  expect_identical(cycle_colors(c("a", "b", "c"), 2),
+                   cycle_colours(c("a", "b", "c"), 2))
+  hd <- derive_headings(cpunctatus, rule = "distal")
+  expect_identical(hf_color_col(hd), hf_colour_col(hd))
+  expect_true(all(c("assign_color_key","assign_cycle_colors","cycle_colors","hf_color_col")
+                  %in% getNamespaceExports("radiatR")))
+})
