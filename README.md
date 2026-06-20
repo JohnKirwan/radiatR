@@ -171,6 +171,16 @@ track_duration(ts)                                       # seconds per track
 radiate(ts, show_tracks = TRUE, track_colour = "time")   # colour by elapsed time
 ```
 
+A frame rate also lets `track_speed()` report trajectory speed in real units
+(arena-units, i.e. radii, per second):
+
+```r
+# speed in real units (arena-units per second) once a frame rate is set
+ts <- set_frame_rate(cpunctatus, fps = 30)
+track_speed(ts)              # mean speed per track
+track_speed(ts, stat = "max")
+```
+
 ### Circular boxplot
 
 A Tukey-like boxplot for circular data (Buttarazzi, Pandolfo & Porzio, 2018):

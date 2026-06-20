@@ -102,6 +102,17 @@ head(track_duration(ts))                                 # seconds per track
 radiate(ts, show_tracks = TRUE, track_colour = "time")   # colour by elapsed time
 ```
 
+A frame rate also lets `track_speed()` report each trajectory's speed in real
+units. With the default unit-arena coordinates that is arena-units (radii) per
+second.
+
+```{r track-speed}
+# speed in real units (arena-units per second) once a frame rate is set
+ts <- set_frame_rate(cpunctatus, fps = 30)
+head(track_speed(ts))            # mean speed per track
+head(track_speed(ts, stat = "max"))
+```
+
 ## Heading Overlays
 
 The **crossing method** — projecting the vector between two concentric-ring crossings to the unit circle — assigns one directional heading per trial. `derive_headings()` with `return_coords = TRUE` returns both the heading angle and the inner-ring crossing position.

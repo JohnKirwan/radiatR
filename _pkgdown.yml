@@ -228,6 +228,8 @@ reference:
       - tortuosity_ratio
       - path_straightness
       - path_tortuosity
+      - track_speed
+      - step_speed
 
   - title: "Track timing"
     desc: >
