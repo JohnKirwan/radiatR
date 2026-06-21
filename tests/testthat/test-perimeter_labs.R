@@ -97,3 +97,50 @@ test_that("perimeter_labs validates its scale and resolves color alias", {
   layers <- perimeter_labs(scale_cardinal(), color = "red")
   expect_identical(layers[[1]]$aes_params$colour, "red")
 })
+
+test_that("radiate(angle_labels=) accepts and renders domain scales", {
+  ts <- simulate_tracks(conditions = data.frame(n_trials = 3L),
+                        n_points = 20, seed = 1, output = "trajset")
+  p  <- radiate(ts, angle_labels = "months")
+
+  geoms <- vapply(p$layers, function(l) class(l$geom)[1], character(1))
+  expect_equal(sum(geoms == "GeomText"), 12L)
+
+  seg <- p$layers[vapply(p$layers,
+                         function(l) inherits(l$geom, "GeomSegment"), logical(1))]
+  tick_rows <- vapply(seg, function(l) nrow(l$data), integer(1))
+  expect_true(12L %in% tick_rows)
+})
+
+test_that("radiate(angle_labels='cardinal') aligns ticks to 4", {
+  ts  <- simulate_tracks(conditions = data.frame(n_trials = 2L),
+                         n_points = 15, seed = 2, output = "trajset")
+  p   <- radiate(ts, angle_labels = "cardinal")
+  geoms <- vapply(p$layers, function(l) class(l$geom)[1], character(1))
+  expect_equal(sum(geoms == "GeomText"), 4L)
+})
+
+test_that("radiate back-compat: degrees/radians/none unchanged", {
+  ts <- simulate_tracks(conditions = data.frame(n_trials = 2L),
+                        n_points = 15, seed = 3, output = "trajset")
+
+  pdeg <- radiate(ts, angle_labels = "degrees")
+  geoms <- vapply(pdeg$layers, function(l) class(l$geom)[1], character(1))
+  expect_equal(sum(geoms == "GeomText"), 4L)
+
+  pnone <- radiate(ts, angle_labels = "none")
+  geoms_none <- vapply(pnone$layers, function(l) class(l$geom)[1], character(1))
+  expect_equal(sum(geoms_none == "GeomText"), 0L)
+
+  seg <- pnone$layers[vapply(pnone$layers,
+                             function(l) inherits(l$geom, "GeomSegment"),
+                             logical(1))]
+  expect_true(8L %in% vapply(seg, function(l) nrow(l$data), integer(1)))
+})
+
+test_that(".angle_label_scale maps names to scales", {
+  expect_null(.angle_label_scale("degrees"))
+  expect_null(.angle_label_scale("none"))
+  expect_identical(.angle_label_scale("months")$name, "months")
+  expect_identical(.angle_label_scale("seconds")$n, 60L)
+})

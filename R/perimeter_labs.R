@@ -167,3 +167,14 @@ scale_seconds <- function(every = 15) {
   list(n = 60L, at = .scale_positions(60L, k),
        labels = as.character(k), name = "seconds")
 }
+
+# Map a radiate() angle_labels name to a perimeter scale, or NULL for the
+# degree_labs (degrees/radians/none) path.
+.angle_label_scale <- function(angle_labels) {
+  switch(angle_labels,
+         cardinal = scale_cardinal(),
+         hours    = scale_clock(),
+         months   = scale_months(),
+         seconds  = scale_seconds(),
+         NULL)
+}
