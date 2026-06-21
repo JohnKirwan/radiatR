@@ -253,6 +253,14 @@ head(velocity_vector(ts))                 # vx, vy per observation
 head(angular_velocity(ts, units = "degrees"))   # turning rate, deg/s (CCW +)
 ```
 
+``` r
+
+# per-track summaries (need a frame rate; velocity uses the distance scale)
+ts <- set_frame_rate(cpunctatus, fps = 30)
+track_velocity(ts)                       # net velocity vector (vx, vy) per track
+track_turning(ts, units = "degrees")     # typical turning rate (deg/s) per track
+```
+
 ### Circular boxplot
 
 A Tukey-like boxplot for circular data (Buttarazzi, Pandolfo & Porzio,

@@ -89,6 +89,13 @@
   the signed turning rate (counter-clockwise positive; radians or
   degrees per second).
 
+- Per-track summaries:
+  [`track_velocity()`](https://johnkirwan.github.io/radiatR/reference/track_velocity.md)
+  (net average velocity vector, distance-calibrated) and
+  [`track_turning()`](https://johnkirwan.github.io/radiatR/reference/track_turning.md)
+  (turning-rate summary – `mean_abs` magnitude by default, plus
+  `mean`/`max_abs`/`median_abs`; radians or degrees).
+
 - Optional distance calibration:
   [`set_distance_scale()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
   /

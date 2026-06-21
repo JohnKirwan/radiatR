@@ -370,6 +370,34 @@ head(angular_velocity(ts, units = "degrees"))   # turning rate, deg/s (CCW +)
 #> [1]        NA 4050.0000    0.0000 3075.3530  637.8571    0.0000
 ```
 
+Reduced to one row per track,
+[`track_velocity()`](https://johnkirwan.github.io/radiatR/reference/track_velocity.md)
+gives each path’s net (average) velocity vector and
+[`track_turning()`](https://johnkirwan.github.io/radiatR/reference/track_turning.md)
+summarises its turning rate.
+
+``` r
+
+# per-track summaries (need a frame rate; velocity uses the distance scale)
+ts <- set_frame_rate(cpunctatus, fps = 30)
+head(track_velocity(ts))                       # net velocity vector (vx, vy) per track
+#>         trial_id           vx          vy
+#> 10_1_1    10_1_1  0.244467664  0.27514439
+#> 10_10_1  10_10_1  0.001745265 -0.08705181
+#> 10_11_1  10_11_1  0.072856469  0.47347488
+#> 10_12_1  10_12_1 -0.411668880  0.50517999
+#> 10_13_1  10_13_1  0.000000000 -0.38637420
+#> 10_14_1  10_14_1 -0.461499359  0.78038925
+head(track_turning(ts, units = "degrees"))     # typical turning rate (deg/s) per track
+#>         trial_id   turning
+#> 10_1_1    10_1_1 1122.7526
+#> 10_10_1  10_10_1  603.2629
+#> 10_11_1  10_11_1 1019.2704
+#> 10_12_1  10_12_1  878.3579
+#> 10_13_1  10_13_1  913.2823
+#> 10_14_1  10_14_1  351.5319
+```
+
 ## Heading Overlays
 
 The **crossing method** — projecting the vector between two

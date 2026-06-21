@@ -321,6 +321,10 @@ Per-trajectory straightness and tortuosity of the movement path.
   : Tortuosity ratio for a single trajectory
 - [`track_speed()`](https://johnkirwan.github.io/radiatR/reference/track_speed.md)
   : Per-trajectory speed for a Tracks, in real units
+- [`track_velocity()`](https://johnkirwan.github.io/radiatR/reference/track_velocity.md)
+  : Per-trajectory net velocity for a Tracks
+- [`track_turning()`](https://johnkirwan.github.io/radiatR/reference/track_turning.md)
+  : Per-trajectory turning-rate summary for a Tracks
 - [`track_length()`](https://johnkirwan.github.io/radiatR/reference/track_length.md)
   : Per-trajectory path length for a Tracks
 - [`step_speed()`](https://johnkirwan.github.io/radiatR/reference/step_speed.md)
@@ -603,6 +607,10 @@ Any remaining exported topics.
   : Per-trajectory path length for a Tracks
 - [`track_speed()`](https://johnkirwan.github.io/radiatR/reference/track_speed.md)
   : Per-trajectory speed for a Tracks, in real units
+- [`track_turning()`](https://johnkirwan.github.io/radiatR/reference/track_turning.md)
+  : Per-trajectory turning-rate summary for a Tracks
+- [`track_velocity()`](https://johnkirwan.github.io/radiatR/reference/track_velocity.md)
+  : Per-trajectory net velocity for a Tracks
 - [`transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`log_transform()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`set_transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
