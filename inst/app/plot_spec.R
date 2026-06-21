@@ -383,7 +383,7 @@ spec_to_stats_code <- function(spec) {
   # join it onto `hd` (unless it is already a column, e.g. from the facet merge).
   if (!is.null(by_col) && !identical(by_col, spec$facet_by)) {
     src <- if (pre$headings_mode) "cpunctatus" else "ts"
-    src_id <- if (pre$headings_mode) "trial_id" else q(spec$group_col)
+    src_id <- if (pre$headings_mode) q("trial_id") else q(spec$group_col)
     add("if (!", q(by_col), " %in% names(hd)) hd <- merge(hd, unique(as.data.frame(",
         src, ")[, c(", src_id, ", ", q(by_col), ")]), by.x = \"id\", by.y = ",
         src_id, ", all.x = TRUE)")

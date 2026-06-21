@@ -59,3 +59,13 @@ test_that("headings-only spec omits straightness_index", {
   code <- spec_to_stats_code(stats_spec(headings = TRUE))
   expect_false(grepl("straightness_index", code, fixed = TRUE))
 })
+
+test_that("headings-grouped emitted script runs (regression: quoted source id)", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  spec <- stats_spec(by_col = "arc", headings = TRUE)   # mode="headings", source example
+  code <- spec_to_stats_code(spec)
+  expect_match(code, 'c("trial_id", "arc")', fixed = TRUE)   # quoted, not bare
+  e <- new.env()
+  expect_error(suppressWarnings(suppressMessages(eval(parse(text = code), envir = e))), NA)  # runs cleanly
+  expect_true(is.data.frame(e$summ))
+})
