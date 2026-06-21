@@ -272,3 +272,46 @@ instantaneous_speed <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
   }
   out * (distance_scale(ts) %||% 1)
 }
+
+#' Per-observation velocity vector for a Tracks
+#'
+#' The velocity components (`vx`, `vy`) at each point, aligned to the `Tracks`'s
+#' rows. Each point carries the velocity of the step that ends at it (step
+#' displacement divided by its elapsed time); the first point of every trajectory
+#' is `NA`. The magnitude is [instantaneous_speed()] and the direction is
+#' `atan2(vy, vx)`.
+#'
+#' Numeric (frame) time requires a frame rate ([set_frame_rate()]); POSIXct time
+#' is used directly. With a distance calibration ([set_distance_scale()]) the
+#' components are in physical units per second; otherwise coordinate units per
+#' second.
+#'
+#' @param ts A `Tracks`.
+#' @param x_col,y_col Names of the coordinate columns. Default to the `Tracks`'s
+#'   recorded x/y columns.
+#' @return A `data.frame` with columns `vx` and `vy`, one row per observation in
+#'   `ts@data` order (`NA` at each trajectory's first point).
+#' @seealso [instantaneous_speed()], [angular_velocity()], [set_distance_scale()]
+#' @export
+velocity_vector <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
+  if (!methods::is(ts, "Tracks")) stop("'ts' must be a Tracks.")
+  d   <- ts@data
+  idc <- ts@cols$id
+  tc  <- ts@cols$time
+  for (cc in c(idc, x_col, y_col, tc)) {
+    if (is.null(cc) || !cc %in% names(d))
+      stop("column '", cc, "' not found in the Tracks.")
+  }
+  el  <- elapsed_seconds(ts)
+  vx  <- rep(NA_real_, nrow(d)); vy <- rep(NA_real_, nrow(d))
+  for (i in unique(d[[idc]])) {
+    sel <- which(d[[idc]] == i)
+    if (length(sel) >= 2L) {
+      dt <- diff(el[sel]); dt[!is.finite(dt) | dt <= 0] <- NA_real_
+      vx[sel[-1L]] <- diff(d[[x_col]][sel]) / dt
+      vy[sel[-1L]] <- diff(d[[y_col]][sel]) / dt
+    }
+  }
+  scl <- distance_scale(ts) %||% 1
+  data.frame(vx = vx * scl, vy = vy * scl)
+}
