@@ -354,12 +354,17 @@
 <span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/frame_rate.html">set_frame_rate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, fps <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/track_velocity.html">track_velocity</a></span><span class="op">(</span><span class="va">ts</span><span class="op">)</span>                       <span class="co"># net velocity vector (vx, vy) per track</span></span>
 <span><span class="fu"><a href="reference/track_turning.html">track_turning</a></span><span class="op">(</span><span class="va">ts</span>, units <span class="op">=</span> <span class="st">"degrees"</span><span class="op">)</span>     <span class="co"># typical turning rate (deg/s) per track</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># non-circular kinematics: speed (or turning rate) along each track over time</span></span>
+<span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/frame_rate.html">set_frame_rate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, fps <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/plot_profile.html">plot_profile</a></span><span class="op">(</span><span class="va">ts</span>, metric <span class="op">=</span> <span class="st">"speed"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/plot_profile.html">plot_profile</a></span><span class="op">(</span><span class="va">ts</span>, metric <span class="op">=</span> <span class="st">"turning"</span>, units <span class="op">=</span> <span class="st">"degrees"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="circular-boxplot">Circular boxplot<a class="anchor" aria-label="anchor" href="#circular-boxplot"></a>
 </h3>
 <p>A Tukey-like boxplot for circular data (Buttarazzi, Pandolfo &amp; Porzio, 2018): the box spans the central 50% around the circular median, whiskers reach a concentration-adjusted fence, and far-out values are marked individually. Position-based axial data is supported via <code>axial = TRUE</code> (drawn at both poles).</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hd</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/derive_headings.html">derive_headings</a></span><span class="op">(</span><span class="va">cpunctatus</span>, rule <span class="op">=</span> <span class="st">"crossing"</span>, circ0 <span class="op">=</span> <span class="fl">0.2</span>, circ1 <span class="op">=</span> <span class="fl">0.4</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="reference/add_circular_boxplot.html">add_circular_boxplot</a></span><span class="op">(</span><span class="va">hd</span><span class="op">)</span></span>
 <span></span>
@@ -371,7 +376,7 @@
 <h2 id="simulate-data">Simulate Data<a class="anchor" aria-label="anchor" href="#simulate-data"></a>
 </h2>
 <p><code><a href="reference/simulate_tracks.html">simulate_tracks()</a></code> generates synthetic arena trajectories for testing pipelines and teaching:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Three default conditions differing in concentration and tortuosity</span></span>
 <span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/simulate_tracks.html">simulate_tracks</a></span><span class="op">(</span>seed <span class="op">=</span> <span class="fl">42</span>, output <span class="op">=</span> <span class="st">"trajset"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">ts</span>, group_col <span class="op">=</span> <span class="st">"trial_id"</span>, panel_by <span class="op">=</span> <span class="st">"condition"</span>, show_arrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -385,7 +390,7 @@
 <span><span class="op">)</span></span>
 <span><span class="va">ts2</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/simulate_tracks.html">simulate_tracks</a></span><span class="op">(</span>conditions <span class="op">=</span> <span class="va">conds</span>, seed <span class="op">=</span> <span class="fl">1</span>, output <span class="op">=</span> <span class="st">"trajset"</span><span class="op">)</span></span></code></pre></div>
 <p>Each condition can also carry a known directional <strong>ground truth</strong>. Set a <strong>modality</strong> (<code>uniform</code> / <code>unimodal</code> / <code>axial</code> / <code>multimodal</code>, with <code>n_modes</code>) to control the distribution of per-track headings, and a <strong>track shape</strong> (<code>directed</code> or <code>oscillatory</code>) to control within-track geometry — <code>oscillatory</code> tracks move back and forth along an axis, the kind of data the position-based axial heading methods (<code>pca_axis</code>, <code>ransac_straight</code>) are built for:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Oscillatory axial tracks: each moves back-and-forth along a ~0.6 rad axis</span></span>
 <span><span class="va">osc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>condition <span class="op">=</span> <span class="st">"axial_osc"</span>, n_trials <span class="op">=</span> <span class="fl">40L</span>, ref_mean <span class="op">=</span> <span class="fl">0.6</span>,</span>
 <span>                  concentration_base <span class="op">=</span> <span class="fl">50</span>, track_shape <span class="op">=</span> <span class="st">"oscillatory"</span>,</span>
@@ -404,7 +409,7 @@
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># From r-universe (pre-built binaries)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"radiatR"</span>,</span>
 <span>                 repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"https://johnkirwan.r-universe.dev"</span>,</span>
@@ -421,10 +426,10 @@
 </h2>
 <p>A browser-based interface covers the common workflow — upload a tracking file, choose a heading method, and view circular plots and summary statistics — with no R coding required. There are three ways to reach it:</p>
 <p><strong>1. Run locally</strong> (works after installing the package):</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">radiatR</span><span class="fu">::</span><span class="fu"><a href="reference/launch_app.html">launch_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><strong>2. Hosted on the web</strong> — the bundled app deploys to a Shiny host without modification, giving a clickable link for collaborators who do not use R:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">rsconnect</span><span class="fu">::</span><span class="fu">deployApp</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"app"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><strong>3. Static site (no server)</strong> — a <code>shinylive</code> build runs the app entirely in the browser via WebAssembly, so uploaded files never leave the user’s machine (which suits sensitive data). The GitHub Actions workflow in <code>.github/workflows/shinylive.yaml</code> publishes it to GitHub Pages alongside the documentation, at <a href="https://johnkirwan.github.io/radiatR/app/" class="uri">https://johnkirwan.github.io/radiatR/app/</a>. The build runs on each <strong>published GitHub Release</strong>: it compiles radiatR into a webR WebAssembly image (attached to the release), then exports and deploys the app. Publish or re-publish a release to refresh the hosted app.</p>
 </div>

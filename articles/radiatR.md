@@ -398,6 +398,29 @@ head(track_turning(ts, units = "degrees"))     # typical turning rate (deg/s) pe
 #> 10_14_1  10_14_1  351.5319
 ```
 
+For a non-circular view,
+[`plot_profile()`](https://johnkirwan.github.io/radiatR/reference/plot_profile.md)
+draws a per-observation kinematics metric — instantaneous speed or
+turning rate — against elapsed time, one line per track. It is the
+ggplot sibling of
+[`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md).
+
+``` r
+
+# speed (or turning rate) along each track over time
+ts <- set_frame_rate(cpunctatus, fps = 30)
+plot_profile(ts, metric = "speed")
+```
+
+![](radiatR_files/figure-html/plot-profile-1.png)
+
+``` r
+
+plot_profile(ts, metric = "turning", units = "degrees")
+```
+
+![](radiatR_files/figure-html/plot-profile-2.png)
+
 ## Heading Overlays
 
 The **crossing method** — projecting the vector between two
