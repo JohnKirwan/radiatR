@@ -933,157 +933,174 @@ server <- function(input, output, session) {
     } else {
       tagList(
         uiOutput("attrition_banner"),
-        layout_columns(
-          col_widths = c(8, 4),
-          card(
-            card_header("Tracks and headings"),
-            card_body(
-              padding = 0,
-              uiOutput("track_plot_ui")
+        navset_card_tab(
+          id = "results_tab",
+          # ---- Circular plots -----------------------------------------------
+          nav_panel(
+            "Circular plots",
+            layout_sidebar(
+              sidebar = sidebar(
+                width = 360, position = "right", open = TRUE,
+                accordion(
+                  open = "Display",
+                  accordion_panel(
+                    "Display",
+                    selectInput(
+                      "plot_theme", "Theme",
+                      choices = c("Void"          = "void",
+                                  "Minimal"       = "minimal",
+                                  "Classic"       = "classic",
+                                  "Black & white" = "bw",
+                                  "Grey"          = "grey",
+                                  "Light"         = "light",
+                                  "Dark"          = "dark",
+                                  "Line draw"     = "linedraw"),
+                      selected = "void"
+                    ),
+                    selectInput(
+                      "angle_labels", "Angle labels",
+                      choices = c("Degrees (45°)" = "degrees",
+                                  "None"          = "none",
+                                  "Radians (π/4)" = "radians"),
+                      selected = "degrees"
+                    ),
+                    selectInput(
+                      "heading_display", "Heading display",
+                      choices = c("Points (overlapping)"  = "points",
+                                  "Stacked dots (inward)" = "stacked",
+                                  "None"                  = "none"),
+                      selected = "points"
+                    ),
+                    selectInput(
+                      "track_colour", "Track colour",
+                      choices = c("By trajectory"                = "trajectory",
+                                  "By sequence (start → finish)" = "sequence",
+                                  "By elapsed time"              = "time",
+                                  "By speed"                     = "speed"),
+                      selected = "trajectory"
+                    ),
+                    conditionalPanel(
+                      condition = "input.track_colour == 'time' || input.track_colour == 'speed'",
+                      numericInput("frame_rate", "Frame rate (fps)", value = 30, min = 0, step = 1),
+                      uiOutput("track_time_note")
+                    ),
+                    uiOutput("colour_by_ui"),
+                    tags$hr(class = "my-2"),
+                    div(
+                      style = paste("display: grid;",
+                                    "grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));",
+                                    "column-gap: 0.75rem;"),
+                      .layer_switch("show_tracks",    "Trajectories",       TRUE),
+                      .layer_switch("show_arrow",     "Directedness arrow", TRUE),
+                      .layer_switch("show_ci",        "Mean-direction CI",  FALSE),
+                      .layer_switch("show_vectors",   "Heading vectors",    FALSE),
+                      .layer_switch("show_rayleigh",  "Rayleigh circle",    FALSE),
+                      .layer_switch("show_vtest",     "V-test line",        FALSE),
+                      .layer_switch("show_boxplot",   "Circular boxplot",   FALSE),
+                      .layer_switch("show_quadrants", "Quadrant lines",     FALSE),
+                      .layer_switch("show_rings",     "Guide rings",        FALSE)
+                    ),
+                    uiOutput("boxplot_note"),
+                    tags$hr(class = "my-2"),
+                    sliderInput(
+                      "preview_px", "Preview size (px)",
+                      min = 480, max = 1000, value = 840, step = 20
+                    ),
+                    tags$span(
+                      class = "text-muted small",
+                      "On-screen only; export size is set under Image export."
+                    )
+                  ),
+                  accordion_panel(
+                    "Image export",
+                    layout_columns(
+                      col_widths = c(6, 6),
+                      numericInput("plot_w", "Width (in)", value = 7,
+                                   min = 1, max = 30, step = 0.5),
+                      numericInput("plot_h", "Height (in)", value = 7,
+                                   min = 1, max = 30, step = 0.5)
+                    ),
+                    selectInput(
+                      "plot_fmt", "Format",
+                      choices = c("PDF (vector)"  = "pdf",
+                                  "SVG (vector)"  = "svg",
+                                  "PNG (raster)"  = "png",
+                                  "JPG (raster)"  = "jpg")
+                    ),
+                    conditionalPanel(
+                      "input.plot_fmt == 'png' || input.plot_fmt == 'jpg'",
+                      numericInput("plot_dpi", "Resolution (dpi)", value = 300,
+                                   min = 72, max = 600, step = 1)
+                    ),
+                    # JPEG has no alpha channel, so transparency only applies to
+                    # the other formats; hide the option when JPG is selected.
+                    conditionalPanel(
+                      "input.plot_fmt != 'jpg'",
+                      checkboxInput("plot_transparent",
+                                    "Transparent background", value = FALSE)
+                    ),
+                    downloadButton(
+                      "dl_plot", "Download plot",
+                      class = "btn-sm btn-outline-primary w-100 mb-2"
+                    )
+                  ),
+                  accordion_panel(
+                    "R code",
+                    tags$p(
+                      class = "text-muted small",
+                      "radiatR code that reproduces this figure. Edit the data path",
+                      " to point at your own file."
+                    ),
+                    tags$div(
+                      style = "max-height:320px; overflow:auto;",
+                      verbatimTextOutput("figure_code")
+                    ),
+                    tags$button(
+                      class   = "btn btn-sm btn-outline-primary w-100 mb-2",
+                      onclick = paste0(
+                        "navigator.clipboard.writeText(",
+                        "document.getElementById('figure_code').innerText);",
+                        "this.innerText='Copied';",
+                        "setTimeout(()=>this.innerText='Copy R code',1200);"
+                      ),
+                      "Copy R code"
+                    ),
+                    downloadButton("dl_code", "Download .R",
+                                   class = "btn-sm btn-outline-primary w-100")
+                  )
+                )
+              ),
+              card(
+                card_header("Tracks and headings"),
+                card_body(
+                  padding = 0,
+                  uiOutput("track_plot_ui")
+                )
+              )
             )
           ),
-          accordion(
-            id = "results_options",
-            # Collapsible option groups so the right column can hold more
-            # controls without crowding the plot. Display + Summary start open;
-            # Download starts collapsed. multiple = TRUE lets several stay open.
-            open = c("Display", "Summary"),
-            accordion_panel(
-              "Display",
-              selectInput(
-                "plot_theme", "Theme",
-                choices = c("Void"          = "void",
-                            "Minimal"       = "minimal",
-                            "Classic"       = "classic",
-                            "Black & white" = "bw",
-                            "Grey"          = "grey",
-                            "Light"         = "light",
-                            "Dark"          = "dark",
-                            "Line draw"     = "linedraw"),
-                selected = "void"
+          # ---- Summary & stats ----------------------------------------------
+          nav_panel(
+            "Summary & stats",
+            layout_sidebar(
+              sidebar = sidebar(
+                width = 360, position = "right", open = TRUE,
+                selectInput("omnibus_test", "Omnibus test",
+                            choices  = c("Rao spacing" = "rao",
+                                         "Hermans-Rasson" = "hermans_rasson"),
+                            selected = "rao"),
+                tags$hr(class = "my-2"),
+                uiOutput("dl_csv_ui")              # stats CSV download (moved from Download)
               ),
-              selectInput(
-                "angle_labels", "Angle labels",
-                choices = c("Degrees (45°)" = "degrees",
-                            "None"          = "none",
-                            "Radians (π/4)" = "radians"),
-                selected = "degrees"
-              ),
-              selectInput(
-                "heading_display", "Heading display",
-                choices = c("Points (overlapping)"  = "points",
-                            "Stacked dots (inward)" = "stacked",
-                            "None"                  = "none"),
-                selected = "points"
-              ),
-              selectInput(
-                "track_colour", "Track colour",
-                choices = c("By trajectory"                = "trajectory",
-                            "By sequence (start → finish)" = "sequence",
-                            "By elapsed time"              = "time",
-                            "By speed"                     = "speed"),
-                selected = "trajectory"
-              ),
-              conditionalPanel(
-                condition = "input.track_colour == 'time' || input.track_colour == 'speed'",
-                numericInput("frame_rate", "Frame rate (fps)", value = 30, min = 0, step = 1),
-                uiOutput("track_time_note")
-              ),
-              uiOutput("colour_by_ui"),
-              tags$hr(class = "my-2"),
-              div(
-                style = paste("display: grid;",
-                              "grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));",
-                              "column-gap: 0.75rem;"),
-                .layer_switch("show_tracks",    "Trajectories",       TRUE),
-                .layer_switch("show_arrow",     "Directedness arrow", TRUE),
-                .layer_switch("show_ci",        "Mean-direction CI",  FALSE),
-                .layer_switch("show_vectors",   "Heading vectors",    FALSE),
-                .layer_switch("show_rayleigh",  "Rayleigh circle",    FALSE),
-                .layer_switch("show_vtest",     "V-test line",        FALSE),
-                .layer_switch("show_boxplot",   "Circular boxplot",   FALSE),
-                .layer_switch("show_quadrants", "Quadrant lines",     FALSE),
-                .layer_switch("show_rings",     "Guide rings",        FALSE)
-              ),
-              uiOutput("boxplot_note"),
-              tags$hr(class = "my-2"),
-              sliderInput(
-                "preview_px", "Preview size (px)",
-                min = 480, max = 1000, value = 840, step = 20
-              ),
-              tags$span(
-                class = "text-muted small",
-                "On-screen only; export size is set under Download."
+              card(
+                card_header("Summary"),
+                card_body(
+                  tableOutput("summary_tbl"),
+                  tags$hr(class = "my-2"),
+                  tags$strong("Model selection (AICc)"),
+                  tableOutput("model_sel_tbl")
+                )
               )
-            ),
-            accordion_panel(
-              "Summary",
-              selectInput("omnibus_test", "Omnibus test",
-                          choices  = c("Rao spacing" = "rao",
-                                       "Hermans-Rasson" = "hermans_rasson"),
-                          selected = "rao"),
-              tableOutput("summary_tbl"),
-              tags$hr(class = "my-2"),
-              tags$strong("Model selection (AICc)"),
-              tableOutput("model_sel_tbl")
-            ),
-            accordion_panel(
-              "Download",
-              layout_columns(
-                col_widths = c(6, 6),
-                numericInput("plot_w", "Width (in)", value = 7,
-                             min = 1, max = 30, step = 0.5),
-                numericInput("plot_h", "Height (in)", value = 7,
-                             min = 1, max = 30, step = 0.5)
-              ),
-              selectInput(
-                "plot_fmt", "Format",
-                choices = c("PDF (vector)"  = "pdf",
-                            "SVG (vector)"  = "svg",
-                            "PNG (raster)"  = "png",
-                            "JPG (raster)"  = "jpg")
-              ),
-              conditionalPanel(
-                "input.plot_fmt == 'png' || input.plot_fmt == 'jpg'",
-                numericInput("plot_dpi", "Resolution (dpi)", value = 300,
-                             min = 72, max = 600, step = 1)
-              ),
-              # JPEG has no alpha channel, so transparency only applies to the
-              # other formats; hide the option when JPG is selected.
-              conditionalPanel(
-                "input.plot_fmt != 'jpg'",
-                checkboxInput("plot_transparent",
-                              "Transparent background", value = FALSE)
-              ),
-              downloadButton(
-                "dl_plot", "Download plot",
-                class = "btn-sm btn-outline-primary w-100 mb-2"
-              ),
-              uiOutput("dl_csv_ui")
-            ),
-            accordion_panel(
-              "R code",
-              tags$p(
-                class = "text-muted small",
-                "radiatR code that reproduces this figure. Edit the data path",
-                " to point at your own file."
-              ),
-              tags$div(
-                style = "max-height:320px; overflow:auto;",
-                verbatimTextOutput("figure_code")
-              ),
-              tags$button(
-                class   = "btn btn-sm btn-outline-primary w-100 mb-2",
-                onclick = paste0(
-                  "navigator.clipboard.writeText(",
-                  "document.getElementById('figure_code').innerText);",
-                  "this.innerText='Copied';",
-                  "setTimeout(()=>this.innerText='Copy R code',1200);"
-                ),
-                "Copy R code"
-              ),
-              downloadButton("dl_code", "Download .R",
-                             class = "btn-sm btn-outline-primary w-100")
             )
           )
         )
