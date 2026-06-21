@@ -245,6 +245,14 @@ track_speed(ts)             # mean speed per track, in mm/s
 # ts <- calibrate_distance(ts, coord_distance = 0.8, real_distance = 40, unit = "mm")
 ```
 
+``` r
+
+# velocity components and turning rate (need a frame rate; vx/vy use the distance scale)
+ts <- set_frame_rate(cpunctatus, fps = 30)
+head(velocity_vector(ts))                 # vx, vy per observation
+head(angular_velocity(ts, units = "degrees"))   # turning rate, deg/s (CCW +)
+```
+
 ### Circular boxplot
 
 A Tukey-like boxplot for circular data (Buttarazzi, Pandolfo & Porzio,

@@ -347,6 +347,29 @@ head(track_speed(ts))       # mean speed per track, in mm/s
 # ts <- calibrate_distance(ts, coord_distance = 0.8, real_distance = 40, unit = "mm")
 ```
 
+A frame rate also unlocks per-observation kinematics:
+[`velocity_vector()`](https://johnkirwan.github.io/radiatR/reference/velocity_vector.md)
+gives the velocity components (`vx`, `vy`; distance-calibrated when a
+scale is set) and
+[`angular_velocity()`](https://johnkirwan.github.io/radiatR/reference/angular_velocity.md)
+the signed turning rate (counter-clockwise positive).
+
+``` r
+
+# velocity components and turning rate (need a frame rate; vx/vy use the distance scale)
+ts <- set_frame_rate(cpunctatus, fps = 30)
+head(velocity_vector(ts))                 # vx, vy per observation
+#>           vx         vy
+#> 1         NA         NA
+#> 2  0.2309549  0.2309549
+#> 3 -0.2309549  0.0000000
+#> 4 -0.1533230  0.0000000
+#> 5  0.1533230 -0.6909238
+#> 6  0.3076164 -0.4599689
+head(angular_velocity(ts, units = "degrees"))   # turning rate, deg/s (CCW +)
+#> [1]        NA 4050.0000    0.0000 3075.3530  637.8571    0.0000
+```
+
 ## Heading Overlays
 
 The **crossing method** — projecting the vector between two

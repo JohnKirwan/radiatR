@@ -327,6 +327,10 @@ Per-trajectory straightness and tortuosity of the movement path.
   : Per-step speed along a trajectory
 - [`instantaneous_speed()`](https://johnkirwan.github.io/radiatR/reference/instantaneous_speed.md)
   : Per-observation instantaneous speed for a Tracks
+- [`velocity_vector()`](https://johnkirwan.github.io/radiatR/reference/velocity_vector.md)
+  : Per-observation velocity vector for a Tracks
+- [`angular_velocity()`](https://johnkirwan.github.io/radiatR/reference/angular_velocity.md)
+  : Per-observation angular (turning-rate) velocity for a Tracks
 
 ## Track timing
 
@@ -412,6 +416,8 @@ Any remaining exported topics.
   : Overlay a fitted von Mises density curve on a radiate plot
 - [`add_wrappedcauchy_density()`](https://johnkirwan.github.io/radiatR/reference/add_wrappedcauchy_density.md)
   : Overlay a fitted wrapped Cauchy density curve on a radiate plot
+- [`angular_velocity()`](https://johnkirwan.github.io/radiatR/reference/angular_velocity.md)
+  : Per-observation angular (turning-rate) velocity for a Tracks
 - [`apply_transform()`](https://johnkirwan.github.io/radiatR/reference/apply_transform.md)
   : Apply a bespoke transformation to a Tracks
 - [`as.data.frame(`*`<Tracks>`*`)`](https://johnkirwan.github.io/radiatR/reference/as.data.frame.Tracks.md)
@@ -601,6 +607,8 @@ Any remaining exported topics.
   [`log_transform()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`set_transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   : Transform history helpers for Tracks objects
+- [`velocity_vector()`](https://johnkirwan.github.io/radiatR/reference/velocity_vector.md)
+  : Per-observation velocity vector for a Tracks
 - [`vonmises_fit()`](https://johnkirwan.github.io/radiatR/reference/vonmises_fit.md)
   : Fit a von Mises distribution to per-group heading data
 - [`wrappedcauchy_fit()`](https://johnkirwan.github.io/radiatR/reference/wrappedcauchy_fit.md)

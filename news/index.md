@@ -82,6 +82,13 @@
   and `radiate(track_colour = "speed")` colours each path by it.
   Arena-units per second with the default coordinates.
 
+- [`velocity_vector()`](https://johnkirwan.github.io/radiatR/reference/velocity_vector.md)
+  gives per-observation velocity components (`vx`, `vy`;
+  distance-calibrated when a scale is set), and
+  [`angular_velocity()`](https://johnkirwan.github.io/radiatR/reference/angular_velocity.md)
+  the signed turning rate (counter-clockwise positive; radians or
+  degrees per second).
+
 - Optional distance calibration:
   [`set_distance_scale()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
   /
