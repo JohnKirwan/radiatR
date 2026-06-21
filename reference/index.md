@@ -321,6 +321,8 @@ Per-trajectory straightness and tortuosity of the movement path.
   : Tortuosity ratio for a single trajectory
 - [`track_speed()`](https://johnkirwan.github.io/radiatR/reference/track_speed.md)
   : Per-trajectory speed for a Tracks, in real units
+- [`track_length()`](https://johnkirwan.github.io/radiatR/reference/track_length.md)
+  : Per-trajectory path length for a Tracks
 - [`step_speed()`](https://johnkirwan.github.io/radiatR/reference/step_speed.md)
   : Per-step speed along a trajectory
 - [`instantaneous_speed()`](https://johnkirwan.github.io/radiatR/reference/instantaneous_speed.md)
@@ -338,6 +340,11 @@ time per observation or per trajectory.
   : Elapsed time per observation of a Tracks object
 - [`track_duration()`](https://johnkirwan.github.io/radiatR/reference/track_duration.md)
   : Duration of each track
+- [`distance_scale()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
+  [`distance_unit()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
+  [`set_distance_scale()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
+  [`calibrate_distance()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
+  : Distance calibration for a Tracks object
 
 ## Datasets
 
@@ -467,6 +474,11 @@ Any remaining exported topics.
   : Derive heading angle(s) from trajectories using specified rule
 - [`directedness_arrow()`](https://johnkirwan.github.io/radiatR/reference/directedness_arrow.md)
   : Make mean resultant length arrow
+- [`distance_scale()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
+  [`distance_unit()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
+  [`set_distance_scale()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
+  [`calibrate_distance()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
+  : Distance calibration for a Tracks object
 - [`.heading_registry`](https://johnkirwan.github.io/radiatR/reference/dot-heading_registry.md)
   : Build a data frame of arrow segments representing mean direction
   vectors Length equals resultant_R; angle equals mean_dir
@@ -581,6 +593,8 @@ Any remaining exported topics.
   : Per-trajectory tortuosity ratio for a Tracks
 - [`track_duration()`](https://johnkirwan.github.io/radiatR/reference/track_duration.md)
   : Duration of each track
+- [`track_length()`](https://johnkirwan.github.io/radiatR/reference/track_length.md)
+  : Per-trajectory path length for a Tracks
 - [`track_speed()`](https://johnkirwan.github.io/radiatR/reference/track_speed.md)
   : Per-trajectory speed for a Tracks, in real units
 - [`transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)

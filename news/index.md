@@ -82,6 +82,17 @@
   and `radiate(track_colour = "speed")` colours each path by it.
   Arena-units per second with the default coordinates.
 
+- Optional distance calibration:
+  [`set_distance_scale()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
+  /
+  [`calibrate_distance()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
+  attach a physical scale + unit, so
+  [`track_length()`](https://johnkirwan.github.io/radiatR/reference/track_length.md),
+  [`track_speed()`](https://johnkirwan.github.io/radiatR/reference/track_speed.md),
+  [`instantaneous_speed()`](https://johnkirwan.github.io/radiatR/reference/instantaneous_speed.md)
+  and `radiate(track_colour = "speed")` report real units (e.g. mm,
+  mm/s). Unset, everything stays in arena/coordinate units.
+
 ### Visualisation
 
 - American spellings are now accepted throughout: every `colour...`

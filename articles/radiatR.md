@@ -318,6 +318,35 @@ radiate(ts, show_tracks = TRUE, track_colour = "speed")
 
 ![](radiatR_files/figure-html/plot-speed-1.png)
 
+If you know a physical scale, calibrate distances so lengths and speeds
+report in real units. The scale is physical units per coordinate unit
+(e.g. mm per arena radius); unset, everything stays in arena/coordinate
+units.
+
+``` r
+
+# calibrate distance (optional): 50 mm per coordinate unit (e.g. arena radius)
+ts <- set_distance_scale(set_frame_rate(cpunctatus, 30), 50, unit = "mm")
+head(track_length(ts))      # path length per track, in mm
+#>         trial_id    length
+#> 10_1_1    10_1_1  68.22790
+#> 10_10_1  10_10_1 436.93869
+#> 10_11_1  10_11_1  63.91794
+#> 10_12_1  10_12_1  61.88499
+#> 10_13_1  10_13_1  79.63053
+#> 10_14_1  10_14_1  46.82644
+head(track_speed(ts))       # mean speed per track, in mm/s
+#>         trial_id    speed
+#> 10_1_1    10_1_1 25.58546
+#> 10_10_1  10_10_1 43.98712
+#> 10_11_1  10_11_1 29.96154
+#> 10_12_1  10_12_1 39.50105
+#> 10_13_1  10_13_1 30.23944
+#> 10_14_1  10_14_1 48.44115
+# or from two measured landmarks:
+# ts <- calibrate_distance(ts, coord_distance = 0.8, real_distance = 40, unit = "mm")
+```
+
 ## Heading Overlays
 
 The **crossing method** — projecting the vector between two

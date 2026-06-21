@@ -61,6 +61,7 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/derive_coords.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/derive_headings.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/directedness_arrow.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/distance_scale.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/dot-heading_registry.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/draw_tracks.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/dtrack_read.html</loc></url>
@@ -114,6 +115,7 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/test_uniformity.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/tortuosity_ratio.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/track_duration.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/track_length.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/track_speed.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/transform_history.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/vonmises_fit.html</loc></url>
