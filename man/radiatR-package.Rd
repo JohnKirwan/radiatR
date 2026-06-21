@@ -21,7 +21,7 @@ supplying both spellings of a pair is an error.
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://johnkirwan.github.io/radiatR}
+  \item \url{https://johnkirwan.github.io/radiatR/}
   \item \url{https://github.com/JohnKirwan/radiatR}
   \item Report bugs at \url{https://github.com/JohnKirwan/radiatR/issues}
 }
