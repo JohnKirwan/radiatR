@@ -66,6 +66,10 @@
 
 ## Visualisation
 
+* `plot_profile()` draws a non-circular kinematics profile -- instantaneous speed
+  or turning rate against elapsed time, one line per track (the ggplot sibling of
+  `radiate()`). Needs a frame rate; distance-calibrated when a scale is set.
+
 * American spellings are now accepted throughout: every `colour...` argument and
   the `assign_colour_*` / `cycle_colours` / `hf_colour_col` functions have
   `color...` aliases (British remains canonical; supplying both errors).

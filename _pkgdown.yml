@@ -146,6 +146,7 @@ reference:
       The main radiate() function and its building blocks.
     contents:
       - radiate
+      - plot_profile
       - gg_traj
       - draw_tracks
       - add_ticks
