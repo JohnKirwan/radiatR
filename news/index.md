@@ -144,6 +144,11 @@
 
 ### Shiny app
 
+- The Results step is reorganised into **Circular plots** and **Summary
+  & stats** sub-tabs, each with its own options sidebar (the circular
+  figure + its reproduce/export controls on one, the summary and
+  model-selection tables on the other).
+
 - The Results figure’s **Track colour** selector gains “By elapsed
   time”, with a frame-rate (fps) input; an unset/invalid frame rate
   falls back to sequence colouring with a note.
