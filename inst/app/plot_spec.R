@@ -292,6 +292,58 @@ spec_to_plot <- function(spec, ts, hd) {
   p
 }
 
+# Emit the data-load + headings-derivation lines shared by the figure-code and
+# stats-code scripts: `data(cpunctatus)`/`read.csv`/`read_tracks` + `ts`/`hd`
+# (+ the facet merge). Figure-specific lines (colour keys, frame rate, disp) stay
+# in the caller. `add`/`q` are the caller's line-appender / string-quoter.
+.emit_data_preamble <- function(spec, add, q) {
+  headings_mode <- identical(spec$mode, "headings")
+  has_hd <- headings_mode || !identical(spec$headings$rule, "none")
+  if (headings_mode) {
+    if (identical(spec$data$source, "example")) {
+      add("data(cpunctatus)")
+      add("hd <- derive_headings(cpunctatus, rule = \"distal\", coords = \"relative\")")
+      if (!is.null(spec$facet_by))
+        add("hd <- merge(hd, unique(as.data.frame(cpunctatus)[, c(\"trial_id\", ",
+            q(spec$facet_by), ")]), by.x = \"id\", by.y = \"trial_id\", all.x = TRUE)")
+      add("hd <- headings_frame(hd, col = heading, units = \"radians\")")
+    } else {
+      add("df <- read.csv(", q(spec$data$path), ")")
+      add("hd <- headings_frame(df, col = ", spec$data$col,
+          ", units = ", q(spec$data$units),
+          ", angle_convention = ", q(spec$data$convention), ")")
+      if (!identical(spec$data$col, "heading")) {
+        add("names(hd)[names(hd) == ", q(spec$data$col), "] <- \"heading\"")
+        add("attr(hd, \"heading_col\") <- \"heading\"")
+      }
+    }
+  } else {
+    if (identical(spec$data$source, "example")) {
+      add("data(cpunctatus)")
+      add("ts <- cpunctatus")
+    } else {
+      dia <- if (!is.null(spec$data$dialect))
+        paste0(", dialect = ", q(spec$data$dialect)) else ""
+      add("ts <- read_tracks(", q(spec$data$path), dia, ")")
+    }
+    if (has_hd) {
+      add("")
+      hp <- if (identical(spec$headings$rule, "crossing"))
+        paste0(", circ0 = ", spec$headings$circ0, ", circ1 = ", spec$headings$circ1) else ""
+      # Heading vectors need the crossing construction coords; request them so the
+      # emitted script can draw them (only the crossing rule produces x_inner/y_inner).
+      rc <- if (spec$show$vectors && identical(spec$headings$rule, "crossing"))
+        ", return_coords = TRUE" else ""
+      add("hd <- derive_headings(ts, rule = ", q(spec$headings$rule), hp, rc, ")")
+      if (!is.null(spec$facet_by))
+        add("hd <- merge(hd, unique(as.data.frame(ts)[, c(", q(spec$group_col), ", ",
+            q(spec$facet_by), ")]), by.x = \"id\", by.y = ", q(spec$group_col),
+            ", all.x = TRUE)")
+    }
+  }
+  list(headings_mode = headings_mode, has_hd = has_hd)
+}
+
 # Emit the radiatR script (a single string) that reproduces spec_to_plot(spec).
 spec_to_code <- function(spec) {
   # encodeString escapes embedded quotes/backslashes so the emitted literal
@@ -314,30 +366,17 @@ spec_to_code <- function(spec) {
                speed    = ", track_colour = \"speed\"",
                sequence = ", track_colour = \"sequence\"",
                "")
-  # Headings mode always has a headings frame; trajectory mode has one unless the
-  # heading rule is "none". Used to gate both the trajectory-branch derive_headings
-  # emission and the shared overlay/tail emission below.
-  has_hd <- headings_mode || !identical(spec$headings$rule, "none")
   ax <- if (isTRUE(spec$axial)) ", axial = TRUE" else ""
 
+  # Data-load + heading-derivation (shared with the stats-code emitter); returns
+  # headings_mode/has_hd. Headings mode always has a headings frame; trajectory
+  # mode has one unless the heading rule is "none". has_hd gates the figure-specific
+  # colour-key emission below and the shared overlay/tail emission further down.
+  pre <- .emit_data_preamble(spec, add, q)
+  headings_mode <- pre$headings_mode
+  has_hd        <- pre$has_hd
+
   if (headings_mode) {
-    if (identical(spec$data$source, "example")) {
-      add("data(cpunctatus)")
-      add("hd <- derive_headings(cpunctatus, rule = \"distal\", coords = \"relative\")")
-      if (!is.null(spec$facet_by))
-        add("hd <- merge(hd, unique(as.data.frame(cpunctatus)[, c(\"trial_id\", ",
-            q(spec$facet_by), ")]), by.x = \"id\", by.y = \"trial_id\", all.x = TRUE)")
-      add("hd <- headings_frame(hd, col = heading, units = \"radians\")")
-    } else {
-      add("df <- read.csv(", q(spec$data$path), ")")
-      add("hd <- headings_frame(df, col = ", spec$data$col,
-          ", units = ", q(spec$data$units),
-          ", angle_convention = ", q(spec$data$convention), ")")
-      if (!identical(spec$data$col, "heading")) {
-        add("names(hd)[names(hd) == ", q(spec$data$col), "] <- \"heading\"")
-        add("attr(hd, \"heading_col\") <- \"heading\"")
-      }
-    }
     add("")
     if (identical(spec$colour$by, "trajectory")) {
       add("hd$.colour <- factor(\"all\")")          # single-colour: no group column
@@ -345,30 +384,6 @@ spec_to_code <- function(spec) {
       add("hd <- assign_colour_key(hd, by = ", q(spec$colour$by), ")")
     }
   } else {
-    if (identical(spec$data$source, "example")) {
-      add("data(cpunctatus)")
-      add("ts <- cpunctatus")
-    } else {
-      dia <- if (!is.null(spec$data$dialect))
-        paste0(", dialect = ", q(spec$data$dialect)) else ""
-      add("ts <- read_tracks(", q(spec$data$path), dia, ")")
-    }
-
-    if (has_hd) {
-      add("")
-      hp <- if (identical(spec$headings$rule, "crossing"))
-        paste0(", circ0 = ", spec$headings$circ0, ", circ1 = ", spec$headings$circ1) else ""
-      # Heading vectors need the crossing construction coords; request them so the
-      # emitted script can draw them (only the crossing rule produces x_inner/y_inner).
-      rc <- if (spec$show$vectors && identical(spec$headings$rule, "crossing"))
-        ", return_coords = TRUE" else ""
-      add("hd <- derive_headings(ts, rule = ", q(spec$headings$rule), hp, rc, ")")
-      if (!is.null(spec$facet_by))
-        add("hd <- merge(hd, unique(as.data.frame(ts)[, c(", q(spec$group_col), ", ",
-            q(spec$facet_by), ")]), by.x = \"id\", by.y = ", q(spec$group_col),
-            ", all.x = TRUE)")
-    }
-
     add("")
     add("ts <- assign_colour_key(ts, by = ", q(spec$colour$by), ")")
     if (rtc$effective %in% c("time", "speed"))
