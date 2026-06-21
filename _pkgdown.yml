@@ -235,6 +235,8 @@ reference:
       - track_length
       - step_speed
       - instantaneous_speed
+      - velocity_vector
+      - angular_velocity
 
   - title: "Track timing"
     desc: >
