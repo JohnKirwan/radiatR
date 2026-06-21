@@ -146,6 +146,16 @@ head(velocity_vector(ts))                 # vx, vy per observation
 head(angular_velocity(ts, units = "degrees"))   # turning rate, deg/s (CCW +)
 ```
 
+Reduced to one row per track, `track_velocity()` gives each path's net
+(average) velocity vector and `track_turning()` summarises its turning rate.
+
+```{r velocity-turning}
+# per-track summaries (need a frame rate; velocity uses the distance scale)
+ts <- set_frame_rate(cpunctatus, fps = 30)
+head(track_velocity(ts))                       # net velocity vector (vx, vy) per track
+head(track_turning(ts, units = "degrees"))     # typical turning rate (deg/s) per track
+```
+
 ## Heading Overlays
 
 The **crossing method** — projecting the vector between two concentric-ring crossings to the unit circle — assigns one directional heading per trial. `derive_headings()` with `return_coords = TRUE` returns both the heading angle and the inner-ring crossing position.

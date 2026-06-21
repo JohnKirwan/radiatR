@@ -55,6 +55,10 @@
   distance-calibrated when a scale is set), and `angular_velocity()` the signed
   turning rate (counter-clockwise positive; radians or degrees per second).
 
+* Per-track summaries: `track_velocity()` (net average velocity vector,
+  distance-calibrated) and `track_turning()` (turning-rate summary -- `mean_abs`
+  magnitude by default, plus `mean`/`max_abs`/`median_abs`; radians or degrees).
+
 * Optional distance calibration: `set_distance_scale()` / `calibrate_distance()`
   attach a physical scale + unit, so `track_length()`, `track_speed()`,
   `instantaneous_speed()` and `radiate(track_colour = "speed")` report real units

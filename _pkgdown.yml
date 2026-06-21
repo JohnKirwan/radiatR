@@ -232,6 +232,8 @@ reference:
       - path_straightness
       - path_tortuosity
       - track_speed
+      - track_velocity
+      - track_turning
       - track_length
       - step_speed
       - instantaneous_speed

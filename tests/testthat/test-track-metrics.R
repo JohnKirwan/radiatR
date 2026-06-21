@@ -248,3 +248,65 @@ test_that("angular_velocity: CW turn is negative; degrees option; needs a frame 
     cols = list(id = "id", time = "frame", angle = "angle", x = "x", y = "y"),
     angle_unit = "radians", meta = list())), "frame rate")
 })
+
+mk_netvel_ts <- function() {
+  d <- rbind(
+    data.frame(id = "a", frame = 0:3, x = (0:3) * 2, y = 0,      angle = 0),  # straight, vx 2/frame
+    data.frame(id = "b", frame = 0:2, x = c(0, 1, 0), y = c(0, 1, 0), angle = 0)  # closed loop
+  )
+  methods::new("Tracks", data = d,
+    cols = list(id = "id", time = "frame", angle = "angle", x = "x", y = "y"),
+    angle_unit = "radians", meta = list())
+}
+
+test_that("track_velocity: net velocity = displacement / duration, distance-scaled", {
+  ts <- set_frame_rate(mk_netvel_ts(), 30)
+  v  <- track_velocity(ts)
+  expect_named(v, c("id", "vx", "vy"))
+  # track a: net dx = 6 over 3 frames = 0.1 s -> 6 / 0.1 = 60; vy 0
+  expect_equal(v$vx[v$id == "a"], 60)
+  expect_equal(v$vy[v$id == "a"], 0)
+  # track b: returns to start -> net (0, 0)
+  expect_equal(v$vx[v$id == "b"], 0)
+  expect_equal(v$vy[v$id == "b"], 0)
+  # distance scale
+  ts2 <- set_distance_scale(ts, 50, "mm")
+  expect_equal(track_velocity(ts2)$vx[v$id == "a"], 60 * 50)
+})
+
+test_that("track_velocity: numeric frames need a frame rate; <2-point track -> NA", {
+  expect_error(track_velocity(mk_netvel_ts()), "frame rate")
+  one <- methods::new("Tracks",
+    data = data.frame(id = "z", frame = 0L, x = 0, y = 0, angle = 0),
+    cols = list(id = "id", time = "frame", angle = "angle", x = "x", y = "y"),
+    angle_unit = "radians", meta = list(frame_rate = 30))
+  v <- track_velocity(one)
+  expect_true(is.na(v$vx) && is.na(v$vy))
+})
+
+mk_mixturn_ts <- function() {
+  # track a: +90 (left) then -90 (right): right, up, right -> turns +pi/2 then -pi/2
+  d <- data.frame(id = "a", frame = 0:3,
+                  x = c(0, 1, 1, 2), y = c(0, 0, 1, 1), angle = 0)
+  methods::new("Tracks", data = d,
+    cols = list(id = "id", time = "frame", angle = "angle", x = "x", y = "y"),
+    angle_unit = "radians", meta = list())
+}
+
+test_that("track_turning: mean cancels opposite turns, mean_abs does not; max_abs is the sharpest", {
+  ts <- set_frame_rate(mk_mixturn_ts(), 1)    # 1 fps -> seconds == frame index
+  expect_named(track_turning(ts), c("id", "turning"))
+  expect_equal(track_turning(ts, stat = "mean")$turning, 0)            # +pi/2 and -pi/2 cancel
+  expect_equal(track_turning(ts, stat = "mean_abs")$turning, pi / 2)   # magnitude (dt_center 1 s)
+  expect_equal(track_turning(ts, stat = "max_abs")$turning, pi / 2)
+  expect_equal(track_turning(ts, stat = "mean_abs", units = "degrees")$turning, 90)
+})
+
+test_that("track_turning: <3-point track -> NA; numeric frames need a frame rate", {
+  expect_error(track_turning(mk_mixturn_ts()), "frame rate")
+  two <- methods::new("Tracks",
+    data = data.frame(id = "z", frame = 0:1, x = c(0, 1), y = 0, angle = 0),
+    cols = list(id = "id", time = "frame", angle = "angle", x = "x", y = "y"),
+    angle_unit = "radians", meta = list(frame_rate = 1))
+  expect_true(is.na(track_turning(two)$turning))
+})
