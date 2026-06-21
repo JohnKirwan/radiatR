@@ -74,6 +74,14 @@ radiate(cpunctatus,
         display    = circ_display(zero = 0))
 ```
 
+The circumference can be labelled in domain units instead of degrees --- useful
+for time-of-year or compass data. `angle_labels` selects a built-in scale and
+aligns the tick count to it:
+
+```{r plot-perimeter-labs}
+radiate(cpunctatus, angle_labels = "months")
+```
+
 ### Colour tracks by position
 
 Setting `track_colour = "sequence"` shades each path along its own length, so the

@@ -145,6 +145,18 @@ radiate(ts,
 > any scaling to real-world units in your tracking pipeline (e.g. your tracker's
 > own calibration, or OpenCV `undistort`) before importing.
 
+### Label the perimeter in domain units
+
+The circumference can be labelled in domain units instead of degrees — handy for
+time-of-year or compass data. `angle_labels` selects a built-in scale
+(`"cardinal"`, `"hours"`, `"months"`, `"seconds"`) and aligns the tick count to
+it:
+
+```r
+# Label the circle in months instead of degrees
+radiate(ts, angle_labels = "months")
+```
+
 ### Colour tracks by position
 
 `track_colour = "sequence"` shades each trajectory along its own length, so the
