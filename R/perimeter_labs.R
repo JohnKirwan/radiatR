@@ -41,6 +41,48 @@
   invisible(every)
 }
 
+#' Label the circumference of a radial plot in domain units
+#'
+#' Adds perimeter text labels (cardinal directions, hours, months, seconds, or a
+#' custom scale) to a radial ggplot. The display-aware sibling of [degree_labs()]:
+#' labels are positioned through the supplied `display` so they track the plotted
+#' data when the convention changes.
+#'
+#' @param scale A perimeter-scale list, from [scale_cardinal()], [scale_clock()],
+#'   [scale_months()], [scale_seconds()], or hand-written as
+#'   `list(n =, at =, labels =)` (`at` in raw unit-circle radians, 0 = East,
+#'   counterclockwise; `labels` the same length as `at`).
+#' @param display A [circ_display()] convention. Default `circ_display()`
+#'   (North/top, clockwise).
+#' @param colour,color Label colour. Default `"black"`. `color` is the
+#'   American-spelling alias.
+#' @param size Label text size, in mm. Default `3.88` (ggplot2's default).
+#' @param family Label font family. Default `""` (device default).
+#' @param radius Radial distance of the labels from the centre, as a multiple of
+#'   the unit circle. Default `0.85`.
+#' @return A list of ggplot2 annotation layers, add to a plot with `+`.
+#' @seealso [degree_labs()] for degree/radian labels; [scale_cardinal()],
+#'   [scale_clock()], [scale_months()], [scale_seconds()].
+#' @examples
+#' library(ggplot2)
+#' ggplot() +
+#'   coord_fixed() +
+#'   perimeter_labs(scale_months())
+#' @export
+perimeter_labs <- function(scale, display = circ_display(), colour = "black",
+                           size = 3.88, family = "", radius = 0.85,
+                           color = NULL) {
+  .apply_spelling_aliases()
+  .check_scale(scale)
+  x_uc <- radius * cos(scale$at)
+  y_uc <- radius * sin(scale$at)
+  pos  <- .uc_to_display_coords(x_uc, y_uc, display)
+  Map(function(x, y, lab)
+        ggplot2::annotate("text", x = x, y = y, label = lab,
+                          colour = colour, size = size, family = family),
+      pos$x, pos$y, scale$labels)
+}
+
 #' Perimeter scale: cardinal compass directions
 #'
 #' @param points `4` (N/E/S/W, default) or `8` (adds the intercardinals
