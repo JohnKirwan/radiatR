@@ -148,6 +148,11 @@
   time”, with a frame-rate (fps) input; an unset/invalid frame rate
   falls back to sequence colouring with a note.
 
+- The Results figure’s **Track colour** selector gains “By speed”
+  (instantaneous speed), sharing the frame-rate input with “By elapsed
+  time”; an unset/invalid frame rate falls back to sequence colouring
+  with a note.
+
 - The Results figure gains a **Circular boxplot** overlay toggle
   (directional and axial), wired through the figure-code export so the
   emitted script reproduces it. The layer toggles now reflow into two
