@@ -144,6 +144,11 @@
 
 ### Shiny app
 
+- The Summary & stats sub-tab now offers reproducible R code for the
+  analysis (`circ_summarise`, `test_uniformity`, `circ_model_select`,
+  `straightness_index`) to copy or download, alongside the figure code
+  on the Circular plots tab.
+
 - The Results step is reorganised into **Circular plots** and **Summary
   & stats** sub-tabs, each with its own options sidebar (the circular
   figure + its reproduce/export controls on one, the summary and
