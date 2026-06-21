@@ -1072,8 +1072,13 @@ server <- function(input, output, session) {
               ),
               card(
                 card_header("Tracks and headings"),
+                # fillable = FALSE so the plot honours the explicit pixel height
+                # from the Preview-size slider instead of being stretched to fill
+                # the fillable card (which pinned it to the viewport height and
+                # made the slider appear to do nothing).
                 card_body(
                   padding = 0,
+                  fillable = FALSE,
                   uiOutput("track_plot_ui")
                 )
               )
