@@ -1461,6 +1461,14 @@ server <- function(input, output, session) {
     ms
   }, striped = TRUE, hover = TRUE, align = "c")
 
+  # The summary tables live in the "Summary & stats" sub-tab, which is not the
+  # default Results tab. Without this, Shiny suspends their outputs (returning
+  # NULL) until the user first clicks onto that tab. Keep them live so the
+  # summary/model tables — and the CSV download that reads them — are populated
+  # as soon as Results is reached, regardless of which sub-tab is in front.
+  outputOptions(output, "summary_tbl",   suspendWhenHidden = FALSE)
+  outputOptions(output, "model_sel_tbl", suspendWhenHidden = FALSE)
+
   # The radiatR script reproducing the current figure (shown, copied, downloaded).
   figure_code_text <- reactive({
     req(rv$ts %||% rv$hd)
