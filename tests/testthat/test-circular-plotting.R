@@ -1902,3 +1902,14 @@ test_that("radiate track_colour = 'speed' cannot combine with colour_cycle", {
   expect_error(radiate(ts, show_tracks = TRUE, track_colour = "speed", colour_cycle = 4),
                "cannot be combined")
 })
+
+test_that("radiate track_colour='speed' colourbar shows the distance unit when calibrated", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  ts <- set_distance_scale(set_frame_rate(cpunctatus, 30), 50, "mm")
+  p  <- radiate(ts, show_tracks = TRUE, track_colour = "speed")
+  cs <- p$scales$get_scales("colour")
+  # ggplot2 4.x stores the guide title under `$params$title`; older versions
+  # exposed it directly at `$title`.
+  guide_title <- if (!is.null(cs$guide$params$title)) cs$guide$params$title else cs$guide$title
+  expect_equal(guide_title, "speed (mm/s)")
+})

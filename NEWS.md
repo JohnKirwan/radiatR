@@ -51,6 +51,11 @@
   `elapsed_seconds()`), and `radiate(track_colour = "speed")` colours each path
   by it. Arena-units per second with the default coordinates.
 
+* Optional distance calibration: `set_distance_scale()` / `calibrate_distance()`
+  attach a physical scale + unit, so `track_length()`, `track_speed()`,
+  `instantaneous_speed()` and `radiate(track_colour = "speed")` report real units
+  (e.g. mm, mm/s). Unset, everything stays in arena/coordinate units.
+
 ## Visualisation
 
 * American spellings are now accepted throughout: every `colour...` argument and

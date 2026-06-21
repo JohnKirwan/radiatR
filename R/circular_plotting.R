@@ -2668,8 +2668,11 @@ function(
   }
 
   if (speed_track) {
+    spd_unit <- distance_unit(ts)
+    spd_lab  <- if (!is.null(distance_scale(ts)) && !is.null(spd_unit))
+                  paste0("speed (", spd_unit, "/s)") else "speed (units/s)"
     g <- g + ggplot2::scale_colour_viridis_c(
-      guide = ggplot2::guide_colourbar(title = "speed (units/s)"))
+      guide = ggplot2::guide_colourbar(title = spd_lab))
   } else if (time_track) {
     unit_lab <- switch(time_units, seconds = "elapsed (s)",
                        minutes = "elapsed (min)", milliseconds = "elapsed (ms)")

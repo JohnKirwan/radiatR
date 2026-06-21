@@ -159,3 +159,68 @@ setMethod("set_frame_rate", "Tracks", function(x, fps) {
   x@meta$frame_rate <- as.numeric(fps)
   x
 })
+
+#' Distance calibration for a Tracks object
+#'
+#' Attach a physical-distance scale (and optional unit label) to a [Tracks] so
+#' path lengths and speeds can be reported in real units. The scale is physical
+#' units per unit of the recorded `x`/`y` coordinates; it is applied on demand
+#' and the stored coordinates are never altered. radiatR otherwise analyses in
+#' normalised (unit-arena) space -- this is an optional calibration hook.
+#'
+#' @param x A [Tracks] object.
+#' @param scale A single positive number: physical units per coordinate unit.
+#' @param unit Optional single string, the physical unit label (e.g. `"mm"`).
+#' @param coord_distance,real_distance For `calibrate_distance()`, a known
+#'   separation in coordinate units and its real-world length; the scale is
+#'   `real_distance / coord_distance`.
+#' @param ts A [Tracks] object (for `calibrate_distance()`).
+#' @return `distance_scale()`/`distance_unit()` the stored values (or `NULL`);
+#'   `set_distance_scale()`/`calibrate_distance()` the modified `Tracks`.
+#' @seealso [frame_rate()], [track_length()], [track_speed()]
+#' @name distance_scale
+#' @export
+setGeneric("distance_scale", function(x) standardGeneric("distance_scale"))
+
+#' @rdname distance_scale
+#' @export
+setMethod("distance_scale", "Tracks", function(x) x@meta$distance_scale)
+
+#' @rdname distance_scale
+#' @export
+setGeneric("distance_unit", function(x) standardGeneric("distance_unit"))
+
+#' @rdname distance_scale
+#' @export
+setMethod("distance_unit", "Tracks", function(x) x@meta$distance_unit)
+
+#' @rdname distance_scale
+#' @export
+setGeneric("set_distance_scale",
+           function(x, scale, unit = NULL) standardGeneric("set_distance_scale"))
+
+#' @rdname distance_scale
+#' @export
+setMethod("set_distance_scale", "Tracks", function(x, scale, unit = NULL) {
+  if (!is.numeric(scale) || length(scale) != 1L)
+    stop("`scale` must be a single number (physical units per coordinate unit).")
+  if (!is.finite(scale) || scale <= 0)
+    stop("`scale` must be a positive, finite number.")
+  if (!is.null(unit) && (!is.character(unit) || length(unit) != 1L))
+    stop("`unit` must be NULL or a single string.")
+  x@meta$distance_scale <- as.numeric(scale)
+  if (!is.null(unit)) x@meta$distance_unit <- unit
+  x
+})
+
+#' @rdname distance_scale
+#' @export
+calibrate_distance <- function(ts, coord_distance, real_distance, unit = NULL) {
+  if (!is.numeric(coord_distance) || length(coord_distance) != 1L ||
+      !is.finite(coord_distance) || coord_distance <= 0)
+    stop("`coord_distance` must be a single positive, finite number.")
+  if (!is.numeric(real_distance) || length(real_distance) != 1L ||
+      !is.finite(real_distance) || real_distance <= 0)
+    stop("`real_distance` must be a single positive, finite number.")
+  set_distance_scale(ts, real_distance / coord_distance, unit)
+}
