@@ -303,6 +303,21 @@ head(track_speed(ts, stat = "max"))
 #> 10_14_1  10_14_1 1.4268880
 ```
 
+The same frame rate lets
+[`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+colour each path by its instantaneous speed, the per-observation sibling
+of
+[`track_speed()`](https://johnkirwan.github.io/radiatR/reference/track_speed.md).
+
+``` r
+
+# colour each path by its instantaneous speed (needs a frame rate)
+ts <- set_frame_rate(cpunctatus, fps = 30)
+radiate(ts, show_tracks = TRUE, track_colour = "speed")
+```
+
+![](radiatR_files/figure-html/plot-speed-1.png)
+
 ## Heading Overlays
 
 The **crossing method** — projecting the vector between two

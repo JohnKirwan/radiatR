@@ -76,6 +76,12 @@
   track’s frame rate / timestamps. With the default unit-arena
   coordinates that is arena-units (radii) per second.
 
+- [`instantaneous_speed()`](https://johnkirwan.github.io/radiatR/reference/instantaneous_speed.md)
+  gives per-observation speed (the per-row sibling of
+  [`elapsed_seconds()`](https://johnkirwan.github.io/radiatR/reference/elapsed_seconds.md)),
+  and `radiate(track_colour = "speed")` colours each path by it.
+  Arena-units per second with the default coordinates.
+
 ### Visualisation
 
 - American spellings are now accepted throughout: every `colour...`

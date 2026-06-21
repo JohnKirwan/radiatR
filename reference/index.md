@@ -323,6 +323,8 @@ Per-trajectory straightness and tortuosity of the movement path.
   : Per-trajectory speed for a Tracks, in real units
 - [`step_speed()`](https://johnkirwan.github.io/radiatR/reference/step_speed.md)
   : Per-step speed along a trajectory
+- [`instantaneous_speed()`](https://johnkirwan.github.io/radiatR/reference/instantaneous_speed.md)
+  : Per-observation instantaneous speed for a Tracks
 
 ## Track timing
 
@@ -502,6 +504,8 @@ Any remaining exported topics.
 - [`import_tracks()`](https://johnkirwan.github.io/radiatR/reference/import_tracks.md)
   : Discover dtrack (or compatible) landmark/track file pairs in a
   directory
+- [`instantaneous_speed()`](https://johnkirwan.github.io/radiatR/reference/instantaneous_speed.md)
+  : Per-observation instantaneous speed for a Tracks
 - [`launch_app()`](https://johnkirwan.github.io/radiatR/reference/launch_app.md)
   : Launch the radiatR Shiny companion app
 - [`line_circle_intercept()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept.md)
