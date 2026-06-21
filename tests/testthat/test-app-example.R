@@ -628,6 +628,19 @@ test_that("the method dropdown is grouped into Directional and Axial optgroups",
   })
 })
 
+test_that("Results sub-tabs: plot, summary, and figure-code outputs all render after the restructure", {
+  app_dir <- system.file("app", package = "radiatR")
+  if (!nzchar(app_dir)) app_dir <- testthat::test_path("..", "..", "inst", "app")
+  shiny::testServer(app_dir, {
+    session$setInputs(load_example = 1)
+    session$setInputs(go3 = 1)                       # advance to Results
+    expect_no_error(current_spec())
+    expect_no_error(output$track_plot)               # Circular plots sub-tab
+    expect_no_error(output$summary_tbl)              # Summary & stats sub-tab
+    expect_no_error(output$figure_code)              # figure code (Plots sub-tab)
+  })
+})
+
 test_that("method_model_note hints, warns, and stays silent appropriately", {
   skip_if_not_installed("shiny")
   app_dir <- system.file("app", package = "radiatR")
