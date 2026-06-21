@@ -182,3 +182,69 @@ test_that("instantaneous_speed: numeric frames need a frame rate; POSIXct does n
     angle_unit = "radians", meta = list())
   expect_equal(instantaneous_speed(ts), c(NA, 3, 3))
 })
+
+mk_vel_ts <- function() {
+  d <- rbind(
+    data.frame(id = "a", frame = 0:3, x = (0:3) * 2, y = 0,    angle = 0),  # vx 2/frame
+    data.frame(id = "b", frame = 0:2, x = 0:2,       y = 0:2,  angle = 0)   # diagonal 1/frame
+  )
+  methods::new("Tracks", data = d,
+    cols = list(id = "id", time = "frame", angle = "angle", x = "x", y = "y"),
+    angle_unit = "radians", meta = list())
+}
+
+test_that("velocity_vector: per-row vx/vy, NA at each track's first point, real units", {
+  ts <- set_frame_rate(mk_vel_ts(), 30)
+  v  <- velocity_vector(ts)
+  expect_named(v, c("vx", "vy"))
+  expect_equal(nrow(v), nrow(ts@data))
+  d  <- ts@data
+  first <- tapply(seq_len(nrow(d)), d$id, min)
+  expect_true(all(is.na(v$vx[first])) && all(is.na(v$vy[first])))
+  expect_equal(v$vx[d$id == "a"][-1], rep(60, 3))     # 2/frame * 30
+  expect_equal(v$vy[d$id == "a"][-1], rep(0, 3))
+  expect_equal(v$vx[d$id == "b"][-1], rep(30, 2))     # diagonal: 1/frame * 30
+  expect_equal(v$vy[d$id == "b"][-1], rep(30, 2))
+})
+
+test_that("velocity_vector: scales to physical units; needs a frame rate for numeric frames", {
+  expect_error(velocity_vector(mk_vel_ts()), "frame rate")
+  ts <- set_distance_scale(set_frame_rate(mk_vel_ts(), 30), 50, "mm")
+  expect_equal(velocity_vector(ts)$vx[2], 60 * 50)    # mm/s
+})
+
+mk_turn_ts <- function() {
+  # CCW (left) 90-degree turn at the middle point of track "a"; straight "b"
+  d <- rbind(
+    data.frame(id = "a", frame = 0:2, x = c(0, 1, 1), y = c(0, 0, 1), angle = 0),  # right then up -> +90
+    data.frame(id = "b", frame = 0:2, x = 0:2,        y = 0,          angle = 0)   # straight -> 0 turn
+  )
+  methods::new("Tracks", data = d,
+    cols = list(id = "id", time = "frame", angle = "angle", x = "x", y = "y"),
+    angle_unit = "radians", meta = list())
+}
+
+test_that("angular_velocity: signed CCW turning rate, NA at track ends", {
+  ts <- set_frame_rate(mk_turn_ts(), 1)        # 1 fps -> seconds == frame index
+  w  <- angular_velocity(ts)
+  d  <- ts@data
+  # track a: interior point (row 2) has a +90deg (left) turn over dt_center = (2-0)/2 = 1 s
+  a_rows <- which(d$id == "a")
+  expect_equal(w[a_rows[2]], (pi / 2) / 1)
+  expect_true(is.na(w[a_rows[1]]) && is.na(w[a_rows[3]]))   # first + last NA
+  # track b: straight -> 0 turn
+  b_rows <- which(d$id == "b")
+  expect_equal(w[b_rows[2]], 0)
+})
+
+test_that("angular_velocity: CW turn is negative; degrees option; needs a frame rate", {
+  d <- data.frame(id = "a", frame = 0:2, x = c(0, 1, 1), y = c(0, 0, -1), angle = 0) # right then down -> -90
+  ts <- set_frame_rate(methods::new("Tracks", data = d,
+    cols = list(id = "id", time = "frame", angle = "angle", x = "x", y = "y"),
+    angle_unit = "radians", meta = list()), 1)
+  expect_equal(angular_velocity(ts)[2], -(pi / 2))
+  expect_equal(angular_velocity(ts, units = "degrees")[2], -90)
+  expect_error(angular_velocity(methods::new("Tracks", data = d,
+    cols = list(id = "id", time = "frame", angle = "angle", x = "x", y = "y"),
+    angle_unit = "radians", meta = list())), "frame rate")
+})

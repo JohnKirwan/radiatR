@@ -135,6 +135,17 @@ head(track_speed(ts))       # mean speed per track, in mm/s
 # ts <- calibrate_distance(ts, coord_distance = 0.8, real_distance = 40, unit = "mm")
 ```
 
+A frame rate also unlocks per-observation kinematics: `velocity_vector()` gives
+the velocity components (`vx`, `vy`; distance-calibrated when a scale is set) and
+`angular_velocity()` the signed turning rate (counter-clockwise positive).
+
+```{r velocity-angular}
+# velocity components and turning rate (need a frame rate; vx/vy use the distance scale)
+ts <- set_frame_rate(cpunctatus, fps = 30)
+head(velocity_vector(ts))                 # vx, vy per observation
+head(angular_velocity(ts, units = "degrees"))   # turning rate, deg/s (CCW +)
+```
+
 ## Heading Overlays
 
 The **crossing method** — projecting the vector between two concentric-ring crossings to the unit circle — assigns one directional heading per trial. `derive_headings()` with `return_coords = TRUE` returns both the heading angle and the inner-ring crossing position.

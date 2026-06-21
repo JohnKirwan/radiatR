@@ -51,6 +51,10 @@
   `elapsed_seconds()`), and `radiate(track_colour = "speed")` colours each path
   by it. Arena-units per second with the default coordinates.
 
+* `velocity_vector()` gives per-observation velocity components (`vx`, `vy`;
+  distance-calibrated when a scale is set), and `angular_velocity()` the signed
+  turning rate (counter-clockwise positive; radians or degrees per second).
+
 * Optional distance calibration: `set_distance_scale()` / `calibrate_distance()`
   attach a physical scale + unit, so `track_length()`, `track_speed()`,
   `instantaneous_speed()` and `radiate(track_colour = "speed")` report real units
