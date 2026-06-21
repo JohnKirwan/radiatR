@@ -1095,7 +1095,24 @@ server <- function(input, output, session) {
                                          "Hermans-Rasson" = "hermans_rasson"),
                             selected = "rao"),
                 tags$hr(class = "my-2"),
-                uiOutput("dl_csv_ui")              # stats CSV download (moved from Download)
+                uiOutput("dl_csv_ui"),             # stats CSV download (moved from Download)
+                tags$hr(class = "my-2"),
+                tags$strong("R code"),
+                tags$p(class = "text-muted small",
+                       "radiatR code reproducing this analysis. Edit the data path",
+                       " to point at your own file."),
+                tags$div(style = "max-height:320px; overflow:auto;",
+                         verbatimTextOutput("stats_code")),
+                tags$button(
+                  class   = "btn btn-sm btn-outline-primary w-100 mb-2",
+                  onclick = paste0(
+                    "navigator.clipboard.writeText(",
+                    "document.getElementById('stats_code').innerText);",
+                    "this.innerText='Copied';",
+                    "setTimeout(()=>this.innerText='Copy R code',1200);"),
+                  "Copy R code"),
+                downloadButton("dl_stats_code", "Download .R",
+                               class = "btn-sm btn-outline-primary w-100")
               ),
               card(
                 card_header("Summary"),
@@ -1264,6 +1281,7 @@ server <- function(input, output, session) {
           convention = map$convention, group = grp),
         inputs = list(
           cond_col = grp, colour_by = input$colour_by,
+          omnibus_test = input$omnibus_test,
           plot_theme = input$plot_theme, angle_labels = input$angle_labels,
           heading_display = input$heading_display,
           track_colour = input$track_colour %||% "trajectory",
@@ -1290,6 +1308,7 @@ server <- function(input, output, session) {
           NULL else rv$dialect),
       inputs = list(
         cond_col = input$cond_col, colour_by = input$colour_by,
+        omnibus_test = input$omnibus_test,
         circ0 = input$circ0, circ1 = input$circ1,
         plot_theme = input$plot_theme, angle_labels = input$angle_labels,
         heading_display = input$heading_display,
@@ -1478,6 +1497,17 @@ server <- function(input, output, session) {
   output$dl_code <- downloadHandler(
     filename = function() paste0("radiatR_figure_", Sys.Date(), ".R"),
     content  = function(file) writeLines(figure_code_text(), file)
+  )
+
+  # The radiatR script reproducing the Summary & stats analysis.
+  stats_code_text <- reactive({
+    req(rv$hd %||% rv$ts)
+    spec_to_stats_code(current_spec())
+  })
+  output$stats_code <- renderText(stats_code_text())
+  output$dl_stats_code <- downloadHandler(
+    filename = function() paste0("radiatR_stats_", Sys.Date(), ".R"),
+    content  = function(file) writeLines(stats_code_text(), file)
   )
 
   output$dl_plot <- downloadHandler(
