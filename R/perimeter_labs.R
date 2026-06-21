@@ -29,6 +29,18 @@
   (pi / 2 - 2 * pi * k / n_div) %% (2 * pi)
 }
 
+# Validate a label-spacing `every`: a positive integer that evenly divides
+# `period`. Gives a clear error rather than an opaque `if (NA)` / seq() failure
+# on degenerate input (0, negative, or fractional).
+.check_every <- function(every, period) {
+  if (length(every) != 1L || !is.numeric(every) || is.na(every) ||
+      every < 1 || every != round(every))
+    stop("`every` must be a positive integer.", call. = FALSE)
+  if (period %% every != 0)
+    stop("`every` must evenly divide ", period, ".", call. = FALSE)
+  invisible(every)
+}
+
 #' Perimeter scale: cardinal compass directions
 #'
 #' @param points `4` (N/E/S/W, default) or `8` (adds the intercardinals
@@ -68,8 +80,7 @@ scale_clock <- function(hours = 24, every = NULL) {
   if (!hours %in% c(12, 24))
     stop("`hours` must be 12 or 24.", call. = FALSE)
   if (is.null(every)) every <- if (hours == 24) 6L else 3L
-  if (hours %% every != 0)
-    stop("`every` must evenly divide `hours`.", call. = FALSE)
+  .check_every(every, hours)
   k <- seq(0L, hours - 1L, by = every)
   list(n = as.integer(hours), at = .scale_positions(hours, k),
        labels = as.character(k), name = "clock")
@@ -109,8 +120,7 @@ scale_months <- function(format = c("abbr", "initial", "number")) {
 #' scale_seconds(every = 10)
 #' @export
 scale_seconds <- function(every = 15) {
-  if (60 %% every != 0)
-    stop("`every` must evenly divide 60.", call. = FALSE)
+  .check_every(every, 60L)
   k <- seq(0L, 59L, by = every)
   list(n = 60L, at = .scale_positions(60L, k),
        labels = as.character(k), name = "seconds")

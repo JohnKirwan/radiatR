@@ -44,6 +44,13 @@ test_that("scale_seconds draws 60 ticks but few labels", {
   expect_error(scale_seconds(every = 7), "evenly divide")
 })
 
+test_that("scale_clock/scale_seconds reject degenerate `every`", {
+  expect_error(scale_clock(every = 0),     "positive integer")
+  expect_error(scale_clock(every = -6),    "positive integer")
+  expect_error(scale_seconds(every = 0),   "positive integer")
+  expect_error(scale_seconds(every = 7.5), "positive integer")
+})
+
 test_that(".check_scale rejects malformed specs", {
   expect_error(.check_scale(list(n = 12, at = 1:3)), "labels")
   expect_error(
