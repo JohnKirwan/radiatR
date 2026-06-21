@@ -673,3 +673,18 @@ test_that("method_model_note hints, warns, and stays silent appropriately", {
     expect_false(grepl("folded|biases", note(output$method_model_note)))
   })
 })
+
+test_that("Summary & stats sub-tab emits reproducible R code", {
+  skip_if_not_installed("shiny")
+  app_dir <- system.file("app", package = "radiatR")
+  if (!nzchar(app_dir)) app_dir <- testthat::test_path("..", "..", "inst", "app")
+  skip_if(!dir.exists(app_dir), "radiatR app directory not found")
+
+  shiny::testServer(app_dir, {
+    session$setInputs(load_example = 1)
+    session$setInputs(go3 = 1)
+    code <- spec_to_stats_code(current_spec())
+    expect_match(code, "circ_summarise(", fixed = TRUE)
+    expect_no_error(output$stats_code)
+  })
+})
