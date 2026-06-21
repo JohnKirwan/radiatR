@@ -418,3 +418,35 @@ test_that(".resolve_track_colour resolves effective mode and validity", {
   expect_false(.resolve_track_colour(mk("trajectory", NULL), FALSE)$gradient)
   expect_equal(.resolve_track_colour(mk("time", 30), TRUE)$effective, "trajectory")  # headings mode: no tracks
 })
+
+test_that("track_colour = 'speed' with a valid frame rate emits set_frame_rate + the radiate arg and round-trips", {
+  rt <- roundtrip_spec("none", by = "trajectory", facet = NULL, arrow = FALSE, vectors = FALSE)
+  rt$spec$track_colour <- "speed"
+  rt$spec$frame_rate   <- 30
+  rt$spec$show$tracks  <- TRUE
+  code <- spec_to_code(rt$spec)
+  expect_match(code, "set_frame_rate(ts, 30)", fixed = TRUE)
+  expect_match(code, 'track_colour = "speed"', fixed = TRUE)
+  suppressWarnings(expect_roundtrip(rt))
+})
+
+test_that("track_colour = 'speed' with an invalid frame rate falls back to sequence in BOTH paths", {
+  rt <- roundtrip_spec("none", by = "trajectory", facet = NULL, arrow = FALSE, vectors = FALSE)
+  rt$spec$track_colour <- "speed"
+  rt$spec$show$tracks  <- TRUE
+  for (bad in list(NA_real_, 0, -5, NULL)) {
+    rt$spec$frame_rate <- bad
+    code <- spec_to_code(rt$spec)
+    expect_false(grepl("set_frame_rate", code, fixed = TRUE))
+    expect_match(code, 'track_colour = "sequence"', fixed = TRUE)
+    suppressWarnings(expect_roundtrip(rt))
+  }
+})
+
+test_that(".resolve_track_colour treats speed like time (needs a valid fps)", {
+  mk <- function(tc, fps) list(track_colour = tc, frame_rate = fps)
+  expect_equal(.resolve_track_colour(mk("speed", 30), FALSE)$effective, "speed")
+  expect_true (.resolve_track_colour(mk("speed", 30), FALSE)$gradient)
+  expect_equal(.resolve_track_colour(mk("speed", NA), FALSE)$effective, "sequence")
+  expect_equal(.resolve_track_colour(mk("speed", 30), TRUE)$effective, "trajectory")  # headings mode
+})

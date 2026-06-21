@@ -593,12 +593,15 @@ server <- function(input, output, session) {
   # rate (the package hard-errors otherwise). When time-mode is selected with an
   # unset/invalid fps the figure falls back to sequence colouring; surface why.
   output$track_time_note <- renderUI({
-    if (!identical(input$track_colour, "time")) return(NULL)
+    if (!identical(input$track_colour, "time") && !identical(input$track_colour, "speed"))
+      return(NULL)
     fps <- input$frame_rate
     ok  <- is.numeric(fps) && length(fps) == 1L && is.finite(fps) && fps > 0
     if (ok) return(NULL)
+    what <- if (identical(input$track_colour, "speed")) "by speed" else "by elapsed time"
     tags$div(class = "alert alert-secondary py-1 px-2 small mb-2",
-             "Enter a positive frame rate to colour by elapsed time (showing sequence position instead).")
+             paste0("Enter a positive frame rate to colour ", what,
+                    " (showing sequence position instead)."))
   })
 
   # Live illustrative preview of the selected method on fixed demo tracks.
@@ -977,11 +980,12 @@ server <- function(input, output, session) {
                 "track_colour", "Track colour",
                 choices = c("By trajectory"                = "trajectory",
                             "By sequence (start → finish)" = "sequence",
-                            "By elapsed time"              = "time"),
+                            "By elapsed time"              = "time",
+                            "By speed"                     = "speed"),
                 selected = "trajectory"
               ),
               conditionalPanel(
-                condition = "input.track_colour == 'time'",
+                condition = "input.track_colour == 'time' || input.track_colour == 'speed'",
                 numericInput("frame_rate", "Frame rate (fps)", value = 30, min = 0, step = 1),
                 uiOutput("track_time_note")
               ),
