@@ -1264,6 +1264,7 @@ server <- function(input, output, session) {
           convention = map$convention, group = grp),
         inputs = list(
           cond_col = grp, colour_by = input$colour_by,
+          omnibus_test = input$omnibus_test,
           plot_theme = input$plot_theme, angle_labels = input$angle_labels,
           heading_display = input$heading_display,
           track_colour = input$track_colour %||% "trajectory",
@@ -1290,6 +1291,7 @@ server <- function(input, output, session) {
           NULL else rv$dialect),
       inputs = list(
         cond_col = input$cond_col, colour_by = input$colour_by,
+        omnibus_test = input$omnibus_test,
         circ0 = input$circ0, circ1 = input$circ1,
         plot_theme = input$plot_theme, angle_labels = input$angle_labels,
         heading_display = input$heading_display,

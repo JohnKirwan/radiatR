@@ -137,6 +137,23 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
     # reproduces it verbatim. NULL/"" means no label.
     subtitle = inputs$subtitle,
     caption  = inputs$caption,
+    # Resolution of the Summary & stats grouping, mirroring summary_ctx() in
+    # app.R: headings mode groups by the hd group column (pooled -> a one-level
+    # ".all" sentinel); trajectory mode groups by the condition column or "id".
+    # Consumed by spec_to_stats_code() so the emitted analysis matches the table.
+    stats = local({
+      if (headings_mode) {
+        list(by_col  = gc %||% ".all",
+             pooled  = is.null(gc),
+             omnibus = inputs$omnibus_test %||% "rao",
+             axial   = isTRUE(inputs$axial))
+      } else {
+        list(by_col  = gc %||% id_col,
+             pooled  = FALSE,
+             omnibus = inputs$omnibus_test %||% "rao",
+             axial   = isTRUE(inputs$axial))
+      }
+    }),
     show = list(tracks    = !headings_mode && isTRUE(inputs$show_tracks),
                 arrow     = isTRUE(inputs$show_arrow),
                 vectors   = isTRUE(inputs$show_vectors),
@@ -342,6 +359,56 @@ spec_to_plot <- function(spec, ts, hd) {
     }
   }
   list(headings_mode = headings_mode, has_hd = has_hd)
+}
+
+# Runnable radiatR script reproducing the Summary & stats analysis (the real
+# statistics behind the table; the app applies display formatting on top).
+spec_to_stats_code <- function(spec) {
+  q   <- function(s) encodeString(s, quote = '"')
+  L   <- character(0)
+  add <- function(...) L[[length(L) + 1L]] <<- paste0(...)
+
+  add("library(radiatR)")
+  add("")
+  pre <- .emit_data_preamble(spec, add, q)
+  add("")
+  add("# Summary & stats analysis (display formatting is applied in the app)")
+
+  st     <- spec$stats %||% list()
+  by_col <- if (isTRUE(st$pooled)) NULL else st$by_col
+  axial  <- if (isTRUE(st$axial)) ", axial = TRUE" else ""
+  byarg  <- if (!is.null(by_col)) paste0(", .by = ", q(by_col)) else ""
+
+  # `hd` keys trials on "id"; the grouping column lives on the source data, so
+  # join it onto `hd` (unless it is already a column, e.g. from the facet merge).
+  if (!is.null(by_col) && !identical(by_col, spec$facet_by)) {
+    src <- if (pre$headings_mode) "cpunctatus" else "ts"
+    src_id <- if (pre$headings_mode) "trial_id" else q(spec$group_col)
+    add("if (!", q(by_col), " %in% names(hd)) hd <- merge(hd, unique(as.data.frame(",
+        src, ")[, c(", src_id, ", ", q(by_col), ")]), by.x = \"id\", by.y = ",
+        src_id, ", all.x = TRUE)")
+  }
+
+  add("summ <- circ_summarise(hd, \"heading\", units = \"radians\"", byarg,
+      ", stats = c(\"n\", \"n_missing\", \"mean_dir_deg\", \"resultant_R\")",
+      ", display = circ_display(zero = 0)", axial, ")")
+  add("summ")
+  add("")
+  add("test_uniformity(hd, test = \"rayleigh\"", axial, ")")
+  omni <- if (identical(st$omnibus, "hermans_rasson")) "hermans_rasson" else "rao"
+  add("test_uniformity(hd, test = ", q(omni), ")")
+  if (!is.null(by_col)) {
+    add("")
+    add("circ_model_select(hd, group_col = ", q(by_col), ")")
+  } else if (isTRUE(pre$has_hd)) {
+    add("")
+    add("circ_model_select(hd)")
+  }
+  if (!pre$headings_mode) {           # straightness needs the Tracks
+    add("")
+    add("straightness_index(ts)")
+  }
+  paste(L, collapse = "\n")
 }
 
 # Emit the radiatR script (a single string) that reproduces spec_to_plot(spec).
