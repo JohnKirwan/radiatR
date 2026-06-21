@@ -214,6 +214,13 @@ track_velocity(ts)                       # net velocity vector (vx, vy) per trac
 track_turning(ts, units = "degrees")     # typical turning rate (deg/s) per track
 ```
 
+```r
+# non-circular kinematics: speed (or turning rate) along each track over time
+ts <- set_frame_rate(cpunctatus, fps = 30)
+plot_profile(ts, metric = "speed")
+plot_profile(ts, metric = "turning", units = "degrees")
+```
+
 ### Circular boxplot
 
 A Tukey-like boxplot for circular data (Buttarazzi, Pandolfo & Porzio, 2018):
