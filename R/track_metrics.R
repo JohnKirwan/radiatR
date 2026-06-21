@@ -421,3 +421,44 @@ track_velocity <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
   names(out) <- c(idc, "vx", "vy")
   out
 }
+
+#' Per-trajectory turning-rate summary for a Tracks
+#'
+#' Summarises each trajectory's [angular_velocity()] (signed turning rate,
+#' counter-clockwise positive) by the chosen statistic.
+#'
+#' @param ts A `Tracks`.
+#' @param stat `"mean_abs"` (default) the typical turning magnitude; `"mean"` the
+#'   signed net bias (opposite turns cancel); `"max_abs"` the sharpest turn;
+#'   `"median_abs"` a robust turning magnitude.
+#' @param units `"radians"` per second (default) or `"degrees"` per second.
+#' @param x_col,y_col Names of the coordinate columns. Default to the `Tracks`'s
+#'   recorded x/y columns.
+#' @return A `data.frame` with one row per trajectory: the id column and a numeric
+#'   `turning` column (`NA` for tracks with fewer than three points).
+#' @seealso [angular_velocity()], [track_velocity()], [track_speed()]
+#' @export
+track_turning <- function(ts, stat = c("mean_abs", "mean", "max_abs", "median_abs"),
+                          units = c("radians", "degrees"),
+                          x_col = ts@cols$x, y_col = ts@cols$y) {
+  if (!methods::is(ts, "Tracks")) stop("'ts' must be a Tracks.")
+  stat   <- match.arg(stat)
+  units  <- match.arg(units)
+  reduce <- switch(stat,
+    mean_abs   = function(z) mean(abs(z)),
+    mean       = function(z) mean(z),
+    max_abs    = function(z) max(abs(z)),
+    median_abs = function(z) stats::median(abs(z)))
+  w   <- angular_velocity(ts, units = units, x_col = x_col, y_col = y_col)
+  d   <- ts@data
+  idc <- ts@cols$id
+  ids <- unique(d[[idc]])
+  vals <- vapply(ids, function(i) {
+    z <- w[d[[idc]] == i]
+    z <- z[is.finite(z)]
+    if (!length(z)) NA_real_ else reduce(z)
+  }, numeric(1L))
+  out <- data.frame(ids, vals, stringsAsFactors = FALSE)
+  names(out) <- c(idc, "turning")
+  out
+}
