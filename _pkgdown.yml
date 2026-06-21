@@ -3,6 +3,15 @@ url: https://johnkirwan.github.io/radiatR/
 template:
   bootstrap: 5
   bootswatch: flatly
+  includes:
+    # GoatCounter: cookieless, privacy-friendly page-view analytics for this
+    # documentation site only. No cookies, no personal data, no consent banner
+    # required. The package itself and the app's data path are untouched. For
+    # data to flow, register the subdomain below (free for non-commercial use)
+    # at https://www.goatcounter.com/.
+    in_header: |
+      <script data-goatcounter="https://radiatr.goatcounter.com/count"
+              async src="//gc.zgo.at/count.js"></script>
 
 home:
   title: "radiatR -- Headings & Trajectories in Circular Space"
