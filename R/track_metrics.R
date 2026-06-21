@@ -375,3 +375,49 @@ angular_velocity <- function(ts, units = c("radians", "degrees"),
   if (units == "degrees") out <- out * 180 / pi
   out
 }
+
+#' Per-trajectory net velocity for a Tracks
+#'
+#' The net (average) velocity vector of each trajectory: its straight-line
+#' displacement divided by its elapsed duration. The magnitude is the net speed
+#' and `atan2(vy, vx)` the overall direction of travel (so a path returning to
+#' its start has zero net velocity). Distance-calibrated when a scale is set.
+#'
+#' Numeric (frame) time requires a frame rate ([set_frame_rate()]); POSIXct time
+#' is used directly.
+#'
+#' @param ts A `Tracks`.
+#' @param x_col,y_col Names of the coordinate columns. Default to the `Tracks`'s
+#'   recorded x/y columns.
+#' @return A `data.frame` with one row per trajectory: the id column and numeric
+#'   `vx`, `vy` (`NA` for tracks with fewer than two points or zero duration).
+#' @seealso [velocity_vector()], [track_speed()], [track_turning()],
+#'   [set_distance_scale()]
+#' @export
+track_velocity <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
+  if (!methods::is(ts, "Tracks")) stop("'ts' must be a Tracks.")
+  d   <- ts@data
+  idc <- ts@cols$id
+  tc  <- ts@cols$time
+  for (cc in c(idc, x_col, y_col, tc)) {
+    if (is.null(cc) || !cc %in% names(d))
+      stop("column '", cc, "' not found in the Tracks.")
+  }
+  el  <- elapsed_seconds(ts)
+  scl <- distance_scale(ts) %||% 1
+  ids <- unique(d[[idc]])
+  comp <- function(i) {
+    sel <- which(d[[idc]] == i)
+    if (length(sel) < 2L) return(c(NA_real_, NA_real_))
+    ord <- order(d[[tc]][sel])
+    s   <- sel[ord]
+    dur <- el[s[length(s)]]
+    if (!is.finite(dur) || dur <= 0) return(c(NA_real_, NA_real_))
+    c((d[[x_col]][s[length(s)]] - d[[x_col]][s[1L]]) / dur,
+      (d[[y_col]][s[length(s)]] - d[[y_col]][s[1L]]) / dur) * scl
+  }
+  m <- vapply(ids, comp, numeric(2L))         # 2 x n_ids (rows vx, vy)
+  out <- data.frame(ids, m[1L, ], m[2L, ], stringsAsFactors = FALSE)
+  names(out) <- c(idc, "vx", "vy")
+  out
+}
