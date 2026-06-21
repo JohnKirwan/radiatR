@@ -181,6 +181,12 @@ track_speed(ts)              # mean speed per track
 track_speed(ts, stat = "max")
 ```
 
+```r
+# colour each path by its instantaneous speed (needs a frame rate)
+ts <- set_frame_rate(cpunctatus, fps = 30)
+radiate(ts, show_tracks = TRUE, track_colour = "speed")
+```
+
 ### Circular boxplot
 
 A Tukey-like boxplot for circular data (Buttarazzi, Pandolfo & Porzio, 2018):

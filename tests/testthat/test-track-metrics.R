@@ -161,3 +161,24 @@ test_that("track_speed: POSIXct time works without a frame rate", {
     angle_unit = "radians", meta = list())
   expect_equal(track_speed(ts)$speed, 3)                 # 3 units / 1 s
 })
+
+test_that("instantaneous_speed: per-row, NA at each track's first point, real units", {
+  ts <- set_frame_rate(mk_speed_ts(), 30)
+  v  <- instantaneous_speed(ts)
+  expect_length(v, nrow(ts@data))
+  d  <- ts@data
+  first_rows <- tapply(seq_len(nrow(d)), d$id, min)
+  expect_true(all(is.na(v[first_rows])))               # NA at each track's first point
+  expect_equal(v[d$id == "a"][-1], rep(60, sum(d$id == "a") - 1))  # 2 units/frame * 30
+  expect_equal(v[d$id == "b"][-1], rep(30, sum(d$id == "b") - 1))
+})
+
+test_that("instantaneous_speed: numeric frames need a frame rate; POSIXct does not", {
+  expect_error(instantaneous_speed(mk_speed_ts()), "frame rate")
+  t0 <- as.POSIXct("2020-01-01", tz = "UTC")
+  d  <- data.frame(id = "a", frame = t0 + c(0, 1, 2), x = c(0, 3, 6), y = 0, angle = 0)
+  ts <- methods::new("Tracks", data = d,
+    cols = list(id = "id", time = "frame", angle = "angle", x = "x", y = "y"),
+    angle_unit = "radians", meta = list())
+  expect_equal(instantaneous_speed(ts), c(NA, 3, 3))
+})
