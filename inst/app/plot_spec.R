@@ -14,14 +14,15 @@
   tc  <- spec$track_colour %||% "trajectory"
   if (headings_mode) tc <- "trajectory"          # no tracks to colour in headings mode
   fps <- spec$frame_rate
-  time_ok <- identical(tc, "time") && is.numeric(fps) && length(fps) == 1L &&
-             is.finite(fps) && fps > 0
-  effective <- if (time_ok) "time"
-               else if (tc %in% c("time", "sequence")) "sequence"   # time-but-invalid -> sequence
+  fps_ok    <- is.numeric(fps) && length(fps) == 1L && is.finite(fps) && fps > 0
+  needs_fps <- tc %in% c("time", "speed")
+  effective <- if (needs_fps && fps_ok) tc
+               else if (tc %in% c("time", "speed", "sequence")) "sequence"  # bad fps -> sequence
                else "trajectory"
   list(effective = effective,
-       gradient  = effective %in% c("sequence", "time"),
-       time_ok   = time_ok,
+       gradient  = effective %in% c("sequence", "time", "speed"),
+       fps_ok    = fps_ok,
+       needs_fps = needs_fps,
        fps       = fps)
 }
 
@@ -185,7 +186,7 @@ spec_to_plot <- function(spec, ts, hd) {
     )
   } else {
     ts <- assign_colour_key(ts, by = by, n = cap)
-    if (identical(rtc$effective, "time")) ts <- set_frame_rate(ts, rtc$fps)
+    if (rtc$effective %in% c("time", "speed")) ts <- set_frame_rate(ts, rtc$fps)
     p <- radiate(
       ts,
       group_col    = spec$group_col,
@@ -310,6 +311,7 @@ spec_to_code <- function(spec) {
   gradient_track <- rtc$gradient
   tc <- switch(rtc$effective,
                time     = ", track_colour = \"time\"",
+               speed    = ", track_colour = \"speed\"",
                sequence = ", track_colour = \"sequence\"",
                "")
   # Headings mode always has a headings frame; trajectory mode has one unless the
@@ -369,7 +371,7 @@ spec_to_code <- function(spec) {
 
     add("")
     add("ts <- assign_colour_key(ts, by = ", q(spec$colour$by), ")")
-    if (identical(rtc$effective, "time"))
+    if (rtc$effective %in% c("time", "speed"))
       add("ts <- set_frame_rate(ts, ", rtc$fps, ")")
     if (has_hd)
       add("hd <- assign_colour_key(hd, by = ", q(spec$colour$by), ", reference = ts)")
