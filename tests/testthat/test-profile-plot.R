@@ -196,3 +196,32 @@ test_that("plot_profile: max_speed does not affect turning/direction", {
     expect_null(p$labels$caption)
   }
 })
+
+test_that("plot_speed_histogram: pooled histogram, robust x-clip, median/CV subtitle", {
+  ts <- set_frame_rate(cpunctatus, 30)
+  p  <- plot_speed_histogram(ts)
+  expect_s3_class(p, "ggplot")
+  expect_true(any(vapply(p$layers, function(l) inherits(l$geom, "GeomBar"), logical(1))))
+  rl <- .robust_speed_limit(instantaneous_speed(ts))
+  expect_equal(p$coordinates$limits$x, c(0, rl$limit))   # clipped (< 50)
+  expect_true(rl$limit < 50)
+  expect_equal(p$labels$x, "speed (units/s)")
+  expect_equal(p$labels$y, "count")
+  fin <- instantaneous_speed(ts); fin <- fin[is.finite(fin)]
+  expect_match(p$labels$subtitle, sprintf("CV %.2f", stats::sd(fin) / mean(fin)), fixed = TRUE)
+  expect_match(p$labels$subtitle, sprintf("median %.3g", stats::median(fin)), fixed = TRUE)
+})
+
+test_that("plot_speed_histogram: off-scale caption by default, none with max_speed=Inf", {
+  ts <- set_frame_rate(cpunctatus, 30)
+  expect_true(grepl("off-scale", plot_speed_histogram(ts)$labels$caption))
+  praw <- plot_speed_histogram(ts, max_speed = Inf)
+  expect_null(praw$labels$caption)
+  expect_equal(praw$coordinates$limits$x[2], max(instantaneous_speed(ts), na.rm = TRUE))
+})
+
+test_that("plot_speed_histogram: physical x-label when calibrated; non-Tracks errors", {
+  ts <- set_distance_scale(set_frame_rate(cpunctatus, 30), 50, "mm")
+  expect_equal(plot_speed_histogram(ts)$labels$x, "speed (mm/s)")
+  expect_error(plot_speed_histogram(data.frame(x = 1)), "Tracks")
+})

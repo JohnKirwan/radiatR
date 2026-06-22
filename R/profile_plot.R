@@ -191,3 +191,48 @@ plot_speed_direction <- function(ts, units = c("radians", "degrees"),
                   colour = if (!is.null(colour_by)) colour_by else NULL) +
     ggplot2::theme_minimal()
 }
+
+#' Speed distribution histogram for a Tracks
+#'
+#' A pooled histogram of step speeds ([instantaneous_speed()]) across all tracks,
+#' annotated with the pooled median and coefficient of variation (CV = sd / mean,
+#' a movement-regularity descriptor). The companion distribution view to the
+#' time/scatter plots of [plot_profile()] / [plot_speed_direction()].
+#'
+#' The speed axis is robustly clipped by default (`max_speed = NULL` zooms to the
+#' 99.5% quantile) so a few single-frame tracking artifacts do not flatten the
+#' bulk of the distribution; a caption reports how many steps are off-scale. The
+#' clip is a view zoom (`coord_cartesian`), so no data are dropped. Set
+#' `max_speed` to a number for a hard cap, or `Inf` for the full raw range.
+#'
+#' @param ts A `Tracks`. Needs a frame rate for frame-indexed time
+#'   ([set_frame_rate()]); POSIXct time is used directly.
+#' @param max_speed Speed-axis cap: `NULL` (default, 99.5% quantile), a positive
+#'   number (hard cap), or `Inf` (no clip).
+#' @param bins Number of bars across the (clipped) speed axis. Default `30`.
+#' @return A `ggplot2` object.
+#' @seealso [instantaneous_speed()], [plot_profile()], [plot_speed_direction()]
+#' @export
+#' @examples
+#' ts <- set_frame_rate(cpunctatus, 30)
+#' plot_speed_histogram(ts)
+plot_speed_histogram <- function(ts, max_speed = NULL, bins = 30) {
+  if (!methods::is(ts, "Tracks")) stop("'ts' must be a Tracks.")
+  spd <- instantaneous_speed(ts)
+  rl  <- .robust_speed_limit(spd, max_speed)
+  fin <- spd[is.finite(spd)]
+  sub <- sprintf("median %.3g | CV %.2f",
+                 stats::median(fin), stats::sd(fin) / mean(fin))
+  cap <- if (rl$n_off > 0)
+    sprintf("%d point%s off-scale (max %.3g)",
+            rl$n_off, if (rl$n_off == 1L) "" else "s", rl$max) else NULL
+
+  ggplot2::ggplot(data.frame(.speed = spd),
+                  ggplot2::aes(x = .data$.speed)) +
+    ggplot2::geom_histogram(binwidth = rl$limit / bins, boundary = 0,
+                            fill = "grey40", colour = "white", na.rm = TRUE) +
+    ggplot2::coord_cartesian(xlim = c(0, rl$limit)) +
+    ggplot2::labs(x = .speed_ylab(ts), y = "count",
+                  subtitle = sub, caption = cap) +
+    ggplot2::theme_minimal()
+}
