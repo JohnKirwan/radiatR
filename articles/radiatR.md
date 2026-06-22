@@ -465,6 +465,16 @@ plot_speed_direction(ts)
 
 ![](radiatR_files/figure-html/speed-direction-1.png)
 
+The pooled speed distribution, with median and CV, comes from
+[`plot_speed_histogram()`](https://johnkirwan.github.io/radiatR/reference/plot_speed_histogram.md):
+
+``` r
+
+plot_speed_histogram(ts)
+```
+
+![](radiatR_files/figure-html/speed-histogram-1.png)
+
 ## Heading Overlays
 
 The **crossing method** — projecting the vector between two
