@@ -1872,8 +1872,11 @@ test_that("radiate track_colour = 'time' colours by elapsed seconds with a frame
 })
 
 test_that("radiate track_colour = 'time' errors on numeric frames without a frame rate", {
-  data(cpunctatus, package = "radiatR", envir = environment())
-  expect_error(radiate(cpunctatus, show_tracks = TRUE, track_colour = "time"),
+  bare <- methods::new("Tracks",
+    data = data.frame(id = "a", frame = 0:3, x = (0:3) / 3, y = 0, angle = 0),
+    cols = list(id = "id", time = "frame", angle = "angle", x = "x", y = "y"),
+    angle_unit = "radians", meta = list())
+  expect_error(radiate(bare, show_tracks = TRUE, track_colour = "time"),
                "frame rate")
 })
 
@@ -1892,8 +1895,11 @@ test_that("radiate track_colour = 'speed' colours by instantaneous speed with a 
 })
 
 test_that("radiate track_colour = 'speed' errors on numeric frames without a frame rate", {
-  data(cpunctatus, package = "radiatR", envir = environment())
-  expect_error(radiate(cpunctatus, show_tracks = TRUE, track_colour = "speed"), "frame rate")
+  bare <- methods::new("Tracks",
+    data = data.frame(id = "a", frame = 0:3, x = (0:3) / 3, y = 0, angle = 0),
+    cols = list(id = "id", time = "frame", angle = "angle", x = "x", y = "y"),
+    angle_unit = "radians", meta = list())
+  expect_error(radiate(bare, show_tracks = TRUE, track_colour = "speed"), "frame rate")
 })
 
 test_that("radiate track_colour = 'speed' cannot combine with colour_cycle", {

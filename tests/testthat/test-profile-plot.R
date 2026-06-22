@@ -28,7 +28,11 @@ test_that("plot_profile(turning) uses angular_velocity and a turning y-label", {
 
 test_that("plot_profile: distance scale -> physical y-label; needs a frame rate", {
   data(cpunctatus, package = "radiatR", envir = environment())
-  expect_error(plot_profile(cpunctatus, metric = "speed"), "frame rate")
+  bare <- methods::new("Tracks",
+    data = data.frame(id = "a", frame = 0:3, x = (0:3) / 3, y = 0, angle = 0),
+    cols = list(id = "id", time = "frame", angle = "angle", x = "x", y = "y"),
+    angle_unit = "radians", meta = list())
+  expect_error(plot_profile(bare, metric = "speed"), "frame rate")
   ts <- set_distance_scale(set_frame_rate(cpunctatus, 30), 50, "mm")
   expect_equal(plot_profile(ts, metric = "speed")$labels$y, "speed (mm/s)")
 })
