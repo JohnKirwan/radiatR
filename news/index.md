@@ -69,6 +69,11 @@
 
 ### Track metrics
 
+- The bundled `cpunctatus` example now carries its true capture rate
+  (0.2 fps, 1 frame / 5 s), so its kinematics plots read real seconds
+  out of the box without a manual
+  [`set_frame_rate()`](https://johnkirwan.github.io/radiatR/reference/frame_rate.md).
+
 - [`track_speed()`](https://johnkirwan.github.io/radiatR/reference/track_speed.md)
   and
   [`step_speed()`](https://johnkirwan.github.io/radiatR/reference/step_speed.md)
@@ -198,6 +203,12 @@
   implementation.
 
 ### Shiny app
+
+- The Kinematics sub-tab gains a **Track** selector, defaulting to a
+  single track (the per-track view) with an “All tracks (overlay)”
+  option, so many-track datasets no longer render as overlapping
+  spaghetti. The app also adopts a loaded `Tracks`’s own capture frame
+  rate when one is set.
 
 - The Summary & stats sub-tab now offers reproducible R code for the
   analysis (`circ_summarise`, `test_uniformity`, `circ_model_select`,

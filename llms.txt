@@ -954,6 +954,8 @@ Any remaining exported topics.
   [`hf_color_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
   [`hf_coords()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
   : Read the canonical attributes of a heading frame
+- [`ids()`](https://johnkirwan.github.io/radiatR/reference/ids.md) :
+  Trajectory identifiers of a Tracks
 - [`import_info()`](https://johnkirwan.github.io/radiatR/reference/import_info.md)
   : Import landmark coordinates from text files
 - [`import_tracks()`](https://johnkirwan.github.io/radiatR/reference/import_tracks.md)
