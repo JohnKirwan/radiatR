@@ -81,6 +81,10 @@
   or turning rate against elapsed time, one line per track (the ggplot sibling of
   `radiate()`). Needs a frame rate; distance-calibrated when a scale is set.
 
+* `plot_profile()` gains `metric = "direction"`, plotting the per-observation
+  movement direction (`velocity_angle()`) over elapsed time as points (direction
+  is circular, so it is drawn as points rather than a line).
+
 * American spellings are now accepted throughout: every `colour...` argument and
   the `assign_colour_*` / `cycle_colours` / `hf_colour_col` functions have
   `color...` aliases (British remains canonical; supplying both errors).
