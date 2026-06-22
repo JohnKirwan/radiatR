@@ -121,6 +121,9 @@
 
 ## Shiny app
 
+* The app now shows the radiatR logo in the header, a browser-tab favicon, and
+  its version in the footer.
+
 * The Kinematics sub-tab gains a **Track** selector, defaulting to a single track
   (the per-track view) with an "All tracks (overlay)" option, so many-track
   datasets no longer render as overlapping spaghetti. The app also adopts a loaded

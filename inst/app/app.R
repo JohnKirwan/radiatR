@@ -377,7 +377,12 @@ ui <- page_fillable(
   theme   = bs_theme(bootswatch = "flatly"),
   padding = "1.5rem",
 
-  tags$head(tags$style(HTML("
+  tags$head(
+    tags$link(rel = "icon", type = "image/x-icon", href = "favicon.ico"),
+    tags$link(rel = "icon", type = "image/png", sizes = "32x32", href = "favicon-32x32.png"),
+    tags$link(rel = "icon", type = "image/png", sizes = "16x16", href = "favicon-16x16.png"),
+    tags$link(rel = "apple-touch-icon", href = "apple-touch-icon.png"),
+    tags$style(HTML("
     .pill       { display:inline-block; padding:3px 14px;
                   border-radius:99px; font-size:.78rem;
                   font-weight:600; margin-right:3px; }
@@ -390,7 +395,10 @@ ui <- page_fillable(
   card(
     card_header(
       class = "d-flex justify-content-between align-items-center",
-      tags$b("radiatR — Circular Track Analysis"),
+      tags$span(
+        tags$img(src = "logo.png", height = "30px", alt = "radiatR", class = "me-2"),
+        tags$b("radiatR — Circular Track Analysis")
+      ),
       uiOutput("step_pills")
     ),
     card_body(class = "main-body", uiOutput("wizard")),
@@ -400,6 +408,8 @@ ui <- page_fillable(
         "back_btn", "Back",
         class = "btn-sm btn-outline-secondary"
       ),
+      tags$span(class = "text-muted small",
+                paste0("v", utils::packageVersion("radiatR"))),
       uiOutput("fwd_btn_ui")
     )
   )
