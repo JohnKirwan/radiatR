@@ -420,8 +420,12 @@ tracks <- function(df,
 #' @return The unique trajectory ids, in first-appearance order.
 #' @examples
 #' ids(cpunctatus)
+#' @name ids
 #' @export
 setGeneric("ids", function(x) standardGeneric("ids"))
+
+#' @rdname ids
+#' @export
 setMethod("ids", "Tracks", function(x) unique(x@data[[x@cols$id]]))
 
 #' @rdname Tracks-class

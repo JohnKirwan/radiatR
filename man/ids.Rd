@@ -2,9 +2,12 @@
 % Please edit documentation in R/Tracks.R
 \name{ids}
 \alias{ids}
+\alias{ids,Tracks-method}
 \title{Trajectory identifiers of a Tracks}
 \usage{
 ids(x)
+
+\S4method{ids}{Tracks}(x)
 }
 \arguments{
 \item{x}{A [Tracks-class] object.}
