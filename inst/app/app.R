@@ -1263,6 +1263,21 @@ server <- function(input, output, session) {
   # Treat an as-yet-unrendered toggle (NULL) as its declared default.
   tog <- function(v, default) if (is.null(v)) default else isTRUE(v)
 
+  # Single app-wide capture frame rate. Both the Circular time/speed colouring
+  # and the Kinematics tab read this one value; the per-sidebar numeric inputs
+  # (frame_rate, kin_frame_rate) mirror it. Equality guards prevent feedback loops.
+  fps_rv <- reactiveVal(30)
+  observeEvent(input$frame_rate, {
+    if (!isTRUE(all.equal(input$frame_rate, fps_rv()))) fps_rv(input$frame_rate)
+  }, ignoreInit = TRUE)
+  observeEvent(fps_rv(), {
+    v <- fps_rv()
+    if (!isTRUE(all.equal(input$frame_rate, v)))
+      updateNumericInput(session, "frame_rate", value = v)
+    if (!isTRUE(all.equal(input$kin_frame_rate, v)))   # no-op until Task 3 adds the input
+      updateNumericInput(session, "kin_frame_rate", value = v)
+  })
+
   # The plot spec resolved from the current inputs (shared by the figure and the
   # code export so they cannot drift).
   current_spec <- function() {
@@ -1285,7 +1300,7 @@ server <- function(input, output, session) {
           plot_theme = input$plot_theme, angle_labels = input$angle_labels,
           heading_display = input$heading_display,
           track_colour = input$track_colour %||% "trajectory",
-          frame_rate = input$frame_rate,
+          frame_rate = fps_rv(),
           show_arrow = tog(input$show_arrow, TRUE),
           show_vectors = tog(input$show_vectors, FALSE),
           show_rayleigh = tog(input$show_rayleigh, FALSE),
@@ -1313,7 +1328,7 @@ server <- function(input, output, session) {
         plot_theme = input$plot_theme, angle_labels = input$angle_labels,
         heading_display = input$heading_display,
         track_colour = input$track_colour %||% "trajectory",
-        frame_rate = input$frame_rate,
+        frame_rate = fps_rv(),
         # Path-metrics caption, none mode only (no headings). spec_to_plot and
         # spec_to_code render and reproduce it.
         caption  = if (is.null(rv$hd)) straightness_caption(rv$ts, gc) else NULL,
