@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">radiatR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,24 +41,24 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="radiatr-development-version">radiatR (development version)<a class="anchor" aria-label="anchor" href="#radiatr-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.4.1" id="radiatr-041">radiatR 0.4.1<a class="anchor" aria-label="anchor" href="#radiatr-041"></a></h2>
 <div class="section level3">
-<h3 id="breaking-changes-development-version">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-development-version"></a></h3>
+<h3 id="breaking-changes-0-4-1">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-4-1"></a></h3>
 <ul><li>The central S4 class <code>TrajSet</code> is renamed to <strong><code>Tracks</code></strong>, its constructor to the lowercase <code><a href="../reference/Tracks-class.html">tracks()</a></code>, and the loader functions to snake_case: <code>TrajSet_read()</code> -&gt; <code><a href="../reference/read_tracks.html">read_tracks()</a></code>, <code>TrajSet_read_dir()</code> -&gt; <code><a href="../reference/read_tracks_dir.html">read_tracks_dir()</a></code>, <code>TrajSet_read_format()</code> -&gt; <code><a href="../reference/read_tracks_format.html">read_tracks_format()</a></code>, <code>TrajSet_load_manifest()</code> -&gt; <code><a href="../reference/load_manifest.html">load_manifest()</a></code>. No behaviour, slot, or output changed. Bundled <code>cpunctatus</code> is now a <code>Tracks</code> object.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="infrastructure-development-version">Infrastructure<a class="anchor" aria-label="anchor" href="#infrastructure-development-version"></a></h3>
+<h3 id="infrastructure-0-4-1">Infrastructure<a class="anchor" aria-label="anchor" href="#infrastructure-0-4-1"></a></h3>
 <ul><li>
 <code>headings_frame</code> is now a tibble subclass whose class and display convention survive dplyr verbs (<code>mutate</code>/<code>filter</code>/<code>select</code>/<code>bind_rows</code>) via the <code>dplyr_reconstruct</code> contract, so the orientation no longer leaks. New exported <code><a href="../reference/hf_accessors.html">hf_display()</a></code>/<code><a href="../reference/hf_accessors.html">hf_heading_col()</a></code>/<code><a href="../reference/hf_accessors.html">hf_colour_col()</a></code>/<code><a href="../reference/hf_accessors.html">hf_coords()</a></code> accessors read the metadata (and work on a plain data frame). <code><a href="../reference/derive_headings.html">derive_headings()</a></code> now returns a <code>headings_frame</code>; orientation is consolidated into a single <code>display</code> attribute (the vestigial <code>display_convention</code>/<code>angle_convention</code> strings are removed). See <code><a href="../articles/design.html">vignette("design")</a></code>.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="statistics-development-version">Statistics<a class="anchor" aria-label="anchor" href="#statistics-development-version"></a></h3>
+<h3 id="statistics-0-4-1">Statistics<a class="anchor" aria-label="anchor" href="#statistics-0-4-1"></a></h3>
 <ul><li><p>New <code><a href="../reference/circ_regression.html">circ_regression()</a></code> fits Fisher-Lee circular-linear regression of a heading on linear covariates (formula interface over <code><a href="https://rdrr.io/pkg/circular/man/lm.circular.html" class="external-link">circular::lm.circular</a></code>), with <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> (tidy coefficients), <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>/<code><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted()</a></code>, and <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> methods. <code><a href="../reference/simulate_tracks.html">simulate_tracks()</a></code> gains a per-condition <code>mean_slope</code> so the predictor shifts the mean heading, enabling end-to-end recovery.</p></li>
 <li><p>New <code><a href="../reference/fitted_directions.html">fitted_directions()</a></code> turns a <code><a href="../reference/circ_regression.html">circ_regression()</a></code> fit into mean-direction arrows for <code><a href="../reference/add_circ_mean.html">add_circ_mean()</a></code>, so the fitted heading-vs-covariate relationship can be drawn on the circular panel, colour-graded by the predictor.</p></li>
 <li><p><code><a href="../reference/simulate_tracks.html">simulate_tracks()</a></code> is now modality- and shape-aware. Per-condition <code>modality</code> (<code>uniform</code> / <code>unimodal</code> / <code>axial</code> / <code>multimodal</code> with <code>n_modes</code>) sets the distribution of per-track headings, and <code>track_shape</code> (<code>directed</code> or <code>oscillatory</code>) sets within-track geometry — <code>oscillatory</code> produces back-and-forth axial tracks whose line-width (<code>line_width</code>) is independent of tortuosity, so the per-track axial methods recover the axis at default settings. The ground truth is recorded in new output columns and in the <code>TrajSet</code> <code>meta$sim_conditions</code>. The default output is unchanged.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="track-metrics-development-version">Track metrics<a class="anchor" aria-label="anchor" href="#track-metrics-development-version"></a></h3>
+<h3 id="track-metrics-0-4-1">Track metrics<a class="anchor" aria-label="anchor" href="#track-metrics-0-4-1"></a></h3>
 <ul><li><p><code><a href="../reference/track_speed.html">track_speed()</a></code> and <code><a href="../reference/step_speed.html">step_speed()</a></code> report trajectory speed in real units (distance per second), using the track’s frame rate / timestamps. With the default unit-arena coordinates that is arena-units (radii) per second.</p></li>
 <li><p><code><a href="../reference/instantaneous_speed.html">instantaneous_speed()</a></code> gives per-observation speed (the per-row sibling of <code><a href="../reference/elapsed_seconds.html">elapsed_seconds()</a></code>), and <code>radiate(track_colour = "speed")</code> colours each path by it. Arena-units per second with the default coordinates.</p></li>
 <li><p><code><a href="../reference/velocity_vector.html">velocity_vector()</a></code> gives per-observation velocity components (<code>vx</code>, <code>vy</code>; distance-calibrated when a scale is set), and <code><a href="../reference/angular_velocity.html">angular_velocity()</a></code> the signed turning rate (counter-clockwise positive; radians or degrees per second).</p></li>
@@ -67,7 +67,7 @@
 <li><p>Optional distance calibration: <code><a href="../reference/distance_scale.html">set_distance_scale()</a></code> / <code><a href="../reference/distance_scale.html">calibrate_distance()</a></code> attach a physical scale + unit, so <code><a href="../reference/track_length.html">track_length()</a></code>, <code><a href="../reference/track_speed.html">track_speed()</a></code>, <code><a href="../reference/instantaneous_speed.html">instantaneous_speed()</a></code> and <code>radiate(track_colour = "speed")</code> report real units (e.g. mm, mm/s). Unset, everything stays in arena/coordinate units.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="visualisation-development-version">Visualisation<a class="anchor" aria-label="anchor" href="#visualisation-development-version"></a></h3>
+<h3 id="visualisation-0-4-1">Visualisation<a class="anchor" aria-label="anchor" href="#visualisation-0-4-1"></a></h3>
 <ul><li><p>New <code><a href="../reference/perimeter_labs.html">perimeter_labs()</a></code> labels a radial plot’s circumference in domain units, with built-in scales <code><a href="../reference/scale_cardinal.html">scale_cardinal()</a></code> (compass), <code><a href="../reference/scale_clock.html">scale_clock()</a></code> (hours), <code><a href="../reference/scale_months.html">scale_months()</a></code>, and <code><a href="../reference/scale_seconds.html">scale_seconds()</a></code>. <code>radiate(angle_labels = "cardinal" | "hours" | "months" | "seconds")</code> selects them directly and aligns the tick count to the scale.</p></li>
 <li><p><code><a href="../reference/plot_profile.html">plot_profile()</a></code> draws a non-circular kinematics profile – instantaneous speed or turning rate against elapsed time, one line per track (the ggplot sibling of <code><a href="../reference/radiate.html">radiate()</a></code>). Needs a frame rate; distance-calibrated when a scale is set.</p></li>
 <li><p><code><a href="../reference/plot_profile.html">plot_profile()</a></code> gains <code>metric = "direction"</code>, plotting the per-observation movement direction (<code><a href="../reference/velocity_angle.html">velocity_angle()</a></code>) over elapsed time as points (direction is circular, so it is drawn as points rather than a line).</p></li>
@@ -79,7 +79,7 @@
 <li><p>New <code><a href="../reference/circ_boxplot_stats.html">circ_boxplot_stats()</a></code> and <code><a href="../reference/add_circular_boxplot.html">add_circular_boxplot()</a></code> implement the Tukey-like circular boxplot of Buttarazzi, Pandolfo &amp; Porzio (2018) for circular and axial heading data: a depth-ranked box around the circular median, a closed-form von Mises fence multiplier, whiskers, and far-out values. Validated against the bpDir reference implementation.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="shiny-app-development-version">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-development-version"></a></h3>
+<h3 id="shiny-app-0-4-1">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-0-4-1"></a></h3>
 <ul><li><p>The Summary &amp; stats sub-tab now offers reproducible R code for the analysis (<code>circ_summarise</code>, <code>test_uniformity</code>, <code>circ_model_select</code>, <code>straightness_index</code>) to copy or download, alongside the figure code on the Circular plots tab.</p></li>
 <li><p>The Results step is reorganised into <strong>Circular plots</strong> and <strong>Summary &amp; stats</strong> sub-tabs, each with its own options sidebar (the circular figure + its reproduce/export controls on one, the summary and model-selection tables on the other).</p></li>
 <li><p>The Results figure’s <strong>Track colour</strong> selector gains “By elapsed time”, with a frame-rate (fps) input; an unset/invalid frame rate falls back to sequence colouring with a note.</p></li>
