@@ -580,7 +580,9 @@ build_kinematics_spec <- function(ts, inputs) {
 }
 
 kinematics_spec_to_plot <- function(spec, ts) {
-  ts <- set_frame_rate(ts, spec$fps)
+  # `%||% 30` mirrors spec_to_kinematics_code so render and emit never diverge on
+  # an unset fps (the app always supplies one; this keeps the triad self-consistent).
+  ts <- set_frame_rate(ts, spec$fps %||% 30)
   plot_profile(ts, metric = spec$metric, units = spec$units,
                colour_by = spec$colour_by)
 }
