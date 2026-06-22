@@ -154,6 +154,14 @@ head(velocity_vector(ts))                 # vx, vy per observation
 head(angular_velocity(ts, units = "degrees"))   # turning rate, deg/s (CCW +)
 ```
 
+`velocity_angle()` gives the direction of travel at each observation, in the same
+convention as headings --- so it feeds straight into the circular tools:
+
+```{r velocity-angle}
+ts <- set_frame_rate(cpunctatus, fps = 30)
+head(velocity_angle(ts, units = "degrees"))   # movement direction per observation
+```
+
 Reduced to one row per track, `track_velocity()` gives each path's net
 (average) velocity vector and `track_turning()` summarises its turning rate.
 

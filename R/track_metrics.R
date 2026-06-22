@@ -316,6 +316,44 @@ velocity_vector <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
   data.frame(vx = vx * scl, vy = vy * scl)
 }
 
+#' Per-row movement direction
+#'
+#' The heading of the velocity vector at each observation -- the direction of
+#' travel from the previous point -- as a per-row vector aligned to the Tracks'
+#' rows. The directional sibling of [instantaneous_speed()]; the per-observation
+#' counterpart of a velocity-based [derive_headings()] rule (which gives one
+#' heading per track).
+#'
+#' Returned in the package's heading convention: radians in `[0, 2*pi)` (or
+#' degrees in `[0, 360)`), `0` = the positive x-axis, increasing
+#' counterclockwise -- the same frame as [derive_headings()] output, so it drops
+#' straight into [circ_summary()] / [radiate()]. Map to a display orientation
+#' with [circ_display()] when plotting.
+#'
+#' Direction needs a step, so the first row of each track is `NA`. The result is
+#' invariant to any [set_distance_scale()] (the scale cancels in the ratio).
+#'
+#' @param ts A [Tracks-class] object.
+#' @param units `"radians"` (default, `[0, 2*pi)`) or `"degrees"` (`[0, 360)`).
+#' @param x_col,y_col Position columns. Default the Tracks' `x`/`y`.
+#' @return A numeric vector, one element per row of `ts`, `NA` at each track's
+#'   first row.
+#' @seealso [velocity_vector()], [instantaneous_speed()], [angular_velocity()],
+#'   [circ_summary()]
+#' @examples
+#' ts <- simulate_tracks(conditions = data.frame(n_trials = 3L),
+#'                       n_points = 20, seed = 1, output = "trajset")
+#' ts <- set_frame_rate(ts, 30)
+#' head(velocity_angle(ts))
+#' @export
+velocity_angle <- function(ts, units = c("radians", "degrees"),
+                           x_col = ts@cols$x, y_col = ts@cols$y) {
+  units <- match.arg(units)
+  v   <- velocity_vector(ts, x_col = x_col, y_col = y_col)
+  ang <- .wrap_to_2pi(atan2(v$vy, v$vx))     # [0, 2*pi); NA propagates from velocity_vector
+  if (units == "degrees") ang * 180 / pi else ang
+}
+
 # Signed turn (CCW positive, in (-pi, pi]) between each pair of consecutive
 # steps of a trajectory; length(x) - 2 values (one per interior point). Mirrors
 # the geometry in R/headings.R without altering it.

@@ -55,6 +55,11 @@
   distance-calibrated when a scale is set), and `angular_velocity()` the signed
   turning rate (counter-clockwise positive; radians or degrees per second).
 
+* New `velocity_angle()` returns the per-row movement direction (the heading of
+  the velocity vector) in `[0, 2*pi)`, the directional sibling of
+  `instantaneous_speed()`. It shares the heading convention, so it feeds straight
+  into `circ_summary()` / `radiate()`.
+
 * Per-track summaries: `track_velocity()` (net average velocity vector,
   distance-calibrated) and `track_turning()` (turning-rate summary -- `mean_abs`
   magnitude by default, plus `mean`/`max_abs`/`median_abs`; radians or degrees).

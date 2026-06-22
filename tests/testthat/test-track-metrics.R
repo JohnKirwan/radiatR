@@ -310,3 +310,45 @@ test_that("track_turning: <3-point track -> NA; numeric frames need a frame rate
     angle_unit = "radians", meta = list(frame_rate = 1))
   expect_true(is.na(track_turning(two)$turning))
 })
+
+test_that("velocity_angle: per-row movement direction in [0, 2*pi), NA at first row", {
+  ts <- set_frame_rate(mk_vel_ts(), 30)
+  a  <- velocity_angle(ts)
+  expect_length(a, nrow(ts@data))
+  d  <- ts@data
+  first <- tapply(seq_len(nrow(d)), d$id, min)
+  expect_true(all(is.na(a[first])))                 # NA at each track's first row
+  expect_equal(a[d$id == "a"][-1], rep(0, 3))       # due East -> 0
+  expect_equal(a[d$id == "b"][-1], rep(pi / 4, 2))  # NE diagonal -> pi/4
+  expect_true(all(a[!is.na(a)] >= 0 & a[!is.na(a)] < 2 * pi))
+})
+
+test_that("velocity_angle: westward step wraps to pi (not -pi)", {
+  d <- data.frame(id = "a", frame = 0:1, x = c(0, -1), y = 0, angle = 0)  # due West
+  ts <- set_frame_rate(methods::new("Tracks", data = d,
+    cols = list(id = "id", time = "frame", angle = "angle", x = "x", y = "y"),
+    angle_unit = "radians", meta = list()), 1)
+  expect_equal(velocity_angle(ts), c(NA, pi))
+})
+
+test_that("velocity_angle: degrees option returns [0, 360)", {
+  ts <- set_frame_rate(mk_vel_ts(), 30)
+  a  <- velocity_angle(ts, units = "degrees")
+  d  <- ts@data
+  expect_equal(a[d$id == "b"][-1], rep(45, 2))      # NE diagonal -> 45 deg
+  expect_true(all(a[!is.na(a)] >= 0 & a[!is.na(a)] < 360))
+})
+
+test_that("velocity_angle: scale-invariant and numeric frames need a frame rate", {
+  expect_error(velocity_angle(mk_vel_ts()), "frame rate")
+  ts  <- set_frame_rate(mk_vel_ts(), 30)
+  scaled <- set_distance_scale(ts, 50, "mm")
+  expect_equal(velocity_angle(scaled), velocity_angle(ts))   # direction unchanged by scale
+})
+
+test_that("velocity_angle: output composes with the circular stack", {
+  ts <- set_frame_rate(mk_vel_ts(), 30)
+  a  <- stats::na.omit(velocity_angle(ts))
+  r  <- circular::rho.circular(circular::circular(a, units = "radians"))
+  expect_true(is.finite(as.numeric(r)) && r >= 0 && r <= 1)  # a valid resultant length
+})
