@@ -15,7 +15,8 @@ plot_profile(
   metric = c("speed", "turning", "direction"),
   units = c("radians", "degrees"),
   colour_by = NULL,
-  panel_by = NULL
+  panel_by = NULL,
+  max_speed = NULL
 )
 ```
 
@@ -39,6 +40,13 @@ plot_profile(
   Optional column names of \`as.data.frame(ts)\` to colour by / facet
   into panels. Default: one neutral series per track.
 
+- max_speed:
+
+  For \`metric = "speed"\`, the speed-axis cap: \`NULL\` (default, the
+  99.5 plot), a positive number (hard cap), or \`Inf\` (no clip).
+  Off-scale points are reported in a caption. Ignored for
+  \`"turning"\`/\`"direction"\`.
+
 ## Value
 
 A \`ggplot2\` object.
@@ -48,7 +56,8 @@ A \`ggplot2\` object.
 Speed and turning rate are per-second, so a frame rate is required for
 frame-indexed time (\[set_frame_rate()\]); POSIXct time is used
 directly. With a distance calibration (\[set_distance_scale()\]) speed
-is in physical units.
+is in physical units. The speed axis is robustly clipped by default (see
+\`max_speed\`).
 
 Direction is circular: it is drawn as points (not a line) because a line
 would draw a false vertical bar across the 0/2\*pi seam. A rotating
@@ -58,7 +67,8 @@ track shows points spread across the range, and values near 0/2\*pi
 ## See also
 
 \[instantaneous_speed()\], \[angular_velocity()\], \[velocity_angle()\],
-\[elapsed_seconds()\], \[radiate()\], \[set_frame_rate()\]
+\[plot_speed_direction()\], \[elapsed_seconds()\], \[radiate()\],
+\[set_frame_rate()\]
 
 ## Examples
 

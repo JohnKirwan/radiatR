@@ -453,6 +453,18 @@ plot_profile(ts, metric = "direction", units = "degrees")
 
 ![](radiatR_files/figure-html/profile-direction-1.png)
 
+[`plot_speed_direction()`](https://johnkirwan.github.io/radiatR/reference/plot_speed_direction.md)
+crosses the two — each observation’s speed against its movement
+direction. The speed axis is robustly clipped by default so a few
+single-frame tracking artifacts do not crush the display:
+
+``` r
+
+plot_speed_direction(ts)
+```
+
+![](radiatR_files/figure-html/speed-direction-1.png)
+
 ## Heading Overlays
 
 The **crossing method** — projecting the vector between two

@@ -183,6 +183,8 @@ The main radiate() function and its building blocks.
   : Make ggplot object of tracks radiating from circle centre.
 - [`plot_profile()`](https://johnkirwan.github.io/radiatR/reference/plot_profile.md)
   : Kinematics profile plot for a Tracks
+- [`plot_speed_direction()`](https://johnkirwan.github.io/radiatR/reference/plot_speed_direction.md)
+  : Speed-vs-direction scatter for a Tracks
 - [`gg_traj()`](https://johnkirwan.github.io/radiatR/reference/gg_traj.md)
   : Plot trajectories from a Tracks (overlay or faceted)
 - [`draw_tracks()`](https://johnkirwan.github.io/radiatR/reference/draw_tracks.md)
@@ -578,6 +580,8 @@ Any remaining exported topics.
   : Label the circumference of a radial plot in domain units
 - [`plot_profile()`](https://johnkirwan.github.io/radiatR/reference/plot_profile.md)
   : Kinematics profile plot for a Tracks
+- [`plot_speed_direction()`](https://johnkirwan.github.io/radiatR/reference/plot_speed_direction.md)
+  : Speed-vs-direction scatter for a Tracks
 - [`pose_to_headings()`](https://johnkirwan.github.io/radiatR/reference/pose_to_headings.md)
   : Derive per-frame headings from pose data without a Tracks
 - [`rad_shepherd()`](https://johnkirwan.github.io/radiatR/reference/rad_shepherd.md)

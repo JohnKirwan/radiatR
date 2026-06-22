@@ -147,6 +147,17 @@
   over elapsed time as points (direction is circular, so it is drawn as
   points rather than a line).
 
+- New
+  [`plot_speed_direction()`](https://johnkirwan.github.io/radiatR/reference/plot_speed_direction.md)
+  scatters each observation’s speed against its movement direction
+  ([`velocity_angle()`](https://johnkirwan.github.io/radiatR/reference/velocity_angle.md)).
+  Its speed axis – and
+  [`plot_profile()`](https://johnkirwan.github.io/radiatR/reference/plot_profile.md)’s
+  for `metric = "speed"` – is robustly clipped by default (`max_speed`,
+  the 99.5% quantile) so single-frame tracking artifacts no longer crush
+  the display; off-scale points are reported in a caption.
+  `max_speed = Inf` restores the raw range.
+
 - American spellings are now accepted throughout: every `colour...`
   argument and the `assign_colour_*` / `cycle_colours` / `hf_colour_col`
   functions have `color...` aliases (British remains canonical;
