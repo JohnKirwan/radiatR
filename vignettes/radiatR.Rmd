@@ -190,6 +190,14 @@ direction is circular):
 plot_profile(ts, metric = "direction", units = "degrees")
 ```
 
+`plot_speed_direction()` crosses the two — each observation's speed against its
+movement direction. The speed axis is robustly clipped by default so a few
+single-frame tracking artifacts do not crush the display:
+
+```{r speed-direction}
+plot_speed_direction(ts)
+```
+
 ## Heading Overlays
 
 The **crossing method** — projecting the vector between two concentric-ring crossings to the unit circle — assigns one directional heading per trial. `derive_headings()` with `return_coords = TRUE` returns both the heading angle and the inner-ring crossing position.

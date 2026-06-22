@@ -156,6 +156,7 @@ reference:
     contents:
       - radiate
       - plot_profile
+      - plot_speed_direction
       - gg_traj
       - draw_tracks
       - add_ticks
