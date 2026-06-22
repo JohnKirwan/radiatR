@@ -565,10 +565,14 @@ build_kinematics_spec <- function(ts, inputs) {
   cb <- inputs$kin_colour_by
   colour_by <- if (!is.null(cb) && nzchar(cb) && cb %in% names(as.data.frame(ts)))
     cb else NULL
+  tr <- inputs$kin_track
+  track <- if (!is.null(tr) && nzchar(tr) && tr %in% as.character(ids(ts)))
+    tr else NULL
   list(
     metric    = inputs$kin_metric %||% "speed",
     units     = inputs$kin_units  %||% "radians",
     colour_by = colour_by,
+    track     = track,
     fps       = inputs$fps,
     src_id    = ts@cols$id,
     data      = inputs$data,
@@ -582,6 +586,7 @@ build_kinematics_spec <- function(ts, inputs) {
 kinematics_spec_to_plot <- function(spec, ts) {
   # `%||% 30` mirrors spec_to_kinematics_code so render and emit never diverge on
   # an unset fps (the app always supplies one; this keeps the triad self-consistent).
+  if (!is.null(spec$track)) ts <- ts[spec$track]
   ts <- set_frame_rate(ts, spec$fps %||% 30)
   plot_profile(ts, metric = spec$metric, units = spec$units,
                colour_by = spec$colour_by)
@@ -596,6 +601,7 @@ spec_to_kinematics_code <- function(spec) {
   add("")
   .emit_data_preamble(spec, add, q)              # trajectory ts-load only
   add("")
+  if (!is.null(spec$track)) add("ts <- ts[", q(spec$track), "]")
   add("ts <- set_frame_rate(ts, ", spec$fps %||% 30, ")")
   unit_arg <- if (identical(spec$metric, "turning"))
     paste0(", units = ", q(spec$units)) else ""

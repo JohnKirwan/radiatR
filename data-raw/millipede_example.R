@@ -158,6 +158,9 @@ methods::validObject(cpunctatus)
 
 cpunctatus_tracks <- tibble::as_tibble(cpunctatus@data)
 
+# Real capture rate: 1 frame / 5 s = 0.2 fps (Kirwan & Nilsson 2019).
+cpunctatus@meta$frame_rate <- 0.2
+
 usethis::use_data(cpunctatus, overwrite = TRUE, compress = "xz")
 usethis::use_data(cpunctatus_tracks, overwrite = TRUE, compress = "xz")
 message("Built cpunctatus (TrajSet, ",

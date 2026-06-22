@@ -83,3 +83,37 @@ test_that("emitted kinematics code reproduces kinematics_spec_to_plot", {
                 envir = new.env(parent = globalenv()))
   expect_equal(.kfingerprint(evald), .kfingerprint(live))
 })
+
+test_that("build_kinematics_spec carries a valid track id, else NULL", {
+  ts  <- kin_ts()
+  id1 <- as.character(ids(ts))[1]
+  sp  <- build_kinematics_spec(ts, list(kin_metric = "speed", kin_track = id1,
+                                        fps = 30, data = example_data_block))
+  expect_identical(sp$track, id1)
+  expect_null(build_kinematics_spec(ts, list(kin_track = "",   fps = 30,
+                                             data = example_data_block))$track)
+  expect_null(build_kinematics_spec(ts, list(kin_track = "nope", fps = 30,
+                                             data = example_data_block))$track)
+})
+
+test_that("kinematics_spec_to_plot filters to one track when track set", {
+  ts  <- kin_ts()
+  id1 <- as.character(ids(ts))[1]
+  sp  <- build_kinematics_spec(ts, list(kin_metric = "speed", kin_track = id1,
+                                        fps = 30, data = example_data_block))
+  p   <- kinematics_spec_to_plot(sp, ts)
+  b   <- ggplot2::ggplot_build(p)
+  expect_equal(length(unique(b$data[[1]]$group)), 1L)   # one track only
+})
+
+test_that("spec_to_kinematics_code emits the track subset; round-trips", {
+  ts  <- kin_ts()
+  id1 <- as.character(ids(ts))[1]
+  sp  <- build_kinematics_spec(ts, list(kin_metric = "speed", kin_track = id1,
+                                        fps = 30, data = example_data_block))
+  code <- spec_to_kinematics_code(sp)
+  expect_true(grepl(sprintf('ts <- ts["%s"]', id1), code, fixed = TRUE))
+  live  <- kinematics_spec_to_plot(sp, ts)
+  evald <- eval(parse(text = code), envir = new.env(parent = globalenv()))
+  expect_equal(.kfingerprint(evald), .kfingerprint(live))
+})

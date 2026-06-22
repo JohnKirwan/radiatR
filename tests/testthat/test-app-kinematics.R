@@ -54,3 +54,29 @@ test_that("Kinematics needs trajectory data; headings-only shows a note", {
     expect_match(note(output$kin_note), "trajectory")
   })
 })
+
+test_that("Kinematics defaults to one track; 'All' overlays every track", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  shiny::testServer(app_dir(), {
+    session$setInputs(load_example = 1); session$setInputs(go3 = 1)
+    id1 <- as.character(ids(rv$ts))[1]
+    session$setInputs(kin_metric = "speed", kin_colour_by = "", kin_track = id1)
+    expect_identical(kinematics_spec()$track, id1)
+    b1 <- ggplot2::ggplot_build(kinematics_spec_to_plot(kinematics_spec(), rv$ts))
+    expect_equal(length(unique(b1$data[[1]]$group)), 1L)        # one track
+    session$setInputs(kin_track = "")                          # All tracks
+    expect_null(kinematics_spec()$track)
+    bA <- ggplot2::ggplot_build(kinematics_spec_to_plot(kinematics_spec(), rv$ts))
+    expect_gt(length(unique(bA$data[[1]]$group)), 1L)          # many tracks
+  })
+})
+
+test_that("loading the example adopts the data's frame rate (0.2 fps)", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  shiny::testServer(app_dir(), {
+    session$setInputs(load_example = 1); session$setInputs(go3 = 1)
+    expect_equal(fps_rv(), frame_rate(rv$ts))   # adopted from cpunctatus (0.2)
+  })
+})
