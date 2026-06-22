@@ -1143,6 +1143,7 @@ server <- function(input, output, session) {
                                           "Degrees" = "degrees"),
                               selected = "radians")
                 ),
+                uiOutput("kin_track_ui"),
                 uiOutput("kin_colour_ui"),
                 numericInput("kin_frame_rate", "Frame rate (fps)",
                              value = 30, min = 0, step = 1),
@@ -1319,6 +1320,12 @@ server <- function(input, output, session) {
   # and the Kinematics tab read this one value; the per-sidebar numeric inputs
   # (frame_rate, kin_frame_rate) mirror it. Equality guards prevent feedback loops.
   fps_rv <- reactiveVal(30)
+  # When a loaded Tracks carries its own capture rate, adopt it as the app fps.
+  observeEvent(rv$ts, {
+    fr <- if (is.null(rv$ts)) NULL else frame_rate(rv$ts)
+    if (!is.null(fr) && is.finite(fr) && fr > 0 &&
+        !isTRUE(all.equal(fr, fps_rv()))) fps_rv(fr)
+  }, ignoreNULL = FALSE)
   observeEvent(input$frame_rate, {
     if (!isTRUE(all.equal(input$frame_rate, fps_rv()))) fps_rv(input$frame_rate)
   }, ignoreInit = TRUE)
@@ -1628,6 +1635,15 @@ server <- function(input, output, session) {
       fps_rv(input$kin_frame_rate)
   }, ignoreInit = TRUE)
 
+  output$kin_track_ui <- renderUI({
+    if (is.null(rv$ts)) return(NULL)
+    tid <- as.character(ids(rv$ts))
+    selectInput("kin_track", "Track",
+                choices = c(stats::setNames(tid, tid),
+                            "All tracks (overlay)" = ""),
+                selected = tid[1])
+  })
+
   # Colour-by selector: categorical columns of the loaded Tracks ("None" default).
   output$kin_colour_ui <- renderUI({
     cols <- if (is.null(rv$ts)) character(0) else colour_cols(rv$ts)
@@ -1642,6 +1658,7 @@ server <- function(input, output, session) {
       kin_metric    = input$kin_metric,
       kin_units     = input$kin_units,
       kin_colour_by = input$kin_colour_by,
+      kin_track     = input$kin_track,
       fps           = fps_rv(),
       data = list(
         source  = if (identical(rv$source, "example")) "example" else "file",
