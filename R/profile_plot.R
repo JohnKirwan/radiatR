@@ -118,3 +118,66 @@ plot_profile <- function(ts, metric = c("speed", "turning", "direction"),
     g <- g + ggplot2::facet_wrap(ggplot2::vars(.data[[panel_by]]))
   g
 }
+
+#' Speed-vs-direction scatter for a Tracks
+#'
+#' Plots each observation's instantaneous speed ([instantaneous_speed()]) against
+#' its movement direction ([velocity_angle()]) -- the bivariate companion to the
+#' time profiles of [plot_profile()]. Points, since direction is circular.
+#'
+#' The speed axis is robustly clipped by default (`max_speed = NULL` zooms to the
+#' 99.5% quantile) so a few single-frame tracking artifacts do not crush the
+#' display; a caption reports how many points are off-scale. The clip is a view
+#' zoom (`coord_cartesian`), so no data are dropped. Set `max_speed` to a number
+#' for a hard cap, or `Inf` for the full raw range.
+#'
+#' @param ts A `Tracks`. Needs a frame rate for frame-indexed time
+#'   ([set_frame_rate()]); POSIXct time is used directly.
+#' @param units Direction units: `"radians"` (default, `[0, 2*pi)`) or
+#'   `"degrees"` (`[0, 360)`).
+#' @param colour_by Optional column of `as.data.frame(ts)` to colour points by.
+#' @param max_speed Speed-axis cap: `NULL` (default, 99.5% quantile), a positive
+#'   number (hard cap), or `Inf` (no clip).
+#' @return A `ggplot2` object.
+#' @seealso [plot_profile()], [instantaneous_speed()], [velocity_angle()]
+#' @export
+#' @examples
+#' ts <- set_frame_rate(cpunctatus, 30)
+#' plot_speed_direction(ts)
+plot_speed_direction <- function(ts, units = c("radians", "degrees"),
+                                 colour_by = NULL, max_speed = NULL) {
+  if (!methods::is(ts, "Tracks")) stop("'ts' must be a Tracks.")
+  units <- match.arg(units)
+  d <- as.data.frame(ts)
+  if (!is.null(colour_by) && !colour_by %in% names(d))
+    stop("column '", colour_by, "' not found in the Tracks.")
+
+  spd <- instantaneous_speed(ts)
+  dir <- velocity_angle(ts, units = units)
+  df  <- data.frame(.speed = spd, .direction = dir,
+                    .id = d[[ts@cols$id]], stringsAsFactors = FALSE)
+  if (!is.null(colour_by)) df[[colour_by]] <- d[[colour_by]]
+
+  rl   <- .robust_speed_limit(spd, max_speed)
+  cap  <- if (rl$n_off > 0)
+    sprintf("%d point%s off-scale (max %.3g)",
+            rl$n_off, if (rl$n_off == 1L) "" else "s", rl$max) else NULL
+  xlab <- if (units == "degrees") "direction (deg)" else "direction (rad)"
+
+  if (is.null(colour_by)) {
+    g <- ggplot2::ggplot(
+      df, ggplot2::aes(x = .data$.direction, y = .data$.speed)) +
+      ggplot2::geom_point(colour = "grey20", size = 0.7, alpha = 0.5, na.rm = TRUE)
+  } else {
+    g <- ggplot2::ggplot(
+      df, ggplot2::aes(x = .data$.direction, y = .data$.speed,
+                       colour = .data[[colour_by]])) +
+      ggplot2::geom_point(size = 0.7, alpha = 0.5, na.rm = TRUE)
+  }
+
+  g +
+    ggplot2::coord_cartesian(ylim = c(0, rl$limit)) +
+    ggplot2::labs(x = xlab, y = .speed_ylab(ts), caption = cap,
+                  colour = if (!is.null(colour_by)) colour_by else NULL) +
+    ggplot2::theme_minimal()
+}

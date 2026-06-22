@@ -126,3 +126,42 @@ test_that(".speed_ylab: physical unit when calibrated, else units/s", {
   ts2 <- set_distance_scale(ts, 50, "mm")
   expect_equal(.speed_ylab(ts2), "speed (mm/s)")
 })
+
+test_that("plot_speed_direction: scatter of speed vs movement direction", {
+  ts <- set_frame_rate(cpunctatus, 30)
+  p  <- plot_speed_direction(ts)
+  expect_s3_class(p, "ggplot")
+  expect_true(any(vapply(p$layers, function(l) inherits(l$geom, "GeomPoint"), logical(1))))
+  expect_equal(p$labels$x, "direction (rad)")
+  expect_equal(p$labels$y, "speed (units/s)")
+  b  <- ggplot2::ggplot_build(p)
+  ld <- b$data[[which(vapply(p$layers,
+    function(l) inherits(l$geom, "GeomPoint"), logical(1)))[1]]]
+  dir <- velocity_angle(ts); spd <- instantaneous_speed(ts)
+  ok  <- is.finite(dir) & is.finite(spd)
+  expect_equal(sort(round(ld$x, 6)), sort(round(dir[ok], 6)))
+  expect_equal(sort(round(ld$y, 6)), sort(round(spd[ok], 6)))
+})
+
+test_that("plot_speed_direction: robust speed clip + off-scale caption by default", {
+  ts <- set_frame_rate(cpunctatus, 30)
+  p  <- plot_speed_direction(ts)
+  rl <- .robust_speed_limit(instantaneous_speed(ts))
+  expect_equal(p$coordinates$limits$y, c(0, rl$limit))   # clipped, not 0..50
+  expect_true(rl$limit < 50)
+  expect_true(!is.null(p$labels$caption) && grepl("off-scale", p$labels$caption))
+
+  praw <- plot_speed_direction(ts, max_speed = Inf)
+  expect_equal(praw$coordinates$limits$y, c(0, rl$max))   # no clip
+  expect_null(praw$labels$caption)
+})
+
+test_that("plot_speed_direction: degrees x-label, colour_by maps, bad column errors", {
+  ts  <- set_frame_rate(cpunctatus, 30)
+  expect_equal(plot_speed_direction(ts, units = "degrees")$labels$x, "direction (deg)")
+  grp <- intersect(c("arc", "type"), names(as.data.frame(ts)))[1]
+  skip_if(is.na(grp), "no grouping column")
+  pc <- plot_speed_direction(ts, colour_by = grp)
+  expect_true("colour" %in% names(ggplot2::ggplot_build(pc)$data[[1]]))
+  expect_error(plot_speed_direction(ts, colour_by = "nope"), "not found|column")
+})
