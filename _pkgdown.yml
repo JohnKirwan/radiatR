@@ -248,6 +248,7 @@ reference:
       - step_speed
       - instantaneous_speed
       - velocity_vector
+      - velocity_angle
       - angular_velocity
 
   - title: "Track timing"
