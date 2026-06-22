@@ -109,6 +109,20 @@
 
 ### Visualisation
 
+- New
+  [`perimeter_labs()`](https://johnkirwan.github.io/radiatR/reference/perimeter_labs.md)
+  labels a radial plot’s circumference in domain units, with built-in
+  scales
+  [`scale_cardinal()`](https://johnkirwan.github.io/radiatR/reference/scale_cardinal.md)
+  (compass),
+  [`scale_clock()`](https://johnkirwan.github.io/radiatR/reference/scale_clock.md)
+  (hours),
+  [`scale_months()`](https://johnkirwan.github.io/radiatR/reference/scale_months.md),
+  and
+  [`scale_seconds()`](https://johnkirwan.github.io/radiatR/reference/scale_seconds.md).
+  `radiate(angle_labels = "cardinal" | "hours" | "months" | "seconds")`
+  selects them directly and aligns the tick count to the scale.
+
 - [`plot_profile()`](https://johnkirwan.github.io/radiatR/reference/plot_profile.md)
   draws a non-circular kinematics profile – instantaneous speed or
   turning rate against elapsed time, one line per track (the ggplot

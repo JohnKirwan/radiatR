@@ -81,7 +81,8 @@ the object and handed off to the plotting helpers.</p>
 <span>  xlab <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ylab <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  axes <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  angle_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"degrees"</span>, <span class="st">"none"</span>, <span class="st">"radians"</span><span class="op">)</span>,</span>
+<span>  angle_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"degrees"</span>, <span class="st">"none"</span>, <span class="st">"radians"</span>, <span class="st">"cardinal"</span>, <span class="st">"hours"</span>, <span class="st">"months"</span>,</span>
+<span>    <span class="st">"seconds"</span><span class="op">)</span>,</span>
 <span>  theme <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"void"</span>, <span class="st">"minimal"</span>, <span class="st">"classic"</span>, <span class="st">"bw"</span>, <span class="st">"grey"</span>, <span class="st">"gray"</span>, <span class="st">"light"</span>, <span class="st">"dark"</span>,</span>
 <span>    <span class="st">"linedraw"</span><span class="op">)</span>,</span>
 <span>  quadrants <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -125,7 +126,8 @@ the object and handed off to the plotting helpers.</p>
 <span>  ncol <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ticks <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  degrees <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  angle_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"degrees"</span>, <span class="st">"none"</span>, <span class="st">"radians"</span><span class="op">)</span>,</span>
+<span>  angle_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"degrees"</span>, <span class="st">"none"</span>, <span class="st">"radians"</span>, <span class="st">"cardinal"</span>, <span class="st">"hours"</span>, <span class="st">"months"</span>,</span>
+<span>    <span class="st">"seconds"</span><span class="op">)</span>,</span>
 <span>  title <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  theme <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"void"</span>, <span class="st">"minimal"</span>, <span class="st">"classic"</span>, <span class="st">"bw"</span>, <span class="st">"grey"</span>, <span class="st">"gray"</span>, <span class="st">"light"</span>, <span class="st">"dark"</span>,</span>
 <span>    <span class="st">"linedraw"</span><span class="op">)</span>,</span>
@@ -246,9 +248,14 @@ follows the chosen `theme`'s `axis.ticks`.</p></dd>
 
 
 <dt id="arg-angle-labels">angle_labels<a class="anchor" aria-label="anchor" href="#arg-angle-labels"></a></dt>
-<dd><p>One of `"degrees"` (default; e.g. `45°`), `"none"`, or
-`"radians"` (e.g. `π/4`) – the diagonal angle labels around the circle.
-Label styling (colour, size, family) follows the chosen `theme`'s `axis.text`.</p></dd>
+<dd><p>Circumference labels. `"degrees"` (default; e.g. `45°`),
+`"radians"` (e.g. `π/4`), or `"none"` use diagonal angle labels via
+[degree_labs()]. The domain scales `"cardinal"` (N/E/S/W), `"hours"`
+(24-hour clock), `"months"` (Jan...Dec), and `"seconds"` instead label the
+perimeter via [perimeter_labs()], aligning the tick count to the scale. For
+finer control (8-point compass, 12-hour clock, month formats) add an
+explicit `perimeter_labs()` layer. Label styling follows the chosen
+`theme`'s `axis.text`.</p></dd>
 
 
 <dt id="arg-theme">theme<a class="anchor" aria-label="anchor" href="#arg-theme"></a></dt>

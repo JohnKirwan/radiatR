@@ -29,7 +29,7 @@ spellings of a pair is an error.
 
 Useful links:
 
-- <https://johnkirwan.github.io/radiatR>
+- <https://johnkirwan.github.io/radiatR/>
 
 - <https://github.com/JohnKirwan/radiatR>
 

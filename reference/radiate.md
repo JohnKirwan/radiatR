@@ -35,7 +35,8 @@ radiate(
   xlab = NULL,
   ylab = NULL,
   axes = NULL,
-  angle_labels = c("degrees", "none", "radians"),
+  angle_labels = c("degrees", "none", "radians", "cardinal", "hours", "months",
+    "seconds"),
   theme = c("void", "minimal", "classic", "bw", "grey", "gray", "light", "dark",
     "linedraw"),
   quadrants = FALSE,
@@ -79,7 +80,8 @@ radiate(
   ncol = NULL,
   ticks = TRUE,
   degrees = TRUE,
-  angle_labels = c("degrees", "none", "radians"),
+  angle_labels = c("degrees", "none", "radians", "cardinal", "hours", "months",
+    "seconds"),
   title = NULL,
   theme = c("void", "minimal", "classic", "bw", "grey", "gray", "light", "dark",
     "linedraw"),
@@ -202,9 +204,14 @@ radiate(
 
 - angle_labels:
 
-  One of \`"degrees"\` (default; e.g. \`45°\`), \`"none"\`, or
-  \`"radians"\` (e.g. \`π/4\`) – the diagonal angle labels around the
-  circle. Label styling (colour, size, family) follows the chosen
+  Circumference labels. \`"degrees"\` (default; e.g. \`45°\`),
+  \`"radians"\` (e.g. \`π/4\`), or \`"none"\` use diagonal angle labels
+  via \[degree_labs()\]. The domain scales \`"cardinal"\` (N/E/S/W),
+  \`"hours"\` (24-hour clock), \`"months"\` (Jan...Dec), and
+  \`"seconds"\` instead label the perimeter via \[perimeter_labs()\],
+  aligning the tick count to the scale. For finer control (8-point
+  compass, 12-hour clock, month formats) add an explicit
+  \`perimeter_labs()\` layer. Label styling follows the chosen
   \`theme\`'s \`axis.text\`.
 
 - theme:

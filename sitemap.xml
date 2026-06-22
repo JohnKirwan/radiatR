@@ -93,6 +93,7 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/new_headings_frame.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/path_straightness.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/path_tortuosity.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/perimeter_labs.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/plot_profile.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/pose_to_headings.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/rad_shepherd.html</loc></url>
@@ -106,6 +107,10 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/register_heading_rule.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/register_loader_dialect.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/register_loader_format.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/scale_cardinal.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/scale_clock.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/scale_months.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/scale_seconds.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/sector_summary.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/set_reference.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/simulate_tracks.html</loc></url>

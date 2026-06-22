@@ -215,6 +215,22 @@ The main radiate() function and its building blocks.
   [`cycle_colors()`](https://johnkirwan.github.io/radiatR/reference/cycle_colours.md)
   : Cycle a bounded set of colour indices over the values of a key
 
+## Visualisation – perimeter scales
+
+Label the circumference of a radial plot in domain units – compass
+points, clock hours, months, or seconds.
+
+- [`perimeter_labs()`](https://johnkirwan.github.io/radiatR/reference/perimeter_labs.md)
+  : Label the circumference of a radial plot in domain units
+- [`scale_cardinal()`](https://johnkirwan.github.io/radiatR/reference/scale_cardinal.md)
+  : Perimeter scale: cardinal compass directions
+- [`scale_clock()`](https://johnkirwan.github.io/radiatR/reference/scale_clock.md)
+  : Perimeter scale: clock hours
+- [`scale_months()`](https://johnkirwan.github.io/radiatR/reference/scale_months.md)
+  : Perimeter scale: months of the year
+- [`scale_seconds()`](https://johnkirwan.github.io/radiatR/reference/scale_seconds.md)
+  : Perimeter scale: seconds (or minutes)
+
 ## Visualisation – heading overlays
 
 Per-trial heading markers, vectors, and mean-direction arrows.
@@ -556,6 +572,8 @@ Any remaining exported topics.
   : Path straightness index for a single trajectory
 - [`path_tortuosity()`](https://johnkirwan.github.io/radiatR/reference/path_tortuosity.md)
   : Tortuosity ratio for a single trajectory
+- [`perimeter_labs()`](https://johnkirwan.github.io/radiatR/reference/perimeter_labs.md)
+  : Label the circumference of a radial plot in domain units
 - [`plot_profile()`](https://johnkirwan.github.io/radiatR/reference/plot_profile.md)
   : Kinematics profile plot for a Tracks
 - [`pose_to_headings()`](https://johnkirwan.github.io/radiatR/reference/pose_to_headings.md)
@@ -585,6 +603,14 @@ Any remaining exported topics.
   : Register a declarative loader \*format\* (list or YAML/JSON file)
   The spec maps cleanly onto read_tracks() args and supports regex-based
   column finding.
+- [`scale_cardinal()`](https://johnkirwan.github.io/radiatR/reference/scale_cardinal.md)
+  : Perimeter scale: cardinal compass directions
+- [`scale_clock()`](https://johnkirwan.github.io/radiatR/reference/scale_clock.md)
+  : Perimeter scale: clock hours
+- [`scale_months()`](https://johnkirwan.github.io/radiatR/reference/scale_months.md)
+  : Perimeter scale: months of the year
+- [`scale_seconds()`](https://johnkirwan.github.io/radiatR/reference/scale_seconds.md)
+  : Perimeter scale: seconds (or minutes)
 - [`sector_summary()`](https://johnkirwan.github.io/radiatR/reference/sector_summary.md)
   : Proportion of time spent in angular sectors
 - [`set_reference()`](https://johnkirwan.github.io/radiatR/reference/set_reference.md)
