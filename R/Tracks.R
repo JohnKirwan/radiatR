@@ -414,6 +414,13 @@ tracks <- function(df,
 }
 
 ## ---- accessors & show --------------------------------------------------------
+#' Trajectory identifiers of a Tracks
+#'
+#' @param x A [Tracks-class] object.
+#' @return The unique trajectory ids, in first-appearance order.
+#' @examples
+#' ids(cpunctatus)
+#' @export
 setGeneric("ids", function(x) standardGeneric("ids"))
 setMethod("ids", "Tracks", function(x) unique(x@data[[x@cols$id]]))
 
