@@ -555,3 +555,50 @@ spec_to_code <- function(spec) {
 
   paste(L, collapse = "\n")
 }
+
+# ---- Kinematics figure (Results "Kinematics" sub-tab) ------------------------
+# The non-circular sibling of build_plot_spec/spec_to_plot/spec_to_code: resolves
+# the speed/turning-vs-time profile to a plain spec that both renders via the
+# exported plot_profile() and emits matching radiatR code.
+
+build_kinematics_spec <- function(ts, inputs) {
+  cb <- inputs$kin_colour_by
+  colour_by <- if (!is.null(cb) && nzchar(cb) && cb %in% names(as.data.frame(ts)))
+    cb else NULL
+  list(
+    metric    = inputs$kin_metric %||% "speed",
+    units     = inputs$kin_units  %||% "radians",
+    colour_by = colour_by,
+    fps       = inputs$fps,
+    src_id    = ts@cols$id,
+    data      = inputs$data,
+    # mode + a "none" heading rule make .emit_data_preamble emit only the ts-load
+    # (has_hd == FALSE), never a derive_headings() the kinematics figure does not use.
+    mode      = "trajectories",
+    headings  = list(rule = "none")
+  )
+}
+
+kinematics_spec_to_plot <- function(spec, ts) {
+  ts <- set_frame_rate(ts, spec$fps)
+  plot_profile(ts, metric = spec$metric, units = spec$units,
+               colour_by = spec$colour_by)
+}
+
+spec_to_kinematics_code <- function(spec) {
+  q   <- function(s) encodeString(s, quote = '"')
+  L   <- character(0)
+  add <- function(...) L[[length(L) + 1L]] <<- paste0(...)
+
+  add("library(radiatR)")
+  add("")
+  .emit_data_preamble(spec, add, q)              # trajectory ts-load only
+  add("")
+  add("ts <- set_frame_rate(ts, ", spec$fps %||% 30, ")")
+  unit_arg <- if (identical(spec$metric, "turning"))
+    paste0(", units = ", q(spec$units)) else ""
+  col_arg  <- if (!is.null(spec$colour_by))
+    paste0(", colour_by = ", q(spec$colour_by)) else ""
+  add("plot_profile(ts, metric = ", q(spec$metric), unit_arg, col_arg, ")")
+  paste(L, collapse = "\n")
+}
