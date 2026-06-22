@@ -33,7 +33,8 @@ radiate(data, ...)
   xlab = NULL,
   ylab = NULL,
   axes = NULL,
-  angle_labels = c("degrees", "none", "radians"),
+  angle_labels = c("degrees", "none", "radians", "cardinal", "hours", "months",
+    "seconds"),
   theme = c("void", "minimal", "classic", "bw", "grey", "gray", "light", "dark",
     "linedraw"),
   quadrants = FALSE,
@@ -76,7 +77,8 @@ radiate(data, ...)
   ncol = NULL,
   ticks = TRUE,
   degrees = TRUE,
-  angle_labels = c("degrees", "none", "radians"),
+  angle_labels = c("degrees", "none", "radians", "cardinal", "hours", "months",
+    "seconds"),
   title = NULL,
   theme = c("void", "minimal", "classic", "bw", "grey", "gray", "light", "dark",
     "linedraw"),
@@ -160,9 +162,14 @@ text and the in-panel `"inside"` annotation.}
 equivalent to `angle_labels = "none"`. Tick styling (colour, width, length)
 follows the chosen `theme`'s `axis.ticks`.}
 
-\item{angle_labels}{One of `"degrees"` (default; e.g. `45°`), `"none"`, or
-`"radians"` (e.g. `π/4`) -- the diagonal angle labels around the circle.
-Label styling (colour, size, family) follows the chosen `theme`'s `axis.text`.}
+\item{angle_labels}{Circumference labels. `"degrees"` (default; e.g. `45°`),
+`"radians"` (e.g. `π/4`), or `"none"` use diagonal angle labels via
+[degree_labs()]. The domain scales `"cardinal"` (N/E/S/W), `"hours"`
+(24-hour clock), `"months"` (Jan...Dec), and `"seconds"` instead label the
+perimeter via [perimeter_labs()], aligning the tick count to the scale. For
+finer control (8-point compass, 12-hour clock, month formats) add an
+explicit `perimeter_labs()` layer. Label styling follows the chosen
+`theme`'s `axis.text`.}
 
 \item{theme}{Plot appearance, named for the ggplot2 base themes: one of
 `"void"` (default), `"minimal"`, `"classic"`, `"bw"`, `"grey"`, `"light"`,

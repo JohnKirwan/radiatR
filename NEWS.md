@@ -66,6 +66,12 @@
 
 ## Visualisation
 
+* New `perimeter_labs()` labels a radial plot's circumference in domain units,
+  with built-in scales `scale_cardinal()` (compass), `scale_clock()` (hours),
+  `scale_months()`, and `scale_seconds()`. `radiate(angle_labels = "cardinal" |
+  "hours" | "months" | "seconds")` selects them directly and aligns the tick
+  count to the scale.
+
 * `plot_profile()` draws a non-circular kinematics profile -- instantaneous speed
   or turning rate against elapsed time, one line per track (the ggplot sibling of
   `radiate()`). Needs a frame rate; distance-calibrated when a scale is set.

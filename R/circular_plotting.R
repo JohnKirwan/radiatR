@@ -2237,14 +2237,23 @@ line_circle_intercept_traj <- function(traj, id, range) {
     circ_lw <- if (isTRUE(style$ax$line$present)) style$ax$line$linewidth else 0.5
     g <- g + add_circ(circle_colour = style$col_of(style$ax$line), circle_size = circ_lw)
   }
+  scale <- .angle_label_scale(angle_labels)
   if (isTRUE(ticks))
     g <- g + add_ticks(colour = style$col_of(style$ax$ticks),
-                       linewidth = style$ax$ticks$linewidth)
-  if (angle_labels != "none")
-    g <- g + degree_labs(display = display, units = angle_labels,
-                         colour = style$col_of(style$ax$text),
-                         size   = style$ax$text$size / ggplot2::.pt,
-                         family = style$ax$text$family)
+                       linewidth = style$ax$ticks$linewidth,
+                       n = if (is.null(scale)) 8L else scale$n)
+  if (angle_labels != "none") {
+    if (is.null(scale))
+      g <- g + degree_labs(display = display, units = angle_labels,
+                           colour = style$col_of(style$ax$text),
+                           size   = style$ax$text$size / ggplot2::.pt,
+                           family = style$ax$text$family)
+    else
+      g <- g + perimeter_labs(scale, display = display,
+                              colour = style$col_of(style$ax$text),
+                              size   = style$ax$text$size / ggplot2::.pt,
+                              family = style$ax$text$family)
+  }
   g
 }
 
@@ -2351,9 +2360,14 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   `degrees` is retained for back-compatibility; `degrees = FALSE` is
 #'   equivalent to `angle_labels = "none"`. Tick styling (colour, width, length)
 #'   follows the chosen `theme`'s `axis.ticks`.
-#' @param angle_labels One of `"degrees"` (default; e.g. `45°`), `"none"`, or
-#'   `"radians"` (e.g. `π/4`) -- the diagonal angle labels around the circle.
-#'   Label styling (colour, size, family) follows the chosen `theme`'s `axis.text`.
+#' @param angle_labels Circumference labels. `"degrees"` (default; e.g. `45°`),
+#'   `"radians"` (e.g. `π/4`), or `"none"` use diagonal angle labels via
+#'   [degree_labs()]. The domain scales `"cardinal"` (N/E/S/W), `"hours"`
+#'   (24-hour clock), `"months"` (Jan...Dec), and `"seconds"` instead label the
+#'   perimeter via [perimeter_labs()], aligning the tick count to the scale. For
+#'   finer control (8-point compass, 12-hour clock, month formats) add an
+#'   explicit `perimeter_labs()` layer. Label styling follows the chosen
+#'   `theme`'s `axis.text`.
 #' @param ... Additional arguments forwarded to [draw_tracks()].
 #' @return A `ggplot2` object.
 #' @inheritSection radiatR-package American spellings
@@ -2390,7 +2404,8 @@ function(
   ticks = NULL,
   degrees = NULL, legend = NULL, title = NULL,
   xlab = NULL, ylab = NULL, axes = NULL,
-  angle_labels = c("degrees", "none", "radians"),
+  angle_labels = c("degrees", "none", "radians",
+                   "cardinal", "hours", "months", "seconds"),
   theme = c("void", "minimal", "classic", "bw", "grey", "gray",
             "light", "dark", "linedraw"),
   quadrants = FALSE,
@@ -2779,7 +2794,8 @@ radiate.headings_frame <- function(
   ncol      = NULL,
   ticks     = TRUE,
   degrees   = TRUE,
-  angle_labels = c("degrees", "none", "radians"),
+  angle_labels = c("degrees", "none", "radians",
+                   "cardinal", "hours", "months", "seconds"),
   title     = NULL,
   theme     = c("void", "minimal", "classic", "bw", "grey", "gray",
                 "light", "dark", "linedraw"),
