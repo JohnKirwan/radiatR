@@ -157,6 +157,7 @@ reference:
       - radiate
       - plot_profile
       - plot_speed_direction
+      - plot_speed_histogram
       - gg_traj
       - draw_tracks
       - add_ticks

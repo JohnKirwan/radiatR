@@ -91,6 +91,10 @@
   quantile) so single-frame tracking artifacts no longer crush the display;
   off-scale points are reported in a caption. `max_speed = Inf` restores the raw range.
 
+* New `plot_speed_histogram()` shows the pooled distribution of step speeds with
+  the median and coefficient of variation (CV) annotated, and the same robust
+  speed clipping (`max_speed`) as the other kinematics plots.
+
 * American spellings are now accepted throughout: every `colour...` argument and
   the `assign_colour_*` / `cycle_colours` / `hf_colour_col` functions have
   `color...` aliases (British remains canonical; supplying both errors).
