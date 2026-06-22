@@ -89,6 +89,16 @@
   the signed turning rate (counter-clockwise positive; radians or
   degrees per second).
 
+- New
+  [`velocity_angle()`](https://johnkirwan.github.io/radiatR/reference/velocity_angle.md)
+  returns the per-row movement direction (the heading of the velocity
+  vector) in `[0, 2*pi)`, the directional sibling of
+  [`instantaneous_speed()`](https://johnkirwan.github.io/radiatR/reference/instantaneous_speed.md).
+  It shares the heading convention, so it feeds straight into
+  [`circ_summary()`](https://johnkirwan.github.io/radiatR/reference/circ_summary.md)
+  /
+  [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md).
+
 - Per-track summaries:
   [`track_velocity()`](https://johnkirwan.github.io/radiatR/reference/track_velocity.md)
   (net average velocity vector, distance-calibrated) and

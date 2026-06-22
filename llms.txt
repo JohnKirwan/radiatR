@@ -760,6 +760,8 @@ Per-trajectory straightness and tortuosity of the movement path.
   : Per-observation instantaneous speed for a Tracks
 - [`velocity_vector()`](https://johnkirwan.github.io/radiatR/reference/velocity_vector.md)
   : Per-observation velocity vector for a Tracks
+- [`velocity_angle()`](https://johnkirwan.github.io/radiatR/reference/velocity_angle.md)
+  : Per-row movement direction
 - [`angular_velocity()`](https://johnkirwan.github.io/radiatR/reference/angular_velocity.md)
   : Per-observation angular (turning-rate) velocity for a Tracks
 
@@ -1054,6 +1056,8 @@ Any remaining exported topics.
   [`log_transform()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`set_transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   : Transform history helpers for Tracks objects
+- [`velocity_angle()`](https://johnkirwan.github.io/radiatR/reference/velocity_angle.md)
+  : Per-row movement direction
 - [`velocity_vector()`](https://johnkirwan.github.io/radiatR/reference/velocity_vector.md)
   : Per-observation velocity vector for a Tracks
 - [`vonmises_fit()`](https://johnkirwan.github.io/radiatR/reference/vonmises_fit.md)

@@ -381,6 +381,17 @@ head(angular_velocity(ts, units = "degrees"))   # turning rate, deg/s (CCW +)
 #> [1]        NA 4050.0000    0.0000 3075.3530  637.8571    0.0000
 ```
 
+[`velocity_angle()`](https://johnkirwan.github.io/radiatR/reference/velocity_angle.md)
+gives the direction of travel at each observation, in the same
+convention as headings — so it feeds straight into the circular tools:
+
+``` r
+
+ts <- set_frame_rate(cpunctatus, fps = 30)
+head(velocity_angle(ts, units = "degrees"))   # movement direction per observation
+#> [1]       NA  45.0000 180.0000 180.0000 282.5118 303.7737
+```
+
 Reduced to one row per track,
 [`track_velocity()`](https://johnkirwan.github.io/radiatR/reference/track_velocity.md)
 gives each path’s net (average) velocity vector and
