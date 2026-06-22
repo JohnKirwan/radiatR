@@ -165,3 +165,34 @@ test_that("plot_speed_direction: degrees x-label, colour_by maps, bad column err
   expect_true("colour" %in% names(ggplot2::ggplot_build(pc)$data[[1]]))
   expect_error(plot_speed_direction(ts, colour_by = "nope"), "not found|column")
 })
+
+test_that("plot_profile(speed) clips robustly by default but keeps the data", {
+  ts <- set_frame_rate(cpunctatus, 30)
+  p  <- plot_profile(ts, metric = "speed")
+  rl <- .robust_speed_limit(instantaneous_speed(ts))
+  expect_equal(p$coordinates$limits$y, c(0, rl$limit))     # clipped (< 50)
+  expect_true(rl$limit < 50)
+  expect_true(grepl("off-scale", p$labels$caption))
+  # back-compat: the layer data is NOT dropped (coord zoom only)
+  b  <- ggplot2::ggplot_build(p)
+  ld <- b$data[[which(vapply(p$layers,
+    function(l) inherits(l$geom, "GeomLine"), logical(1)))[1]]]
+  spd <- instantaneous_speed(ts)
+  expect_equal(sort(round(ld$y, 6)), sort(round(spd[is.finite(spd)], 6)))
+})
+
+test_that("plot_profile(speed, max_speed=Inf) is the raw full range, no caption", {
+  ts <- set_frame_rate(cpunctatus, 30)
+  p  <- plot_profile(ts, metric = "speed", max_speed = Inf)
+  expect_equal(p$coordinates$limits$y[2], max(instantaneous_speed(ts), na.rm = TRUE))
+  expect_null(p$labels$caption)
+})
+
+test_that("plot_profile: max_speed does not affect turning/direction", {
+  ts <- set_frame_rate(cpunctatus, 30)
+  for (m in c("turning", "direction")) {
+    p <- plot_profile(ts, metric = m, max_speed = 1)
+    expect_null(p$coordinates$limits$y)     # no coord clip added
+    expect_null(p$labels$caption)
+  }
+})

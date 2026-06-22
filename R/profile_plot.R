@@ -37,7 +37,8 @@
 #'
 #' Speed and turning rate are per-second, so a frame rate is required for
 #' frame-indexed time ([set_frame_rate()]); POSIXct time is used directly. With a
-#' distance calibration ([set_distance_scale()]) speed is in physical units.
+#' distance calibration ([set_distance_scale()]) speed is in physical units. The
+#' speed axis is robustly clipped by default (see `max_speed`).
 #'
 #' Direction is circular: it is drawn as points (not a line) because a line would
 #' draw a false vertical bar across the 0/2*pi seam. A rotating track shows points
@@ -50,9 +51,13 @@
 #'   `"radians"` (default) or `"degrees"`.
 #' @param colour_by,panel_by Optional column names of `as.data.frame(ts)` to
 #'   colour by / facet into panels. Default: one neutral series per track.
+#' @param max_speed For `metric = "speed"`, the speed-axis cap: `NULL` (default,
+#'   the 99.5% quantile -- so single-frame tracking artifacts do not crush the
+#'   plot), a positive number (hard cap), or `Inf` (no clip). Off-scale points
+#'   are reported in a caption. Ignored for `"turning"`/`"direction"`.
 #' @return A `ggplot2` object.
 #' @seealso [instantaneous_speed()], [angular_velocity()], [velocity_angle()],
-#'   [elapsed_seconds()], [radiate()], [set_frame_rate()]
+#'   [plot_speed_direction()], [elapsed_seconds()], [radiate()], [set_frame_rate()]
 #' @export
 #' @examples
 #' ts <- set_frame_rate(cpunctatus, 30)
@@ -60,7 +65,7 @@
 #' plot_profile(ts, metric = "direction", units = "degrees")
 plot_profile <- function(ts, metric = c("speed", "turning", "direction"),
                          units = c("radians", "degrees"),
-                         colour_by = NULL, panel_by = NULL) {
+                         colour_by = NULL, panel_by = NULL, max_speed = NULL) {
   if (!methods::is(ts, "Tracks")) stop("'ts' must be a Tracks.")
   metric <- match.arg(metric)
   units  <- match.arg(units)
@@ -80,11 +85,7 @@ plot_profile <- function(ts, metric = c("speed", "turning", "direction"),
   if (!is.null(panel_by))  df[[panel_by]]  <- d[[panel_by]]
 
   ylab <- switch(metric,
-    speed = {
-      u <- distance_unit(ts)
-      if (!is.null(distance_scale(ts)) && !is.null(u)) paste0("speed (", u, "/s)")
-      else "speed (units/s)"
-    },
+    speed     = .speed_ylab(ts),
     turning   = if (units == "degrees") "turning rate (deg/s)" else "turning rate (rad/s)",
     direction = if (units == "degrees") "direction (deg)" else "direction (rad)")
 
@@ -110,8 +111,17 @@ plot_profile <- function(ts, metric = c("speed", "turning", "direction"),
       ggplot2::geom_line(alpha = 0.7, na.rm = TRUE)
   }
 
+  cap <- NULL
+  if (metric == "speed") {
+    rl  <- .robust_speed_limit(value, max_speed)
+    g   <- g + ggplot2::coord_cartesian(ylim = c(0, rl$limit))
+    if (rl$n_off > 0)
+      cap <- sprintf("%d point%s off-scale (max %.3g)",
+                     rl$n_off, if (rl$n_off == 1L) "" else "s", rl$max)
+  }
+
   g <- g +
-    ggplot2::labs(x = "elapsed (s)", y = ylab,
+    ggplot2::labs(x = "elapsed (s)", y = ylab, caption = cap,
                   colour = if (!is.null(colour_by)) colour_by else NULL) +
     ggplot2::theme_minimal()
   if (!is.null(panel_by))
