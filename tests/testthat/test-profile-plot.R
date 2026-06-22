@@ -94,3 +94,35 @@ test_that("plot_profile(direction) honours colour_by and panel_by", {
   pf <- plot_profile(ts, metric = "direction", panel_by = grp)
   expect_s3_class(ggplot2::ggplot_build(pf), "ggplot_built")
 })
+
+test_that(".robust_speed_limit: quantile default, hard cap, Inf, off-scale count", {
+  v <- c(rep(1, 998), 21, 50)                 # bulk at 1, two artifacts
+  r <- .robust_speed_limit(v)                 # default NULL -> 99.5% quantile
+  expect_equal(unname(r$limit), 1)            # 0.995 quantile of this vector is 1
+  expect_equal(r$n_off, 2L)                   # the 21 and 50 are above
+  expect_equal(r$max, 50)
+
+  r3 <- .robust_speed_limit(v, max_speed = 3)
+  expect_equal(r3$limit, 3); expect_equal(r3$n_off, 2L)
+
+  ri <- .robust_speed_limit(v, max_speed = Inf)
+  expect_equal(ri$limit, 50); expect_equal(ri$n_off, 0L)
+
+  r0 <- .robust_speed_limit(rep(1, 100))      # no outliers
+  expect_equal(r0$n_off, 0L)
+})
+
+test_that(".robust_speed_limit: rejects invalid max_speed", {
+  v <- c(1, 2, 3)
+  expect_error(.robust_speed_limit(v, max_speed = 0),  "max_speed")
+  expect_error(.robust_speed_limit(v, max_speed = -1), "max_speed")
+  expect_error(.robust_speed_limit(v, max_speed = c(1, 2)), "max_speed")
+  expect_error(.robust_speed_limit(v, max_speed = "x"), "max_speed")
+})
+
+test_that(".speed_ylab: physical unit when calibrated, else units/s", {
+  ts <- set_frame_rate(cpunctatus, 30)
+  expect_equal(.speed_ylab(ts), "speed (units/s)")
+  ts2 <- set_distance_scale(ts, 50, "mm")
+  expect_equal(.speed_ylab(ts2), "speed (mm/s)")
+})

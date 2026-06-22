@@ -1,3 +1,32 @@
+# Robust upper limit for a speed axis + count of off-scale values, so a few
+# single-frame tracking artifacts do not crush the display. max_speed: NULL ->
+# the 99.5% quantile; a finite positive number -> that hard cap; Inf -> the data
+# max (no effective clip). Applied by callers via coord_cartesian (a view zoom
+# that keeps all data rows).
+.robust_speed_limit <- function(value, max_speed = NULL) {
+  if (!is.null(max_speed)) {
+    ok <- length(max_speed) == 1L && is.numeric(max_speed) &&
+      !is.na(max_speed) && (is.infinite(max_speed) || max_speed > 0)
+    if (!ok)
+      stop("`max_speed` must be NULL, a positive number, or Inf.", call. = FALSE)
+  }
+  mx <- max(value, na.rm = TRUE)
+  limit <- if (is.null(max_speed))
+    as.numeric(stats::quantile(value, 0.995, na.rm = TRUE))
+  else if (is.infinite(max_speed)) mx
+  else max_speed
+  list(limit = limit, n_off = sum(value > limit, na.rm = TRUE), max = mx)
+}
+
+# The speed y-label: physical units when a distance scale + unit are set,
+# otherwise generic coordinate units per second. Shared by plot_profile and
+# plot_speed_direction.
+.speed_ylab <- function(ts) {
+  u <- distance_unit(ts)
+  if (!is.null(distance_scale(ts)) && !is.null(u)) paste0("speed (", u, "/s)")
+  else "speed (units/s)"
+}
+
 #' Kinematics profile plot for a Tracks
 #'
 #' Draws a per-observation kinematics metric against elapsed time -- the
