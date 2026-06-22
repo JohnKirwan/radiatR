@@ -1125,6 +1125,58 @@ server <- function(input, output, session) {
               )
             )
           )
+          ,
+          # ---- Kinematics ---------------------------------------------------
+          nav_panel(
+            "Kinematics",
+            layout_sidebar(
+              sidebar = sidebar(
+                width = 360, position = "right", open = TRUE,
+                radioButtons("kin_metric", "Metric",
+                             choices = c("Speed" = "speed",
+                                         "Turning rate" = "turning"),
+                             selected = "speed"),
+                conditionalPanel(
+                  condition = "input.kin_metric == 'turning'",
+                  selectInput("kin_units", "Turning units",
+                              choices = c("Radians" = "radians",
+                                          "Degrees" = "degrees"),
+                              selected = "radians")
+                ),
+                uiOutput("kin_colour_ui"),
+                numericInput("kin_frame_rate", "Frame rate (fps)",
+                             value = 30, min = 0, step = 1),
+                uiOutput("kin_note"),
+                tags$hr(class = "my-2"),
+                tags$p(class = "text-muted small",
+                       "radiatR code that reproduces this profile."),
+                tags$div(
+                  style = "max-height:320px; overflow:auto;",
+                  verbatimTextOutput("kinematics_code")
+                ),
+                tags$button(
+                  class   = "btn btn-sm btn-outline-primary w-100 mb-2",
+                  onclick = paste0(
+                    "navigator.clipboard.writeText(",
+                    "document.getElementById('kinematics_code').innerText);",
+                    "this.innerText='Copied';",
+                    "setTimeout(()=>this.innerText='Copy R code',1200);"
+                  ),
+                  "Copy R code"
+                ),
+                downloadButton("dl_kinematics_code", "Download .R",
+                               class = "btn-sm btn-outline-primary w-100")
+              ),
+              card(
+                card_header("Kinematics profile"),
+                card_body(
+                  padding = 0,
+                  fillable = FALSE,
+                  plotOutput("kinematics_plot", height = "460px")
+                )
+              )
+            )
+          )
         )
       )
     }
@@ -1263,6 +1315,21 @@ server <- function(input, output, session) {
   # Treat an as-yet-unrendered toggle (NULL) as its declared default.
   tog <- function(v, default) if (is.null(v)) default else isTRUE(v)
 
+  # Single app-wide capture frame rate. Both the Circular time/speed colouring
+  # and the Kinematics tab read this one value; the per-sidebar numeric inputs
+  # (frame_rate, kin_frame_rate) mirror it. Equality guards prevent feedback loops.
+  fps_rv <- reactiveVal(30)
+  observeEvent(input$frame_rate, {
+    if (!isTRUE(all.equal(input$frame_rate, fps_rv()))) fps_rv(input$frame_rate)
+  }, ignoreInit = TRUE)
+  observeEvent(fps_rv(), {
+    v <- fps_rv()
+    if (!isTRUE(all.equal(input$frame_rate, v)))
+      updateNumericInput(session, "frame_rate", value = v)
+    if (!isTRUE(all.equal(input$kin_frame_rate, v)))   # no-op until Task 3 adds the input
+      updateNumericInput(session, "kin_frame_rate", value = v)
+  })
+
   # The plot spec resolved from the current inputs (shared by the figure and the
   # code export so they cannot drift).
   current_spec <- function() {
@@ -1285,7 +1352,7 @@ server <- function(input, output, session) {
           plot_theme = input$plot_theme, angle_labels = input$angle_labels,
           heading_display = input$heading_display,
           track_colour = input$track_colour %||% "trajectory",
-          frame_rate = input$frame_rate,
+          frame_rate = fps_rv(),
           show_arrow = tog(input$show_arrow, TRUE),
           show_vectors = tog(input$show_vectors, FALSE),
           show_rayleigh = tog(input$show_rayleigh, FALSE),
@@ -1313,7 +1380,7 @@ server <- function(input, output, session) {
         plot_theme = input$plot_theme, angle_labels = input$angle_labels,
         heading_display = input$heading_display,
         track_colour = input$track_colour %||% "trajectory",
-        frame_rate = input$frame_rate,
+        frame_rate = fps_rv(),
         # Path-metrics caption, none mode only (no headings). spec_to_plot and
         # spec_to_code render and reproduce it.
         caption  = if (is.null(rv$hd)) straightness_caption(rv$ts, gc) else NULL,
@@ -1551,6 +1618,71 @@ server <- function(input, output, session) {
       dat <- if (is.null(rv$hd)) straightness_index(rv$ts) else rv$hd
       utils::write.csv(dat, file, row.names = FALSE)
     }
+  )
+
+  # ---- Kinematics sub-tab ----------------------------------------------------
+
+  # Sync the Kinematics frame-rate widget into the single shared fps value.
+  observeEvent(input$kin_frame_rate, {
+    if (!isTRUE(all.equal(input$kin_frame_rate, fps_rv())))
+      fps_rv(input$kin_frame_rate)
+  }, ignoreInit = TRUE)
+
+  # Colour-by selector: categorical columns of the loaded Tracks ("None" default).
+  output$kin_colour_ui <- renderUI({
+    cols <- if (is.null(rv$ts)) character(0) else colour_cols(rv$ts)
+    selectInput("kin_colour_by", "Colour lines by",
+                choices = c("None" = "", stats::setNames(cols, cols)),
+                selected = "")
+  })
+
+  kinematics_spec <- reactive({
+    req(rv$ts)
+    build_kinematics_spec(rv$ts, list(
+      kin_metric    = input$kin_metric,
+      kin_units     = input$kin_units,
+      kin_colour_by = input$kin_colour_by,
+      fps           = fps_rv(),
+      data = list(
+        source  = if (identical(rv$source, "example")) "example" else "file",
+        mode    = "trajectories",
+        path    = rv$file_name %||% "your_tracks.csv",
+        dialect = if (is.null(rv$dialect) || rv$dialect %in% c("auto", "generic"))
+          NULL else rv$dialect)))
+  })
+
+  # fps is required only for numeric-frame Tracks; POSIXct time needs none.
+  kin_fps_ok <- reactive({
+    if (is.null(rv$ts)) return(FALSE)
+    if (inherits(as.data.frame(rv$ts)[[rv$ts@cols$time]], "POSIXct")) return(TRUE)
+    f <- fps_rv(); is.numeric(f) && length(f) == 1L && is.finite(f) && f > 0
+  })
+
+  output$kin_note <- renderUI({
+    if (is.null(rv$ts))
+      return(div(class = "alert alert-secondary py-1 px-2 small mb-2",
+                 "Kinematics needs trajectory data (load tracks, not headings)."))
+    if (!isTRUE(kin_fps_ok()))
+      return(div(class = "alert alert-warning py-1 px-2 small mb-2",
+                 "Set a positive frame rate to convert frames to seconds."))
+    NULL
+  })
+
+  output$kinematics_plot <- renderPlot({
+    req(rv$ts)
+    validate(need(isTRUE(kin_fps_ok()),
+                  "Set a positive frame rate to plot kinematics."))
+    kinematics_spec_to_plot(kinematics_spec(), rv$ts)
+  })
+
+  kinematics_code_text <- reactive({
+    req(rv$ts)
+    spec_to_kinematics_code(kinematics_spec())
+  })
+  output$kinematics_code <- renderText(kinematics_code_text())
+  output$dl_kinematics_code <- downloadHandler(
+    filename = function() paste0("radiatR_kinematics_", Sys.Date(), ".R"),
+    content  = function(file) writeLines(kinematics_code_text(), file)
   )
 }
 
