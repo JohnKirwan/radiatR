@@ -140,6 +140,13 @@
   [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)).
   Needs a frame rate; distance-calibrated when a scale is set.
 
+- [`plot_profile()`](https://johnkirwan.github.io/radiatR/reference/plot_profile.md)
+  gains `metric = "direction"`, plotting the per-observation movement
+  direction
+  ([`velocity_angle()`](https://johnkirwan.github.io/radiatR/reference/velocity_angle.md))
+  over elapsed time as points (direction is circular, so it is drawn as
+  points rather than a line).
+
 - American spellings are now accepted throughout: every `colour...`
   argument and the `assign_colour_*` / `cycle_colours` / `hf_colour_col`
   functions have `color...` aliases (British remains canonical;

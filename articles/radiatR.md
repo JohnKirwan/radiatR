@@ -443,6 +443,16 @@ plot_profile(ts, metric = "turning", units = "degrees")
 
 ![](radiatR_files/figure-html/plot-profile-2.png)
 
+`metric = "direction"` plots the movement direction over time (as
+points, since direction is circular):
+
+``` r
+
+plot_profile(ts, metric = "direction", units = "degrees")
+```
+
+![](radiatR_files/figure-html/profile-direction-1.png)
+
 ## Heading Overlays
 
 The **crossing method** — projecting the vector between two
