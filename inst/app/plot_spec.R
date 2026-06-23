@@ -304,7 +304,8 @@ spec_to_plot <- function(spec, ts, hd) {
   # Circular boxplot overlay (Buttarazzi et al. 2018), drawn last. NULL (no-op
   # under +) and a warning when the data is not drawable.
   if (isTRUE(spec$show$boxplot))
-    p <- p + add_circular_boxplot(hd, axial = isTRUE(spec$axial))
+    p <- p + add_circular_boxplot(hd, axial = isTRUE(spec$axial),
+                                  theme = spec$theme %||% "void")
 
   p
 }
@@ -538,7 +539,8 @@ spec_to_code <- function(spec) {
       ", colour = ", q(SPEC_VTEST_COLOUR), ", linewidth = ", SPEC_VTEST_LWD, ax, ")"))
   }
   if (has_hd && isTRUE(spec$show$boxplot))
-    tail <- c(tail, paste0("add_circular_boxplot(hd", ax, ")"))
+    tail <- c(tail, paste0("add_circular_boxplot(hd", ax,
+                           ", theme = ", q(spec$theme %||% "void"), ")"))
   lab_parts <- character(0)
   if (!is.null(spec$subtitle) && nzchar(spec$subtitle))
     lab_parts <- c(lab_parts, paste0("subtitle = ", q(spec$subtitle)))
