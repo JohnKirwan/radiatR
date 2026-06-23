@@ -15,15 +15,16 @@ add_circular_boxplot(
   hd,
   angle_col = "heading",
   axial = FALSE,
-  radius = 1,
-  width = 0.1,
+  radius = 1.1,
+  width = 0.06,
   colour = "black",
-  box_fill = "grey80",
+  box_fill = "grey90",
   farout_shape = 8,
-  show_median_arrow = TRUE,
+  show_median_arrow = FALSE,
   linewidth = 0.8,
   n_theta = 200L,
   display = NULL,
+  theme = NULL,
   color = NULL
 )
 ```
@@ -49,11 +50,12 @@ add_circular_boxplot(
 
 - radius:
 
-  Perimeter radius for the box/whiskers. Default \`1\`.
+  Perimeter radius for the box/whiskers. Default \`1.1\` (just outside
+  the unit circle).
 
 - width:
 
-  Radial thickness of the box band. Default \`0.1\`.
+  Radial thickness of the box band. Default \`0.06\`.
 
 - colour, color:
 
@@ -62,7 +64,7 @@ add_circular_boxplot(
 
 - box_fill:
 
-  Fill colour of the box band. Default \`"grey80"\`.
+  Fill colour of the box band. Default \`"grey90"\`.
 
 - farout_shape:
 
@@ -70,7 +72,8 @@ add_circular_boxplot(
 
 - show_median_arrow:
 
-  Draw a radial arrow at the median. Default \`TRUE\`.
+  Draw a centre-to-edge arrow at the median direction (a median pointer,
+  not a rho resultant). Default \`FALSE\`.
 
 - linewidth:
 
@@ -84,6 +87,12 @@ add_circular_boxplot(
 
   A \[circ_display()\] object; when \`NULL\` (default), taken from
   \`attr(hd, "display")\`, falling back to \`circ_display()\`.
+
+- theme:
+
+  Optional radiate theme name (e.g. "void", "minimal", "dark"). When
+  set, the box, whiskers and crossbars take that theme's chrome colour
+  (matching the circle and ticks), overriding `colour`.
 
 ## Value
 

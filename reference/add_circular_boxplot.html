@@ -66,15 +66,16 @@ a short band even when the axis sits on the 0/pi seam). Composable with `+`.</p>
 <span>  <span class="va">hd</span>,</span>
 <span>  angle_col <span class="op">=</span> <span class="st">"heading"</span>,</span>
 <span>  axial <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  radius <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  width <span class="op">=</span> <span class="fl">0.1</span>,</span>
+<span>  radius <span class="op">=</span> <span class="fl">1.1</span>,</span>
+<span>  width <span class="op">=</span> <span class="fl">0.06</span>,</span>
 <span>  colour <span class="op">=</span> <span class="st">"black"</span>,</span>
-<span>  box_fill <span class="op">=</span> <span class="st">"grey80"</span>,</span>
+<span>  box_fill <span class="op">=</span> <span class="st">"grey90"</span>,</span>
 <span>  farout_shape <span class="op">=</span> <span class="fl">8</span>,</span>
-<span>  show_median_arrow <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  show_median_arrow <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  linewidth <span class="op">=</span> <span class="fl">0.8</span>,</span>
 <span>  n_theta <span class="op">=</span> <span class="fl">200L</span>,</span>
 <span>  display <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  theme <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  color <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -101,11 +102,12 @@ angles are doubled, the boxplot computed, and locations halved back to
 
 
 <dt id="arg-radius">radius<a class="anchor" aria-label="anchor" href="#arg-radius"></a></dt>
-<dd><p>Perimeter radius for the box/whiskers. Default `1`.</p></dd>
+<dd><p>Perimeter radius for the box/whiskers. Default `1.1` (just
+outside the unit circle).</p></dd>
 
 
 <dt id="arg-width">width<a class="anchor" aria-label="anchor" href="#arg-width"></a></dt>
-<dd><p>Radial thickness of the box band. Default `0.1`.</p></dd>
+<dd><p>Radial thickness of the box band. Default `0.06`.</p></dd>
 
 
 <dt id="arg-colour-color">colour, color<a class="anchor" aria-label="anchor" href="#arg-colour-color"></a></dt>
@@ -114,7 +116,7 @@ Default `"black"`. `color` is the American-spelling alias.</p></dd>
 
 
 <dt id="arg-box-fill">box_fill<a class="anchor" aria-label="anchor" href="#arg-box-fill"></a></dt>
-<dd><p>Fill colour of the box band. Default `"grey80"`.</p></dd>
+<dd><p>Fill colour of the box band. Default `"grey90"`.</p></dd>
 
 
 <dt id="arg-farout-shape">farout_shape<a class="anchor" aria-label="anchor" href="#arg-farout-shape"></a></dt>
@@ -122,7 +124,8 @@ Default `"black"`. `color` is the American-spelling alias.</p></dd>
 
 
 <dt id="arg-show-median-arrow">show_median_arrow<a class="anchor" aria-label="anchor" href="#arg-show-median-arrow"></a></dt>
-<dd><p>Draw a radial arrow at the median. Default `TRUE`.</p></dd>
+<dd><p>Draw a centre-to-edge arrow at the median direction
+(a median pointer, not a rho resultant). Default `FALSE`.</p></dd>
 
 
 <dt id="arg-linewidth">linewidth<a class="anchor" aria-label="anchor" href="#arg-linewidth"></a></dt>
@@ -136,6 +139,12 @@ Default `"black"`. `color` is the American-spelling alias.</p></dd>
 <dt id="arg-display">display<a class="anchor" aria-label="anchor" href="#arg-display"></a></dt>
 <dd><p>A [circ_display()] object; when `NULL` (default), taken from
 `attr(hd, "display")`, falling back to `circ_display()`.</p></dd>
+
+
+<dt id="arg-theme">theme<a class="anchor" aria-label="anchor" href="#arg-theme"></a></dt>
+<dd><p>Optional radiate theme name (e.g. "void", "minimal", "dark").
+When set, the box, whiskers and crossbars take that theme's chrome colour
+(matching the circle and ticks), overriding <code>colour</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

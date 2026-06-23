@@ -124,6 +124,12 @@
 
 ### Visualisation
 
+- The circular boxplot
+  ([`add_circular_boxplot()`](https://johnkirwan.github.io/radiatR/reference/add_circular_boxplot.md))
+  now draws just outside the circle in a thinner band with the median
+  arrow off by default, and takes the plot theme’s colour (`theme =`);
+  the app’s overlay follows the active theme.
+
 - New
   [`perimeter_labs()`](https://johnkirwan.github.io/radiatR/reference/perimeter_labs.md)
   labels a radial plot’s circumference in domain units, with built-in
