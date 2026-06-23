@@ -159,17 +159,22 @@ circ_boxplot_stats <- function(hd, angle_col = "heading", axial = FALSE) {
 #' a short band even when the axis sits on the 0/pi seam). Composable with `+`.
 #'
 #' @inheritParams circ_boxplot_stats
-#' @param radius Perimeter radius for the box/whiskers. Default `1`.
-#' @param width Radial thickness of the box band. Default `0.1`.
+#' @param radius Perimeter radius for the box/whiskers. Default `1.1` (just
+#'   outside the unit circle).
+#' @param width Radial thickness of the box band. Default `0.06`.
 #' @param colour,color Outline colour for box, whiskers, crossbars, far-out.
 #'   Default `"black"`. `color` is the American-spelling alias.
-#' @param box_fill Fill colour of the box band. Default `"grey80"`.
+#' @param box_fill Fill colour of the box band. Default `"grey90"`.
 #' @param farout_shape Point shape for far-out values. Default `8` (star).
-#' @param show_median_arrow Draw a radial arrow at the median. Default `TRUE`.
+#' @param show_median_arrow Draw a centre-to-edge arrow at the median direction
+#'   (a median pointer, not a rho resultant). Default `FALSE`.
 #' @param linewidth Line width for arcs/crossbars. Default `0.8`.
 #' @param n_theta Points per arc. Default `200`.
 #' @param display A [circ_display()] object; when `NULL` (default), taken from
 #'   `attr(hd, "display")`, falling back to `circ_display()`.
+#' @param theme Optional radiate theme name (e.g. "void", "minimal", "dark").
+#'   When set, the box, whiskers and crossbars take that theme's chrome colour
+#'   (matching the circle and ticks), overriding \code{colour}.
 #' @return A list of ggplot2 layers, or `NULL` when the boxplot is not drawable
 #'   (a `warning()` is emitted with the reason).
 #' @references Buttarazzi, D., Pandolfo, G. & Porzio, G. C. (2018). A boxplot
@@ -181,12 +186,16 @@ circ_boxplot_stats <- function(hd, angle_col = "heading", axial = FALSE) {
 #' @importFrom grid arrow unit
 #' @export
 add_circular_boxplot <- function(hd, angle_col = "heading", axial = FALSE,
-                                 radius = 1, width = 0.1,
-                                 colour = "black", box_fill = "grey80",
-                                 farout_shape = 8, show_median_arrow = TRUE,
+                                 radius = 1.1, width = 0.06,
+                                 colour = "black", box_fill = "grey90",
+                                 farout_shape = 8, show_median_arrow = FALSE,
                                  linewidth = 0.8, n_theta = 200L, display = NULL,
-                                 color = NULL) {
+                                 theme = NULL, color = NULL) {
   .apply_spelling_aliases()
+  if (!is.null(theme)) {
+    st     <- .radial_style(theme)
+    colour <- st$col_of(st$ax$line)
+  }
   s <- circ_boxplot_stats(hd, angle_col = angle_col, axial = axial)
   if (is.null(display))
     display <- (if (is.data.frame(hd)) attr(hd, "display", exact = TRUE) else NULL) %||% circ_display()
@@ -248,7 +257,8 @@ add_circular_boxplot <- function(hd, angle_col = "heading", axial = FALSE,
   layers <- list(
     ggplot2::geom_polygon(data = box_df,
       ggplot2::aes(x = .data$.x, y = .data$.y, group = .data$.g),
-      fill = box_fill, colour = colour, linewidth = linewidth, inherit.aes = FALSE),
+      fill = box_fill, colour = colour, linewidth = linewidth,
+      alpha = 0.6, inherit.aes = FALSE),
     ggplot2::geom_path(data = whisk_df,
       ggplot2::aes(x = .data$.x, y = .data$.y, group = .data$.g),
       colour = colour, linewidth = linewidth, inherit.aes = FALSE),
