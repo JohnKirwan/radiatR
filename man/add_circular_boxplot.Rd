@@ -8,15 +8,16 @@ add_circular_boxplot(
   hd,
   angle_col = "heading",
   axial = FALSE,
-  radius = 1,
-  width = 0.1,
+  radius = 1.1,
+  width = 0.06,
   colour = "black",
-  box_fill = "grey80",
+  box_fill = "grey90",
   farout_shape = 8,
-  show_median_arrow = TRUE,
+  show_median_arrow = FALSE,
   linewidth = 0.8,
   n_theta = 200L,
   display = NULL,
+  theme = NULL,
   color = NULL
 )
 }
@@ -32,18 +33,20 @@ angles are doubled, the boxplot computed, and locations halved back to
 `[0, pi)`; the fence multiplier is taken on the doubled data. Default
 `FALSE`.}
 
-\item{radius}{Perimeter radius for the box/whiskers. Default `1`.}
+\item{radius}{Perimeter radius for the box/whiskers. Default `1.1` (just
+outside the unit circle).}
 
-\item{width}{Radial thickness of the box band. Default `0.1`.}
+\item{width}{Radial thickness of the box band. Default `0.06`.}
 
 \item{colour, color}{Outline colour for box, whiskers, crossbars, far-out.
 Default `"black"`. `color` is the American-spelling alias.}
 
-\item{box_fill}{Fill colour of the box band. Default `"grey80"`.}
+\item{box_fill}{Fill colour of the box band. Default `"grey90"`.}
 
 \item{farout_shape}{Point shape for far-out values. Default `8` (star).}
 
-\item{show_median_arrow}{Draw a radial arrow at the median. Default `TRUE`.}
+\item{show_median_arrow}{Draw a centre-to-edge arrow at the median direction
+(a median pointer, not a rho resultant). Default `FALSE`.}
 
 \item{linewidth}{Line width for arcs/crossbars. Default `0.8`.}
 
@@ -51,6 +54,10 @@ Default `"black"`. `color` is the American-spelling alias.}
 
 \item{display}{A [circ_display()] object; when `NULL` (default), taken from
 `attr(hd, "display")`, falling back to `circ_display()`.}
+
+\item{theme}{Optional radiate theme name (e.g. "void", "minimal", "dark").
+When set, the box, whiskers and crossbars take that theme's chrome colour
+(matching the circle and ticks), overriding \code{colour}.}
 }
 \value{
 A list of ggplot2 layers, or `NULL` when the boxplot is not drawable

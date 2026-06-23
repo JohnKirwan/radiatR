@@ -361,7 +361,7 @@ test_that("circular boxplot overlay round-trips (directional)", {
   live <- suppressWarnings(spec_to_plot(rt$spec, rt$ts, rt$hd))
   expect_true(any(vapply(live$layers, function(l) inherits(l$geom, "GeomPolygon"), logical(1))))
   code <- spec_to_code(rt$spec)
-  expect_match(code, "add_circular_boxplot(hd)", fixed = TRUE)
+  expect_match(code, 'add_circular_boxplot(hd, theme = "void")', fixed = TRUE)
   suppressWarnings(expect_roundtrip(rt))
 })
 
@@ -379,7 +379,7 @@ test_that("circular boxplot overlay round-trips (axial) and emits axial = TRUE",
   rt <- roundtrip_spec("points", by = "trajectory", facet = NULL,
                        arrow = FALSE, vectors = FALSE, axial = TRUE, boxplot = TRUE)
   code <- spec_to_code(rt$spec)
-  expect_match(code, "add_circular_boxplot(hd, axial = TRUE)", fixed = TRUE)
+  expect_match(code, 'add_circular_boxplot(hd, axial = TRUE, theme = "void")', fixed = TRUE)
   suppressWarnings(expect_roundtrip(rt))
 })
 

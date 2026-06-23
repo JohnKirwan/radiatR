@@ -75,6 +75,10 @@
 
 ## Visualisation
 
+* The circular boxplot (`add_circular_boxplot()`) now draws just outside the
+  circle in a thinner band with the median arrow off by default, and takes the
+  plot theme's colour (`theme =`); the app's overlay follows the active theme.
+
 * New `perimeter_labs()` labels a radial plot's circumference in domain units,
   with built-in scales `scale_cardinal()` (compass), `scale_clock()` (hours),
   `scale_months()`, and `scale_seconds()`. `radiate(angle_labels = "cardinal" |

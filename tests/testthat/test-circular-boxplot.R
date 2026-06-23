@@ -142,3 +142,36 @@ test_that("axial boxplot draws correctly when the axis sits on the 0/pi seam", {
   p <- ggplot2::ggplot() + ggplot2::coord_fixed() + la
   expect_s3_class(ggplot2::ggplot_build(p), "ggplot_built")
 })
+
+test_that("add_circular_boxplot: arrow off by default, thin band outside the circle", {
+  set.seed(8)
+  hd <- data.frame(heading = as.numeric(
+    circular::rvonmises(150, mu = circular::circular(1), kappa = 5)))
+  lyr <- add_circular_boxplot(hd)
+  has_arrow <- function(L) inherits(L, "Layer") && !is.null(L$geom_params$arrow)
+  expect_false(any(vapply(lyr, has_arrow, logical(1))))          # no arrow by default
+  poly <- lyr[[which(vapply(lyr, function(L) inherits(L$geom, "GeomPolygon"),
+                            logical(1)))[1]]]$data
+  r <- sqrt(poly$.x^2 + poly$.y^2)
+  expect_true(min(r) > 1.0)                                      # entirely outside the circle
+  expect_true(max(r) > 1.05 && max(r) < 1.2)                     # ~1.1 band
+  expect_true((max(r) - min(r)) < 0.1)                           # thin (width 0.06)
+  lyr2 <- add_circular_boxplot(hd, show_median_arrow = TRUE)
+  expect_true(any(vapply(lyr2, has_arrow, logical(1))))          # opt back in
+})
+
+test_that("add_circular_boxplot: theme sets the chrome colour", {
+  set.seed(8)
+  hd <- data.frame(heading = as.numeric(
+    circular::rvonmises(150, mu = circular::circular(1), kappa = 5)))
+  poly_col <- function(lyr) {
+    L <- lyr[[which(vapply(lyr, function(z) inherits(z$geom, "GeomPolygon"),
+                           logical(1)))[1]]]
+    L$aes_params$colour
+  }
+  expect_equal(poly_col(add_circular_boxplot(hd, theme = "void")), "black")
+  dk <- radiatR:::.radial_style("dark")
+  expect_equal(poly_col(add_circular_boxplot(hd, theme = "dark")),
+               dk$col_of(dk$ax$line))
+  expect_equal(poly_col(add_circular_boxplot(hd)), "black")       # NULL theme -> colour default
+})
