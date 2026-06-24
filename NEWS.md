@@ -75,6 +75,11 @@
 
 ## Visualisation
 
+* `add_circular_boxplot()` gains `panel_by` so a faceted `radiate()` draws a
+  separate boxplot per panel instead of repeating one pooled summary on every
+  facet; the Shiny app passes the active facet column automatically. A panel
+  with too few observations is skipped while the others still draw.
+
 * `radiate()` gains `coords = "absolute"` to plot the arena-native (un-rotated)
   frame instead of the landmark-relative one, useful as an experimental control;
   the Shiny app exposes it via a "Heading frame" toggle. The relative (landmark)

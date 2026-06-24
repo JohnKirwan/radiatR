@@ -306,7 +306,8 @@ spec_to_plot <- function(spec, ts, hd) {
   # under +) and a warning when the data is not drawable.
   if (isTRUE(spec$show$boxplot))
     p <- p + add_circular_boxplot(hd, axial = isTRUE(spec$axial),
-                                  theme = spec$theme %||% "void")
+                                  theme = spec$theme %||% "void",
+                                  panel_by = spec$facet_by)
 
   p
 }
@@ -543,9 +544,11 @@ spec_to_code <- function(spec) {
       "add_critical_v_line(hd, mu0 = pi / 2, angle_col = \"heading\"", gpg,
       ", colour = ", q(SPEC_VTEST_COLOUR), ", linewidth = ", SPEC_VTEST_LWD, ax, ")"))
   }
-  if (has_hd && isTRUE(spec$show$boxplot))
+  if (has_hd && isTRUE(spec$show$boxplot)) {
+    bpb <- if (is.null(spec$facet_by)) "" else paste0(", panel_by = ", q(spec$facet_by))
     tail <- c(tail, paste0("add_circular_boxplot(hd", ax,
-                           ", theme = ", q(spec$theme %||% "void"), ")"))
+                           ", theme = ", q(spec$theme %||% "void"), bpb, ")"))
+  }
   lab_parts <- character(0)
   if (!is.null(spec$subtitle) && nzchar(spec$subtitle))
     lab_parts <- c(lab_parts, paste0("subtitle = ", q(spec$subtitle)))
