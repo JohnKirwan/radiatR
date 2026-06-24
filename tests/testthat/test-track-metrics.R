@@ -71,6 +71,60 @@ test_that("path_tortuosity is Inf when the path returns to its start", {
   expect_identical(path_tortuosity(c(0, 1, 0), c(0, 1, 0)), Inf)
 })
 
+test_that("path_sinuosity: straight path is ~0", {
+  expect_equal(path_sinuosity(0:6, rep(0, 7)), 0, tolerance = 1e-8)
+})
+
+test_that("path_sinuosity matches the closed form for a constant-step zig-zag", {
+  # Regular saw-tooth: constant step length p, alternating turn +/- theta.
+  # b = 0 (constant step), c = cos(theta), so
+  # S = 2 / sqrt( p * (1 + cos theta) / (1 - cos theta) ).
+  theta <- pi / 4
+  p     <- 1
+  # build the path step by step from headings 0, +theta, 0, +theta, ... (the
+  # interior turn alternates 0/theta -> mean cos = (1 + cos theta)/2; use a pure
+  # constant-turn path instead so c = cos(theta) exactly).
+  n  <- 50L
+  hd <- cumsum(c(0, rep(theta, n - 1L)))          # constant turn theta each step
+  x  <- c(0, cumsum(p * cos(hd)))
+  y  <- c(0, cumsum(p * sin(hd)))
+  s  <- path_sinuosity(x, y)
+  cc <- cos(theta)
+  expected <- 2 / sqrt(p * (1 + cc) / (1 - cc))
+  expect_equal(s, expected, tolerance = 1e-6)
+})
+
+test_that("path_sinuosity handles degenerate input", {
+  expect_true(is.na(path_sinuosity(numeric(0), numeric(0))))
+  expect_true(is.na(path_sinuosity(c(0, 1), c(0, 1))))       # < 3 points
+  expect_true(is.na(path_sinuosity(rep(2, 5), rep(3, 5))))   # zero-length steps
+})
+
+test_that("sinuosity returns one value per trajectory and matches path_sinuosity", {
+  ts  <- simulate_tracks(conditions = data.frame(n_trials = 4L),
+                         n_points = 40, seed = 7, output = "trajset")
+  idc <- ts@cols$id
+  sn  <- sinuosity(ts)
+  expect_s3_class(sn, "data.frame")
+  expect_named(sn, c(idc, "sinuosity"))
+  expect_equal(nrow(sn), length(unique(ts@data[[idc]])))
+  d   <- as.data.frame(ts)
+  one <- d[d[[idc]] == sn[[idc]][1], ]
+  one <- one[order(one[[ts@cols$time]]), ]
+  expect_equal(sn$sinuosity[1],
+               path_sinuosity(one[[ts@cols$x]], one[[ts@cols$y]]),
+               tolerance = 1e-8)
+})
+
+test_that("sinuosity is distance-calibrated (larger scale -> smaller S)", {
+  ts  <- simulate_tracks(conditions = data.frame(n_trials = 3L),
+                         n_points = 40, seed = 8, output = "trajset")
+  base   <- sinuosity(ts)$sinuosity
+  scaled <- sinuosity(set_distance_scale(ts, 10))$sinuosity
+  ok <- is.finite(base) & is.finite(scaled) & base > 0
+  expect_true(all(scaled[ok] < base[ok]))
+})
+
 test_that("path_tortuosity handles degenerate input", {
   expect_true(is.na(path_tortuosity(numeric(0), numeric(0))))
   expect_true(is.na(path_tortuosity(1, 1)))                     # single point
