@@ -10,6 +10,8 @@ degree_labs(
   units = NULL,
   size = 3.88,
   family = "",
+  position = c("outside", "inside", "split"),
+  inside_radius = 0.88,
   color = NULL
 )
 }
@@ -27,6 +29,16 @@ American-spelling alias.}
 text size).}
 
 \item{family}{Label font family. Default `""` (the device default).}
+
+\item{position}{Where to place the labels: `"outside"` (default) keeps the
+four diagonals (45/135/225/315) in the plot corners, as before;
+`"inside"` puts all eight directions (including the cardinals
+0/90/180/270) just inside the circle at `inside_radius`; `"split"` puts
+the cardinals inside and the diagonals outside. The `"inside"`/`"split"`
+modes honour `display` (the labels rotate with the plot).}
+
+\item{inside_radius}{Radius (unit-circle fraction) for inside labels.
+Default `0.88`.}
 }
 \value{
 A list of ggplot2 annotation layers.
