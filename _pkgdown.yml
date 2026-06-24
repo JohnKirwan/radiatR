@@ -32,6 +32,8 @@ navbar:
       menu:
         - text: "Main workflow"
           href: articles/radiatR.html
+        - text: "Quantifying path shape"
+          href: articles/track-metrics.html
         - text: "Loaders"
           href: articles/loaders.html
         - text: "Circular statistics & distribution overlays"
