@@ -226,12 +226,13 @@ straightness_caption <- function(ts, gc = NULL) {
   }
 }
 
-derive_hd <- function(ts, method, circ0, circ1) {
-  # Use relative coords when available so headings are in the same frame as
-  # the rel_x/rel_y display (stimulus fixed at East). Fall back to absolute
-  # for datasets without a normalised relative coordinate system.
+derive_hd <- function(ts, method, circ0, circ1, coords = "relative") {
+  # Use the requested frame; relative aligns headings with the rel_x/rel_y display
+  # (stimulus fixed at East). Datasets without a relative coordinate system can
+  # only produce absolute headings, so a relative request floors to absolute.
   has_rel <- !is.null(ts@cols$rel_x) && !is.null(ts@cols$rel_y)
-  args <- list(x = ts, coords = if (has_rel) "relative" else "absolute")
+  use <- if (identical(coords, "relative") && !has_rel) "absolute" else coords
+  args <- list(x = ts, coords = use)
   # The app surfaces attrition via the Results banner, not the R console; quiet
   # still attaches the n_total/n_missing/missing_ids attributes the banner reads.
   args$on_missing <- "quiet"
@@ -587,6 +588,20 @@ server <- function(input, output, session) {
     }
   })
 
+  output$frame_ui <- renderUI({
+    req(rv$ts)
+    has_rel <- !is.null(rv$ts@cols$rel_x) && !is.null(rv$ts@cols$rel_y)
+    rb <- radioButtons(
+      "frame", "Heading frame",
+      choices  = c("Relative to landmark" = "relative",
+                   "Absolute (control)"   = "absolute"),
+      selected = isolate(input$frame) %||% "relative")
+    if (has_rel) rb else tagList(
+      tags$div(rb, style = "opacity:0.5; pointer-events:none;"),
+      tags$p(class = "text-muted small",
+             "No landmark frame in this dataset — showing absolute coordinates."))
+  })
+
   # When the circular-boxplot overlay is on but the current headings are not
   # drawable (non-unique median or n < 4) the overlay silently no-ops; surface
   # the reason so the empty result is not mysterious.
@@ -669,7 +684,7 @@ server <- function(input, output, session) {
     c0     <- if (is.null(input$circ0))  0.3 else input$circ0
     c1     <- if (is.null(input$circ1))  0.6 else input$circ1
     hd <- tryCatch(
-      derive_hd(rv$ts, method, c0, c1),
+      derive_hd(rv$ts, method, c0, c1, input$frame %||% "relative"),
       error = function(e) {
         rv$error <- plain_error(e)
         NULL
@@ -693,6 +708,7 @@ server <- function(input, output, session) {
       }
       rv$hd     <- hd
       rv$method <- method
+      rv$frame  <- input$frame %||% "relative"
       rv$step   <- 3L
       rv$error  <- NULL
     }
@@ -907,6 +923,7 @@ server <- function(input, output, session) {
               selected = "directional"
             ),
             uiOutput("method_model_note"),
+            uiOutput("frame_ui"),
             conditionalPanel(
               "input.method == 'crossing'",
               tags$hr(),
@@ -1397,6 +1414,7 @@ server <- function(input, output, session) {
         plot_theme = input$plot_theme, angle_labels = input$angle_labels,
         heading_display = input$heading_display,
         track_colour = input$track_colour %||% "trajectory",
+        frame = rv$frame %||% "relative",
         frame_rate = fps_rv(),
         # Path-metrics caption, none mode only (no headings). spec_to_plot and
         # spec_to_code render and reproduce it.

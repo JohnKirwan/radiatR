@@ -74,6 +74,16 @@ radiate(cpunctatus,
         display    = circ_display(zero = 0))
 ```
 
+By default `radiate()` plots the landmark-**relative** frame --- each
+trajectory rotated so its trial landmark (e.g. the stimulus) sits at the same
+direction. To inspect the arena-native frame as an experimental control (for
+instance, to check the apparatus carries no directional bias of its own), pass
+`coords = "absolute"`:
+
+```{r plot-absolute}
+radiate(cpunctatus, coords = "absolute")
+```
+
 The circumference can be labelled in domain units instead of degrees --- useful
 for time-of-year or compass data. `angle_labels` selects a built-in scale and
 aligns the tick count to it:

@@ -111,6 +111,25 @@ test_that("spec_to_code: headings with no group emits a single-colour key", {
   expect_match(code, "hd$.colour <- factor(\"all\")", fixed = TRUE)
 })
 
+test_that("spec_to_code emits coords only for the absolute frame", {
+  # Build a trajectory-mode spec the same way the neighbouring tests do.
+  ts  <- cpunctatus
+  hd  <- derive_headings(ts, rule = "distal")
+  spec <- build_plot_spec(
+    ts = ts, hd = hd, method = "distal",
+    data = list(source = "example", mode = "trajectories",
+                path = "x.csv", dialect = NULL),
+    inputs = list(cond_col = NULL, colour_by = NULL, plot_theme = "void",
+                  angle_labels = "degrees", show_tracks = TRUE,
+                  show_arrow = FALSE))
+  expect_false(grepl('coords = "absolute"', spec_to_code(spec), fixed = TRUE))
+
+  spec$coords <- "absolute"
+  code <- spec_to_code(spec)
+  expect_match(code, 'derive_headings\\(ts, rule = "[^"]+".*coords = "absolute"')
+  expect_match(code, 'radiate\\(ts, group_col.*coords = "absolute"')
+})
+
 test_that("spec_to_code emits axial = TRUE for axial headings specs", {
   sp <- example_spec(rule = "distal", arrow = TRUE)
   sp$data <- list(source = "example", path = NULL, dialect = NULL)
