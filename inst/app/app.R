@@ -208,23 +208,42 @@ method_help_text <- c(
 )
 
 # One-line path-metrics caption for the no-headings ("none") mode. Reads the
-# same straightness_index() table the summary uses so numbers match. Extend by
-# appending more "name: value" clauses as metrics are added.
+# same exported metric functions the metrics table uses so numbers match. Extend
+# by appending more "label/values" clauses as metrics are added.
 straightness_caption <- function(ts, gc = NULL) {
-  st  <- straightness_index(ts)
   idc <- ts@cols$id
+  st  <- straightness_index(ts)
+  sn  <- sinuosity(ts)
   if (is.null(gc)) {
-    m <- mean(st$straightness, na.rm = TRUE)
-    if (!is.finite(m)) return("")
-    sprintf("Mean straightness: %.2f", m)
+    ms <- mean(st$straightness, na.rm = TRUE)
+    if (!is.finite(ms)) return("")
+    msin <- mean(sn$sinuosity, na.rm = TRUE)
+    out  <- sprintf("Mean straightness: %.2f", ms)
+    if (is.finite(msin)) out <- paste0(out, sprintf(" | Mean sinuosity: %.2f", msin))
+    out
   } else {
     cond_map <- unique(as.data.frame(ts)[, c(idc, gc), drop = FALSE])
-    st  <- merge(st, cond_map, by = idc)
-    agg <- tapply(st$straightness, as.character(st[[gc]]),
-                  function(v) mean(v, na.rm = TRUE))
-    parts <- sprintf("%s: %.2f", names(agg), as.numeric(agg))
-    paste0("Straightness - ", paste(parts, collapse = ", "))
+    clause <- function(tbl, val, label) {
+      tbl <- merge(tbl, cond_map, by = idc)
+      agg <- tapply(tbl[[val]], as.character(tbl[[gc]]),
+                    function(v) mean(v, na.rm = TRUE))
+      paste0(label, " - ",
+             paste(sprintf("%s: %.2f", names(agg), as.numeric(agg)),
+                   collapse = ", "))
+    }
+    paste(clause(st, "straightness", "Straightness"),
+          clause(sn, "sinuosity",    "Sinuosity"), sep = " | ")
   }
+}
+
+# Combined per-track path-metrics table for the no-headings ("none") CSV: id +
+# length + straightness + tortuosity + sinuosity, each from its exported package
+# function, joined on the id column.
+path_metrics_table <- function(ts) {
+  idc <- ts@cols$id
+  Reduce(function(a, b) merge(a, b, by = idc),
+         list(track_length(ts), straightness_index(ts),
+              tortuosity_ratio(ts), sinuosity(ts)))
 }
 
 derive_hd <- function(ts, method, circ0, circ1, coords = "relative") {
@@ -1591,7 +1610,7 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       req(rv$ts %||% rv$hd)
-      dat <- if (is.null(rv$hd)) straightness_index(rv$ts) else rv$hd
+      dat <- if (is.null(rv$hd)) path_metrics_table(rv$ts) else rv$hd
       utils::write.csv(dat, file, row.names = FALSE)
     }
   )

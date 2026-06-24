@@ -157,6 +157,69 @@ tortuosity_ratio <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
   .trajectory_metric(ts, x_col, y_col, "tortuosity", path_tortuosity)
 }
 
+#' Sinuosity index for a single trajectory
+#'
+#' The sinuosity index of Benhamou (2004), a turning-angle-based measure of path
+#' tortuosity that — unlike the displacement-based [path_straightness()] /
+#' [path_tortuosity()] — does not rely on net start-to-end displacement, so it
+#' is well-behaved for convoluted or random-search paths:
+#' \deqn{S = 2 \left[ p\,\frac{1+c}{1-c} + b^2 \right]^{-1/2}}
+#' where \eqn{p} is the mean step length, \eqn{c} the mean cosine of the interior
+#' turning angles, and \eqn{b} the coefficient of variation of step length. A
+#' perfectly straight path gives `0`; more winding paths give larger values.
+#'
+#' Unlike the straightness index, sinuosity is **not** scale-invariant: it has
+#' units of \eqn{1/\sqrt{\mathrm{length}}}. For the most reliable comparison
+#' across trajectories the path should be resampled to a common step length
+#' (rediscretisation); the \eqn{b} term mitigates variable step length but does
+#' not fully replace it.
+#'
+#' @param x,y Numeric vectors of ordered (in time) coordinates for one
+#'   trajectory.
+#' @return A single sinuosity value `>= 0`, or `NA_real_` when fewer than three
+#'   finite points are available or all steps have zero length.
+#' @references Benhamou, S. (2004). How to reliably estimate the tortuosity of an
+#'   animal's path. \emph{Journal of Theoretical Biology} 229(2), 209--220.
+#'   \doi{10.1016/j.jtbi.2004.03.016}
+#' @seealso [sinuosity()] for a whole `Tracks`; [path_straightness()],
+#'   [path_tortuosity()].
+#' @export
+#' @examples
+#' path_sinuosity(x = 0:5, y = rep(0, 6))              # straight -> 0
+path_sinuosity <- function(x, y) {
+  ok <- is.finite(x) & is.finite(y)
+  x <- x[ok]; y <- y[ok]
+  if (length(x) < 3L) return(NA_real_)
+  L <- sqrt(diff(x)^2 + diff(y)^2)
+  p <- mean(L)
+  if (!is.finite(p) || p == 0) return(NA_real_)
+  b <- stats::sd(L) / p                         # CV of step length
+  cc <- mean(cos(.step_turns(x, y)))            # mean cosine of turning angles
+  if (!is.finite(cc) || cc >= 1 - 1e-12) return(0)   # straight path
+  2 / sqrt(p * (1 + cc) / (1 - cc) + b^2)
+}
+
+#' Per-trajectory sinuosity for a Tracks
+#'
+#' Computes [path_sinuosity()] (Benhamou 2004) for each trajectory in a `Tracks`,
+#' ordering each trajectory's points by its time column when one is recorded.
+#' Distance-calibrated: with a `distance_scale` set the step lengths are in real
+#' units, so the reported sinuosity is in \eqn{1/\sqrt{\mathrm{unit}}}.
+#'
+#' @param ts A `Tracks`.
+#' @param x_col,y_col Names of the coordinate columns to use. Default to the
+#'   `Tracks`'s recorded x/y columns (the real recorded positions).
+#' @return A `data.frame` with one row per trajectory: the `Tracks`'s id column
+#'   and a numeric `sinuosity` column (`>= 0`).
+#' @seealso [path_sinuosity()], [straightness_index()], [tortuosity_ratio()],
+#'   [set_distance_scale()]
+#' @export
+sinuosity <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
+  scl <- distance_scale(ts) %||% 1
+  .trajectory_metric(ts, x_col, y_col, "sinuosity",
+                     function(x, y) path_sinuosity(x * scl, y * scl))
+}
+
 #' Per-step speed along a trajectory
 #'
 #' Speed of each step as straight-line step distance divided by the elapsed time
