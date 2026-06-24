@@ -1598,6 +1598,17 @@ server <- function(input, output, session) {
 
   # ---- Kinematics sub-tab ----------------------------------------------------
 
+  # Ghost (hide) the Kinematics tab when only headings are loaded, since
+  # kinematics require trajectory data. Show it once track data is present.
+  observe({
+    req(rv$step == 3L)
+    if (is.null(rv$ts)) {
+      nav_hide("results_tab", "Kinematics", session = session)
+    } else {
+      nav_show("results_tab", "Kinematics", select = FALSE, session = session)
+    }
+  })
+
   # Sync the Kinematics frame-rate widget into the single shared fps value.
   observeEvent(input$kin_frame_rate, {
     if (!isTRUE(all.equal(input$kin_frame_rate, fps_rv())))
