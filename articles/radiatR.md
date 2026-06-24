@@ -232,6 +232,21 @@ radiate(cpunctatus,
 
 ![](radiatR_files/figure-html/plot-all-1.png)
 
+By default
+[`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+plots the landmark-**relative** frame — each trajectory rotated so its
+trial landmark (e.g. the stimulus) sits at the same direction. To
+inspect the arena-native frame as an experimental control (for instance,
+to check the apparatus carries no directional bias of its own), pass
+`coords = "absolute"`:
+
+``` r
+
+radiate(cpunctatus, coords = "absolute")
+```
+
+![](radiatR_files/figure-html/plot-absolute-1.png)
+
 The circumference can be labelled in domain units instead of degrees —
 useful for time-of-year or compass data. `angle_labels` selects a
 built-in scale and aligns the tick count to it:

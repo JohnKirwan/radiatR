@@ -124,6 +124,13 @@
 
 ### Visualisation
 
+- [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  gains `coords = "absolute"` to plot the arena-native (un-rotated)
+  frame instead of the landmark-relative one, useful as an experimental
+  control; the Shiny app exposes it via a “Heading frame” toggle. The
+  relative (landmark) frame remains the default.
+  ([\#39](https://github.com/JohnKirwan/radiatR/issues/39))
+
 - The circular boxplot
   ([`add_circular_boxplot()`](https://johnkirwan.github.io/radiatR/reference/add_circular_boxplot.md))
   now draws just outside the circle in a thinner band with the median

@@ -69,6 +69,7 @@ the object and handed off to the plotting helpers.</p>
 <span>  colour_cycle <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  track_colour <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"trajectory"</span>, <span class="st">"sequence"</span>, <span class="st">"time"</span>, <span class="st">"speed"</span><span class="op">)</span>,</span>
 <span>  time_units <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"seconds"</span>, <span class="st">"minutes"</span>, <span class="st">"milliseconds"</span><span class="op">)</span>,</span>
+<span>  coords <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"relative"</span>, <span class="st">"absolute"</span><span class="op">)</span>,</span>
 <span>  panel_by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  strip_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -209,6 +210,15 @@ is the American-spelling alias.</p></dd>
 <dt id="arg-time-units">time_units<a class="anchor" aria-label="anchor" href="#arg-time-units"></a></dt>
 <dd><p>Units for `track_colour = "time"`: `"seconds"` (default),
 `"minutes"`, or `"milliseconds"`. Sets the colourbar title and scale.</p></dd>
+
+
+<dt id="arg-coords">coords<a class="anchor" aria-label="anchor" href="#arg-coords"></a></dt>
+<dd><p>Which reference frame to plot: `"relative"` (default) uses the
+landmark-relative position (`rel_x`/`rel_y`) and relative headings;
+`"absolute"` uses the arena-native unit-circle position (`x`/`y`) and
+un-rotated absolute headings, useful as an experimental control. Ignored
+when explicit `x_col`/`y_col` are supplied. Errors if `"absolute"` is
+requested but the `Tracks` has no `x`/`y` columns registered.</p></dd>
 
 
 <dt id="arg-panel-by">panel_by<a class="anchor" aria-label="anchor" href="#arg-panel-by"></a></dt>
@@ -398,6 +408,8 @@ supplying both spellings of a pair is an error.</p>
 <span class="r-in"><span>                               n_points <span class="op">=</span> <span class="fl">200</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">radiate</span><span class="op">(</span><span class="va">tracks_demo</span>, x_col <span class="op">=</span> <span class="st">"rel_x"</span>, y_col <span class="op">=</span> <span class="st">"rel_y"</span>, group_col <span class="op">=</span> <span class="st">"trial_id"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="radiate-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span><span class="fu">radiate</span><span class="op">(</span><span class="va">cpunctatus</span>, coords <span class="op">=</span> <span class="st">"absolute"</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="radiate-2.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

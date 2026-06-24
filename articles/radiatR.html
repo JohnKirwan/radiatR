@@ -293,10 +293,19 @@ shows how paths cluster by condition.</p>
 <span>        show_arrow  <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>        display    <span class="op">=</span> <span class="fu"><a href="../reference/circ_display.html">circ_display</a></span><span class="op">(</span>zero <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/plot-all-1.png" class="r-plt" alt="" width="700"></p>
+<p>By default <code><a href="../reference/radiate.html">radiate()</a></code> plots the
+landmark-<strong>relative</strong> frame — each trajectory rotated so
+its trial landmark (e.g. the stimulus) sits at the same direction. To
+inspect the arena-native frame as an experimental control (for instance,
+to check the apparatus carries no directional bias of its own), pass
+<code>coords = "absolute"</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, coords <span class="op">=</span> <span class="st">"absolute"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="radiatR_files/figure-html/plot-absolute-1.png" class="r-plt" alt="" width="700"></p>
 <p>The circumference can be labelled in domain units instead of degrees
 — useful for time-of-year or compass data. <code>angle_labels</code>
 selects a built-in scale and aligns the tick count to it:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, angle_labels <span class="op">=</span> <span class="st">"months"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/plot-perimeter-labs-1.png" class="r-plt" alt="" width="700"></p>
 <div class="section level3">
@@ -308,7 +317,7 @@ per-track gradient from start (dark) to finish (bright), with a
 continuous “start → finish” colourbar. This mode owns the colour
 aesthetic, so it is not combined with
 <code>colour_col</code>/<code>colour_cycle</code>.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># colour each track from start (dark) to finish (bright)</span></span>
 <span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, show_tracks <span class="op">=</span> <span class="cn">TRUE</span>, track_colour <span class="op">=</span> <span class="st">"sequence"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/plot-sequence-1.png" class="r-plt" alt="" width="700"></p>
@@ -323,7 +332,7 @@ stored in the object’s metadata; the time/frame column itself is never
 altered. <code><a href="../reference/track_duration.html">track_duration()</a></code> reports the elapsed seconds of
 each trajectory, and <code>track_colour = "time"</code> colours each
 path by elapsed time (POSIXct time works without a frame rate).</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># attach a capture rate, then represent the time aspect</span></span>
 <span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/frame_rate.html">set_frame_rate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, fps <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/track_duration.html">track_duration</a></span><span class="op">(</span><span class="va">ts</span><span class="op">)</span><span class="op">)</span>                                 <span class="co"># seconds per track</span></span>
@@ -339,7 +348,7 @@ path by elapsed time (POSIXct time works without a frame rate).</p>
 <p>A frame rate also lets <code><a href="../reference/track_speed.html">track_speed()</a></code> report each
 trajectory’s speed in real units. With the default unit-arena
 coordinates that is arena-units (radii) per second.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># speed in real units (arena-units per second) once a frame rate is set</span></span>
 <span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/frame_rate.html">set_frame_rate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, fps <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/track_speed.html">track_speed</a></span><span class="op">(</span><span class="va">ts</span><span class="op">)</span><span class="op">)</span>            <span class="co"># mean speed per track</span></span>
@@ -361,7 +370,7 @@ coordinates that is arena-units (radii) per second.</p>
 <p>The same frame rate lets <code><a href="../reference/radiate.html">radiate()</a></code> colour each path by
 its instantaneous speed, the per-observation sibling of
 <code><a href="../reference/track_speed.html">track_speed()</a></code>.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># colour each path by its instantaneous speed (needs a frame rate)</span></span>
 <span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/frame_rate.html">set_frame_rate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, fps <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">ts</span>, show_tracks <span class="op">=</span> <span class="cn">TRUE</span>, track_colour <span class="op">=</span> <span class="st">"speed"</span><span class="op">)</span></span></code></pre></div>
@@ -370,7 +379,7 @@ its instantaneous speed, the per-observation sibling of
 speeds report in real units. The scale is physical units per coordinate
 unit (e.g. mm per arena radius); unset, everything stays in
 arena/coordinate units.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># calibrate distance (optional): 50 mm per coordinate unit (e.g. arena radius)</span></span>
 <span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/distance_scale.html">set_distance_scale</a></span><span class="op">(</span><span class="fu"><a href="../reference/frame_rate.html">set_frame_rate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, <span class="fl">30</span><span class="op">)</span>, <span class="fl">50</span>, unit <span class="op">=</span> <span class="st">"mm"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/track_length.html">track_length</a></span><span class="op">(</span><span class="va">ts</span><span class="op">)</span><span class="op">)</span>      <span class="co"># path length per track, in mm</span></span>
@@ -396,7 +405,7 @@ arena/coordinate units.</p>
 (<code>vx</code>, <code>vy</code>; distance-calibrated when a scale is
 set) and <code><a href="../reference/angular_velocity.html">angular_velocity()</a></code> the signed turning rate
 (counter-clockwise positive).</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># velocity components and turning rate (need a frame rate; vx/vy use the distance scale)</span></span>
 <span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/frame_rate.html">set_frame_rate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, fps <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/velocity_vector.html">velocity_vector</a></span><span class="op">(</span><span class="va">ts</span><span class="op">)</span><span class="op">)</span>                 <span class="co"># vx, vy per observation</span></span>
@@ -412,14 +421,14 @@ set) and <code><a href="../reference/angular_velocity.html">angular_velocity()</
 <p><code><a href="../reference/velocity_angle.html">velocity_angle()</a></code> gives the direction of travel at each
 observation, in the same convention as headings — so it feeds straight
 into the circular tools:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/frame_rate.html">set_frame_rate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, fps <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/velocity_angle.html">velocity_angle</a></span><span class="op">(</span><span class="va">ts</span>, units <span class="op">=</span> <span class="st">"degrees"</span><span class="op">)</span><span class="op">)</span>   <span class="co"># movement direction per observation</span></span>
 <span><span class="co">#&gt; [1]       NA  45.0000 180.0000 180.0000 282.5118 303.7737</span></span></code></pre></div>
 <p>Reduced to one row per track, <code><a href="../reference/track_velocity.html">track_velocity()</a></code> gives
 each path’s net (average) velocity vector and
 <code><a href="../reference/track_turning.html">track_turning()</a></code> summarises its turning rate.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># per-track summaries (need a frame rate; velocity uses the distance scale)</span></span>
 <span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/frame_rate.html">set_frame_rate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, fps <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/track_velocity.html">track_velocity</a></span><span class="op">(</span><span class="va">ts</span><span class="op">)</span><span class="op">)</span>                       <span class="co"># net velocity vector (vx, vy) per track</span></span>
@@ -442,29 +451,29 @@ each path’s net (average) velocity vector and
 per-observation kinematics metric — instantaneous speed or turning rate
 — against elapsed time, one line per track. It is the ggplot sibling of
 <code><a href="../reference/radiate.html">radiate()</a></code>.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># speed (or turning rate) along each track over time</span></span>
 <span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/frame_rate.html">set_frame_rate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, fps <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/plot_profile.html">plot_profile</a></span><span class="op">(</span><span class="va">ts</span>, metric <span class="op">=</span> <span class="st">"speed"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/plot-profile-1.png" class="r-plt" alt="" width="700"></p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_profile.html">plot_profile</a></span><span class="op">(</span><span class="va">ts</span>, metric <span class="op">=</span> <span class="st">"turning"</span>, units <span class="op">=</span> <span class="st">"degrees"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/plot-profile-2.png" class="r-plt" alt="" width="700"></p>
 <p><code>metric = "direction"</code> plots the movement direction over
 time (as points, since direction is circular):</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_profile.html">plot_profile</a></span><span class="op">(</span><span class="va">ts</span>, metric <span class="op">=</span> <span class="st">"direction"</span>, units <span class="op">=</span> <span class="st">"degrees"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/profile-direction-1.png" class="r-plt" alt="" width="700"></p>
 <p><code><a href="../reference/plot_speed_direction.html">plot_speed_direction()</a></code> crosses the two — each
 observation’s speed against its movement direction. The speed axis is
 robustly clipped by default so a few single-frame tracking artifacts do
 not crush the display:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_speed_direction.html">plot_speed_direction</a></span><span class="op">(</span><span class="va">ts</span><span class="op">)</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/speed-direction-1.png" class="r-plt" alt="" width="700"></p>
 <p>The pooled speed distribution, with median and CV, comes from
 <code><a href="../reference/plot_speed_histogram.html">plot_speed_histogram()</a></code>:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_speed_histogram.html">plot_speed_histogram</a></span><span class="op">(</span><span class="va">ts</span><span class="op">)</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/speed-histogram-1.png" class="r-plt" alt="" width="700"></p>
 </div>
@@ -477,7 +486,7 @@ two concentric-ring crossings to the unit circle — assigns one
 directional heading per trial. <code><a href="../reference/derive_headings.html">derive_headings()</a></code> with
 <code>return_coords = TRUE</code> returns both the heading angle and the
 inner-ring crossing position.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hd</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/derive_headings.html">derive_headings</a></span><span class="op">(</span><span class="va">cpunctatus</span>, rule <span class="op">=</span> <span class="st">"crossing"</span>,</span>
 <span>                      circ0 <span class="op">=</span> <span class="fl">0.2</span>, circ1 <span class="op">=</span> <span class="fl">0.4</span>,</span>
 <span>                      return_coords <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -502,7 +511,7 @@ inner-ring crossing position.</p>
 <p>Overlaying the heading endpoints (one hollow circle per trial) and
 the grand mean direction on the combined trajectory plot gives a compact
 summary of the full dataset:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span>,</span>
 <span>                 group_col   <span class="op">=</span> <span class="st">"trial_id"</span>,</span>
 <span>                 colour_col  <span class="op">=</span> <span class="st">"arc"</span>,</span>
@@ -558,7 +567,7 @@ bootstraps the von Mises MLE confidence interval for the mean direction;
 <code>stat = "sd"</code> draws a ±1 circular SD arc. The split design
 lets you substitute Bayesian credible bounds into the data frame before
 rendering:</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">iv</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_circ_interval.html">compute_circ_interval</a></span><span class="op">(</span><span class="va">hd</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, stat <span class="op">=</span> <span class="st">"bootstrap_ci"</span><span class="op">)</span></span>
 <span><span class="co"># replace with Bayesian posteriors: iv$lower &lt;- ...; iv$upper &lt;- ...</span></span>
 <span><span class="fu"><a href="../reference/add_circ_interval.html">add_circ_interval</a></span><span class="op">(</span><span class="va">iv</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span></span></code></pre></div>
@@ -571,7 +580,7 @@ operator, so a plot can be assembled feature by feature. The four chunks
 below start from trajectories only and add heading endpoints, the grand
 mean arrow, and finally a bootstrap CI arc.</p>
 <p><strong>Trajectories:</strong></p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span>,</span>
 <span>             group_col   <span class="op">=</span> <span class="st">"trial_id"</span>,</span>
 <span>             colour_col  <span class="op">=</span> <span class="st">"arc"</span>,</span>
@@ -582,14 +591,14 @@ mean arrow, and finally a bootstrap CI arc.</p>
 <p><img src="radiatR_files/figure-html/build-1-1.png" class="r-plt" alt="" width="700"></p>
 <p><strong>+ Heading endpoints</strong> at each trial’s crossing
 location:</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="va">p</span> <span class="op">+</span> <span class="fu"><a href="../reference/add_heading_points.html">add_heading_points</a></span><span class="op">(</span><span class="va">hd</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, size <span class="op">=</span> <span class="fl">1.5</span>, alpha <span class="op">=</span> <span class="fl">0.7</span><span class="op">)</span></span>
 <span><span class="va">p</span></span>
 <span><span class="co">#&gt; Warning: Removed 25 rows containing missing values or values outside the scale range</span></span>
 <span><span class="co">#&gt; (`geom_point()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/build-2-1.png" class="r-plt" alt="" width="700"></p>
 <p><strong>+ Grand mean direction arrow:</strong></p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="va">p</span> <span class="op">+</span> <span class="fu"><a href="../reference/add_heading_arrow.html">add_heading_arrow</a></span><span class="op">(</span><span class="va">hd</span><span class="op">)</span></span>
 <span><span class="va">p</span></span>
 <span><span class="co">#&gt; Warning: Removed 25 rows containing missing values or values outside the scale range</span></span>
@@ -607,14 +616,14 @@ the central 50 % around the circular median, whiskers reach a
 concentration-adjusted fence, and far-out values are marked
 individually. It composes onto a <code><a href="../reference/radiate.html">radiate()</a></code> plot like the
 other overlay helpers.</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="../reference/add_circular_boxplot.html">add_circular_boxplot</a></span><span class="op">(</span><span class="va">hd</span><span class="op">)</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/boxplot-1.png" class="r-plt" alt="" width="576"></p>
 <p><code><a href="../reference/circ_boxplot_stats.html">circ_boxplot_stats()</a></code> returns the underlying numeric
 summary — the circular median, box hinges, fences, far-out values, and
 the closed-form von Mises fence multiplier — so the boxplot can be
 inspected or reproduced independently of the plot:</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/circ_boxplot_stats.html">circ_boxplot_stats</a></span><span class="op">(</span><span class="va">hd</span><span class="op">)</span><span class="op">$</span><span class="va">constant</span></span>
 <span><span class="co">#&gt; [1] 0.5995206</span></span></code></pre></div>
 <p>The boxplot is not recommended for uniform or multimodal data: with
@@ -654,7 +663,7 @@ boundary. Calling it explicitly on both the track data and the headings
 data frame (joining by trial id) means heading markers inherit the exact
 per-trajectory colour — not a single per-condition colour — when
 <code>colour_col</code> is used for both.</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Pre-compute cycling colours: 10 colours, restarting within each arc panel.</span></span>
 <span><span class="co"># Join to headings so heading layers can use the same column.</span></span>
 <span><span class="va">cpunctatus_cc</span>        <span class="op">&lt;-</span> <span class="va">cpunctatus</span></span>
@@ -667,7 +676,7 @@ per-trajectory colour — not a single per-condition colour — when
 <span>                    by      <span class="op">=</span> <span class="st">"trial_id"</span>, all.x <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">hd_cc</span>, <span class="st">"display"</span><span class="op">)</span>    <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">hd</span>, <span class="st">"display"</span>, exact <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">hd_cc</span>, <span class="st">"colour_col"</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"cycle_colour"</span></span></code></pre></div>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus_cc</span>,</span>
 <span>        group_col    <span class="op">=</span> <span class="st">"trial_id"</span>,</span>
 <span>        colour_col   <span class="op">=</span> <span class="st">"cycle_colour"</span>,</span>
@@ -680,21 +689,21 @@ per-trajectory colour — not a single per-condition colour — when
 <p><img src="radiatR_files/figure-html/arc-panels-simple-1.png" class="r-plt" alt="" width="768"></p>
 <p><strong>+ Bootstrap CI arc</strong> added first so it sits behind
 heading markers:</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="va">p</span> <span class="op">+</span> <span class="fu"><a href="../reference/add_heading_interval.html">add_heading_interval</a></span><span class="op">(</span><span class="va">hd_cc</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, colour <span class="op">=</span> <span class="st">"black"</span>,</span>
 <span>                               stat <span class="op">=</span> <span class="st">"bootstrap_ci"</span>, boot_reps <span class="op">=</span> <span class="fl">999L</span><span class="op">)</span></span>
 <span><span class="va">p</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/build-4-1.png" class="r-plt" alt="" width="768"></p>
 <p><strong>+ Heading vectors</strong> (dotted lines from inner crossing
 to perimeter):</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="va">p</span> <span class="op">+</span> <span class="fu"><a href="../reference/add_heading_vectors.html">add_heading_vectors</a></span><span class="op">(</span><span class="va">hd_cc</span><span class="op">)</span></span>
 <span><span class="va">p</span></span>
 <span><span class="co">#&gt; Warning: Removed 25 rows containing missing values or values outside the scale range</span></span>
 <span><span class="co">#&gt; (`geom_segment()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/arc-panels-vectors-1.png" class="r-plt" alt="" width="768"></p>
 <p><strong>+ Heading points</strong> on top of the CI arc:</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="va">p</span> <span class="op">+</span> <span class="fu"><a href="../reference/add_heading_points.html">add_heading_points</a></span><span class="op">(</span><span class="va">hd_cc</span>, size <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
 <span><span class="va">p</span></span>
 <span><span class="co">#&gt; Warning: Removed 25 rows containing missing values or values outside the scale range</span></span>
@@ -702,7 +711,7 @@ to perimeter):</p>
 <span><span class="co">#&gt; Warning: Removed 25 rows containing missing values or values outside the scale range</span></span>
 <span><span class="co">#&gt; (`geom_point()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/arc-panels-headings-1.png" class="r-plt" alt="" width="768"></p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="va">p</span> <span class="op">+</span> <span class="fu"><a href="../reference/add_heading_arrow.html">add_heading_arrow</a></span><span class="op">(</span><span class="va">hd_cc</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, colour <span class="op">=</span> <span class="st">"black"</span><span class="op">)</span></span>
 <span><span class="va">p</span></span>
 <span><span class="co">#&gt; Warning: Removed 25 rows containing missing values or values outside the scale range</span></span>
@@ -757,7 +766,7 @@ computation and rendering steps are separate, the <code>density</code>
 column can be replaced with values from any other model — including a
 Bayesian posterior predictive density from <code>brms</code> — before
 calling <code><a href="../reference/add_circular_density.html">add_circular_density()</a></code>:</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dens_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_circular_density.html">compute_circular_density</a></span><span class="op">(</span><span class="va">hd</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, method <span class="op">=</span> <span class="st">"vonmises"</span><span class="op">)</span></span>
 <span><span class="co"># replace with Bayesian posterior: dens_df$density &lt;- my_brms_fitted_density(dens_df$theta)</span></span>
 <span><span class="fu"><a href="../reference/add_circular_density.html">add_circular_density</a></span><span class="op">(</span><span class="va">dens_df</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, fill <span class="op">=</span> <span class="st">"grey80"</span>, alpha <span class="op">=</span> <span class="fl">0.35</span><span class="op">)</span></span></code></pre></div>
@@ -765,7 +774,7 @@ calling <code><a href="../reference/add_circular_density.html">add_circular_dens
 intermediate step when no substitution is needed. The combined panel
 plot below uses it to shade a per-condition von Mises density alongside
 the heading vectors:</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus_cc</span>,</span>
 <span>        group_col    <span class="op">=</span> <span class="st">"trial_id"</span>,</span>
 <span>        colour_col   <span class="op">=</span> <span class="st">"cycle_colour"</span>,</span>
@@ -800,7 +809,7 @@ quantiles across replicates become <code>density_lower</code> and
 <code>density_upper</code> columns, which
 <code><a href="../reference/add_circular_density.html">add_circular_density()</a></code> renders as a shaded band around the
 fitted curve.</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dens_boot</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_circular_density.html">compute_circular_density</a></span><span class="op">(</span><span class="va">hd</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>,</span>
 <span>                                      method <span class="op">=</span> <span class="st">"vonmises"</span>,</span>
 <span>                                      boot_reps <span class="op">=</span> <span class="fl">499L</span>, boot_alpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
@@ -833,7 +842,7 @@ Bayesian model (e.g. the 2.5th and 97.5th percentiles of a
 </h2>
 <p><code><a href="../reference/compute_circ_mean.html">compute_circ_mean()</a></code> returns the per-condition statistics
 behind the arrows above:</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/compute_circ_mean.html">compute_circ_mean</a></span><span class="op">(</span><span class="va">hd</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"arc"</span>, <span class="st">"mean_dir"</span>, <span class="st">"resultant_R"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt;   arc  mean_dir resultant_R</span></span>
 <span><span class="co">#&gt; 1   0 2.4441971  0.21852376</span></span>
@@ -847,7 +856,7 @@ behind the arrows above:</p>
 <p>For within-trial path consistency (tortuosity),
 <code><a href="../reference/circ_summary.html">circ_summary()</a></code> operates on the step-by-step angle
 distribution:</p>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/circ_summary.html">circ_summary</a></span><span class="op">(</span><span class="va">ts_demo</span><span class="op">)</span></span>
 <span><span class="co">#&gt;           id   n t_start t_end   mean_dir resultant_R kappa</span></span>
 <span><span class="co">#&gt; 1     10_1_1  81       1    81 0.11601277  0.83986765    NA</span></span>
@@ -1130,7 +1139,7 @@ matters</td>
 the frame where the subject is farthest from the arena centre. It
 requires no ring parameters and never returns <code>NA</code> because
 every trial has a most-distal frame.</p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hd_distal</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/derive_headings.html">derive_headings</a></span><span class="op">(</span><span class="va">cpunctatus</span>, rule <span class="op">=</span> <span class="st">"distal"</span>,</span>
 <span>                              return_coords <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">hd_distal</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">hd_distal</span><span class="op">)</span> <span class="op">==</span> <span class="st">"id"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"trial_id"</span></span>
@@ -1141,7 +1150,7 @@ every trial has a most-distal frame.</p>
 <p>Per-condition resultant lengths from <code>"distal"</code> are very
 close to those from <code>"crossing"</code>, consistent with millipede
 tracks being fairly direct:</p>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sm_cross</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_circ_mean.html">compute_circ_mean</a></span><span class="op">(</span><span class="va">hd</span>,       colour_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"arc"</span>, <span class="st">"resultant_R"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="va">sm_distal</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_circ_mean.html">compute_circ_mean</a></span><span class="op">(</span><span class="va">hd_distal</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"arc"</span>, <span class="st">"resultant_R"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">sm_cross</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>  <span class="op">&lt;-</span> <span class="st">"crossing"</span></span>
@@ -1158,7 +1167,7 @@ tracks being fairly direct:</p>
 <span><span class="co">#&gt; 8  50 0.09148952 0.15790182</span></span></code></pre></div>
 <p>Visualising the distal headings on the per-condition panel confirms
 that the spatial pattern is consistent with the crossing method:</p>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cpunctatus_cc_d</span>        <span class="op">&lt;-</span> <span class="va">cpunctatus</span></span>
 <span><span class="va">cpunctatus_cc_d</span><span class="op">@</span><span class="va">data</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/assign_cycle_colours.html">assign_cycle_colours</a></span><span class="op">(</span><span class="va">cpunctatus</span><span class="op">@</span><span class="va">data</span>,</span>
 <span>                                              id_col    <span class="op">=</span> <span class="st">"trial_id"</span>,</span>
@@ -1194,7 +1203,7 @@ from the first recorded position to the last, ignoring all intermediate
 points. It is the fastest possible estimate and is the natural match for
 GPS vanishing-bearing studies where only the release and final observed
 positions are available.</p>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hd_net</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/derive_headings.html">derive_headings</a></span><span class="op">(</span><span class="va">cpunctatus</span>, rule <span class="op">=</span> <span class="st">"net"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">hd_net</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">hd_net</span><span class="op">)</span> <span class="op">==</span> <span class="st">"id"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"trial_id"</span></span>
 <span><span class="co"># join the target half-width (arc) from the dataset, as for the crossing rule</span></span>
@@ -1225,7 +1234,7 @@ search behaviour before committing to a direction.</p>
 <p><code><a href="../reference/simulate_tracks.html">simulate_tracks()</a></code> generates synthetic trajectories
 without any files, useful for testing and demonstrations. The
 <code>kappa</code> parameter controls directedness:</p>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sim_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/simulate_tracks.html">simulate_tracks</a></span><span class="op">(</span></span>
 <span>  conditions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>n_trials <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5L</span>, <span class="fl">5L</span><span class="op">)</span>, kappa <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">8</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  n_points <span class="op">=</span> <span class="fl">150</span>,</span>
