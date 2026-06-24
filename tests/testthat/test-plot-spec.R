@@ -144,6 +144,31 @@ test_that("attrition_note: returns NULL when there is no attrition", {
   expect_null(attrition_note(n_total = 100, n_missing = NULL, derived = FALSE))
 })
 
+test_that("build_plot_spec carries the heading frame and spec_to_plot honours it", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  ts <- cpunctatus
+  hd <- derive_headings(ts, rule = "distal", coords = "absolute")
+  spec <- build_plot_spec(
+    ts = ts, hd = hd, method = "distal",
+    data = list(source = "example", mode = "trajectories",
+                path = NULL, dialect = NULL),
+    inputs = list(cond_col = NULL, colour_by = NULL, frame = "absolute",
+                  plot_theme = "void", angle_labels = "degrees",
+                  show_tracks = TRUE, show_arrow = FALSE))
+  expect_identical(spec$coords, "absolute")
+  expect_s3_class(spec_to_plot(spec, ts, hd), "ggplot")
+
+  # default (no frame input) is relative
+  spec2 <- build_plot_spec(
+    ts = ts, hd = derive_headings(ts, rule = "distal"), method = "distal",
+    data = list(source = "example", mode = "trajectories",
+                path = NULL, dialect = NULL),
+    inputs = list(cond_col = NULL, colour_by = NULL,
+                  plot_theme = "void", angle_labels = "degrees",
+                  show_tracks = TRUE, show_arrow = FALSE))
+  expect_identical(spec2$coords, "relative")
+})
+
 test_that("build_plot_spec maps show_boxplot into spec$show$boxplot", {
   data(cpunctatus, package = "radiatR", envir = environment())
   ts <- cpunctatus

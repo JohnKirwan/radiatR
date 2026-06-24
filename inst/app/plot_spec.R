@@ -129,6 +129,7 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
                      cap = SPEC_CYCLE_N, legend = legend),
     theme        = inputs$plot_theme %||% "void",
     track_colour = inputs$track_colour %||% "trajectory",
+    coords = inputs$frame %||% "relative",
     frame_rate = inputs$frame_rate,
     angle_labels = inputs$angle_labels %||% "degrees",
     display      = list(zero = 0),
@@ -209,6 +210,7 @@ spec_to_plot <- function(spec, ts, hd) {
       group_col    = spec$group_col,
       colour_col   = if (gradient_track) NULL else ".colour",
       track_colour = rtc$effective,
+      coords       = spec$coords %||% "relative",
       panel_by     = spec$facet_by,
       colour_cycle = NULL,
       legend       = spec$colour$legend,
@@ -352,7 +354,9 @@ spec_to_plot <- function(spec, ts, hd) {
       # emitted script can draw them (only the crossing rule produces x_inner/y_inner).
       rc <- if (spec$show$vectors && identical(spec$headings$rule, "crossing"))
         ", return_coords = TRUE" else ""
-      add("hd <- derive_headings(ts, rule = ", q(spec$headings$rule), hp, rc, ")")
+      coa <- if (identical(spec$coords %||% "relative", "absolute"))
+        ", coords = \"absolute\"" else ""
+      add("hd <- derive_headings(ts, rule = ", q(spec$headings$rule), hp, rc, coa, ")")
       if (!is.null(spec$facet_by))
         add("hd <- merge(hd, unique(as.data.frame(ts)[, c(", q(spec$group_col), ", ",
             q(spec$facet_by), ")]), by.x = \"id\", by.y = ", q(spec$group_col),
@@ -435,6 +439,8 @@ spec_to_code <- function(spec) {
                sequence = ", track_colour = \"sequence\"",
                "")
   ax <- if (isTRUE(spec$axial)) ", axial = TRUE" else ""
+  co <- if (identical(spec$coords %||% "relative", "absolute"))
+    ", coords = \"absolute\"" else ""
 
   # Data-load + heading-derivation (shared with the stats-code emitter); returns
   # headings_mode/has_hd. Headings mode always has a headings frame; trajectory
@@ -493,7 +499,7 @@ spec_to_code <- function(spec) {
   } else {
     cc <- if (gradient_track) ", colour_col = NULL" else ", colour_col = \".colour\""
     add("radiate(ts, group_col = ", q(spec$group_col),
-        cc, tc, pby,
+        cc, tc, co, pby,
         ", legend = ", if (spec$colour$legend) "TRUE" else "FALSE",
         ", theme = ", q(spec$theme),
         ", angle_labels = ", q(spec$angle_labels), qr,
