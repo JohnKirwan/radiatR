@@ -135,6 +135,11 @@
 
 ## Shiny app
 
+* The Kinematics sub-tab now offers the same saving sections as Circular plots:
+  a **Download plot** / image-export panel (format, size, dpi, transparency) and
+  an organised **R code** panel. The shared sidebar UI is factored into reusable
+  helpers so the two sub-tabs stay consistent. (#17)
+
 * The app now shows the radiatR logo in the header, a browser-tab favicon, and
   its version in the footer.
 
