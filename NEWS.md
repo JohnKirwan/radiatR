@@ -75,6 +75,13 @@
 
 ## Visualisation
 
+* `degree_labs()` gains `position = c("outside", "inside", "split")` (and
+  `radiate(angle_label_position = )`): `"inside"` places all eight direction
+  labels just inside the circle, `"split"` puts the cardinals (0/90/180/270)
+  inside and the diagonals outside. The cardinals — previously unlabelled in the
+  numeric degree/radian mode — now get numbers. `"outside"` (default) is
+  unchanged.
+
 * `add_circular_boxplot()` gains `panel_by` so a faceted `radiate()` draws a
   separate boxplot per panel instead of repeating one pooled summary on every
   facet; the Shiny app passes the active facet column automatically. A panel
