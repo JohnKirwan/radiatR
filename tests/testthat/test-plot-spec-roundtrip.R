@@ -365,6 +365,15 @@ test_that("circular boxplot overlay round-trips (directional)", {
   suppressWarnings(expect_roundtrip(rt))
 })
 
+test_that("faceted circular boxplot round-trips and emits panel_by", {
+  rt <- roundtrip_spec("points", by = "trajectory", facet = "type",
+                       arrow = FALSE, vectors = FALSE, boxplot = TRUE)
+  code <- spec_to_code(rt$spec)
+  expect_match(code, 'add_circular_boxplot(hd, theme = "void", panel_by = "type")',
+               fixed = TRUE)
+  suppressWarnings(expect_roundtrip(rt))
+})
+
 test_that("track_colour = 'sequence' round-trips and emits the radiate arg", {
   rt <- roundtrip_spec("none", by = "trajectory", facet = NULL,
                        arrow = FALSE, vectors = FALSE)
