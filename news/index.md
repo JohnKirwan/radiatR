@@ -255,6 +255,10 @@
 
 ### Shiny app
 
+- The Configure step’s “Data model” selector is now a clearer
+  **“Directionality”** inline toggle (Directional / Axial), placed above
+  the heading-method dropdown since it is the more general question.
+
 - The Kinematics sub-tab now offers the same saving sections as Circular
   plots: a **Download plot** / image-export panel (format, size, dpi,
   transparency) and an organised **R code** panel. The shared sidebar UI

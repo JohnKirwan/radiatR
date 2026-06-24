@@ -88,7 +88,8 @@
 </ul></div>
 <div class="section level3">
 <h3 id="shiny-app-0-4-1">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app-0-4-1"></a></h3>
-<ul><li><p>The Kinematics sub-tab now offers the same saving sections as Circular plots: a <strong>Download plot</strong> / image-export panel (format, size, dpi, transparency) and an organised <strong>R code</strong> panel. The shared sidebar UI is factored into reusable helpers so the two sub-tabs stay consistent. (<a href="https://github.com/JohnKirwan/radiatR/issues/17" class="external-link">#17</a>)</p></li>
+<ul><li><p>The Configure step’s “Data model” selector is now a clearer <strong>“Directionality”</strong> inline toggle (Directional / Axial), placed above the heading-method dropdown since it is the more general question.</p></li>
+<li><p>The Kinematics sub-tab now offers the same saving sections as Circular plots: a <strong>Download plot</strong> / image-export panel (format, size, dpi, transparency) and an organised <strong>R code</strong> panel. The shared sidebar UI is factored into reusable helpers so the two sub-tabs stay consistent. (<a href="https://github.com/JohnKirwan/radiatR/issues/17" class="external-link">#17</a>)</p></li>
 <li><p>The app now shows the radiatR logo in the header, a browser-tab favicon, and its version in the footer.</p></li>
 <li><p>The Kinematics sub-tab gains a <strong>Track</strong> selector, defaulting to a single track (the per-track view) with an “All tracks (overlay)” option, so many-track datasets no longer render as overlapping spaghetti. The app also adopts a loaded <code>Tracks</code>’s own capture frame rate when one is set.</p></li>
 <li><p>The Summary &amp; stats sub-tab now offers reproducible R code for the analysis (<code>circ_summarise</code>, <code>test_uniformity</code>, <code>circ_model_select</code>, <code>straightness_index</code>) to copy or download, alongside the figure code on the Circular plots tab.</p></li>
