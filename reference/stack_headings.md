@@ -12,7 +12,7 @@ stack_headings(
   data,
   col = NULL,
   step = 0.025,
-  start_sep = 0,
+  start_sep = step/2,
   tol = NULL,
   direction = "inward",
   base_r = 1,
@@ -46,9 +46,10 @@ stack_headings(
   Radial offset of the first (outermost, for `"inward"`) dot from
   `base_r`, in data units (the analogue of
   [`circular::plot.circular`](https://rdrr.io/pkg/circular/man/plot.circular.html)'s
-  `start.sep`). Default `0` places the first dot on the reference
-  circle. A small positive value shifts the whole stack off the line so
-  the dots abut rather than straddle it.
+  `start.sep`). Default `step / 2` places the first dot half a step
+  inside the reference circle so its outer edge approximately abuts the
+  circumference. Set to `0` to place the dot centre exactly on the
+  reference circle.
 
 - tol:
 

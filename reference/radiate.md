@@ -72,6 +72,7 @@ radiate(
   data,
   col = NULL,
   step = 0.025,
+  start_sep = step/2,
   tol = NULL,
   direction = "inward",
   base_r = 1,
@@ -337,7 +338,7 @@ radiate(
   attribute when `data` is a
   [`headings_frame`](https://johnkirwan.github.io/radiatR/reference/headings_frame.md).
 
-- step, tol, direction, base_r, shade, shape:
+- step, start_sep, tol, direction, base_r, shade, shape:
 
   Passed to
   [`add_stacked_headings`](https://johnkirwan.github.io/radiatR/reference/add_stacked_headings.md).
