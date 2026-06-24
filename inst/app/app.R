@@ -1123,9 +1123,9 @@ server <- function(input, output, session) {
             )
           )
           ,
-          # ---- Kinematics ---------------------------------------------------
+          # ---- Track metrics ------------------------------------------------
           nav_panel(
-            "Kinematics",
+            "Track metrics",
             layout_sidebar(
               sidebar = sidebar(
                 width = 360, position = "right", open = TRUE,
@@ -1155,6 +1155,17 @@ server <- function(input, output, session) {
                     "kinematics_code", "dl_kinematics_code",
                     paste0("radiatR code that reproduces this profile. Edit the ",
                            "data path to point at your own file."))
+                )
+              ),
+              card(
+                card_header("Per-track metrics"),
+                card_body(
+                  uiOutput("track_metric_scope_ui"),
+                  uiOutput("track_metrics_summary"),
+                  div(style = "max-height:300px; overflow:auto;",
+                      tableOutput("track_metrics_table")),
+                  downloadButton("dl_track_metrics", "Download (CSV)",
+                                 class = "btn-sm btn-outline-primary")
                 )
               ),
               card(
@@ -1619,14 +1630,14 @@ server <- function(input, output, session) {
 
   # ---- Kinematics sub-tab ----------------------------------------------------
 
-  # Ghost (hide) the Kinematics tab when only headings are loaded, since
-  # kinematics require trajectory data. Show it once track data is present.
+  # Ghost (hide) the Track metrics tab when only headings are loaded, since
+  # track metrics require trajectory data. Show it once track data is present.
   observe({
     req(rv$step == 3L)
     if (is.null(rv$ts)) {
-      nav_hide("results_tab", "Kinematics", session = session)
+      nav_hide("results_tab", "Track metrics", session = session)
     } else {
-      nav_show("results_tab", "Kinematics", select = FALSE, session = session)
+      nav_show("results_tab", "Track metrics", select = FALSE, session = session)
     }
   })
 
@@ -1724,6 +1735,59 @@ server <- function(input, output, session) {
         dpi    = num_or(input$kin_plot_dpi, 300),
         bg     = if (transparent) "transparent" else NULL
       )
+    }
+  )
+
+  # ---- Per-track metrics (length / straightness / tortuosity / sinuosity) -----
+  # Geometric metrics for every loaded track (no frame rate needed). When a
+  # heading method was used, some tracks may not have produced a heading, so the
+  # scope control lets the user view all tracks or only the heading-producing
+  # subset. The same metrics are downloadable.
+
+  # ids of the tracks that produced a heading (NULL in no-headings mode).
+  heading_ids <- reactive(if (is.null(rv$hd)) NULL else unique(as.character(rv$hd$id)))
+
+  output$track_metric_scope_ui <- renderUI({
+    req(rv$ts, !is.null(rv$hd))            # only relevant when headings exist
+    radioButtons("track_metric_scope", NULL, inline = TRUE,
+                 choices  = c("All loaded tracks"      = "all",
+                              "Tracks with a heading"  = "heading"),
+                 selected = "all")
+  })
+
+  track_metrics_tbl <- reactive({
+    req(rv$ts)
+    m   <- path_metrics_table(rv$ts)
+    idc <- rv$ts@cols$id
+    hid <- heading_ids()
+    if (identical(input$track_metric_scope, "heading") && !is.null(hid))
+      m <- m[as.character(m[[idc]]) %in% hid, , drop = FALSE]
+    m
+  })
+
+  output$track_metrics_summary <- renderUI({
+    req(rv$ts)
+    m   <- track_metrics_tbl()
+    hid <- heading_ids()
+    fmean <- function(v) mean(v[is.finite(v)], na.rm = TRUE)
+    counts <- if (is.null(hid))
+      sprintf("%d tracks", nrow(path_metrics_table(rv$ts)))
+    else
+      sprintf("%d tracks loaded · %d produced a heading",
+              nrow(path_metrics_table(rv$ts)), length(hid))
+    div(class = "text-muted small mb-2",
+        counts, br(),
+        sprintf("Means (shown) — straightness %.2f · tortuosity %.2f · sinuosity %.2f",
+                fmean(m$straightness), fmean(m$tortuosity), fmean(m$sinuosity)))
+  })
+
+  output$track_metrics_table <- renderTable(track_metrics_tbl(), digits = 3)
+
+  output$dl_track_metrics <- downloadHandler(
+    filename = function() paste0("radiatR_track_metrics_", Sys.Date(), ".csv"),
+    content  = function(file) {
+      req(rv$ts)
+      utils::write.csv(track_metrics_tbl(), file, row.names = FALSE)
     }
   )
 }
