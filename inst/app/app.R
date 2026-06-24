@@ -21,6 +21,7 @@ ensure_pkgs <- function() {
 source("preview.R", local = FALSE)
 source("preview_constructions.R", local = FALSE)
 source("download_helpers.R", local = FALSE)
+source("ui_helpers.R", local = FALSE)
 source("plot_spec.R", local = FALSE)
 
 # ---- dialect registry --------------------------------------------------------
@@ -928,7 +929,7 @@ server <- function(input, output, session) {
               "input.method == 'crossing'",
               tags$hr(),
               p(class = "text-muted small",
-                "Radii as fractions of the arena radius",
+                "Radii as fractions of the unit circle radius",
                 " (0 = centre, 1 = edge)."),
               layout_columns(
                 col_widths = c(6, 6),
@@ -1038,63 +1039,11 @@ server <- function(input, output, session) {
                       "On-screen only; export size is set under Image export."
                     )
                   ),
-                  accordion_panel(
-                    "Image export",
-                    layout_columns(
-                      col_widths = c(6, 6),
-                      numericInput("plot_w", "Width (in)", value = 7,
-                                   min = 1, max = 30, step = 0.5),
-                      numericInput("plot_h", "Height (in)", value = 7,
-                                   min = 1, max = 30, step = 0.5)
-                    ),
-                    selectInput(
-                      "plot_fmt", "Format",
-                      choices = c("PDF (vector)"  = "pdf",
-                                  "SVG (vector)"  = "svg",
-                                  "PNG (raster)"  = "png",
-                                  "JPG (raster)"  = "jpg")
-                    ),
-                    conditionalPanel(
-                      "input.plot_fmt == 'png' || input.plot_fmt == 'jpg'",
-                      numericInput("plot_dpi", "Resolution (dpi)", value = 300,
-                                   min = 72, max = 600, step = 1)
-                    ),
-                    # JPEG has no alpha channel, so transparency only applies to
-                    # the other formats; hide the option when JPG is selected.
-                    conditionalPanel(
-                      "input.plot_fmt != 'jpg'",
-                      checkboxInput("plot_transparent",
-                                    "Transparent background", value = FALSE)
-                    ),
-                    downloadButton(
-                      "dl_plot", "Download plot",
-                      class = "btn-sm btn-outline-primary w-100 mb-2"
-                    )
-                  ),
-                  accordion_panel(
-                    "R code",
-                    tags$p(
-                      class = "text-muted small",
-                      "radiatR code that reproduces this figure. Edit the data path",
-                      " to point at your own file."
-                    ),
-                    tags$div(
-                      style = "max-height:320px; overflow:auto;",
-                      verbatimTextOutput("figure_code")
-                    ),
-                    tags$button(
-                      class   = "btn btn-sm btn-outline-primary w-100 mb-2",
-                      onclick = paste0(
-                        "navigator.clipboard.writeText(",
-                        "document.getElementById('figure_code').innerText);",
-                        "this.innerText='Copied';",
-                        "setTimeout(()=>this.innerText='Copy R code',1200);"
-                      ),
-                      "Copy R code"
-                    ),
-                    downloadButton("dl_code", "Download .R",
-                                   class = "btn-sm btn-outline-primary w-100")
-                  )
+                  ui_image_export(""),
+                  ui_code_section(
+                    "figure_code", "dl_code",
+                    paste0("radiatR code that reproduces this figure. Edit the ",
+                           "data path to point at your own file."))
                 )
               ),
               card(
@@ -1159,41 +1108,33 @@ server <- function(input, output, session) {
             layout_sidebar(
               sidebar = sidebar(
                 width = 360, position = "right", open = TRUE,
-                radioButtons("kin_metric", "Metric",
-                             choices = c("Speed" = "speed",
-                                         "Turning rate" = "turning"),
-                             selected = "speed"),
-                conditionalPanel(
-                  condition = "input.kin_metric == 'turning'",
-                  selectInput("kin_units", "Turning units",
-                              choices = c("Radians" = "radians",
-                                          "Degrees" = "degrees"),
-                              selected = "radians")
-                ),
-                uiOutput("kin_track_ui"),
-                uiOutput("kin_colour_ui"),
-                numericInput("kin_frame_rate", "Frame rate (fps)",
-                             value = 30, min = 0, step = 1),
-                uiOutput("kin_note"),
-                tags$hr(class = "my-2"),
-                tags$p(class = "text-muted small",
-                       "radiatR code that reproduces this profile."),
-                tags$div(
-                  style = "max-height:320px; overflow:auto;",
-                  verbatimTextOutput("kinematics_code")
-                ),
-                tags$button(
-                  class   = "btn btn-sm btn-outline-primary w-100 mb-2",
-                  onclick = paste0(
-                    "navigator.clipboard.writeText(",
-                    "document.getElementById('kinematics_code').innerText);",
-                    "this.innerText='Copied';",
-                    "setTimeout(()=>this.innerText='Copy R code',1200);"
+                accordion(
+                  open = TRUE,
+                  accordion_panel(
+                    "Profile",
+                    radioButtons("kin_metric", "Metric",
+                                 choices = c("Speed" = "speed",
+                                             "Turning rate" = "turning"),
+                                 selected = "speed"),
+                    conditionalPanel(
+                      condition = "input.kin_metric == 'turning'",
+                      selectInput("kin_units", "Turning units",
+                                  choices = c("Radians" = "radians",
+                                              "Degrees" = "degrees"),
+                                  selected = "radians")
+                    ),
+                    uiOutput("kin_track_ui"),
+                    uiOutput("kin_colour_ui"),
+                    numericInput("kin_frame_rate", "Frame rate (fps)",
+                                 value = 30, min = 0, step = 1),
+                    uiOutput("kin_note")
                   ),
-                  "Copy R code"
-                ),
-                downloadButton("dl_kinematics_code", "Download .R",
-                               class = "btn-sm btn-outline-primary w-100")
+                  ui_image_export("kin_"),
+                  ui_code_section(
+                    "kinematics_code", "dl_kinematics_code",
+                    paste0("radiatR code that reproduces this profile. Edit the ",
+                           "data path to point at your own file."))
+                )
               ),
               card(
                 card_header("Kinematics profile"),
@@ -1728,6 +1669,30 @@ server <- function(input, output, session) {
   output$dl_kinematics_code <- downloadHandler(
     filename = function() paste0("radiatR_kinematics_", Sys.Date(), ".R"),
     content  = function(file) writeLines(kinematics_code_text(), file)
+  )
+
+  # Image export for the kinematics profile, mirroring dl_plot for the figure.
+  output$dl_kin_plot <- downloadHandler(
+    filename = function() {
+      fmt <- if (is.null(input$kin_plot_fmt)) "pdf" else input$kin_plot_fmt
+      paste0("radiatR_kinematics_", Sys.Date(), ".", fmt)
+    },
+    content = function(file) {
+      req(rv$ts, isTRUE(kin_fps_ok()))
+      fmt <- if (is.null(input$kin_plot_fmt)) "pdf" else input$kin_plot_fmt
+      transparent <- isTRUE(input$kin_plot_transparent) && fmt != "jpg"
+      p <- kinematics_spec_to_plot(kinematics_spec(), rv$ts)
+      if (transparent) p <- p + .transparent_theme()
+      ggsave(
+        file, p,
+        device = .plot_device(fmt),
+        width  = num_or(input$kin_plot_w, 7),
+        height = num_or(input$kin_plot_h, 7),
+        units  = "in",
+        dpi    = num_or(input$kin_plot_dpi, 300),
+        bg     = if (transparent) "transparent" else NULL
+      )
+    }
   )
 }
 
