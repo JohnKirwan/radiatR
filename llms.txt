@@ -1093,3 +1093,5 @@ Any remaining exported topics.
 - [radiatR](https://johnkirwan.github.io/radiatR/articles/radiatR.md):
 - [Simulating
   Trajectories](https://johnkirwan.github.io/radiatR/articles/simulate.md):
+- [Quantifying path
+  shape](https://johnkirwan.github.io/radiatR/articles/track-metrics.md):

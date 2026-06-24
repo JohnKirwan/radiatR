@@ -27,6 +27,17 @@ includes:
 - polished `ggplot2` layers for drawing concentric guides and annotated
   paths.
 
+Prefer a point-and-click interface?
+[`launch_app()`](https://johnkirwan.github.io/radiatR/reference/launch_app.md)
+opens an interactive Shiny companion to upload tracks or headings,
+configure the analysis, and view the figures together with the radiatR
+code that reproduces them.
+
+``` r
+
+launch_app()
+```
+
 ## Import Pipeline
 
 The package ships a full set of example tracks (a millipede orientation
@@ -256,6 +267,59 @@ radiate(cpunctatus, angle_labels = "months")
 ```
 
 ![](radiatR_files/figure-html/plot-circumference-labs-1.png)
+
+The other built-in scales are `"cardinal"` (compass), `"hours"` (24-hour
+clock), and `"seconds"`. For finer control — an 8-point compass, a
+12-hour clock, different month formats — add an explicit
+[`circumference_labs()`](https://johnkirwan.github.io/radiatR/reference/circumference_labs.md)
+layer built from
+[`scale_cardinal()`](https://johnkirwan.github.io/radiatR/reference/scale_cardinal.md),
+[`scale_clock()`](https://johnkirwan.github.io/radiatR/reference/scale_clock.md),
+[`scale_months()`](https://johnkirwan.github.io/radiatR/reference/scale_months.md),
+or
+[`scale_seconds()`](https://johnkirwan.github.io/radiatR/reference/scale_seconds.md):
+
+``` r
+
+radiate(cpunctatus, ticks = FALSE, show_labels = FALSE, show_arrow = FALSE) +
+  circumference_labs(scale_clock(hours = 12))
+```
+
+![](radiatR_files/figure-html/plot-circumference-explicit-1.png)
+
+`n_labels` sets how many equally-spaced ticks and numeric labels to draw
+— e.g. `12` for a clock face, `4` for cardinals only, `0` for a bare
+circle — and `angle_label_position` places the numeric labels
+`"outside"` (default), `"inside"`, or `"split"` (cardinals inside,
+diagonals outside):
+
+``` r
+
+radiate(cpunctatus, n_labels = 12, angle_label_position = "split",
+        show_labels = FALSE, show_arrow = FALSE)
+```
+
+![](radiatR_files/figure-html/plot-label-count-1.png)
+
+### Reference frame: relative vs absolute
+
+By default
+[`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+plots the landmark-**relative** frame: each trajectory is rotated so its
+trial landmark (e.g. the stimulus) sits at the same direction. Pass
+`coords = "absolute"` to plot the arena-native frame instead — useful as
+an experimental control, for instance to check the apparatus carries no
+directional bias of its own.
+([`set_reference()`](https://johnkirwan.github.io/radiatR/reference/set_reference.md)
+sets the per-trajectory landmark direction that defines the relative
+frame.)
+
+``` r
+
+radiate(cpunctatus, coords = "absolute")
+```
+
+![](radiatR_files/figure-html/plot-absolute-frame-1.png)
 
 ### Colour tracks by position
 
