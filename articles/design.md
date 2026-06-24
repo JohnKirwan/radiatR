@@ -18,7 +18,7 @@ flat table cannot hold safely.
 
 ## Rich objects, only where structure is irreducible
 
-- `Tracks` — trajectories with arena geometry, a per-trajectory
+- `Tracks` — trajectories with coordinate geometry, a per-trajectory
   reference frame, and transform history (invariants a bare tibble
   cannot enforce).
 - [`circ_display()`](https://johnkirwan.github.io/radiatR/reference/circ_display.md)

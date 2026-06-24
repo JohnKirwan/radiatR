@@ -172,8 +172,8 @@ radiate(
 
   Which reference frame to plot: \`"relative"\` (default) uses the
   landmark-relative position (\`rel_x\`/\`rel_y\`) and relative
-  headings; \`"absolute"\` uses the arena-native unit-circle position
-  (\`x\`/\`y\`) and un-rotated absolute headings, useful as an
+  headings; \`"absolute"\` uses the unit-circle position (\`x\`/\`y\`)
+  in the original (un-rotated) frame and absolute headings, useful as an
   experimental control. Ignored when explicit \`x_col\`/\`y_col\` are
   supplied. Errors if \`"absolute"\` is requested but the \`Tracks\` has
   no \`x\`/\`y\` columns registered.

@@ -172,7 +172,7 @@ radiate(ts,
   add_heading_points(hd, colour_col = "condition")
 ```
 
-> **Coordinates.** radiatR normalises each trajectory to a unit arena,
+> **Coordinates.** radiatR normalises each trajectory to a unit circle,
 > so its outputs (headings, mean direction, resultant length, circular
 > statistics) are scale-invariant and need no metric calibration.
 > Correct lens distortion and any scaling to real-world units in your
@@ -225,12 +225,11 @@ radiate(ts, show_tracks = TRUE, track_colour = "time")   # colour by elapsed tim
 
 A frame rate also lets
 [`track_speed()`](https://johnkirwan.github.io/radiatR/reference/track_speed.md)
-report trajectory speed in real units (arena-units, i.e. radii, per
-second):
+report trajectory speed in real units (radii per second):
 
 ``` r
 
-# speed in real units (arena-units per second) once a frame rate is set
+# speed in radii per second once a frame rate is set
 ts <- set_frame_rate(cpunctatus, fps = 30)
 track_speed(ts)              # mean speed per track
 track_speed(ts, stat = "max")
@@ -245,12 +244,12 @@ radiate(ts, show_tracks = TRUE, track_colour = "speed")
 
 If you know a physical scale, calibrate distances so lengths and speeds
 report in real units. The scale is physical units per coordinate unit
-(e.g. mm per arena radius); unset, everything stays in arena/coordinate
-units.
+(e.g. mm per radius); unset, everything stays in coordinate units
+(radii).
 
 ``` r
 
-# calibrate distance (optional): 50 mm per coordinate unit (e.g. arena radius)
+# calibrate distance (optional): 50 mm per coordinate unit (radius)
 ts <- set_distance_scale(set_frame_rate(cpunctatus, 30), 50, unit = "mm")
 track_length(ts)            # path length per track, in mm
 track_speed(ts)             # mean speed per track, in mm/s
@@ -302,7 +301,7 @@ circ_boxplot_stats(hd)$constant
 ## Simulate Data
 
 [`simulate_tracks()`](https://johnkirwan.github.io/radiatR/reference/simulate_tracks.md)
-generates synthetic arena trajectories for testing pipelines and
+generates synthetic circular trajectories for testing pipelines and
 teaching:
 
 ``` r

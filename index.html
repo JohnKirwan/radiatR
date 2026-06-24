@@ -307,7 +307,7 @@
 <span>        show_arrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="reference/add_heading_points.html">add_heading_points</a></span><span class="op">(</span><span class="va">hd</span>, colour_col <span class="op">=</span> <span class="st">"condition"</span><span class="op">)</span></span></code></pre></div>
 <blockquote>
-<p><strong>Coordinates.</strong> radiatR normalises each trajectory to a unit arena, so its outputs (headings, mean direction, resultant length, circular statistics) are scale-invariant and need no metric calibration. Correct lens distortion and any scaling to real-world units in your tracking pipeline (e.g. your tracker’s own calibration, or OpenCV <code>undistort</code>) before importing.</p>
+<p><strong>Coordinates.</strong> radiatR normalises each trajectory to a unit circle, so its outputs (headings, mean direction, resultant length, circular statistics) are scale-invariant and need no metric calibration. Correct lens distortion and any scaling to real-world units in your tracking pipeline (e.g. your tracker’s own calibration, or OpenCV <code>undistort</code>) before importing.</p>
 </blockquote>
 <div class="section level3">
 <h3 id="label-the-perimeter-in-domain-units">Label the perimeter in domain units<a class="anchor" aria-label="anchor" href="#label-the-perimeter-in-domain-units"></a>
@@ -334,9 +334,9 @@
 <span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/frame_rate.html">set_frame_rate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, fps <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/track_duration.html">track_duration</a></span><span class="op">(</span><span class="va">ts</span><span class="op">)</span>                                       <span class="co"># seconds per track</span></span>
 <span><span class="fu"><a href="reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">ts</span>, show_tracks <span class="op">=</span> <span class="cn">TRUE</span>, track_colour <span class="op">=</span> <span class="st">"time"</span><span class="op">)</span>   <span class="co"># colour by elapsed time</span></span></code></pre></div>
-<p>A frame rate also lets <code><a href="reference/track_speed.html">track_speed()</a></code> report trajectory speed in real units (arena-units, i.e. radii, per second):</p>
+<p>A frame rate also lets <code><a href="reference/track_speed.html">track_speed()</a></code> report trajectory speed in real units (radii per second):</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># speed in real units (arena-units per second) once a frame rate is set</span></span>
+<code class="sourceCode R"><span><span class="co"># speed in radii per second once a frame rate is set</span></span>
 <span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/frame_rate.html">set_frame_rate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, fps <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/track_speed.html">track_speed</a></span><span class="op">(</span><span class="va">ts</span><span class="op">)</span>              <span class="co"># mean speed per track</span></span>
 <span><span class="fu"><a href="reference/track_speed.html">track_speed</a></span><span class="op">(</span><span class="va">ts</span>, stat <span class="op">=</span> <span class="st">"max"</span><span class="op">)</span></span></code></pre></div>
@@ -344,9 +344,9 @@
 <code class="sourceCode R"><span><span class="co"># colour each path by its instantaneous speed (needs a frame rate)</span></span>
 <span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/frame_rate.html">set_frame_rate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, fps <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">ts</span>, show_tracks <span class="op">=</span> <span class="cn">TRUE</span>, track_colour <span class="op">=</span> <span class="st">"speed"</span><span class="op">)</span></span></code></pre></div>
-<p>If you know a physical scale, calibrate distances so lengths and speeds report in real units. The scale is physical units per coordinate unit (e.g. mm per arena radius); unset, everything stays in arena/coordinate units.</p>
+<p>If you know a physical scale, calibrate distances so lengths and speeds report in real units. The scale is physical units per coordinate unit (e.g. mm per radius); unset, everything stays in coordinate units (radii).</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># calibrate distance (optional): 50 mm per coordinate unit (e.g. arena radius)</span></span>
+<code class="sourceCode R"><span><span class="co"># calibrate distance (optional): 50 mm per coordinate unit (radius)</span></span>
 <span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/distance_scale.html">set_distance_scale</a></span><span class="op">(</span><span class="fu"><a href="reference/frame_rate.html">set_frame_rate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, <span class="fl">30</span><span class="op">)</span>, <span class="fl">50</span>, unit <span class="op">=</span> <span class="st">"mm"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/track_length.html">track_length</a></span><span class="op">(</span><span class="va">ts</span><span class="op">)</span>            <span class="co"># path length per track, in mm</span></span>
 <span><span class="fu"><a href="reference/track_speed.html">track_speed</a></span><span class="op">(</span><span class="va">ts</span><span class="op">)</span>             <span class="co"># mean speed per track, in mm/s</span></span>
@@ -383,7 +383,7 @@
 <div class="section level2">
 <h2 id="simulate-data">Simulate Data<a class="anchor" aria-label="anchor" href="#simulate-data"></a>
 </h2>
-<p><code><a href="reference/simulate_tracks.html">simulate_tracks()</a></code> generates synthetic arena trajectories for testing pipelines and teaching:</p>
+<p><code><a href="reference/simulate_tracks.html">simulate_tracks()</a></code> generates synthetic circular trajectories for testing pipelines and teaching:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Three default conditions differing in concentration and tortuosity</span></span>
 <span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/simulate_tracks.html">simulate_tracks</a></span><span class="op">(</span>seed <span class="op">=</span> <span class="fl">42</span>, output <span class="op">=</span> <span class="st">"trajset"</span><span class="op">)</span></span>

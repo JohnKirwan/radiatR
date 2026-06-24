@@ -59,112 +59,112 @@ file_tbl  <- load_tracks(file_tbl, manifest, track_dir)
 #> 50_104, 50_105, 50_107, 50_108, 50_109, 50_110, 50_112, 50_113, 50_119, 50_121
 
 ts_demo <- suppressWarnings(get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir))
-#> 1 point across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 11 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 1 point across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 5 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 5 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 1 point across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 9 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 10 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 9 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 8 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 5 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 1 point across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 8 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 8 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 5 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 8 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 7 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 23 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 11 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 8 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 7 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 1 point across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 10 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 1 point across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 1 point across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 7 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 11 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 19 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 9 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 4 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 6 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 3 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 9 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
-#> 2 points across 1 trial exceeded the arena boundary (radius > 1); coordinates left unscaled.
+#> 1 point across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 11 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 1 point across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 5 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 5 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 1 point across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 9 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 10 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 9 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 8 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 5 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 1 point across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 8 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 8 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 5 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 8 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 7 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 23 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 11 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 8 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 7 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 1 point across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 10 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 1 point across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 1 point across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 7 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 11 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 19 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 9 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 4 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 6 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 3 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 9 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
+#> 2 points across 1 trial exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
 ts_demo
 #> Tracks: 235 trajectories, 44331 observations
 #> Columns: id='trial_id', time='frame', angle='rel_theta' (radians), x='trans_x', y='trans_y', rel_x='rel_x', rel_y='rel_y'
@@ -182,9 +182,8 @@ ts_demo
 
 [`get_all_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.md)
 reads each landmark/track pair, normalises coordinates to a unit circle
-(arena radius = 1), and returns a `Tracks`. Trial metadata (arena
-radius, target position, frame limits) is in
-`ts_demo@meta$trial_limits`.
+(radius = 1), and returns a `Tracks`. Trial metadata (physical radius,
+target position, frame limits) is in `ts_demo@meta$trial_limits`.
 
 ## Full Millipede Dataset
 
@@ -236,7 +235,7 @@ By default
 [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
 plots the landmark-**relative** frame — each trajectory rotated so its
 trial landmark (e.g. the stimulus) sits at the same direction. To
-inspect the arena-native frame as an experimental control (for instance,
+inspect the un-rotated frame as an experimental control (for instance,
 to check the apparatus carries no directional bias of its own), pass
 `coords = "absolute"`:
 
@@ -305,11 +304,11 @@ radiate(ts, show_tracks = TRUE, track_colour = "time")   # colour by elapsed tim
 A frame rate also lets
 [`track_speed()`](https://johnkirwan.github.io/radiatR/reference/track_speed.md)
 report each trajectory’s speed in real units. With the default
-unit-arena coordinates that is arena-units (radii) per second.
+unit-circle coordinates that is radii per second.
 
 ``` r
 
-# speed in real units (arena-units per second) once a frame rate is set
+# speed in radii per second once a frame rate is set
 ts <- set_frame_rate(cpunctatus, fps = 30)
 head(track_speed(ts))            # mean speed per track
 #>         trial_id     speed
@@ -346,12 +345,12 @@ radiate(ts, show_tracks = TRUE, track_colour = "speed")
 
 If you know a physical scale, calibrate distances so lengths and speeds
 report in real units. The scale is physical units per coordinate unit
-(e.g. mm per arena radius); unset, everything stays in arena/coordinate
-units.
+(e.g. mm per radius); unset, everything stays in coordinate units
+(radii).
 
 ``` r
 
-# calibrate distance (optional): 50 mm per coordinate unit (e.g. arena radius)
+# calibrate distance (optional): 50 mm per coordinate unit (radius)
 ts <- set_distance_scale(set_frame_rate(cpunctatus, 30), 50, unit = "mm")
 head(track_length(ts))      # path length per track, in mm
 #>         trial_id    length
@@ -1171,8 +1170,8 @@ Two parameter-free alternatives are especially useful:
 ### distal
 
 The **distal** rule takes `atan2(y, x)` at the frame where the subject
-is farthest from the arena centre. It requires no ring parameters and
-never returns `NA` because every trial has a most-distal frame.
+is farthest from the centre. It requires no ring parameters and never
+returns `NA` because every trial has a most-distal frame.
 
 ``` r
 

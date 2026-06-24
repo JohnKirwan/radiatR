@@ -42,8 +42,8 @@ points).
 
 Numeric (frame) time requires a frame rate (\[set_frame_rate()\]);
 POSIXct time is used directly. With the default coordinate columns the
-unit is arena-units (radii) per second, because radiatR normalises
-trajectories to a unit arena.
+unit is radii per second, because radiatR normalises trajectories to a
+unit circle.
 
 ## See also
 

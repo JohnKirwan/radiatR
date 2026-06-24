@@ -3,7 +3,7 @@
 Speed of each step as straight-line step distance divided by the elapsed
 time of that step: \`sqrt(diff(x)^2 + diff(y)^2) / diff(seconds)\`. The
 unit is the distance unit of \`x\`/\`y\` per second; for radiatR's
-unit-arena coordinates that is arena-units (radii) per second.
+unit-circle coordinates that is radii per second.
 
 ## Usage
 

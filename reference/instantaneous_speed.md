@@ -32,7 +32,7 @@ at each trajectory's first point.
 
 Numeric (frame) time requires a frame rate (\[set_frame_rate()\]);
 POSIXct time is used directly. With the default coordinate columns the
-unit is arena-units (radii) per second.
+unit is radii per second.
 
 ## See also
 
