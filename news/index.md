@@ -176,7 +176,7 @@
   the app’s overlay follows the active theme.
 
 - New
-  [`perimeter_labs()`](https://johnkirwan.github.io/radiatR/reference/perimeter_labs.md)
+  [`circumference_labs()`](https://johnkirwan.github.io/radiatR/reference/circumference_labs.md)
   labels a radial plot’s circumference in domain units, with built-in
   scales
   [`scale_cardinal()`](https://johnkirwan.github.io/radiatR/reference/scale_cardinal.md)

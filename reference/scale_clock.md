@@ -1,4 +1,4 @@
-# Perimeter scale: clock hours
+# Circumference scale: clock hours
 
 Draws a tick at every hour and labels a sparse subset.
 
@@ -22,11 +22,11 @@ scale_clock(hours = 24, every = NULL)
 
 ## Value
 
-A perimeter-scale list for \[perimeter_labs()\].
+A circumference-scale list for \[circumference_labs()\].
 
 ## See also
 
-\[perimeter_labs()\], \[scale_cardinal()\], \[scale_months()\],
+\[circumference_labs()\], \[scale_cardinal()\], \[scale_months()\],
 \[scale_seconds()\]
 
 ## Examples

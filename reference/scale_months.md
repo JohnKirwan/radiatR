@@ -1,6 +1,6 @@
-# Perimeter scale: months of the year
+# Circumference scale: months of the year
 
-Perimeter scale: months of the year
+Circumference scale: months of the year
 
 ## Usage
 
@@ -17,11 +17,11 @@ scale_months(format = c("abbr", "initial", "number"))
 
 ## Value
 
-A perimeter-scale list for \[perimeter_labs()\].
+A circumference-scale list for \[circumference_labs()\].
 
 ## See also
 
-\[perimeter_labs()\], \[scale_cardinal()\], \[scale_clock()\],
+\[circumference_labs()\], \[scale_cardinal()\], \[scale_clock()\],
 \[scale_seconds()\]
 
 ## Examples

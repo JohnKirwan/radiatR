@@ -1,4 +1,4 @@
-# Perimeter scale: seconds (or minutes)
+# Circumference scale: seconds (or minutes)
 
 Draws 60 ticks and labels a sparse subset. Also serves a minutes dial.
 
@@ -17,11 +17,11 @@ scale_seconds(every = 15)
 
 ## Value
 
-A perimeter-scale list for \[perimeter_labs()\].
+A circumference-scale list for \[circumference_labs()\].
 
 ## See also
 
-\[perimeter_labs()\], \[scale_cardinal()\], \[scale_clock()\],
+\[circumference_labs()\], \[scale_cardinal()\], \[scale_clock()\],
 \[scale_months()\]
 
 ## Examples

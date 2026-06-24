@@ -224,11 +224,11 @@ radiate(
   \`"radians"\` (e.g. \`π/4\`), or \`"none"\` use diagonal angle labels
   via \[degree_labs()\]. The domain scales \`"cardinal"\` (N/E/S/W),
   \`"hours"\` (24-hour clock), \`"months"\` (Jan...Dec), and
-  \`"seconds"\` instead label the perimeter via \[perimeter_labs()\],
-  aligning the tick count to the scale. For finer control (8-point
-  compass, 12-hour clock, month formats) add an explicit
-  \`perimeter_labs()\` layer. Label styling follows the chosen
-  \`theme\`'s \`axis.text\`.
+  \`"seconds"\` instead label the perimeter via
+  \[circumference_labs()\], aligning the tick count to the scale. For
+  finer control (8-point compass, 12-hour clock, month formats) add an
+  explicit \`circumference_labs()\` layer. Label styling follows the
+  chosen \`theme\`'s \`axis.text\`.
 
 - angle_label_position:
 
@@ -238,7 +238,7 @@ radiate(
   inside the circle; \`"split"\` puts the cardinals inside and the
   diagonals outside. Ignored by the domain scales
   (\`"cardinal"\`/\`"hours"\`/\`"months"\`/ \`"seconds"\`), which place
-  labels via \[perimeter_labs()\]. See \[degree_labs()\].
+  labels via \[circumference_labs()\]. See \[degree_labs()\].
 
 - n_labels:
 

@@ -1,6 +1,6 @@
-# Perimeter scale: cardinal compass directions
+# Circumference scale: cardinal compass directions
 
-Perimeter scale: cardinal compass directions
+Circumference scale: cardinal compass directions
 
 ## Usage
 
@@ -17,11 +17,11 @@ scale_cardinal(points = 4)
 
 ## Value
 
-A perimeter-scale list for \[perimeter_labs()\].
+A circumference-scale list for \[circumference_labs()\].
 
 ## See also
 
-\[perimeter_labs()\], \[scale_clock()\], \[scale_months()\],
+\[circumference_labs()\], \[scale_clock()\], \[scale_months()\],
 \[scale_seconds()\]
 
 ## Examples

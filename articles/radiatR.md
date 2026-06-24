@@ -255,7 +255,7 @@ built-in scale and aligns the tick count to it:
 radiate(cpunctatus, angle_labels = "months")
 ```
 
-![](radiatR_files/figure-html/plot-perimeter-labs-1.png)
+![](radiatR_files/figure-html/plot-circumference-labs-1.png)
 
 ### Colour tracks by position
 

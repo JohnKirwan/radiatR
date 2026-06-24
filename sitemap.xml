@@ -9,6 +9,7 @@
 <url><loc>https://johnkirwan.github.io/radiatR/articles/radiatR.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/articles/simulate.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/authors.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/copilot-instructions.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/index.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/news/index.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/Tracks-class.html</loc></url>
@@ -51,6 +52,7 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/circ_summary.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/circ_summary_headings.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/circular_mapping.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/circumference_labs.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/compute_circ_interval.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/compute_circ_mean.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/compute_circular_density.html</loc></url>
@@ -95,7 +97,6 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/path_sinuosity.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/path_straightness.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/path_tortuosity.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/perimeter_labs.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/plot_profile.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/plot_speed_direction.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/plot_speed_histogram.html</loc></url>
