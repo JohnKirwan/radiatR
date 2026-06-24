@@ -155,6 +155,13 @@
 
 ## Shiny app
 
+* The Results "Kinematics" sub-tab is renamed **"Track metrics"** and now also
+  shows a **per-track metrics table** (length, straightness, tortuosity,
+  sinuosity) with a means summary and CSV download — available whenever tracks
+  are loaded, not only in no-headings mode. A scope toggle distinguishes all
+  loaded tracks from those that produced a heading (with the counts shown). The
+  kinematics speed/turning profile is unchanged.
+
 * The Configure step's "Data model" selector is now a clearer **"Directionality"**
   inline toggle (Directional / Axial), placed above the heading-method dropdown
   since it is the more general question.

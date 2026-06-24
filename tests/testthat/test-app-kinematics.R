@@ -29,6 +29,28 @@ test_that("the Kinematics tab renders a plot and emits matching code", {
   })
 })
 
+test_that("Track metrics tab surfaces the per-track metrics, scopable to heading-producing tracks", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  shiny::testServer(app_dir(), {
+    session$setInputs(load_example = 1, method = "distal")
+    session$setInputs(go3 = 1)
+    # Metrics are available even with headings derived (not only in none mode).
+    m <- track_metrics_tbl()
+    expect_true(all(c("length", "straightness", "tortuosity", "sinuosity") %in% names(m)))
+    n_all <- nrow(m)
+    expect_gt(n_all, 0)
+
+    # Scoping to heading-producing tracks keeps only ids present in rv$hd.
+    session$setInputs(track_metric_scope = "heading")
+    idc <- rv$ts@cols$id
+    expect_true(all(as.character(track_metrics_tbl()[[idc]]) %in% heading_ids()))
+    expect_lte(nrow(track_metrics_tbl()), n_all)
+
+    expect_match(output$dl_track_metrics, "\\.csv$")
+  })
+})
+
 test_that("kin_frame_rate participates in the shared frame rate", {
   skip_if_not_installed("shiny")
   skip_if(!dir.exists(app_dir()), "app dir not found")
