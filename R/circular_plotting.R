@@ -2294,6 +2294,12 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   is the American-spelling alias.
 #' @param time_units Units for `track_colour = "time"`: `"seconds"` (default),
 #'   `"minutes"`, or `"milliseconds"`. Sets the colourbar title and scale.
+#' @param coords Which reference frame to plot: `"relative"` (default) uses the
+#'   landmark-relative position (`rel_x`/`rel_y`) and relative headings;
+#'   `"absolute"` uses the arena-native unit-circle position (`x`/`y`) and
+#'   un-rotated absolute headings, useful as an experimental control. Ignored
+#'   when explicit `x_col`/`y_col` are supplied. Errors if `"absolute"` is
+#'   requested but the `Tracks` has no `x`/`y` columns registered.
 #' @param theme Plot appearance, named for the ggplot2 base themes: one of
 #'   `"void"` (default), `"minimal"`, `"classic"`, `"bw"`, `"grey"`, `"light"`,
 #'   `"dark"`, or `"linedraw"`. See [radial_theme()].
@@ -2376,6 +2382,7 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #' tracks_demo <- simulate_tracks(conditions = data.frame(n_trials = 1L),
 #'                                n_points = 200, seed = 1)
 #' radiate(tracks_demo, x_col = "rel_x", y_col = "rel_y", group_col = "trial_id")
+#' radiate(cpunctatus, coords = "absolute")
 
 #' @export
 radiate <- function(data, ...) UseMethod("radiate")
@@ -2383,6 +2390,19 @@ radiate <- function(data, ...) UseMethod("radiate")
 #' @rdname radiate
 #' @exportS3Method
 radiate.Tracks <- function(data, ...) radiate.default(data, ...)
+
+# Per-row absolute heading: undo the per-trajectory landmark rotation so the
+# directedness arrow points in the arena-native frame. Returns NULL when the
+# Tracks carries no angle column. rel_theta = .wrap_to_2pi(abs_theta - reference)
+# => abs_theta = .wrap_to_2pi(angle + reference).
+.absolute_angle <- function(ts, data, group_col) {
+  ang_col <- ts@cols$angle
+  if (is.null(ang_col)) return(NULL)
+  lut <- .reference_lookup(ts)
+  ref <- lut[as.character(data[[group_col]])]
+  ref[is.na(ref)] <- 0
+  .wrap_to_2pi(data[[ang_col]] + ref)
+}
 
 #' @rdname radiate
 #' @exportS3Method
@@ -2396,6 +2416,7 @@ function(
   colour_cycle = NULL,
   track_colour = c("trajectory", "sequence", "time", "speed"),
   time_units = c("seconds", "minutes", "milliseconds"),
+  coords = c("relative", "absolute"),
   panel_by = NULL,
   ncol = NULL,
   strip_labels = NULL,
@@ -2441,6 +2462,7 @@ function(
   grid <- match.arg(grid)
   track_colour <- match.arg(track_colour)
   time_units <- match.arg(time_units)
+  coords <- match.arg(coords)
   seq_track  <- identical(track_colour, "sequence")
   time_track <- identical(track_colour, "time")
   speed_track <- identical(track_colour, "speed")
@@ -2481,7 +2503,12 @@ function(
   }
 
   data <- as.data.frame(ts)
-  if (!is.null(ts@meta$plot_x_col) && identical(x_col, "rel_x")) {
+  if (identical(coords, "absolute") && identical(x_col, "rel_x")) {
+    if (is.null(ts@cols$x) || is.null(ts@cols$y))
+      stop("coords='absolute' requires x and y registered in Tracks@cols.")
+    x_col <- ts@cols$x
+    if (identical(y_col, "rel_y")) y_col <- ts@cols$y
+  } else if (!is.null(ts@meta$plot_x_col) && identical(x_col, "rel_x")) {
     x_col <- ts@meta$plot_x_col
     if (!is.null(ts@meta$plot_y_col) && identical(y_col, "rel_y"))
       y_col <- ts@meta$plot_y_col
@@ -2495,7 +2522,19 @@ function(
   x_col <- ".disp_x"
   y_col <- ".disp_y"
   if (is.null(group_col)) group_col <- ts@cols$id
-  if (is.null(arrow_angle_col)) arrow_angle_col <- ts@cols$angle
+  if (is.null(arrow_angle_col)) {
+    if (identical(coords, "absolute")) {
+      abs_ang <- .absolute_angle(ts, data, group_col)
+      if (!is.null(abs_ang)) {
+        data[[".abs_theta"]] <- abs_ang
+        arrow_angle_col <- ".abs_theta"
+      } else {
+        arrow_angle_col <- ts@cols$angle
+      }
+    } else {
+      arrow_angle_col <- ts@cols$angle
+    }
+  }
 
   if (!is.null(colour_cycle)) {
     if (!is.null(colour_col))

@@ -1919,3 +1919,65 @@ test_that("radiate track_colour='speed' colourbar shows the distance unit when c
   guide_title <- if (!is.null(cs$guide$params$title)) cs$guide$params$title else cs$guide$title
   expect_equal(guide_title, "speed (mm/s)")
 })
+
+.abs_demo_tracks <- function() {
+  d <- data.frame(
+    id    = rep(c("a", "b"), each = 4L),
+    t     = rep(1:4, 2L),
+    x     = c(0.1, 0.3, 0.5, 0.7,  -0.1, -0.2, -0.4, -0.6),
+    y     = c(0.0, 0.1, 0.2, 0.1,   0.2,  0.3,  0.4,  0.5),
+    rel_x = NA_real_, rel_y = NA_real_, angle = 0
+  )
+  ts <- tracks(d, id = "id", time = "t", angle = "angle",
+               x = "x", y = "y", rel_x = "rel_x", rel_y = "rel_y",
+               angle_unit = "radians", normalize_xy = FALSE)
+  ts <- set_reference(ts, c(a = pi / 2, b = pi))
+  # The loader points the plot at the relative frame (circular_trials.R); mirror
+  # that here so coords="relative" genuinely plots rel_x/rel_y, not the x/y role.
+  ts@meta$plot_x_col <- "rel_x"
+  ts@meta$plot_y_col <- "rel_y"
+  ts
+}
+
+test_that("coords='absolute' plots x/y, not the relative frame", {
+  ts <- .abs_demo_tracks()
+  pa <- radiate(ts, coords = "absolute", ticks = FALSE)
+  pr <- radiate(ts, coords = "relative", ticks = FALSE)
+  da <- ggplot2::layer_data(pa, 1)
+  dr <- ggplot2::layer_data(pr, 1)
+  expect_false(isTRUE(all.equal(range(da$x), range(dr$x))))
+  expect_equal(sort(round(range(da$x), 6)),
+               sort(round(range(as.data.frame(ts)[[ts@cols$x]]), 6)))
+})
+
+test_that("coords='absolute' un-rotates the directedness arrow angle", {
+  ts <- .abs_demo_tracks()
+  d  <- as.data.frame(ts)
+  ref <- radiatR:::.reference_lookup(ts)
+  expect_equal(
+    radiatR:::.absolute_angle(ts, d, ts@cols$id),
+    radiatR:::.wrap_to_2pi(d[[ts@cols$angle]] + ref[as.character(d[[ts@cols$id]])]),
+    ignore_attr = TRUE)
+})
+
+test_that("coords='absolute' errors when x/y are not registered", {
+  # tracks() derives x/y from angle, so drop the registered roles to model a
+  # Tracks that genuinely has no absolute frame.
+  ts <- .abs_demo_tracks()
+  ts@cols$x <- NULL
+  ts@cols$y <- NULL
+  expect_error(radiate(ts, coords = "absolute"),
+               "coords='absolute' requires", fixed = TRUE)
+})
+
+test_that("coords='absolute' equals the default when no reference is set", {
+  d <- data.frame(id = "a", t = 1:4,
+                  rel_x = c(0.1, 0.2, 0.3, 0.4), rel_y = c(0, 0.1, 0.2, 0.1),
+                  x = c(0.1, 0.2, 0.3, 0.4), y = c(0, 0.1, 0.2, 0.1), angle = 0)
+  ts <- tracks(d, id = "id", time = "t", angle = "angle",
+               x = "x", y = "y", rel_x = "rel_x", rel_y = "rel_y",
+               angle_unit = "radians", normalize_xy = FALSE)
+  da <- ggplot2::layer_data(radiate(ts, coords = "absolute", ticks = FALSE), 1)
+  dd <- ggplot2::layer_data(radiate(ts, ticks = FALSE), 1)
+  expect_equal(da$x, dd$x); expect_equal(da$y, dd$y)
+})

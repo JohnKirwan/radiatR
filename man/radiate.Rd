@@ -21,6 +21,7 @@ radiate(data, ...)
   colour_cycle = NULL,
   track_colour = c("trajectory", "sequence", "time", "speed"),
   time_units = c("seconds", "minutes", "milliseconds"),
+  coords = c("relative", "absolute"),
   panel_by = NULL,
   ncol = NULL,
   strip_labels = NULL,
@@ -137,6 +138,13 @@ is the American-spelling alias.}
 
 \item{time_units}{Units for `track_colour = "time"`: `"seconds"` (default),
 `"minutes"`, or `"milliseconds"`. Sets the colourbar title and scale.}
+
+\item{coords}{Which reference frame to plot: `"relative"` (default) uses the
+landmark-relative position (`rel_x`/`rel_y`) and relative headings;
+`"absolute"` uses the arena-native unit-circle position (`x`/`y`) and
+un-rotated absolute headings, useful as an experimental control. Ignored
+when explicit `x_col`/`y_col` are supplied. Errors if `"absolute"` is
+requested but the `Tracks` has no `x`/`y` columns registered.}
 
 \item{panel_by}{NULL, a column name, or a character vector of column names
 to facet by (via [ggplot2::facet_wrap()]). The named column(s) must be
@@ -267,4 +275,5 @@ supplying both spellings of a pair is an error.
 tracks_demo <- simulate_tracks(conditions = data.frame(n_trials = 1L),
                                n_points = 200, seed = 1)
 radiate(tracks_demo, x_col = "rel_x", y_col = "rel_y", group_col = "trial_id")
+radiate(cpunctatus, coords = "absolute")
 }
