@@ -342,6 +342,69 @@ test_that("degree_labs inside is display-aware (rotation moves the labels)", {
   expect_false(isTRUE(all.equal(pick(d0, "0°"), pick(dz, "0°"))))
 })
 
+test_that("degree_labs(n=) sets the number and angles of labels", {
+  expect_length(degree_labs(), 4)                    # n = NULL unchanged (legacy)
+  l12 <- degree_labs(n = 12)
+  expect_length(l12, 12)
+  expect_setequal(.lab_text(l12),
+                  paste0(seq(0, 330, by = 30), "\U00B0"))
+  l4 <- degree_labs(n = 4)
+  expect_setequal(.lab_text(l4), c("0°", "90°", "180°", "270°"))
+  expect_length(degree_labs(n = 0), 0)               # bare
+})
+
+test_that("degree_labs(n=, position='split') puts quadrants inside, rest outside", {
+  ls <- degree_labs(n = 12, position = "split", inside_radius = 0.88)
+  rs <- stats::setNames(vapply(ls, .lab_r, numeric(1)), .lab_text(ls))
+  quad <- c("0°", "90°", "180°", "270°")
+  expect_true(all(abs(rs[quad] - 0.88) < 1e-6))      # quadrants inside
+  expect_true(all(rs[setdiff(names(rs), quad)] > 1.05))  # the other 8 outside
+})
+
+test_that("degree_labs(n=, position='split') falls back to inside when n %% 4 != 0", {
+  expect_message(ls <- degree_labs(n = 6, position = "split", inside_radius = 0.88),
+                 "split", ignore.case = TRUE)
+  rs <- vapply(ls, .lab_r, numeric(1))
+  expect_length(ls, 6)
+  expect_true(all(abs(rs - 0.88) < 1e-6))            # all inside
+})
+
+test_that("radiate(n_labels=) drives tick and label counts; 0 is a bare circle", {
+  d0 <- data.frame(id = "a", t = 1:4,
+                   rel_x = c(0.1, 0.2, 0.3, 0.4), rel_y = c(0, 0.1, 0.2, 0.1),
+                   x = c(0.1, 0.2, 0.3, 0.4), y = c(0, 0.1, 0.2, 0.1), angle = 0)
+  ts <- tracks(d0, id = "id", time = "t", angle = "angle",
+               x = "x", y = "y", rel_x = "rel_x", rel_y = "rel_y",
+               angle_unit = "radians", normalize_xy = FALSE)
+  `%||%` <- function(a, b) if (is.null(a)) b else a
+  tick_rows <- function(p) {
+    seg <- Filter(function(L) inherits(L$geom, "GeomSegment"), p$layers)
+    if (!length(seg)) 0L else nrow(seg[[1]]$data)
+  }
+  n_text <- function(p) sum(vapply(p$layers,
+    function(L) isTRUE(nzchar(L$aes_params$label %||% "")), logical(1)))
+  # show_arrow off so the only GeomSegment layer is the ticks.
+  p12 <- radiate(ts, n_labels = 12, show_arrow = FALSE)
+  expect_equal(tick_rows(p12), 12)
+  expect_equal(n_text(p12), 12)
+  p0 <- radiate(ts, n_labels = 0, show_arrow = FALSE)
+  expect_equal(tick_rows(p0), 0)
+  expect_equal(n_text(p0), 0)
+  pn <- radiate(ts, n_labels = 12, angle_labels = "none", show_arrow = FALSE)
+  expect_equal(tick_rows(pn), 12)
+  expect_equal(n_text(pn), 0)
+})
+
+test_that("radiate(n_labels=) validates its argument", {
+  ts <- tracks(data.frame(id = "a", t = 1:3, x = c(.1,.2,.3), y = c(0,.1,.2),
+                          rel_x = c(.1,.2,.3), rel_y = c(0,.1,.2), angle = 0),
+               id = "id", time = "t", angle = "angle", x = "x", y = "y",
+               rel_x = "rel_x", rel_y = "rel_y", angle_unit = "radians",
+               normalize_xy = FALSE)
+  expect_error(radiate(ts, n_labels = -1), "n_labels")
+  expect_error(radiate(ts, n_labels = 2.5), "n_labels")
+})
+
 test_that("radiate(angle_label_position='split') adds the cardinal labels", {
   d <- data.frame(id = "a", t = 1:4,
                   rel_x = c(0.1, 0.2, 0.3, 0.4), rel_y = c(0, 0.1, 0.2, 0.1),
