@@ -132,7 +132,7 @@ get_trial_limits <- function(landmarks, track, file_tbl, vid_num) {
 #'   trial limits (including `valid_track` flags) are stored in
 #'   `meta$trial_limits`.
 #'
-#' @importFrom purrr compact map
+#' @importFrom purrr compact
 #' @importFrom tibble tibble add_column as_tibble
 #' @export
 get_tracked_object_pos <- function(
@@ -147,7 +147,7 @@ get_tracked_object_pos <- function(
     trial_limits$valid_track <- TRUE
   }
 
-  trackz <- purrr::map(vector(length = num_trials), tibble::tibble)
+  trial_tracks <- vector("list", num_trials)
   transform_entries <- vector("list", num_trials)
 
   # Landmark-mapped coordinates are kept as-is (never rescaled); track points that
@@ -180,7 +180,7 @@ get_tracked_object_pos <- function(
         .after = "y"
       )
 
-    trackz[[i]] <- XY
+    trial_tracks[[i]] <- XY
     transform_entries[[i]] <- list(
       step = "unit_circle_mapping",
       order = 1L,
@@ -191,7 +191,7 @@ get_tracked_object_pos <- function(
     )
 
     if (all(mapped$trans_rho > .4, na.rm = TRUE)) {
-      trackz[[i]] <- NULL
+      trial_tracks[[i]] <- NULL
       transform_entries[[i]] <- NULL
       trial_limits$valid_track[i] <- FALSE
       warning("Track starts too far from centre: ", trial_limits$video[i])
@@ -234,7 +234,7 @@ get_tracked_object_pos <- function(
       oob_trials, if (oob_trials == 1L) "" else "s"))
   }
 
-  trackz <- purrr::compact(trackz)
+  trial_tracks <- purrr::compact(trial_tracks)
   transform_entries <- purrr::compact(transform_entries)
   transform_history <- .empty_transform_history()
   if (length(transform_entries)) {
@@ -251,11 +251,11 @@ get_tracked_object_pos <- function(
     }
   }
 
-  if (!length(trackz)) {
+  if (!length(trial_tracks)) {
     return(NULL)
   }
 
-  combined <- tibble::as_tibble(do.call(rbind, trackz))
+  combined <- tibble::as_tibble(do.call(rbind, trial_tracks))
   combined <- tibble::add_column(
     combined,
     trial_id = combined$vid_ord,
