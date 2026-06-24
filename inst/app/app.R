@@ -164,7 +164,7 @@ example_ts <- function() {
 }
 
 # Heading methods that are inherently axial (per-track movement axis, not a
-# single direction). Selecting one soft-syncs the Data model to "axial".
+# single direction). Selecting one soft-syncs Directionality to "axial".
 # Extend here when the modality piece adds more axial methods.
 AXIAL_METHODS <- c("velocity_axis", "pca_axis", "ransac_straight")
 
@@ -199,7 +199,7 @@ method_help_text <- c(
   window_net      = "Net direction over a sliding window, smoothing local wobble.",
   origin_mean     = "Mean of the directions from the centre to each point.",
   velocity_mean   = "Mean of the step (velocity) directions along the path.",
-  velocity_axis   = "Axial mean of step directions - the back-and-forth movement axis per track. Enable the Axial toggle for correct circular statistics.",
+  velocity_axis   = "Axial mean of step directions - the back-and-forth movement axis per track. Set Directionality to Axial for correct circular statistics.",
   maxspeed_window = "Direction over the window of the subject's fastest movement.",
   vm_fit          = "Von Mises fit to the step directions (peak of the fitted distribution).",
   pca_axis        = "Principal (long) axis of the visited positions.",
@@ -456,7 +456,7 @@ server <- function(input, output, session) {
     hd_map    = NULL    # list(col, units, convention, group) for the headings spec
   )
 
-  # Single source of truth for axial mode, resolved from the Data model selector.
+  # Single source of truth for axial mode, resolved from the Directionality control.
   is_axial <- reactive(identical(input$data_model, "axial"))
 
   # Soft default: choosing an inherently axial heading method pre-selects the
@@ -464,7 +464,7 @@ server <- function(input, output, session) {
   # directional method does not force it back.
   observeEvent(input$method, {
     if (!is.null(input$method) && input$method %in% AXIAL_METHODS)
-      updateSelectInput(session, "data_model", selected = "axial")
+      updateRadioButtons(session, "data_model", selected = "axial")
   }, ignoreInit = TRUE)
 
   # ---- step pills ------------------------------------------------------------
@@ -586,7 +586,7 @@ server <- function(input, output, session) {
     tags$p(class = "text-muted small", txt)
   })
 
-  # Contextual note when the heading method and the Data model are mismatched.
+  # Contextual note when the heading method and Directionality are mismatched.
   # Hint (grey) for a directional method under the Axial model (directions are
   # folded to axes -- valid but maybe unintended). Warning (amber) for an axial
   # method under the Directional model (a per-track axis analysed as a direction
@@ -602,7 +602,7 @@ server <- function(input, output, session) {
     } else if (!is_axial() && axial_method) {
       tags$div(class = "alert alert-warning py-1 px-2 small mb-2",
         "This method returns a per-track axis (0–180°); analysing it as ",
-        "Directional biases the circular statistics — set Data model to Axial.")
+        "Directional biases the circular statistics — set Directionality to Axial.")
     } else {
       NULL
     }
@@ -868,14 +868,14 @@ server <- function(input, output, session) {
           p(class = "text-muted",
             "These headings come from the bundled millipede dataset — no column ",
             "mapping is needed. Choose how to facet the plot, then click Analyse."),
+          radioButtons(
+            "data_model", "Directionality",
+            choices  = c("Directional" = "directional", "Axial" = "axial"),
+            selected = "directional", inline = TRUE
+          ),
           selectInput("hd_group", "Facet by (optional)",
                       choices  = c("(none)" = "", stats::setNames(choices, choices)),
                       selected = cur),
-          selectInput(
-            "data_model", "Data model",
-            choices  = c("Directional" = "directional", "Axial" = "axial"),
-            selected = "directional"
-          ),
           err_box
         )
       } else {
@@ -883,6 +883,11 @@ server <- function(input, output, session) {
         all_cols <- names(rv$raw_hd)
         tagList(
           h5("Describe your headings"),
+          radioButtons(
+            "data_model", "Directionality",
+            choices  = c("Directional" = "directional", "Axial" = "axial"),
+            selected = "directional", inline = TRUE
+          ),
           selectInput("hd_col", "Angle column", choices = num_cols,
                       selected = num_cols[1]),
           selectInput("hd_units", "Units",
@@ -895,11 +900,6 @@ server <- function(input, output, session) {
           selectInput("hd_group", "Group column (optional)",
                       choices = c("(none)" = "", stats::setNames(all_cols, all_cols)),
                       selected = ""),
-          selectInput(
-            "data_model", "Data model",
-            choices  = c("Directional" = "directional", "Axial" = "axial"),
-            selected = "directional"
-          ),
           err_box
         )
       }
@@ -911,6 +911,13 @@ server <- function(input, output, session) {
           col_widths = c(5, 7),
           # ---- left: controls ----
           tagList(
+            # Directionality is the more general question (does head==tail?), so it
+            # comes before the heading-measurement method.
+            radioButtons(
+              "data_model", "Directionality",
+              choices  = c("Directional" = "directional", "Axial" = "axial"),
+              selected = "directional", inline = TRUE
+            ),
             h5("How should headings be measured?"),
             selectInput(
               "method", NULL,
@@ -937,11 +944,6 @@ server <- function(input, output, session) {
               selected = "distal"
             ),
             uiOutput("method_help"),
-            selectInput(
-              "data_model", "Data model",
-              choices  = c("Directional" = "directional", "Axial" = "axial"),
-              selected = "directional"
-            ),
             uiOutput("method_model_note"),
             uiOutput("frame_ui"),
             conditionalPanel(
@@ -1472,7 +1474,7 @@ server <- function(input, output, session) {
   })
 
   # Candidate-model ranking (detection): all three models, independent of the
-  # Data model selector. NULL when there are no headings.
+  # Directionality control. NULL when there are no headings.
   model_sel <- reactive({
     ctx <- summary_ctx()
     if (!isTRUE(ctx$has_hd)) return(NULL)
