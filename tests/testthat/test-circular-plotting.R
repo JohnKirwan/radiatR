@@ -302,6 +302,62 @@ test_that("plotting helpers return ggplot layers", {
   expect_s3_class(arrow, "LayerInstance")
 })
 
+# Helpers to read an annotate("text", ...) layer's position and label.
+.lab_xy <- function(l) c(l$data$x, l$data$y)
+.lab_r  <- function(l) sqrt(l$data$x^2 + l$data$y^2)
+.lab_text <- function(ls) vapply(ls, function(l) l$aes_params$label, character(1))
+
+test_that("degree_labs position='outside' is unchanged (4 diagonals in the corners)", {
+  ls <- degree_labs(position = "outside")
+  expect_length(ls, 4)
+  expect_setequal(.lab_text(ls), c("45°", "135°", "225°", "315°"))
+  rs <- vapply(ls, .lab_r, numeric(1))
+  expect_true(all(rs > 1.05))                       # corners, outside the circle
+  expect_equal(degree_labs(), degree_labs(position = "outside"))   # default
+})
+
+test_that("degree_labs position='inside' labels all 8 just inside the circle", {
+  ls <- degree_labs(position = "inside", inside_radius = 0.88)
+  expect_length(ls, 8)
+  txt <- .lab_text(ls)
+  expect_true(all(c("0°", "90°", "180°", "270°") %in% txt))  # cardinals labelled
+  expect_true(all(c("45°", "135°", "225°", "315°") %in% txt))
+  rs <- vapply(ls, .lab_r, numeric(1))
+  expect_true(all(abs(rs - 0.88) < 1e-6))           # every label at inside_radius
+})
+
+test_that("degree_labs position='split': cardinals inside, diagonals outside", {
+  ls <- degree_labs(position = "split", inside_radius = 0.88)
+  expect_length(ls, 8)
+  txt <- .lab_text(ls)
+  rs  <- stats::setNames(vapply(ls, .lab_r, numeric(1)), txt)
+  expect_true(all(abs(rs[c("0°","90°","180°","270°")] - 0.88) < 1e-6))
+  expect_true(all(rs[c("45°","135°","225°","315°")] > 1.05))
+})
+
+test_that("degree_labs inside is display-aware (rotation moves the labels)", {
+  d0 <- degree_labs(position = "inside", display = circ_display())          # zero = pi/2
+  dz <- degree_labs(position = "inside", display = circ_display(zero = 0))
+  pick <- function(ls, lab) .lab_xy(ls[[which(.lab_text(ls) == lab)]])
+  expect_false(isTRUE(all.equal(pick(d0, "0°"), pick(dz, "0°"))))
+})
+
+test_that("radiate(angle_label_position='split') adds the cardinal labels", {
+  d <- data.frame(id = "a", t = 1:4,
+                  rel_x = c(0.1, 0.2, 0.3, 0.4), rel_y = c(0, 0.1, 0.2, 0.1),
+                  x = c(0.1, 0.2, 0.3, 0.4), y = c(0, 0.1, 0.2, 0.1), angle = 0)
+  ts <- tracks(d, id = "id", time = "t", angle = "angle",
+               x = "x", y = "y", rel_x = "rel_x", rel_y = "rel_y",
+               angle_unit = "radians", normalize_xy = FALSE)
+  p_def <- radiate(ts)
+  p_spl <- radiate(ts, angle_label_position = "split")
+  has_card <- function(p) any(vapply(p$layers, function(L)
+    isTRUE(L$aes_params$label %in% c("0°","90°","180°","270°")),
+    logical(1)))
+  expect_false(has_card(p_def))
+  expect_true(has_card(p_spl))
+})
+
 test_that("trajectory helpers create ggplot objects", {
   df <- data.frame(
     id = rep("A", 4),
