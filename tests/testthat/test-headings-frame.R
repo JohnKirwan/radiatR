@@ -68,21 +68,21 @@ test_that("stack_headings always adds stack_r and stack_n columns", {
   expect_equal(nrow(out), 3L)  # row count unchanged
 })
 
-test_that("stack_headings inward: outermost rank=1 at base_r, inner ranks decrease", {
+test_that("stack_headings inward: outermost rank=1 at base_r - step/2, inner ranks decrease", {
   df <- data.frame(heading = c(0, 0, 0))
   hf <- headings_frame(df, col = "heading", units = "radians")
   out <- stack_headings(hf, step = 0.025, direction = "inward", base_r = 1)
-  expect_equal(max(out$stack_r), 1, tolerance = 1e-10)
+  expect_equal(max(out$stack_r), 0.9875, tolerance = 1e-10)
   expect_equal(sort(out$stack_r, decreasing = TRUE),
-               c(1, 0.975, 0.950), tolerance = 1e-10)
+               c(0.9875, 0.9625, 0.9375), tolerance = 1e-10)
 })
 
-test_that("stack_headings outward: outermost rank=1 at base_r, inner ranks increase", {
+test_that("stack_headings outward: outermost rank=1 at base_r + step/2, inner ranks increase", {
   df <- data.frame(heading = c(0, 0))
   hf <- headings_frame(df, col = "heading", units = "radians")
   out <- stack_headings(hf, step = 0.025, direction = "outward", base_r = 1)
-  expect_equal(min(out$stack_r), 1, tolerance = 1e-10)
-  expect_equal(sort(out$stack_r), c(1, 1.025), tolerance = 1e-10)
+  expect_equal(min(out$stack_r), 1.0125, tolerance = 1e-10)
+  expect_equal(sort(out$stack_r), c(1.0125, 1.0375), tolerance = 1e-10)
 })
 
 test_that("stack_headings start_sep offsets the whole stack off base_r (inward)", {
@@ -103,11 +103,11 @@ test_that("stack_headings start_sep offsets outward too", {
   expect_equal(sort(out$stack_r), c(1.035, 1.080), tolerance = 1e-10)
 })
 
-test_that("stack_headings start_sep defaults to 0 (back-compatible)", {
+test_that("stack_headings start_sep defaults to step/2", {
   df <- data.frame(heading = c(0, 0))
   hf <- headings_frame(df, col = "heading", units = "radians")
   out <- stack_headings(hf, step = 0.025, direction = "inward", base_r = 1)
-  expect_equal(max(out$stack_r), 1, tolerance = 1e-10)  # first dot still on base_r
+  expect_equal(max(out$stack_r), 0.9875, tolerance = 1e-10)  # first dot at base_r - step/2
 })
 
 test_that("stack_headings rejects negative start_sep", {
@@ -116,11 +116,11 @@ test_that("stack_headings rejects negative start_sep", {
   expect_error(stack_headings(hf, start_sep = -0.1), "non-negative")
 })
 
-test_that("stack_headings unique angles: every observation gets stack_r == base_r", {
+test_that("stack_headings unique angles: every observation gets stack_r == base_r - step/2", {
   df <- data.frame(heading = c(0, pi/4, pi/2))
   hf <- headings_frame(df, col = "heading", units = "radians")
   out <- stack_headings(hf, base_r = 1)
-  expect_true(all(out$stack_r == 1))
+  expect_true(all(abs(out$stack_r - (1 - 0.025 / 2)) < 1e-10))
   expect_true(all(out$stack_n == 1L))
 })
 
@@ -321,8 +321,8 @@ test_that("stack_headings(group=) stacks within each group independently", {
   hf <- headings_frame(df, col = "heading", units = "radians")
   out <- stack_headings(hf, group = "g", step = 0.025, base_r = 1)
   # each group restarts the stack: ranks 1,2 within "a" and within "b"
-  expect_equal(sort(out$stack_r[out$g == "a"], decreasing = TRUE), c(1, 0.975), tolerance = 1e-9)
-  expect_equal(sort(out$stack_r[out$g == "b"], decreasing = TRUE), c(1, 0.975), tolerance = 1e-9)
+  expect_equal(sort(out$stack_r[out$g == "a"], decreasing = TRUE), c(0.9875, 0.9625), tolerance = 1e-9)
+  expect_equal(sort(out$stack_r[out$g == "b"], decreasing = TRUE), c(0.9875, 0.9625), tolerance = 1e-9)
 })
 
 test_that("radiate.headings_frame draws frame-only when show_markers = FALSE", {

@@ -69,6 +69,7 @@ radiate(data, ...)
   data,
   col = NULL,
   step = 0.025,
+  start_sep = step/2,
   tol = NULL,
   direction = "inward",
   base_r = 1,
@@ -248,7 +249,7 @@ unit-circle coordinates (e.g. the `cpunctatus` dataset).}
 \code{heading_col} attribute when \code{data} is a
 \code{\link{headings_frame}}.}
 
-\item{step, tol, direction, base_r, shade, shape}{Passed to
+\item{step, start_sep, tol, direction, base_r, shade, shape}{Passed to
 \code{\link{add_stacked_headings}}. See that function for details.}
 
 \item{show_markers}{When \code{TRUE} (default) the stacked-dot markers are

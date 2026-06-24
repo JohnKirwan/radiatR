@@ -8,7 +8,7 @@ stack_headings(
   data,
   col = NULL,
   step = 0.025,
-  start_sep = 0,
+  start_sep = step/2,
   tol = NULL,
   direction = "inward",
   base_r = 1,
@@ -29,9 +29,10 @@ attribute when \code{data} is a \code{headings_frame}.}
 
 \item{start_sep}{Radial offset of the first (outermost, for \code{"inward"})
 dot from \code{base_r}, in data units (the analogue of
-\code{circular::plot.circular}'s \code{start.sep}). Default \code{0} places
-the first dot on the reference circle. A small positive value shifts the
-whole stack off the line so the dots abut rather than straddle it.}
+\code{circular::plot.circular}'s \code{start.sep}). Default \code{step / 2}
+places the first dot half a step inside the reference circle so its outer
+edge approximately abuts the circumference. Set to \code{0} to place the
+dot centre exactly on the reference circle.}
 
 \item{tol}{Grouping tolerance in radians. \code{NULL} (default) = exact
 equality, correct for binned data. \code{tol > 0} assigns each

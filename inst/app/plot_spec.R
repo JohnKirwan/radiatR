@@ -69,7 +69,6 @@ attrition_note <- function(n_total, n_missing, derived, rule = NULL) {
 SPEC_CYCLE_N         <- 20L
 SPEC_STACK_BIN_WIDTH <- pi / 36   # 5 degrees
 SPEC_STACK_STEP      <- 0.08
-SPEC_STACK_START_SEP <- 0.07
 SPEC_MARKER_SIZE     <- 2.5
 SPEC_MARKER_ALPHA    <- 0.8
 SPEC_TRAJ_KEY        <- "__trajectory__"
@@ -261,7 +260,7 @@ spec_to_plot <- function(spec, ts, hd) {
       hd$heading <- bin_angles(hd$heading, width = SPEC_STACK_BIN_WIDTH)
       p <- p + add_stacked_headings(hd, colour_col = pt_colour_col,
                  colour = pt_colour, group = spec$facet_by,
-                 step = SPEC_STACK_STEP, start_sep = SPEC_STACK_START_SEP,
+                 step = SPEC_STACK_STEP,
                  size = SPEC_MARKER_SIZE, alpha = SPEC_MARKER_ALPHA,
                  axial = isTRUE(spec$axial))
     } else {
@@ -515,7 +514,7 @@ spec_to_code <- function(spec) {
   if (has_hd && identical(spec$heading_display, "stacked")) {
     grp <- if (is.null(spec$facet_by)) "" else paste0(", group = ", q(spec$facet_by))
     tail <- c(tail, paste0("add_stacked_headings(hd, ", pt_cc, grp,
-                           ", step = ", SPEC_STACK_STEP, ", start_sep = ", SPEC_STACK_START_SEP,
+                           ", step = ", SPEC_STACK_STEP,
                            ", size = ", SPEC_MARKER_SIZE, ", alpha = ", SPEC_MARKER_ALPHA, ax, ")"))
   }
   if (has_hd && identical(spec$heading_display, "points"))

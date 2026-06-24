@@ -8,7 +8,7 @@ add_stacked_headings(
   data,
   col = NULL,
   step = 0.025,
-  start_sep = 0,
+  start_sep = step/2,
   tol = NULL,
   direction = "inward",
   base_r = 1,
@@ -35,7 +35,9 @@ attribute when \code{data} is a \code{headings_frame}.}
 \item{step, start_sep, tol, direction, base_r}{Passed to
 \code{\link{stack_headings}} when \code{stack_r} is absent. See that
 function for details. \code{step} sets the gap between dots and
-\code{start_sep} offsets the first dot off the reference circle.}
+\code{start_sep} (default \code{step / 2}) offsets the first dot inward
+from the reference circle so its outer edge approximately abuts the
+circumference.}
 
 \item{shade}{If \code{TRUE}, map \code{stack_n} to the alpha aesthetic
 (scaled 0.2--1 across the observed range). Overrides the fixed
