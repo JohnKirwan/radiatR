@@ -2298,8 +2298,8 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   `"minutes"`, or `"milliseconds"`. Sets the colourbar title and scale.
 #' @param coords Which reference frame to plot: `"relative"` (default) uses the
 #'   landmark-relative position (`rel_x`/`rel_y`) and relative headings;
-#'   `"absolute"` uses the arena-native unit-circle position (`x`/`y`) and
-#'   un-rotated absolute headings, useful as an experimental control. Ignored
+#'   `"absolute"` uses the unit-circle position (`x`/`y`) in the original
+#'   (un-rotated) frame and absolute headings, useful as an experimental control. Ignored
 #'   when explicit `x_col`/`y_col` are supplied. Errors if `"absolute"` is
 #'   requested but the `Tracks` has no `x`/`y` columns registered.
 #' @param theme Plot appearance, named for the ggplot2 base themes: one of
@@ -2394,7 +2394,7 @@ radiate <- function(data, ...) UseMethod("radiate")
 radiate.Tracks <- function(data, ...) radiate.default(data, ...)
 
 # Per-row absolute heading: undo the per-trajectory landmark rotation so the
-# directedness arrow points in the arena-native frame. Returns NULL when the
+# directedness arrow points in the un-rotated frame. Returns NULL when the
 # Tracks carries no angle column. rel_theta = .wrap_to_2pi(abs_theta - reference)
 # => abs_theta = .wrap_to_2pi(angle + reference).
 .absolute_angle <- function(ts, data, group_col) {

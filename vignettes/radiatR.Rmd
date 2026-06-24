@@ -50,7 +50,7 @@ ts_demo <- suppressWarnings(get_all_object_pos(file_tbl = file_tbl, track_dir = 
 ts_demo
 ```
 
-`get_all_object_pos()` reads each landmark/track pair, normalises coordinates to a unit circle (arena radius = 1), and returns a `Tracks`. Trial metadata (arena radius, target position, frame limits) is in `ts_demo@meta$trial_limits`.
+`get_all_object_pos()` reads each landmark/track pair, normalises coordinates to a unit circle (radius = 1), and returns a `Tracks`. Trial metadata (physical radius, target position, frame limits) is in `ts_demo@meta$trial_limits`.
 
 ## Full Millipede Dataset
 
@@ -76,7 +76,7 @@ radiate(cpunctatus,
 
 By default `radiate()` plots the landmark-**relative** frame --- each
 trajectory rotated so its trial landmark (e.g. the stimulus) sits at the same
-direction. To inspect the arena-native frame as an experimental control (for
+direction. To inspect the un-rotated frame as an experimental control (for
 instance, to check the apparatus carries no directional bias of its own), pass
 `coords = "absolute"`:
 
@@ -121,11 +121,10 @@ radiate(ts, show_tracks = TRUE, track_colour = "time")   # colour by elapsed tim
 ```
 
 A frame rate also lets `track_speed()` report each trajectory's speed in real
-units. With the default unit-arena coordinates that is arena-units (radii) per
-second.
+units. With the default unit-circle coordinates that is radii per second.
 
 ```{r track-speed}
-# speed in real units (arena-units per second) once a frame rate is set
+# speed in radii per second once a frame rate is set
 ts <- set_frame_rate(cpunctatus, fps = 30)
 head(track_speed(ts))            # mean speed per track
 head(track_speed(ts, stat = "max"))
@@ -142,10 +141,10 @@ radiate(ts, show_tracks = TRUE, track_colour = "speed")
 
 If you know a physical scale, calibrate distances so lengths and speeds report
 in real units. The scale is physical units per coordinate unit (e.g. mm per
-arena radius); unset, everything stays in arena/coordinate units.
+radius); unset, everything stays in coordinate units (radii).
 
 ```{r distance-calibration}
-# calibrate distance (optional): 50 mm per coordinate unit (e.g. arena radius)
+# calibrate distance (optional): 50 mm per coordinate unit (radius)
 ts <- set_distance_scale(set_frame_rate(cpunctatus, 30), 50, unit = "mm")
 head(track_length(ts))      # path length per track, in mm
 head(track_speed(ts))       # mean speed per track, in mm/s
@@ -493,7 +492,7 @@ Two parameter-free alternatives are especially useful:
 ### distal
 
 The **distal** rule takes `atan2(y, x)` at the frame where the subject is
-farthest from the arena centre. It requires no ring parameters and never
+farthest from the centre. It requires no ring parameters and never
 returns `NA` because every trial has a most-distal frame.
 
 ```{r hd-distal}

@@ -25,8 +25,8 @@ Speeds come from [step_speed()] using the track's elapsed time from
 }
 \details{
 Numeric (frame) time requires a frame rate ([set_frame_rate()]); POSIXct time
-is used directly. With the default coordinate columns the unit is arena-units
-(radii) per second.
+is used directly. With the default coordinate columns the unit is radii
+per second.
 }
 \seealso{
 [step_speed()], [track_speed()], [elapsed_seconds()]

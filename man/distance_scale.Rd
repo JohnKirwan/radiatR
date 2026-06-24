@@ -46,7 +46,7 @@ Attach a physical-distance scale (and optional unit label) to a [Tracks] so
 path lengths and speeds can be reported in real units. The scale is physical
 units per unit of the recorded `x`/`y` coordinates; it is applied on demand
 and the stored coordinates are never altered. radiatR otherwise analyses in
-normalised (unit-arena) space -- this is an optional calibration hook.
+normalised (unit-circle) space -- this is an optional calibration hook.
 }
 \seealso{
 [frame_rate()], [track_length()], [track_speed()]

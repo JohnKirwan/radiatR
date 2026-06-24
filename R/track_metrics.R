@@ -161,8 +161,8 @@ tortuosity_ratio <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
 #'
 #' Speed of each step as straight-line step distance divided by the elapsed time
 #' of that step: `sqrt(diff(x)^2 + diff(y)^2) / diff(seconds)`. The unit is the
-#' distance unit of `x`/`y` per second; for radiatR's unit-arena coordinates that
-#' is arena-units (radii) per second.
+#' distance unit of `x`/`y` per second; for radiatR's unit-circle coordinates that
+#' is radii per second.
 #'
 #' @param x,y Numeric vectors of ordered (in time) coordinates for one trajectory.
 #' @param seconds Numeric vector, the elapsed time of each point in seconds (same
@@ -194,8 +194,8 @@ step_speed <- function(x, y, seconds) {
 #' the per-track summary is the chosen `stat` of those step speeds.
 #'
 #' Numeric (frame) time requires a frame rate ([set_frame_rate()]); POSIXct time
-#' is used directly. With the default coordinate columns the unit is arena-units
-#' (radii) per second, because radiatR normalises trajectories to a unit arena.
+#' is used directly. With the default coordinate columns the unit is radii
+#' per second, because radiatR normalises trajectories to a unit circle.
 #'
 #' @param ts A `Tracks`.
 #' @param stat Per-track reduction of the step speeds: `"mean"` (default),
@@ -244,8 +244,8 @@ track_speed <- function(ts, stat = c("mean", "max", "median"),
 #' [elapsed_seconds()].
 #'
 #' Numeric (frame) time requires a frame rate ([set_frame_rate()]); POSIXct time
-#' is used directly. With the default coordinate columns the unit is arena-units
-#' (radii) per second.
+#' is used directly. With the default coordinate columns the unit is radii
+#' per second.
 #'
 #' @param ts A `Tracks`.
 #' @param x_col,y_col Names of the coordinate columns. Default to the `Tracks`'s

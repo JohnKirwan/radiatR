@@ -31,7 +31,7 @@ hold safely.
 
 ## Rich objects, only where structure is irreducible
 
-- `Tracks` — trajectories with arena geometry, a per-trajectory reference
+- `Tracks` — trajectories with coordinate geometry, a per-trajectory reference
   frame, and transform history (invariants a bare tibble cannot enforce).
 - `circ_display()` — an orientation convention (zero direction, rotation).
 - `circ_regression()` — a fitted model (like `lm`).
