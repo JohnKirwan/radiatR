@@ -86,13 +86,13 @@ setGeneric(
 # ---- crossing rule -----------------------------------------------------------
 # Finds successive crossings of two radii circ0 < circ1 (default outward) and
 # projects the inner->outer crossing vector forward onto the unit circle (the
-# arena boundary); the heading is the bearing of that boundary intersection.
+# circumference); the heading is the bearing of that boundary intersection.
 # If multiple crossing pairs occur, returns one row per pair unless
 # first_only=TRUE. When return_coords=TRUE, also returns x_inner/y_inner (inner
 # circ0 crossing) and x_outer/y_outer (outer circ1 crossing).
 
 # Forward intersection of the ray from (x0,y0) toward (x1,y1) with the unit
-# circle: the inner->outer crossing vector projected to the arena boundary.
+# circle: the inner->outer crossing vector projected to the circumference.
 # (x0,y0) is inside the unit circle, so the forward root is unique and positive.
 # Returns c(px, py), or c(NA, NA) when the direction is degenerate.
 .crossing_boundary_point <- function(x0, y0, x1, y1) {

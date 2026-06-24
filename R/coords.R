@@ -166,7 +166,7 @@ setMethod("set_frame_rate", "Tracks", function(x, fps) {
 #' path lengths and speeds can be reported in real units. The scale is physical
 #' units per unit of the recorded `x`/`y` coordinates; it is applied on demand
 #' and the stored coordinates are never altered. radiatR otherwise analyses in
-#' normalised (unit-arena) space -- this is an optional calibration hook.
+#' normalised (unit-circle) space -- this is an optional calibration hook.
 #'
 #' @param x A [Tracks] object.
 #' @param scale A single positive number: physical units per coordinate unit.

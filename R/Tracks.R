@@ -211,10 +211,10 @@ setValidity("Tracks", function(object) {
   TRUE
 })
 
-# Per-trajectory affine map into the unit arena: centre each trajectory on its
+# Per-trajectory affine map into the unit circle: centre each trajectory on its
 # bounding-box midpoint and scale so the furthest point sits at radius 1. Used by
 # the Tracks constructor when normalize_xy = TRUE. Preserves trajectory shape and
-# places the arena centre at the origin (what the radius-based heading rules
+# places the centre at the origin (what the radius-based heading rules
 # assume). Degenerate (zero-extent or all-NA) trajectories map to the origin.
 .normalize_to_unit_arena <- function(x, y, id) {
   xo <- rep(NA_real_, length(x))

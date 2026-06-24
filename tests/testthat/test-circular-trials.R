@@ -81,7 +81,7 @@ test_that("get_tracked_object_pos reports out-of-bounds points once, aggregated 
 
   msgs <- testthat::capture_messages(
     suppressWarnings(get_tracked_object_pos(limits, track)))
-  oob <- grep("exceeded the arena boundary", msgs, value = TRUE)
+  oob <- grep("exceeded the unit circle boundary", msgs, value = TRUE)
   expect_length(oob, 1L)                 # one message, not one per trial
   expect_match(oob, "across 2 trials")   # aggregated across both trials
 })

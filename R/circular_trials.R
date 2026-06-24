@@ -151,7 +151,7 @@ get_tracked_object_pos <- function(
   transform_entries <- vector("list", num_trials)
 
   # Landmark-mapped coordinates are kept as-is (never rescaled); track points that
-  # fall outside the arena boundary (radius > 1) are tallied and reported once
+  # fall outside the circumference (radius > 1) are tallied and reported once
   # after the loop rather than warned about per trial.
   oob_points <- 0L
   oob_trials <- 0L
@@ -229,7 +229,7 @@ get_tracked_object_pos <- function(
 
   if (oob_points > 0L) {
     message(sprintf(
-      "%d point%s across %d trial%s exceeded the arena boundary (radius > 1); coordinates left unscaled.",
+      "%d point%s across %d trial%s exceeded the unit circle boundary (radius > 1); coordinates left unscaled.",
       oob_points, if (oob_points == 1L) "" else "s",
       oob_trials, if (oob_trials == 1L) "" else "s"))
   }

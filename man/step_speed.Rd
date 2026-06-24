@@ -20,8 +20,8 @@ A numeric vector of per-step speeds, length `length(x) - 1`. A step is
 \description{
 Speed of each step as straight-line step distance divided by the elapsed time
 of that step: `sqrt(diff(x)^2 + diff(y)^2) / diff(seconds)`. The unit is the
-distance unit of `x`/`y` per second; for radiatR's unit-arena coordinates that
-is arena-units (radii) per second.
+distance unit of `x`/`y` per second; for radiatR's unit-circle coordinates that
+is radii per second.
 }
 \examples{
 step_speed(x = 0:3, y = rep(0, 4), seconds = (0:3) / 30)   # 30 units/s
