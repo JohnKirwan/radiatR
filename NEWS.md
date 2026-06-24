@@ -316,6 +316,13 @@
 
 ## Documentation
 
+* New vignette **"Quantifying path shape"** (`vignette("track-metrics")`) covers
+  the spatial path metrics --- length, straightness, tortuosity, and the new
+  sinuosity index. The main vignette gains sections on the newer circumference
+  labelling (`circumference_labs()` + scales, `n_labels`, `angle_label_position`),
+  the relative-vs-absolute reference frame (`radiate(coords = "absolute")`), and a
+  pointer to the Shiny app (`launch_app()`).
+
 * Repositioned the package documentation from "animal movement in circular
   arenas" toward the general case -- analysis and visualisation of headings and
   trajectories in circular space -- reflecting that angles can be supplied
