@@ -23,3 +23,7 @@ Rplots.pdf
 
 # Reference materials for the circular boxplot (copyrighted supplements) — never commit/ship
 boxplot/
+
+# Ignore hidden directories at the root, except .github/
+/.*/
+!/.github/
