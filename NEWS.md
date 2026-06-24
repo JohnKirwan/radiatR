@@ -75,6 +75,12 @@
 
 ## Visualisation
 
+* `radiate()` gains `n_labels` (and `degree_labs(n = )`) to vary the number of
+  circumference divisions: an integer draws that many equally-spaced ticks and
+  numeric labels at `360 / n` (e.g. `4` cardinals, `12` clock), `0` a bare
+  circle; `NULL` (default) keeps the standard eight. Orthogonal to
+  `angle_labels` (the label format); the domain scales keep their own count.
+
 * `degree_labs()` gains `position = c("outside", "inside", "split")` (and
   `radiate(angle_label_position = )`): `"inside"` places all eight direction
   labels just inside the circle, `"split"` puts the cardinals (0/90/180/270)
