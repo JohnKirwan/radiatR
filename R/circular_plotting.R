@@ -415,7 +415,7 @@ degree_labs <- function(display = circ_display(), colour = "black",
                   pos, diag_d, SIMPLIFY = FALSE))
   }
 
-  # "inside"/"split": display-aware placement (matches perimeter_labs), so the
+  # "inside"/"split": display-aware placement (matches circumference_labs), so the
   # labels rotate with the plot. Outside diagonals sit at the corner magnitude
   # (0.85 * sqrt(2)), i.e. the historical corner distance.
   cardinals <- c(0, 90, 180, 270)
@@ -2315,7 +2315,7 @@ line_circle_intercept_traj <- function(traj, id, range) {
                            family = style$ax$text$family,
                            position = angle_label_position, n = n_labels)
     else
-      g <- g + perimeter_labs(scale, display = display,
+      g <- g + circumference_labs(scale, display = display,
                               colour = style$col_of(style$ax$text),
                               size   = style$ax$text$size / ggplot2::.pt,
                               family = style$ax$text$family)
@@ -2436,16 +2436,16 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   `"radians"` (e.g. `π/4`), or `"none"` use diagonal angle labels via
 #'   [degree_labs()]. The domain scales `"cardinal"` (N/E/S/W), `"hours"`
 #'   (24-hour clock), `"months"` (Jan...Dec), and `"seconds"` instead label the
-#'   perimeter via [perimeter_labs()], aligning the tick count to the scale. For
+#'   perimeter via [circumference_labs()], aligning the tick count to the scale. For
 #'   finer control (8-point compass, 12-hour clock, month formats) add an
-#'   explicit `perimeter_labs()` layer. Label styling follows the chosen
+#'   explicit `circumference_labs()` layer. Label styling follows the chosen
 #'   `theme`'s `axis.text`.
 #' @param angle_label_position For the numeric (`"degrees"`/`"radians"`) labels,
 #'   where to place them: `"outside"` (default) keeps the diagonals in the plot
 #'   corners; `"inside"` puts all eight directions (including cardinals) just
 #'   inside the circle; `"split"` puts the cardinals inside and the diagonals
 #'   outside. Ignored by the domain scales (`"cardinal"`/`"hours"`/`"months"`/
-#'   `"seconds"`), which place labels via [perimeter_labs()]. See [degree_labs()].
+#'   `"seconds"`), which place labels via [circumference_labs()]. See [degree_labs()].
 #' @param n_labels Number of equally-spaced circumference divisions (ticks and
 #'   numeric labels) at `360 / n` degrees, for the numeric `"degrees"`/`"radians"`
 #'   labels. `NULL` (default) keeps the standard 8 ticks and legacy label set;

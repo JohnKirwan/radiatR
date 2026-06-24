@@ -61,15 +61,15 @@ test_that(".check_scale rejects malformed specs", {
     "positive integer")
 })
 
-test_that("perimeter_labs returns one text layer per label", {
-  layers <- perimeter_labs(scale_cardinal())
+test_that("circumference_labs returns one text layer per label", {
+  layers <- circumference_labs(scale_cardinal())
   expect_type(layers, "list")
   expect_length(layers, 4L)
   expect_s3_class(layers[[1]], "LayerInstance")
 })
 
-test_that("perimeter_labs places labels at unit-circle positions (default display)", {
-  layers <- perimeter_labs(scale_cardinal(), radius = 0.85)
+test_that("circumference_labs places labels at unit-circle positions (default display)", {
+  layers <- circumference_labs(scale_cardinal(), radius = 0.85)
   xs <- vapply(layers, function(l) l$data$x, numeric(1))
   ys <- vapply(layers, function(l) l$data$y, numeric(1))
   labs <- vapply(layers, function(l) as.character(l$aes_params$label), character(1))
@@ -80,21 +80,21 @@ test_that("perimeter_labs places labels at unit-circle positions (default displa
   expect_equal(ys[2], 0,    tolerance = 1e-9)
 })
 
-test_that("perimeter_labs honours the display convention", {
-  base  <- perimeter_labs(scale_cardinal())
-  zero0 <- perimeter_labs(scale_cardinal(), display = circ_display(zero = 0))
+test_that("circumference_labs honours the display convention", {
+  base  <- circumference_labs(scale_cardinal())
+  zero0 <- circumference_labs(scale_cardinal(), display = circ_display(zero = 0))
   expect_equal(zero0[[1]]$data$x, -0.85, tolerance = 1e-9)  # N rotates to left
   expect_equal(zero0[[1]]$data$y,  0,    tolerance = 1e-9)
 
-  ccw <- perimeter_labs(scale_cardinal(),
+  ccw <- circumference_labs(scale_cardinal(),
                         display = circ_display(clockwise = FALSE))
   expect_equal(ccw[[2]]$data$x, -base[[2]]$data$x, tolerance = 1e-9)  # E flips
 })
 
-test_that("perimeter_labs validates its scale and resolves color alias", {
-  expect_error(perimeter_labs(list(n = 12, at = 1, labels = c("a", "b"))),
+test_that("circumference_labs validates its scale and resolves color alias", {
+  expect_error(circumference_labs(list(n = 12, at = 1, labels = c("a", "b"))),
                "same length")
-  layers <- perimeter_labs(scale_cardinal(), color = "red")
+  layers <- circumference_labs(scale_cardinal(), color = "red")
   expect_identical(layers[[1]]$aes_params$colour, "red")
 })
 

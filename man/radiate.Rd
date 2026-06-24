@@ -179,9 +179,9 @@ follows the chosen `theme`'s `axis.ticks`.}
 `"radians"` (e.g. `π/4`), or `"none"` use diagonal angle labels via
 [degree_labs()]. The domain scales `"cardinal"` (N/E/S/W), `"hours"`
 (24-hour clock), `"months"` (Jan...Dec), and `"seconds"` instead label the
-perimeter via [perimeter_labs()], aligning the tick count to the scale. For
+perimeter via [circumference_labs()], aligning the tick count to the scale. For
 finer control (8-point compass, 12-hour clock, month formats) add an
-explicit `perimeter_labs()` layer. Label styling follows the chosen
+explicit `circumference_labs()` layer. Label styling follows the chosen
 `theme`'s `axis.text`.}
 
 \item{angle_label_position}{For the numeric (`"degrees"`/`"radians"`) labels,
@@ -189,7 +189,7 @@ where to place them: `"outside"` (default) keeps the diagonals in the plot
 corners; `"inside"` puts all eight directions (including cardinals) just
 inside the circle; `"split"` puts the cardinals inside and the diagonals
 outside. Ignored by the domain scales (`"cardinal"`/`"hours"`/`"months"`/
-`"seconds"`), which place labels via [perimeter_labs()]. See [degree_labs()].}
+`"seconds"`), which place labels via [circumference_labs()]. See [degree_labs()].}
 
 \item{n_labels}{Number of equally-spaced circumference divisions (ticks and
 numeric labels) at `360 / n` degrees, for the numeric `"degrees"`/`"radians"`

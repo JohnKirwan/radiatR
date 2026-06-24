@@ -109,8 +109,8 @@
   circle in a thinner band with the median arrow off by default, and takes the
   plot theme's colour (`theme =`); the app's overlay follows the active theme.
 
-* New `perimeter_labs()` labels a radial plot's circumference in domain units,
-  with built-in scales `scale_cardinal()` (compass), `scale_clock()` (hours),
+* New `circumference_labs()` labels a radial plot's circumference in domain
+  units, with built-in scales `scale_cardinal()` (compass), `scale_clock()` (hours),
   `scale_months()`, and `scale_seconds()`. `radiate(angle_labels = "cardinal" |
   "hours" | "months" | "seconds")` selects them directly and aligns the tick
   count to the scale.

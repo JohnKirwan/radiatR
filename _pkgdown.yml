@@ -176,12 +176,12 @@ reference:
       - cycle_colours
       - cycle_colors
 
-  - title: "Visualisation -- perimeter scales"
+  - title: "Visualisation -- circumference scales"
     desc: >
       Label the circumference of a radial plot in domain units -- compass
       points, clock hours, months, or seconds.
     contents:
-      - perimeter_labs
+      - circumference_labs
       - scale_cardinal
       - scale_clock
       - scale_months

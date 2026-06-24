@@ -1,9 +1,9 @@
-# Perimeter (circumference) labelling for radial plots.
+# Circumference labelling for radial plots.
 #
 # A "scale" is a plain list describing how the circle's circumference is
 # labelled: list(n, at, labels, name). `at`/`labels` are equal-length and may be
 # shorter than `n` (draw `n` ticks, label a subset). Positions in `at` are raw
-# unit-circle radians (0 = East, counterclockwise); perimeter_labs() rotates them
+# unit-circle radians (0 = East, counterclockwise); circumference_labs() rotates them
 # through a circ_display so labels track the plotted data.
 
 # Validate a scale spec; stop() on any structural problem, else return invisibly.
@@ -43,12 +43,12 @@
 
 #' Label the circumference of a radial plot in domain units
 #'
-#' Adds perimeter text labels (cardinal directions, hours, months, seconds, or a
+#' Adds circumference text labels (cardinal directions, hours, months, seconds, or a
 #' custom scale) to a radial ggplot. The display-aware sibling of [degree_labs()]:
 #' labels are positioned through the supplied `display` so they track the plotted
 #' data when the convention changes.
 #'
-#' @param scale A perimeter-scale list, from [scale_cardinal()], [scale_clock()],
+#' @param scale A circumference-scale list, from [scale_cardinal()], [scale_clock()],
 #'   [scale_months()], [scale_seconds()], or hand-written as
 #'   `list(n =, at =, labels =)` (`at` in raw unit-circle radians, 0 = East,
 #'   counterclockwise; `labels` the same length as `at`).
@@ -67,9 +67,9 @@
 #' library(ggplot2)
 #' ggplot() +
 #'   coord_fixed() +
-#'   perimeter_labs(scale_months())
+#'   circumference_labs(scale_months())
 #' @export
-perimeter_labs <- function(scale, display = circ_display(), colour = "black",
+circumference_labs <- function(scale, display = circ_display(), colour = "black",
                            size = 3.88, family = "", radius = 0.85,
                            color = NULL) {
   .apply_spelling_aliases()
@@ -83,12 +83,12 @@ perimeter_labs <- function(scale, display = circ_display(), colour = "black",
       pos$x, pos$y, scale$labels)
 }
 
-#' Perimeter scale: cardinal compass directions
+#' Circumference scale: cardinal compass directions
 #'
 #' @param points `4` (N/E/S/W, default) or `8` (adds the intercardinals
 #'   NE/SE/SW/NW).
-#' @return A perimeter-scale list for [perimeter_labs()].
-#' @seealso [perimeter_labs()], [scale_clock()], [scale_months()],
+#' @return A circumference-scale list for [circumference_labs()].
+#' @seealso [circumference_labs()], [scale_clock()], [scale_months()],
 #'   [scale_seconds()]
 #' @examples
 #' scale_cardinal(points = 8)
@@ -105,15 +105,15 @@ scale_cardinal <- function(points = 4) {
        labels = labels, name = "cardinal")
 }
 
-#' Perimeter scale: clock hours
+#' Circumference scale: clock hours
 #'
 #' Draws a tick at every hour and labels a sparse subset.
 #'
 #' @param hours `24` (default) or `12`.
 #' @param every Label every `every` hours. `NULL` (default) auto-picks `6` for a
 #'   24-hour dial and `3` for a 12-hour dial. Must evenly divide `hours`.
-#' @return A perimeter-scale list for [perimeter_labs()].
-#' @seealso [perimeter_labs()], [scale_cardinal()], [scale_months()],
+#' @return A circumference-scale list for [circumference_labs()].
+#' @seealso [circumference_labs()], [scale_cardinal()], [scale_months()],
 #'   [scale_seconds()]
 #' @examples
 #' scale_clock(hours = 12)
@@ -128,12 +128,12 @@ scale_clock <- function(hours = 24, every = NULL) {
        labels = as.character(k), name = "clock")
 }
 
-#' Perimeter scale: months of the year
+#' Circumference scale: months of the year
 #'
 #' @param format `"abbr"` (Jan...Dec, default), `"initial"` (J, F, M, ...), or
 #'   `"number"` (1...12).
-#' @return A perimeter-scale list for [perimeter_labs()].
-#' @seealso [perimeter_labs()], [scale_cardinal()], [scale_clock()],
+#' @return A circumference-scale list for [circumference_labs()].
+#' @seealso [circumference_labs()], [scale_cardinal()], [scale_clock()],
 #'   [scale_seconds()]
 #' @examples
 #' scale_months("initial")
@@ -149,14 +149,14 @@ scale_months <- function(format = c("abbr", "initial", "number")) {
        name = "months")
 }
 
-#' Perimeter scale: seconds (or minutes)
+#' Circumference scale: seconds (or minutes)
 #'
 #' Draws 60 ticks and labels a sparse subset. Also serves a minutes dial.
 #'
 #' @param every Label every `every` divisions (default `15`). Must evenly divide
 #'   60.
-#' @return A perimeter-scale list for [perimeter_labs()].
-#' @seealso [perimeter_labs()], [scale_cardinal()], [scale_clock()],
+#' @return A circumference-scale list for [circumference_labs()].
+#' @seealso [circumference_labs()], [scale_cardinal()], [scale_clock()],
 #'   [scale_months()]
 #' @examples
 #' scale_seconds(every = 10)
@@ -168,7 +168,7 @@ scale_seconds <- function(every = 15) {
        labels = as.character(k), name = "seconds")
 }
 
-# Map a radiate() angle_labels name to a perimeter scale, or NULL for the
+# Map a radiate() angle_labels name to a circumference scale, or NULL for the
 # degree_labs (degrees/radians/none) path.
 .angle_label_scale <- function(angle_labels) {
   switch(angle_labels,
