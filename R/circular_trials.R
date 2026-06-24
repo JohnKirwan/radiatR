@@ -112,6 +112,77 @@ get_trial_limits <- function(landmarks, track, file_tbl, vid_num) {
   tl
 }
 
+# Map one trial's frame-windowed track to unit-circle coordinates and pick its
+# inner/outer radius-crossing landmarks. `tl` is the one-row trial_limits slice
+# for trial `i`. Returns a list with the augmented track tibble (`track`), its
+# transform-history `entry`, validity, the per-trial trial_limits updates
+# (`order`/`vid_ord`/`landmarks`), and the out-of-bounds point count. A track
+# whose points never come near the centre (rho > 0.4 throughout) is rejected:
+# `track`/`entry` are NULL, `valid` FALSE, and the order/vid_ord/landmark/OOB
+# updates are omitted (a warning is emitted), matching the original loop.
+.map_one_trial <- function(tl, track_df, i, circ0, circ1, radius_criterion) {
+  idx <- track_df$frame >= tl$first_f & track_df$frame <= tl$last_f
+  XY  <- tibble::as_tibble(track_df[idx, , drop = FALSE])
+  trial_id <- paste0(tl$video, "_", i)
+
+  mapping <- build_unit_circle_mapping(
+    origin    = c(tl$orig_x, tl$orig_y),
+    reference = c(tl$ref_x, tl$ref_y),
+    flip_y    = TRUE
+  )
+  mapped <- mapping$map(XY$x, XY$y)
+
+  XY <- XY |>
+    tibble::add_column(
+      trans_x   = mapped$trans_x,
+      trans_y   = mapped$trans_y,
+      rel_theta = mapped$rel_theta_unit,
+      video     = tl$video,
+      order     = as.character(i),
+      vid_ord   = trial_id,
+      .after    = "y"
+    )
+
+  entry <- list(
+    step = "unit_circle_mapping",
+    order = 1L,
+    id = trial_id,
+    implementation = "build_unit_circle_mapping",
+    params = mapping,
+    depends_on = character()
+  )
+
+  # Reject a track that never comes near the centre.
+  if (all(mapped$trans_rho > .4, na.rm = TRUE)) {
+    warning("Track starts too far from centre: ", tl$video)
+    return(list(track = NULL, transform_entry = NULL, valid = FALSE,
+                order = NULL, vid_ord = NULL, landmarks = NULL, oob_n = 0L))
+  }
+
+  if (radius_criterion == "first_past") {
+    if (!any(mapped$trans_rho > circ0, na.rm = TRUE))
+      warning("No points beyond inner radius for ", tl$video)
+    inner_idx <- which(mapped$trans_rho >= circ0)
+    inner_idx <- if (length(inner_idx)) inner_idx[1] else which.max(mapped$trans_rho)
+    outer_idx <- which(mapped$trans_rho >= circ1)
+    outer_idx <- if (length(outer_idx)) outer_idx[1] else which.max(mapped$trans_rho)
+  } else {
+    inner_idx <- which.min(abs(mapped$trans_rho - circ0))
+    outer_idx <- which.min(abs(mapped$trans_rho - circ1))
+  }
+
+  list(
+    track = XY,
+    transform_entry = entry,
+    valid = TRUE,
+    order = as.character(i),
+    vid_ord = trial_id,
+    landmarks = list(x0 = mapped$trans_x[inner_idx], y0 = mapped$trans_y[inner_idx],
+                     x1 = mapped$trans_x[outer_idx], y1 = mapped$trans_y[outer_idx]),
+    oob_n = sum(mapped$trans_rho > 1, na.rm = TRUE)
+  )
+}
+
 #' Derive trial-level track positions in polar coordinates.
 #'
 #' Using the trial limits returned by [get_trial_limits()], this helper extracts
@@ -157,74 +228,24 @@ get_tracked_object_pos <- function(
   oob_trials <- 0L
 
   for (i in seq_len(num_trials)) {
-    idx <- track_df$frame >= trial_limits$first_f[i] &
-      track_df$frame <= trial_limits$last_f[i]
-    XY <- tibble::as_tibble(track_df[idx, , drop = FALSE])
-    trial_id <- paste0(trial_limits$video[i], "_", i)
-
-    mapping <- build_unit_circle_mapping(
-      origin = c(trial_limits$orig_x[i], trial_limits$orig_y[i]),
-      reference = c(trial_limits$ref_x[i], trial_limits$ref_y[i]),
-      flip_y = TRUE
-    )
-    mapped <- mapping$map(XY$x, XY$y)
-
-    XY <- XY |>
-      tibble::add_column(
-        trans_x = mapped$trans_x,
-        trans_y = mapped$trans_y,
-        rel_theta = mapped$rel_theta_unit,
-        video = trial_limits$video[i],
-        order = as.character(i),
-        vid_ord = trial_id,
-        .after = "y"
-      )
-
-    trial_tracks[[i]] <- XY
-    transform_entries[[i]] <- list(
-      step = "unit_circle_mapping",
-      order = 1L,
-      id = trial_id,
-      implementation = "build_unit_circle_mapping",
-      params = mapping,
-      depends_on = character()
-    )
-
-    if (all(mapped$trans_rho > .4, na.rm = TRUE)) {
-      trial_tracks[[i]] <- NULL
-      transform_entries[[i]] <- NULL
-      trial_limits$valid_track[i] <- FALSE
-      warning("Track starts too far from centre: ", trial_limits$video[i])
-      next
-    } else {
-      trial_limits$valid_track[i] <- TRUE
+    res <- .map_one_trial(trial_limits[i, , drop = FALSE], track_df, i,
+                          circ0, circ1, radius_criterion)
+    # Assigning NULL via [[<-] drops the slot; `purrr::compact()` later removes
+    # the rest, and each track tibble carries its own vid_ord, so list position
+    # is immaterial downstream.
+    trial_tracks[[i]]           <- res$track
+    transform_entries[[i]]      <- res$transform_entry
+    trial_limits$valid_track[i] <- res$valid
+    if (res$valid) {
+      trial_limits$order[i]   <- res$order
+      trial_limits$vid_ord[i] <- res$vid_ord
+      trial_limits$x0[i] <- res$landmarks$x0
+      trial_limits$y0[i] <- res$landmarks$y0
+      trial_limits$x1[i] <- res$landmarks$x1
+      trial_limits$y1[i] <- res$landmarks$y1
+      oob_points <- oob_points + res$oob_n
+      if (res$oob_n > 0L) oob_trials <- oob_trials + 1L
     }
-    n_oob <- sum(mapped$trans_rho > 1, na.rm = TRUE)
-    if (n_oob > 0L) {
-      oob_points <- oob_points + n_oob
-      oob_trials <- oob_trials + 1L
-    }
-
-    trial_limits$order[i] <- as.character(i)
-    trial_limits$vid_ord[i] <- trial_id
-
-    if (radius_criterion == "first_past") {
-      if (!any(mapped$trans_rho > circ0, na.rm = TRUE)) {
-        warning("No points beyond inner radius for ", trial_limits$video[i])
-      }
-      inner_idx <- which(mapped$trans_rho >= circ0)
-      inner_idx <- if (length(inner_idx)) inner_idx[1] else which.max(mapped$trans_rho)
-      outer_idx <- which(mapped$trans_rho >= circ1)
-      outer_idx <- if (length(outer_idx)) outer_idx[1] else which.max(mapped$trans_rho)
-    } else {
-      inner_idx <- which.min(abs(mapped$trans_rho - circ0))
-      outer_idx <- which.min(abs(mapped$trans_rho - circ1))
-    }
-
-    trial_limits$x0[i] <- mapped$trans_x[inner_idx]
-    trial_limits$y0[i] <- mapped$trans_y[inner_idx]
-    trial_limits$x1[i] <- mapped$trans_x[outer_idx]
-    trial_limits$y1[i] <- mapped$trans_y[outer_idx]
   }
 
   if (oob_points > 0L) {
