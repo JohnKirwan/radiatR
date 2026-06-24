@@ -37,6 +37,7 @@ radiate(data, ...)
   angle_labels = c("degrees", "none", "radians", "cardinal", "hours", "months",
     "seconds"),
   angle_label_position = c("outside", "inside", "split"),
+  n_labels = NULL,
   theme = c("void", "minimal", "classic", "bw", "grey", "gray", "light", "dark",
     "linedraw"),
   quadrants = FALSE,
@@ -83,6 +84,7 @@ radiate(data, ...)
   angle_labels = c("degrees", "none", "radians", "cardinal", "hours", "months",
     "seconds"),
   angle_label_position = c("outside", "inside", "split"),
+  n_labels = NULL,
   title = NULL,
   theme = c("void", "minimal", "classic", "bw", "grey", "gray", "light", "dark",
     "linedraw"),
@@ -188,6 +190,14 @@ corners; `"inside"` puts all eight directions (including cardinals) just
 inside the circle; `"split"` puts the cardinals inside and the diagonals
 outside. Ignored by the domain scales (`"cardinal"`/`"hours"`/`"months"`/
 `"seconds"`), which place labels via [perimeter_labs()]. See [degree_labs()].}
+
+\item{n_labels}{Number of equally-spaced circumference divisions (ticks and
+numeric labels) at `360 / n` degrees, for the numeric `"degrees"`/`"radians"`
+labels. `NULL` (default) keeps the standard 8 ticks and legacy label set;
+`0` draws a bare circle (no ticks or labels); e.g. `4` (cardinals), `12`
+(clock). Orthogonal to `angle_labels` (the format). Ignored by the domain
+scales (`"cardinal"`/`"hours"`/`"months"`/`"seconds"`), which carry their
+own count.}
 
 \item{theme}{Plot appearance, named for the ggplot2 base themes: one of
 `"void"` (default), `"minimal"`, `"classic"`, `"bw"`, `"grey"`, `"light"`,

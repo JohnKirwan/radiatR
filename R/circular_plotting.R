@@ -350,6 +350,11 @@ add_radial_grid <- function(rings_major = 0.5, rings_minor = c(0.25, 0.75),
 #'   modes honour `display` (the labels rotate with the plot).
 #' @param inside_radius Radius (unit-circle fraction) for inside labels.
 #'   Default `0.88`.
+#' @param n Number of equally-spaced labels at `360 / n` degrees from 0. `NULL`
+#'   (default) keeps the legacy set (4 diagonals for `"outside"`, 8 for
+#'   `"inside"`/`"split"`). `0` draws none. For `position = "split"`, `n` must be
+#'   divisible by 4 (so the quadrant directions are present); otherwise it falls
+#'   back to `"inside"` with a message.
 #' @return A list of ggplot2 annotation layers.
 #'
 #' @examples
@@ -361,7 +366,7 @@ add_radial_grid <- function(rings_major = 0.5, rings_minor = c(0.25, 0.75),
 degree_labs <- function(display = circ_display(), colour = "black",
                         units = NULL, size = 3.88, family = "",
                         position = c("outside", "inside", "split"),
-                        inside_radius = 0.88, color = NULL) {
+                        inside_radius = 0.88, n = NULL, color = NULL) {
   .apply_spelling_aliases()
   if (is.null(units)) units <- display$units
   units <- match.arg(units, c("degrees", "radians"))
@@ -372,6 +377,32 @@ degree_labs <- function(display = circ_display(), colour = "black",
   lab_layer <- function(x, y, lab)
     ggplot2::annotate("text", x = x, y = y, label = lab, colour = colour,
                       size = size, family = family)
+  outer_r <- 0.85 * sqrt(2)                # historical corner distance
+  at_r <- function(deg, r) {
+    th <- deg * pi / 180
+    .uc_to_display_coords(r * cos(th), r * sin(th), display)
+  }
+
+  # Variable-count uniform path (opt-in via `n`): `n` directions at 360/n from
+  # 0 degrees, placed per `position`. Display-aware throughout.
+  if (!is.null(n)) {
+    if (!is.numeric(n) || length(n) != 1L || !is.finite(n) || n < 0 || n != round(n))
+      stop("`n` must be NULL or a single non-negative integer.")
+    n <- as.integer(n)
+    if (n == 0L) return(list())
+    degs     <- 360 * (seq_len(n) - 1L) / n
+    split_ok <- position == "split" && n %% 4L == 0L
+    if (position == "split" && !split_ok)
+      message("degree_labs: `position = \"split\"` needs `n` divisible by 4; ",
+              "using \"inside\".")
+    place_r <- function(deg)
+      if (position == "inside" || (position == "split" && !split_ok)) inside_radius
+      else if (position == "outside") outer_r
+      else if (deg %% 90 == 0) inside_radius else outer_r   # split: quadrants in
+    return(lapply(degs, function(deg) {
+      xy <- at_r(deg, place_r(deg)); lab_layer(xy$x, xy$y, fmt(round(deg)))
+    }))
+  }
 
   # "outside" keeps the historical hardcoded corner positions for the four
   # diagonals (back-compat); no cardinals.
@@ -389,11 +420,6 @@ degree_labs <- function(display = circ_display(), colour = "black",
   # (0.85 * sqrt(2)), i.e. the historical corner distance.
   cardinals <- c(0, 90, 180, 270)
   diagonals <- c(45, 135, 225, 315)
-  outer_r   <- 0.85 * sqrt(2)
-  at_r <- function(deg, r) {
-    th <- deg * pi / 180
-    .uc_to_display_coords(r * cos(th), r * sin(th), display)
-  }
   card_layers <- lapply(cardinals, function(deg) {
     xy <- at_r(deg, inside_radius); lab_layer(xy$x, xy$y, fmt(deg))
   })
@@ -2249,7 +2275,8 @@ line_circle_intercept_traj <- function(traj, id, range) {
 .radial_chrome_foreground <- function(g, style, theme, grid, angle_labels,
                                       display, ticks = TRUE, quadrants = FALSE,
                                       rings = FALSE, circumference = TRUE,
-                                      angle_label_position = "outside") {
+                                      angle_label_position = "outside",
+                                      n_labels = NULL) {
   g <- g + radial_theme(theme)
   if (style$draw_radial_grid) {
     g <- g + ggplot2::theme(
@@ -2274,17 +2301,19 @@ line_circle_intercept_traj <- function(traj, id, range) {
     g <- g + add_circ(circle_colour = style$col_of(style$ax$line), circle_size = circ_lw)
   }
   scale <- .angle_label_scale(angle_labels)
-  if (isTRUE(ticks))
+  # n_labels (degrees/radians path only) overrides the tick/label count; 0 = bare.
+  tick_n <- if (!is.null(n_labels) && is.null(scale)) as.integer(n_labels)
+            else if (is.null(scale)) 8L else scale$n
+  if (isTRUE(ticks) && tick_n > 0L)
     g <- g + add_ticks(colour = style$col_of(style$ax$ticks),
-                       linewidth = style$ax$ticks$linewidth,
-                       n = if (is.null(scale)) 8L else scale$n)
+                       linewidth = style$ax$ticks$linewidth, n = tick_n)
   if (angle_labels != "none") {
     if (is.null(scale))
       g <- g + degree_labs(display = display, units = angle_labels,
                            colour = style$col_of(style$ax$text),
                            size   = style$ax$text$size / ggplot2::.pt,
                            family = style$ax$text$family,
-                           position = angle_label_position)
+                           position = angle_label_position, n = n_labels)
     else
       g <- g + perimeter_labs(scale, display = display,
                               colour = style$col_of(style$ax$text),
@@ -2417,6 +2446,13 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   inside the circle; `"split"` puts the cardinals inside and the diagonals
 #'   outside. Ignored by the domain scales (`"cardinal"`/`"hours"`/`"months"`/
 #'   `"seconds"`), which place labels via [perimeter_labs()]. See [degree_labs()].
+#' @param n_labels Number of equally-spaced circumference divisions (ticks and
+#'   numeric labels) at `360 / n` degrees, for the numeric `"degrees"`/`"radians"`
+#'   labels. `NULL` (default) keeps the standard 8 ticks and legacy label set;
+#'   `0` draws a bare circle (no ticks or labels); e.g. `4` (cardinals), `12`
+#'   (clock). Orthogonal to `angle_labels` (the format). Ignored by the domain
+#'   scales (`"cardinal"`/`"hours"`/`"months"`/`"seconds"`), which carry their
+#'   own count.
 #' @param ... Additional arguments forwarded to [draw_tracks()].
 #' @return A `ggplot2` object.
 #' @inheritSection radiatR-package American spellings
@@ -2471,6 +2507,7 @@ function(
   angle_labels = c("degrees", "none", "radians",
                    "cardinal", "hours", "months", "seconds"),
   angle_label_position = c("outside", "inside", "split"),
+  n_labels = NULL,
   theme = c("void", "minimal", "classic", "bw", "grey", "gray",
             "light", "dark", "linedraw"),
   quadrants = FALSE,
@@ -2504,6 +2541,10 @@ function(
   if (is.null(axes)) {axes = FALSE}
   angle_labels <- match.arg(angle_labels)
   angle_label_position <- match.arg(angle_label_position)
+  if (!is.null(n_labels) &&
+      (!is.numeric(n_labels) || length(n_labels) != 1L || !is.finite(n_labels) ||
+       n_labels < 0 || n_labels != round(n_labels)))
+    stop("`n_labels` must be NULL or a single non-negative integer.")
   grid <- match.arg(grid)
   track_colour <- match.arg(track_colour)
   time_units <- match.arg(time_units)
@@ -2637,7 +2678,8 @@ function(
   g <- .radial_chrome_foreground(
     g, style, theme = theme, grid = grid, angle_labels = angle_labels,
     display = display, ticks = ticks, quadrants = quadrants, rings = rings,
-    circumference = circumference, angle_label_position = angle_label_position
+    circumference = circumference, angle_label_position = angle_label_position,
+    n_labels = n_labels
   )
 
   label_col <- resolve_label_column(data, label_col, group_col)
@@ -2882,6 +2924,7 @@ radiate.headings_frame <- function(
   angle_labels = c("degrees", "none", "radians",
                    "cardinal", "hours", "months", "seconds"),
   angle_label_position = c("outside", "inside", "split"),
+  n_labels = NULL,
   title     = NULL,
   theme     = c("void", "minimal", "classic", "bw", "grey", "gray",
                 "light", "dark", "linedraw"),
@@ -2901,6 +2944,10 @@ radiate.headings_frame <- function(
   grid         <- match.arg(grid)
   angle_labels <- match.arg(angle_labels)
   angle_label_position <- match.arg(angle_label_position)
+  if (!is.null(n_labels) &&
+      (!is.numeric(n_labels) || length(n_labels) != 1L || !is.finite(n_labels) ||
+       n_labels < 0 || n_labels != round(n_labels)))
+    stop("`n_labels` must be NULL or a single non-negative integer.")
   if (isFALSE(degrees)) angle_labels <- "none"
 
   style <- .radial_style(theme, grid, grid_colour)
@@ -2920,7 +2967,8 @@ radiate.headings_frame <- function(
   g <- .radial_chrome_foreground(
     g, style, theme = theme, grid = grid, angle_labels = angle_labels,
     display = display, ticks = ticks, quadrants = quadrants, rings = rings,
-    circumference = circumference, angle_label_position = angle_label_position
+    circumference = circumference, angle_label_position = angle_label_position,
+    n_labels = n_labels
   )
 
   if (!is.null(panel_by)) {

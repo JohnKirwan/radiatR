@@ -12,6 +12,7 @@ degree_labs(
   family = "",
   position = c("outside", "inside", "split"),
   inside_radius = 0.88,
+  n = NULL,
   color = NULL
 )
 }
@@ -39,6 +40,12 @@ modes honour `display` (the labels rotate with the plot).}
 
 \item{inside_radius}{Radius (unit-circle fraction) for inside labels.
 Default `0.88`.}
+
+\item{n}{Number of equally-spaced labels at `360 / n` degrees from 0. `NULL`
+(default) keeps the legacy set (4 diagonals for `"outside"`, 8 for
+`"inside"`/`"split"`). `0` draws none. For `position = "split"`, `n` must be
+divisible by 4 (so the quadrant directions are present); otherwise it falls
+back to `"inside"` with a message.}
 }
 \value{
 A list of ggplot2 annotation layers.
