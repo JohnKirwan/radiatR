@@ -124,6 +124,14 @@
 
 ### Visualisation
 
+- [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  gains `n_labels` (and `degree_labs(n = )`) to vary the number of
+  circumference divisions: an integer draws that many equally-spaced
+  ticks and numeric labels at `360 / n` (e.g. `4` cardinals, `12`
+  clock), `0` a bare circle; `NULL` (default) keeps the standard eight.
+  Orthogonal to `angle_labels` (the label format); the domain scales
+  keep their own count.
+
 - [`degree_labs()`](https://johnkirwan.github.io/radiatR/reference/degree_labs.md)
   gains `position = c("outside", "inside", "split")` (and
   `radiate(angle_label_position = )`): `"inside"` places all eight

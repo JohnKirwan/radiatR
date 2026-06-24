@@ -85,6 +85,7 @@ the object and handed off to the plotting helpers.</p>
 <span>  angle_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"degrees"</span>, <span class="st">"none"</span>, <span class="st">"radians"</span>, <span class="st">"cardinal"</span>, <span class="st">"hours"</span>, <span class="st">"months"</span>,</span>
 <span>    <span class="st">"seconds"</span><span class="op">)</span>,</span>
 <span>  angle_label_position <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"outside"</span>, <span class="st">"inside"</span>, <span class="st">"split"</span><span class="op">)</span>,</span>
+<span>  n_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  theme <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"void"</span>, <span class="st">"minimal"</span>, <span class="st">"classic"</span>, <span class="st">"bw"</span>, <span class="st">"grey"</span>, <span class="st">"gray"</span>, <span class="st">"light"</span>, <span class="st">"dark"</span>,</span>
 <span>    <span class="st">"linedraw"</span><span class="op">)</span>,</span>
 <span>  quadrants <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -132,6 +133,7 @@ the object and handed off to the plotting helpers.</p>
 <span>  angle_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"degrees"</span>, <span class="st">"none"</span>, <span class="st">"radians"</span>, <span class="st">"cardinal"</span>, <span class="st">"hours"</span>, <span class="st">"months"</span>,</span>
 <span>    <span class="st">"seconds"</span><span class="op">)</span>,</span>
 <span>  angle_label_position <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"outside"</span>, <span class="st">"inside"</span>, <span class="st">"split"</span><span class="op">)</span>,</span>
+<span>  n_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  title <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  theme <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"void"</span>, <span class="st">"minimal"</span>, <span class="st">"classic"</span>, <span class="st">"bw"</span>, <span class="st">"grey"</span>, <span class="st">"gray"</span>, <span class="st">"light"</span>, <span class="st">"dark"</span>,</span>
 <span>    <span class="st">"linedraw"</span><span class="op">)</span>,</span>
@@ -278,6 +280,16 @@ corners; `"inside"` puts all eight directions (including cardinals) just
 inside the circle; `"split"` puts the cardinals inside and the diagonals
 outside. Ignored by the domain scales (`"cardinal"`/`"hours"`/`"months"`/
 `"seconds"`), which place labels via [perimeter_labs()]. See [degree_labs()].</p></dd>
+
+
+<dt id="arg-n-labels">n_labels<a class="anchor" aria-label="anchor" href="#arg-n-labels"></a></dt>
+<dd><p>Number of equally-spaced circumference divisions (ticks and
+numeric labels) at `360 / n` degrees, for the numeric `"degrees"`/`"radians"`
+labels. `NULL` (default) keeps the standard 8 ticks and legacy label set;
+`0` draws a bare circle (no ticks or labels); e.g. `4` (cardinals), `12`
+(clock). Orthogonal to `angle_labels` (the format). Ignored by the domain
+scales (`"cardinal"`/`"hours"`/`"months"`/`"seconds"`), which carry their
+own count.</p></dd>
 
 
 <dt id="arg-theme">theme<a class="anchor" aria-label="anchor" href="#arg-theme"></a></dt>

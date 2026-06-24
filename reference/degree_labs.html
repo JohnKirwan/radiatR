@@ -58,6 +58,7 @@ unit circle.</p>
 <span>  family <span class="op">=</span> <span class="st">""</span>,</span>
 <span>  position <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"outside"</span>, <span class="st">"inside"</span>, <span class="st">"split"</span><span class="op">)</span>,</span>
 <span>  inside_radius <span class="op">=</span> <span class="fl">0.88</span>,</span>
+<span>  n <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  color <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -102,6 +103,14 @@ modes honour `display` (the labels rotate with the plot).</p></dd>
 <dt id="arg-inside-radius">inside_radius<a class="anchor" aria-label="anchor" href="#arg-inside-radius"></a></dt>
 <dd><p>Radius (unit-circle fraction) for inside labels.
 Default `0.88`.</p></dd>
+
+
+<dt id="arg-n">n<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
+<dd><p>Number of equally-spaced labels at `360 / n` degrees from 0. `NULL`
+(default) keeps the legacy set (4 diagonals for `"outside"`, 8 for
+`"inside"`/`"split"`). `0` draws none. For `position = "split"`, `n` must be
+divisible by 4 (so the quadrant directions are present); otherwise it falls
+back to `"inside"` with a message.</p></dd>
 
 </dl></div>
     <div class="section level2">
