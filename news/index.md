@@ -124,6 +124,14 @@
 
 ### Visualisation
 
+- [`degree_labs()`](https://johnkirwan.github.io/radiatR/reference/degree_labs.md)
+  gains `position = c("outside", "inside", "split")` (and
+  `radiate(angle_label_position = )`): `"inside"` places all eight
+  direction labels just inside the circle, `"split"` puts the cardinals
+  (0/90/180/270) inside and the diagonals outside. The cardinals —
+  previously unlabelled in the numeric degree/radian mode — now get
+  numbers. `"outside"` (default) is unchanged.
+
 - [`add_circular_boxplot()`](https://johnkirwan.github.io/radiatR/reference/add_circular_boxplot.md)
   gains `panel_by` so a faceted
   [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)

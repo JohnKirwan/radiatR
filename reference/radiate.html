@@ -84,6 +84,7 @@ the object and handed off to the plotting helpers.</p>
 <span>  axes <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  angle_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"degrees"</span>, <span class="st">"none"</span>, <span class="st">"radians"</span>, <span class="st">"cardinal"</span>, <span class="st">"hours"</span>, <span class="st">"months"</span>,</span>
 <span>    <span class="st">"seconds"</span><span class="op">)</span>,</span>
+<span>  angle_label_position <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"outside"</span>, <span class="st">"inside"</span>, <span class="st">"split"</span><span class="op">)</span>,</span>
 <span>  theme <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"void"</span>, <span class="st">"minimal"</span>, <span class="st">"classic"</span>, <span class="st">"bw"</span>, <span class="st">"grey"</span>, <span class="st">"gray"</span>, <span class="st">"light"</span>, <span class="st">"dark"</span>,</span>
 <span>    <span class="st">"linedraw"</span><span class="op">)</span>,</span>
 <span>  quadrants <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -130,6 +131,7 @@ the object and handed off to the plotting helpers.</p>
 <span>  degrees <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  angle_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"degrees"</span>, <span class="st">"none"</span>, <span class="st">"radians"</span>, <span class="st">"cardinal"</span>, <span class="st">"hours"</span>, <span class="st">"months"</span>,</span>
 <span>    <span class="st">"seconds"</span><span class="op">)</span>,</span>
+<span>  angle_label_position <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"outside"</span>, <span class="st">"inside"</span>, <span class="st">"split"</span><span class="op">)</span>,</span>
 <span>  title <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  theme <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"void"</span>, <span class="st">"minimal"</span>, <span class="st">"classic"</span>, <span class="st">"bw"</span>, <span class="st">"grey"</span>, <span class="st">"gray"</span>, <span class="st">"light"</span>, <span class="st">"dark"</span>,</span>
 <span>    <span class="st">"linedraw"</span><span class="op">)</span>,</span>
@@ -267,6 +269,15 @@ perimeter via [perimeter_labs()], aligning the tick count to the scale. For
 finer control (8-point compass, 12-hour clock, month formats) add an
 explicit `perimeter_labs()` layer. Label styling follows the chosen
 `theme`'s `axis.text`.</p></dd>
+
+
+<dt id="arg-angle-label-position">angle_label_position<a class="anchor" aria-label="anchor" href="#arg-angle-label-position"></a></dt>
+<dd><p>For the numeric (`"degrees"`/`"radians"`) labels,
+where to place them: `"outside"` (default) keeps the diagonals in the plot
+corners; `"inside"` puts all eight directions (including cardinals) just
+inside the circle; `"split"` puts the cardinals inside and the diagonals
+outside. Ignored by the domain scales (`"cardinal"`/`"hours"`/`"months"`/
+`"seconds"`), which place labels via [perimeter_labs()]. See [degree_labs()].</p></dd>
 
 
 <dt id="arg-theme">theme<a class="anchor" aria-label="anchor" href="#arg-theme"></a></dt>

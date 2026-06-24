@@ -38,6 +38,7 @@ radiate(
   axes = NULL,
   angle_labels = c("degrees", "none", "radians", "cardinal", "hours", "months",
     "seconds"),
+  angle_label_position = c("outside", "inside", "split"),
   theme = c("void", "minimal", "classic", "bw", "grey", "gray", "light", "dark",
     "linedraw"),
   quadrants = FALSE,
@@ -84,6 +85,7 @@ radiate(
   degrees = TRUE,
   angle_labels = c("degrees", "none", "radians", "cardinal", "hours", "months",
     "seconds"),
+  angle_label_position = c("outside", "inside", "split"),
   title = NULL,
   theme = c("void", "minimal", "classic", "bw", "grey", "gray", "light", "dark",
     "linedraw"),
@@ -225,6 +227,16 @@ radiate(
   compass, 12-hour clock, month formats) add an explicit
   \`perimeter_labs()\` layer. Label styling follows the chosen
   \`theme\`'s \`axis.text\`.
+
+- angle_label_position:
+
+  For the numeric (\`"degrees"\`/\`"radians"\`) labels, where to place
+  them: \`"outside"\` (default) keeps the diagonals in the plot corners;
+  \`"inside"\` puts all eight directions (including cardinals) just
+  inside the circle; \`"split"\` puts the cardinals inside and the
+  diagonals outside. Ignored by the domain scales
+  (\`"cardinal"\`/\`"hours"\`/\`"months"\`/ \`"seconds"\`), which place
+  labels via \[perimeter_labs()\]. See \[degree_labs()\].
 
 - theme:
 
