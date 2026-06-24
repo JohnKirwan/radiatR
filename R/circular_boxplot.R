@@ -172,6 +172,13 @@ circ_boxplot_stats <- function(hd, angle_col = "heading", axial = FALSE) {
 #' @param n_theta Points per arc. Default `200`.
 #' @param display A [circ_display()] object; when `NULL` (default), taken from
 #'   `attr(hd, "display")`, falling back to `circ_display()`.
+#' @param panel_by Optional name of a column in `hd` identifying facet panels
+#'   (the same column passed to `radiate(panel_by = )`). When set, a separate
+#'   boxplot is computed and drawn per level so each facet shows its own
+#'   summary; the layer data is tagged with this column so it faces correctly. A
+#'   level that is not drawable (fewer than 4 usable observations or a non-unique
+#'   median) is skipped with a warning while the others still draw. Default
+#'   `NULL` draws a single boxplot from all of `hd`.
 #' @param theme Optional radiate theme name (e.g. "void", "minimal", "dark").
 #'   When set, the box, whiskers and crossbars take that theme's chrome colour
 #'   (matching the circle and ticks), overriding \code{colour}.
@@ -190,35 +197,17 @@ add_circular_boxplot <- function(hd, angle_col = "heading", axial = FALSE,
                                  colour = "black", box_fill = "grey90",
                                  farout_shape = 8, show_median_arrow = FALSE,
                                  linewidth = 0.8, n_theta = 200L, display = NULL,
-                                 theme = NULL, color = NULL) {
+                                 panel_by = NULL, theme = NULL, color = NULL) {
   .apply_spelling_aliases()
   if (!is.null(theme)) {
     st     <- .radial_style(theme)
     colour <- st$col_of(st$ax$line)
   }
-  s <- circ_boxplot_stats(hd, angle_col = angle_col, axial = axial)
   if (is.null(display))
     display <- (if (is.data.frame(hd)) attr(hd, "display", exact = TRUE) else NULL) %||% circ_display()
 
-  if (!isTRUE(s$drawable)) {
-    warning("add_circular_boxplot: ", s$reason, call. = FALSE)
-    return(NULL)
-  }
-  if (!is.na(s$reason)) warning("add_circular_boxplot: ", s$reason, call. = FALSE)
-
   r_in  <- radius - width / 2
   r_out <- radius + width / 2
-
-  # Signed offset of an angle from the median. For axial data the locations live
-  # on a mod-pi circle, so offsets must be taken mod pi (range (-pi/2, pi/2]) and
-  # each element mirrored at the axis and its antipode (+pi); using mod-2pi here
-  # would draw arcs the long way around the 0/pi seam.
-  M   <- s$median
-  off <- if (axial) function(a) ((a - M + pi/2) %% pi)     - pi/2
-         else        function(a) ((a - M + pi)   %% (2*pi)) - pi
-  h   <- sort(off(s$hinges)); w <- sort(off(s$whiskers))
-  fo  <- off(s$far_out)
-  offs <- if (axial) c(0, pi) else 0
 
   arc_xy <- function(a0, a1, r, gid) {
     th <- seq(a0, a1, length.out = n_theta)
@@ -231,28 +220,82 @@ add_circular_boxplot <- function(hd, angle_col = "heading", axial = FALSE,
     data.frame(.x = p0$x, .y = p0$y, .xend = p1$x, .yend = p1$y)
   }
 
-  box_df <- whisk_df <- cross_df <- arrow_df <- fo_df <- NULL
-  for (k in seq_along(offs)) {
-    base <- M + offs[k]
-    # box band: outer arc forward + inner arc back -> one closed ring per pole
-    outer <- arc_xy(base + h[1], base + h[2], r_out, k)
-    inner <- arc_xy(base + h[2], base + h[1], r_in,  k)
-    box_df <- rbind(box_df, outer, inner)
-    # whiskers: hinge -> whisker end on each side, along the perimeter
-    whisk_df <- rbind(whisk_df,
-      arc_xy(base + h[2], base + w[2], radius, 2*k - 1),
-      arc_xy(base + w[1], base + h[1], radius, 2*k))
-    # crossbars at median + hinges (short radial segments)
-    cross_df <- rbind(cross_df,
-      radial_xy(base + 0,    r_in, r_out),
-      radial_xy(base + h[1], r_in, r_out),
-      radial_xy(base + h[2], r_in, r_out))
-    if (show_median_arrow) arrow_df <- rbind(arrow_df, radial_xy(base, 0, radius))
-    if (length(fo)) {
-      xy <- .uc_to_display_coords(radius * cos(base + fo), radius * sin(base + fo), display)
-      fo_df <- rbind(fo_df, data.frame(.x = xy$x, .y = xy$y))
+  # Build the five geometry frames (box/whiskers/crossbars/arrow/far-out) for one
+  # boxplot summary `s`. Signed offset from the median: for axial data the
+  # locations live on a mod-pi circle, so offsets are taken mod pi (range
+  # (-pi/2, pi/2]) and mirrored at the axis and its antipode (+pi); mod-2pi would
+  # draw arcs the long way round the 0/pi seam.
+  build_geom <- function(s) {
+    M   <- s$median
+    off <- if (axial) function(a) ((a - M + pi/2) %% pi)     - pi/2
+           else        function(a) ((a - M + pi)   %% (2*pi)) - pi
+    h   <- sort(off(s$hinges)); w <- sort(off(s$whiskers))
+    fo  <- off(s$far_out)
+    offs <- if (axial) c(0, pi) else 0
+    box_df <- whisk_df <- cross_df <- arrow_df <- fo_df <- NULL
+    for (k in seq_along(offs)) {
+      base <- M + offs[k]
+      # box band: outer arc forward + inner arc back -> one closed ring per pole
+      outer <- arc_xy(base + h[1], base + h[2], r_out, k)
+      inner <- arc_xy(base + h[2], base + h[1], r_in,  k)
+      box_df <- rbind(box_df, outer, inner)
+      # whiskers: hinge -> whisker end on each side, along the perimeter
+      whisk_df <- rbind(whisk_df,
+        arc_xy(base + h[2], base + w[2], radius, 2*k - 1),
+        arc_xy(base + w[1], base + h[1], radius, 2*k))
+      # crossbars at median + hinges (short radial segments)
+      cross_df <- rbind(cross_df,
+        radial_xy(base + 0,    r_in, r_out),
+        radial_xy(base + h[1], r_in, r_out),
+        radial_xy(base + h[2], r_in, r_out))
+      if (show_median_arrow) arrow_df <- rbind(arrow_df, radial_xy(base, 0, radius))
+      if (length(fo)) {
+        xy <- .uc_to_display_coords(radius * cos(base + fo), radius * sin(base + fo), display)
+        fo_df <- rbind(fo_df, data.frame(.x = xy$x, .y = xy$y))
+      }
     }
+    list(box = box_df, whisk = whisk_df, cross = cross_df,
+         arrow = arrow_df, fo = fo_df)
   }
+
+  # One boxplot, or one per panel level when panel_by names a column of hd.
+  faceted <- !is.null(panel_by) && is.data.frame(hd) && panel_by %in% names(hd)
+  if (!faceted) {
+    s <- circ_boxplot_stats(hd, angle_col = angle_col, axial = axial)
+    if (!isTRUE(s$drawable)) {
+      warning("add_circular_boxplot: ", s$reason, call. = FALSE)
+      return(NULL)
+    }
+    if (!is.na(s$reason)) warning("add_circular_boxplot: ", s$reason, call. = FALSE)
+    geom <- build_geom(s)
+  } else {
+    groups <- split(seq_len(nrow(hd)), hd[[panel_by]])
+    geom   <- list(box = NULL, whisk = NULL, cross = NULL, arrow = NULL, fo = NULL)
+    for (lv in names(groups)) {
+      s <- circ_boxplot_stats(hd[groups[[lv]], , drop = FALSE],
+                              angle_col = angle_col, axial = axial)
+      if (!isTRUE(s$drawable)) {
+        warning("add_circular_boxplot [", lv, "]: ", s$reason, call. = FALSE)
+        next
+      }
+      if (!is.na(s$reason))
+        warning("add_circular_boxplot [", lv, "]: ", s$reason, call. = FALSE)
+      g <- build_geom(s)
+      for (nm in names(geom)) {
+        if (!is.null(g[[nm]])) {
+          g[[nm]][[panel_by]] <- lv
+          geom[[nm]] <- rbind(geom[[nm]], g[[nm]])
+        }
+      }
+    }
+    if (is.null(geom$box)) return(NULL)   # no level was drawable
+  }
+
+  box_df   <- geom$box
+  whisk_df <- geom$whisk
+  cross_df <- geom$cross
+  arrow_df <- geom$arrow
+  fo_df    <- geom$fo
 
   layers <- list(
     ggplot2::geom_polygon(data = box_df,
