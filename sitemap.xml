@@ -92,6 +92,7 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/load_tracks.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/load_tracks2.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/new_headings_frame.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/path_sinuosity.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/path_straightness.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/path_tortuosity.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/perimeter_labs.html</loc></url>
@@ -117,6 +118,7 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/sector_summary.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/set_reference.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/simulate_tracks.html</loc></url>
+<url><loc>https://johnkirwan.github.io/radiatR/reference/sinuosity.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/stack_headings.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/step_speed.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/straightness_index.html</loc></url>

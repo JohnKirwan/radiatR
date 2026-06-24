@@ -69,6 +69,20 @@
 
 ### Track metrics
 
+- New
+  [`path_sinuosity()`](https://johnkirwan.github.io/radiatR/reference/path_sinuosity.md)
+  /
+  [`sinuosity()`](https://johnkirwan.github.io/radiatR/reference/sinuosity.md)
+  add the turning-angle-based sinuosity index (Benhamou 2004) — the
+  tortuosity complement to the displacement-based
+  [`straightness_index()`](https://johnkirwan.github.io/radiatR/reference/straightness_index.md)
+  /
+  [`tortuosity_ratio()`](https://johnkirwan.github.io/radiatR/reference/tortuosity_ratio.md),
+  robust for convoluted paths where net displacement is unreliable.
+  Distance-calibrated; the Shiny app’s path-metrics caption reports mean
+  sinuosity and the per-track metrics CSV gains
+  `length`/`straightness`/`tortuosity`/`sinuosity` columns.
+
 - The bundled `cpunctatus` example now carries its true capture rate
   (0.2 fps, 1 frame / 5 s), so its kinematics plots read real seconds
   out of the box without a manual
