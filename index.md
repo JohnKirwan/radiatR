@@ -366,8 +366,11 @@ devtools::install_local(".")
 
 A browser-based interface covers the common workflow — upload a tracking
 file, choose a heading method, and view circular plots and summary
-statistics — with no R coding required. There are three ways to reach
-it:
+statistics — with no R coding required.
+
+> **Try it live:** <https://johnkirwan.shinyapps.io/radiatR/>
+
+There are three ways to reach it:
 
 **1. Run locally** (works after installing the package):
 
@@ -376,11 +379,12 @@ it:
 radiatR::launch_app()
 ```
 
-**2. Hosted on shinyapps.io** (recommended for collaborators) — a real
-Shiny server runs R server-side, so the page loads like any normal web
-app. The GitHub Actions workflow in `.github/workflows/shinyapps.yaml`
-deploys `inst/app` on each **published GitHub Release** (and on demand
-via *workflow_dispatch*). It needs three repository secrets from your
+**2. Hosted on shinyapps.io** (recommended for collaborators) —
+<https://johnkirwan.shinyapps.io/radiatR/>. A real Shiny server runs R
+server-side, so the page loads like any normal web app. The GitHub
+Actions workflow in `.github/workflows/shinyapps.yaml` deploys
+`inst/app` on each **published GitHub Release** (and on demand via
+*workflow_dispatch*). It needs three repository secrets from your
 shinyapps.io account — `SHINYAPPS_NAME` (the account name in the URL),
 `SHINYAPPS_TOKEN`, and `SHINYAPPS_SECRET` (Account → Tokens). To deploy
 by hand instead:
