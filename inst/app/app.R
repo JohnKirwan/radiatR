@@ -1402,6 +1402,7 @@ server <- function(input, output, session) {
         # spec_to_code render and reproduce it.
         caption  = if (is.null(rv$hd)) straightness_caption(rv$ts, gc) else NULL,
         show_tracks = tog(input$show_tracks, TRUE),
+        show_oob    = tog(input$show_oob,    FALSE),
         show_arrow  = tog(input$show_arrow,  TRUE),
         show_vectors = tog(input$show_vectors, FALSE),
         show_rayleigh = tog(input$show_rayleigh, FALSE),
