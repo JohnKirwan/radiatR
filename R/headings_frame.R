@@ -94,17 +94,24 @@ new_headings_frame <- function(data, display = circ_display(),
   .hf_set_class(data)
 }
 
-# Restore the headings_frame class + canonical attributes after a dplyr verb.
-#' @exportS3Method dplyr::dplyr_reconstruct
-dplyr_reconstruct.headings_frame <- function(data, template) {
+# Copy the canonical attributes from `template` onto `data` and re-set the class.
+# Pure base R (no dplyr), so base `[` below works whether or not dplyr is
+# installed -- dplyr is only Suggested, and routing subsetting through
+# dplyr::dplyr_reconstruct() made every `hd[...]` hard-require dplyr at runtime.
+.hf_reconstruct <- function(data, template) {
   for (a in .HF_ATTRS) attr(data, a) <- attr(template, a, exact = TRUE)
   .hf_set_class(data)
 }
 
+# Restore the headings_frame class + canonical attributes after a dplyr verb.
+#' @exportS3Method dplyr::dplyr_reconstruct
+dplyr_reconstruct.headings_frame <- function(data, template)
+  .hf_reconstruct(data, template)
+
 #' @export
 `[.headings_frame` <- function(x, ...) {
   out <- NextMethod()
-  if (is.data.frame(out)) dplyr::dplyr_reconstruct(out, x) else out
+  if (is.data.frame(out)) .hf_reconstruct(out, x) else out
 }
 
 #' Read the canonical attributes of a heading frame
