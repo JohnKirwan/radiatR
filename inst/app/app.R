@@ -1146,6 +1146,13 @@ server <- function(input, output, session) {
                     ),
                     uiOutput("kin_track_ui"),
                     uiOutput("kin_colour_ui"),
+                    sliderInput("kin_smooth", "Smoothing (window, points)",
+                                min = 1, max = 25, value = 1, step = 1),
+                    conditionalPanel(
+                      condition = "input.kin_smooth > 1",
+                      checkboxInput("kin_show_raw", "Show raw (faint)",
+                                    value = FALSE)
+                    ),
                     numericInput("kin_frame_rate", "Frame rate (fps)",
                                  value = 30, min = 0, step = 1),
                     uiOutput("kin_note")
@@ -1671,6 +1678,8 @@ server <- function(input, output, session) {
       kin_units     = input$kin_units,
       kin_colour_by = input$kin_colour_by,
       kin_track     = input$kin_track,
+      kin_smooth    = input$kin_smooth,
+      kin_show_raw  = input$kin_show_raw,
       fps           = fps_rv(),
       data = list(
         source  = if (identical(rv$source, "example")) "example" else "file",

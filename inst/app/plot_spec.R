@@ -583,6 +583,8 @@ build_kinematics_spec <- function(ts, inputs) {
     units     = inputs$kin_units  %||% "radians",
     colour_by = colour_by,
     track     = track,
+    smooth    = inputs$kin_smooth %||% 1,
+    show_raw  = isTRUE(inputs$kin_show_raw),
     fps       = inputs$fps,
     src_id    = ts@cols$id,
     data      = inputs$data,
@@ -599,7 +601,8 @@ kinematics_spec_to_plot <- function(spec, ts) {
   if (!is.null(spec$track)) ts <- ts[spec$track]
   ts <- set_frame_rate(ts, spec$fps %||% 30)
   plot_profile(ts, metric = spec$metric, units = spec$units,
-               colour_by = spec$colour_by)
+               colour_by = spec$colour_by,
+               smooth = spec$smooth %||% 1, show_raw = isTRUE(spec$show_raw))
 }
 
 spec_to_kinematics_code <- function(spec) {
@@ -617,6 +620,10 @@ spec_to_kinematics_code <- function(spec) {
     paste0(", units = ", q(spec$units)) else ""
   col_arg  <- if (!is.null(spec$colour_by))
     paste0(", colour_by = ", q(spec$colour_by)) else ""
-  add("plot_profile(ts, metric = ", q(spec$metric), unit_arg, col_arg, ")")
+  sm_arg   <- if ((spec$smooth %||% 1) > 1)
+    paste0(", smooth = ", as.integer(spec$smooth)) else ""
+  raw_arg  <- if (isTRUE(spec$show_raw) && (spec$smooth %||% 1) > 1)
+    ", show_raw = TRUE" else ""
+  add("plot_profile(ts, metric = ", q(spec$metric), unit_arg, col_arg, sm_arg, raw_arg, ")")
   paste(L, collapse = "\n")
 }

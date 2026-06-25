@@ -10,7 +10,9 @@ plot_profile(
   units = c("radians", "degrees"),
   colour_by = NULL,
   panel_by = NULL,
-  max_speed = NULL
+  max_speed = NULL,
+  smooth = 1L,
+  show_raw = FALSE
 )
 }
 \arguments{
@@ -28,6 +30,14 @@ colour by / facet into panels. Default: one neutral series per track.}
 the 99.5% quantile -- so single-frame tracking artifacts do not crush the
 plot), a positive number (hard cap), or `Inf` (no clip). Off-scale points
 are reported in a caption. Ignored for `"turning"`/`"direction"`.}
+
+\item{smooth}{Integer window, in observations, for a centered per-track moving
+average of the `"speed"`/`"turning"` series. `1` (default) leaves the raw
+series unchanged; larger values smooth out per-frame jitter. Ignored for
+`"direction"` (a circular metric).}
+
+\item{show_raw}{Logical; when `TRUE` and `smooth > 1`, draw the raw series as a
+faint line beneath the smoothed line. Default `FALSE`.}
 }
 \value{
 A `ggplot2` object.

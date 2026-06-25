@@ -229,3 +229,57 @@ test_that("plot_speed_histogram: physical x-label when calibrated; non-Tracks er
   expect_equal(plot_speed_histogram(ts)$labels$x, "speed (mm/s)")
   expect_error(plot_speed_histogram(data.frame(x = 1)), "Tracks")
 })
+
+# ---- profile smoothing -------------------------------------------------------
+
+test_that(".smooth_profile: centered partial-window moving average, per track", {
+  v  <- c(1, 2, 3, 4, 5)
+  id <- rep("a", 5); t <- 1:5
+  expect_equal(radiatR:::.smooth_profile(v, id, t, 1), v)          # no-op
+  expect_equal(radiatR:::.smooth_profile(v, id, t, 3), c(1.5, 2, 3, 4, 4.5))
+  # two tracks: smoothing must not bleed across the boundary
+  v2  <- c(0, 0, 0, 10, 10, 10); id2 <- rep(c("a", "b"), each = 3); t2 <- rep(1:3, 2)
+  sm  <- radiatR:::.smooth_profile(v2, id2, t2, 3)
+  expect_equal(sm[id2 == "a"], c(0, 0, 0))
+  expect_equal(sm[id2 == "b"], c(10, 10, 10))
+})
+
+test_that("plot_profile(smooth=) smooths the line; default is a no-op", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  ts <- set_frame_rate(cpunctatus, 30)
+  line_y <- function(p) {
+    b <- ggplot2::ggplot_build(p)
+    i <- which(vapply(p$layers, function(l) inherits(l$geom, "GeomLine"), logical(1)))[1]
+    b$data[[i]]$y
+  }
+  expect_equal(line_y(plot_profile(ts, metric = "speed", smooth = 1)),
+               line_y(plot_profile(ts, metric = "speed")))
+  raw <- line_y(plot_profile(ts, metric = "speed"))
+  sm  <- line_y(plot_profile(ts, metric = "speed", smooth = 9))
+  expect_lt(stats::sd(sm, na.rm = TRUE), stats::sd(raw, na.rm = TRUE))   # less spread
+})
+
+test_that("plot_profile(show_raw=) adds a faint raw line only when smoothing", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  ts <- set_frame_rate(cpunctatus, 30)
+  n_line <- function(p) sum(vapply(p$layers,
+    function(l) inherits(l$geom, "GeomLine"), logical(1)))
+  expect_equal(n_line(plot_profile(ts, metric = "speed", smooth = 5, show_raw = TRUE)),
+               n_line(plot_profile(ts, metric = "speed", smooth = 5)) + 1L)
+  expect_equal(n_line(plot_profile(ts, metric = "speed", smooth = 1, show_raw = TRUE)),
+               n_line(plot_profile(ts, metric = "speed", smooth = 1)))   # no-op w/o smoothing
+})
+
+test_that("plot_profile(direction) ignores smoothing; smooth validates", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  ts <- set_frame_rate(cpunctatus, 30)
+  pt_y <- function(p) {
+    b <- ggplot2::ggplot_build(p)
+    i <- which(vapply(p$layers, function(l) inherits(l$geom, "GeomPoint"), logical(1)))[1]
+    b$data[[i]]$y
+  }
+  expect_equal(pt_y(plot_profile(ts, metric = "direction", smooth = 5)),
+               pt_y(plot_profile(ts, metric = "direction")))
+  expect_error(plot_profile(ts, metric = "speed", smooth = 0), "smooth")
+  expect_error(plot_profile(ts, metric = "speed", smooth = 2.5), "smooth")
+})

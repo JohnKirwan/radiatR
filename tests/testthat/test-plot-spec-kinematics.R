@@ -72,6 +72,19 @@ test_that("spec_to_kinematics_code emits a runnable, exported-only script", {
   code2 <- spec_to_kinematics_code(sp2)
   expect_true(grepl('plot_profile(ts, metric = "speed")', code2, fixed = TRUE))
   expect_false(grepl("units =", code2, fixed = TRUE))
+  expect_false(grepl("smooth", code2, fixed = TRUE))                 # default omits smooth
+})
+
+test_that("kinematics spec carries and emits smoothing only when set", {
+  ts <- kin_ts()
+  sp <- build_kinematics_spec(ts, list(kin_metric = "speed", kin_smooth = 7,
+                                       kin_show_raw = TRUE, fps = 30,
+                                       data = example_data_block))
+  expect_equal(sp$smooth, 7)
+  expect_true(isTRUE(sp$show_raw))
+  expect_match(spec_to_kinematics_code(sp),
+               'plot_profile(ts, metric = "speed", smooth = 7, show_raw = TRUE)',
+               fixed = TRUE)
 })
 
 test_that("emitted kinematics code reproduces kinematics_spec_to_plot", {
