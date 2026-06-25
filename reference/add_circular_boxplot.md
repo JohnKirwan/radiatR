@@ -16,7 +16,7 @@ add_circular_boxplot(
   angle_col = "heading",
   axial = FALSE,
   radius = 1.1,
-  width = 0.06,
+  width = 0.05,
   colour = "black",
   box_fill = "grey90",
   farout_shape = 8,
@@ -56,7 +56,7 @@ add_circular_boxplot(
 
 - width:
 
-  Radial thickness of the box band. Default \`0.06\`.
+  Radial thickness of the box band. Default \`0.05\`.
 
 - colour, color:
 

@@ -60,8 +60,8 @@
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-0-4-1">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-4-1"></a></h3>
-<ul><li>
-<code>derive_headings(carry = )</code> now preserves the carried column’s class: a carried <strong>factor</strong> kept its labels instead of being coerced to integer level codes (so e.g. <code>circ_summary_headings(group_by = &lt;a carried factor&gt;)</code> grouped by the real labels, not <code>1, 2, ...</code>); <code>POSIXct</code>/<code>Date</code> columns are likewise preserved.</li>
+<ul><li><p><code>derive_headings(carry = )</code> now preserves the carried column’s class: a carried <strong>factor</strong> kept its labels instead of being coerced to integer level codes (so e.g. <code>circ_summary_headings(group_by = &lt;a carried factor&gt;)</code> grouped by the real labels, not <code>1, 2, ...</code>); <code>POSIXct</code>/<code>Date</code> columns are likewise preserved.</p></li>
+<li><p>The <code>"outside"</code>/<code>"split"</code> degree labels no longer collide with the circular boxplot: they sit a little further out (corner magnitude <code>0.85*sqrt(2)</code> -&gt; <code>0.9*sqrt(2)</code>) so the label text clears <code><a href="../reference/add_circular_boxplot.html">add_circular_boxplot()</a></code>’s band, whose default <code>width</code> is also narrowed (<code>0.06</code> -&gt; <code>0.05</code>) for a thinner ring.</p></li>
 </ul></div>
 <div class="section level3">
 <h3 id="track-metrics-0-4-1">Track metrics<a class="anchor" aria-label="anchor" href="#track-metrics-0-4-1"></a></h3>
