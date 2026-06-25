@@ -15,21 +15,24 @@
 # ---- utilities ---------------------------------------------------------------
 `%||%` <- function(a, b) if (!is.null(a)) a else b
 
-# carry helper: add columns from nearest time per id
+# carry helper: add columns from nearest time per id. Each carried column is
+# assigned as a whole vector (`data[[col]][j]`), so its class is preserved --
+# factors keep their labels, POSIXct/Date stay dates -- rather than being coerced
+# to storage codes by row-by-row `[i, col] <-` assignment into an NA-initialised
+# column.
 .carry_nearest <- function(res, data, idc, tc, cols) {
   if (is.null(cols) || !length(cols)) return(res)
   cols <- intersect(cols, names(data))
   if (!length(cols)) return(res)
-  out <- res
-  out[, cols] <- NA
   idx_by_id <- split(seq_len(nrow(data)), data[[idc]])
-  for (i in seq_len(nrow(res))) {
-    idv <- res$id[i]; tv <- res$time[i]
-    idx <- idx_by_id[[as.character(idv)]]
-    if (is.null(idx) || !length(idx)) next
-    j <- idx[which.min(abs(data[[tc]][idx] - tv))]
-    out[i, cols] <- data[j, cols, drop = FALSE]
-  }
+  # nearest source row for each result row (NA when the id is absent)
+  j <- vapply(seq_len(nrow(res)), function(i) {
+    idx <- idx_by_id[[as.character(res$id[i])]]
+    if (is.null(idx) || !length(idx)) return(NA_integer_)
+    idx[which.min(abs(data[[tc]][idx] - res$time[i]))]
+  }, integer(1))
+  out <- res
+  for (col in cols) out[[col]] <- data[[col]][j]   # class-preserving subset
   out
 }
 
