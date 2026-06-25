@@ -550,3 +550,33 @@ test_that("a plain data frame with a heading column still flows through the API"
   lyr <- add_heading_points(df)
   expect_true(inherits(lyr, "Layer"))
 })
+
+test_that("derive_headings(carry=) preserves the carried column's class/levels", {
+  d <- data.frame(
+    id   = rep(c("a", "b"), each = 3L),
+    t    = rep(1:3, 2L),
+    x    = c(0, 0.5, 0.9,  0, -0.5, -0.9),
+    y    = c(0, 0.1, 0.0,  0,  0.1,  0.0),
+    grp  = factor(rep(c("low", "high"), each = 3L), levels = c("low", "high")),
+    val  = rep(c(10, 20), each = 3L),
+    lab  = rep(c("x", "y"), each = 3L))
+  ts <- tracks(d, id = "id", time = "t", x = "x", y = "y",
+               angle_unit = "radians", normalize_xy = FALSE)
+  hd <- derive_headings(ts, rule = "distal", carry = c("grp", "val", "lab"))
+  # factor stays a factor with its original labels (not coerced to 1/2 codes)
+  expect_s3_class(hd$grp, "factor")
+  expect_identical(levels(hd$grp), c("low", "high"))
+  expect_identical(as.character(hd$grp[hd$id == "a"]), "low")
+  expect_identical(as.character(hd$grp[hd$id == "b"]), "high")
+  # other types preserved
+  expect_type(hd$val, "double");   expect_equal(hd$val[hd$id == "b"], 20)
+  expect_type(hd$lab, "character"); expect_identical(hd$lab[hd$id == "a"], "x")
+})
+
+test_that("derive_headings(carry=) keeps an ordered factor (cpunctatus arc)", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+  expect_s3_class(hd$arc, "factor")
+  expect_true(is.ordered(hd$arc))
+  expect_setequal(levels(hd$arc), c("0","5","10","15","20","30","40","50"))
+})
