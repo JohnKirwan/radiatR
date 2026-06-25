@@ -71,3 +71,30 @@ ui_code_section <- function(code_id, dl_id, desc) {
                           class = "btn-sm btn-outline-primary w-100")
   )
 }
+
+# The header brand cluster: the radiatR logo + title, linked to the package
+# website (logo-as-home), plus a small explicit Documentation link. `site_url`
+# is the pkgdown site. Pure UI; unit-tested standalone.
+ui_brand <- function(site_url) {
+  shiny::tags$span(
+    shiny::tags$a(
+      href = site_url, target = "_blank", rel = "noopener",
+      style = "text-decoration:none; color:inherit;",
+      shiny::tags$img(src = "logo.png", height = "30px", alt = "radiatR",
+                      class = "me-2"),
+      shiny::tags$b("radiatR — Circular Track Analysis")
+    ),
+    shiny::tags$a(
+      href = site_url, target = "_blank", rel = "noopener",
+      class = "ms-3 small text-muted",
+      "Documentation ↗"
+    )
+  )
+}
+
+# A larger centered radiatR logo for the Upload step's landing screen.
+# Decorative (not linked).
+ui_upload_logo <- function() {
+  shiny::tags$img(src = "logo.png", height = "120px",
+                  class = "d-block mx-auto mb-3", alt = "radiatR")
+}

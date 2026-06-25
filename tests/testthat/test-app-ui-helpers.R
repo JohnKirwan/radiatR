@@ -28,3 +28,20 @@ test_that("ui_code_section wires the code output and both buttons", {
   expect_true(grepl("Download .R", s, fixed = TRUE))
   expect_true(grepl("reproduces this profile", s, fixed = TRUE))
 })
+
+test_that("ui_brand links the logo+title and a Documentation link to the site", {
+  s <- as.character(ui_brand("https://example.org/x/"))
+  expect_true(grepl("https://example.org/x/", s, fixed = TRUE))
+  expect_true(grepl('target="_blank"', s, fixed = TRUE))
+  expect_true(grepl('rel="noopener"', s, fixed = TRUE))
+  expect_true(grepl("logo.png", s, fixed = TRUE))
+  expect_true(grepl("radiatR", s, fixed = TRUE))
+  expect_true(grepl("Documentation", s, fixed = TRUE))
+})
+
+test_that("ui_upload_logo is a centered logo image", {
+  s <- as.character(ui_upload_logo())
+  expect_true(grepl("logo.png", s, fixed = TRUE))
+  expect_true(grepl("mx-auto", s, fixed = TRUE))
+  expect_true(grepl('alt="radiatR"', s, fixed = TRUE))
+})
