@@ -118,6 +118,35 @@ aggregate(cbind(straightness, tortuosity, sinuosity) ~ arc,
           data = metrics, FUN = function(v) round(mean(v, na.rm = TRUE), 2))
 ```
 
+## Goal-directed paths and zone occupancy
+
+A second family of spatial metrics summarises *where* a track went relative to a
+**target direction** --- the water-maze idiom (probe-trial quadrant dwell, and
+crossings of a goal zone). On `cpunctatus` the natural target is the stimulus;
+in the landmark-**relative** frame the stimulus sits at angle `0`, so we pass
+`coords = "relative"` and `target_angle = 0`.
+
+`count_goal_entries()` counts how many times each track enters a small goal zone
+at the target (a `FALSE -> TRUE` crossing of `distance < crossing_radius`):
+
+```{r goal-entries}
+head(count_goal_entries(cpunctatus, target_angle = 0, coords = "relative"))
+```
+
+`zone_dwell()` gives the proportion of frames each track spends in every
+quadrant--ring zone (`Q1` is the target quadrant, the outer ring is the rim):
+
+```{r zone-dwell}
+dwell <- zone_dwell(cpunctatus, target_angle = 0, coords = "relative")
+head(dwell)
+# mean occupancy of the target quadrant (Q1) across tracks
+mean(tapply(dwell$proportion[dwell$quadrant == 1],
+            dwell$id[dwell$quadrant == 1], sum), na.rm = TRUE)
+```
+
+Tune the goal zone with `target_radius` / `crossing_radius` and the annuli with
+`ring_breaks` --- see `?count_goal_entries` and `?zone_dwell`.
+
 ## See also
 
 The Shiny companion app surfaces these per-track metrics interactively (a
