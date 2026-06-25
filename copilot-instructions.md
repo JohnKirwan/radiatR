@@ -118,8 +118,8 @@ run, navigate, and modify this repository safely and effectively.
   project-specific rationale and conventions.
 
 - .github/workflows/\* — CI workflows (R-CMD-check.yaml, pkgdown.yaml,
-  shinylive.yaml) contain useful automation details (notably shinylive
-  release/static app build on releases).
+  shinyapps.yaml) contain useful automation details (notably the
+  server-side shinyapps.io app deploy on releases / workflow_dispatch).
 
 ------------------------------------------------------------------------
 

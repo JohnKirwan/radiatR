@@ -1,28 +1,25 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Shiny App</title>
-    <script
-      src="./shinylive/load-shinylive-sw.js"
-      type="module"
-    ></script>
-    <script type="module">
-      import { runExportedApp } from "./shinylive/shinylive.js";
-      runExportedApp({
-        id: "root",
-        appEngine: "r",
-        relPath: "",
-      });
-    </script>
-    <link rel="stylesheet" href="./shinylive/style-resets.css" />
-    <link rel="stylesheet" href="./shinylive/shinylive.css" />
-    
-  </head>
-  <body>
-    
-    <div style="height: 100vh; width: 100vw" id="root"></div>
-    
-  </body>
+<head>
+  <meta charset="utf-8">
+  <title>radiatR app — redirecting…</title>
+  <!-- The radiatR Shiny app is hosted server-side on shinyapps.io. This page
+       replaces the retired in-browser shinylive build that used to live at
+       /app/, redirecting any old links/bookmarks to the live app. -->
+  <meta name="robots" content="noindex">
+  <link rel="canonical" href="https://johnkirwan.shinyapps.io/radiatR/">
+  <meta http-equiv="refresh" content="0; url=https://johnkirwan.shinyapps.io/radiatR/">
+  <script>
+    window.location.replace("https://johnkirwan.shinyapps.io/radiatR/");
+  </script>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           margin: 4rem auto; max-width: 32rem; padding: 0 1rem; line-height: 1.5; }
+    a { color: #2c3e50; }
+  </style>
+</head>
+<body>
+  <p>The radiatR app has moved. If you are not redirected automatically,
+     open <a href="https://johnkirwan.shinyapps.io/radiatR/">johnkirwan.shinyapps.io/radiatR</a>.</p>
+</body>
 </html>
