@@ -2475,6 +2475,12 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #' @param show_tracks Whether to draw the trajectory paths. Default `TRUE`.
 #'   Set to `FALSE` to render the unit circle and any overlays (arrow, circle, ticks)
 #'   without the track geometry.
+#' @param clip_tracks Logical; when `TRUE` (default) trajectory paths are clipped
+#'   to the unit circle, so out-of-arena (`rho > 1`) excursions are truncated at
+#'   the circumference (segment-intercept, leaving a gap until the track
+#'   re-enters) rather than drawn past it. Set `FALSE` to draw tracks unclipped.
+#'   Plot-only: kinematics are unaffected. Applies in the relative frame;
+#'   ignored when `coords = "absolute"`.
 #' @param show_arrow Whether to draw a mean resultant arrow from the centre.
 #' @param arrow_angle_col Column containing angles (radians) to summarise for the arrow.
 #' @param arrow_colour,arrow_color Arrow colour (a single fixed colour). Ignored
@@ -2598,6 +2604,7 @@ function(
   label_padding = 1.08,
   label_use_repel = TRUE,
   show_tracks = TRUE,
+  clip_tracks = TRUE,
   show_arrow = NULL,
   arrow_angle_col = NULL,
   arrow_colour = "black",
@@ -2745,8 +2752,11 @@ function(
   g <- .radial_chrome_background(g, style, origin = origin)
 
   if (show_tracks) {
+    track_data <- data
+    if (isTRUE(clip_tracks) && identical(coords, "relative"))
+      track_data <- .clip_path_to_circle(track_data, x_col, y_col, group_col, geom)
     g <- g + draw_tracks(
-      data = data, x_col = x_col, y_col = y_col,
+      data = track_data, x_col = x_col, y_col = y_col,
       geom = geom, mapping = layer_mapping, ...
     )
   }

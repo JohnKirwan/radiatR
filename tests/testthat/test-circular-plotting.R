@@ -2136,3 +2136,23 @@ test_that(".clip_path_to_circle with geom='point' drops out-of-arena rows", {
   expect_equal(nrow(out), 2L)
   expect_true(all(sqrt(out$x^2 + out$y^2) <= 1))
 })
+
+# ---- radiate() clip_tracks parameter -----------------------------------------
+
+test_that("radiate() clips tracks to the unit circle by default", {
+  data(cpunctatus, package = "radiatR")
+  p <- radiate(cpunctatus)                      # clip_tracks defaults TRUE
+  b <- ggplot2::ggplot_build(p)
+  trk <- b$data[[1]]                            # first layer = track GeomPath
+  rho <- sqrt(trk$x^2 + trk$y^2)
+  expect_true(all(rho <= 1 + 1e-6, na.rm = TRUE))
+})
+
+test_that("radiate(clip_tracks = FALSE) preserves out-of-arena overshoot", {
+  data(cpunctatus, package = "radiatR")
+  p <- radiate(cpunctatus, clip_tracks = FALSE)
+  b <- ggplot2::ggplot_build(p)
+  trk <- b$data[[1]]
+  rho <- sqrt(trk$x^2 + trk$y^2)
+  expect_true(any(rho > 1, na.rm = TRUE))       # the original bug, on demand
+})

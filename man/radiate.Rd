@@ -52,6 +52,7 @@ radiate(data, ...)
   label_padding = 1.08,
   label_use_repel = TRUE,
   show_tracks = TRUE,
+  clip_tracks = TRUE,
   show_arrow = NULL,
   arrow_angle_col = NULL,
   arrow_colour = "black",
@@ -242,6 +243,13 @@ has no effect there.}
 \item{show_tracks}{Whether to draw the trajectory paths. Default `TRUE`.
 Set to `FALSE` to render the unit circle and any overlays (arrow, circle, ticks)
 without the track geometry.}
+
+\item{clip_tracks}{Logical; when `TRUE` (default) trajectory paths are clipped
+to the unit circle, so out-of-arena (`rho > 1`) excursions are truncated at
+the circumference (segment-intercept, leaving a gap until the track
+re-enters) rather than drawn past it. Set `FALSE` to draw tracks unclipped.
+Plot-only: kinematics are unaffected. Applies in the relative frame;
+ignored when `coords = "absolute"`.}
 
 \item{show_arrow}{Whether to draw a mean resultant arrow from the centre.}
 
