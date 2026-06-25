@@ -69,7 +69,7 @@ test_that("the app walks example -> Results and honours the layer toggles", {
   ))
 
   # Hiding every layer (no heading markers either) still renders the empty
-  # arena (no crash).
+  # circle (no crash).
   app$set_inputs(show_tracks = FALSE, heading_display = "none",
                  show_arrow = FALSE, show_ci = FALSE)
   app$wait_for_idle(timeout = 30 * 1000)

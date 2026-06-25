@@ -67,5 +67,5 @@ construction coordinates each rule used to derive the heading, in the chosen
 vector). Other rules ignore it.
 The `distal` rule accepts `max_radius` (default `Inf`): the furthest-point
 search is restricted to positions with radius `<= max_radius`, so
-`max_radius = 1` ignores out-of-arena (`rho > 1`) tracking outliers.
+`max_radius = 1` ignores beyond-circumference (`rho > 1`) tracking outliers.
 }

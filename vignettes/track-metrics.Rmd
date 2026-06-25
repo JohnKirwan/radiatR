@@ -59,12 +59,12 @@ cpunctatus
 ## Path length
 
 `track_length()` is the total distance walked along each trajectory. With the
-default unit-arena coordinates it is in arena radii; attach a calibration with
+default unit-circle coordinates it is in unit-circle radii; attach a calibration with
 `set_distance_scale()` (or `calibrate_distance()`) and it is reported in physical
 units.
 
 ```{r length}
-head(track_length(cpunctatus))                         # arena radii
+head(track_length(cpunctatus))                         # unit-circle radii
 head(track_length(set_distance_scale(cpunctatus, 50, unit = "mm")))   # mm
 ```
 

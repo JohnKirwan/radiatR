@@ -216,7 +216,7 @@ setValidity("Tracks", function(object) {
 # the Tracks constructor when normalize_xy = TRUE. Preserves trajectory shape and
 # places the centre at the origin (what the radius-based heading rules
 # assume). Degenerate (zero-extent or all-NA) trajectories map to the origin.
-.normalize_to_unit_arena <- function(x, y, id) {
+.normalize_to_unit_circle <- function(x, y, id) {
   xo <- rep(NA_real_, length(x))
   yo <- rep(NA_real_, length(y))
   # Group by id; rows with a missing id are treated as one group (rather than
@@ -329,7 +329,7 @@ tracks <- function(df,
       d[[raw_y_name]] <- d[[y]]
       raw_cols$x <- raw_x_name
       raw_cols$y <- raw_y_name
-      norm <- .normalize_to_unit_arena(d[[x]], d[[y]], d[[id]])
+      norm <- .normalize_to_unit_circle(d[[x]], d[[y]], d[[id]])
       xy_x <- norm$x; xy_y <- norm$y
     } else {
       xy_x <- d[[x]]; xy_y <- d[[y]]

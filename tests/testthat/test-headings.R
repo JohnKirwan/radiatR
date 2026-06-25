@@ -51,7 +51,7 @@ test_that("crossing heading is the boundary projection, not the segment slope", 
   c1 <- c(hd$x_outer, hd$y_outer)
   p  <- c(cos(hd$heading), sin(hd$heading))
 
-  # the heading point is on the unit circle (the arena boundary)
+  # the heading point is on the unit circle (the circumference)
   expect_equal(sqrt(sum(p^2)), 1, tolerance = 1e-8)
   # p is collinear with the inner->outer line (cross product ~ 0)
   cross <- (c1[1] - c0[1]) * (p[2] - c0[2]) - (c1[2] - c0[2]) * (p[1] - c0[1])

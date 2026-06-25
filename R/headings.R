@@ -74,7 +74,7 @@
 #' vector). Other rules ignore it.
 #' The `distal` rule accepts `max_radius` (default `Inf`): the furthest-point
 #' search is restricted to positions with radius `<= max_radius`, so
-#' `max_radius = 1` ignores out-of-arena (`rho > 1`) tracking outliers.
+#' `max_radius = 1` ignores beyond-circumference (`rho > 1`) tracking outliers.
 #' @return data.frame with columns id, time (approx), heading (radians, unit-circle
 #'   convention), plus the rule-specific construction columns above when
 #'   `return_coords = TRUE`. For some rules there may be multiple headings per id.
