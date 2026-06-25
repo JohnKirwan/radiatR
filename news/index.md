@@ -69,6 +69,17 @@
 
 ### Bug fixes
 
+- Subsetting a `headings_frame` (`x[i, ]`, `x[, j]`) no longer requires
+  the optional **dplyr** package. `[.headings_frame` previously called
+  [`dplyr::dplyr_reconstruct()`](https://dplyr.tidyverse.org/reference/dplyr_extending.html)
+  to re-attach the display convention, which raised *“there is no
+  package called ‘dplyr’”* wherever dplyr is not installed (e.g. the
+  deployed Shiny app, whose host installs `Imports`/`Depends` but not
+  `Suggests`) — so any plot whose path subsets a `headings_frame`
+  failed. Class and attribute restoration now goes through a base-R
+  helper shared with the `dplyr_reconstruct` method, so subsetting works
+  with dplyr absent.
+
 - `derive_headings(carry = )` now preserves the carried column’s class:
   a carried **factor** kept its labels instead of being coerced to
   integer level codes (so
