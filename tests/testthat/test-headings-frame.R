@@ -423,3 +423,26 @@ test_that("headings_frame() constructor consolidates orientation to a single dis
   # data still normalised to unit-circle radians (clock 10deg -> (pi/2 - 10deg) wrapped)
   expect_equal(hf$theta[1], wrap_to_2pi(pi/2 - 10 * pi/180), tolerance = 1e-9)
 })
+
+test_that("subsetting a headings_frame preserves class/attrs without requiring dplyr", {
+  hf <- new_headings_frame(
+    data.frame(heading = c(0.1, 0.2, 0.3), grp = c("a", "a", "b")),
+    heading_col = "heading", colour_col = "grp", coords = "relative")
+
+  # row and column subsets stay headings_frames with metadata intact
+  r <- hf[1:2, ]
+  expect_s3_class(r, "headings_frame")
+  expect_identical(hf_heading_col(r), "heading")
+  expect_identical(hf_colour_col(r), "grp")
+  expect_identical(hf_coords(r), "relative")
+  expect_equal(nrow(r), 2L)
+
+  csub <- hf[, "heading"]
+  expect_s3_class(csub, "headings_frame")
+  expect_identical(hf_coords(csub), "relative")
+
+  # `[` must not hard-depend on dplyr (a Suggest): a plain install without dplyr
+  # must still be able to subset. Guard the regression by checking the method
+  # body calls no dplyr:: -- routing base subsetting through dplyr broke shinyapps.
+  expect_false(any(grepl("dplyr", deparse(body(`[.headings_frame`)), fixed = TRUE)))
+})
