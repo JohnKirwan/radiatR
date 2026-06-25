@@ -318,8 +318,14 @@ statistics — with no R coding required. There are three ways to reach it:
 radiatR::launch_app()
 ```
 
-**2. Hosted on the web** — the bundled app deploys to a Shiny host without
-modification, giving a clickable link for collaborators who do not use R:
+**2. Hosted on shinyapps.io** (recommended for collaborators) — a real Shiny
+server runs R server-side, so the page loads like any normal web app. The
+GitHub Actions workflow in `.github/workflows/shinyapps.yaml` deploys
+`inst/app` on each **published GitHub Release** (and on demand via
+*workflow_dispatch*). It needs three repository secrets from your
+shinyapps.io account — `SHINYAPPS_NAME` (the account name in the URL),
+`SHINYAPPS_TOKEN`, and `SHINYAPPS_SECRET` (Account → Tokens). To deploy by
+hand instead:
 
 ```r
 rsconnect::deployApp(system.file("app", package = "radiatR"))
@@ -332,7 +338,9 @@ machine (which suits sensitive data). The GitHub Actions workflow in
 the documentation, at <https://johnkirwan.github.io/radiatR/app/>. The build
 runs on each **published GitHub Release**: it compiles radiatR into a webR
 WebAssembly image (attached to the release), then exports and deploys the
-app. Publish or re-publish a release to refresh the hosted app.
+app. Because it ships and runs the whole R runtime in the browser, first load
+is heavy and it needs cross-origin isolation — prefer option 2 for a
+responsive shared link, and keep this as the no-server fallback.
 
 ## Optional Dependencies
 
