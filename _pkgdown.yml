@@ -25,8 +25,14 @@ home:
 
 navbar:
   structure:
-    left: [intro, reference, articles, news]
+    left: [intro, reference, articles, news, app]
   components:
+    app:
+      text: App
+      # Full URL (not a relative href) so it resolves from every page depth --
+      # the shinylive build is published to gh-pages /app by shinylive.yaml.
+      href: https://johnkirwan.github.io/radiatR/app/
+      aria-label: Launch the radiatR Shiny app
     articles:
       text: Vignettes
       menu:
