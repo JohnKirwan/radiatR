@@ -34,7 +34,7 @@ run, navigate, and modify this repository safely and effectively.
 ## High-level architecture (big picture)
 
 - Core data structure: Tracks (S4) — defined in R/Tracks.R. Tracks wrap
-  a list of per-trial tibbles plus arena geometry and a transform
+  a list of per-trial tibbles plus unit-circle geometry and a transform
   history. Most package functions accept or return a Tracks.
 
 - Pipeline stages (each stage is implemented primarily in the listed R
@@ -44,7 +44,7 @@ run, navigate, and modify this repository safely and effectively.
       dialect-based loader registry allows adding new formats without
       editing core code.
   2.  Coordinate transformation: R/circular_trials.R and
-      R/circular_mapping.R convert Cartesian coordinates to unit-arena
+      R/circular_mapping.R convert Cartesian coordinates to unit-circle
       coordinates and angles.
   3.  Heading computation: R/headings.R derives per-trial headings via a
       registry of rules (e.g., `distal`, `crossing`, `velocity_mean`,
@@ -84,8 +84,8 @@ run, navigate, and modify this repository safely and effectively.
   (named lists stored in package environment). Use register_loader\_\*
   and register_heading_rule() for extensions.
 
-- Normalised coordinates: radiatR normalises trajectories to a unit
-  arena internally. Do not expect pixel units — upstream
+- Normalised coordinates: radiatR normalises trajectories to the unit
+  circle internally. Do not expect pixel units — upstream
   calibration/lens correction should be done before import.
 
 - headings_frame: a tibble subclass that carries display conventions

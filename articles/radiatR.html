@@ -350,11 +350,11 @@ for cardinals only, <code>0</code> for a bare circle — and
 <p>By default <code><a href="../reference/radiate.html">radiate()</a></code> plots the
 landmark-<strong>relative</strong> frame: each trajectory is rotated so
 its trial landmark (e.g. the stimulus) sits at the same direction. Pass
-<code>coords = "absolute"</code> to plot the arena-native frame instead
-— useful as an experimental control, for instance to check the apparatus
-carries no directional bias of its own. (<code><a href="../reference/set_reference.html">set_reference()</a></code>
-sets the per-trajectory landmark direction that defines the relative
-frame.)</p>
+<code>coords = "absolute"</code> to plot the absolute (native) frame
+instead — useful as an experimental control, for instance to check the
+apparatus carries no directional bias of its own.
+(<code><a href="../reference/set_reference.html">set_reference()</a></code> sets the per-trajectory landmark direction
+that defines the relative frame.)</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, coords <span class="op">=</span> <span class="st">"absolute"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/plot-absolute-frame-1.png" class="r-plt" alt="" width="700"></p>

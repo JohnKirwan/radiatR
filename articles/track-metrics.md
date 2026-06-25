@@ -67,7 +67,8 @@ cpunctatus
 
 [`track_length()`](https://johnkirwan.github.io/radiatR/reference/track_length.md)
 is the total distance walked along each trajectory. With the default
-unit-arena coordinates it is in arena radii; attach a calibration with
+unit-circle coordinates it is in unit-circle radii; attach a calibration
+with
 [`set_distance_scale()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
 (or
 [`calibrate_distance()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md))
@@ -75,7 +76,7 @@ and it is reported in physical units.
 
 ``` r
 
-head(track_length(cpunctatus))                         # arena radii
+head(track_length(cpunctatus))                         # unit-circle radii
 #>         trial_id    length
 #> 10_1_1    10_1_1 1.3645581
 #> 10_10_1  10_10_1 8.7387738

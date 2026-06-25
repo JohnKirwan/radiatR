@@ -315,9 +315,9 @@ By default
 [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
 plots the landmark-**relative** frame: each trajectory is rotated so its
 trial landmark (e.g. the stimulus) sits at the same direction. Pass
-`coords = "absolute"` to plot the arena-native frame instead — useful as
-an experimental control, for instance to check the apparatus carries no
-directional bias of its own.
+`coords = "absolute"` to plot the absolute (native) frame instead —
+useful as an experimental control, for instance to check the apparatus
+carries no directional bias of its own.
 ([`set_reference()`](https://johnkirwan.github.io/radiatR/reference/set_reference.md)
 sets the per-trajectory landmark direction that defines the relative
 frame.)

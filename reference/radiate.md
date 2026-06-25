@@ -326,10 +326,10 @@ radiate(
 - clip_tracks:
 
   Logical; when \`TRUE\` (default) trajectory paths are clipped to the
-  unit circle, so out-of-arena (\`rho \> 1\`) excursions are truncated
-  at the circumference (segment-intercept, leaving a gap until the track
-  re-enters) rather than drawn past it. Set \`FALSE\` to draw tracks
-  unclipped. Plot-only: kinematics are unaffected. Applies in the
+  unit circle, so beyond-circumference (\`rho \> 1\`) excursions are
+  truncated at the circumference (segment-intercept, leaving a gap until
+  the track re-enters) rather than drawn past it. Set \`FALSE\` to draw
+  tracks unclipped. Plot-only: kinematics are unaffected. Applies in the
   relative frame; ignored when \`coords = "absolute"\`.
 
 - show_arrow:

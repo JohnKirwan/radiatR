@@ -75,11 +75,11 @@
 </ul><hr></div>
 <div class="section level2">
 <h2 id="high-level-architecture-big-picture">High-level architecture (big picture)<a class="anchor" aria-label="anchor" href="#high-level-architecture-big-picture"></a></h2>
-<ul><li><p>Core data structure: Tracks (S4) — defined in R/Tracks.R. Tracks wrap a list of per-trial tibbles plus arena geometry and a transform history. Most package functions accept or return a Tracks.</p></li>
+<ul><li><p>Core data structure: Tracks (S4) — defined in R/Tracks.R. Tracks wrap a list of per-trial tibbles plus unit-circle geometry and a transform history. Most package functions accept or return a Tracks.</p></li>
 <li>
 <p>Pipeline stages (each stage is implemented primarily in the listed R files):</p>
 <ol style="list-style-type: decimal"><li>Import / loaders: R/loaders.R and read_tracks_* functions. A dialect-based loader registry allows adding new formats without editing core code.</li>
-<li>Coordinate transformation: R/circular_trials.R and R/circular_mapping.R convert Cartesian coordinates to unit-arena coordinates and angles.</li>
+<li>Coordinate transformation: R/circular_trials.R and R/circular_mapping.R convert Cartesian coordinates to unit-circle coordinates and angles.</li>
 <li>Heading computation: R/headings.R derives per-trial headings via a registry of rules (e.g., <code>distal</code>, <code>crossing</code>, <code>velocity_mean</code>, <code>pca_axis</code>, <code>bodypart_axis</code>, etc.). New rules register with register_heading_rule().</li>
 <li>Statistics: R/circular_statistics.R wraps the circular package and exposes circ_summary / circ_summarise helpers and testing utilities (Rayleigh, Hermans–Rasson, model selection).</li>
 <li>Visualization: R/circular_plotting.R implements radiate() and composable helpers (add_ticks, add_circ, add_heading_points, add_vonmises_density).</li>
@@ -93,7 +93,7 @@
 <li><p>Roxygen / documentation: Edit @ tags in R/ source and run devtools::document(); man/ is generated and should not be edited by hand.</p></li>
 <li><p>Collate order: DESCRIPTION::Collate lists R source order and matters for package build — do not reorder files accidentally.</p></li>
 <li><p>Registries: loader formats and heading rules use registry patterns (named lists stored in package environment). Use register_loader_* and register_heading_rule() for extensions.</p></li>
-<li><p>Normalised coordinates: radiatR normalises trajectories to a unit arena internally. Do not expect pixel units — upstream calibration/lens correction should be done before import.</p></li>
+<li><p>Normalised coordinates: radiatR normalises trajectories to the unit circle internally. Do not expect pixel units — upstream calibration/lens correction should be done before import.</p></li>
 <li><p>headings_frame: a tibble subclass that carries display conventions through dplyr verbs. When creating or transforming headings data, prefer hf_* accessors to preserve metadata.</p></li>
 <li><p>Tests: tests/testthat contains one file per module. Sample datasets used by tests are in data/ (cpunctatus*.rda). testthat edition 3 is used (see DESCRIPTION).</p></li>
 <li><p>Shiny testing: prefer shiny::testServer for app logic tests (fast, no browser). shinytest2 is used only where DOM/browser behavior is necessary; setup-shinytest2.R configures sandbox flags. CI runs shinytest2 on Ubuntu because chromote + Chrome are available.</p></li>

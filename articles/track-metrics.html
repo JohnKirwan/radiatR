@@ -131,12 +131,12 @@ vignette — see the kinematics section of
 <h2 id="path-length">Path length<a class="anchor" aria-label="anchor" href="#path-length"></a>
 </h2>
 <p><code><a href="../reference/track_length.html">track_length()</a></code> is the total distance walked along each
-trajectory. With the default unit-arena coordinates it is in arena
-radii; attach a calibration with <code><a href="../reference/distance_scale.html">set_distance_scale()</a></code> (or
-<code><a href="../reference/distance_scale.html">calibrate_distance()</a></code>) and it is reported in physical
-units.</p>
+trajectory. With the default unit-circle coordinates it is in
+unit-circle radii; attach a calibration with
+<code><a href="../reference/distance_scale.html">set_distance_scale()</a></code> (or <code><a href="../reference/distance_scale.html">calibrate_distance()</a></code>)
+and it is reported in physical units.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/track_length.html">track_length</a></span><span class="op">(</span><span class="va">cpunctatus</span><span class="op">)</span><span class="op">)</span>                         <span class="co"># arena radii</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/track_length.html">track_length</a></span><span class="op">(</span><span class="va">cpunctatus</span><span class="op">)</span><span class="op">)</span>                         <span class="co"># unit-circle radii</span></span>
 <span><span class="co">#&gt;         trial_id    length</span></span>
 <span><span class="co">#&gt; 10_1_1    10_1_1 1.3645581</span></span>
 <span><span class="co">#&gt; 10_10_1  10_10_1 8.7387738</span></span>

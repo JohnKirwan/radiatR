@@ -6,8 +6,8 @@ with code in this repository.
 ## What this is
 
 `radiatR` is an R package for plotting and analyzing animal movement
-trajectories in circular/radial arenas. It handles the full pipeline:
-data import → coordinate transformation → circular statistics →
+trajectories in circular space. It handles the full pipeline: data
+import → coordinate transformation → circular statistics →
 visualization.
 
 ## Development commands
@@ -41,9 +41,9 @@ devtools::install_local(".")
 ### Core data structure: `Tracks` (S4 class)
 
 `R/Tracks.R` defines the central container. A `Tracks` holds a list of
-trajectory tibbles plus metadata (arena geometry, transform history).
-Almost every downstream function either accepts or returns a `Tracks`.
-Understand this class before touching any other module.
+trajectory tibbles plus metadata (unit-circle geometry, transform
+history). Almost every downstream function either accepts or returns a
+`Tracks`. Understand this class before touching any other module.
 
 ### Pipeline stages
 
@@ -56,8 +56,8 @@ Understand this class before touching any other module.
 2.  **Coordinate transformation** (`R/circular_trials.R`,
     `R/circular_mapping.R`) — converts Cartesian pixel coordinates to
     unit-circle angles. `circular_trials.R` extracts per-trial segments
-    and normalises them to a unit arena; `circular_mapping.R` handles
-    pixel→angle arithmetic. (radiatR analyses normalised, unit-arena
+    and normalises them to the unit circle; `circular_mapping.R` handles
+    pixel→angle arithmetic. (radiatR analyses normalised, unit-circle
     tracks; correcting lens distortion or scaling to metric units is
     left to the upstream tracking pipeline.)
 

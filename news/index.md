@@ -71,9 +71,9 @@
 
 - [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   now clips trajectory paths to the unit circle by default
-  (`clip_tracks = TRUE`): out-of-arena (`rho > 1`) excursions are
-  truncated at the circumference (segment-intercept, leaving a gap until
-  the track re-enters) instead of being drawn past it. Set
+  (`clip_tracks = TRUE`): beyond-circumference (`rho > 1`) excursions
+  are truncated at the circumference (segment-intercept, leaving a gap
+  until the track re-enters) instead of being drawn past it. Set
   `clip_tracks = FALSE` to draw tracks unclipped. This is a plot-only
   change — kinematics
   ([`track_speed()`](https://johnkirwan.github.io/radiatR/reference/track_speed.md),
@@ -81,8 +81,8 @@
   path metrics) compute from the unchanged `Tracks` and are unaffected.
   Relatedly, the `distal` heading rule gains a `max_radius` argument
   (default `Inf`); `derive_headings(rule = "distal", max_radius = 1)`
-  ignores out-of-arena tracking outliers when picking the furthest
-  point.
+  ignores beyond-circumference tracking outliers when picking the
+  furthest point.
 
 - Subsetting a `headings_frame` (`x[i, ]`, `x[, j]`) no longer requires
   the optional **dplyr** package. `[.headings_frame` previously called
@@ -148,14 +148,14 @@
   and
   [`step_speed()`](https://johnkirwan.github.io/radiatR/reference/step_speed.md)
   report trajectory speed in real units (distance per second), using the
-  track’s frame rate / timestamps. With the default unit-arena
-  coordinates that is arena-units (radii) per second.
+  track’s frame rate / timestamps. With the default unit-circle
+  coordinates that is unit-circle units (radii) per second.
 
 - [`instantaneous_speed()`](https://johnkirwan.github.io/radiatR/reference/instantaneous_speed.md)
   gives per-observation speed (the per-row sibling of
   [`elapsed_seconds()`](https://johnkirwan.github.io/radiatR/reference/elapsed_seconds.md)),
   and `radiate(track_colour = "speed")` colours each path by it.
-  Arena-units per second with the default coordinates.
+  Unit-circle units per second with the default coordinates.
 
 - [`velocity_vector()`](https://johnkirwan.github.io/radiatR/reference/velocity_vector.md)
   gives per-observation velocity components (`vx`, `vy`;
@@ -190,7 +190,7 @@
   [`track_speed()`](https://johnkirwan.github.io/radiatR/reference/track_speed.md),
   [`instantaneous_speed()`](https://johnkirwan.github.io/radiatR/reference/instantaneous_speed.md)
   and `radiate(track_colour = "speed")` report real units (e.g. mm,
-  mm/s). Unset, everything stays in arena/coordinate units.
+  mm/s). Unset, everything stays in unit-circle / coordinate units.
 
 ### Visualisation
 
@@ -219,7 +219,7 @@
   others still draw.
 
 - [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
-  gains `coords = "absolute"` to plot the arena-native (un-rotated)
+  gains `coords = "absolute"` to plot the absolute, native (un-rotated)
   frame instead of the landmark-relative one, useful as an experimental
   control; the Shiny app exposes it via a “Heading frame” toggle. The
   relative (landmark) frame remains the default.
@@ -596,12 +596,12 @@
   [`add_stacked_headings()`](https://johnkirwan.github.io/radiatR/reference/add_stacked_headings.md)
   overlay.
 
-- Repositioned the package documentation from “animal movement in
-  circular arenas” toward the general case – analysis and visualisation
-  of headings and trajectories in circular space – reflecting that
-  angles can be supplied directly (not only reconstructed from tracking
-  data). Animal-movement tracking remains a primary supported
-  application. No code or API changes.
+- Repositioned the package documentation from animal-movement-specific
+  framing toward the general case – analysis and visualisation of
+  headings and trajectories in circular space – reflecting that angles
+  can be supplied directly (not only reconstructed from tracking data).
+  Animal-movement tracking remains a primary supported application. No
+  code or API changes.
 
 ### Statistics and headings
 
@@ -733,42 +733,42 @@
 ### Coordinate handling
 
 - **Fix:** `normalize_xy = TRUE` (the `TrajSet()` and `TrajSet_read()`
-  default) now arena-scales each trajectory instead of collapsing every
-  point onto the unit circle. Previously it replaced each point with its
-  unit vector (radius → 1), destroying trajectory shape: radius- and
-  displacement-based heading rules (`net`, `distal`, `crossing`, `exit`,
-  `origin_mean`, `straight`, …) returned wrong or `NA` headings, and
-  uploaded data in the Shiny app was affected. Each trajectory is now
-  centred on its bounding-box midpoint and scaled so its furthest point
-  sits at radius 1, preserving shape and placing the arena centre at the
-  origin (what the radius-based rules expect). Raw coordinates are still
-  kept in `<x>_raw`/`<y>_raw`, and `rho` now holds the relative radius
-  rather than a constant 1. Landmark-based mapping, when available,
-  remains the accurate path; this only improves the no-landmark
-  fallback. Stored `x`/`y`/`rho` values change for
+  default) now unit-circle-scales each trajectory instead of collapsing
+  every point onto the unit circle. Previously it replaced each point
+  with its unit vector (radius → 1), destroying trajectory shape:
+  radius- and displacement-based heading rules (`net`, `distal`,
+  `crossing`, `exit`, `origin_mean`, `straight`, …) returned wrong or
+  `NA` headings, and uploaded data in the Shiny app was affected. Each
+  trajectory is now centred on its bounding-box midpoint and scaled so
+  its furthest point sits at radius 1, preserving shape and placing the
+  circle centre at the origin (what the radius-based rules expect). Raw
+  coordinates are still kept in `<x>_raw`/`<y>_raw`, and `rho` now holds
+  the relative radius rather than a constant 1. Landmark-based mapping,
+  when available, remains the accurate path; this only improves the
+  no-landmark fallback. Stored `x`/`y`/`rho` values change for
   `normalize_xy = TRUE`; pass `normalize_xy = FALSE` to keep raw
   coordinates.
 - Landmark-mapped tracks are never rescaled (they are built
   `normalize_xy = FALSE`), preserving legitimate excursions past the
-  arena boundary. Track points that fall outside the boundary (radius
-  \> 1) are now reported once per dataset – “N points across M trials
-  exceeded the arena boundary (radius \> 1)” – instead of a separate
-  warning per trial.
+  circumference. Track points that fall outside the circumference
+  (radius \> 1) are now reported once per dataset – “N points across M
+  trials exceeded the circumference (radius \> 1)” – instead of a
+  separate warning per trial.
 
 ### Camera calibration
 
 - **Breaking:** removed the camera-calibration layer entirely
   (`read_calibration()`, `cal_model()`, `cam_cal_pt()`,
   `cam_cal_many()`, `calibrate_positions()`, and the `CalModel` class),
-  along with its vignette. radiatR normalises each trajectory to a unit
-  arena, so its outputs (headings, mean direction, resultant length,
-  circular statistics) are scale-invariant and never needed metric
-  calibration; lens-distortion correction and scaling to real-world
-  units are better handled in the upstream tracking pipeline (the
-  tracker’s own calibration, or OpenCV `undistort`) before import. This
-  completes the narrowing begun in 0.2.0, which removed the calibration
-  *estimator*. The `R.matlab`, `yaml`, and `jsonlite` suggested
-  dependencies remain — they are still used by the loaders.
+  along with its vignette. radiatR normalises each trajectory to the
+  unit circle, so its outputs (headings, mean direction, resultant
+  length, circular statistics) are scale-invariant and never needed
+  metric calibration; lens-distortion correction and scaling to
+  real-world units are better handled in the upstream tracking pipeline
+  (the tracker’s own calibration, or OpenCV `undistort`) before import.
+  This completes the narrowing begun in 0.2.0, which removed the
+  calibration *estimator*. The `R.matlab`, `yaml`, and `jsonlite`
+  suggested dependencies remain — they are still used by the loaders.
 
 ### Shiny app
 
@@ -792,7 +792,7 @@
 ## radiatR 0.2.0
 
 A large feature release that broadens *radiatR* from a focused plotting
-toolkit into an end-to-end pipeline for circular-arena tracking: many
+toolkit into an end-to-end pipeline for circular-space tracking: many
 more data sources, a full circular-statistics layer, richer distribution
 overlays, and a no-code graphical interface.
 
@@ -967,7 +967,7 @@ overlays, and a no-code graphical interface.
   [`degree_labs()`](https://johnkirwan.github.io/radiatR/reference/degree_labs.md)
   gain a `colour` argument.
 - [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
-  gains a `show_tracks` argument (default `TRUE`) to draw the arena and
+  gains a `show_tracks` argument (default `TRUE`) to draw the circle and
   overlays without the trajectory paths, symmetric with `show_arrow` and
   `show_labels`.
 
@@ -1108,7 +1108,7 @@ overlays, and a no-code graphical interface.
   (e.g. a clock-oriented plot) instead of being drawn ~90 degrees off.
   Behaviour on the default plot is unchanged.
 - The `crossing` heading rule now computes the heading as the bearing of
-  the inner→outer ring-crossing vector projected onto the arena boundary
+  the inner→outer ring-crossing vector projected onto the circumference
   (the unit circle) — the method described in the vignette and used in
   the original analysis — rather than the slope of the crossing segment.
   The two agree for radial tracks but differ for oblique ones, so

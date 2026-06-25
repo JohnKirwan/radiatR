@@ -76,7 +76,7 @@ column mappings and metadata.
 
 ## Simulation
 
-Generate synthetic circular-arena trajectories for teaching, pipeline
+Generate synthetic circular-space trajectories for teaching, pipeline
 testing, and power analysis.
 
 - [`simulate_tracks()`](https://johnkirwan.github.io/radiatR/reference/simulate_tracks.md)
@@ -288,7 +288,7 @@ darkorange, KDE tomato.
 - [`compute_circular_density()`](https://johnkirwan.github.io/radiatR/reference/compute_circular_density.md)
   : Compute a circular density data frame from heading observations
 
-## Visualisation – arena guides
+## Visualisation – zone & quadrant guides
 
 Zone dwell-time, quadrant lines, and goal-entry counting.
 
