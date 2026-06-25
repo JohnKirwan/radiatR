@@ -89,6 +89,19 @@ head(hd[, c("trial_id", "arc", "heading")])
 The `heading` column is in radians, reference-relative (0 = toward the
 target). Everything below operates on that column.
 
+If you only need a summary and not the heading frame itself,
+[`circ_summary_headings()`](https://johnkirwan.github.io/radiatR/reference/circ_summary_headings.md)
+derives headings from the tracks with a chosen rule and returns the
+circular summary in one call. `group_by = NULL` pools all trials;
+`group_by = "id"` (the default) gives one row per trial:
+
+``` r
+
+circ_summary_headings(cpunctatus, rule = "distal", group_by = NULL)
+#>   mean_dir resultant_R      kappa   n group
+#> 1 1.814938  0.04215183 0.08437866 235   all
+```
+
 ## Dispersion summaries
 
 [`circ_dispersion()`](https://johnkirwan.github.io/radiatR/reference/circ_dispersion.md)
@@ -360,6 +373,27 @@ von Mises fit, **darkorange** the wrapped Cauchy, and **tomato** a
 circular kernel density estimate. Where the parametric curves track the
 rose closely the fit is good; a systematic gap (especially in the tails)
 is the cue to prefer the heavier-tailed wrapped Cauchy.
+
+To show the **individual** headings rather than a smoothed distribution,
+[`add_stacked_headings()`](https://johnkirwan.github.io/radiatR/reference/add_stacked_headings.md)
+fans coincident headings into radial columns of dots, reducing the
+overplotting of points stacked at the same angle. It needs a
+`headings_frame` (the object
+[`derive_headings()`](https://johnkirwan.github.io/radiatR/reference/derive_headings.md)
+returns), so we use a fresh one here — `hd` above was demoted to a plain
+data frame by the [`merge()`](https://rdrr.io/r/base/merge.html)/subset:
+
+``` r
+
+hd_frame <- derive_headings(cpunctatus, rule = "distal")
+radiate(hd_frame, show_markers = FALSE) + add_stacked_headings(hd_frame)
+```
+
+![](circular-statistics_files/figure-html/stacked-1.png)
+
+`step` sets the gap between dots and `start_sep` the inward offset of
+the first dot from the rim; pass `axial = TRUE` to draw each datum at
+both poles.
 
 ## Per-group overlays
 

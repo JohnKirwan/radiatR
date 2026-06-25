@@ -172,6 +172,58 @@ aggregate(cbind(straightness, tortuosity, sinuosity) ~ arc,
 #> 8  50         0.68       1.64      2.02
 ```
 
+## Goal-directed paths and zone occupancy
+
+A second family of spatial metrics summarises *where* a track went
+relative to a **target direction** — the water-maze idiom (probe-trial
+quadrant dwell, and crossings of a goal zone). On `cpunctatus` the
+natural target is the stimulus; in the landmark-**relative** frame the
+stimulus sits at angle `0`, so we pass `coords = "relative"` and
+`target_angle = 0`.
+
+[`count_goal_entries()`](https://johnkirwan.github.io/radiatR/reference/count_goal_entries.md)
+counts how many times each track enters a small goal zone at the target
+(a `FALSE -> TRUE` crossing of `distance < crossing_radius`):
+
+``` r
+
+head(count_goal_entries(cpunctatus, target_angle = 0, coords = "relative"))
+#>              id n_entries
+#> 10_1_1   10_1_1         0
+#> 10_10_1 10_10_1         0
+#> 10_11_1 10_11_1         1
+#> 10_12_1 10_12_1         0
+#> 10_13_1 10_13_1         1
+#> 10_14_1 10_14_1         0
+```
+
+[`zone_dwell()`](https://johnkirwan.github.io/radiatR/reference/zone_dwell.md)
+gives the proportion of frames each track spends in every quadrant–ring
+zone (`Q1` is the target quadrant, the outer ring is the rim):
+
+``` r
+
+dwell <- zone_dwell(cpunctatus, target_angle = 0, coords = "relative")
+head(dwell)
+#>                id quadrant ring  zone n_frames proportion
+#> 10_1_1.1   10_1_1        1    1 Q1.R1       30 0.37037037
+#> 10_1_1.2   10_1_1        2    1 Q2.R1        2 0.02469136
+#> 10_1_1.3   10_1_1        4    1 Q4.R1       11 0.13580247
+#> 10_1_1.4   10_1_1        1    2 Q1.R2       26 0.32098765
+#> 10_1_1.5   10_1_1        1    3 Q1.R3       12 0.14814815
+#> 10_10_1.1 10_10_1        1    1 Q1.R1       43 0.14381271
+# mean occupancy of the target quadrant (Q1) across tracks
+mean(tapply(dwell$proportion[dwell$quadrant == 1],
+            dwell$id[dwell$quadrant == 1], sum), na.rm = TRUE)
+#> [1] 0.5809896
+```
+
+Tune the goal zone with `target_radius` / `crossing_radius` and the
+annuli with `ring_breaks` — see
+[`?count_goal_entries`](https://johnkirwan.github.io/radiatR/reference/count_goal_entries.md)
+and
+[`?zone_dwell`](https://johnkirwan.github.io/radiatR/reference/zone_dwell.md).
+
 ## See also
 
 The Shiny companion app surfaces these per-track metrics interactively

@@ -509,6 +509,20 @@
   Shiny app
   ([`launch_app()`](https://johnkirwan.github.io/radiatR/reference/launch_app.md)).
 
+- The vignettes now cover the previously-undocumented heading/spatial
+  extras:
+  [`vignette("track-metrics")`](https://johnkirwan.github.io/radiatR/articles/track-metrics.md)
+  gains a goal-directed / zone-occupancy section
+  ([`count_goal_entries()`](https://johnkirwan.github.io/radiatR/reference/count_goal_entries.md),
+  [`zone_dwell()`](https://johnkirwan.github.io/radiatR/reference/zone_dwell.md)),
+  and
+  [`vignette("circular-statistics")`](https://johnkirwan.github.io/radiatR/articles/circular-statistics.md)
+  shows the one-call
+  [`circ_summary_headings()`](https://johnkirwan.github.io/radiatR/reference/circ_summary_headings.md)
+  and the
+  [`add_stacked_headings()`](https://johnkirwan.github.io/radiatR/reference/add_stacked_headings.md)
+  overlay.
+
 - Repositioned the package documentation from “animal movement in
   circular arenas” toward the general case – analysis and visualisation
   of headings and trajectories in circular space – reflecting that

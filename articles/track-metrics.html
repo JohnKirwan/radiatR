@@ -226,6 +226,50 @@ featureless control):</p>
 <span><span class="co">#&gt; 8  50         0.68       1.64      2.02</span></span></code></pre></div>
 </div>
 <div class="section level2">
+<h2 id="goal-directed-paths-and-zone-occupancy">Goal-directed paths and zone occupancy<a class="anchor" aria-label="anchor" href="#goal-directed-paths-and-zone-occupancy"></a>
+</h2>
+<p>A second family of spatial metrics summarises <em>where</em> a track
+went relative to a <strong>target direction</strong> — the water-maze
+idiom (probe-trial quadrant dwell, and crossings of a goal zone). On
+<code>cpunctatus</code> the natural target is the stimulus; in the
+landmark-<strong>relative</strong> frame the stimulus sits at angle
+<code>0</code>, so we pass <code>coords = "relative"</code> and
+<code>target_angle = 0</code>.</p>
+<p><code><a href="../reference/count_goal_entries.html">count_goal_entries()</a></code> counts how many times each track
+enters a small goal zone at the target (a <code>FALSE -&gt; TRUE</code>
+crossing of <code>distance &lt; crossing_radius</code>):</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/count_goal_entries.html">count_goal_entries</a></span><span class="op">(</span><span class="va">cpunctatus</span>, target_angle <span class="op">=</span> <span class="fl">0</span>, coords <span class="op">=</span> <span class="st">"relative"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;              id n_entries</span></span>
+<span><span class="co">#&gt; 10_1_1   10_1_1         0</span></span>
+<span><span class="co">#&gt; 10_10_1 10_10_1         0</span></span>
+<span><span class="co">#&gt; 10_11_1 10_11_1         1</span></span>
+<span><span class="co">#&gt; 10_12_1 10_12_1         0</span></span>
+<span><span class="co">#&gt; 10_13_1 10_13_1         1</span></span>
+<span><span class="co">#&gt; 10_14_1 10_14_1         0</span></span></code></pre></div>
+<p><code><a href="../reference/zone_dwell.html">zone_dwell()</a></code> gives the proportion of frames each track
+spends in every quadrant–ring zone (<code>Q1</code> is the target
+quadrant, the outer ring is the rim):</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dwell</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/zone_dwell.html">zone_dwell</a></span><span class="op">(</span><span class="va">cpunctatus</span>, target_angle <span class="op">=</span> <span class="fl">0</span>, coords <span class="op">=</span> <span class="st">"relative"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">dwell</span><span class="op">)</span></span>
+<span><span class="co">#&gt;                id quadrant ring  zone n_frames proportion</span></span>
+<span><span class="co">#&gt; 10_1_1.1   10_1_1        1    1 Q1.R1       30 0.37037037</span></span>
+<span><span class="co">#&gt; 10_1_1.2   10_1_1        2    1 Q2.R1        2 0.02469136</span></span>
+<span><span class="co">#&gt; 10_1_1.3   10_1_1        4    1 Q4.R1       11 0.13580247</span></span>
+<span><span class="co">#&gt; 10_1_1.4   10_1_1        1    2 Q1.R2       26 0.32098765</span></span>
+<span><span class="co">#&gt; 10_1_1.5   10_1_1        1    3 Q1.R3       12 0.14814815</span></span>
+<span><span class="co">#&gt; 10_10_1.1 10_10_1        1    1 Q1.R1       43 0.14381271</span></span>
+<span><span class="co"># mean occupancy of the target quadrant (Q1) across tracks</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tapply.html" class="external-link">tapply</a></span><span class="op">(</span><span class="va">dwell</span><span class="op">$</span><span class="va">proportion</span><span class="op">[</span><span class="va">dwell</span><span class="op">$</span><span class="va">quadrant</span> <span class="op">==</span> <span class="fl">1</span><span class="op">]</span>,</span>
+<span>            <span class="va">dwell</span><span class="op">$</span><span class="va">id</span><span class="op">[</span><span class="va">dwell</span><span class="op">$</span><span class="va">quadrant</span> <span class="op">==</span> <span class="fl">1</span><span class="op">]</span>, <span class="va">sum</span><span class="op">)</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0.5809896</span></span></code></pre></div>
+<p>Tune the goal zone with <code>target_radius</code> /
+<code>crossing_radius</code> and the annuli with
+<code>ring_breaks</code> — see <code><a href="../reference/count_goal_entries.html">?count_goal_entries</a></code> and
+<code><a href="../reference/zone_dwell.html">?zone_dwell</a></code>.</p>
+</div>
+<div class="section level2">
 <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a>
 </h2>
 <p>The Shiny companion app surfaces these per-track metrics
