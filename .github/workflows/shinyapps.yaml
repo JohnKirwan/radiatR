@@ -48,6 +48,12 @@ jobs:
         uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
+          # shinyapps.io's build servers lag the newest R release: deploying with
+          # the very latest (e.g. 4.6.1) fails with "Unsupported R version ... for
+          # operating system jammy". Pin one minor behind (the version the package
+          # is already CI-tested on via the oldrel-1 R-CMD-check job). The manifest
+          # rsconnect writes records this version for the shinyapps build.
+          r-version: 'oldrel-1'
 
       # The app's runtime dependencies. radiatR (installed from GitHub so the
       # remote metadata is recorded) brings circular/ggplot2; the rest are

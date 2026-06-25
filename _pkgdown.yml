@@ -29,9 +29,11 @@ navbar:
   components:
     app:
       text: App
-      # Full URL (not a relative href) so it resolves from every page depth --
-      # the shinylive build is published to gh-pages /app by shinylive.yaml.
-      href: https://johnkirwan.github.io/radiatR/app/
+      # Full URL (not a relative href) so it resolves from every page depth.
+      # Points at the server-side shinyapps.io deploy (shinyapps.yaml) -- it
+      # loads fast and reliably; the in-browser shinylive build at
+      # /radiatR/app/ (shinylive.yaml) is the no-server fallback.
+      href: https://johnkirwan.shinyapps.io/radiatR/
       aria-label: Launch the radiatR Shiny app
     articles:
       text: Vignettes
