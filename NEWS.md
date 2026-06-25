@@ -48,6 +48,11 @@
   e.g. `circ_summary_headings(group_by = <a carried factor>)` grouped by the real
   labels, not `1, 2, ...`); `POSIXct`/`Date` columns are likewise preserved.
 
+* The `"outside"`/`"split"` degree labels no longer collide with the circular
+  boxplot: they sit a little further out (corner magnitude `0.85*sqrt(2)` ->
+  `0.9*sqrt(2)`) so the label text clears `add_circular_boxplot()`'s band, whose
+  default `width` is also narrowed (`0.06` -> `0.05`) for a thinner ring.
+
 ## Track metrics
 
 * New `path_sinuosity()` / `sinuosity()` add the turning-angle-based sinuosity
