@@ -30,9 +30,9 @@ navbar:
     app:
       text: App
       # Full URL (not a relative href) so it resolves from every page depth.
-      # Points at the server-side shinyapps.io deploy (shinyapps.yaml) -- it
-      # loads fast and reliably; the in-browser shinylive build at
-      # /radiatR/app/ (shinylive.yaml) is the no-server fallback.
+      # Points at the server-side shinyapps.io deploy (shinyapps.yaml). The old
+      # in-browser shinylive build at /radiatR/app/ is retired -- that path now
+      # redirects here (pkgdown/assets/app/index.html).
       href: https://johnkirwan.shinyapps.io/radiatR/
       aria-label: Launch the radiatR Shiny app
     articles:

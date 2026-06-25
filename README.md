@@ -314,7 +314,7 @@ statistics — with no R coding required.
 
 > **Try it live:** <https://johnkirwan.shinyapps.io/radiatR/>
 
-There are three ways to reach it:
+There are two ways to reach it:
 
 **1. Run locally** (works after installing the package):
 
@@ -335,16 +335,12 @@ three repository secrets from your shinyapps.io account — `SHINYAPPS_NAME`
 rsconnect::deployApp(system.file("app", package = "radiatR"))
 ```
 
-**3. Static site (no server)** — a `shinylive` build runs the app entirely
-in the browser via WebAssembly, so uploaded files never leave the user's
-machine (which suits sensitive data). The GitHub Actions workflow in
-`.github/workflows/shinylive.yaml` publishes it to GitHub Pages alongside
-the documentation, at <https://johnkirwan.github.io/radiatR/app/>. The build
-runs on each **published GitHub Release**: it compiles radiatR into a webR
-WebAssembly image (attached to the release), then exports and deploys the
-app. Because it ships and runs the whole R runtime in the browser, first load
-is heavy and it needs cross-origin isolation — prefer option 2 for a
-responsive shared link, and keep this as the no-server fallback.
+> The old in-browser `shinylive` (WebAssembly) build at
+> <https://johnkirwan.github.io/radiatR/app/> has been retired — that URL now
+> redirects to the shinyapps.io app above. The WASM build shipped the whole R
+> runtime to the browser, so it loaded slowly and needed cross-origin isolation
+> that GitHub Pages can't provide, making it unreliable. The server-side
+> shinyapps.io deploy replaces it.
 
 ## Optional Dependencies
 
