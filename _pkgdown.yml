@@ -97,7 +97,7 @@ reference:
 
   - title: "Simulation"
     desc: >
-      Generate synthetic circular-arena trajectories for teaching,
+      Generate synthetic circular-space trajectories for teaching,
       pipeline testing, and power analysis.
     contents:
       - simulate_tracks
@@ -228,7 +228,7 @@ reference:
       - add_circular_boxplot
       - compute_circular_density
 
-  - title: "Visualisation -- arena guides"
+  - title: "Visualisation -- zone & quadrant guides"
     desc: >
       Zone dwell-time, quadrant lines, and goal-entry counting.
     contents:

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`radiatR` is an R package for plotting and analyzing animal movement trajectories in circular/radial arenas. It handles the full pipeline: data import → coordinate transformation → circular statistics → visualization.
+`radiatR` is an R package for plotting and analyzing animal movement trajectories in circular space. It handles the full pipeline: data import → coordinate transformation → circular statistics → visualization.
 
 ## Development commands
 
@@ -34,13 +34,13 @@ devtools::install_local(".")
 
 ### Core data structure: `Tracks` (S4 class)
 
-`R/Tracks.R` defines the central container. A `Tracks` holds a list of trajectory tibbles plus metadata (arena geometry, transform history). Almost every downstream function either accepts or returns a `Tracks`. Understand this class before touching any other module.
+`R/Tracks.R` defines the central container. A `Tracks` holds a list of trajectory tibbles plus metadata (unit-circle geometry, transform history). Almost every downstream function either accepts or returns a `Tracks`. Understand this class before touching any other module.
 
 ### Pipeline stages
 
 1. **Import** (`R/loaders.R`) — the largest module. Reads manifest files that describe where track data lives, then dispatches to format-specific readers (`read_tracks_*`). The loader format registry (`register_loader_*`) lets callers add new file formats without modifying core code.
 
-2. **Coordinate transformation** (`R/circular_trials.R`, `R/circular_mapping.R`) — converts Cartesian pixel coordinates to unit-circle angles. `circular_trials.R` extracts per-trial segments and normalises them to a unit arena; `circular_mapping.R` handles pixel→angle arithmetic. (radiatR analyses normalised, unit-arena tracks; correcting lens distortion or scaling to metric units is left to the upstream tracking pipeline.)
+2. **Coordinate transformation** (`R/circular_trials.R`, `R/circular_mapping.R`) — converts Cartesian pixel coordinates to unit-circle angles. `circular_trials.R` extracts per-trial segments and normalises them to the unit circle; `circular_mapping.R` handles pixel→angle arithmetic. (radiatR analyses normalised, unit-circle tracks; correcting lens distortion or scaling to metric units is left to the upstream tracking pipeline.)
 
 3. **Heading computation** (`R/headings.R`) — derives directional headings from position sequences. Uses a rule registry pattern (analogous to the loader registry) so custom heading rules can be registered and applied by name.
 

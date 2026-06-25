@@ -2130,7 +2130,7 @@ test_that(".clip_path_to_circle leaves an all-inside track unchanged", {
   expect_equal(out$y, d$y)
 })
 
-test_that(".clip_path_to_circle with geom='point' drops out-of-arena rows", {
+test_that(".clip_path_to_circle with geom='point' drops beyond-circumference rows", {
   d <- data.frame(g = "A", x = c(0.2, 1.3, 0.4), y = c(0, 0, 0))
   out <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "point")
   expect_equal(nrow(out), 2L)
@@ -2148,7 +2148,7 @@ test_that("radiate() clips tracks to the unit circle by default", {
   expect_true(all(rho <= 1 + 1e-6, na.rm = TRUE))
 })
 
-test_that("radiate(clip_tracks = FALSE) preserves out-of-arena overshoot", {
+test_that("radiate(clip_tracks = FALSE) preserves beyond-circumference overshoot", {
   data(cpunctatus, package = "radiatR")
   p <- radiate(cpunctatus, clip_tracks = FALSE)
   b <- ggplot2::ggplot_build(p)
@@ -2201,7 +2201,7 @@ test_that(".clip_path_to_circle does not warn when an inside point is exactly on
 
 test_that(".clip_path_to_circle treats a point a hair over the rim as inside (no spurious clip)", {
   # A point at rho = 1 + 1e-12 (float round-off / simulate_tracks clamp-to-1) is
-  # on the rim, not out of arena: it must NOT trigger a clip (which would change
+  # on the rim, not beyond the circumference: it must NOT trigger a clip (which would change
   # the row count and fragment the path with an NA break).
   eps <- 1e-12
   d <- data.frame(g = "A", x = c(0, 0.5, 1 + eps, 0.5, 0), y = c(0, 0, 0, 0, 0))

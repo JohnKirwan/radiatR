@@ -2254,8 +2254,8 @@ line_circle_intercept_traj <- function(traj, id, range) {
   geom <- if (is.character(geom)) tolower(geom) else "path"
 
   # Rim tolerance: a point a hair over 1 (float round-off, or simulate_tracks'
-  # clamp-to-1 round-tripped through sqrt(cos^2+sin^2)) is on the rim, not out of
-  # arena -- treat it as inside so it is not spuriously clipped.
+  # clamp-to-1 round-tripped through sqrt(cos^2+sin^2)) is on the rim, not beyond
+  # the circumference -- treat it as inside so it is not spuriously clipped.
   rim2 <- 1 + 1e-9
 
   if (identical(geom, "point")) {
@@ -2486,7 +2486,7 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   Set to `FALSE` to render the unit circle and any overlays (arrow, circle, ticks)
 #'   without the track geometry.
 #' @param clip_tracks Logical; when `TRUE` (default) trajectory paths are clipped
-#'   to the unit circle, so out-of-arena (`rho > 1`) excursions are truncated at
+#'   to the unit circle, so beyond-circumference (`rho > 1`) excursions are truncated at
 #'   the circumference (segment-intercept, leaving a gap until the track
 #'   re-enters) rather than drawn past it. Set `FALSE` to draw tracks unclipped.
 #'   Plot-only: kinematics are unaffected. Applies in the relative frame;

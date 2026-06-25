@@ -245,7 +245,7 @@ Set to `FALSE` to render the unit circle and any overlays (arrow, circle, ticks)
 without the track geometry.}
 
 \item{clip_tracks}{Logical; when `TRUE` (default) trajectory paths are clipped
-to the unit circle, so out-of-arena (`rho > 1`) excursions are truncated at
+to the unit circle, so beyond-circumference (`rho > 1`) excursions are truncated at
 the circumference (segment-intercept, leaving a gap until the track
 re-enters) rather than drawn past it. Set `FALSE` to draw tracks unclipped.
 Plot-only: kinematics are unaffected. Applies in the relative frame;

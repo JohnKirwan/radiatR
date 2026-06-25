@@ -1,11 +1,11 @@
-# normalize_xy = TRUE must arena-scale per trajectory (centre on the bounding-box
+# normalize_xy = TRUE must unit-circle-scale per trajectory (centre on the bounding-box
 # midpoint, scale so the furthest point sits at radius 1), preserving trajectory
 # shape -- NOT collapse every point onto the unit circle.
 
 test_that("normalize_xy=TRUE yields the same headings regardless of raw scale/offset", {
   # A non-radial (L-shaped) trajectory, then the same trajectory in a shifted and
-  # scaled "raw pixel" frame. Arena scaling must recover identical headings: that
-  # is the whole point -- load any pixel data, get correct arena-relative headings.
+  # scaled "raw pixel" frame. Unit-circle scaling must recover identical headings: that
+  # is the whole point -- load any pixel data, get correct circle-relative headings.
   # non-radial track with a single, unambiguous furthest-from-centre point (so
   # `distal` is well defined and not sensitive to float ties).
   base <- data.frame(id = "a", time = 1:6,

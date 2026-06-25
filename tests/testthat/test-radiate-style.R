@@ -55,7 +55,7 @@ test_that("show_tracks toggles the trajectory layer", {
   ts <- simulate_tracks(n_points = 30, seed = 123, output = "trajset")
 
   # The track layer is the geom_path whose data has one row per track point;
-  # the arena circle is also a geom_path but with its own small generated data.
+  # the unit circle is also a geom_path but with its own small generated data.
   n_track_layers <- function(g) {
     n_pts <- nrow(ts@data)
     sum(vapply(g$layers, function(l) {
@@ -71,7 +71,7 @@ test_that("show_tracks toggles the trajectory layer", {
 
   expect_equal(n_track_layers(g_on), 1L)
   expect_equal(n_track_layers(g_off), 0L)
-  # the arena still renders without tracks
+  # the circle still renders without tracks
   expect_s3_class(g_off, "ggplot")
   expect_silent(ggplot2::ggplot_build(g_off))
 })
