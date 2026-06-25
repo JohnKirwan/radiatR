@@ -112,6 +112,20 @@
 ### Track metrics
 
 - New
+  [`restrict_to_circumference()`](https://johnkirwan.github.io/radiatR/reference/restrict_to_circumference.md)
+  returns a `Tracks` with out-of-circumference (`rho > 1`) data removed,
+  so the kinematics
+  ([`track_speed()`](https://johnkirwan.github.io/radiatR/reference/track_speed.md),
+  [`instantaneous_speed()`](https://johnkirwan.github.io/radiatR/reference/instantaneous_speed.md),
+  [`track_length()`](https://johnkirwan.github.io/radiatR/reference/track_length.md),
+  the `path_*` shape metrics) are computed only on the within-circle
+  portion of each trajectory. `mode = "truncate"` (default) keeps each
+  track up to its first excursion beyond the circumference;
+  `mode = "drop"` removes individual out-of-circumference points. This
+  is the data-filtering counterpart to the plot-only
+  `radiate(clip_tracks = TRUE)`.
+
+- New
   [`path_sinuosity()`](https://johnkirwan.github.io/radiatR/reference/path_sinuosity.md)
   /
   [`sinuosity()`](https://johnkirwan.github.io/radiatR/reference/sinuosity.md)

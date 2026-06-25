@@ -96,6 +96,34 @@ head(track_length(set_distance_scale(cpunctatus, 50, unit = "mm")))   # mm
 The single-path helpers `path_*` operate on plain `x`/`y` vectors if you
 want a metric for one trajectory outside a `Tracks`.
 
+## Restricting to within the circumference
+
+Tracks can wander past the circumference (`rho > 1`) – the animal
+reaching the edge, or an occasional tracking outlier.
+[`restrict_to_circumference()`](https://johnkirwan.github.io/radiatR/reference/restrict_to_circumference.md)
+returns a `Tracks` with that out-of-circumference data removed, so the
+metrics see only the within-circle path. `mode = "truncate"` (the
+default) keeps each track up to its first excursion beyond the
+circumference; `mode = "drop"` removes individual out-of-circumference
+points.
+
+``` r
+
+within <- restrict_to_circumference(cpunctatus, mode = "truncate")
+#> restrict_to_circumference(truncate): removed 489 of 44331 rows.
+head(track_length(within))
+#>         trial_id    length
+#> 10_1_1    10_1_1 1.3645581
+#> 10_10_1  10_10_1 8.7387738
+#> 10_11_1  10_11_1 1.2628195
+#> 10_12_1  10_12_1 1.1615569
+#> 10_13_1  10_13_1 1.5757405
+#> 10_14_1  10_14_1 0.9365288
+```
+
+This is the data counterpart to the plot-only
+`radiate(clip_tracks = TRUE)`.
+
 ## Straightness and tortuosity
 
 The straightness index is net displacement / total length, in `[0, 1]`

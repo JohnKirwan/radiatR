@@ -326,6 +326,8 @@ bespoke transformations (recorded in the transform history).
   : Set the per-trajectory reference and re-derive the relative frame
 - [`apply_transform()`](https://johnkirwan.github.io/radiatR/reference/apply_transform.md)
   : Apply a bespoke transformation to a Tracks
+- [`restrict_to_circumference()`](https://johnkirwan.github.io/radiatR/reference/restrict_to_circumference.md)
+  : Restrict a Tracks to within the unit circle
 - [`transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`log_transform()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
   [`set_transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
@@ -621,6 +623,8 @@ Any remaining exported topics.
   : Register a declarative loader \*format\* (list or YAML/JSON file)
   The spec maps cleanly onto read_tracks() args and supports regex-based
   column finding.
+- [`restrict_to_circumference()`](https://johnkirwan.github.io/radiatR/reference/restrict_to_circumference.md)
+  : Restrict a Tracks to within the unit circle
 - [`scale_cardinal()`](https://johnkirwan.github.io/radiatR/reference/scale_cardinal.md)
   : Circumference scale: cardinal compass directions
 - [`scale_clock()`](https://johnkirwan.github.io/radiatR/reference/scale_clock.md)
