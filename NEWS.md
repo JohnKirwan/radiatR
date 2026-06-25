@@ -339,6 +339,12 @@
   the relative-vs-absolute reference frame (`radiate(coords = "absolute")`), and a
   pointer to the Shiny app (`launch_app()`).
 
+* The vignettes now cover the previously-undocumented heading/spatial extras:
+  `vignette("track-metrics")` gains a goal-directed / zone-occupancy section
+  (`count_goal_entries()`, `zone_dwell()`), and `vignette("circular-statistics")`
+  shows the one-call `circ_summary_headings()` and the `add_stacked_headings()`
+  overlay.
+
 * Repositioned the package documentation from "animal movement in circular
   arenas" toward the general case -- analysis and visualisation of headings and
   trajectories in circular space -- reflecting that angles can be supplied
