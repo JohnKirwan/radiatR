@@ -161,7 +161,7 @@ circ_boxplot_stats <- function(hd, angle_col = "heading", axial = FALSE) {
 #' @inheritParams circ_boxplot_stats
 #' @param radius Perimeter radius for the box/whiskers. Default `1.1` (just
 #'   outside the unit circle).
-#' @param width Radial thickness of the box band. Default `0.06`.
+#' @param width Radial thickness of the box band. Default `0.05`.
 #' @param colour,color Outline colour for box, whiskers, crossbars, far-out.
 #'   Default `"black"`. `color` is the American-spelling alias.
 #' @param box_fill Fill colour of the box band. Default `"grey90"`.
@@ -193,7 +193,7 @@ circ_boxplot_stats <- function(hd, angle_col = "heading", axial = FALSE) {
 #' @importFrom grid arrow unit
 #' @export
 add_circular_boxplot <- function(hd, angle_col = "heading", axial = FALSE,
-                                 radius = 1.1, width = 0.06,
+                                 radius = 1.1, width = 0.05,
                                  colour = "black", box_fill = "grey90",
                                  farout_shape = 8, show_median_arrow = FALSE,
                                  linewidth = 0.8, n_theta = 200L, display = NULL,

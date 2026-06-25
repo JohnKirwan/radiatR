@@ -9,7 +9,7 @@ add_circular_boxplot(
   angle_col = "heading",
   axial = FALSE,
   radius = 1.1,
-  width = 0.06,
+  width = 0.05,
   colour = "black",
   box_fill = "grey90",
   farout_shape = 8,
@@ -37,7 +37,7 @@ angles are doubled, the boxplot computed, and locations halved back to
 \item{radius}{Perimeter radius for the box/whiskers. Default `1.1` (just
 outside the unit circle).}
 
-\item{width}{Radial thickness of the box band. Default `0.06`.}
+\item{width}{Radial thickness of the box band. Default `0.05`.}
 
 \item{colour, color}{Outline colour for box, whiskers, crossbars, far-out.
 Default `"black"`. `color` is the American-spelling alias.}

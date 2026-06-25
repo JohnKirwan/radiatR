@@ -377,7 +377,7 @@ degree_labs <- function(display = circ_display(), colour = "black",
   lab_layer <- function(x, y, lab)
     ggplot2::annotate("text", x = x, y = y, label = lab, colour = colour,
                       size = size, family = family)
-  outer_r <- 0.85 * sqrt(2)                # historical corner distance
+  outer_r <- 0.9 * sqrt(2)                 # corner distance; clears a default boxplot band (~1.13)
   at_r <- function(deg, r) {
     th <- deg * pi / 180
     .uc_to_display_coords(r * cos(th), r * sin(th), display)
@@ -407,7 +407,7 @@ degree_labs <- function(display = circ_display(), colour = "black",
   # "outside" keeps the historical hardcoded corner positions for the four
   # diagonals (back-compat); no cardinals.
   if (position == "outside") {
-    diag_r <- 0.85
+    diag_r <- 0.9                          # matches outer_r/sqrt(2); clears a default boxplot band
     pos    <- list(c(diag_r,  diag_r), c(diag_r, -diag_r),
                    c(-diag_r, -diag_r), c(-diag_r,  diag_r))
     diag_d <- c(45, 135, 225, 315)

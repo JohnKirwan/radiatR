@@ -307,12 +307,15 @@ test_that("plotting helpers return ggplot layers", {
 .lab_r  <- function(l) sqrt(l$data$x^2 + l$data$y^2)
 .lab_text <- function(ls) vapply(ls, function(l) l$aes_params$label, character(1))
 
-test_that("degree_labs position='outside' is unchanged (4 diagonals in the corners)", {
+test_that("degree_labs position='outside' diagonals clear the default boxplot band", {
   ls <- degree_labs(position = "outside")
   expect_length(ls, 4)
   expect_setequal(.lab_text(ls), c("45°", "135°", "225°", "315°"))
   rs <- vapply(ls, .lab_r, numeric(1))
-  expect_true(all(rs > 1.05))                       # corners, outside the circle
+  # bumped out so the inward-extending text clears a default add_circular_boxplot()
+  # band (radius 1.1 + width/2 = 1.125); the old position (0.85*sqrt(2)=1.202)
+  # collided with it
+  expect_true(all(rs > 1.25))
   expect_equal(degree_labs(), degree_labs(position = "outside"))   # default
 })
 
@@ -332,7 +335,7 @@ test_that("degree_labs position='split': cardinals inside, diagonals outside", {
   txt <- .lab_text(ls)
   rs  <- stats::setNames(vapply(ls, .lab_r, numeric(1)), txt)
   expect_true(all(abs(rs[c("0°","90°","180°","270°")] - 0.88) < 1e-6))
-  expect_true(all(rs[c("45°","135°","225°","315°")] > 1.05))
+  expect_true(all(rs[c("45°","135°","225°","315°")] > 1.25))   # clear of the boxplot band
 })
 
 test_that("degree_labs inside is display-aware (rotation moves the labels)", {
