@@ -238,6 +238,8 @@ radiate(cpunctatus,
         show_labels = FALSE,
         show_arrow  = FALSE,
         display    = circ_display(zero = 0))
+#> Warning: Removed 109 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 ```
 
 ![](radiatR_files/figure-html/plot-all-1.png)
@@ -264,6 +266,8 @@ built-in scale and aligns the tick count to it:
 ``` r
 
 radiate(cpunctatus, angle_labels = "months")
+#> Warning: Removed 109 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 ```
 
 ![](radiatR_files/figure-html/plot-circumference-labs-1.png)
@@ -283,6 +287,8 @@ or
 
 radiate(cpunctatus, ticks = FALSE, show_labels = FALSE, show_arrow = FALSE) +
   circumference_labs(scale_clock(hours = 12))
+#> Warning: Removed 109 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 ```
 
 ![](radiatR_files/figure-html/plot-circumference-explicit-1.png)
@@ -297,6 +303,8 @@ diagonals outside):
 
 radiate(cpunctatus, n_labels = 12, angle_label_position = "split",
         show_labels = FALSE, show_arrow = FALSE)
+#> Warning: Removed 109 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 ```
 
 ![](radiatR_files/figure-html/plot-label-count-1.png)
@@ -333,6 +341,8 @@ combined with `colour_col`/`colour_cycle`.
 
 # colour each track from start (dark) to finish (bright)
 radiate(cpunctatus, show_tracks = TRUE, track_colour = "sequence")
+#> Warning: Removed 109 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 ```
 
 ![](radiatR_files/figure-html/plot-sequence-1.png)
@@ -361,6 +371,8 @@ head(track_duration(ts))                                 # seconds per track
 #> 5 10_13_1 2.6333333
 #> 6 10_14_1 0.9666667
 radiate(ts, show_tracks = TRUE, track_colour = "time")   # colour by elapsed time
+#> Warning: Removed 109 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 ```
 
 ![](radiatR_files/figure-html/plot-time-1.png)
@@ -403,6 +415,8 @@ of
 # colour each path by its instantaneous speed (needs a frame rate)
 ts <- set_frame_rate(cpunctatus, fps = 30)
 radiate(ts, show_tracks = TRUE, track_colour = "speed")
+#> Warning: Removed 109 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 ```
 
 ![](radiatR_files/figure-html/plot-speed-1.png)
@@ -602,6 +616,8 @@ p_all <- radiate(cpunctatus,
   add_heading_points(hd, colour_col = "arc", size = 1, alpha = 0.6)
 
 p_all + add_heading_arrow(hd)
+#> Warning: Removed 109 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 #> Warning: Removed 25 rows containing missing values or values outside the scale range
 #> (`geom_point()`).
 ```
@@ -654,6 +670,8 @@ p <- radiate(cpunctatus,
              show_arrow  = FALSE,
              display     = circ_display(zero = 0))
 p
+#> Warning: Removed 109 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 ```
 
 ![](radiatR_files/figure-html/build-1-1.png)
@@ -664,6 +682,8 @@ p
 
 p <- p + add_heading_points(hd, colour_col = "arc", size = 1.5, alpha = 0.7)
 p
+#> Warning: Removed 109 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 #> Warning: Removed 25 rows containing missing values or values outside the scale range
 #> (`geom_point()`).
 ```
@@ -676,6 +696,8 @@ p
 
 p <- p + add_heading_arrow(hd)
 p
+#> Warning: Removed 109 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 #> Warning: Removed 25 rows containing missing values or values outside the scale range
 #> (`geom_point()`).
 ```
@@ -698,6 +720,8 @@ plot like the other overlay helpers.
 ``` r
 
 radiate(cpunctatus) + add_circular_boxplot(hd)
+#> Warning: Removed 109 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 ```
 
 ![](radiatR_files/figure-html/boxplot-1.png)
@@ -782,6 +806,8 @@ p <- radiate(cpunctatus_cc,
         show_arrow   = FALSE,
         display      = circ_display(zero = 0))
 p
+#> Warning: Removed 109 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 ```
 
 ![](radiatR_files/figure-html/arc-panels-simple-1.png)
@@ -793,6 +819,8 @@ p
 p <- p + add_heading_interval(hd_cc, colour_col = "arc", colour = "black",
                                stat = "bootstrap_ci", boot_reps = 999L)
 p
+#> Warning: Removed 109 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 ```
 
 ![](radiatR_files/figure-html/build-4-1.png)
@@ -803,6 +831,8 @@ p
 
 p <- p + add_heading_vectors(hd_cc)
 p
+#> Warning: Removed 109 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 #> Warning: Removed 25 rows containing missing values or values outside the scale range
 #> (`geom_segment()`).
 ```
@@ -815,6 +845,8 @@ p
 
 p <- p + add_heading_points(hd_cc, size = 4)
 p
+#> Warning: Removed 109 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 #> Warning: Removed 25 rows containing missing values or values outside the scale range
 #> (`geom_segment()`).
 #> Warning: Removed 25 rows containing missing values or values outside the scale range
@@ -827,6 +859,8 @@ p
 
 p <- p + add_heading_arrow(hd_cc, colour_col = "arc", colour = "black")
 p
+#> Warning: Removed 109 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 #> Warning: Removed 25 rows containing missing values or values outside the scale range
 #> (`geom_segment()`).
 #> Warning: Removed 25 rows containing missing values or values outside the scale range
@@ -891,6 +925,8 @@ radiate(cpunctatus_cc,
                       fill = "grey80", alpha = 0.35) +
   add_heading_vectors(hd_cc) +
   add_heading_arrow(hd_cc, colour_col = "arc", colour = "black")
+#> Warning: Removed 109 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 #> Warning: Removed 25 rows containing missing values or values outside the scale range
 #> (`geom_segment()`).
 ```
@@ -933,6 +969,8 @@ radiate(cpunctatus,
                        scale = 0.4, fill = "grey80", alpha = 0.35,
                        ci_fill = "grey60", ci_alpha = 0.35) +
   add_heading_arrow(hd, colour_col = "arc", colour = "black")
+#> Warning: Removed 109 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 ```
 
 ![](radiatR_files/figure-html/bootstrap-ci-1.png)
@@ -1296,6 +1334,8 @@ radiate(cpunctatus_cc_d,
                        stat = "bootstrap_ci", boot_reps = 999L) +
   add_heading_points(hd_distal_cc, size = 4) +
   add_heading_arrow(hd_distal_cc, colour_col = "arc", colour = "black")
+#> Warning: Removed 109 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 ```
 
 ![](radiatR_files/figure-html/hd-distal-panel-1.png)

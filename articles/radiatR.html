@@ -299,7 +299,9 @@ shows how paths cluster by condition.</p>
 <span>        colour_col <span class="op">=</span> <span class="st">"arc"</span>,</span>
 <span>        show_labels <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>        show_arrow  <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>        display    <span class="op">=</span> <span class="fu"><a href="../reference/circ_display.html">circ_display</a></span><span class="op">(</span>zero <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>        display    <span class="op">=</span> <span class="fu"><a href="../reference/circ_display.html">circ_display</a></span><span class="op">(</span>zero <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 109 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/plot-all-1.png" class="r-plt" alt="" width="700"></p>
 <p>By default <code><a href="../reference/radiate.html">radiate()</a></code> plots the
 landmark-<strong>relative</strong> frame — each trajectory rotated so
@@ -314,7 +316,9 @@ to check the apparatus carries no directional bias of its own), pass
 — useful for time-of-year or compass data. <code>angle_labels</code>
 selects a built-in scale and aligns the tick count to it:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, angle_labels <span class="op">=</span> <span class="st">"months"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, angle_labels <span class="op">=</span> <span class="st">"months"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 109 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/plot-circumference-labs-1.png" class="r-plt" alt="" width="700"></p>
 <p>The other built-in scales are <code>"cardinal"</code> (compass),
 <code>"hours"</code> (24-hour clock), and <code>"seconds"</code>. For
@@ -324,7 +328,9 @@ from <code><a href="../reference/scale_cardinal.html">scale_cardinal()</a></code
 <code><a href="../reference/scale_months.html">scale_months()</a></code>, or <code><a href="../reference/scale_seconds.html">scale_seconds()</a></code>:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, ticks <span class="op">=</span> <span class="cn">FALSE</span>, show_labels <span class="op">=</span> <span class="cn">FALSE</span>, show_arrow <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="../reference/circumference_labs.html">circumference_labs</a></span><span class="op">(</span><span class="fu"><a href="../reference/scale_clock.html">scale_clock</a></span><span class="op">(</span>hours <span class="op">=</span> <span class="fl">12</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="../reference/circumference_labs.html">circumference_labs</a></span><span class="op">(</span><span class="fu"><a href="../reference/scale_clock.html">scale_clock</a></span><span class="op">(</span>hours <span class="op">=</span> <span class="fl">12</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 109 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/plot-circumference-explicit-1.png" class="r-plt" alt="" width="700"></p>
 <p><code>n_labels</code> sets how many equally-spaced ticks and numeric
 labels to draw — e.g. <code>12</code> for a clock face, <code>4</code>
@@ -334,7 +340,9 @@ for cardinals only, <code>0</code> for a bare circle — and
 <code>"split"</code> (cardinals inside, diagonals outside):</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, n_labels <span class="op">=</span> <span class="fl">12</span>, angle_label_position <span class="op">=</span> <span class="st">"split"</span>,</span>
-<span>        show_labels <span class="op">=</span> <span class="cn">FALSE</span>, show_arrow <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<span>        show_labels <span class="op">=</span> <span class="cn">FALSE</span>, show_arrow <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 109 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/plot-label-count-1.png" class="r-plt" alt="" width="700"></p>
 <div class="section level3">
 <h3 id="reference-frame-relative-vs-absolute">Reference frame: relative vs absolute<a class="anchor" aria-label="anchor" href="#reference-frame-relative-vs-absolute"></a>
@@ -362,7 +370,9 @@ aesthetic, so it is not combined with
 <code>colour_col</code>/<code>colour_cycle</code>.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># colour each track from start (dark) to finish (bright)</span></span>
-<span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, show_tracks <span class="op">=</span> <span class="cn">TRUE</span>, track_colour <span class="op">=</span> <span class="st">"sequence"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, show_tracks <span class="op">=</span> <span class="cn">TRUE</span>, track_colour <span class="op">=</span> <span class="st">"sequence"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 109 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/plot-sequence-1.png" class="r-plt" alt="" width="700"></p>
 </div>
 <div class="section level3">
@@ -386,7 +396,9 @@ path by elapsed time (POSIXct time works without a frame rate).</p>
 <span><span class="co">#&gt; 4 10_12_1 1.5666667</span></span>
 <span><span class="co">#&gt; 5 10_13_1 2.6333333</span></span>
 <span><span class="co">#&gt; 6 10_14_1 0.9666667</span></span>
-<span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">ts</span>, show_tracks <span class="op">=</span> <span class="cn">TRUE</span>, track_colour <span class="op">=</span> <span class="st">"time"</span><span class="op">)</span>   <span class="co"># colour by elapsed time</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">ts</span>, show_tracks <span class="op">=</span> <span class="cn">TRUE</span>, track_colour <span class="op">=</span> <span class="st">"time"</span><span class="op">)</span>   <span class="co"># colour by elapsed time</span></span>
+<span><span class="co">#&gt; Warning: Removed 109 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/plot-time-1.png" class="r-plt" alt="" width="700"></p>
 <p>A frame rate also lets <code><a href="../reference/track_speed.html">track_speed()</a></code> report each
 trajectory’s speed in real units. With the default unit-circle
@@ -416,7 +428,9 @@ its instantaneous speed, the per-observation sibling of
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># colour each path by its instantaneous speed (needs a frame rate)</span></span>
 <span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/frame_rate.html">set_frame_rate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, fps <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">ts</span>, show_tracks <span class="op">=</span> <span class="cn">TRUE</span>, track_colour <span class="op">=</span> <span class="st">"speed"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">ts</span>, show_tracks <span class="op">=</span> <span class="cn">TRUE</span>, track_colour <span class="op">=</span> <span class="st">"speed"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 109 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/plot-speed-1.png" class="r-plt" alt="" width="700"></p>
 <p>If you know a physical scale, calibrate distances so lengths and
 speeds report in real units. The scale is physical units per coordinate
@@ -564,6 +578,8 @@ summary of the full dataset:</p>
 <span>  <span class="fu"><a href="../reference/add_heading_points.html">add_heading_points</a></span><span class="op">(</span><span class="va">hd</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, size <span class="op">=</span> <span class="fl">1</span>, alpha <span class="op">=</span> <span class="fl">0.6</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">p_all</span> <span class="op">+</span> <span class="fu"><a href="../reference/add_heading_arrow.html">add_heading_arrow</a></span><span class="op">(</span><span class="va">hd</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 109 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span>
 <span><span class="co">#&gt; Warning: Removed 25 rows containing missing values or values outside the scale range</span></span>
 <span><span class="co">#&gt; (`geom_point()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/headings-overlay-1.png" class="r-plt" alt="" width="700"></p>
@@ -630,13 +646,17 @@ mean arrow, and finally a bootstrap CI arc.</p>
 <span>             show_labels <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>             show_arrow  <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>             display     <span class="op">=</span> <span class="fu"><a href="../reference/circ_display.html">circ_display</a></span><span class="op">(</span>zero <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">p</span></span></code></pre></div>
+<span><span class="va">p</span></span>
+<span><span class="co">#&gt; Warning: Removed 109 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/build-1-1.png" class="r-plt" alt="" width="700"></p>
 <p><strong>+ Heading endpoints</strong> at each trial’s crossing
 location:</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="va">p</span> <span class="op">+</span> <span class="fu"><a href="../reference/add_heading_points.html">add_heading_points</a></span><span class="op">(</span><span class="va">hd</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, size <span class="op">=</span> <span class="fl">1.5</span>, alpha <span class="op">=</span> <span class="fl">0.7</span><span class="op">)</span></span>
 <span><span class="va">p</span></span>
+<span><span class="co">#&gt; Warning: Removed 109 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span>
 <span><span class="co">#&gt; Warning: Removed 25 rows containing missing values or values outside the scale range</span></span>
 <span><span class="co">#&gt; (`geom_point()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/build-2-1.png" class="r-plt" alt="" width="700"></p>
@@ -644,6 +664,8 @@ location:</p>
 <div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="va">p</span> <span class="op">+</span> <span class="fu"><a href="../reference/add_heading_arrow.html">add_heading_arrow</a></span><span class="op">(</span><span class="va">hd</span><span class="op">)</span></span>
 <span><span class="va">p</span></span>
+<span><span class="co">#&gt; Warning: Removed 109 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span>
 <span><span class="co">#&gt; Warning: Removed 25 rows containing missing values or values outside the scale range</span></span>
 <span><span class="co">#&gt; (`geom_point()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/build-3-1.png" class="r-plt" alt="" width="700"></p>
@@ -660,7 +682,9 @@ concentration-adjusted fence, and far-out values are marked
 individually. It composes onto a <code><a href="../reference/radiate.html">radiate()</a></code> plot like the
 other overlay helpers.</p>
 <div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="../reference/add_circular_boxplot.html">add_circular_boxplot</a></span><span class="op">(</span><span class="va">hd</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="../reference/add_circular_boxplot.html">add_circular_boxplot</a></span><span class="op">(</span><span class="va">hd</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 109 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/boxplot-1.png" class="r-plt" alt="" width="576"></p>
 <p><code><a href="../reference/circ_boxplot_stats.html">circ_boxplot_stats()</a></code> returns the underlying numeric
 summary — the circular median, box hinges, fences, far-out values, and
@@ -728,20 +752,26 @@ per-trajectory colour — not a single per-condition colour — when
 <span>        show_labels  <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>        show_arrow   <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>        display      <span class="op">=</span> <span class="fu"><a href="../reference/circ_display.html">circ_display</a></span><span class="op">(</span>zero <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">p</span></span></code></pre></div>
+<span><span class="va">p</span></span>
+<span><span class="co">#&gt; Warning: Removed 109 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/arc-panels-simple-1.png" class="r-plt" alt="" width="768"></p>
 <p><strong>+ Bootstrap CI arc</strong> added first so it sits behind
 heading markers:</p>
 <div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="va">p</span> <span class="op">+</span> <span class="fu"><a href="../reference/add_heading_interval.html">add_heading_interval</a></span><span class="op">(</span><span class="va">hd_cc</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, colour <span class="op">=</span> <span class="st">"black"</span>,</span>
 <span>                               stat <span class="op">=</span> <span class="st">"bootstrap_ci"</span>, boot_reps <span class="op">=</span> <span class="fl">999L</span><span class="op">)</span></span>
-<span><span class="va">p</span></span></code></pre></div>
+<span><span class="va">p</span></span>
+<span><span class="co">#&gt; Warning: Removed 109 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/build-4-1.png" class="r-plt" alt="" width="768"></p>
 <p><strong>+ Heading vectors</strong> (dotted lines from inner crossing
 to perimeter):</p>
 <div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="va">p</span> <span class="op">+</span> <span class="fu"><a href="../reference/add_heading_vectors.html">add_heading_vectors</a></span><span class="op">(</span><span class="va">hd_cc</span><span class="op">)</span></span>
 <span><span class="va">p</span></span>
+<span><span class="co">#&gt; Warning: Removed 109 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span>
 <span><span class="co">#&gt; Warning: Removed 25 rows containing missing values or values outside the scale range</span></span>
 <span><span class="co">#&gt; (`geom_segment()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/arc-panels-vectors-1.png" class="r-plt" alt="" width="768"></p>
@@ -749,6 +779,8 @@ to perimeter):</p>
 <div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="va">p</span> <span class="op">+</span> <span class="fu"><a href="../reference/add_heading_points.html">add_heading_points</a></span><span class="op">(</span><span class="va">hd_cc</span>, size <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
 <span><span class="va">p</span></span>
+<span><span class="co">#&gt; Warning: Removed 109 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span>
 <span><span class="co">#&gt; Warning: Removed 25 rows containing missing values or values outside the scale range</span></span>
 <span><span class="co">#&gt; (`geom_segment()`).</span></span>
 <span><span class="co">#&gt; Warning: Removed 25 rows containing missing values or values outside the scale range</span></span>
@@ -757,6 +789,8 @@ to perimeter):</p>
 <div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="va">p</span> <span class="op">+</span> <span class="fu"><a href="../reference/add_heading_arrow.html">add_heading_arrow</a></span><span class="op">(</span><span class="va">hd_cc</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, colour <span class="op">=</span> <span class="st">"black"</span><span class="op">)</span></span>
 <span><span class="va">p</span></span>
+<span><span class="co">#&gt; Warning: Removed 109 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span>
 <span><span class="co">#&gt; Warning: Removed 25 rows containing missing values or values outside the scale range</span></span>
 <span><span class="co">#&gt; (`geom_segment()`).</span></span>
 <span><span class="co">#&gt; Warning: Removed 25 rows containing missing values or values outside the scale range</span></span>
@@ -831,6 +865,8 @@ the heading vectors:</p>
 <span>                      fill <span class="op">=</span> <span class="st">"grey80"</span>, alpha <span class="op">=</span> <span class="fl">0.35</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="../reference/add_heading_vectors.html">add_heading_vectors</a></span><span class="op">(</span><span class="va">hd_cc</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="../reference/add_heading_arrow.html">add_heading_arrow</a></span><span class="op">(</span><span class="va">hd_cc</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, colour <span class="op">=</span> <span class="st">"black"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 109 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span>
 <span><span class="co">#&gt; Warning: Removed 25 rows containing missing values or values outside the scale range</span></span>
 <span><span class="co">#&gt; (`geom_segment()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/density-overlay-1.png" class="r-plt" alt="" width="768"></p>
@@ -869,7 +905,9 @@ fitted curve.</p>
 <span>  <span class="fu"><a href="../reference/add_circular_density.html">add_circular_density</a></span><span class="op">(</span><span class="va">dens_boot</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>,</span>
 <span>                       scale <span class="op">=</span> <span class="fl">0.4</span>, fill <span class="op">=</span> <span class="st">"grey80"</span>, alpha <span class="op">=</span> <span class="fl">0.35</span>,</span>
 <span>                       ci_fill <span class="op">=</span> <span class="st">"grey60"</span>, ci_alpha <span class="op">=</span> <span class="fl">0.35</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="../reference/add_heading_arrow.html">add_heading_arrow</a></span><span class="op">(</span><span class="va">hd</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, colour <span class="op">=</span> <span class="st">"black"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="../reference/add_heading_arrow.html">add_heading_arrow</a></span><span class="op">(</span><span class="va">hd</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, colour <span class="op">=</span> <span class="st">"black"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 109 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/bootstrap-ci-1.png" class="r-plt" alt="" width="768"></p>
 <p>The darker band is the 95% bootstrap confidence interval for the
 fitted von Mises density. A wider band reflects greater parametric
@@ -1232,7 +1270,9 @@ that the spatial pattern is consistent with the crossing method:</p>
 <span>  <span class="fu"><a href="../reference/add_heading_interval.html">add_heading_interval</a></span><span class="op">(</span><span class="va">hd_distal_cc</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, colour <span class="op">=</span> <span class="st">"black"</span>,</span>
 <span>                       stat <span class="op">=</span> <span class="st">"bootstrap_ci"</span>, boot_reps <span class="op">=</span> <span class="fl">999L</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="../reference/add_heading_points.html">add_heading_points</a></span><span class="op">(</span><span class="va">hd_distal_cc</span>, size <span class="op">=</span> <span class="fl">4</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="../reference/add_heading_arrow.html">add_heading_arrow</a></span><span class="op">(</span><span class="va">hd_distal_cc</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, colour <span class="op">=</span> <span class="st">"black"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="../reference/add_heading_arrow.html">add_heading_arrow</a></span><span class="op">(</span><span class="va">hd_distal_cc</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, colour <span class="op">=</span> <span class="st">"black"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 109 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/hd-distal-panel-1.png" class="r-plt" alt="" width="768"></p>
 <p>Because millipede tracks are nearly radial, the heading estimates
 agree closely across methods. For more sinuous species (moths, pigeons)
