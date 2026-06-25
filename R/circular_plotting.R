@@ -2237,6 +2237,92 @@ line_circle_intercept_traj <- function(traj, id, range) {
   )
 }
 
+# Clip trajectory geometry to the unit circle, for plotting only. Operates on a
+# data frame whose display coordinates are in columns `x_col`/`y_col`, grouped by
+# `group_col`. The Tracks object and all kinematics are untouched -- this only
+# shapes what `draw_tracks()` draws.
+#
+# geom = "point": drop rows with rho > 1.
+# geom = "path"/"line": per group, split into maximal finite runs (pre-existing
+#   NA-coordinate rows already break the path), then within each run keep
+#   inside->inside segments, insert the boundary intercept (via
+#   line_circle_intercept(), inside endpoint passed first) at inside<->outside
+#   crossings, drop outside->outside segments, and separate disjoint sub-paths
+#   with an all-NA break row so geom_path does not bridge the gap.
+.clip_path_to_circle <- function(data, x_col, y_col, group_col, geom = "path") {
+  if (!nrow(data)) return(data)
+  geom <- if (is.character(geom)) tolower(geom) else "path"
+
+  # Rim tolerance: a point a hair over 1 (float round-off, or simulate_tracks'
+  # clamp-to-1 round-tripped through sqrt(cos^2+sin^2)) is on the rim, not out of
+  # arena -- treat it as inside so it is not spuriously clipped.
+  rim2 <- 1 + 1e-9
+
+  if (identical(geom, "point")) {
+    rho2 <- data[[x_col]]^2 + data[[y_col]]^2
+    return(data[!is.finite(rho2) | rho2 <= rim2, , drop = FALSE])
+  }
+
+  groups <- if (is.null(group_col) || !group_col %in% names(data))
+    list(seq_len(nrow(data)))
+  else
+    split(seq_len(nrow(data)), data[[group_col]])
+
+  na_row <- data[1, , drop = FALSE]
+  na_row[] <- NA   # all-NA row -> geom_path break
+
+  clip_run <- function(g) {
+    gx <- g[[x_col]]; gy <- g[[y_col]]
+    inside <- (gx^2 + gy^2) <= rim2
+    if (all(inside)) return(g)
+    if (!any(inside)) return(NULL)
+    n <- nrow(g)
+    out <- vector("list", 0L)
+    push <- function(df) out[[length(out) + 1L]] <<- df
+    icept <- function(in_i, out_i) {
+      r <- g[in_i, , drop = FALSE]
+      if (sqrt(gx[in_i]^2 + gy[in_i]^2) >= 1 - 1e-9) {
+        # inside endpoint already on the rim -> reuse it (no intercept needed)
+        r[[x_col]] <- gx[in_i]; r[[y_col]] <- gy[in_i]
+      } else {
+        ic <- line_circle_intercept(gx[in_i], gy[in_i], gx[out_i], gy[out_i])
+        r[[x_col]] <- ic$x_int; r[[y_col]] <- ic$y_int
+      }
+      r
+    }
+    if (inside[1]) push(g[1, , drop = FALSE])
+    if (n >= 2L) for (i in 2:n) {
+      if (inside[i - 1L] && inside[i]) {
+        push(g[i, , drop = FALSE])
+      } else if (inside[i - 1L] && !inside[i]) {
+        push(icept(i - 1L, i)); push(na_row)
+      } else if (!inside[i - 1L] && inside[i]) {
+        push(icept(i, i - 1L)); push(g[i, , drop = FALSE])
+      }
+    }
+    if (length(out)) do.call(rbind, out) else NULL
+  }
+
+  pieces <- vector("list", 0L)
+  for (rows in groups) {
+    g <- data[rows, , drop = FALSE]
+    finite <- is.finite(g[[x_col]]) & is.finite(g[[y_col]])
+    if (!any(finite)) next
+    runlab <- cumsum(!finite)            # increments at each non-finite row
+    g_fin  <- g[finite, , drop = FALSE]
+    lab    <- runlab[finite]
+    runs   <- lapply(split(seq_len(nrow(g_fin)), lab),
+                     function(ix) clip_run(g_fin[ix, , drop = FALSE]))
+    runs   <- Filter(Negate(is.null), runs)
+    if (!length(runs)) next
+    joined <- runs[[1L]]
+    for (k in seq_along(runs)[-1L]) joined <- rbind(joined, na_row, runs[[k]])
+    pieces[[length(pieces) + 1L]] <- joined
+  }
+  if (!length(pieces)) return(data[0, , drop = FALSE])
+  do.call(rbind, pieces)
+}
+
 # Theme-derived radial styling resolved once, shared by the chrome helpers below
 # and by radiate.default / radiate.headings_frame.
 .radial_style <- function(theme, grid = "radial", grid_colour = NULL) {
@@ -2399,6 +2485,12 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #' @param show_tracks Whether to draw the trajectory paths. Default `TRUE`.
 #'   Set to `FALSE` to render the unit circle and any overlays (arrow, circle, ticks)
 #'   without the track geometry.
+#' @param clip_tracks Logical; when `TRUE` (default) trajectory paths are clipped
+#'   to the unit circle, so out-of-arena (`rho > 1`) excursions are truncated at
+#'   the circumference (segment-intercept, leaving a gap until the track
+#'   re-enters) rather than drawn past it. Set `FALSE` to draw tracks unclipped.
+#'   Plot-only: kinematics are unaffected. Applies in the relative frame;
+#'   ignored when `coords = "absolute"`.
 #' @param show_arrow Whether to draw a mean resultant arrow from the centre.
 #' @param arrow_angle_col Column containing angles (radians) to summarise for the arrow.
 #' @param arrow_colour,arrow_color Arrow colour (a single fixed colour). Ignored
@@ -2522,6 +2614,7 @@ function(
   label_padding = 1.08,
   label_use_repel = TRUE,
   show_tracks = TRUE,
+  clip_tracks = TRUE,
   show_arrow = NULL,
   arrow_angle_col = NULL,
   arrow_colour = "black",
@@ -2669,8 +2762,11 @@ function(
   g <- .radial_chrome_background(g, style, origin = origin)
 
   if (show_tracks) {
+    track_data <- data
+    if (isTRUE(clip_tracks) && identical(coords, "relative"))
+      track_data <- .clip_path_to_circle(track_data, x_col, y_col, group_col, geom)
     g <- g + draw_tracks(
-      data = data, x_col = x_col, y_col = y_col,
+      data = track_data, x_col = x_col, y_col = y_col,
       geom = geom, mapping = layer_mapping, ...
     )
   }

@@ -43,6 +43,16 @@
 
 ## Bug fixes
 
+* `radiate()` now clips trajectory paths to the unit circle by default
+  (`clip_tracks = TRUE`): out-of-arena (`rho > 1`) excursions are truncated at
+  the circumference (segment-intercept, leaving a gap until the track re-enters)
+  instead of being drawn past it. Set `clip_tracks = FALSE` to draw tracks
+  unclipped. This is a plot-only change — kinematics (`track_speed()`,
+  `instantaneous_speed()`, path metrics) compute from the unchanged `Tracks` and
+  are unaffected. Relatedly, the `distal` heading rule gains a `max_radius`
+  argument (default `Inf`); `derive_headings(rule = "distal", max_radius = 1)`
+  ignores out-of-arena tracking outliers when picking the furthest point.
+
 * Subsetting a `headings_frame` (`x[i, ]`, `x[, j]`) no longer requires the
   optional **dplyr** package. `[.headings_frame` previously called
   `dplyr::dplyr_reconstruct()` to re-attach the display convention, which raised

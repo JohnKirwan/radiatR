@@ -2103,3 +2103,112 @@ test_that("coords='absolute' equals the default when no reference is set", {
   dd <- ggplot2::layer_data(radiate(ts, ticks = FALSE), 1)
   expect_equal(da$x, dd$x); expect_equal(da$y, dd$y)
 })
+
+# ---- .clip_path_to_circle ---------------------------------------------------
+
+test_that(".clip_path_to_circle truncates an excursion at the rim with an NA break", {
+  # one group exiting then re-entering the unit circle
+  d <- data.frame(
+    g = "A",
+    x = c(0.0, 0.5, 1.4, 0.5, 0.0),  # middle point is outside (rho 1.4)
+    y = c(0.0, 0.0, 0.0, 0.0, 0.0)
+  )
+  out <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "path")
+  rho <- sqrt(out$x^2 + out$y^2)
+  # no rendered point sits outside the circle (NA rows excluded)
+  expect_true(all(rho <= 1 + 1e-8, na.rm = TRUE))
+  # the boundary was hit exactly (an intercept at rho == 1)
+  expect_true(any(abs(rho - 1) < 1e-8, na.rm = TRUE))
+  # a break (all-NA coords row) was inserted
+  expect_true(any(is.na(out$x)))
+})
+
+test_that(".clip_path_to_circle leaves an all-inside track unchanged", {
+  d <- data.frame(g = "A", x = c(0, 0.3, 0.6, 0.3), y = c(0, 0.1, 0.2, 0.1))
+  out <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "path")
+  expect_equal(out$x, d$x)
+  expect_equal(out$y, d$y)
+})
+
+test_that(".clip_path_to_circle with geom='point' drops out-of-arena rows", {
+  d <- data.frame(g = "A", x = c(0.2, 1.3, 0.4), y = c(0, 0, 0))
+  out <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "point")
+  expect_equal(nrow(out), 2L)
+  expect_true(all(sqrt(out$x^2 + out$y^2) <= 1))
+})
+
+# ---- radiate() clip_tracks parameter -----------------------------------------
+
+test_that("radiate() clips tracks to the unit circle by default", {
+  data(cpunctatus, package = "radiatR")
+  p <- radiate(cpunctatus)                      # clip_tracks defaults TRUE
+  b <- ggplot2::ggplot_build(p)
+  trk <- b$data[[1]]                            # first layer = track GeomPath
+  rho <- sqrt(trk$x^2 + trk$y^2)
+  expect_true(all(rho <= 1 + 1e-6, na.rm = TRUE))
+})
+
+test_that("radiate(clip_tracks = FALSE) preserves out-of-arena overshoot", {
+  data(cpunctatus, package = "radiatR")
+  p <- radiate(cpunctatus, clip_tracks = FALSE)
+  b <- ggplot2::ggplot_build(p)
+  trk <- b$data[[1]]
+  rho <- sqrt(trk$x^2 + trk$y^2)
+  expect_true(any(rho > 1, na.rm = TRUE))       # the original bug, on demand
+})
+
+test_that(".clip_path_to_circle isolates groups (one clipped, one all-inside)", {
+  d <- data.frame(
+    g = c("A","A","A", "B","B","B"),
+    x = c(0, 1.4, 0,   0, 0.3, 0.6),
+    y = c(0, 0,   0,   0, 0.1, 0.2)
+  )
+  out <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "path")
+  b <- out[!is.na(out$g) & out$g == "B", ]
+  expect_equal(b$x, c(0, 0.3, 0.6))
+  expect_equal(b$y, c(0, 0.1, 0.2))
+  expect_true(all(sqrt(out$x^2 + out$y^2) <= 1 + 1e-8, na.rm = TRUE))
+})
+
+test_that(".clip_path_to_circle drops an all-outside group", {
+  d <- data.frame(
+    g = c("A","A", "B","B"),
+    x = c(1.2, 1.3,  0, 0.4),
+    y = c(0.5, 0.6,  0, 0.1)
+  )
+  out <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "path")
+  expect_false(any(!is.na(out$g) & out$g == "A"))
+  expect_true(any(!is.na(out$g) & out$g == "B"))
+})
+
+test_that(".clip_path_to_circle splits a group on a pre-existing NA row", {
+  d <- data.frame(
+    g = "A",
+    x = c(0, 0.3, NA, 0.5, 0.2),
+    y = c(0, 0.1, NA, 0.0, 0.0)
+  )
+  out <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "path")
+  expect_true(any(is.na(out$x)))
+  fin <- out[!is.na(out$x), ]
+  expect_equal(nrow(fin), 4L)
+  expect_true(all(sqrt(fin$x^2 + fin$y^2) <= 1 + 1e-8))
+})
+
+test_that(".clip_path_to_circle does not warn when an inside point is exactly on the rim", {
+  d <- data.frame(g = "A", x = c(0, 1, 1.5), y = c(0, 0, 0))
+  expect_no_warning(radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "path"))
+})
+
+test_that(".clip_path_to_circle treats a point a hair over the rim as inside (no spurious clip)", {
+  # A point at rho = 1 + 1e-12 (float round-off / simulate_tracks clamp-to-1) is
+  # on the rim, not out of arena: it must NOT trigger a clip (which would change
+  # the row count and fragment the path with an NA break).
+  eps <- 1e-12
+  d <- data.frame(g = "A", x = c(0, 0.5, 1 + eps, 0.5, 0), y = c(0, 0, 0, 0, 0))
+  out <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "path")
+  expect_equal(nrow(out), nrow(d))
+  expect_false(any(is.na(out$x)))
+  # geom = "point" likewise keeps a just-over-rim point
+  outp <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "point")
+  expect_equal(nrow(outp), nrow(d))
+})

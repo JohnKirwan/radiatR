@@ -72,6 +72,9 @@
 #' `straight` adds `x_seg0`/`y_seg0`/`x_seg1`/`y_seg1` (the run endpoints);
 #' `pca_axis` adds `x_centroid`/`y_centroid`/`axis_x`/`axis_y` (a unit axis
 #' vector). Other rules ignore it.
+#' The `distal` rule accepts `max_radius` (default `Inf`): the furthest-point
+#' search is restricted to positions with radius `<= max_radius`, so
+#' `max_radius = 1` ignores out-of-arena (`rho > 1`) tracking outliers.
 #' @return data.frame with columns id, time (approx), heading (radians, unit-circle
 #'   convention), plus the rule-specific construction columns above when
 #'   `return_coords = TRUE`. For some rules there may be multiple headings per id.
@@ -171,9 +174,16 @@ setGeneric(
 
 # ---- distal rule ------------------------------------------------------------- -------------------------------------------------------------
 # Heading = angle of the most distal point (max radius from origin)
-.set_headings_distal_one <- function(d, id, tc, xc, yc, return_coords = FALSE) {
+.set_headings_distal_one <- function(d, id, tc, xc, yc, return_coords = FALSE,
+                                     max_radius = Inf) {
   r <- sqrt(d[[xc]]^2 + d[[yc]]^2)
-  m <- which.max(r)
+  ok <- which(is.finite(r) & r <= max_radius)
+  if (!length(ok)) {
+    row <- data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_)
+    if (return_coords) { row$x_distal <- NA_real_; row$y_distal <- NA_real_ }
+    return(row)
+  }
+  m <- ok[which.max(r[ok])]
   row <- data.frame(id = d[[id]][m], time = d[[tc]][m],
                     heading = .wrap_to_2pi(atan2(d[[yc]][m], d[[xc]][m])))
   if (return_coords) {
@@ -552,8 +562,10 @@ setMethod("derive_headings", "Tracks", function(
       },
       distal   = {
         return_coords <- dots$return_coords %||% FALSE
+        max_radius    <- dots$max_radius    %||% Inf
         do.call(rbind, lapply(sp, function(ii) .set_headings_distal_one(d[ii, , drop = FALSE], id, tc, xc, yc,
-                                                                        return_coords = return_coords)))
+                                                                        return_coords = return_coords,
+                                                                        max_radius = max_radius)))
       },
       straight = {
         tol <- dots$tol %||% (pi/18); min_len <- dots$min_len %||% 5L
