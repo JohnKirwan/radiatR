@@ -580,3 +580,18 @@ test_that("derive_headings(carry=) keeps an ordered factor (cpunctatus arc)", {
   expect_true(is.ordered(hd$arc))
   expect_setequal(levels(hd$arc), c("0","5","10","15","20","30","40","50"))
 })
+
+test_that("distal rule with max_radius caps the furthest-point search", {
+  data(cpunctatus, package = "radiatR")
+  hd_capped <- derive_headings(cpunctatus, rule = "distal",
+                               return_coords = TRUE, max_radius = 1)
+  rho <- sqrt(hd_capped$x_distal^2 + hd_capped$y_distal^2)
+  expect_true(all(rho <= 1 + 1e-8, na.rm = TRUE))
+})
+
+test_that("distal rule default (max_radius = Inf) is unchanged", {
+  data(cpunctatus, package = "radiatR")
+  hd_default <- derive_headings(cpunctatus, rule = "distal")
+  hd_inf     <- derive_headings(cpunctatus, rule = "distal", max_radius = Inf)
+  expect_equal(hd_default$heading, hd_inf$heading)
+})

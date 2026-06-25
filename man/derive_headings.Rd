@@ -65,4 +65,7 @@ construction coordinates each rule used to derive the heading, in the chosen
 `straight` adds `x_seg0`/`y_seg0`/`x_seg1`/`y_seg1` (the run endpoints);
 `pca_axis` adds `x_centroid`/`y_centroid`/`axis_x`/`axis_y` (a unit axis
 vector). Other rules ignore it.
+  The `distal` rule accepts `max_radius` (default `Inf`): the furthest-point
+  search is restricted to positions with radius `<= max_radius`, so
+  `max_radius = 1` ignores out-of-arena (`rho > 1`) tracking outliers.
 }
