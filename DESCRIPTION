@@ -81,6 +81,7 @@ Collate:
     'loaders.R'
     'model_selection.R'
     'circumference_labs.R'
+    'periodic_angle.R'
     'profile_plot.R'
     'radiatR-package.R'
     'simulate_tracks.R'

@@ -188,6 +188,7 @@ reference:
       - scale_clock
       - scale_months
       - scale_seconds
+      - as_angle
 
   - title: "Visualisation -- heading overlays"
     desc: >
