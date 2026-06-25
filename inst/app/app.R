@@ -168,6 +168,9 @@ example_ts <- function() {
 # Extend here when the modality piece adds more axial methods.
 AXIAL_METHODS <- c("velocity_axis", "pca_axis", "ransac_straight")
 
+# Package website (pkgdown). Used by the header brand + Documentation link.
+SITE_URL <- "https://johnkirwan.github.io/radiatR/"
+
 # A compact inline on/off toggle for a results-plot layer. Wraps a standard
 # Shiny checkbox (so it registers as input[[id]]) and styles it as a switch.
 .layer_switch <- function(id, label, value) {
@@ -416,10 +419,7 @@ ui <- page_fillable(
   card(
     card_header(
       class = "d-flex justify-content-between align-items-center",
-      tags$span(
-        tags$img(src = "logo.png", height = "30px", alt = "radiatR", class = "me-2"),
-        tags$b("radiatR — Circular Track Analysis")
-      ),
+      ui_brand(SITE_URL),
       uiOutput("step_pills")
     ),
     card_body(class = "main-body", uiOutput("wizard")),
@@ -818,6 +818,7 @@ server <- function(input, output, session) {
     # ---- Step 1: upload ----
     if (rv$step == 1L) {
       tagList(
+        ui_upload_logo(),
         h5("Upload your tracking data"),
         p(class = "text-muted",
           "Upload a CSV or text file from your tracking software.",
