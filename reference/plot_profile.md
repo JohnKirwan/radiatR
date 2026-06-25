@@ -16,7 +16,9 @@ plot_profile(
   units = c("radians", "degrees"),
   colour_by = NULL,
   panel_by = NULL,
-  max_speed = NULL
+  max_speed = NULL,
+  smooth = 1L,
+  show_raw = FALSE
 )
 ```
 
@@ -46,6 +48,18 @@ plot_profile(
   99.5 plot), a positive number (hard cap), or \`Inf\` (no clip).
   Off-scale points are reported in a caption. Ignored for
   \`"turning"\`/\`"direction"\`.
+
+- smooth:
+
+  Integer window, in observations, for a centered per-track moving
+  average of the \`"speed"\`/\`"turning"\` series. \`1\` (default)
+  leaves the raw series unchanged; larger values smooth out per-frame
+  jitter. Ignored for \`"direction"\` (a circular metric).
+
+- show_raw:
+
+  Logical; when \`TRUE\` and \`smooth \> 1\`, draw the raw series as a
+  faint line beneath the smoothed line. Default \`FALSE\`.
 
 ## Value
 

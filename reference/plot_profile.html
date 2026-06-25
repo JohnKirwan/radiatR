@@ -46,7 +46,7 @@ non-circular companion to [radiate()]. `metric = "speed"` plots
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Kinematics profile plot for a Tracks</h1>
-      <small class="dont-index">Source: <a href="https://github.com/JohnKirwan/radiatR/blob/v0.4.1/R/profile_plot.R" class="external-link"><code>R/profile_plot.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/JohnKirwan/radiatR/blob/master/R/profile_plot.R" class="external-link"><code>R/profile_plot.R</code></a></small>
       <div class="d-none name"><code>plot_profile.Rd</code></div>
     </div>
 
@@ -66,7 +66,9 @@ non-circular companion to [radiate()]. `metric = "speed"` plots
 <span>  units <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"radians"</span>, <span class="st">"degrees"</span><span class="op">)</span>,</span>
 <span>  colour_by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  panel_by <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  max_speed <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  max_speed <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  smooth <span class="op">=</span> <span class="fl">1L</span>,</span>
+<span>  show_raw <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -97,6 +99,18 @@ colour by / facet into panels. Default: one neutral series per track.</p></dd>
 the 99.5<!-- % quantile -- so single-frame tracking artifacts do not crush the -->
 plot), a positive number (hard cap), or `Inf` (no clip). Off-scale points
 are reported in a caption. Ignored for `"turning"`/`"direction"`.</p></dd>
+
+
+<dt id="arg-smooth">smooth<a class="anchor" aria-label="anchor" href="#arg-smooth"></a></dt>
+<dd><p>Integer window, in observations, for a centered per-track moving
+average of the `"speed"`/`"turning"` series. `1` (default) leaves the raw
+series unchanged; larger values smooth out per-frame jitter. Ignored for
+`"direction"` (a circular metric).</p></dd>
+
+
+<dt id="arg-show-raw">show_raw<a class="anchor" aria-label="anchor" href="#arg-show-raw"></a></dt>
+<dd><p>Logical; when `TRUE` and `smooth &gt; 1`, draw the raw series as a
+faint line beneath the smoothed line. Default `FALSE`.</p></dd>
 
 </dl></div>
     <div class="section level2">

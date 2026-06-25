@@ -203,6 +203,13 @@
   over elapsed time as points (direction is circular, so it is drawn as
   points rather than a line).
 
+- [`plot_profile()`](https://johnkirwan.github.io/radiatR/reference/plot_profile.md)
+  gains `smooth` (a centered per-track sliding-window moving average of
+  the speed/turning series, in points; `1` = off) and `show_raw` (draw
+  the raw series faintly under the smoothed line). The Shiny app’s
+  Track-metrics profile gains a smoothing slider and a “Show raw”
+  checkbox.
+
 - New
   [`plot_speed_direction()`](https://johnkirwan.github.io/radiatR/reference/plot_speed_direction.md)
   scatters each observation’s speed against its movement direction
