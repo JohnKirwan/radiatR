@@ -2237,6 +2237,82 @@ line_circle_intercept_traj <- function(traj, id, range) {
   )
 }
 
+# Clip trajectory geometry to the unit circle, for plotting only. Operates on a
+# data frame whose display coordinates are in columns `x_col`/`y_col`, grouped by
+# `group_col`. The Tracks object and all kinematics are untouched -- this only
+# shapes what `draw_tracks()` draws.
+#
+# geom = "point": drop rows with rho > 1.
+# geom = "path"/"line": per group, split into maximal finite runs (pre-existing
+#   NA-coordinate rows already break the path), then within each run keep
+#   inside->inside segments, insert the boundary intercept (via
+#   line_circle_intercept(), inside endpoint passed first) at inside<->outside
+#   crossings, drop outside->outside segments, and separate disjoint sub-paths
+#   with an all-NA break row so geom_path does not bridge the gap.
+.clip_path_to_circle <- function(data, x_col, y_col, group_col, geom = "path") {
+  if (!nrow(data)) return(data)
+  geom <- if (is.character(geom)) tolower(geom) else "path"
+
+  if (identical(geom, "point")) {
+    rho2 <- data[[x_col]]^2 + data[[y_col]]^2
+    return(data[!is.finite(rho2) | rho2 <= 1, , drop = FALSE])
+  }
+
+  groups <- if (is.null(group_col) || !group_col %in% names(data))
+    list(seq_len(nrow(data)))
+  else
+    split(seq_len(nrow(data)), data[[group_col]])
+
+  na_row <- data[1, , drop = FALSE]
+  na_row[] <- NA   # all-NA row -> geom_path break
+
+  clip_run <- function(g) {
+    gx <- g[[x_col]]; gy <- g[[y_col]]
+    inside <- (gx^2 + gy^2) <= 1
+    if (all(inside)) return(g)
+    if (!any(inside)) return(NULL)
+    n <- nrow(g)
+    out <- vector("list", 0L)
+    push <- function(df) out[[length(out) + 1L]] <<- df
+    icept <- function(in_i, out_i) {
+      ic <- line_circle_intercept(gx[in_i], gy[in_i], gx[out_i], gy[out_i])
+      r <- g[in_i, , drop = FALSE]
+      r[[x_col]] <- ic$x_int; r[[y_col]] <- ic$y_int
+      r
+    }
+    if (inside[1]) push(g[1, , drop = FALSE])
+    if (n >= 2L) for (i in 2:n) {
+      if (inside[i - 1L] && inside[i]) {
+        push(g[i, , drop = FALSE])
+      } else if (inside[i - 1L] && !inside[i]) {
+        push(icept(i - 1L, i)); push(na_row)
+      } else if (!inside[i - 1L] && inside[i]) {
+        push(icept(i, i - 1L)); push(g[i, , drop = FALSE])
+      }
+    }
+    if (length(out)) do.call(rbind, out) else NULL
+  }
+
+  pieces <- vector("list", 0L)
+  for (rows in groups) {
+    g <- data[rows, , drop = FALSE]
+    finite <- is.finite(g[[x_col]]) & is.finite(g[[y_col]])
+    if (!any(finite)) next
+    runlab <- cumsum(!finite)            # increments at each non-finite row
+    g_fin  <- g[finite, , drop = FALSE]
+    lab    <- runlab[finite]
+    runs   <- lapply(split(seq_len(nrow(g_fin)), lab),
+                     function(ix) clip_run(g_fin[ix, , drop = FALSE]))
+    runs   <- Filter(Negate(is.null), runs)
+    if (!length(runs)) next
+    joined <- runs[[1L]]
+    for (k in seq_along(runs)[-1L]) joined <- rbind(joined, na_row, runs[[k]])
+    pieces[[length(pieces) + 1L]] <- joined
+  }
+  if (!length(pieces)) return(data[0, , drop = FALSE])
+  do.call(rbind, pieces)
+}
+
 # Theme-derived radial styling resolved once, shared by the chrome helpers below
 # and by radiate.default / radiate.headings_frame.
 .radial_style <- function(theme, grid = "radial", grid_colour = NULL) {

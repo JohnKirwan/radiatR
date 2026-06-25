@@ -2103,3 +2103,36 @@ test_that("coords='absolute' equals the default when no reference is set", {
   dd <- ggplot2::layer_data(radiate(ts, ticks = FALSE), 1)
   expect_equal(da$x, dd$x); expect_equal(da$y, dd$y)
 })
+
+# ---- .clip_path_to_circle ---------------------------------------------------
+
+test_that(".clip_path_to_circle truncates an excursion at the rim with an NA break", {
+  # one group exiting then re-entering the unit circle
+  d <- data.frame(
+    g = "A",
+    x = c(0.0, 0.5, 1.4, 0.5, 0.0),  # middle point is outside (rho 1.4)
+    y = c(0.0, 0.0, 0.0, 0.0, 0.0)
+  )
+  out <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "path")
+  rho <- sqrt(out$x^2 + out$y^2)
+  # no rendered point sits outside the circle (NA rows excluded)
+  expect_true(all(rho <= 1 + 1e-8, na.rm = TRUE))
+  # the boundary was hit exactly (an intercept at rho == 1)
+  expect_true(any(abs(rho - 1) < 1e-8, na.rm = TRUE))
+  # a break (all-NA coords row) was inserted
+  expect_true(any(is.na(out$x)))
+})
+
+test_that(".clip_path_to_circle leaves an all-inside track unchanged", {
+  d <- data.frame(g = "A", x = c(0, 0.3, 0.6, 0.3), y = c(0, 0.1, 0.2, 0.1))
+  out <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "path")
+  expect_equal(out$x, d$x)
+  expect_equal(out$y, d$y)
+})
+
+test_that(".clip_path_to_circle with geom='point' drops out-of-arena rows", {
+  d <- data.frame(g = "A", x = c(0.2, 1.3, 0.4), y = c(0, 0, 0))
+  out <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "point")
+  expect_equal(nrow(out), 2L)
+  expect_true(all(sqrt(out$x^2 + out$y^2) <= 1))
+})
