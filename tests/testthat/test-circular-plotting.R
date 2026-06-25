@@ -2198,3 +2198,17 @@ test_that(".clip_path_to_circle does not warn when an inside point is exactly on
   d <- data.frame(g = "A", x = c(0, 1, 1.5), y = c(0, 0, 0))
   expect_no_warning(radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "path"))
 })
+
+test_that(".clip_path_to_circle treats a point a hair over the rim as inside (no spurious clip)", {
+  # A point at rho = 1 + 1e-12 (float round-off / simulate_tracks clamp-to-1) is
+  # on the rim, not out of arena: it must NOT trigger a clip (which would change
+  # the row count and fragment the path with an NA break).
+  eps <- 1e-12
+  d <- data.frame(g = "A", x = c(0, 0.5, 1 + eps, 0.5, 0), y = c(0, 0, 0, 0, 0))
+  out <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "path")
+  expect_equal(nrow(out), nrow(d))
+  expect_false(any(is.na(out$x)))
+  # geom = "point" likewise keeps a just-over-rim point
+  outp <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "point")
+  expect_equal(nrow(outp), nrow(d))
+})

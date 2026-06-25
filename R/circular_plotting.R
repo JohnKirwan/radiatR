@@ -2253,9 +2253,14 @@ line_circle_intercept_traj <- function(traj, id, range) {
   if (!nrow(data)) return(data)
   geom <- if (is.character(geom)) tolower(geom) else "path"
 
+  # Rim tolerance: a point a hair over 1 (float round-off, or simulate_tracks'
+  # clamp-to-1 round-tripped through sqrt(cos^2+sin^2)) is on the rim, not out of
+  # arena -- treat it as inside so it is not spuriously clipped.
+  rim2 <- 1 + 1e-9
+
   if (identical(geom, "point")) {
     rho2 <- data[[x_col]]^2 + data[[y_col]]^2
-    return(data[!is.finite(rho2) | rho2 <= 1, , drop = FALSE])
+    return(data[!is.finite(rho2) | rho2 <= rim2, , drop = FALSE])
   }
 
   groups <- if (is.null(group_col) || !group_col %in% names(data))
@@ -2268,7 +2273,7 @@ line_circle_intercept_traj <- function(traj, id, range) {
 
   clip_run <- function(g) {
     gx <- g[[x_col]]; gy <- g[[y_col]]
-    inside <- (gx^2 + gy^2) <= 1
+    inside <- (gx^2 + gy^2) <= rim2
     if (all(inside)) return(g)
     if (!any(inside)) return(NULL)
     n <- nrow(g)
