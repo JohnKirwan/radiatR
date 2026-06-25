@@ -67,6 +67,15 @@
   columns and in the `TrajSet` `meta$sim_conditions`. The default output
   is unchanged.
 
+### Bug fixes
+
+- `derive_headings(carry = )` now preserves the carried column’s class:
+  a carried **factor** kept its labels instead of being coerced to
+  integer level codes (so
+  e.g. `circ_summary_headings(group_by = <a carried factor>)` grouped by
+  the real labels, not `1, 2, ...`); `POSIXct`/`Date` columns are
+  likewise preserved.
+
 ### Track metrics
 
 - New
