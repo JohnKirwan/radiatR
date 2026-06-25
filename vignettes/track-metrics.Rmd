@@ -71,6 +71,22 @@ head(track_length(set_distance_scale(cpunctatus, 50, unit = "mm")))   # mm
 The single-path helpers `path_*` operate on plain `x`/`y` vectors if you want a
 metric for one trajectory outside a `Tracks`.
 
+## Restricting to within the circumference
+
+Tracks can wander past the circumference (`rho > 1`) -- the animal reaching the
+edge, or an occasional tracking outlier. `restrict_to_circumference()` returns a
+`Tracks` with that out-of-circumference data removed, so the metrics see only the
+within-circle path. `mode = "truncate"` (the default) keeps each track up to its
+first excursion beyond the circumference; `mode = "drop"` removes individual
+out-of-circumference points.
+
+```{r restrict}
+within <- restrict_to_circumference(cpunctatus, mode = "truncate")
+head(track_length(within))
+```
+
+This is the data counterpart to the plot-only `radiate(clip_tracks = TRUE)`.
+
 ## Straightness and tortuosity
 
 The straightness index is net displacement / total length, in `[0, 1]`
