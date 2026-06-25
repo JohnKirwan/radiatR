@@ -74,6 +74,15 @@
 
 ## Track metrics
 
+* New `restrict_to_circumference()` returns a `Tracks` with out-of-circumference
+  (`rho > 1`) data removed, so the kinematics (`track_speed()`,
+  `instantaneous_speed()`, `track_length()`, the `path_*` shape metrics) are
+  computed only on the within-circle portion of each trajectory. `mode =
+  "truncate"` (default) keeps each track up to its first excursion beyond the
+  circumference; `mode = "drop"` removes individual out-of-circumference points.
+  This is the data-filtering counterpart to the plot-only
+  `radiate(clip_tracks = TRUE)`.
+
 * New `path_sinuosity()` / `sinuosity()` add the turning-angle-based sinuosity
   index (Benhamou 2004) — the tortuosity complement to the displacement-based
   `straightness_index()` / `tortuosity_ratio()`, robust for convoluted paths

@@ -254,6 +254,7 @@ reference:
       - reference
       - set_reference
       - apply_transform
+      - restrict_to_circumference
       - set_transform_history
       - log_transform
 
