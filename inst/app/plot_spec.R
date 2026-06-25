@@ -128,7 +128,7 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
                      cap = SPEC_CYCLE_N, legend = legend),
     theme        = inputs$plot_theme %||% "void",
     track_colour = inputs$track_colour %||% "trajectory",
-    clip_tracks = !isTRUE(inputs$show_oob),   # FALSE -> draw points exceeding the perimeter
+    clip_tracks = !isTRUE(inputs$show_oob),   # FALSE -> draw points beyond the circumference
     coords = inputs$frame %||% "relative",
     frame_rate = inputs$frame_rate,
     angle_labels = inputs$angle_labels %||% "degrees",

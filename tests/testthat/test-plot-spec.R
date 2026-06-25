@@ -209,7 +209,7 @@ test_that("spec_to_code emits clip_tracks = FALSE only when off-default", {
   expect_false(grepl("clip_tracks", spec_to_code(spec_off), fixed = TRUE))
 })
 
-test_that("spec_to_plot honours clip_tracks (out-of-perimeter points)", {
+test_that("spec_to_plot honours clip_tracks (beyond-circumference points)", {
   data(cpunctatus, package = "radiatR", envir = environment())
   ts <- cpunctatus; hd <- derive_headings(ts, rule = "distal")
   rho_max <- function(oob) {
@@ -219,6 +219,6 @@ test_that("spec_to_plot honours clip_tracks (out-of-perimeter points)", {
     b <- ggplot2::ggplot_build(spec_to_plot(spec, ts, NULL))
     max(sqrt(b$data[[1]]$x^2 + b$data[[1]]$y^2), na.rm = TRUE)
   }
-  expect_gt(rho_max(TRUE), 1)            # clip off -> points beyond the perimeter
+  expect_gt(rho_max(TRUE), 1)            # clip off -> points beyond the circumference
   expect_lte(rho_max(FALSE), 1 + 1e-6)   # clip on (default) -> within the unit circle
 })

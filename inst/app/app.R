@@ -1041,7 +1041,7 @@ server <- function(input, output, session) {
                                     "grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));",
                                     "column-gap: 0.75rem;"),
                       .layer_switch("show_tracks",    "Trajectories",       TRUE),
-                      .layer_switch("show_oob",       "Allow points exceeding perimeter", FALSE),
+                      .layer_switch("show_oob",       "Allow points beyond the circumference", FALSE),
                       .layer_switch("show_arrow",     "Directedness arrow", TRUE),
                       .layer_switch("show_ci",        "Mean-direction CI",  FALSE),
                       .layer_switch("show_vectors",   "Heading vectors",    FALSE),
