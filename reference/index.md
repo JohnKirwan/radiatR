@@ -234,6 +234,8 @@ points, clock hours, months, or seconds.
   : Circumference scale: months of the year
 - [`scale_seconds()`](https://johnkirwan.github.io/radiatR/reference/scale_seconds.md)
   : Circumference scale: seconds (or minutes)
+- [`as_angle()`](https://johnkirwan.github.io/radiatR/reference/as_angle.md)
+  : Map periodic time, date, or numeric data onto circular angles
 
 ## Visualisation – heading overlays
 
@@ -450,6 +452,8 @@ Any remaining exported topics.
   : Apply a bespoke transformation to a Tracks
 - [`as.data.frame(`*`<Tracks>`*`)`](https://johnkirwan.github.io/radiatR/reference/as.data.frame.Tracks.md)
   : Coerce a Tracks to a data frame
+- [`as_angle()`](https://johnkirwan.github.io/radiatR/reference/as_angle.md)
+  : Map periodic time, date, or numeric data onto circular angles
 - [`assign_colour_key()`](https://johnkirwan.github.io/radiatR/reference/assign_colour_key.md)
   [`assign_color_key()`](https://johnkirwan.github.io/radiatR/reference/assign_colour_key.md)
   : Assign a shared colour-key column to a Tracks or data frame

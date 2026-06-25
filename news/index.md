@@ -198,6 +198,23 @@
   `radiate(angle_labels = "cardinal" | "hours" | "months" | "seconds")`
   selects them directly and aligns the tick count to the scale.
 
+- New
+  [`as_angle()`](https://johnkirwan.github.io/radiatR/reference/as_angle.md)
+  maps periodic **time / date / numeric** data onto circular angles —
+  the data-side counterpart of the circumference labels.
+  `as_angle(x, period = "day" | "year" | <numeric>)` turns
+  `POSIXct`/`Date`/numeric input into unit-circle radians in the
+  clock/calendar convention, so a `06:00` timestamp lands on the `"6"`
+  hours label (and the 1st of each month on its month label), and the
+  result feeds
+  [`headings_frame()`](https://johnkirwan.github.io/radiatR/reference/headings_frame.md)
+  /
+  [`circ_summary()`](https://johnkirwan.github.io/radiatR/reference/circ_summary.md)
+  /
+  [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  like any heading column. Enables chronobiology (time of day) and
+  phenology (time of year) circular analyses.
+
 - [`plot_profile()`](https://johnkirwan.github.io/radiatR/reference/plot_profile.md)
   draws a non-circular kinematics profile – instantaneous speed or
   turning rate against elapsed time, one line per track (the ggplot

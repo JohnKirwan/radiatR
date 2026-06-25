@@ -489,6 +489,38 @@ target), the V-test is more powerful than the omnibus Rayleigh test, and
 the line makes the one-sided nature of the decision visible.</p>
 </div>
 <div class="section level2">
+<h2 id="periodic-data-time-of-day-or-year">Periodic data: time of day or year<a class="anchor" aria-label="anchor" href="#periodic-data-time-of-day-or-year"></a>
+</h2>
+<p>Headings are not the only angles. Any <strong>periodic</strong>
+variable — the time of day an event occurs (chronobiology), the day of
+the year (phenology), or a generic cycle — maps onto the circle, and
+then every tool above applies. <code><a href="../reference/as_angle.html">as_angle()</a></code> does the mapping
+in the same clock/calendar convention as the circumference labels, so a
+<code>06:00</code> event lands on the <code>"6"</code> o’clock
+label.</p>
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
+<span><span class="co"># 200 events: a strong morning cluster (~09:00) and a weaker evening one (~21:00)</span></span>
+<span><span class="va">times</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.POSIXlt.html" class="external-link">as.POSIXct</a></span><span class="op">(</span><span class="st">"2020-06-01"</span>, tz <span class="op">=</span> <span class="st">"UTC"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">150</span>, <span class="fl">9</span> <span class="op">*</span> <span class="fl">3600</span>, <span class="fl">1.2</span> <span class="op">*</span> <span class="fl">3600</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">21</span> <span class="op">*</span> <span class="fl">3600</span>, <span class="fl">3600</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">events</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/headings_frame.html">headings_frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>heading <span class="op">=</span> <span class="fu"><a href="../reference/as_angle.html">as_angle</a></span><span class="op">(</span><span class="va">times</span>, <span class="st">"day"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>                         col <span class="op">=</span> <span class="va">heading</span>, units <span class="op">=</span> <span class="st">"radians"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># is the timing non-uniform over the day?</span></span>
+<span><span class="fu"><a href="../reference/test_uniformity.html">test_uniformity</a></span><span class="op">(</span><span class="va">events</span>, test <span class="op">=</span> <span class="st">"rayleigh"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   statistic      p_value   n     test</span></span>
+<span><span class="co">#&gt; 1 0.4789747 1.183343e-20 200 rayleigh</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">events</span>, angle_labels <span class="op">=</span> <span class="st">"hours"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="circular-statistics_files/figure-html/periodic-1.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
+<p>The dots cluster at their clock positions, and the Rayleigh test
+confirms the day is not uniform. Use <code>period = "year"</code> for
+<code>Date</code>/<code>POSIXct</code> day-of-year data (pair it with
+<code>angle_labels = "months"</code>), or a positive number for a custom
+cycle length.</p>
+</div>
+<div class="section level2">
 <h2 id="where-next">Where next<a class="anchor" aria-label="anchor" href="#where-next"></a>
 </h2>
 <ul>
