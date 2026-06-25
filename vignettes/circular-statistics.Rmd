@@ -349,6 +349,34 @@ When the experiment has an *a priori* expected direction (the target), the
 V-test is more powerful than the omnibus Rayleigh test, and the line makes the
 one-sided nature of the decision visible.
 
+## Periodic data: time of day or year
+
+Headings are not the only angles. Any **periodic** variable --- the time of day
+an event occurs (chronobiology), the day of the year (phenology), or a generic
+cycle --- maps onto the circle, and then every tool above applies. `as_angle()`
+does the mapping in the same clock/calendar convention as the circumference
+labels, so a `06:00` event lands on the `"6"` o'clock label.
+
+```{r periodic, fig.width=6, fig.height=6}
+set.seed(1)
+# 200 events: a strong morning cluster (~09:00) and a weaker evening one (~21:00)
+times <- as.POSIXct("2020-06-01", tz = "UTC") +
+  c(rnorm(150, 9 * 3600, 1.2 * 3600), rnorm(50, 21 * 3600, 3600))
+
+events <- headings_frame(data.frame(heading = as_angle(times, "day")),
+                         col = heading, units = "radians")
+
+# is the timing non-uniform over the day?
+test_uniformity(events, test = "rayleigh")
+
+radiate(events, angle_labels = "hours")
+```
+
+The dots cluster at their clock positions, and the Rayleigh test confirms the
+day is not uniform. Use `period = "year"` for `Date`/`POSIXct` day-of-year data
+(pair it with `angle_labels = "months"`), or a positive number for a custom
+cycle length.
+
 ## Where next
 
 - The **main vignette** covers building these heading data frames and the
