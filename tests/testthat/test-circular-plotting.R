@@ -2156,3 +2156,45 @@ test_that("radiate(clip_tracks = FALSE) preserves out-of-arena overshoot", {
   rho <- sqrt(trk$x^2 + trk$y^2)
   expect_true(any(rho > 1, na.rm = TRUE))       # the original bug, on demand
 })
+
+test_that(".clip_path_to_circle isolates groups (one clipped, one all-inside)", {
+  d <- data.frame(
+    g = c("A","A","A", "B","B","B"),
+    x = c(0, 1.4, 0,   0, 0.3, 0.6),
+    y = c(0, 0,   0,   0, 0.1, 0.2)
+  )
+  out <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "path")
+  b <- out[!is.na(out$g) & out$g == "B", ]
+  expect_equal(b$x, c(0, 0.3, 0.6))
+  expect_equal(b$y, c(0, 0.1, 0.2))
+  expect_true(all(sqrt(out$x^2 + out$y^2) <= 1 + 1e-8, na.rm = TRUE))
+})
+
+test_that(".clip_path_to_circle drops an all-outside group", {
+  d <- data.frame(
+    g = c("A","A", "B","B"),
+    x = c(1.2, 1.3,  0, 0.4),
+    y = c(0.5, 0.6,  0, 0.1)
+  )
+  out <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "path")
+  expect_false(any(!is.na(out$g) & out$g == "A"))
+  expect_true(any(!is.na(out$g) & out$g == "B"))
+})
+
+test_that(".clip_path_to_circle splits a group on a pre-existing NA row", {
+  d <- data.frame(
+    g = "A",
+    x = c(0, 0.3, NA, 0.5, 0.2),
+    y = c(0, 0.1, NA, 0.0, 0.0)
+  )
+  out <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "path")
+  expect_true(any(is.na(out$x)))
+  fin <- out[!is.na(out$x), ]
+  expect_equal(nrow(fin), 4L)
+  expect_true(all(sqrt(fin$x^2 + fin$y^2) <= 1 + 1e-8))
+})
+
+test_that(".clip_path_to_circle does not warn when an inside point is exactly on the rim", {
+  d <- data.frame(g = "A", x = c(0, 1, 1.5), y = c(0, 0, 0))
+  expect_no_warning(radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "path"))
+})

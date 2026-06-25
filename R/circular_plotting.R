@@ -2275,9 +2275,14 @@ line_circle_intercept_traj <- function(traj, id, range) {
     out <- vector("list", 0L)
     push <- function(df) out[[length(out) + 1L]] <<- df
     icept <- function(in_i, out_i) {
-      ic <- line_circle_intercept(gx[in_i], gy[in_i], gx[out_i], gy[out_i])
       r <- g[in_i, , drop = FALSE]
-      r[[x_col]] <- ic$x_int; r[[y_col]] <- ic$y_int
+      if (sqrt(gx[in_i]^2 + gy[in_i]^2) >= 1 - 1e-9) {
+        # inside endpoint already on the rim -> reuse it (no intercept needed)
+        r[[x_col]] <- gx[in_i]; r[[y_col]] <- gy[in_i]
+      } else {
+        ic <- line_circle_intercept(gx[in_i], gy[in_i], gx[out_i], gy[out_i])
+        r[[x_col]] <- ic$x_int; r[[y_col]] <- ic$y_int
+      }
       r
     }
     if (inside[1]) push(g[1, , drop = FALSE])

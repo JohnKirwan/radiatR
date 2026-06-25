@@ -72,9 +72,9 @@
 #' `straight` adds `x_seg0`/`y_seg0`/`x_seg1`/`y_seg1` (the run endpoints);
 #' `pca_axis` adds `x_centroid`/`y_centroid`/`axis_x`/`axis_y` (a unit axis
 #' vector). Other rules ignore it.
-#'   The `distal` rule accepts `max_radius` (default `Inf`): the furthest-point
-#'   search is restricted to positions with radius `<= max_radius`, so
-#'   `max_radius = 1` ignores out-of-arena (`rho > 1`) tracking outliers.
+#' The `distal` rule accepts `max_radius` (default `Inf`): the furthest-point
+#' search is restricted to positions with radius `<= max_radius`, so
+#' `max_radius = 1` ignores out-of-arena (`rho > 1`) tracking outliers.
 #' @return data.frame with columns id, time (approx), heading (radians, unit-circle
 #'   convention), plus the rule-specific construction columns above when
 #'   `return_coords = TRUE`. For some rules there may be multiple headings per id.
