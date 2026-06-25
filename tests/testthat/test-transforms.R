@@ -89,3 +89,62 @@ test_that("direction_to_axis doubles the angle modulo 2*pi", {
   expect_equal(out@data[[ts@cols$angle]],
                (2 * cpunctatus@data[[cpunctatus@cols$angle]]) %% (2 * pi))
 })
+
+# Build a one-track Tracks with explicit relative coords (rho = |rel_x| here).
+# normalize_xy = FALSE keeps the supplied rel_x/rel_y as-is.
+mk_track <- function(rx) {
+  n  <- length(rx)
+  df <- data.frame(id = "A", t = seq_len(n), x = rx, y = 0, rx = rx, ry = 0)
+  tracks(df, id = "id", time = "t", x = "x", y = "y",
+         rel_x = "rx", rel_y = "ry", normalize_xy = FALSE)
+}
+
+test_that("restrict_to_circumference truncate keeps the pre-excursion prefix", {
+  ts <- mk_track(c(0, 0.3, 1.4, 0.3, 0))            # first rho>1 at index 3
+  out <- suppressMessages(restrict_to_circumference(ts, "truncate"))
+  d   <- as.data.frame(out)
+  expect_equal(nrow(d), 2L)
+  expect_true(all(sqrt(d$rx^2 + d$ry^2) <= 1 + 1e-9))
+})
+
+test_that("restrict_to_circumference drop removes only beyond-circumference rows", {
+  ts <- mk_track(c(0, 0.3, 1.4, 0.3, 0))
+  out <- suppressMessages(restrict_to_circumference(ts, "drop"))
+  d   <- as.data.frame(out)
+  expect_equal(nrow(d), 4L)                          # only the rho=1.4 row removed
+  expect_true(all(sqrt(d$rx^2 + d$ry^2) <= 1 + 1e-9))
+})
+
+test_that("restrict_to_circumference keeps points exactly on the circumference", {
+  ts <- mk_track(c(0, 0.5, 1, 0.5, 0))               # rho = 1 is on the circle
+  out <- suppressMessages(restrict_to_circumference(ts, "truncate"))
+  expect_equal(nrow(as.data.frame(out)), 5L)         # nothing is "beyond"
+})
+
+test_that("restrict_to_circumference errors without relative coordinates", {
+  df <- data.frame(id = "A", t = 1:3, x = c(0, 0.5, 0.9), y = 0)
+  ts <- tracks(df, id = "id", time = "t", x = "x", y = "y", normalize_xy = FALSE)
+  expect_error(restrict_to_circumference(ts), "relative", ignore.case = TRUE)
+})
+
+test_that("restrict_to_circumference drops a fully-beyond track and messages", {
+  ts <- mk_track(c(1.2, 1.3, 1.4))                   # entire track beyond
+  expect_message(out <- restrict_to_circumference(ts, "truncate"), "removed")
+  expect_equal(nrow(as.data.frame(out)), 0L)
+})
+
+test_that("restrict_to_circumference logs a transform-history entry", {
+  ts  <- mk_track(c(0, 0.3, 1.4, 0.3, 0))
+  out <- suppressMessages(restrict_to_circumference(ts, "drop"))
+  expect_true("restrict_to_circumference" %in% transform_history(out)$step)
+})
+
+test_that("restrict_to_circumference shortens cpunctatus tracks and removes the glitch", {
+  data(cpunctatus, package = "radiatR")
+  tr <- suppressMessages(restrict_to_circumference(cpunctatus, "truncate"))
+  l0 <- track_length(cpunctatus); l1 <- track_length(tr)
+  m  <- merge(l0, l1, by = "trial_id", suffixes = c("_0", "_1"))
+  expect_true(all(m$length_1 <= m$length_0 + 1e-9))
+  d  <- as.data.frame(tr)
+  expect_true(all(sqrt(d$rel_x^2 + d$rel_y^2) <= 1 + 1e-6))   # the 1.347 glitch gone
+})

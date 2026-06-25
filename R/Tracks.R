@@ -643,7 +643,7 @@ as.data.frame.Tracks <- function(x, row.names = NULL, optional = FALSE, ...) {
 
   lut     <- .reference_lookup(x)
   ids_chr <- as.character(d[[cols$id]])
-  for (cname in missing_cols) d[[cname]] <- NA_real_
+  for (cname in missing_cols) d[[cname]] <- if (nrow(d) == 0L) numeric(0) else NA_real_
   for (id in unique(ids_chr)) {
     rows <- which(ids_chr %in% id)
     idx  <- match(id, names(lut))
