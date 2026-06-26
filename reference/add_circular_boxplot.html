@@ -77,7 +77,7 @@ a short band even when the axis sits on the 0/pi seam). Composable with `+`.</p>
 <span>  linewidth <span class="op">=</span> <span class="fl">0.8</span>,</span>
 <span>  n_theta <span class="op">=</span> <span class="fl">200L</span>,</span>
 <span>  display <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  panel_by <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  facets <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  theme <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  color <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -144,9 +144,9 @@ Default `"black"`. `color` is the American-spelling alias.</p></dd>
 `attr(hd, "display")`, falling back to `circ_display()`.</p></dd>
 
 
-<dt id="arg-panel-by">panel_by<a class="anchor" aria-label="anchor" href="#arg-panel-by"></a></dt>
+<dt id="arg-facets">facets<a class="anchor" aria-label="anchor" href="#arg-facets"></a></dt>
 <dd><p>Optional name of a column in `hd` identifying facet panels
-(the same column passed to `radiate(panel_by = )`). When set, a separate
+(the same column passed to `radiate(facets = )`). When set, a separate
 boxplot is computed and drawn per level so each facet shows its own
 summary; the layer data is tagged with this column so it faces correctly. A
 level that is not drawable (fewer than 4 usable observations or a non-unique

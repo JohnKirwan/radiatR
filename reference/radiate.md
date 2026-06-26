@@ -24,7 +24,7 @@ radiate(
   track_colour = c("trajectory", "sequence", "time", "speed"),
   time_units = c("seconds", "minutes", "milliseconds"),
   coords = c("relative", "absolute"),
-  panel_by = NULL,
+  facets = NULL,
   rows = NULL,
   cols = NULL,
   ncol = NULL,
@@ -83,7 +83,7 @@ radiate(
   base_r = 1,
   shade = FALSE,
   shape = FALSE,
-  panel_by = NULL,
+  facets = NULL,
   ncol = NULL,
   ticks = TRUE,
   degrees = TRUE,
@@ -144,7 +144,7 @@ radiate(
   Optional cycling colour specification. Either a positive integer \`n\`
   (trajectories are assigned colours 1–n, cycling back to 1 after every
   \`n\` trajectories) or a character vector of colour values (e.g.
-  \`c("red","blue","green")\`). When \`panel_by\` is set the cycle
+  \`c("red","blue","green")\`). When \`facets\` is set the cycle
   restarts independently within each panel. Mutually exclusive with
   \`colour_col\`. \`color_cycle\` is the American-spelling alias.
 
@@ -185,7 +185,7 @@ radiate(
   supplied. Errors if \`"absolute"\` is requested but the \`Tracks\` has
   no \`x\`/\`y\` columns registered.
 
-- panel_by:
+- facets:
 
   NULL, a column name, or a character vector of column names to facet by
   (via \[ggplot2::facet_wrap()\]). The named column(s) must be present
@@ -197,20 +197,20 @@ radiate(
   column grid via \[ggplot2::facet_grid()\] (mirroring ggplot: \`rows\`
   and \`cols\` map to the two sides of the \`rows ~ cols\` formula, and
   multiple variables per side nest as in \`facet_grid()\`). Use these
-  \*or\* \`panel_by\` (\`facet_wrap\`), not both. Scales are fixed
+  \*or\* \`facets\` (\`facet_wrap\`), not both. Scales are fixed
   (circular panels stay round); \`ncol\`/\`strip_position = "inside"\`
-  apply to \`panel_by\` only.
+  apply to \`facets\` only.
 
 - ncol:
 
-  Number of columns passed to \[ggplot2::facet_wrap()\] when
-  \`panel_by\` is set.
+  Number of columns passed to \[ggplot2::facet_wrap()\] when \`facets\`
+  is set.
 
 - strip_labels:
 
   Logical or \`NULL\`. Whether to show a label identifying the panel
-  variable value on each panel. Defaults to \`TRUE\` when \`panel_by\`
-  is set, \`FALSE\` otherwise. Ignored when \`panel_by\` is \`NULL\`.
+  variable value on each panel. Defaults to \`TRUE\` when \`facets\` is
+  set, \`FALSE\` otherwise. Ignored when \`facets\` is \`NULL\`.
 
 - strip_position:
 
@@ -361,7 +361,7 @@ radiate(
 - arrow_colour_col, arrow_color_col:
 
   Optional grouping column. When supplied, one mean resultant arrow is
-  drawn per level of this column (within each panel, if \`panel_by\` is
+  drawn per level of this column (within each panel, if \`facets\` is
   also set) and mapped to the colour aesthetic, so the arrow can follow
   a colour grouping independently of faceting. Default \`NULL\` draws a
   single arrow in \`arrow_colour\`. \`arrow_color_col\` is the

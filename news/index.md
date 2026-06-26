@@ -18,6 +18,20 @@
   No behaviour, slot, or output changed. Bundled `cpunctatus` is now a
   `Tracks` object.
 
+- The `panel_by` argument of
+  [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md),
+  [`gg_traj()`](https://johnkirwan.github.io/radiatR/reference/gg_traj.md),
+  [`add_circular_boxplot()`](https://johnkirwan.github.io/radiatR/reference/add_circular_boxplot.md),
+  and
+  [`plot_profile()`](https://johnkirwan.github.io/radiatR/reference/plot_profile.md)
+  is renamed to **`facets`** (mirroring
+  [`ggplot2::facet_wrap()`](https://ggplot2.tidyverse.org/reference/facet_wrap.html)).
+  No deprecation alias: existing `panel_by =` calls error with “unused
+  argument”. Behaviour is unchanged;
+  [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  also has `rows`/`cols` for
+  [`facet_grid()`](https://ggplot2.tidyverse.org/reference/facet_grid.html).
+
 ### Infrastructure
 
 - `headings_frame` is now a tibble subclass whose class and display
@@ -74,7 +88,7 @@
   [`ggplot2::facet_grid()`](https://ggplot2.tidyverse.org/reference/facet_grid.html)
   faceting — a true row x column grid, mirroring ggplot (each accepts
   one or more column names, nesting per side). This complements the
-  existing `panel_by` (`facet_wrap`); use one or the other, not both.
+  existing `facets` (`facet_wrap`); use one or the other, not both.
 
 ### Bug fixes
 
@@ -220,7 +234,7 @@
   numbers. `"outside"` (default) is unchanged.
 
 - [`add_circular_boxplot()`](https://johnkirwan.github.io/radiatR/reference/add_circular_boxplot.md)
-  gains `panel_by` so a faceted
+  gains `facets` so a faceted
   [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   draws a separate boxplot per panel instead of repeating one pooled
   summary on every facet; the Shiny app passes the active facet column

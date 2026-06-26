@@ -712,10 +712,10 @@ from <code><a href="../reference/radiate.html">radiate()</a></code> to draw all 
 <p><strong>Option 2 — cycling palette.</strong>
 <code>colour_cycle</code> assigns each trajectory a colour index that
 cycles back to 1 after every <em>n</em> trajectories. When
-<code>panel_by</code> is set the cycle restarts independently within
-each panel so that trajectory 1 in every panel always gets colour 1.
-Pass an integer for automatic palette assignment, or a character vector
-to specify colours explicitly.</p>
+<code>facets</code> is set the cycle restarts independently within each
+panel so that trajectory 1 in every panel always gets colour 1. Pass an
+integer for automatic palette assignment, or a character vector to
+specify colours explicitly.</p>
 <p><strong>Option 3 — variable mapping.</strong> <code>colour_col</code>
 maps any data column to colour (e.g. the <code>arc</code> factor used in
 the combined-trajectory plot above).</p>
@@ -747,7 +747,7 @@ per-trajectory colour — not a single per-condition colour — when
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus_cc</span>,</span>
 <span>        group_col    <span class="op">=</span> <span class="st">"trial_id"</span>,</span>
 <span>        colour_col   <span class="op">=</span> <span class="st">"cycle_colour"</span>,</span>
-<span>        panel_by     <span class="op">=</span> <span class="st">"arc"</span>,</span>
+<span>        facets     <span class="op">=</span> <span class="st">"arc"</span>,</span>
 <span>        ncol         <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>        show_labels  <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>        show_arrow   <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -761,8 +761,8 @@ into a grid via <code><a href="https://ggplot2.tidyverse.org/reference/facet_gri
 each takes one or more columns):</p>
 <div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, group_col <span class="op">=</span> <span class="st">"trial_id"</span>, rows <span class="op">=</span> <span class="st">"type"</span>, cols <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span></span></code></pre></div>
-<p>Use <code>rows</code>/<code>cols</code> (grid) or
-<code>panel_by</code> (wrap), not both.</p>
+<p>Use <code>rows</code>/<code>cols</code> (grid) or <code>facets</code>
+(wrap), not both.</p>
 <p><strong>+ Bootstrap CI arc</strong> added first so it sits behind
 heading markers:</p>
 <div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
@@ -862,7 +862,7 @@ the heading vectors:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus_cc</span>,</span>
 <span>        group_col    <span class="op">=</span> <span class="st">"trial_id"</span>,</span>
 <span>        colour_col   <span class="op">=</span> <span class="st">"cycle_colour"</span>,</span>
-<span>        panel_by     <span class="op">=</span> <span class="st">"arc"</span>,</span>
+<span>        facets     <span class="op">=</span> <span class="st">"arc"</span>,</span>
 <span>        ncol         <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>        show_labels  <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>        show_arrow   <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -904,7 +904,7 @@ fitted curve.</p>
 <span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span>,</span>
 <span>        group_col    <span class="op">=</span> <span class="st">"trial_id"</span>,</span>
 <span>        colour_cycle <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>        panel_by     <span class="op">=</span> <span class="st">"arc"</span>,</span>
+<span>        facets     <span class="op">=</span> <span class="st">"arc"</span>,</span>
 <span>        ncol         <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>        show_labels  <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>        show_arrow   <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -1269,7 +1269,7 @@ that the spatial pattern is consistent with the crossing method:</p>
 <span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus_cc_d</span>,</span>
 <span>        group_col   <span class="op">=</span> <span class="st">"trial_id"</span>,</span>
 <span>        colour_col  <span class="op">=</span> <span class="st">"cycle_colour"</span>,</span>
-<span>        panel_by    <span class="op">=</span> <span class="st">"arc"</span>,</span>
+<span>        facets    <span class="op">=</span> <span class="st">"arc"</span>,</span>
 <span>        ncol        <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>        show_labels <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>        show_arrow  <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -1339,7 +1339,7 @@ without any files, useful for testing and demonstrations. The
 <span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">ts_sim</span>,</span>
 <span>        group_col    <span class="op">=</span> <span class="st">"trial_id"</span>,</span>
 <span>        colour_cycle <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>        panel_by     <span class="op">=</span> <span class="st">"condition"</span>,</span>
+<span>        facets     <span class="op">=</span> <span class="st">"condition"</span>,</span>
 <span>        ncol         <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>        show_arrow   <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/simulate-1.png" class="r-plt" alt="" width="700"></p>

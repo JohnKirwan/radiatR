@@ -155,7 +155,7 @@ produces a 95% interval.</p></dd>
   controls the number of bins.</p>
 <p>When `colour_col` is supplied the density is computed independently for each
 group and the group label is preserved in the output, enabling per-panel use
-with [radiate()]'s `panel_by`.</p>
+with [radiate()]'s `facets`.</p>
 <p>When `boot_reps &gt; 0` and `method = "vonmises"`, a non-parametric bootstrap
 is run: `boot_reps` samples are drawn with replacement, a von Mises MLE is
 fitted to each, and the density is evaluated on the same grid. The

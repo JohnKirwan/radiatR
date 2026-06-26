@@ -66,7 +66,7 @@ non-circular companion to [radiate()]. `metric = "speed"` plots
 <span>  metric <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"speed"</span>, <span class="st">"turning"</span>, <span class="st">"direction"</span><span class="op">)</span>,</span>
 <span>  units <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"radians"</span>, <span class="st">"degrees"</span><span class="op">)</span>,</span>
 <span>  colour_by <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  panel_by <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  facets <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  max_speed <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  smooth <span class="op">=</span> <span class="fl">1L</span>,</span>
 <span>  show_raw <span class="op">=</span> <span class="cn">FALSE</span></span>
@@ -90,7 +90,7 @@ non-circular companion to [radiate()]. `metric = "speed"` plots
 `"radians"` (default) or `"degrees"`.</p></dd>
 
 
-<dt id="arg-colour-by-panel-by">colour_by, panel_by<a class="anchor" aria-label="anchor" href="#arg-colour-by-panel-by"></a></dt>
+<dt id="arg-colour-by-facets">colour_by, facets<a class="anchor" aria-label="anchor" href="#arg-colour-by-facets"></a></dt>
 <dd><p>Optional column names of `as.data.frame(ts)` to
 colour by / facet into panels. Default: one neutral series per track.</p></dd>
 

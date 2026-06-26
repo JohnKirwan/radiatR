@@ -107,7 +107,7 @@ Two tests are supported:
   is a lower bound.
 
 Sample size `n` is taken per group from `hd`. When `group_col` matches
-the parent `radiate(panel_by = ...)` argument, one circle is drawn per
+the parent `radiate(facets = ...)` argument, one circle is drawn per
 panel at the radius appropriate to that panel's `n`. For groups overlaid
 in a single panel, set `per_group = TRUE` to draw one circle per group
 (colour-matched), or `per_group = FALSE` (default) to draw a single

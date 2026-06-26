@@ -199,7 +199,7 @@ functions.</p>
 <span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">ts_default</span>,</span>
 <span>        group_col    <span class="op">=</span> <span class="st">"trial_id"</span>,</span>
 <span>        colour_cycle <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>        panel_by     <span class="op">=</span> <span class="st">"condition"</span>,</span>
+<span>        facets     <span class="op">=</span> <span class="st">"condition"</span>,</span>
 <span>        ncol         <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>        show_labels  <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>        show_arrow   <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
@@ -306,7 +306,7 @@ distributions.</p>
 <span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">ts_kappa</span>,</span>
 <span>        group_col    <span class="op">=</span> <span class="st">"trial_id"</span>,</span>
 <span>        colour_cycle <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>        panel_by     <span class="op">=</span> <span class="st">"condition"</span>,</span>
+<span>        facets     <span class="op">=</span> <span class="st">"condition"</span>,</span>
 <span>        ncol         <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>        show_labels  <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>        show_arrow   <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
@@ -353,7 +353,7 @@ table.</li>
 <span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">ts_tort</span>,</span>
 <span>        group_col    <span class="op">=</span> <span class="st">"trial_id"</span>,</span>
 <span>        colour_cycle <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>        panel_by     <span class="op">=</span> <span class="st">"condition"</span>,</span>
+<span>        facets     <span class="op">=</span> <span class="st">"condition"</span>,</span>
 <span>        ncol         <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>        show_labels  <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>        show_arrow   <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
@@ -379,7 +379,7 @@ the positive x-axis.</p>
 <span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">ts_bias</span>,</span>
 <span>        group_col    <span class="op">=</span> <span class="st">"trial_id"</span>,</span>
 <span>        colour_cycle <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>        panel_by     <span class="op">=</span> <span class="st">"condition"</span>,</span>
+<span>        facets     <span class="op">=</span> <span class="st">"condition"</span>,</span>
 <span>        ncol         <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>        show_labels  <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>        show_arrow   <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
@@ -406,7 +406,7 @@ produce tighter, smoother paths.</p>
 <span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">ts_grad</span>,</span>
 <span>        group_col    <span class="op">=</span> <span class="st">"trial_id"</span>,</span>
 <span>        colour_col   <span class="op">=</span> <span class="st">"condition"</span>,</span>
-<span>        panel_by     <span class="op">=</span> <span class="st">"condition"</span>,</span>
+<span>        facets     <span class="op">=</span> <span class="st">"condition"</span>,</span>
 <span>        ncol         <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>        show_labels  <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>        show_arrow   <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
@@ -491,7 +491,7 @@ data.</p>
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">sim_analysis</span><span class="op">$</span><span class="va">trajset</span>,</span>
 <span>             group_col    <span class="op">=</span> <span class="st">"trial_id"</span>,</span>
 <span>             colour_col   <span class="op">=</span> <span class="st">"condition"</span>,</span>
-<span>             panel_by     <span class="op">=</span> <span class="st">"condition"</span>,</span>
+<span>             facets     <span class="op">=</span> <span class="st">"condition"</span>,</span>
 <span>             ncol         <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>             show_labels  <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>             show_arrow   <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="op">+</span></span>

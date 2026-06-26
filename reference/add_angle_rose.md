@@ -6,7 +6,7 @@ coordinate space used by
 Each wedge spans one angular bin; its outer radius is proportional to
 the proportion (or count) of frames in that bin. The layer can be
 faceted by passing the same column used in the parent
-`radiate(panel_by = ...)` call.
+`radiate(facets = ...)` call.
 
 ## Usage
 
@@ -47,7 +47,7 @@ add_angle_rose(
 
 - group_col:
 
-  Column used for faceting; must match the `panel_by` argument of the
+  Column used for faceting; must match the `facets` argument of the
   parent
   [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   call.

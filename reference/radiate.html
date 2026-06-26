@@ -72,7 +72,7 @@ the object and handed off to the plotting helpers.</p>
 <span>  track_colour <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"trajectory"</span>, <span class="st">"sequence"</span>, <span class="st">"time"</span>, <span class="st">"speed"</span><span class="op">)</span>,</span>
 <span>  time_units <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"seconds"</span>, <span class="st">"minutes"</span>, <span class="st">"milliseconds"</span><span class="op">)</span>,</span>
 <span>  coords <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"relative"</span>, <span class="st">"absolute"</span><span class="op">)</span>,</span>
-<span>  panel_by <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  facets <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  rows <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cols <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -131,7 +131,7 @@ the object and handed off to the plotting helpers.</p>
 <span>  base_r <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  shade <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  shape <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  panel_by <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  facets <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ticks <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  degrees <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -193,7 +193,7 @@ exclusive with `colour_cycle`. `color_col` is the American-spelling alias.</p></
 <dd><p>Optional cycling colour specification. Either a positive
 integer `n` (trajectories are assigned colours 1–n, cycling back to 1 after
 every `n` trajectories) or a character vector of colour values (e.g.
-`c("red","blue","green")`). When `panel_by` is set the cycle restarts
+`c("red","blue","green")`). When `facets` is set the cycle restarts
 independently within each panel. Mutually exclusive with `colour_col`.
 `color_cycle` is the American-spelling alias.</p></dd>
 
@@ -231,7 +231,7 @@ when explicit `x_col`/`y_col` are supplied. Errors if `"absolute"` is
 requested but the `Tracks` has no `x`/`y` columns registered.</p></dd>
 
 
-<dt id="arg-panel-by">panel_by<a class="anchor" aria-label="anchor" href="#arg-panel-by"></a></dt>
+<dt id="arg-facets">facets<a class="anchor" aria-label="anchor" href="#arg-facets"></a></dt>
 <dd><p>NULL, a column name, or a character vector of column names
 to facet by (via [ggplot2::facet_wrap()]). The named column(s) must be
 present in the data.</p></dd>
@@ -241,20 +241,20 @@ present in the data.</p></dd>
 <dd><p>Optional character vectors of column names to facet into a
 row x column grid via [ggplot2::facet_grid()] (mirroring ggplot: `rows` and
 `cols` map to the two sides of the `rows ~ cols` formula, and multiple
-variables per side nest as in `facet_grid()`). Use these *or* `panel_by`
+variables per side nest as in `facet_grid()`). Use these *or* `facets`
 (`facet_wrap`), not both. Scales are fixed (circular panels stay round);
-`ncol`/`strip_position = "inside"` apply to `panel_by` only.</p></dd>
+`ncol`/`strip_position = "inside"` apply to `facets` only.</p></dd>
 
 
 <dt id="arg-ncol">ncol<a class="anchor" aria-label="anchor" href="#arg-ncol"></a></dt>
 <dd><p>Number of columns passed to [ggplot2::facet_wrap()] when
-`panel_by` is set.</p></dd>
+`facets` is set.</p></dd>
 
 
 <dt id="arg-strip-labels">strip_labels<a class="anchor" aria-label="anchor" href="#arg-strip-labels"></a></dt>
 <dd><p>Logical or `NULL`. Whether to show a label identifying
-the panel variable value on each panel. Defaults to `TRUE` when `panel_by`
-is set, `FALSE` otherwise. Ignored when `panel_by` is `NULL`.</p></dd>
+the panel variable value on each panel. Defaults to `TRUE` when `facets`
+is set, `FALSE` otherwise. Ignored when `facets` is `NULL`.</p></dd>
 
 
 <dt id="arg-strip-position">strip_position<a class="anchor" aria-label="anchor" href="#arg-strip-position"></a></dt>
@@ -401,7 +401,7 @@ when `arrow_colour_col` is set. `arrow_color` is the American-spelling alias.</p
 <dt id="arg-arrow-colour-col-arrow-color-col">arrow_colour_col, arrow_color_col<a class="anchor" aria-label="anchor" href="#arg-arrow-colour-col-arrow-color-col"></a></dt>
 <dd><p>Optional grouping column. When
 supplied, one mean resultant arrow is drawn per level of this column (within
-each panel, if `panel_by` is also set) and mapped to the colour aesthetic, so
+each panel, if `facets` is also set) and mapped to the colour aesthetic, so
 the arrow can follow a colour grouping independently of faceting. Default
 `NULL` draws a single arrow in `arrow_colour`. `arrow_color_col` is the
 American-spelling alias.</p></dd>

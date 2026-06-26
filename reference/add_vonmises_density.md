@@ -47,8 +47,8 @@ add_vonmises_density(
 
 - group_col:
 
-  Column in `fit` for faceting; must match the `panel_by` argument of
-  the parent
+  Column in `fit` for faceting; must match the `facets` argument of the
+  parent
   [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   call.
 

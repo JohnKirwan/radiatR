@@ -11,7 +11,7 @@ gg_traj(
   linetype = NULL,
   alpha = NULL,
   size = 0.6,
-  panel_by = NULL,
+  facets = NULL,
   coord = c("polar", "cartesian"),
   geom = c("path"),
   thin = 1L,
@@ -26,7 +26,7 @@ gg_traj(
   linetype = NULL,
   alpha = NULL,
   size = 0.6,
-  panel_by = NULL,
+  facets = NULL,
   coord = c("polar", "cartesian"),
   geom = c("path"),
   thin = 1L,
@@ -46,7 +46,7 @@ gg_traj(
   Optional column names (strings) mapped to aesthetics. \`color\` is the
   American-spelling alias for \`colour\`.
 
-- panel_by:
+- facets:
 
   NULL, a single string, or a character vector of columns to facet by
 

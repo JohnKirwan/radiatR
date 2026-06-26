@@ -759,7 +759,7 @@ to draw all tracks in the default grey.
 
 **Option 2 — cycling palette.** `colour_cycle` assigns each trajectory a
 colour index that cycles back to 1 after every *n* trajectories. When
-`panel_by` is set the cycle restarts independently within each panel so
+`facets` is set the cycle restarts independently within each panel so
 that trajectory 1 in every panel always gets colour 1. Pass an integer
 for automatic palette assignment, or a character vector to specify
 colours explicitly.
@@ -800,7 +800,7 @@ attr(hd_cc, "colour_col") <- "cycle_colour"
 p <- radiate(cpunctatus_cc,
         group_col    = "trial_id",
         colour_col   = "cycle_colour",
-        panel_by     = "arc",
+        facets     = "arc",
         ncol         = 3,
         show_labels  = FALSE,
         show_arrow   = FALSE,
@@ -821,7 +821,7 @@ For a two-way layout, `rows` and `cols` facet into a grid via
 radiate(cpunctatus, group_col = "trial_id", rows = "type", cols = "arc")
 ```
 
-Use `rows`/`cols` (grid) or `panel_by` (wrap), not both.
+Use `rows`/`cols` (grid) or `facets` (wrap), not both.
 
 **+ Bootstrap CI arc** added first so it sits behind heading markers:
 
@@ -927,7 +927,7 @@ alongside the heading vectors:
 radiate(cpunctatus_cc,
         group_col    = "trial_id",
         colour_col   = "cycle_colour",
-        panel_by     = "arc",
+        facets     = "arc",
         ncol         = 3,
         show_labels  = FALSE,
         show_arrow   = FALSE,
@@ -972,7 +972,7 @@ dens_boot <- compute_circular_density(hd, colour_col = "arc",
 radiate(cpunctatus,
         group_col    = "trial_id",
         colour_cycle = 10,
-        panel_by     = "arc",
+        facets     = "arc",
         ncol         = 3,
         show_labels  = FALSE,
         show_arrow   = FALSE,
@@ -1337,7 +1337,7 @@ attr(hd_distal_cc, "colour_col") <- "cycle_colour"
 radiate(cpunctatus_cc_d,
         group_col   = "trial_id",
         colour_col  = "cycle_colour",
-        panel_by    = "arc",
+        facets    = "arc",
         ncol        = 3,
         show_labels = FALSE,
         show_arrow  = FALSE,
@@ -1413,7 +1413,7 @@ ts_sim <- tracks(
 radiate(ts_sim,
         group_col    = "trial_id",
         colour_cycle = 5,
-        panel_by     = "condition",
+        facets     = "condition",
         ncol         = 2,
         show_arrow   = TRUE)
 ```

@@ -46,7 +46,7 @@ add_circular_kde(
 
 - group_col:
 
-  Column for faceting; must match `panel_by` in the parent
+  Column for faceting; must match `facets` in the parent
   [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
   call.
 

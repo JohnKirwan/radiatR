@@ -24,7 +24,7 @@ add_circular_boxplot(
   linewidth = 0.8,
   n_theta = 200L,
   display = NULL,
-  panel_by = NULL,
+  facets = NULL,
   theme = NULL,
   color = NULL
 )
@@ -89,16 +89,15 @@ add_circular_boxplot(
   A \[circ_display()\] object; when \`NULL\` (default), taken from
   \`attr(hd, "display")\`, falling back to \`circ_display()\`.
 
-- panel_by:
+- facets:
 
   Optional name of a column in \`hd\` identifying facet panels (the same
-  column passed to \`radiate(panel_by = )\`). When set, a separate
-  boxplot is computed and drawn per level so each facet shows its own
-  summary; the layer data is tagged with this column so it faces
-  correctly. A level that is not drawable (fewer than 4 usable
-  observations or a non-unique median) is skipped with a warning while
-  the others still draw. Default \`NULL\` draws a single boxplot from
-  all of \`hd\`.
+  column passed to \`radiate(facets = )\`). When set, a separate boxplot
+  is computed and drawn per level so each facet shows its own summary;
+  the layer data is tagged with this column so it faces correctly. A
+  level that is not drawable (fewer than 4 usable observations or a
+  non-unique median) is skipped with a warning while the others still
+  draw. Default \`NULL\` draws a single boxplot from all of \`hd\`.
 
 - theme:
 

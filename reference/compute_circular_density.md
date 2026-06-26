@@ -100,7 +100,7 @@ controls the number of bins.
 
 When \`colour_col\` is supplied the density is computed independently
 for each group and the group label is preserved in the output, enabling
-per-panel use with \[radiate()\]'s \`panel_by\`.
+per-panel use with \[radiate()\]'s \`facets\`.
 
 When \`boot_reps \> 0\` and \`method = "vonmises"\`, a non-parametric
 bootstrap is run: \`boot_reps\` samples are drawn with replacement, a
