@@ -41,7 +41,7 @@ observation to the nearest group centre within \code{tol} radians
 not treated as neighbours.}
 
 \item{direction}{\code{"inward"} (default, stacks toward centre) or
-\code{"outward"} (away from perimeter, matches \code{circular} default).}
+\code{"outward"} (away from the circumference, matches \code{circular} default).}
 
 \item{base_r}{Radius of the reference circle in data units. Default 1.}
 

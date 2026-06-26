@@ -2477,9 +2477,9 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   grid lines.
 #' @param x_col Name of the x-coordinate column.  Default \code{"rel_x"}.
 #' @param y_col Name of the y-coordinate column.  Default \code{"rel_y"}.
-#' @param show_labels Whether to place labels at the perimeter.
+#' @param show_labels Whether to place labels at the circumference.
 #' @param label_col Column containing label values.
-#' @param label_size Text size for perimeter labels.
+#' @param label_size Text size for circumference labels.
 #' @param label_padding Multiplier applied to the unit circle when placing labels.
 #' @param label_use_repel Use `ggrepel::geom_text_repel()` when available.
 #' @param show_tracks Whether to draw the trajectory paths. Default `TRUE`.
@@ -2528,7 +2528,7 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   `"radians"` (e.g. `π/4`), or `"none"` use diagonal angle labels via
 #'   [degree_labs()]. The domain scales `"cardinal"` (N/E/S/W), `"hours"`
 #'   (24-hour clock), `"months"` (Jan...Dec), and `"seconds"` instead label the
-#'   perimeter via [circumference_labs()], aligning the tick count to the scale. For
+#'   circumference via [circumference_labs()], aligning the tick count to the scale. For
 #'   finer control (8-point compass, 12-hour clock, month formats) add an
 #'   explicit `circumference_labs()` layer. Label styling follows the chosen
 #'   `theme`'s `axis.text`.

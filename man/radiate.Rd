@@ -180,7 +180,7 @@ follows the chosen `theme`'s `axis.ticks`.}
 `"radians"` (e.g. `π/4`), or `"none"` use diagonal angle labels via
 [degree_labs()]. The domain scales `"cardinal"` (N/E/S/W), `"hours"`
 (24-hour clock), `"months"` (Jan...Dec), and `"seconds"` instead label the
-perimeter via [circumference_labs()], aligning the tick count to the scale. For
+circumference via [circumference_labs()], aligning the tick count to the scale. For
 finer control (8-point compass, 12-hour clock, month formats) add an
 explicit `circumference_labs()` layer. Label styling follows the chosen
 `theme`'s `axis.text`.}
@@ -230,11 +230,11 @@ Default `TRUE`. Styled from the theme's `axis.line` (else the axis ink). On
 grid-bearing themes the grid's outer ring marks the boundary instead, so this
 has no effect there.}
 
-\item{show_labels}{Whether to place labels at the perimeter.}
+\item{show_labels}{Whether to place labels at the circumference.}
 
 \item{label_col}{Column containing label values.}
 
-\item{label_size}{Text size for perimeter labels.}
+\item{label_size}{Text size for circumference labels.}
 
 \item{label_padding}{Multiplier applied to the unit circle when placing labels.}
 

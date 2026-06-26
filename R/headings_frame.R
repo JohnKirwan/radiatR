@@ -209,7 +209,7 @@ bin_angles <- function(angles, width, phase = 0) {
 #'   (greedy, sorted-order scan); angles near \code{0} and \code{2*pi} are
 #'   not treated as neighbours.
 #' @param direction \code{"inward"} (default, stacks toward centre) or
-#'   \code{"outward"} (away from perimeter, matches \code{circular} default).
+#'   \code{"outward"} (away from the circumference, matches \code{circular} default).
 #' @param base_r Radius of the reference circle in data units. Default 1.
 #' @param shade If \code{TRUE}, add a \code{shade_n} column (alias of
 #'   \code{stack_n}) for use as an alpha aesthetic.

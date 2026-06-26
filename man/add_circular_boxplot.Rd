@@ -34,7 +34,7 @@ angles are doubled, the boxplot computed, and locations halved back to
 `[0, pi)`; the fence multiplier is taken on the doubled data. Default
 `FALSE`.}
 
-\item{radius}{Perimeter radius for the box/whiskers. Default `1.1` (just
+\item{radius}{Circumference radius for the box/whiskers. Default `1.1` (just
 outside the unit circle).}
 
 \item{width}{Radial thickness of the box band. Default `0.05`.}
