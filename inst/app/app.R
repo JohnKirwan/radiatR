@@ -649,6 +649,15 @@ server <- function(input, output, session) {
                     " (showing sequence position instead)."))
   })
 
+  output$facet_grid_note <- renderUI({
+    on2 <- !is.null(input$cond_col2) && nzchar(input$cond_col2)
+    on1 <- !is.null(input$cond_col)  && nzchar(input$cond_col)
+    if (!(on1 && on2)) return(NULL)
+    tags$div(class = "text-muted small mt-1",
+             "Grid mode: statistical overlays (CI, Rayleigh, V-test, boxplot) ",
+             "are shown in single-facet mode only for now.")
+  })
+
   # Live illustrative preview of the selected method on fixed demo tracks.
   output$method_preview <- renderPlot({
     method <- if (is.null(input$method)) "distal" else input$method
@@ -1291,12 +1300,9 @@ server <- function(input, output, session) {
 
     tagList(
       tags$hr(),
-      selectInput(
-        "cond_col",
-        "Facet by (optional)",
-        choices  = choices,
-        selected = col
-      )
+      selectInput("cond_col",  "Facet rows",        choices = choices, selected = col),
+      selectInput("cond_col2", "Facet cols (grid)", choices = choices, selected = ""),
+      uiOutput("facet_grid_note")
     )
   })
 
@@ -1390,7 +1396,8 @@ server <- function(input, output, session) {
         dialect = if (is.null(rv$dialect) || rv$dialect %in% c("auto", "generic"))
           NULL else rv$dialect),
       inputs = list(
-        cond_col = input$cond_col, colour_by = input$colour_by,
+        cond_col = input$cond_col, cond_col2 = input$cond_col2,
+        colour_by = input$colour_by,
         omnibus_test = input$omnibus_test,
         circ0 = input$circ0, circ1 = input$circ1,
         plot_theme = input$plot_theme, angle_labels = input$angle_labels,
