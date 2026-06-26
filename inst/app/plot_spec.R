@@ -101,6 +101,13 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
   # In headings mode a group only exists if it is a column of hd.
   if (headings_mode && !is.null(gc) && !(gc %in% names(df))) gc <- NULL
 
+  # Second facet column (grid). In headings mode only when it is a column of hd.
+  gc2 <- if (!is.null(inputs$cond_col2) && nzchar(inputs$cond_col2))
+    inputs$cond_col2 else if (!is.null(inputs$hd_group2) && nzchar(inputs$hd_group2))
+    inputs$hd_group2 else NULL
+  if (!is.null(gc2) && !(gc2 %in% names(df))) gc2 <- NULL
+  grid_mode <- !is.null(gc) && !is.null(gc2)
+
   cb <- inputs$colour_by
   by_traj <- is.null(cb) || !nzchar(cb) || identical(cb, SPEC_TRAJ_KEY)
   if (headings_mode && by_traj) {
@@ -123,7 +130,8 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
     # in headings mode method is NULL, so headings$rule is absent by design (every reader gates on mode first)
     headings = c(list(rule = method), rule_params),
     group_col = id_col,
-    facet_by  = gc,
+    facet_by   = gc,
+    facet_cols = if (grid_mode) gc2 else NULL,
     colour    = list(by = if (by_traj) "trajectory" else cb,
                      cap = SPEC_CYCLE_N, legend = legend),
     theme        = inputs$plot_theme %||% "void",
@@ -158,12 +166,12 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
     show = list(tracks    = !headings_mode && isTRUE(inputs$show_tracks),
                 arrow     = isTRUE(inputs$show_arrow),
                 vectors   = isTRUE(inputs$show_vectors),
-                rayleigh  = isTRUE(inputs$show_rayleigh),
-                ci        = isTRUE(inputs$show_ci),
-                vtest     = isTRUE(inputs$show_vtest),
+                rayleigh  = !grid_mode && isTRUE(inputs$show_rayleigh),
+                ci        = !grid_mode && isTRUE(inputs$show_ci),
+                vtest     = !grid_mode && isTRUE(inputs$show_vtest),
                 quadrants = isTRUE(inputs$show_quadrants),
                 rings     = isTRUE(inputs$show_rings),
-                boxplot   = isTRUE(inputs$show_boxplot))
+                boxplot   = !grid_mode && isTRUE(inputs$show_boxplot))
   )
 }
 
@@ -180,6 +188,8 @@ spec_to_plot <- function(spec, ts, hd) {
   rtc            <- .resolve_track_colour(spec, headings_mode)
   gradient_track <- rtc$gradient
 
+  grid_mode <- !is.null(spec$facet_cols)
+
   if (headings_mode) {
     # No group column -> "trajectory" sentinel means a single colour. An uploaded
     # angle table has no "id" column, so assign_colour_key(by="trajectory") is not
@@ -194,7 +204,9 @@ spec_to_plot <- function(spec, ts, hd) {
       hd,
       show_markers = FALSE,
       colour_col   = ".colour",
-      panel_by     = spec$facet_by,
+      panel_by     = if (grid_mode) NULL else spec$facet_by,
+      rows         = if (grid_mode) spec$facet_by  else NULL,
+      cols         = if (grid_mode) spec$facet_cols else NULL,
       legend       = spec$colour$legend,
       theme        = spec$theme,
       angle_labels = spec$angle_labels,
@@ -211,7 +223,9 @@ spec_to_plot <- function(spec, ts, hd) {
       colour_col   = if (gradient_track) NULL else ".colour",
       track_colour = rtc$effective,
       coords       = spec$coords %||% "relative",
-      panel_by     = spec$facet_by,
+      panel_by     = if (grid_mode) NULL else spec$facet_by,
+      rows         = if (grid_mode) spec$facet_by  else NULL,
+      cols         = if (grid_mode) spec$facet_cols else NULL,
       colour_cycle = NULL,
       legend       = spec$colour$legend,
       show_tracks  = spec$show$tracks,
@@ -240,17 +254,26 @@ spec_to_plot <- function(spec, ts, hd) {
     return(p)
 
   if (!headings_mode) {
-    # The headings frame may not carry the facet column; attach it (matched by
-    # trajectory id) so the markers/arrow route to the right facet and stack per
-    # facet.
-    if (!is.null(spec$facet_by) && !spec$facet_by %in% names(hd)) {
+    # The headings frame may not carry the facet column(s); attach any that are
+    # missing (matched by trajectory id) so the markers/arrow route to the right
+    # facet and stack per facet.
+    facet_attach <- setdiff(c(spec$facet_by, spec$facet_cols), names(hd))
+    if (length(facet_attach)) {
       df <- as.data.frame(ts)
-      hd <- merge(hd, unique(df[, c(spec$group_col, spec$facet_by)]),
+      hd <- merge(hd, unique(df[, c(spec$group_col, facet_attach), drop = FALSE]),
                   by.x = "id", by.y = spec$group_col, all.x = TRUE)
     }
 
     hd <- assign_colour_key(hd, by = by, n = cap, reference = ts)
     attr(hd, "display") <- disp
+  }
+
+  # Build the per-cell interaction key once so both the stacked overlay and the
+  # mean arrow can reuse it without rebuilding (idempotent either way, but once
+  # is cleaner and keeps render + emit in strict lockstep).
+  if (grid_mode) {
+    hd[[".facet_cell"]] <- interaction(hd[[spec$facet_by]], hd[[spec$facet_cols]],
+                                       drop = TRUE, sep = "\r")
   }
 
   if (!identical(spec$heading_display, "none")) {
@@ -261,7 +284,8 @@ spec_to_plot <- function(spec, ts, hd) {
     if (identical(spec$heading_display, "stacked")) {
       hd$heading <- bin_angles(hd$heading, width = SPEC_STACK_BIN_WIDTH)
       p <- p + add_stacked_headings(hd, colour_col = pt_colour_col,
-                 colour = pt_colour, group = spec$facet_by,
+                 colour = pt_colour,
+                 group = if (grid_mode) ".facet_cell" else spec$facet_by,
                  step = SPEC_STACK_STEP,
                  size = SPEC_MARKER_SIZE, alpha = SPEC_MARKER_ALPHA,
                  axial = isTRUE(spec$axial))
@@ -274,7 +298,15 @@ spec_to_plot <- function(spec, ts, hd) {
   }
 
   if (spec$show$arrow) {
-    arrow_df <- compute_circ_mean(hd, colour_col = spec$facet_by, axial = isTRUE(spec$axial))
+    if (grid_mode) {
+      arrow_df <- compute_circ_mean(hd, colour_col = ".facet_cell",
+                                    axial = isTRUE(spec$axial))
+      cell_map <- unique(hd[, c(".facet_cell", spec$facet_by, spec$facet_cols)])
+      arrow_df <- merge(arrow_df, cell_map, by = ".facet_cell")
+    } else {
+      arrow_df <- compute_circ_mean(hd, colour_col = spec$facet_by,
+                                    axial = isTRUE(spec$axial))
+    }
     p <- p + add_circ_mean(arrow_df, colour = "black", axial = isTRUE(spec$axial))
   }
   if (spec$show$vectors && all(c("x_inner", "y_inner") %in% names(hd)))
@@ -359,9 +391,11 @@ spec_to_plot <- function(spec, ts, hd) {
       coa <- if (identical(spec$coords %||% "relative", "absolute"))
         ", coords = \"absolute\"" else ""
       add("hd <- derive_headings(ts, rule = ", q(spec$headings$rule), hp, rc, coa, ")")
-      if (!is.null(spec$facet_by))
+      facet_cols_to_emit <- unique(c(spec$facet_by, spec$facet_cols))
+      if (length(facet_cols_to_emit) > 0L)
         add("hd <- merge(hd, unique(as.data.frame(ts)[, c(", q(spec$group_col), ", ",
-            q(spec$facet_by), ")]), by.x = \"id\", by.y = ", q(spec$group_col),
+            paste(vapply(facet_cols_to_emit, q, character(1L)), collapse = ", "),
+            ")]), by.x = \"id\", by.y = ", q(spec$group_col),
             ", all.x = TRUE)")
     }
   }
@@ -480,14 +514,34 @@ spec_to_code <- function(spec) {
     add("")
     add("hd$heading <- bin_angles(hd$heading, width = pi / 36)")
   }
-  if (has_hd && spec$show$arrow) {
-    cc <- if (is.null(spec$facet_by)) "" else paste0(", colour_col = ", q(spec$facet_by))
+  # Hoist the per-cell interaction key once when grid mode AND at least one
+  # consumer (stacked overlay or arrow) needs it — so it is never emitted twice
+  # and never emitted when neither overlay uses it.
+  grid_mode <- !is.null(spec$facet_cols)
+  needs_facet_cell <- grid_mode && has_hd &&
+    (identical(spec$heading_display, "stacked") || isTRUE(spec$show$arrow))
+  if (needs_facet_cell) {
     add("")
-    add("arrow_df <- compute_circ_mean(hd", cc, ax, ")")
+    add("hd[[\".facet_cell\"]] <- interaction(hd[[", q(spec$facet_by), "]], hd[[",
+        q(spec$facet_cols), "]], drop = TRUE, sep = \"\\r\")")
+  }
+  if (has_hd && spec$show$arrow) {
+    add("")
+    if (grid_mode) {
+      add("arrow_df <- compute_circ_mean(hd, colour_col = \".facet_cell\"", ax, ")")
+      add("arrow_df <- merge(arrow_df, unique(hd[, c(\".facet_cell\", ",
+          q(spec$facet_by), ", ", q(spec$facet_cols), ")]), by = \".facet_cell\")")
+    } else {
+      cc <- if (is.null(spec$facet_by)) "" else paste0(", colour_col = ", q(spec$facet_by))
+      add("arrow_df <- compute_circ_mean(hd", cc, ax, ")")
+    }
   }
 
   add("")
-  pby <- if (is.null(spec$facet_by)) "" else paste0(", panel_by = ", q(spec$facet_by))
+  pby <- if (!is.null(spec$facet_cols))
+           paste0(", rows = ", q(spec$facet_by), ", cols = ", q(spec$facet_cols))
+         else if (is.null(spec$facet_by)) ""
+         else paste0(", panel_by = ", q(spec$facet_by))
   # Only emit quadrants/rings when on -- they default to FALSE in radiate(), so
   # the common case keeps a clean call.
   qr <- paste0(if (isTRUE(spec$show$quadrants)) ", quadrants = TRUE" else "",
@@ -516,7 +570,9 @@ spec_to_code <- function(spec) {
   # render in a fixed grey (mirrors spec_to_plot's pt_colour_col/pt_colour).
   pt_cc <- if (gradient_track) "colour = \"grey20\"" else "colour_col = \".colour\""
   if (has_hd && identical(spec$heading_display, "stacked")) {
-    grp <- if (is.null(spec$facet_by)) "" else paste0(", group = ", q(spec$facet_by))
+    grp <- if (grid_mode) ", group = \".facet_cell\""
+           else if (is.null(spec$facet_by)) ""
+           else paste0(", group = ", q(spec$facet_by))
     tail <- c(tail, paste0("add_stacked_headings(hd, ", pt_cc, grp,
                            ", step = ", SPEC_STACK_STEP,
                            ", size = ", SPEC_MARKER_SIZE, ", alpha = ", SPEC_MARKER_ALPHA, ax, ")"))

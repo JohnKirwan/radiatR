@@ -27,7 +27,7 @@ roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
                            subtitle = NULL, caption = NULL,
                            quadrants = FALSE, rings = FALSE, axial = FALSE,
                            boxplot = FALSE, frame_rate = NULL,
-                           clip_tracks = TRUE) {
+                           clip_tracks = TRUE, facet_cols = NULL) {
   data(cpunctatus, package = "radiatR", envir = environment())
   ts <- cpunctatus
   hd <- derive_headings(ts, rule = "distal")
@@ -38,7 +38,7 @@ roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
   spec <- list(
     data = list(source = "example", path = NULL, dialect = NULL),
     headings = list(rule = "distal"),
-    group_col = ts@cols$id, facet_by = facet,
+    group_col = ts@cols$id, facet_by = facet, facet_cols = facet_cols,
     colour = list(by = by, cap = 20,
                   legend = !identical(by, "trajectory") &&
                            length(unique(as.data.frame(ts)[[by]])) <= 20),
@@ -465,5 +465,24 @@ test_that(".resolve_track_colour treats speed like time (needs a valid fps)", {
 test_that("emitted code reproduces spec_to_plot (clip_tracks = FALSE)", {
   rt <- roundtrip_spec("points", "trajectory", NULL, FALSE, FALSE,
                        clip_tracks = FALSE)
+  expect_roundtrip(rt)
+})
+
+test_that("emitted code reproduces spec_to_plot (two-variable facet grid + arrow)", {
+  rt <- roundtrip_spec("points", "trajectory", "type", arrow = TRUE, vectors = FALSE,
+                       facet_cols = "arc")
+  # ensure both facet columns are present on hd for grid placement
+  df <- as.data.frame(rt$ts)
+  rt$hd[["type"]] <- df[["type"]][match(rt$hd$id, df[[rt$ts@cols$id]])]
+  rt$hd[["arc"]]  <- df[["arc"]][match(rt$hd$id, df[[rt$ts@cols$id]])]
+  expect_roundtrip(rt)
+})
+
+test_that("emitted code reproduces spec_to_plot (grid + stacked headings per cell)", {
+  rt <- roundtrip_spec("stacked", "trajectory", "type", arrow = TRUE, vectors = FALSE,
+                       facet_cols = "arc")
+  df <- as.data.frame(rt$ts)
+  rt$hd[["type"]] <- df[["type"]][match(rt$hd$id, df[[rt$ts@cols$id]])]
+  rt$hd[["arc"]]  <- df[["arc"]][match(rt$hd$id, df[[rt$ts@cols$id]])]
   expect_roundtrip(rt)
 })
