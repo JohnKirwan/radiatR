@@ -61,7 +61,7 @@ stack_headings(
 - direction:
 
   `"inward"` (default, stacks toward centre) or `"outward"` (away from
-  perimeter, matches `circular` default).
+  the circumference, matches `circular` default).
 
 - base_r:
 

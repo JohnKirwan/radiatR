@@ -16,8 +16,8 @@ build_unit_circle_mapping(origin, reference, flip_y = TRUE)
 
 - reference:
 
-  Numeric vector of length 2 giving the landmark on the perimeter that
-  defines the zero-degree heading.
+  Numeric vector of length 2 giving the landmark on the circumference
+  that defines the zero-degree heading.
 
 - flip_y:
 

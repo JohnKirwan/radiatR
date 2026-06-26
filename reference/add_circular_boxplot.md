@@ -51,8 +51,8 @@ add_circular_boxplot(
 
 - radius:
 
-  Perimeter radius for the box/whiskers. Default \`1.1\` (just outside
-  the unit circle).
+  Circumference radius for the box/whiskers. Default \`1.1\` (just
+  outside the unit circle).
 
 - width:
 

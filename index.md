@@ -179,7 +179,7 @@ radiate(ts,
 > tracking pipeline (e.g. your tracker’s own calibration, or OpenCV
 > `undistort`) before importing.
 
-### Label the perimeter in domain units
+### Label the circumference in domain units
 
 The circumference can be labelled in domain units instead of degrees —
 handy for time-of-year or compass data. `angle_labels` selects a

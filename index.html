@@ -312,7 +312,7 @@
 <p><strong>Coordinates.</strong> radiatR normalises each trajectory to a unit circle, so its outputs (headings, mean direction, resultant length, circular statistics) are scale-invariant and need no metric calibration. Correct lens distortion and any scaling to real-world units in your tracking pipeline (e.g. your tracker’s own calibration, or OpenCV <code>undistort</code>) before importing.</p>
 </blockquote>
 <div class="section level3">
-<h3 id="label-the-perimeter-in-domain-units">Label the perimeter in domain units<a class="anchor" aria-label="anchor" href="#label-the-perimeter-in-domain-units"></a>
+<h3 id="label-the-circumference-in-domain-units">Label the circumference in domain units<a class="anchor" aria-label="anchor" href="#label-the-circumference-in-domain-units"></a>
 </h3>
 <p>The circumference can be labelled in domain units instead of degrees — handy for time-of-year or compass data. <code>angle_labels</code> selects a built-in scale (<code>"cardinal"</code>, <code>"hours"</code>, <code>"months"</code>, <code>"seconds"</code>) and aligns the tick count to it:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">

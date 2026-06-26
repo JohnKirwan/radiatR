@@ -825,7 +825,8 @@ p
 
 ![](radiatR_files/figure-html/build-4-1.png)
 
-**+ Heading vectors** (dotted lines from inner crossing to perimeter):
+**+ Heading vectors** (dotted lines from inner crossing to the
+circumference):
 
 ``` r
 
