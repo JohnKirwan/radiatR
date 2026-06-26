@@ -23,4 +23,4 @@ unpublished/
 ^\.superpowers$
 ^boxplot$
 ^Rplots\.pdf$
-TODO.md
+^TODO\.md$
