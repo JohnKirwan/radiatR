@@ -414,7 +414,7 @@ p <- p + add_heading_interval(hd_cc, colour_col = "arc", colour = "black",
 p
 ```
 
-**+ Heading vectors** (dotted lines from inner crossing to perimeter):
+**+ Heading vectors** (dotted lines from inner crossing to the circumference):
 
 ```{r arc-panels-vectors, fig.width=8, fig.height=5}
 p <- p + add_heading_vectors(hd_cc)

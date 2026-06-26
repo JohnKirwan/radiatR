@@ -143,7 +143,7 @@ polar_to_cartesian <- function(theta, rho = 1) {
 #'
 #' @param origin Numeric vector of length 2 giving the circle origin (x, y).
 #' @param reference Numeric vector of length 2 giving the landmark on the
-#'   perimeter that defines the zero-degree heading.
+#'   circumference that defines the zero-degree heading.
 #' @param flip_y Logical; if `TRUE` (default), invert the y-axis so positive
 #'   values point upward (matching the unit-circle convention).
 #' @return A list containing origin metadata, a forward mapping (`map`) that

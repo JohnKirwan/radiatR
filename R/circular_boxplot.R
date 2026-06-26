@@ -159,7 +159,7 @@ circ_boxplot_stats <- function(hd, angle_col = "heading", axial = FALSE) {
 #' a short band even when the axis sits on the 0/pi seam). Composable with `+`.
 #'
 #' @inheritParams circ_boxplot_stats
-#' @param radius Perimeter radius for the box/whiskers. Default `1.1` (just
+#' @param radius Circumference radius for the box/whiskers. Default `1.1` (just
 #'   outside the unit circle).
 #' @param width Radial thickness of the box band. Default `0.05`.
 #' @param colour,color Outline colour for box, whiskers, crossbars, far-out.
@@ -239,7 +239,7 @@ add_circular_boxplot <- function(hd, angle_col = "heading", axial = FALSE,
       outer <- arc_xy(base + h[1], base + h[2], r_out, k)
       inner <- arc_xy(base + h[2], base + h[1], r_in,  k)
       box_df <- rbind(box_df, outer, inner)
-      # whiskers: hinge -> whisker end on each side, along the perimeter
+      # whiskers: hinge -> whisker end on each side, along the circumference
       whisk_df <- rbind(whisk_df,
         arc_xy(base + h[2], base + w[2], radius, 2*k - 1),
         arc_xy(base + w[1], base + h[1], radius, 2*k))
