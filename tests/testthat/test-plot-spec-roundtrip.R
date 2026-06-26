@@ -477,3 +477,12 @@ test_that("emitted code reproduces spec_to_plot (two-variable facet grid + arrow
   rt$hd[["arc"]]  <- df[["arc"]][match(rt$hd$id, df[[rt$ts@cols$id]])]
   expect_roundtrip(rt)
 })
+
+test_that("emitted code reproduces spec_to_plot (grid + stacked headings per cell)", {
+  rt <- roundtrip_spec("stacked", "trajectory", "type", arrow = TRUE, vectors = FALSE,
+                       facet_cols = "arc")
+  df <- as.data.frame(rt$ts)
+  rt$hd[["type"]] <- df[["type"]][match(rt$hd$id, df[[rt$ts@cols$id]])]
+  rt$hd[["arc"]]  <- df[["arc"]][match(rt$hd$id, df[[rt$ts@cols$id]])]
+  expect_roundtrip(rt)
+})

@@ -268,6 +268,14 @@ spec_to_plot <- function(spec, ts, hd) {
     attr(hd, "display") <- disp
   }
 
+  # Build the per-cell interaction key once so both the stacked overlay and the
+  # mean arrow can reuse it without rebuilding (idempotent either way, but once
+  # is cleaner and keeps render + emit in strict lockstep).
+  if (grid_mode) {
+    hd[[".facet_cell"]] <- interaction(hd[[spec$facet_by]], hd[[spec$facet_cols]],
+                                       drop = TRUE, sep = "\r")
+  }
+
   if (!identical(spec$heading_display, "none")) {
     # In sequence track mode the continuous scale owns the colour aesthetic, so
     # heading overlays render in a fixed colour rather than the discrete key.
@@ -276,7 +284,8 @@ spec_to_plot <- function(spec, ts, hd) {
     if (identical(spec$heading_display, "stacked")) {
       hd$heading <- bin_angles(hd$heading, width = SPEC_STACK_BIN_WIDTH)
       p <- p + add_stacked_headings(hd, colour_col = pt_colour_col,
-                 colour = pt_colour, group = spec$facet_by,
+                 colour = pt_colour,
+                 group = if (grid_mode) ".facet_cell" else spec$facet_by,
                  step = SPEC_STACK_STEP,
                  size = SPEC_MARKER_SIZE, alpha = SPEC_MARKER_ALPHA,
                  axial = isTRUE(spec$axial))
@@ -290,8 +299,6 @@ spec_to_plot <- function(spec, ts, hd) {
 
   if (spec$show$arrow) {
     if (grid_mode) {
-      hd[[".facet_cell"]] <- interaction(hd[[spec$facet_by]], hd[[spec$facet_cols]],
-                                         drop = TRUE, sep = "\r")
       arrow_df <- compute_circ_mean(hd, colour_col = ".facet_cell",
                                     axial = isTRUE(spec$axial))
       cell_map <- unique(hd[, c(".facet_cell", spec$facet_by, spec$facet_cols)])
@@ -507,11 +514,20 @@ spec_to_code <- function(spec) {
     add("")
     add("hd$heading <- bin_angles(hd$heading, width = pi / 36)")
   }
+  # Hoist the per-cell interaction key once when grid mode AND at least one
+  # consumer (stacked overlay or arrow) needs it — so it is never emitted twice
+  # and never emitted when neither overlay uses it.
+  grid_mode <- !is.null(spec$facet_cols)
+  needs_facet_cell <- grid_mode && has_hd &&
+    (identical(spec$heading_display, "stacked") || isTRUE(spec$show$arrow))
+  if (needs_facet_cell) {
+    add("")
+    add("hd[[\".facet_cell\"]] <- interaction(hd[[", q(spec$facet_by), "]], hd[[",
+        q(spec$facet_cols), "]], drop = TRUE, sep = \"\\r\")")
+  }
   if (has_hd && spec$show$arrow) {
     add("")
-    if (!is.null(spec$facet_cols)) {
-      add("hd[[\".facet_cell\"]] <- interaction(hd[[", q(spec$facet_by), "]], hd[[",
-          q(spec$facet_cols), "]], drop = TRUE, sep = \"\\r\")")
+    if (grid_mode) {
       add("arrow_df <- compute_circ_mean(hd, colour_col = \".facet_cell\"", ax, ")")
       add("arrow_df <- merge(arrow_df, unique(hd[, c(\".facet_cell\", ",
           q(spec$facet_by), ", ", q(spec$facet_cols), ")]), by = \".facet_cell\")")
@@ -554,7 +570,9 @@ spec_to_code <- function(spec) {
   # render in a fixed grey (mirrors spec_to_plot's pt_colour_col/pt_colour).
   pt_cc <- if (gradient_track) "colour = \"grey20\"" else "colour_col = \".colour\""
   if (has_hd && identical(spec$heading_display, "stacked")) {
-    grp <- if (is.null(spec$facet_by)) "" else paste0(", group = ", q(spec$facet_by))
+    grp <- if (grid_mode) ", group = \".facet_cell\""
+           else if (is.null(spec$facet_by)) ""
+           else paste0(", group = ", q(spec$facet_by))
     tail <- c(tail, paste0("add_stacked_headings(hd, ", pt_cc, grp,
                            ", step = ", SPEC_STACK_STEP,
                            ", size = ", SPEC_MARKER_SIZE, ", alpha = ", SPEC_MARKER_ALPHA, ax, ")"))
