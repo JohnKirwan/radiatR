@@ -128,6 +128,7 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
                      cap = SPEC_CYCLE_N, legend = legend),
     theme        = inputs$plot_theme %||% "void",
     track_colour = inputs$track_colour %||% "trajectory",
+    clip_tracks = !isTRUE(inputs$show_oob),   # FALSE -> draw points beyond the circumference
     coords = inputs$frame %||% "relative",
     frame_rate = inputs$frame_rate,
     angle_labels = inputs$angle_labels %||% "degrees",
@@ -214,6 +215,7 @@ spec_to_plot <- function(spec, ts, hd) {
       colour_cycle = NULL,
       legend       = spec$colour$legend,
       show_tracks  = spec$show$tracks,
+      clip_tracks  = isTRUE(spec$clip_tracks %||% TRUE),
       show_arrow   = FALSE,                  # arrow added explicitly below
       show_labels  = FALSE,
       theme        = spec$theme,
@@ -498,11 +500,12 @@ spec_to_code <- function(spec) {
         ", display = disp)")
   } else {
     cc <- if (gradient_track) ", colour_col = NULL" else ", colour_col = \".colour\""
+    clp <- if (isFALSE(spec$clip_tracks)) ", clip_tracks = FALSE" else ""
     add("radiate(ts, group_col = ", q(spec$group_col),
         cc, tc, co, pby,
         ", legend = ", if (spec$colour$legend) "TRUE" else "FALSE",
         ", theme = ", q(spec$theme),
-        ", angle_labels = ", q(spec$angle_labels), qr,
+        ", angle_labels = ", q(spec$angle_labels), qr, clp,
         ", show_labels = FALSE, show_arrow = FALSE, display = disp)")
   }
 

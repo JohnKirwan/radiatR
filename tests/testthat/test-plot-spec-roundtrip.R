@@ -26,7 +26,8 @@ roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
                            rayleigh = FALSE, ci = FALSE, vtest = FALSE,
                            subtitle = NULL, caption = NULL,
                            quadrants = FALSE, rings = FALSE, axial = FALSE,
-                           boxplot = FALSE, frame_rate = NULL) {
+                           boxplot = FALSE, frame_rate = NULL,
+                           clip_tracks = TRUE) {
   data(cpunctatus, package = "radiatR", envir = environment())
   ts <- cpunctatus
   hd <- derive_headings(ts, rule = "distal")
@@ -44,6 +45,7 @@ roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
     theme = "void", angle_labels = "degrees", display = list(zero = 0),
     axial = axial,
     track_colour = "trajectory",
+    clip_tracks = clip_tracks,
     frame_rate = frame_rate,
     heading_display = heading_display,
     subtitle = subtitle, caption = caption,
@@ -458,4 +460,10 @@ test_that(".resolve_track_colour treats speed like time (needs a valid fps)", {
   expect_true (.resolve_track_colour(mk("speed", 30), FALSE)$gradient)
   expect_equal(.resolve_track_colour(mk("speed", NA), FALSE)$effective, "sequence")
   expect_equal(.resolve_track_colour(mk("speed", 30), TRUE)$effective, "trajectory")  # headings mode
+})
+
+test_that("emitted code reproduces spec_to_plot (clip_tracks = FALSE)", {
+  rt <- roundtrip_spec("points", "trajectory", NULL, FALSE, FALSE,
+                       clip_tracks = FALSE)
+  expect_roundtrip(rt)
 })

@@ -1041,6 +1041,7 @@ server <- function(input, output, session) {
                                     "grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));",
                                     "column-gap: 0.75rem;"),
                       .layer_switch("show_tracks",    "Trajectories",       TRUE),
+                      .layer_switch("show_oob",       "Allow points beyond the circumference", FALSE),
                       .layer_switch("show_arrow",     "Directedness arrow", TRUE),
                       .layer_switch("show_ci",        "Mean-direction CI",  FALSE),
                       .layer_switch("show_vectors",   "Heading vectors",    FALSE),
@@ -1401,6 +1402,7 @@ server <- function(input, output, session) {
         # spec_to_code render and reproduce it.
         caption  = if (is.null(rv$hd)) straightness_caption(rv$ts, gc) else NULL,
         show_tracks = tog(input$show_tracks, TRUE),
+        show_oob    = tog(input$show_oob,    FALSE),
         show_arrow  = tog(input$show_arrow,  TRUE),
         show_vectors = tog(input$show_vectors, FALSE),
         show_rayleigh = tog(input$show_rayleigh, FALSE),

@@ -182,3 +182,43 @@ test_that("build_plot_spec maps show_boxplot into spec$show$boxplot", {
                            data = list(mode = "trajectories"), inputs = inputs)
   expect_false(isTRUE(spec2$show$boxplot))
 })
+
+test_that("build_plot_spec maps show_oob into spec$clip_tracks (inverted)", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  ts <- cpunctatus; hd <- derive_headings(ts, rule = "distal")
+  spec_on <- build_plot_spec(ts, hd, method = "distal",
+                             data = list(mode = "trajectories"),
+                             inputs = list(show_tracks = TRUE, show_oob = TRUE))
+  expect_false(isTRUE(spec_on$clip_tracks))         # show_oob -> clip off
+  spec_off <- build_plot_spec(ts, hd, method = "distal",
+                              data = list(mode = "trajectories"),
+                              inputs = list(show_tracks = TRUE))
+  expect_true(isTRUE(spec_off$clip_tracks))         # default -> clip on
+})
+
+test_that("spec_to_code emits clip_tracks = FALSE only when off-default", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  ts <- cpunctatus; hd <- derive_headings(ts, rule = "distal")
+  spec_on <- build_plot_spec(ts, hd, method = "distal",
+                             data = list(mode = "trajectories"),
+                             inputs = list(show_tracks = TRUE, show_oob = TRUE))
+  expect_true(grepl("clip_tracks = FALSE", spec_to_code(spec_on), fixed = TRUE))
+  spec_off <- build_plot_spec(ts, hd, method = "distal",
+                              data = list(mode = "trajectories"),
+                              inputs = list(show_tracks = TRUE))
+  expect_false(grepl("clip_tracks", spec_to_code(spec_off), fixed = TRUE))
+})
+
+test_that("spec_to_plot honours clip_tracks (beyond-circumference points)", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  ts <- cpunctatus; hd <- derive_headings(ts, rule = "distal")
+  rho_max <- function(oob) {
+    spec <- build_plot_spec(ts, hd, method = "none",
+                            data = list(mode = "trajectories"),
+                            inputs = list(show_tracks = TRUE, show_oob = oob))
+    b <- ggplot2::ggplot_build(spec_to_plot(spec, ts, NULL))
+    max(sqrt(b$data[[1]]$x^2 + b$data[[1]]$y^2), na.rm = TRUE)
+  }
+  expect_gt(rho_max(TRUE), 1)            # clip off -> points beyond the circumference
+  expect_lte(rho_max(FALSE), 1 + 1e-6)   # clip on (default) -> within the unit circle
+})
