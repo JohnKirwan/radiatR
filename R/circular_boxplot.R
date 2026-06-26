@@ -172,8 +172,8 @@ circ_boxplot_stats <- function(hd, angle_col = "heading", axial = FALSE) {
 #' @param n_theta Points per arc. Default `200`.
 #' @param display A [circ_display()] object; when `NULL` (default), taken from
 #'   `attr(hd, "display")`, falling back to `circ_display()`.
-#' @param panel_by Optional name of a column in `hd` identifying facet panels
-#'   (the same column passed to `radiate(panel_by = )`). When set, a separate
+#' @param facets Optional name of a column in `hd` identifying facet panels
+#'   (the same column passed to `radiate(facets = )`). When set, a separate
 #'   boxplot is computed and drawn per level so each facet shows its own
 #'   summary; the layer data is tagged with this column so it faces correctly. A
 #'   level that is not drawable (fewer than 4 usable observations or a non-unique
@@ -197,7 +197,7 @@ add_circular_boxplot <- function(hd, angle_col = "heading", axial = FALSE,
                                  colour = "black", box_fill = "grey90",
                                  farout_shape = 8, show_median_arrow = FALSE,
                                  linewidth = 0.8, n_theta = 200L, display = NULL,
-                                 panel_by = NULL, theme = NULL, color = NULL) {
+                                 facets = NULL, theme = NULL, color = NULL) {
   .apply_spelling_aliases()
   if (!is.null(theme)) {
     st     <- .radial_style(theme)
@@ -258,8 +258,8 @@ add_circular_boxplot <- function(hd, angle_col = "heading", axial = FALSE,
          arrow = arrow_df, fo = fo_df)
   }
 
-  # One boxplot, or one per panel level when panel_by names a column of hd.
-  faceted <- !is.null(panel_by) && is.data.frame(hd) && panel_by %in% names(hd)
+  # One boxplot, or one per panel level when facets names a column of hd.
+  faceted <- !is.null(facets) && is.data.frame(hd) && facets %in% names(hd)
   if (!faceted) {
     s <- circ_boxplot_stats(hd, angle_col = angle_col, axial = axial)
     if (!isTRUE(s$drawable)) {
@@ -269,7 +269,7 @@ add_circular_boxplot <- function(hd, angle_col = "heading", axial = FALSE,
     if (!is.na(s$reason)) warning("add_circular_boxplot: ", s$reason, call. = FALSE)
     geom <- build_geom(s)
   } else {
-    groups <- split(seq_len(nrow(hd)), hd[[panel_by]])
+    groups <- split(seq_len(nrow(hd)), hd[[facets]])
     geom   <- list(box = NULL, whisk = NULL, cross = NULL, arrow = NULL, fo = NULL)
     for (lv in names(groups)) {
       s <- circ_boxplot_stats(hd[groups[[lv]], , drop = FALSE],
@@ -283,7 +283,7 @@ add_circular_boxplot <- function(hd, angle_col = "heading", axial = FALSE,
       g <- build_geom(s)
       for (nm in names(geom)) {
         if (!is.null(g[[nm]])) {
-          g[[nm]][[panel_by]] <- lv
+          g[[nm]][[facets]] <- lv
           geom[[nm]] <- rbind(geom[[nm]], g[[nm]])
         }
       }

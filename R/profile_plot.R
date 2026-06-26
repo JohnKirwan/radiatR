@@ -68,7 +68,7 @@
 #' @param metric `"speed"` (default), `"turning"`, or `"direction"`.
 #' @param units For `metric = "turning"` (per second) or `metric = "direction"`,
 #'   `"radians"` (default) or `"degrees"`.
-#' @param colour_by,panel_by Optional column names of `as.data.frame(ts)` to
+#' @param colour_by,facets Optional column names of `as.data.frame(ts)` to
 #'   colour by / facet into panels. Default: one neutral series per track.
 #' @param max_speed For `metric = "speed"`, the speed-axis cap: `NULL` (default,
 #'   the 99.5% quantile -- so single-frame tracking artifacts do not crush the
@@ -90,7 +90,7 @@
 #' plot_profile(ts, metric = "direction", units = "degrees")
 plot_profile <- function(ts, metric = c("speed", "turning", "direction"),
                          units = c("radians", "degrees"),
-                         colour_by = NULL, panel_by = NULL, max_speed = NULL,
+                         colour_by = NULL, facets = NULL, max_speed = NULL,
                          smooth = 1L, show_raw = FALSE) {
   if (!methods::is(ts, "Tracks")) stop("'ts' must be a Tracks.")
   metric <- match.arg(metric)
@@ -100,7 +100,7 @@ plot_profile <- function(ts, metric = c("speed", "turning", "direction"),
     stop("`smooth` must be a single positive integer (window in points; 1 = no smoothing).")
   smooth <- as.integer(smooth)
   d <- as.data.frame(ts)
-  for (cc in c(colour_by, panel_by)) {
+  for (cc in c(colour_by, facets)) {
     if (!is.null(cc) && !cc %in% names(d))
       stop("column '", cc, "' not found in the Tracks.")
   }
@@ -119,7 +119,7 @@ plot_profile <- function(ts, metric = c("speed", "turning", "direction"),
   df <- data.frame(.elapsed = el, .value = value, .raw = raw,
                    .id = d[[ts@cols$id]], stringsAsFactors = FALSE)
   if (!is.null(colour_by)) df[[colour_by]] <- d[[colour_by]]
-  if (!is.null(panel_by))  df[[panel_by]]  <- d[[panel_by]]
+  if (!is.null(facets))  df[[facets]]  <- d[[facets]]
 
   ylab <- switch(metric,
     speed     = .speed_ylab(ts),
@@ -163,8 +163,8 @@ plot_profile <- function(ts, metric = c("speed", "turning", "direction"),
     ggplot2::labs(x = "elapsed (s)", y = ylab, caption = cap,
                   colour = if (!is.null(colour_by)) colour_by else NULL) +
     ggplot2::theme_minimal()
-  if (!is.null(panel_by))
-    g <- g + ggplot2::facet_wrap(ggplot2::vars(.data[[panel_by]]))
+  if (!is.null(facets))
+    g <- g + ggplot2::facet_wrap(ggplot2::vars(.data[[facets]]))
   g
 }
 

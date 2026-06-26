@@ -44,7 +44,7 @@ test_that("spec_to_code: points display, distinct colour + legend, no facet", {
   expect_true(grepl("add_heading_points(", code, fixed = TRUE))
   expect_false(grepl("bin_angles", code, fixed = TRUE))
   expect_true(grepl('labs(colour = "arc")', code, fixed = TRUE))
-  expect_false(grepl("panel_by", code, fixed = TRUE))   # no facet
+  expect_false(grepl("facets", code, fixed = TRUE))   # no facet
   expect_false(grepl("by.x =", code, fixed = TRUE))     # no facet merge
   expect_silent(parse(text = code))
 })

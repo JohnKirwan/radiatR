@@ -79,7 +79,7 @@ Two tests are supported:
 }
 
 Sample size \code{n} is taken per group from \code{hd}.  When
-\code{group_col} matches the parent \code{radiate(panel_by = ...)} argument,
+\code{group_col} matches the parent \code{radiate(facets = ...)} argument,
 one circle is drawn per panel at the radius appropriate to that panel's
 \code{n}.  For groups overlaid in a single panel, set \code{per_group = TRUE}
 to draw one circle per group (colour-matched), or \code{per_group = FALSE}

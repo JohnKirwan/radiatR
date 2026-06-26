@@ -28,7 +28,7 @@ Default \code{0.4}.}
 
 \item{inner_r}{Inner radius.  Default \code{0}.}
 
-\item{group_col}{Column for faceting; must match \code{panel_by} in the
+\item{group_col}{Column for faceting; must match \code{facets} in the
 parent \code{radiate()} call.}
 
 \item{n_pts}{Angular evaluation points.  Default \code{360L}.}

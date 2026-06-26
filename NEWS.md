@@ -9,6 +9,11 @@
   `load_manifest()`. No behaviour, slot, or output changed. Bundled `cpunctatus`
   is now a `Tracks` object.
 
+* The `panel_by` argument of `radiate()`, `gg_traj()`, `add_circular_boxplot()`,
+  and `plot_profile()` is renamed to **`facets`** (mirroring `ggplot2::facet_wrap()`).
+  No deprecation alias: existing `panel_by = ` calls error with "unused argument".
+  Behaviour is unchanged; `radiate()` also has `rows`/`cols` for `facet_grid()`.
+
 ## Infrastructure
 
 * `headings_frame` is now a tibble subclass whose class and display convention
@@ -45,7 +50,7 @@
 
 * `radiate()` gains `rows` and `cols` arguments for `ggplot2::facet_grid()`
   faceting — a true row x column grid, mirroring ggplot (each accepts one or more
-  column names, nesting per side). This complements the existing `panel_by`
+  column names, nesting per side). This complements the existing `facets`
   (`facet_wrap`); use one or the other, not both.
 
 ## Bug fixes
@@ -142,7 +147,7 @@
   numeric degree/radian mode — now get numbers. `"outside"` (default) is
   unchanged.
 
-* `add_circular_boxplot()` gains `panel_by` so a faceted `radiate()` draws a
+* `add_circular_boxplot()` gains `facets` so a faceted `radiate()` draws a
   separate boxplot per panel instead of repeating one pooled summary on every
   facet; the Shiny app passes the active facet column automatically. A panel
   with too few observations is skipped while the others still draw.

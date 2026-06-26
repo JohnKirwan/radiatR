@@ -37,13 +37,13 @@ test_that("plot_profile: distance scale -> physical y-label; needs a frame rate"
   expect_equal(plot_profile(ts, metric = "speed")$labels$y, "speed (mm/s)")
 })
 
-test_that("plot_profile: colour_by / panel_by map columns; bad column errors", {
+test_that("plot_profile: colour_by / facets map columns; bad column errors", {
   data(cpunctatus, package = "radiatR", envir = environment())
   ts <- set_frame_rate(cpunctatus, 30)
   grp <- intersect(c("arc","type"), names(as.data.frame(ts)))[1]
   skip_if(is.na(grp), "no grouping column")
   expect_s3_class(plot_profile(ts, metric = "speed", colour_by = grp), "ggplot")
-  pf <- plot_profile(ts, metric = "speed", panel_by = grp)
+  pf <- plot_profile(ts, metric = "speed", facets = grp)
   expect_s3_class(ggplot2::ggplot_build(pf), "ggplot_built")
   expect_error(plot_profile(ts, metric = "speed", colour_by = "nope"), "not found|column")
 })
@@ -87,7 +87,7 @@ test_that("plot_profile: speed/turning still draw lines (back-compat)", {
   }
 })
 
-test_that("plot_profile(direction) honours colour_by and panel_by", {
+test_that("plot_profile(direction) honours colour_by and facets", {
   data(cpunctatus, package = "radiatR", envir = environment())
   ts  <- set_frame_rate(cpunctatus, 30)
   grp <- intersect(c("arc", "type"), names(as.data.frame(ts)))[1]
@@ -95,7 +95,7 @@ test_that("plot_profile(direction) honours colour_by and panel_by", {
   p <- plot_profile(ts, metric = "direction", colour_by = grp)
   expect_s3_class(p, "ggplot")
   expect_true(any(vapply(p$layers, function(l) inherits(l$geom, "GeomPoint"), logical(1))))
-  pf <- plot_profile(ts, metric = "direction", panel_by = grp)
+  pf <- plot_profile(ts, metric = "direction", facets = grp)
   expect_s3_class(ggplot2::ggplot_build(pf), "ggplot_built")
 })
 

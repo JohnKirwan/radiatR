@@ -176,7 +176,7 @@ test_that("add_circular_boxplot: theme sets the chrome colour", {
   expect_equal(poly_col(add_circular_boxplot(hd)), "black")       # NULL theme -> colour default
 })
 
-test_that("add_circular_boxplot: panel_by draws a per-group boxplot", {
+test_that("add_circular_boxplot: facets draws a per-group boxplot", {
   set.seed(9)
   hd <- data.frame(
     heading = c(as.numeric(circular::rvonmises(80, circular::circular(0.5), 6)),
@@ -185,13 +185,13 @@ test_that("add_circular_boxplot: panel_by draws a per-group boxplot", {
   box_data <- function(lyr) lyr[[which(vapply(lyr,
     function(L) inherits(L$geom, "GeomPolygon"), logical(1)))[1]]]$data
 
-  # Pooled (no panel_by): one boxplot, no panel column.
+  # Pooled (no facets): one boxplot, no panel column.
   pooled <- box_data(add_circular_boxplot(hd))
   expect_false("grp" %in% names(pooled))
 
   # Per-panel: the box layer carries the grp column with both levels, and the
   # two groups have clearly different median directions (one box per panel).
-  faceted <- box_data(add_circular_boxplot(hd, panel_by = "grp"))
+  faceted <- box_data(add_circular_boxplot(hd, facets = "grp"))
   expect_true("grp" %in% names(faceted))
   expect_setequal(unique(faceted$grp), c("A", "B"))
   med_dir <- function(df) atan2(mean(df$.y), mean(df$.x))
@@ -206,7 +206,7 @@ test_that("add_circular_boxplot: a non-drawable panel is skipped, others draw", 
     heading = c(as.numeric(circular::rvonmises(80, circular::circular(0.5), 6)),
                 c(0, 0.1, 0.2)),                                   # group B has n < 4
     grp = c(rep("A", 80), rep("B", 3)))
-  expect_warning(lyr <- add_circular_boxplot(hd, panel_by = "grp"),
+  expect_warning(lyr <- add_circular_boxplot(hd, facets = "grp"),
                  "B", fixed = TRUE)
   box <- lyr[[which(vapply(lyr, function(L) inherits(L$geom, "GeomPolygon"),
                            logical(1)))[1]]]$data
