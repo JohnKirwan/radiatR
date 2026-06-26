@@ -101,6 +101,13 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
   # In headings mode a group only exists if it is a column of hd.
   if (headings_mode && !is.null(gc) && !(gc %in% names(df))) gc <- NULL
 
+  # Second facet column (grid). In headings mode only when it is a column of hd.
+  gc2 <- if (!is.null(inputs$cond_col2) && nzchar(inputs$cond_col2))
+    inputs$cond_col2 else if (!is.null(inputs$hd_group2) && nzchar(inputs$hd_group2))
+    inputs$hd_group2 else NULL
+  if (!is.null(gc2) && !(gc2 %in% names(df))) gc2 <- NULL
+  grid_mode <- !is.null(gc) && !is.null(gc2)
+
   cb <- inputs$colour_by
   by_traj <- is.null(cb) || !nzchar(cb) || identical(cb, SPEC_TRAJ_KEY)
   if (headings_mode && by_traj) {
@@ -123,7 +130,8 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
     # in headings mode method is NULL, so headings$rule is absent by design (every reader gates on mode first)
     headings = c(list(rule = method), rule_params),
     group_col = id_col,
-    facet_by  = gc,
+    facet_by   = gc,
+    facet_cols = if (grid_mode) gc2 else NULL,
     colour    = list(by = if (by_traj) "trajectory" else cb,
                      cap = SPEC_CYCLE_N, legend = legend),
     theme        = inputs$plot_theme %||% "void",
@@ -158,12 +166,12 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
     show = list(tracks    = !headings_mode && isTRUE(inputs$show_tracks),
                 arrow     = isTRUE(inputs$show_arrow),
                 vectors   = isTRUE(inputs$show_vectors),
-                rayleigh  = isTRUE(inputs$show_rayleigh),
-                ci        = isTRUE(inputs$show_ci),
-                vtest     = isTRUE(inputs$show_vtest),
+                rayleigh  = !grid_mode && isTRUE(inputs$show_rayleigh),
+                ci        = !grid_mode && isTRUE(inputs$show_ci),
+                vtest     = !grid_mode && isTRUE(inputs$show_vtest),
                 quadrants = isTRUE(inputs$show_quadrants),
                 rings     = isTRUE(inputs$show_rings),
-                boxplot   = isTRUE(inputs$show_boxplot))
+                boxplot   = !grid_mode && isTRUE(inputs$show_boxplot))
   )
 }
 
