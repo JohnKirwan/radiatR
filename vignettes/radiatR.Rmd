@@ -406,6 +406,15 @@ p <- radiate(cpunctatus_cc,
 p
 ```
 
+For a two-way layout, `rows` and `cols` facet into a grid via
+`ggplot2::facet_grid()` (mirroring ggplot --- each takes one or more columns):
+
+```{r facet-grid, eval = FALSE}
+radiate(cpunctatus, group_col = "trial_id", rows = "type", cols = "arc")
+```
+
+Use `rows`/`cols` (grid) or `panel_by` (wrap), not both.
+
 **+ Bootstrap CI arc** added first so it sits behind heading markers:
 
 ```{r build-4, fig.width=8, fig.height=5}

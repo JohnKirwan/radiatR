@@ -41,6 +41,13 @@
   settings. The ground truth is recorded in new output columns and in the
   `TrajSet` `meta$sim_conditions`. The default output is unchanged.
 
+## Plotting
+
+* `radiate()` gains `rows` and `cols` arguments for `ggplot2::facet_grid()`
+  faceting — a true row x column grid, mirroring ggplot (each accepts one or more
+  column names, nesting per side). This complements the existing `panel_by`
+  (`facet_wrap`); use one or the other, not both.
+
 ## Bug fixes
 
 * `radiate()` now clips trajectory paths to the unit circle by default
