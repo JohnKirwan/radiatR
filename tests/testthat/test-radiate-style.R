@@ -190,3 +190,53 @@ test_that("radiate angle_labels switches between degrees, none and radians", {
   # Back-compat: degrees = FALSE hides the labels.
   expect_length(label_texts(base(degrees = FALSE)), 0L)
 })
+
+test_that("radiate(rows=, cols=) builds a facet_grid over the right variables", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  p   <- radiate(cpunctatus, group_col = "trial_id", show_arrow = FALSE,
+                 show_labels = FALSE, rows = "type", cols = "arc")
+  expect_s3_class(p$facet, "FacetGrid")
+  lay <- ggplot2::ggplot_build(p)$layout$layout
+  expect_true(all(c("ROW", "COL", "type", "arc") %in% names(lay)))
+  expect_equal(length(unique(lay$type)), 2L)        # rows = the 2 type levels
+})
+
+test_that("radiate multi-variable grid side nests like facet_grid", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  p <- radiate(cpunctatus, group_col = "trial_id", show_arrow = FALSE,
+               show_labels = FALSE, rows = c("type", "arc"))
+  expect_s3_class(p$facet, "FacetGrid")
+  lay <- ggplot2::ggplot_build(p)$layout$layout
+  expect_true(all(c("type", "arc") %in% names(lay)))
+  expect_equal(length(unique(lay$COL)), 1L)         # cols = . -> single column
+})
+
+test_that("radiate errors when panel_by and rows/cols are both set", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  expect_error(
+    radiate(cpunctatus, group_col = "trial_id", panel_by = "type", cols = "arc"),
+    "facet_grid|both", ignore.case = TRUE)
+})
+
+test_that("radiate errors on a missing rows/cols column", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  expect_error(
+    radiate(cpunctatus, group_col = "trial_id", rows = "nope"),
+    "not found", ignore.case = TRUE)
+})
+
+test_that("radiate facet_grid routes one mean arrow per occupied cell", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  p <- radiate(cpunctatus, group_col = "trial_id", rows = "type",
+               show_labels = FALSE, show_arrow = TRUE)
+  b <- ggplot2::ggplot_build(p)
+  # the mean arrow's geom_segment data starts at the origin (0,0)
+  arrow_d <- NULL
+  for (i in seq_along(p$layers)) {
+    d <- b$data[[i]]
+    if (inherits(p$layers[[i]]$geom, "GeomSegment") &&
+        all(abs(d$x) < 1e-9) && all(abs(d$y) < 1e-9)) { arrow_d <- d; break }
+  }
+  expect_false(is.null(arrow_d))
+  expect_equal(length(unique(arrow_d$PANEL)), 2L)   # one arrow per type panel
+})

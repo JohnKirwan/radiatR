@@ -2268,10 +2268,13 @@ line_circle_intercept_traj <- function(traj, id, range) {
   else
     split(seq_len(nrow(data)), data[[group_col]])
 
-  na_row <- data[1, , drop = FALSE]
-  na_row[] <- NA   # all-NA row -> geom_path break
+  # Template for path-break rows: only x/y are NA; other columns are filled
+  # per group so that facet variables (e.g. type, arc) stay non-NA and
+  # facet_grid does not generate a spurious NA panel for the break rows.
+  na_row_template <- data[1, , drop = FALSE]
+  na_row_template[] <- NA   # start fully NA; x/y NA is what geom_path needs
 
-  clip_run <- function(g) {
+  clip_run <- function(g, na_row) {
     gx <- g[[x_col]]; gy <- g[[y_col]]
     inside <- (gx^2 + gy^2) <= rim2
     if (all(inside)) return(g)
@@ -2311,8 +2314,13 @@ line_circle_intercept_traj <- function(traj, id, range) {
     runlab <- cumsum(!finite)            # increments at each non-finite row
     g_fin  <- g[finite, , drop = FALSE]
     lab    <- runlab[finite]
+    # Build a group-specific break row: keep non-coordinate columns from the
+    # group's first row so facet variables stay non-NA for geom_path breaks.
+    na_row <- na_row_template
+    na_row[, setdiff(names(na_row), c(x_col, y_col))] <-
+      g_fin[1, setdiff(names(g_fin), c(x_col, y_col)), drop = FALSE]
     runs   <- lapply(split(seq_len(nrow(g_fin)), lab),
-                     function(ix) clip_run(g_fin[ix, , drop = FALSE]))
+                     function(ix) clip_run(g_fin[ix, , drop = FALSE], na_row))
     runs   <- Filter(Negate(is.null), runs)
     if (!length(runs)) next
     joined <- runs[[1L]]
@@ -2505,6 +2513,12 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #' @param panel_by NULL, a column name, or a character vector of column names
 #'   to facet by (via [ggplot2::facet_wrap()]). The named column(s) must be
 #'   present in the data.
+#' @param rows,cols Optional character vectors of column names to facet into a
+#'   row x column grid via [ggplot2::facet_grid()] (mirroring ggplot: `rows` and
+#'   `cols` map to the two sides of the `rows ~ cols` formula, and multiple
+#'   variables per side nest as in `facet_grid()`). Use these *or* `panel_by`
+#'   (`facet_wrap`), not both. Scales are fixed (circular panels stay round);
+#'   `ncol`/`strip_position = "inside"` apply to `panel_by` only.
 #' @param ncol Number of columns passed to [ggplot2::facet_wrap()] when
 #'   `panel_by` is set.
 #' @param strip_labels Logical or `NULL`. Whether to show a label identifying
@@ -2589,6 +2603,8 @@ function(
   time_units = c("seconds", "minutes", "milliseconds"),
   coords = c("relative", "absolute"),
   panel_by = NULL,
+  rows = NULL,
+  cols = NULL,
   ncol = NULL,
   strip_labels = NULL,
   strip_position = c("top", "bottom", "left", "right", "inside"),
@@ -2715,12 +2731,22 @@ function(
     }
   }
 
+  # Faceting variables: facet_grid (rows/cols) or facet_wrap (panel_by). Used to
+  # restart the colour cycle and route the mean arrow per panel.
+  facet_vars <- if (!is.null(rows) || !is.null(cols)) c(rows, cols) else panel_by
+
   if (!is.null(colour_cycle)) {
     if (!is.null(colour_col))
       stop("`colour_col` and `colour_cycle` cannot both be set.")
     n_cycle <- if (is.character(colour_cycle)) length(colour_cycle) else as.integer(colour_cycle)
+    # assign_cycle_colours() restarts per single panel column; for several
+    # faceting vars, key on their interaction so the cycle restarts per panel.
+    cycle_panel_col <- if (length(facet_vars) <= 1L) facet_vars else {
+      data[[".panel_key"]] <- interaction(data[facet_vars], drop = TRUE)
+      ".panel_key"
+    }
     data <- assign_cycle_colours(data, id_col = group_col, n = n_cycle,
-                                 panel_col = panel_by, out_col = ".cycle_colour")
+                                 panel_col = cycle_panel_col, out_col = ".cycle_colour")
     colour_col <- ".cycle_colour"
   }
 
@@ -2851,6 +2877,7 @@ function(
       seg_cols <- unique(c(
         if (!is.null(panel_by) && length(panel_by) == 1L &&
             panel_by %in% names(data)) panel_by,
+        intersect(c(rows, cols), names(data)),
         if (!is.null(arrow_colour_col) &&
             arrow_colour_col %in% names(data)) arrow_colour_col
       ))
@@ -2923,7 +2950,25 @@ function(
     g <- g + ggplot2::scale_colour_manual(values = scale_vals)
   }
 
-  if (!is.null(panel_by)) {
+  if ((!is.null(rows) || !is.null(cols)) && !is.null(panel_by))
+    stop("Use either `panel_by` (facet_wrap) or `rows`/`cols` (facet_grid), not both.")
+
+  if (!is.null(rows) || !is.null(cols)) {
+    grid_vars    <- c(rows, cols)
+    missing_grid <- setdiff(grid_vars, names(data))
+    if (length(missing_grid))
+      stop("rows/cols column(s) not found in data: ",
+           paste(missing_grid, collapse = ", "))
+    show_strip_g <- if (is.null(strip_labels)) TRUE else isTRUE(strip_labels)
+    lhs <- if (length(rows)) paste(rows, collapse = " + ") else "."
+    rhs <- if (length(cols)) paste(cols, collapse = " + ") else "."
+    g <- g + ggplot2::facet_grid(stats::as.formula(paste(lhs, "~", rhs)))
+    g <- g + if (show_strip_g)
+      ggplot2::theme(strip.text = ggplot2::element_text(size = strip_label_size))
+    else
+      ggplot2::theme(strip.text = ggplot2::element_blank(),
+                     strip.background = ggplot2::element_blank())
+  } else if (!is.null(panel_by)) {
     if (!is.character(panel_by)) stop("`panel_by` must be a character vector of column names.")
     missing_pby <- setdiff(panel_by, names(data))
     if (length(missing_pby)) stop("panel_by column(s) not found in data: ", paste(missing_pby, collapse = ", "))
