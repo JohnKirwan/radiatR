@@ -25,6 +25,8 @@ radiate(
   time_units = c("seconds", "minutes", "milliseconds"),
   coords = c("relative", "absolute"),
   panel_by = NULL,
+  rows = NULL,
+  cols = NULL,
   ncol = NULL,
   strip_labels = NULL,
   strip_position = c("top", "bottom", "left", "right", "inside"),
@@ -188,6 +190,16 @@ radiate(
   NULL, a column name, or a character vector of column names to facet by
   (via \[ggplot2::facet_wrap()\]). The named column(s) must be present
   in the data.
+
+- rows, cols:
+
+  Optional character vectors of column names to facet into a row x
+  column grid via \[ggplot2::facet_grid()\] (mirroring ggplot: \`rows\`
+  and \`cols\` map to the two sides of the \`rows ~ cols\` formula, and
+  multiple variables per side nest as in \`facet_grid()\`). Use these
+  \*or\* \`panel_by\` (\`facet_wrap\`), not both. Scales are fixed
+  (circular panels stay round); \`ncol\`/\`strip_position = "inside"\`
+  apply to \`panel_by\` only.
 
 - ncol:
 

@@ -73,6 +73,8 @@ the object and handed off to the plotting helpers.</p>
 <span>  time_units <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"seconds"</span>, <span class="st">"minutes"</span>, <span class="st">"milliseconds"</span><span class="op">)</span>,</span>
 <span>  coords <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"relative"</span>, <span class="st">"absolute"</span><span class="op">)</span>,</span>
 <span>  panel_by <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  rows <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  cols <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  strip_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  strip_position <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"top"</span>, <span class="st">"bottom"</span>, <span class="st">"left"</span>, <span class="st">"right"</span>, <span class="st">"inside"</span><span class="op">)</span>,</span>
@@ -233,6 +235,15 @@ requested but the `Tracks` has no `x`/`y` columns registered.</p></dd>
 <dd><p>NULL, a column name, or a character vector of column names
 to facet by (via [ggplot2::facet_wrap()]). The named column(s) must be
 present in the data.</p></dd>
+
+
+<dt id="arg-rows-cols">rows, cols<a class="anchor" aria-label="anchor" href="#arg-rows-cols"></a></dt>
+<dd><p>Optional character vectors of column names to facet into a
+row x column grid via [ggplot2::facet_grid()] (mirroring ggplot: `rows` and
+`cols` map to the two sides of the `rows ~ cols` formula, and multiple
+variables per side nest as in `facet_grid()`). Use these *or* `panel_by`
+(`facet_wrap`), not both. Scales are fixed (circular panels stay round);
+`ncol`/`strip_position = "inside"` apply to `panel_by` only.</p></dd>
 
 
 <dt id="arg-ncol">ncol<a class="anchor" aria-label="anchor" href="#arg-ncol"></a></dt>

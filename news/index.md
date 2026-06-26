@@ -67,6 +67,15 @@
   columns and in the `TrajSet` `meta$sim_conditions`. The default output
   is unchanged.
 
+### Plotting
+
+- [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  gains `rows` and `cols` arguments for
+  [`ggplot2::facet_grid()`](https://ggplot2.tidyverse.org/reference/facet_grid.html)
+  faceting — a true row x column grid, mirroring ggplot (each accepts
+  one or more column names, nesting per side). This complements the
+  existing `panel_by` (`facet_wrap`); use one or the other, not both.
+
 ### Bug fixes
 
 - [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
