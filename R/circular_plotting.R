@@ -1317,6 +1317,26 @@ add_circ_interval <- function(interval_df,
 #' @param display A [`circ_display`] object. When `NULL` (default), read from
 #'   `attr(headings_df, "display")`, falling back to `circ_display()`.
 #'
+# Split `df` into facet x group cells. `facets` (character vector) and
+# `group_col` (single column) name the columns whose union defines a cell; the
+# statistic-drawing overlays compute one piece per cell and attach every one of
+# these columns to the layer data so facet_grid()/facet_wrap() can place it.
+# Returns a list, one element per occupied combination: list(rows, keys), where
+# `keys` is a named list of the single value of each column for that cell. With
+# no columns, returns one pooled group with empty keys. Internal, not exported.
+.facet_group_split <- function(df, facets = NULL, group_col = NULL) {
+  cols <- unique(c(facets, group_col))                 # c() already drops NULLs
+  if (!length(cols))
+    return(list(list(rows = df, keys = list())))
+  combos <- unique(df[cols])
+  lapply(seq_len(nrow(combos)), function(i) {
+    key <- combos[i, , drop = FALSE]
+    sel <- rep(TRUE, nrow(df))
+    for (cc in cols) sel <- sel & (df[[cc]] == key[[cc]])
+    list(rows = df[sel, , drop = FALSE], keys = as.list(key))
+  })
+}
+
 #' @return A `geom_path()` layer.
 #'
 #' @param axial Logical. Render the overlay for axial (bidirectional, mod-pi)

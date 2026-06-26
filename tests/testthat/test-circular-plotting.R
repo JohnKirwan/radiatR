@@ -2212,3 +2212,43 @@ test_that(".clip_path_to_circle treats a point a hair over the rim as inside (no
   outp <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "point")
   expect_equal(nrow(outp), nrow(d))
 })
+
+# ---- .facet_group_split ------------------------------------------------------
+
+test_that(".facet_group_split pools when no columns are given", {
+  df <- data.frame(heading = c(0.1, 0.2, 0.3), a = c("x", "y", "x"))
+  g  <- .facet_group_split(df)
+  expect_length(g, 1L)
+  expect_identical(g[[1]]$rows, df)
+  expect_identical(g[[1]]$keys, list())
+})
+
+test_that(".facet_group_split splits on a single facet column and attaches its value", {
+  df <- data.frame(heading = c(0.1, 0.2, 0.3, 0.4), a = c("x", "x", "y", "y"))
+  g  <- .facet_group_split(df, facets = "a")
+  expect_length(g, 2L)
+  keys <- sort(vapply(g, function(e) e$keys$a, character(1)))
+  expect_identical(keys, c("x", "y"))
+  gx <- Filter(function(e) e$keys$a == "x", g)[[1]]
+  expect_equal(nrow(gx$rows), 2L)
+})
+
+test_that(".facet_group_split splits on the union of facets and group_col", {
+  df <- data.frame(heading = 1:8 / 10,
+                   a = rep(c("x", "y"), each = 4),
+                   s = rep(c("m", "f"), 4))
+  g  <- .facet_group_split(df, facets = c("a"), group_col = "s")
+  expect_length(g, 4L)                              # 2 a-levels x 2 s-levels
+  expect_true(all(vapply(g, function(e)
+    all(c("a", "s") %in% names(e$keys)), logical(1))))
+  expect_true(all(vapply(g, function(e) nrow(e$rows) == 2L, logical(1))))
+})
+
+test_that(".facet_group_split accepts a two-column facets vector", {
+  df <- data.frame(heading = 1:4 / 10,
+                   a = c("x", "x", "y", "y"), b = c("p", "q", "p", "q"))
+  g  <- .facet_group_split(df, facets = c("a", "b"))
+  expect_length(g, 4L)
+  expect_true(all(vapply(g, function(e)
+    all(c("a", "b") %in% names(e$keys)), logical(1))))
+})
