@@ -29,7 +29,7 @@ Default \code{0.4} matches \code{add_angle_rose}.}
 \item{inner_r}{Inner radius; default \code{0}.}
 
 \item{group_col}{Column in \code{fit} for faceting; must match the
-\code{panel_by} argument of the parent \code{radiate()} call.}
+\code{facets} argument of the parent \code{radiate()} call.}
 
 \item{n_pts}{Angular evaluation points.  Default \code{360L}.}
 

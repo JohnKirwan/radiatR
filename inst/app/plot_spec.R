@@ -204,7 +204,7 @@ spec_to_plot <- function(spec, ts, hd) {
       hd,
       show_markers = FALSE,
       colour_col   = ".colour",
-      panel_by     = if (grid_mode) NULL else spec$facet_by,
+      facets     = if (grid_mode) NULL else spec$facet_by,
       rows         = if (grid_mode) spec$facet_by  else NULL,
       cols         = if (grid_mode) spec$facet_cols else NULL,
       legend       = spec$colour$legend,
@@ -223,7 +223,7 @@ spec_to_plot <- function(spec, ts, hd) {
       colour_col   = if (gradient_track) NULL else ".colour",
       track_colour = rtc$effective,
       coords       = spec$coords %||% "relative",
-      panel_by     = if (grid_mode) NULL else spec$facet_by,
+      facets     = if (grid_mode) NULL else spec$facet_by,
       rows         = if (grid_mode) spec$facet_by  else NULL,
       cols         = if (grid_mode) spec$facet_cols else NULL,
       colour_cycle = NULL,
@@ -341,7 +341,7 @@ spec_to_plot <- function(spec, ts, hd) {
   if (isTRUE(spec$show$boxplot))
     p <- p + add_circular_boxplot(hd, axial = isTRUE(spec$axial),
                                   theme = spec$theme %||% "void",
-                                  panel_by = spec$facet_by)
+                                  facets = spec$facet_by)
 
   p
 }
@@ -541,7 +541,7 @@ spec_to_code <- function(spec) {
   pby <- if (!is.null(spec$facet_cols))
            paste0(", rows = ", q(spec$facet_by), ", cols = ", q(spec$facet_cols))
          else if (is.null(spec$facet_by)) ""
-         else paste0(", panel_by = ", q(spec$facet_by))
+         else paste0(", facets = ", q(spec$facet_by))
   # Only emit quadrants/rings when on -- they default to FALSE in radiate(), so
   # the common case keeps a clean call.
   qr <- paste0(if (isTRUE(spec$show$quadrants)) ", quadrants = TRUE" else "",
@@ -604,7 +604,7 @@ spec_to_code <- function(spec) {
       ", colour = ", q(SPEC_VTEST_COLOUR), ", linewidth = ", SPEC_VTEST_LWD, ax, ")"))
   }
   if (has_hd && isTRUE(spec$show$boxplot)) {
-    bpb <- if (is.null(spec$facet_by)) "" else paste0(", panel_by = ", q(spec$facet_by))
+    bpb <- if (is.null(spec$facet_by)) "" else paste0(", facets = ", q(spec$facet_by))
     tail <- c(tail, paste0("add_circular_boxplot(hd", ax,
                            ", theme = ", q(spec$theme %||% "void"), bpb, ")"))
   }

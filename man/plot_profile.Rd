@@ -9,7 +9,7 @@ plot_profile(
   metric = c("speed", "turning", "direction"),
   units = c("radians", "degrees"),
   colour_by = NULL,
-  panel_by = NULL,
+  facets = NULL,
   max_speed = NULL,
   smooth = 1L,
   show_raw = FALSE
@@ -23,7 +23,7 @@ plot_profile(
 \item{units}{For `metric = "turning"` (per second) or `metric = "direction"`,
 `"radians"` (default) or `"degrees"`.}
 
-\item{colour_by, panel_by}{Optional column names of `as.data.frame(ts)` to
+\item{colour_by, facets}{Optional column names of `as.data.frame(ts)` to
 colour by / facet into panels. Default: one neutral series per track.}
 
 \item{max_speed}{For `metric = "speed"`, the speed-axis cap: `NULL` (default,

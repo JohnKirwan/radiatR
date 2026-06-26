@@ -367,11 +367,11 @@ test_that("circular boxplot overlay round-trips (directional)", {
   suppressWarnings(expect_roundtrip(rt))
 })
 
-test_that("faceted circular boxplot round-trips and emits panel_by", {
+test_that("faceted circular boxplot round-trips and emits facets", {
   rt <- roundtrip_spec("points", by = "trajectory", facet = "type",
                        arrow = FALSE, vectors = FALSE, boxplot = TRUE)
   code <- spec_to_code(rt$spec)
-  expect_match(code, 'add_circular_boxplot(hd, theme = "void", panel_by = "type")',
+  expect_match(code, 'add_circular_boxplot(hd, theme = "void", facets = "type")',
                fixed = TRUE)
   suppressWarnings(expect_roundtrip(rt))
 })

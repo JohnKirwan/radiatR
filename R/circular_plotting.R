@@ -759,7 +759,7 @@ assign_cycle_colors <- assign_cycle_colours
 #'
 #' When `colour_col` is supplied the density is computed independently for each
 #' group and the group label is preserved in the output, enabling per-panel use
-#' with [radiate()]'s `panel_by`.
+#' with [radiate()]'s `facets`.
 #'
 #' When `boot_reps > 0` and `method = "vonmises"`, a non-parametric bootstrap
 #' is run: `boot_reps` samples are drawn with replacement, a von Mises MLE is
@@ -1985,7 +1985,7 @@ RADIAL_THEMES <- c("void", "minimal", "classic", "bw", "grey", "gray",
 #' @param x Tracks
 #' @param colour,color,linetype,alpha,size Optional column names (strings) mapped
 #'   to aesthetics. `color` is the American-spelling alias for `colour`.
-#' @param panel_by NULL, a single string, or a character vector of columns to facet by
+#' @param facets NULL, a single string, or a character vector of columns to facet by
 #' @param coord "polar" (unit circle) or "cartesian"
 #' @param geom "path" or "point" (or both, as c("path","point"))
 #' @param thin Keep every n-th point per id (for very long tables)
@@ -1994,7 +1994,7 @@ RADIAL_THEMES <- c("void", "minimal", "classic", "bw", "grey", "gray",
 #' @importFrom stats ave
 #' @export
 setGeneric("gg_traj", function(x, colour = NULL, linetype = NULL, alpha = NULL, size = 0.6,
-                               panel_by = NULL, coord = c("polar", "cartesian"),
+                               facets = NULL, coord = c("polar", "cartesian"),
                                geom = c("path"), thin = 1L, ncol = NULL,
                                color = NULL) standardGeneric("gg_traj"))
 
@@ -2002,7 +2002,7 @@ setGeneric("gg_traj", function(x, colour = NULL, linetype = NULL, alpha = NULL, 
 #' @export
 setMethod("gg_traj", "Tracks",
   function(x, colour = NULL, linetype = NULL, alpha = NULL, size = 0.6,
-           panel_by = NULL, coord = c("polar", "cartesian"),
+           facets = NULL, coord = c("polar", "cartesian"),
            geom = c("path"), thin = 1L, ncol = NULL, color = NULL) {
     # S4 dispatch hides the user call from sys.call(-1L), so resolve the
     # color/colour alias inline rather than via .apply_spelling_aliases().
@@ -2046,13 +2046,13 @@ setMethod("gg_traj", "Tracks",
     if ("path"  %in% geom) p <- p + ggplot2::geom_path(lineend = "round", linewidth = size, na.rm = TRUE)
     if ("point" %in% geom) p <- p + ggplot2::geom_point(size = size * 1.5, stroke = 0, na.rm = TRUE)
 
-    if (!is.null(panel_by)) {
-      if (is.character(panel_by)) {
-        missing <- setdiff(panel_by, names(d))
-        if (length(missing)) stop("panel_by column(s) not found: ", paste(missing, collapse = ", "))
-        p <- p + ggplot2::facet_wrap(stats::as.formula(paste("~", paste(panel_by, collapse = "+"))),
+    if (!is.null(facets)) {
+      if (is.character(facets)) {
+        missing <- setdiff(facets, names(d))
+        if (length(missing)) stop("facets column(s) not found: ", paste(missing, collapse = ", "))
+        p <- p + ggplot2::facet_wrap(stats::as.formula(paste("~", paste(facets, collapse = "+"))),
                                      scales = "free", ncol = ncol)
-      } else stop("panel_by must be NULL or character vector of column names")
+      } else stop("facets must be NULL or character vector of column names")
     }
 
     if (coord == "polar") {
@@ -2433,7 +2433,7 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #' @param colour_cycle,color_cycle Optional cycling colour specification. Either a positive
 #'   integer `n` (trajectories are assigned colours 1--n, cycling back to 1 after
 #'   every `n` trajectories) or a character vector of colour values (e.g.
-#'   `c("red","blue","green")`). When `panel_by` is set the cycle restarts
+#'   `c("red","blue","green")`). When `facets` is set the cycle restarts
 #'   independently within each panel. Mutually exclusive with `colour_col`.
 #'   `color_cycle` is the American-spelling alias.
 #' @param track_colour,track_color How trajectory paths are coloured. `"trajectory"`
@@ -2505,25 +2505,25 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   when `arrow_colour_col` is set. `arrow_color` is the American-spelling alias.
 #' @param arrow_colour_col,arrow_color_col Optional grouping column. When
 #'   supplied, one mean resultant arrow is drawn per level of this column (within
-#'   each panel, if `panel_by` is also set) and mapped to the colour aesthetic, so
+#'   each panel, if `facets` is also set) and mapped to the colour aesthetic, so
 #'   the arrow can follow a colour grouping independently of faceting. Default
 #'   `NULL` draws a single arrow in `arrow_colour`. `arrow_color_col` is the
 #'   American-spelling alias.
 #' @param arrow_size Arrow linewidth.
-#' @param panel_by NULL, a column name, or a character vector of column names
+#' @param facets NULL, a column name, or a character vector of column names
 #'   to facet by (via [ggplot2::facet_wrap()]). The named column(s) must be
 #'   present in the data.
 #' @param rows,cols Optional character vectors of column names to facet into a
 #'   row x column grid via [ggplot2::facet_grid()] (mirroring ggplot: `rows` and
 #'   `cols` map to the two sides of the `rows ~ cols` formula, and multiple
-#'   variables per side nest as in `facet_grid()`). Use these *or* `panel_by`
+#'   variables per side nest as in `facet_grid()`). Use these *or* `facets`
 #'   (`facet_wrap`), not both. Scales are fixed (circular panels stay round);
-#'   `ncol`/`strip_position = "inside"` apply to `panel_by` only.
+#'   `ncol`/`strip_position = "inside"` apply to `facets` only.
 #' @param ncol Number of columns passed to [ggplot2::facet_wrap()] when
-#'   `panel_by` is set.
+#'   `facets` is set.
 #' @param strip_labels Logical or `NULL`. Whether to show a label identifying
-#'   the panel variable value on each panel. Defaults to `TRUE` when `panel_by`
-#'   is set, `FALSE` otherwise. Ignored when `panel_by` is `NULL`.
+#'   the panel variable value on each panel. Defaults to `TRUE` when `facets`
+#'   is set, `FALSE` otherwise. Ignored when `facets` is `NULL`.
 #' @param strip_position Position of the panel label. One of `"top"` (default),
 #'   `"bottom"`, `"left"`, `"right"` (ggplot2 strip positions), or `"inside"`
 #'   (places a text annotation inside the plot area, centred below the unit
@@ -2602,7 +2602,7 @@ function(
   track_colour = c("trajectory", "sequence", "time", "speed"),
   time_units = c("seconds", "minutes", "milliseconds"),
   coords = c("relative", "absolute"),
-  panel_by = NULL,
+  facets = NULL,
   rows = NULL,
   cols = NULL,
   ncol = NULL,
@@ -2731,9 +2731,9 @@ function(
     }
   }
 
-  # Faceting variables: facet_grid (rows/cols) or facet_wrap (panel_by). Used to
+  # Faceting variables: facet_grid (rows/cols) or facet_wrap (facets). Used to
   # restart the colour cycle and route the mean arrow per panel.
-  facet_vars <- if (!is.null(rows) || !is.null(cols)) c(rows, cols) else panel_by
+  facet_vars <- if (!is.null(rows) || !is.null(cols)) c(rows, cols) else facets
 
   if (!is.null(colour_cycle)) {
     if (!is.null(colour_col))
@@ -2875,8 +2875,8 @@ function(
       # and/or the colour column (so it follows a colour grouping). Each grouping
       # column is carried onto the arrow rows for faceting / the colour scale.
       seg_cols <- unique(c(
-        if (!is.null(panel_by) && length(panel_by) == 1L &&
-            panel_by %in% names(data)) panel_by,
+        if (!is.null(facets) && length(facets) == 1L &&
+            facets %in% names(data)) facets,
         intersect(c(rows, cols), names(data)),
         if (!is.null(arrow_colour_col) &&
             arrow_colour_col %in% names(data)) arrow_colour_col
@@ -2950,8 +2950,8 @@ function(
     g <- g + ggplot2::scale_colour_manual(values = scale_vals)
   }
 
-  if ((!is.null(rows) || !is.null(cols)) && !is.null(panel_by))
-    stop("Use either `panel_by` (facet_wrap) or `rows`/`cols` (facet_grid), not both.")
+  if ((!is.null(rows) || !is.null(cols)) && !is.null(facets))
+    stop("Use either `facets` (facet_wrap) or `rows`/`cols` (facet_grid), not both.")
 
   if (!is.null(rows) || !is.null(cols)) {
     grid_vars    <- c(rows, cols)
@@ -2968,17 +2968,17 @@ function(
     else
       ggplot2::theme(strip.text = ggplot2::element_blank(),
                      strip.background = ggplot2::element_blank())
-  } else if (!is.null(panel_by)) {
-    if (!is.character(panel_by)) stop("`panel_by` must be a character vector of column names.")
-    missing_pby <- setdiff(panel_by, names(data))
-    if (length(missing_pby)) stop("panel_by column(s) not found in data: ", paste(missing_pby, collapse = ", "))
+  } else if (!is.null(facets)) {
+    if (!is.character(facets)) stop("`facets` must be a character vector of column names.")
+    missing_pby <- setdiff(facets, names(data))
+    if (length(missing_pby)) stop("facets column(s) not found in data: ", paste(missing_pby, collapse = ", "))
 
     strip_position <- match.arg(strip_position)
     show_strip <- if (is.null(strip_labels)) TRUE else isTRUE(strip_labels)
 
     fw_pos <- if (strip_position == "inside") "top" else strip_position
     g <- g + ggplot2::facet_wrap(
-      stats::as.formula(paste("~", paste(panel_by, collapse = "+"))),
+      stats::as.formula(paste("~", paste(facets, collapse = "+"))),
       ncol = ncol,
       strip.position = fw_pos
     )
@@ -2998,8 +2998,8 @@ function(
     }
 
     if (show_strip && strip_position == "inside") {
-      panel_col <- panel_by[[1]]
-      label_df <- unique(data[, c(panel_by), drop = FALSE])
+      panel_col <- facets[[1]]
+      label_df <- unique(data[, c(facets), drop = FALSE])
       label_df[[".x_lab"]] <- 0
       label_df[[".y_lab"]] <- -1.25
       label_df[[".label"]] <- as.character(label_df[[panel_col]])
@@ -3058,7 +3058,7 @@ radiate.headings_frame <- function(
   base_r    = 1,
   shade     = FALSE,
   shape     = FALSE,
-  panel_by  = NULL,
+  facets  = NULL,
   ncol      = NULL,
   ticks     = TRUE,
   degrees   = TRUE,
@@ -3112,15 +3112,15 @@ radiate.headings_frame <- function(
     n_labels = n_labels
   )
 
-  if (!is.null(panel_by)) {
-    if (!is.character(panel_by))
-      stop("`panel_by` must be a character string.")
-    missing_pby <- setdiff(panel_by, names(data))
+  if (!is.null(facets)) {
+    if (!is.character(facets))
+      stop("`facets` must be a character string.")
+    missing_pby <- setdiff(facets, names(data))
     if (length(missing_pby))
-      stop("panel_by column(s) not found in data: ",
+      stop("facets column(s) not found in data: ",
            paste(missing_pby, collapse = ", "))
     g <- g + ggplot2::facet_wrap(
-      stats::as.formula(paste("~", paste(panel_by, collapse = "+"))),
+      stats::as.formula(paste("~", paste(facets, collapse = "+"))),
       ncol = ncol
     )
   }
@@ -3222,14 +3222,14 @@ build_label_data <- function(data, label_col, x_col, y_col, colour_col = NULL, p
 #' space used by \code{\link{radiate}}.  Each wedge spans one angular bin; its
 #' outer radius is proportional to the proportion (or count) of frames in that
 #' bin.  The layer can be faceted by passing the same column used in the parent
-#' \code{radiate(panel_by = ...)} call.
+#' \code{radiate(facets = ...)} call.
 #'
 #' @param hd Data frame of headings, e.g. from \code{\link{pose_to_headings}}
 #'   or \code{derive_headings(\ldots, frame_select = "all")}.
 #' @param bins Integer; number of equal angular sectors.  Default \code{12}.
 #' @param angle_col Column containing headings in radians.  Default
 #'   \code{"heading"}.
-#' @param group_col Column used for faceting; must match the \code{panel_by}
+#' @param group_col Column used for faceting; must match the \code{facets}
 #'   argument of the parent \code{radiate()} call.
 #' @param scale Maximum outer radius of the tallest wedge as a fraction of the
 #'   unit circle radius.  Default \code{0.4}.
@@ -3317,7 +3317,7 @@ add_angle_rose <- function(hd, bins = 12L, angle_col = "heading",
 #'   Default \code{0.4} matches \code{add_angle_rose}.
 #' @param inner_r Inner radius; default \code{0}.
 #' @param group_col Column in \code{fit} for faceting; must match the
-#'   \code{panel_by} argument of the parent \code{radiate()} call.
+#'   \code{facets} argument of the parent \code{radiate()} call.
 #' @param n_pts Angular evaluation points.  Default \code{360L}.
 #' @param colour,color Outline colour.  Default \code{"steelblue"}. \code{color}
 #'   is the American-spelling alias.
@@ -3411,7 +3411,7 @@ add_vonmises_density <- function(fit, scale = 0.4, inner_r = 0,
 #'
 #' @param hd Data frame with a heading column in radians.
 #' @param angle_col Column name.  Default \code{"heading"}.
-#' @param group_col Column for faceting; must match \code{panel_by} in the
+#' @param group_col Column for faceting; must match \code{facets} in the
 #'   parent \code{radiate()} call.
 #' @param bw Bandwidth (concentration).  \code{NULL} uses
 #'   \code{bw.nrd.circular} automatic selection.
@@ -3525,7 +3525,7 @@ add_circular_kde <- function(hd, angle_col = "heading", group_col = NULL,
 #' @param scale Maximum outer radius as a fraction of the unit circle.
 #'   Default \code{0.4}.
 #' @param inner_r Inner radius.  Default \code{0}.
-#' @param group_col Column for faceting; must match \code{panel_by} in the
+#' @param group_col Column for faceting; must match \code{facets} in the
 #'   parent \code{radiate()} call.
 #' @param n_pts Angular evaluation points.  Default \code{360L}.
 #' @param colour,color Outline colour.  Default \code{"darkorange"}. \code{color}
@@ -3626,7 +3626,7 @@ add_wrappedcauchy_density <- function(fit, scale = 0.4, inner_r = 0,
 #' }
 #'
 #' Sample size \code{n} is taken per group from \code{hd}.  When
-#' \code{group_col} matches the parent \code{radiate(panel_by = ...)} argument,
+#' \code{group_col} matches the parent \code{radiate(facets = ...)} argument,
 #' one circle is drawn per panel at the radius appropriate to that panel's
 #' \code{n}.  For groups overlaid in a single panel, set \code{per_group = TRUE}
 #' to draw one circle per group (colour-matched), or \code{per_group = FALSE}

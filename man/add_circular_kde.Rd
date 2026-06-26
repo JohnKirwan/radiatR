@@ -27,7 +27,7 @@ add_circular_kde(
 
 \item{angle_col}{Column name.  Default \code{"heading"}.}
 
-\item{group_col}{Column for faceting; must match \code{panel_by} in the
+\item{group_col}{Column for faceting; must match \code{facets} in the
 parent \code{radiate()} call.}
 
 \item{bw}{Bandwidth (concentration).  \code{NULL} uses

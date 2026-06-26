@@ -30,7 +30,7 @@ or \code{derive_headings(\ldots, frame_select = "all")}.}
 \item{angle_col}{Column containing headings in radians.  Default
 \code{"heading"}.}
 
-\item{group_col}{Column used for faceting; must match the \code{panel_by}
+\item{group_col}{Column used for faceting; must match the \code{facets}
 argument of the parent \code{radiate()} call.}
 
 \item{scale}{Maximum outer radius of the tallest wedge as a fraction of the
@@ -68,5 +68,5 @@ Draws angular frequency as filled wedge polygons in the Cartesian coordinate
 space used by \code{\link{radiate}}.  Each wedge spans one angular bin; its
 outer radius is proportional to the proportion (or count) of frames in that
 bin.  The layer can be faceted by passing the same column used in the parent
-\code{radiate(panel_by = ...)} call.
+\code{radiate(facets = ...)} call.
 }

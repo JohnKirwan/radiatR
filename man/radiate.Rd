@@ -22,7 +22,7 @@ radiate(data, ...)
   track_colour = c("trajectory", "sequence", "time", "speed"),
   time_units = c("seconds", "minutes", "milliseconds"),
   coords = c("relative", "absolute"),
-  panel_by = NULL,
+  facets = NULL,
   rows = NULL,
   cols = NULL,
   ncol = NULL,
@@ -80,7 +80,7 @@ radiate(data, ...)
   base_r = 1,
   shade = FALSE,
   shape = FALSE,
-  panel_by = NULL,
+  facets = NULL,
   ncol = NULL,
   ticks = TRUE,
   degrees = TRUE,
@@ -123,7 +123,7 @@ exclusive with `colour_cycle`. `color_col` is the American-spelling alias.}
 \item{colour_cycle, color_cycle}{Optional cycling colour specification. Either a positive
 integer `n` (trajectories are assigned colours 1--n, cycling back to 1 after
 every `n` trajectories) or a character vector of colour values (e.g.
-`c("red","blue","green")`). When `panel_by` is set the cycle restarts
+`c("red","blue","green")`). When `facets` is set the cycle restarts
 independently within each panel. Mutually exclusive with `colour_col`.
 `color_cycle` is the American-spelling alias.}
 
@@ -154,23 +154,23 @@ landmark-relative position (`rel_x`/`rel_y`) and relative headings;
 when explicit `x_col`/`y_col` are supplied. Errors if `"absolute"` is
 requested but the `Tracks` has no `x`/`y` columns registered.}
 
-\item{panel_by}{NULL, a column name, or a character vector of column names
+\item{facets}{NULL, a column name, or a character vector of column names
 to facet by (via [ggplot2::facet_wrap()]). The named column(s) must be
 present in the data.}
 
 \item{rows, cols}{Optional character vectors of column names to facet into a
 row x column grid via [ggplot2::facet_grid()] (mirroring ggplot: `rows` and
 `cols` map to the two sides of the `rows ~ cols` formula, and multiple
-variables per side nest as in `facet_grid()`). Use these *or* `panel_by`
+variables per side nest as in `facet_grid()`). Use these *or* `facets`
 (`facet_wrap`), not both. Scales are fixed (circular panels stay round);
-`ncol`/`strip_position = "inside"` apply to `panel_by` only.}
+`ncol`/`strip_position = "inside"` apply to `facets` only.}
 
 \item{ncol}{Number of columns passed to [ggplot2::facet_wrap()] when
-`panel_by` is set.}
+`facets` is set.}
 
 \item{strip_labels}{Logical or `NULL`. Whether to show a label identifying
-the panel variable value on each panel. Defaults to `TRUE` when `panel_by`
-is set, `FALSE` otherwise. Ignored when `panel_by` is `NULL`.}
+the panel variable value on each panel. Defaults to `TRUE` when `facets`
+is set, `FALSE` otherwise. Ignored when `facets` is `NULL`.}
 
 \item{strip_position}{Position of the panel label. One of `"top"` (default),
 `"bottom"`, `"left"`, `"right"` (ggplot2 strip positions), or `"inside"`
@@ -269,7 +269,7 @@ when `arrow_colour_col` is set. `arrow_color` is the American-spelling alias.}
 
 \item{arrow_colour_col, arrow_color_col}{Optional grouping column. When
 supplied, one mean resultant arrow is drawn per level of this column (within
-each panel, if `panel_by` is also set) and mapped to the colour aesthetic, so
+each panel, if `facets` is also set) and mapped to the colour aesthetic, so
 the arrow can follow a colour grouping independently of faceting. Default
 `NULL` draws a single arrow in `arrow_colour`. `arrow_color_col` is the
 American-spelling alias.}

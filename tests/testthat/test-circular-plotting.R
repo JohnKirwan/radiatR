@@ -570,16 +570,16 @@ test_that("radiate errors when colour_col and colour_cycle both set", {
 
 # ---- strip_labels: panel annotations ----------------------------------------
 
-test_that("strip_labels defaults to shown when panel_by is set", {
+test_that("strip_labels defaults to shown when facets is set", {
   library(ggplot2)
   sim <- suppressWarnings(
     simulate_tracks(conditions = data.frame(n_trials = 3L, condition = c("A","B","C")),
                     n_points = 5, seed = 9)
   )
   sim$grp <- rep(c("X","Y","Z"), each = nrow(sim) / 3)
-  # Default (strip_labels = NULL) with panel_by set should show strip text
+  # Default (strip_labels = NULL) with facets set should show strip text
   p <- radiate(sim, x_col = "rel_x", y_col = "rel_y",
-               group_col = "trial_id", panel_by = "condition",
+               group_col = "trial_id", facets = "condition",
                show_arrow = FALSE, show_labels = FALSE)
   # strip.text should NOT be element_blank after radiate override
   strip_el <- ggplot2::calc_element("strip.text", p$theme)
@@ -593,7 +593,7 @@ test_that("strip_labels = FALSE hides strip text", {
                     n_points = 5, seed = 10)
   )
   p <- radiate(sim, x_col = "rel_x", y_col = "rel_y",
-               group_col = "trial_id", panel_by = "condition",
+               group_col = "trial_id", facets = "condition",
                strip_labels = FALSE,
                show_arrow = FALSE, show_labels = FALSE)
   strip_el <- ggplot2::calc_element("strip.text", p$theme)
@@ -607,7 +607,7 @@ test_that("strip_position inside adds a geom_text layer inside the plot", {
                     n_points = 5, seed = 11)
   )
   p <- radiate(sim, x_col = "rel_x", y_col = "rel_y",
-               group_col = "trial_id", panel_by = "condition",
+               group_col = "trial_id", facets = "condition",
                strip_position = "inside",
                show_arrow = FALSE, show_labels = FALSE)
   built <- ggplot_build(p)
@@ -625,7 +625,7 @@ test_that("strip_position bottom passes through to facet_wrap", {
                     n_points = 5, seed = 12)
   )
   p <- radiate(sim, x_col = "rel_x", y_col = "rel_y",
-               group_col = "trial_id", panel_by = "condition",
+               group_col = "trial_id", facets = "condition",
                strip_position = "bottom",
                show_arrow = FALSE, show_labels = FALSE)
   # facet_wrap stores strip.position in its params
@@ -1977,7 +1977,7 @@ test_that("a faceted sequence plot builds", {
   df <- as.data.frame(cpunctatus)
   facet <- intersect(c("arc", "type", "obstacle"), names(df))[1]
   skip_if(is.na(facet), "no facet column in cpunctatus")
-  p <- radiate(cpunctatus, show_tracks = TRUE, track_colour = "sequence", panel_by = facet)
+  p <- radiate(cpunctatus, show_tracks = TRUE, track_colour = "sequence", facets = facet)
   expect_s3_class(ggplot2::ggplot_build(p), "ggplot_built")
 })
 

@@ -211,10 +211,10 @@ test_that("radiate multi-variable grid side nests like facet_grid", {
   expect_equal(length(unique(lay$COL)), 1L)         # cols = . -> single column
 })
 
-test_that("radiate errors when panel_by and rows/cols are both set", {
+test_that("radiate errors when facets and rows/cols are both set", {
   data(cpunctatus, package = "radiatR", envir = environment())
   expect_error(
-    radiate(cpunctatus, group_col = "trial_id", panel_by = "type", cols = "arc"),
+    radiate(cpunctatus, group_col = "trial_id", facets = "type", cols = "arc"),
     "facet_grid|both", ignore.case = TRUE)
 })
 
