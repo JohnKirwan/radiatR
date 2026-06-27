@@ -1407,35 +1407,36 @@ add_heading_interval <- function(headings_df,
 #'   `attr(headings_df, "coords")` automatically.
 #' @param heading_col Name of the column containing heading angles. Default
 #'   `"heading"`.
-#' @param colour_col,color_col Optional. Name of a column to group by. One row is
-#'   returned per group. The same column maps to colour in [add_circ_mean()].
-#'   `color_col` is the American-spelling alias.
+#' @param facets Character vector of column names used as faceting variables.
+#'   One row is returned per unique combination of these columns. These columns
+#'   are attached to the output so that [add_circ_mean()] can route each arrow
+#'   to the correct facet panel.
+#' @param group_col Optional. Name of a single column to group by for colour
+#'   mapping. One row is returned per unique combination of `c(facets,
+#'   group_col)`. Map colour in [add_circ_mean()] via its `colour_col`
+#'   argument.
 #' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
 #'   data: `mean_dir` is the axis in `[0, pi)` and `resultant_R` is the axial
 #'   resultant length, both via the angle-doubling method. Default `FALSE`.
 #' @return A data frame with columns `mean_dir` (unit-circle radians, 0 to
-#'   2pi), `resultant_R` (0--1), and `colour_col` when supplied. Both are `NA`
-#'   when a group contains fewer than 2 finite angles.
+#'   2pi), `resultant_R` (0--1), plus any `facets`/`group_col` columns. Both
+#'   statistics are `NA` when a cell contains fewer than 2 finite angles.
 #'
 #' @seealso [add_circ_mean()], [add_heading_arrow()]
 #' @importFrom circular circular mean.circular rho.circular
 #' @export
 compute_circ_mean <- function(headings_df,
                               heading_col = "heading",
-                              colour_col  = NULL,
-                              axial       = FALSE,
-                              color_col   = NULL) {
-  .apply_spelling_aliases()
+                              facets      = NULL,
+                              group_col   = NULL,
+                              axial       = FALSE) {
   if (!heading_col %in% names(headings_df))
     stop("`heading_col` '", heading_col, "' not found in headings_df.")
 
-  use_colour <- !is.null(colour_col) && colour_col %in% names(headings_df)
-  groups     <- if (use_colour) split(headings_df, headings_df[[colour_col]]) else list(headings_df)
-
-  out_list <- lapply(seq_along(groups), function(i) {
-    angles <- groups[[i]][[heading_col]]
+  cells <- .facet_group_split(headings_df, facets = facets, group_col = group_col)
+  out_list <- lapply(cells, function(cell) {
+    angles <- cell$rows[[heading_col]]
     angles <- angles[is.finite(angles)]
-
     if (length(angles) < 2L) {
       row <- data.frame(mean_dir = NA_real_, resultant_R = NA_real_,
                         stringsAsFactors = FALSE)
@@ -1448,14 +1449,13 @@ compute_circ_mean <- function(headings_df,
       R        <- as.numeric(circular::rho.circular(circ_obj, na.rm = TRUE))
       row <- data.frame(mean_dir = mean_dir, resultant_R = R, stringsAsFactors = FALSE)
     }
-
-    if (use_colour) row[[colour_col]] <- names(groups)[[i]]
+    for (nm in names(cell$keys)) row[[nm]] <- cell$keys[[nm]]
     row
   })
-
   out <- do.call(rbind, out_list)
-  if (use_colour && is.factor(headings_df[[colour_col]]))
-    out[[colour_col]] <- factor(out[[colour_col]], levels = levels(headings_df[[colour_col]]))
+  if (!is.null(group_col) && group_col %in% names(out) &&
+      is.factor(headings_df[[group_col]]))
+    out[[group_col]] <- factor(out[[group_col]], levels = levels(headings_df[[group_col]]))
   # Carry the input's display convention forward so add_circ_mean() orients the
   # arrow the same way as the rest of the figure (rbind drops attributes).
   attr(out, "display") <- attr(headings_df, "display", exact = TRUE)
@@ -1596,7 +1596,7 @@ add_heading_arrow <- function(headings_df,
   if (is.null(display))
     display <- hf_display(headings_df)
   sm <- compute_circ_mean(headings_df, heading_col = heading_col,
-                          colour_col = colour_col, axial = axial)
+                          group_col = colour_col, axial = axial)
   attr(sm, "display") <- display
   add_circ_mean(sm, colour_col = colour_col,
                 linewidth = linewidth, colour = colour,

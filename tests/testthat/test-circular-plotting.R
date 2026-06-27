@@ -1079,7 +1079,7 @@ test_that("compute_circ_mean returns correct mean_dir and R for UC angles", {
 test_that("compute_circ_mean grouped output has one row per group", {
   hd <- data.frame(heading = c(0, 0, pi, pi),
                    grp     = c("A", "A", "B", "B"))
-  result <- compute_circ_mean(hd, colour_col = "grp")
+  result <- compute_circ_mean(hd, group_col = "grp")
   expect_equal(nrow(result), 2L)
   expect_true("grp" %in% names(result))
 })
@@ -1098,10 +1098,10 @@ test_that("compute_circ_mean handles all-NA input without error", {
   expect_true(is.na(result$mean_dir))
 })
 
-test_that("compute_circ_mean preserves factor levels on colour_col", {
+test_that("compute_circ_mean preserves factor levels on group_col", {
   hd <- data.frame(heading = c(0.1, 0.2, 0.3, 0.4),
                    grp     = factor(c("B", "A", "B", "A"), levels = c("A", "B", "C")))
-  result <- compute_circ_mean(hd, colour_col = "grp")
+  result <- compute_circ_mean(hd, group_col = "grp")
   expect_equal(levels(result$grp), c("A", "B", "C"))
 })
 
@@ -1114,6 +1114,15 @@ test_that("compute_circ_mean carries the input's display attribute onto its outp
   attr(hd, "display") <- disp
   result <- compute_circ_mean(hd)
   expect_equal(attr(result, "display", exact = TRUE), disp)
+})
+
+test_that("compute_circ_mean splits per facet cell and attaches both columns", {
+  set.seed(10)
+  hd <- data.frame(heading = runif(40, 0, 2 * pi),
+                   a = rep(c("x", "y"), 20), b = rep(c("p", "q"), each = 20))
+  sm <- compute_circ_mean(hd, facets = c("a", "b"))
+  expect_equal(nrow(sm), 4L)
+  expect_true(all(c("a", "b") %in% names(sm)))
 })
 
 # ---- add_circ_mean -----------------------------------------------------------
