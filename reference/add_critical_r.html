@@ -69,15 +69,12 @@ convention used by Oriana and similar circular-statistics software.</p>
 <span>  alpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
 <span>  test <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rayleigh"</span>, <span class="st">"vtest"</span><span class="op">)</span>,</span>
 <span>  angle_col <span class="op">=</span> <span class="st">"heading"</span>,</span>
+<span>  facets <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  group_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  per_group <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  colour <span class="op">=</span> <span class="st">"firebrick"</span>,</span>
-<span>  colour_by_group <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  linetype <span class="op">=</span> <span class="st">"dashed"</span>,</span>
 <span>  linewidth <span class="op">=</span> <span class="fl">0.6</span>,</span>
-<span>  n_pts <span class="op">=</span> <span class="fl">200L</span>,</span>
-<span>  color <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  color_by_group <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  n_pts <span class="op">=</span> <span class="fl">200L</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -101,30 +98,22 @@ convention used by Oriana and similar circular-statistics software.</p>
 <dd><p>Heading column name.  Default <code>"heading"</code>.</p></dd>
 
 
+<dt id="arg-facets">facets<a class="anchor" aria-label="anchor" href="#arg-facets"></a></dt>
+<dd><p>Character vector of column names that define the facet panels
+(placement only). The critical radius is computed per facet cell and every
+one of these columns is attached to the layer data so the circles land in
+the right panel under facet_wrap()/facet_grid(). <code>NULL</code> pools all rows.</p></dd>
+
+
 <dt id="arg-group-col">group_col<a class="anchor" aria-label="anchor" href="#arg-group-col"></a></dt>
-<dd><p>Column identifying groups.  <code>NULL</code> pools all rows.</p></dd>
+<dd><p>Optional single column. Splits each cell into subgroups (one
+circle each) and maps the circle colour to that column. <code>NULL</code> draws
+every circle in the fixed <code>colour</code>.</p></dd>
 
 
-<dt id="arg-per-group">per_group<a class="anchor" aria-label="anchor" href="#arg-per-group"></a></dt>
-<dd><p>Logical.  When <code>group_col</code> is set but the plot is not
-faceted, draw one circle per group (<code>TRUE</code>) or a single conservative
-circle (<code>FALSE</code>, default).  Ignored when faceting (always per panel).</p></dd>
-
-
-<dt id="arg-colour-color">colour, color<a class="anchor" aria-label="anchor" href="#arg-colour-color"></a></dt>
-<dd><p>Circle colour.  Default <code>"firebrick"</code>.  When
-<code>per_group = TRUE</code> and <code>colour_by_group = TRUE</code> this is overridden
-by the colour scale.  <code>color</code> is the American-spelling alias.</p></dd>
-
-
-<dt id="arg-colour-by-group-color-by-group">colour_by_group, color_by_group<a class="anchor" aria-label="anchor" href="#arg-colour-by-group-color-by-group"></a></dt>
-<dd><p>Logical.  When <code>per_group = TRUE</code>,
-map each circle's colour to its group (<code>TRUE</code>, default) or draw every
-circle in the fixed <code>colour</code> while still attaching the group column so
-the circles facet (<code>FALSE</code>).  Use <code>FALSE</code> to keep per-panel
-circles a single colour without injecting the grouping levels into the
-parent plot's colour scale.  Ignored unless <code>per_group = TRUE</code>.
-<code>color_by_group</code> is the American-spelling alias.</p></dd>
+<dt id="arg-colour">colour<a class="anchor" aria-label="anchor" href="#arg-colour"></a></dt>
+<dd><p>Circle colour.  Default <code>"firebrick"</code>.  Overridden by the
+colour scale when <code>group_col</code> is set.</p></dd>
 
 
 <dt id="arg-linetype">linetype<a class="anchor" aria-label="anchor" href="#arg-linetype"></a></dt>
@@ -159,13 +148,10 @@ parent plot's colour scale.  Ignored unless <code>per_group = TRUE</code>.
     \(\mu_0\), so this circle is a lower bound.</p></dd>
 
 
-</dl><p>Sample size <code>n</code> is taken per group from <code>hd</code>.  When
-<code>group_col</code> matches the parent <code>radiate(facets = ...)</code> argument,
-one circle is drawn per panel at the radius appropriate to that panel's
-<code>n</code>.  For groups overlaid in a single panel, set <code>per_group = TRUE</code>
-to draw one circle per group (colour-matched), or <code>per_group = FALSE</code>
-(default) to draw a single conservative circle using the smallest <code>n</code>
-(largest critical radius).</p>
+</dl><p>Sample size <code>n</code> is taken per occupied cell from <code>hd</code>.  Pass the
+same column(s) to <code>facets</code> as you pass to <code>radiate(rows=)/radiate(cols=)</code>
+so one circle is drawn per panel at the radius appropriate to that panel's
+<code>n</code>.  Pass <code>group_col</code> to split each cell further by colour.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

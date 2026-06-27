@@ -299,13 +299,13 @@
 <span>                      angle_convention <span class="op">=</span> <span class="st">"unit_circle"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 3. Circular summary per condition</span></span>
-<span><span class="fu"><a href="reference/compute_circ_mean.html">compute_circ_mean</a></span><span class="op">(</span><span class="va">hd</span>, colour_col <span class="op">=</span> <span class="st">"condition"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/compute_circ_mean.html">compute_circ_mean</a></span><span class="op">(</span><span class="va">hd</span>, group_col <span class="op">=</span> <span class="st">"condition"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 4. Visualise</span></span>
 <span><span class="fu"><a href="reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">ts</span>,</span>
 <span>        group_col  <span class="op">=</span> <span class="st">"trial_id"</span>,</span>
 <span>        colour_col <span class="op">=</span> <span class="st">"condition"</span>,</span>
-<span>        panel_by   <span class="op">=</span> <span class="st">"condition"</span>,</span>
+<span>        facets     <span class="op">=</span> <span class="st">"condition"</span>,</span>
 <span>        show_arrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="reference/add_heading_points.html">add_heading_points</a></span><span class="op">(</span><span class="va">hd</span>, colour_col <span class="op">=</span> <span class="st">"condition"</span><span class="op">)</span></span></code></pre></div>
 <blockquote>
@@ -389,7 +389,7 @@
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Three default conditions differing in concentration and tortuosity</span></span>
 <span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/simulate_tracks.html">simulate_tracks</a></span><span class="op">(</span>seed <span class="op">=</span> <span class="fl">42</span>, output <span class="op">=</span> <span class="st">"trajset"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">ts</span>, group_col <span class="op">=</span> <span class="st">"trial_id"</span>, panel_by <span class="op">=</span> <span class="st">"condition"</span>, show_arrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">ts</span>, group_col <span class="op">=</span> <span class="st">"trial_id"</span>, facets <span class="op">=</span> <span class="st">"condition"</span>, show_arrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Custom conditions table</span></span>
 <span><span class="va">conds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>

@@ -18,8 +18,8 @@ add_critical_v_line(
   mu0,
   alpha = 0.05,
   angle_col = "heading",
+  facets = NULL,
   group_col = NULL,
-  per_group = FALSE,
   show_region = FALSE,
   colour = "firebrick",
   linetype = "dashed",
@@ -27,8 +27,7 @@ add_critical_v_line(
   region_fill = "firebrick",
   region_alpha = 0.08,
   axial = FALSE,
-  n_pts = 100L,
-  color = NULL
+  n_pts = 100L
 )
 ```
 
@@ -50,24 +49,26 @@ add_critical_v_line(
 
   Heading column name. Default `"heading"`.
 
+- facets:
+
+  Character vector of column names used for faceting (panel placement).
+  Each occupied combination gets its own boundary; the columns are
+  attached to the returned data so `facet_wrap`/`facet_grid` routes each
+  boundary to the correct panel. `NULL` (default) pools across facets.
+
 - group_col:
 
-  Column identifying groups. `NULL` pools all rows.
-
-- per_group:
-
-  Logical. Draw one boundary per group (`TRUE`) or a single conservative
-  boundary (`FALSE`, default). Ignored when faceting, where each panel
-  gets its own boundary.
+  Optional single column. Subdivides each facet cell into subgroups, one
+  boundary per subgroup (each with its own n). All boundaries are drawn
+  in the fixed `colour` — `group_col` does not map colour.
 
 - show_region:
 
   Logical; shade the rejection segment. Default `FALSE`.
 
-- colour, color:
+- colour:
 
-  Line colour. Default `"firebrick"`. `color` is the American-spelling
-  alias.
+  Line colour. Default `"firebrick"`.
 
 - linetype:
 
@@ -105,10 +106,9 @@ The line is clipped to the unit circle (drawn as a chord). With
 `show_region = TRUE` the circular segment beyond the line – the
 rejection region – is shaded.
 
-Sample size `n` is taken per group from `hd`, with the same options as
-[`add_critical_r`](https://johnkirwan.github.io/radiatR/reference/add_critical_r.md):
-per-panel when faceting, per-group when `per_group = TRUE`, or a single
-conservative boundary (smallest `n`, largest \\c\\) otherwise.
+Sample size `n` is taken per boundary from `hd`: one boundary per
+occupied combination of `facets` and `group_col` columns, or a single
+pooled boundary when both are `NULL`.
 
 ## See also
 

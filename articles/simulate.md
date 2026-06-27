@@ -349,7 +349,7 @@ names(hd)[names(hd) == "id"] <- "trial_id"
 cond_map <- unique(sim_analysis$tibble[, c("trial_id", "condition")])
 hd <- merge(hd, cond_map, by = "trial_id")
 
-compute_circ_mean(hd, colour_col = "condition")[,
+compute_circ_mean(hd, group_col = "condition")[,
   c("condition", "mean_dir", "resultant_R")]
 #>      condition   mean_dir resultant_R
 #> 1 concentrated 0.05301978   0.9039690

@@ -91,13 +91,14 @@ add_circular_boxplot(
 
 - facets:
 
-  Optional name of a column in \`hd\` identifying facet panels (the same
-  column passed to \`radiate(facets = )\`). When set, a separate boxplot
-  is computed and drawn per level so each facet shows its own summary;
-  the layer data is tagged with this column so it faces correctly. A
-  level that is not drawable (fewer than 4 usable observations or a
-  non-unique median) is skipped with a warning while the others still
-  draw. Default \`NULL\` draws a single boxplot from all of \`hd\`.
+  Optional character vector of column names in \`hd\` identifying facet
+  panels (the same columns passed to \`radiate(rows = , cols = )\`). A
+  single name gives one boxplot per level; two names give one per cell
+  of the column combination (grid mode). The layer data is tagged with
+  every facet column so each panel shows its own summary. A cell that is
+  not drawable (fewer than 4 usable observations or a non-unique median)
+  is skipped with a warning while the others still draw. Default
+  \`NULL\` draws a single boxplot from all of \`hd\`.
 
 - theme:
 

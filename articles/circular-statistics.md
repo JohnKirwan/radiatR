@@ -397,19 +397,19 @@ both poles.
 
 ## Per-group overlays
 
-Every overlay that summarises headings takes a `colour_col`, so a single
-call draws one element per group, coloured by it – handy for comparing
-conditions on one plot. Here the mean-direction **arrow**
+Heading-summary overlays subdivide by a column to draw one element per
+group, coloured by it – handy for comparing conditions on one plot. The
+mean-direction **arrow**
 ([`add_heading_arrow()`](https://johnkirwan.github.io/radiatR/reference/add_heading_arrow.md))
-and its bootstrap **confidence interval**
+takes a `colour_col`; its bootstrap **confidence interval**
 ([`add_heading_interval()`](https://johnkirwan.github.io/radiatR/reference/add_heading_interval.md))
-are split by target half-width (`arc`):
+takes a `group_col`. Here both are split by target half-width (`arc`):
 
 ``` r
 
 canvas +
   add_heading_arrow(hd,    colour_col = "arc") +
-  add_heading_interval(hd, colour_col = "arc", stat = "bootstrap_ci")
+  add_heading_interval(hd, group_col  = "arc", stat = "bootstrap_ci")
 ```
 
 ![](circular-statistics_files/figure-html/grouped-overlays-1.png)

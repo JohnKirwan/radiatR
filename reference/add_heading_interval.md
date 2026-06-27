@@ -12,7 +12,8 @@ rendering.
 add_heading_interval(
   headings_df,
   heading_col = "heading",
-  colour_col = NULL,
+  facets = NULL,
+  group_col = NULL,
   display = NULL,
   stat = c("bootstrap_ci", "sd"),
   boot_reps = 1000L,
@@ -23,7 +24,6 @@ add_heading_interval(
   linetype = "solid",
   n_theta = 500L,
   axial = FALSE,
-  color_col = NULL,
   color = NULL
 )
 ```
@@ -38,11 +38,18 @@ add_heading_interval(
 
   Name of the heading column (radians). Default \`"heading"\`.
 
-- colour_col, color_col:
+- facets:
 
-  Optional grouping column. When set, one row is returned per group and
-  the column is preserved in the output. \`color_col\` is the
-  American-spelling alias.
+  Character vector of column names used for faceting (placement). Passed
+  to \[compute_circ_interval()\]; each column is attached to the layer
+  data so \`facet_grid()\`/\`facet_wrap()\` can place the arc correctly.
+  Default \`NULL\`.
+
+- group_col:
+
+  Single column name used for colour grouping. Passed to
+  \[compute_circ_interval()\] and then to \[add_circ_interval()\] as
+  \`colour_col\`. Default \`NULL\`.
 
 - display:
 

@@ -75,8 +75,8 @@ falls on the far side of this line – equivalently, if its projection onto
 <span>  <span class="va">mu0</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
 <span>  angle_col <span class="op">=</span> <span class="st">"heading"</span>,</span>
+<span>  facets <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  group_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  per_group <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  show_region <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  colour <span class="op">=</span> <span class="st">"firebrick"</span>,</span>
 <span>  linetype <span class="op">=</span> <span class="st">"dashed"</span>,</span>
@@ -84,8 +84,7 @@ falls on the far side of this line – equivalently, if its projection onto
 <span>  region_fill <span class="op">=</span> <span class="st">"firebrick"</span>,</span>
 <span>  region_alpha <span class="op">=</span> <span class="fl">0.08</span>,</span>
 <span>  axial <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  n_pts <span class="op">=</span> <span class="fl">100L</span>,</span>
-<span>  color <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  n_pts <span class="op">=</span> <span class="fl">100L</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -109,14 +108,18 @@ falls on the far side of this line – equivalently, if its projection onto
 <dd><p>Heading column name.  Default <code>"heading"</code>.</p></dd>
 
 
+<dt id="arg-facets">facets<a class="anchor" aria-label="anchor" href="#arg-facets"></a></dt>
+<dd><p>Character vector of column names used for faceting (panel
+placement).  Each occupied combination gets its own boundary; the columns
+are attached to the returned data so <code>facet_wrap</code>/<code>facet_grid</code>
+routes each boundary to the correct panel.  <code>NULL</code> (default) pools
+across facets.</p></dd>
+
+
 <dt id="arg-group-col">group_col<a class="anchor" aria-label="anchor" href="#arg-group-col"></a></dt>
-<dd><p>Column identifying groups.  <code>NULL</code> pools all rows.</p></dd>
-
-
-<dt id="arg-per-group">per_group<a class="anchor" aria-label="anchor" href="#arg-per-group"></a></dt>
-<dd><p>Logical.  Draw one boundary per group (<code>TRUE</code>) or a
-single conservative boundary (<code>FALSE</code>, default).  Ignored when
-faceting, where each panel gets its own boundary.</p></dd>
+<dd><p>Optional single column. Subdivides each facet cell into
+subgroups, one boundary per subgroup (each with its own n). All boundaries
+are drawn in the fixed <code>colour</code> — <code>group_col</code> does not map colour.</p></dd>
 
 
 <dt id="arg-show-region">show_region<a class="anchor" aria-label="anchor" href="#arg-show-region"></a></dt>
@@ -124,9 +127,8 @@ faceting, where each panel gets its own boundary.</p></dd>
 <code>FALSE</code>.</p></dd>
 
 
-<dt id="arg-colour-color">colour, color<a class="anchor" aria-label="anchor" href="#arg-colour-color"></a></dt>
-<dd><p>Line colour.  Default <code>"firebrick"</code>. <code>color</code> is
-the American-spelling alias.</p></dd>
+<dt id="arg-colour">colour<a class="anchor" aria-label="anchor" href="#arg-colour"></a></dt>
+<dd><p>Line colour.  Default <code>"firebrick"</code>.</p></dd>
 
 
 <dt id="arg-linetype">linetype<a class="anchor" aria-label="anchor" href="#arg-linetype"></a></dt>
@@ -165,10 +167,9 @@ mod-pi) data: the decision chord is mirrored to both poles. Default `FALSE`.</p>
     <p>The line is clipped to the unit circle (drawn as a chord).  With
 <code>show_region = TRUE</code> the circular segment beyond the line – the
 rejection region – is shaded.</p>
-<p>Sample size <code>n</code> is taken per group from <code>hd</code>, with the same
-options as <code><a href="add_critical_r.html">add_critical_r</a></code>: per-panel when faceting,
-per-group when <code>per_group = TRUE</code>, or a single conservative boundary
-(smallest <code>n</code>, largest \(c\)) otherwise.</p>
+<p>Sample size <code>n</code> is taken per boundary from <code>hd</code>: one boundary
+per occupied combination of <code>facets</code> and <code>group_col</code> columns,
+or a single pooled boundary when both are <code>NULL</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

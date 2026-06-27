@@ -647,7 +647,7 @@ Bayesian credible bounds into the data frame before rendering:
 
 ``` r
 
-iv <- compute_circ_interval(hd, colour_col = "arc", stat = "bootstrap_ci")
+iv <- compute_circ_interval(hd, group_col = "arc", stat = "bootstrap_ci")
 # replace with Bayesian posteriors: iv$lower <- ...; iv$upper <- ...
 add_circ_interval(iv, colour_col = "arc")
 ```
@@ -827,7 +827,7 @@ Use `rows`/`cols` (grid) or `facets` (wrap), not both.
 
 ``` r
 
-p <- p + add_heading_interval(hd_cc, colour_col = "arc", colour = "black",
+p <- p + add_heading_interval(hd_cc, group_col = "arc", colour = "black",
                                stat = "bootstrap_ci", boot_reps = 999L)
 p
 #> Warning: Removed 105 rows containing missing values or values outside the scale range
@@ -1003,16 +1003,16 @@ returns the per-condition statistics behind the arrows above:
 
 ``` r
 
-compute_circ_mean(hd, colour_col = "arc")[, c("arc", "mean_dir", "resultant_R")]
+compute_circ_mean(hd, group_col = "arc")[, c("arc", "mean_dir", "resultant_R")]
 #>   arc  mean_dir resultant_R
-#> 1   0 2.4441971  0.21852376
-#> 2   5 6.1710354  0.03518184
-#> 3  10 1.3122762  0.27298867
-#> 4  15 6.1535219  0.25745294
-#> 5  20 3.7683984  0.10968390
-#> 6  30 0.8051961  0.16285026
-#> 7  40 3.3258479  0.12904693
-#> 8  50 1.6405047  0.09148952
+#> 1  10 1.3122762  0.27298867
+#> 2  15 6.1535219  0.25745294
+#> 3  20 3.7683984  0.10968390
+#> 4  30 0.8051961  0.16285026
+#> 5  40 3.3258479  0.12904693
+#> 6   5 6.1710354  0.03518184
+#> 7  50 1.6405047  0.09148952
+#> 8   0 2.4441971  0.21852376
 ```
 
 For within-trial path consistency (tortuosity),
@@ -1303,8 +1303,8 @@ from `"crossing"`, consistent with millipede tracks being fairly direct:
 
 ``` r
 
-sm_cross  <- compute_circ_mean(hd,       colour_col = "arc")[, c("arc", "resultant_R")]
-sm_distal <- compute_circ_mean(hd_distal, colour_col = "arc")[, c("arc", "resultant_R")]
+sm_cross  <- compute_circ_mean(hd,       group_col = "arc")[, c("arc", "resultant_R")]
+sm_distal <- compute_circ_mean(hd_distal, group_col = "arc")[, c("arc", "resultant_R")]
 names(sm_cross)[2]  <- "crossing"
 names(sm_distal)[2] <- "distal"
 merge(sm_cross, sm_distal, by = "arc")
@@ -1342,7 +1342,7 @@ radiate(cpunctatus_cc_d,
         show_labels = FALSE,
         show_arrow  = FALSE,
         display     = circ_display(zero = 0)) +
-  add_heading_interval(hd_distal_cc, colour_col = "arc", colour = "black",
+  add_heading_interval(hd_distal_cc, group_col = "arc", colour = "black",
                        stat = "bootstrap_ci", boot_reps = 999L) +
   add_heading_points(hd_distal_cc, size = 4) +
   add_heading_arrow(hd_distal_cc, colour_col = "arc", colour = "black")
@@ -1372,7 +1372,7 @@ names(hd_net)[names(hd_net) == "id"] <- "trial_id"
 hd_net     <- merge(hd_net, arc_map, by = "trial_id")
 hd_net$arc <- factor(hd_net$arc)
 
-sm_net <- compute_circ_mean(hd_net, colour_col = "arc")[, c("arc", "resultant_R")]
+sm_net <- compute_circ_mean(hd_net, group_col = "arc")[, c("arc", "resultant_R")]
 names(sm_net)[2] <- "net"
 Reduce(function(a, b) merge(a, b, by = "arc"),
        list(sm_cross, sm_distal, sm_net))

@@ -14,12 +14,12 @@ bounds from any model before passing to \[add_circ_interval()\].
 compute_circ_interval(
   headings_df,
   heading_col = "heading",
-  colour_col = NULL,
+  facets = NULL,
+  group_col = NULL,
   stat = c("bootstrap_ci", "sd"),
   boot_reps = 1000L,
   boot_alpha = 0.05,
-  axial = FALSE,
-  color_col = NULL
+  axial = FALSE
 )
 ```
 
@@ -33,11 +33,19 @@ compute_circ_interval(
 
   Name of the heading column (radians). Default \`"heading"\`.
 
-- colour_col, color_col:
+- facets:
 
-  Optional grouping column. When set, one row is returned per group and
-  the column is preserved in the output. \`color_col\` is the
-  American-spelling alias.
+  Character vector of column names used for faceting (placement). One
+  row is returned per occupied combination of \`facets\` and
+  \`group_col\`. Each column is preserved in the output so
+  \`facet_grid()\`/\`facet_wrap()\` can place the layer correctly.
+  Default \`NULL\`.
+
+- group_col:
+
+  Single column name used for colour grouping. When set, one row is
+  returned per group and the column is preserved in the output for
+  colour mapping in \[add_circ_interval()\]. Default \`NULL\`.
 
 - stat:
 

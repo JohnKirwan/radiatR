@@ -16,15 +16,12 @@ add_critical_r(
   alpha = 0.05,
   test = c("rayleigh", "vtest"),
   angle_col = "heading",
+  facets = NULL,
   group_col = NULL,
-  per_group = FALSE,
   colour = "firebrick",
-  colour_by_group = TRUE,
   linetype = "dashed",
   linewidth = 0.6,
-  n_pts = 200L,
-  color = NULL,
-  color_by_group = NULL
+  n_pts = 200L
 )
 ```
 
@@ -46,31 +43,24 @@ add_critical_r(
 
   Heading column name. Default `"heading"`.
 
+- facets:
+
+  Character vector of column names that define the facet panels
+  (placement only). The critical radius is computed per facet cell and
+  every one of these columns is attached to the layer data so the
+  circles land in the right panel under facet_wrap()/facet_grid().
+  `NULL` pools all rows.
+
 - group_col:
 
-  Column identifying groups. `NULL` pools all rows.
+  Optional single column. Splits each cell into subgroups (one circle
+  each) and maps the circle colour to that column. `NULL` draws every
+  circle in the fixed `colour`.
 
-- per_group:
+- colour:
 
-  Logical. When `group_col` is set but the plot is not faceted, draw one
-  circle per group (`TRUE`) or a single conservative circle (`FALSE`,
-  default). Ignored when faceting (always per panel).
-
-- colour, color:
-
-  Circle colour. Default `"firebrick"`. When `per_group = TRUE` and
-  `colour_by_group = TRUE` this is overridden by the colour scale.
-  `color` is the American-spelling alias.
-
-- colour_by_group, color_by_group:
-
-  Logical. When `per_group = TRUE`, map each circle's colour to its
-  group (`TRUE`, default) or draw every circle in the fixed `colour`
-  while still attaching the group column so the circles facet (`FALSE`).
-  Use `FALSE` to keep per-panel circles a single colour without
-  injecting the grouping levels into the parent plot's colour scale.
-  Ignored unless `per_group = TRUE`. `color_by_group` is the
-  American-spelling alias.
+  Circle colour. Default `"firebrick"`. Overridden by the colour scale
+  when `group_col` is set.
 
 - linetype:
 
@@ -106,12 +96,10 @@ Two tests are supported:
   rises as the observed direction departs from \\\mu_0\\, so this circle
   is a lower bound.
 
-Sample size `n` is taken per group from `hd`. When `group_col` matches
-the parent `radiate(facets = ...)` argument, one circle is drawn per
-panel at the radius appropriate to that panel's `n`. For groups overlaid
-in a single panel, set `per_group = TRUE` to draw one circle per group
-(colour-matched), or `per_group = FALSE` (default) to draw a single
-conservative circle using the smallest `n` (largest critical radius).
+Sample size `n` is taken per occupied cell from `hd`. Pass the same
+column(s) to `facets` as you pass to `radiate(rows=)/radiate(cols=)` so
+one circle is drawn per panel at the radius appropriate to that panel's
+`n`. Pass `group_col` to split each cell further by colour.
 
 ## See also
 

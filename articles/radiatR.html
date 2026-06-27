@@ -627,7 +627,7 @@ bootstraps the von Mises MLE confidence interval for the mean direction;
 lets you substitute Bayesian credible bounds into the data frame before
 rendering:</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">iv</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_circ_interval.html">compute_circ_interval</a></span><span class="op">(</span><span class="va">hd</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, stat <span class="op">=</span> <span class="st">"bootstrap_ci"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">iv</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_circ_interval.html">compute_circ_interval</a></span><span class="op">(</span><span class="va">hd</span>, group_col <span class="op">=</span> <span class="st">"arc"</span>, stat <span class="op">=</span> <span class="st">"bootstrap_ci"</span><span class="op">)</span></span>
 <span><span class="co"># replace with Bayesian posteriors: iv$lower &lt;- ...; iv$upper &lt;- ...</span></span>
 <span><span class="fu"><a href="../reference/add_circ_interval.html">add_circ_interval</a></span><span class="op">(</span><span class="va">iv</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -766,7 +766,7 @@ each takes one or more columns):</p>
 <p><strong>+ Bootstrap CI arc</strong> added first so it sits behind
 heading markers:</p>
 <div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="va">p</span> <span class="op">+</span> <span class="fu"><a href="../reference/add_heading_interval.html">add_heading_interval</a></span><span class="op">(</span><span class="va">hd_cc</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, colour <span class="op">=</span> <span class="st">"black"</span>,</span>
+<code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="va">p</span> <span class="op">+</span> <span class="fu"><a href="../reference/add_heading_interval.html">add_heading_interval</a></span><span class="op">(</span><span class="va">hd_cc</span>, group_col <span class="op">=</span> <span class="st">"arc"</span>, colour <span class="op">=</span> <span class="st">"black"</span>,</span>
 <span>                               stat <span class="op">=</span> <span class="st">"bootstrap_ci"</span>, boot_reps <span class="op">=</span> <span class="fl">999L</span><span class="op">)</span></span>
 <span><span class="va">p</span></span>
 <span><span class="co">#&gt; Warning: Removed 105 rows containing missing values or values outside the scale range</span></span>
@@ -931,16 +931,16 @@ Bayesian model (e.g. the 2.5th and 97.5th percentiles of a
 <p><code><a href="../reference/compute_circ_mean.html">compute_circ_mean()</a></code> returns the per-condition statistics
 behind the arrows above:</p>
 <div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/compute_circ_mean.html">compute_circ_mean</a></span><span class="op">(</span><span class="va">hd</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"arc"</span>, <span class="st">"mean_dir"</span>, <span class="st">"resultant_R"</span><span class="op">)</span><span class="op">]</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/compute_circ_mean.html">compute_circ_mean</a></span><span class="op">(</span><span class="va">hd</span>, group_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"arc"</span>, <span class="st">"mean_dir"</span>, <span class="st">"resultant_R"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt;   arc  mean_dir resultant_R</span></span>
-<span><span class="co">#&gt; 1   0 2.4441971  0.21852376</span></span>
-<span><span class="co">#&gt; 2   5 6.1710354  0.03518184</span></span>
-<span><span class="co">#&gt; 3  10 1.3122762  0.27298867</span></span>
-<span><span class="co">#&gt; 4  15 6.1535219  0.25745294</span></span>
-<span><span class="co">#&gt; 5  20 3.7683984  0.10968390</span></span>
-<span><span class="co">#&gt; 6  30 0.8051961  0.16285026</span></span>
-<span><span class="co">#&gt; 7  40 3.3258479  0.12904693</span></span>
-<span><span class="co">#&gt; 8  50 1.6405047  0.09148952</span></span></code></pre></div>
+<span><span class="co">#&gt; 1  10 1.3122762  0.27298867</span></span>
+<span><span class="co">#&gt; 2  15 6.1535219  0.25745294</span></span>
+<span><span class="co">#&gt; 3  20 3.7683984  0.10968390</span></span>
+<span><span class="co">#&gt; 4  30 0.8051961  0.16285026</span></span>
+<span><span class="co">#&gt; 5  40 3.3258479  0.12904693</span></span>
+<span><span class="co">#&gt; 6   5 6.1710354  0.03518184</span></span>
+<span><span class="co">#&gt; 7  50 1.6405047  0.09148952</span></span>
+<span><span class="co">#&gt; 8   0 2.4441971  0.21852376</span></span></code></pre></div>
 <p>For within-trial path consistency (tortuosity),
 <code><a href="../reference/circ_summary.html">circ_summary()</a></code> operates on the step-by-step angle
 distribution:</p>
@@ -1239,8 +1239,8 @@ has a most-distal frame.</p>
 close to those from <code>"crossing"</code>, consistent with millipede
 tracks being fairly direct:</p>
 <div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sm_cross</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_circ_mean.html">compute_circ_mean</a></span><span class="op">(</span><span class="va">hd</span>,       colour_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"arc"</span>, <span class="st">"resultant_R"</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="va">sm_distal</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_circ_mean.html">compute_circ_mean</a></span><span class="op">(</span><span class="va">hd_distal</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"arc"</span>, <span class="st">"resultant_R"</span><span class="op">)</span><span class="op">]</span></span>
+<code class="sourceCode R"><span><span class="va">sm_cross</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_circ_mean.html">compute_circ_mean</a></span><span class="op">(</span><span class="va">hd</span>,       group_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"arc"</span>, <span class="st">"resultant_R"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="va">sm_distal</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_circ_mean.html">compute_circ_mean</a></span><span class="op">(</span><span class="va">hd_distal</span>, group_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"arc"</span>, <span class="st">"resultant_R"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">sm_cross</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>  <span class="op">&lt;-</span> <span class="st">"crossing"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">sm_distal</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"distal"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/merge.html" class="external-link">merge</a></span><span class="op">(</span><span class="va">sm_cross</span>, <span class="va">sm_distal</span>, by <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span></span>
@@ -1274,7 +1274,7 @@ that the spatial pattern is consistent with the crossing method:</p>
 <span>        show_labels <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>        show_arrow  <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>        display     <span class="op">=</span> <span class="fu"><a href="../reference/circ_display.html">circ_display</a></span><span class="op">(</span>zero <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="../reference/add_heading_interval.html">add_heading_interval</a></span><span class="op">(</span><span class="va">hd_distal_cc</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, colour <span class="op">=</span> <span class="st">"black"</span>,</span>
+<span>  <span class="fu"><a href="../reference/add_heading_interval.html">add_heading_interval</a></span><span class="op">(</span><span class="va">hd_distal_cc</span>, group_col <span class="op">=</span> <span class="st">"arc"</span>, colour <span class="op">=</span> <span class="st">"black"</span>,</span>
 <span>                       stat <span class="op">=</span> <span class="st">"bootstrap_ci"</span>, boot_reps <span class="op">=</span> <span class="fl">999L</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="../reference/add_heading_points.html">add_heading_points</a></span><span class="op">(</span><span class="va">hd_distal_cc</span>, size <span class="op">=</span> <span class="fl">4</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="../reference/add_heading_arrow.html">add_heading_arrow</a></span><span class="op">(</span><span class="va">hd_distal_cc</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span>, colour <span class="op">=</span> <span class="st">"black"</span><span class="op">)</span></span>
@@ -1300,7 +1300,7 @@ positions are available.</p>
 <span><span class="va">hd_net</span>     <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/merge.html" class="external-link">merge</a></span><span class="op">(</span><span class="va">hd_net</span>, <span class="va">arc_map</span>, by <span class="op">=</span> <span class="st">"trial_id"</span><span class="op">)</span></span>
 <span><span class="va">hd_net</span><span class="op">$</span><span class="va">arc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">hd_net</span><span class="op">$</span><span class="va">arc</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">sm_net</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_circ_mean.html">compute_circ_mean</a></span><span class="op">(</span><span class="va">hd_net</span>, colour_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"arc"</span>, <span class="st">"resultant_R"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="va">sm_net</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_circ_mean.html">compute_circ_mean</a></span><span class="op">(</span><span class="va">hd_net</span>, group_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"arc"</span>, <span class="st">"resultant_R"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">sm_net</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"net"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/funprog.html" class="external-link">Reduce</a></span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">a</span>, <span class="va">b</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/merge.html" class="external-link">merge</a></span><span class="op">(</span><span class="va">a</span>, <span class="va">b</span>, by <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span>,</span>
 <span>       <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">sm_cross</span>, <span class="va">sm_distal</span>, <span class="va">sm_net</span><span class="op">)</span><span class="op">)</span></span>
