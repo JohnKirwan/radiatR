@@ -3741,23 +3741,25 @@ add_critical_r <- function(hd, alpha = 0.05,
 #' \code{show_region = TRUE} the circular segment beyond the line -- the
 #' rejection region -- is shaded.
 #'
-#' Sample size \code{n} is taken per group from \code{hd}, with the same
-#' options as \code{\link{add_critical_r}}: per-panel when faceting,
-#' per-group when \code{per_group = TRUE}, or a single conservative boundary
-#' (smallest \code{n}, largest \eqn{c}) otherwise.
+#' Sample size \code{n} is taken per boundary from \code{hd}: one boundary
+#' per occupied combination of \code{facets} and \code{group_col} columns,
+#' or a single pooled boundary when both are \code{NULL}.
 #'
 #' @param hd Data frame of headings with a heading column (radians).
 #' @param mu0 Hypothesised direction in radians (unit-circle convention).
 #' @param alpha Significance level.  Default \code{0.05}.
 #' @param angle_col Heading column name.  Default \code{"heading"}.
-#' @param group_col Column identifying groups.  \code{NULL} pools all rows.
-#' @param per_group Logical.  Draw one boundary per group (\code{TRUE}) or a
-#'   single conservative boundary (\code{FALSE}, default).  Ignored when
-#'   faceting, where each panel gets its own boundary.
+#' @param facets Character vector of column names used for faceting (panel
+#'   placement).  Each occupied combination gets its own boundary; the columns
+#'   are attached to the returned data so \code{facet_wrap}/\code{facet_grid}
+#'   routes each boundary to the correct panel.  \code{NULL} (default) pools
+#'   across facets.
+#' @param group_col Column identifying groups (colour mapping).  Each occupied
+#'   value-combination of \code{facets} and \code{group_col} gets its own
+#'   boundary drawn in the fixed \code{colour}.  \code{NULL} pools all rows.
 #' @param show_region Logical; shade the rejection segment.  Default
 #'   \code{FALSE}.
-#' @param colour,color Line colour.  Default \code{"firebrick"}. \code{color} is
-#'   the American-spelling alias.
+#' @param colour Line colour.  Default \code{"firebrick"}.
 #' @param linetype Line type.  Default \code{"dashed"}.
 #' @param linewidth Line width.  Default \code{0.6}.
 #' @param region_fill Fill colour for the rejection region.  Default
@@ -3771,13 +3773,11 @@ add_critical_r <- function(hd, alpha = 0.05,
 #' @seealso \code{\link{add_critical_r}}, \code{\link{add_heading_arrow}}
 #' @export
 add_critical_v_line <- function(hd, mu0, alpha = 0.05,
-                                 angle_col = "heading", group_col = NULL,
-                                 per_group = FALSE, show_region = FALSE,
+                                 angle_col = "heading", facets = NULL,
+                                 group_col = NULL, show_region = FALSE,
                                  colour = "firebrick", linetype = "dashed",
                                  linewidth = 0.6, region_fill = "firebrick",
-                                 region_alpha = 0.08, axial = FALSE, n_pts = 100L,
-                                 color = NULL) {
-  .apply_spelling_aliases()
+                                 region_alpha = 0.08, axial = FALSE, n_pts = 100L) {
   stopifnot(is.data.frame(hd), alpha > 0, alpha < 1)
   if (missing(mu0)) stop("add_critical_v_line: 'mu0' (hypothesised direction) is required")
   if (!angle_col %in% names(hd))
@@ -3824,33 +3824,19 @@ add_critical_v_line <- function(hd, mu0, alpha = 0.05,
     )
   }
 
-  # Collect (c, group-key) pairs to draw
-  if (is.null(group_col)) {
-    keys <- list(list(cc = .c_of_n(sum(is.finite(hd[[angle_col]]))),
-                      g = "all", facet = NULL))
-  } else {
-    if (!group_col %in% names(hd))
-      stop("add_critical_v_line: '", group_col, "' not found")
-    groups <- unique(hd[[group_col]])
-    ns <- vapply(groups, function(g)
-      sum(is.finite(hd[[angle_col]][hd[[group_col]] == g])), integer(1L))
-    if (per_group) {
-      keys <- lapply(seq_along(groups), function(i)
-        list(cc = .c_of_n(ns[i]), g = as.character(groups[i]),
-             facet = groups[i]))
-    } else {
-      n_min <- min(ns[ns >= 2L], na.rm = TRUE)
-      if (!is.finite(n_min)) return(NULL)
-      keys <- list(list(cc = .c_of_n(n_min), g = "conservative", facet = NULL))
-    }
-  }
+  # One boundary per facet x group cell; c (perpendicular distance) from cell n.
+  cells <- .facet_group_split(hd, facets = facets, group_col = group_col)
+  keys <- lapply(seq_along(cells), function(i) {
+    n <- sum(is.finite(cells[[i]]$rows[[angle_col]]))
+    list(cc = .c_of_n(n), g = as.character(i), keys = cells[[i]]$keys)
+  })
 
   geoms <- lapply(keys, function(k) {
     g <- .geom(k$cc, k$g)
     if (is.null(g)) return(NULL)
-    if (!is.null(k$facet)) {
-      g$chord[[group_col]] <- k$facet
-      if (!is.null(g$region)) g$region[[group_col]] <- k$facet
+    for (nm in names(k$keys)) {
+      g$chord[[nm]] <- k$keys[[nm]]
+      if (!is.null(g$region)) g$region[[nm]] <- k$keys[[nm]]
     }
     g
   })

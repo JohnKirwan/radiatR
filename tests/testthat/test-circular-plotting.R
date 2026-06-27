@@ -1506,16 +1506,30 @@ test_that("add_critical_v_line show_region adds a polygon layer", {
   expect_length(with_region, 2L)
 })
 
-test_that("add_critical_v_line per_group: smaller n is further from centre", {
-  hd <- data.frame(
-    grp     = rep(c("A", "B"), times = c(15, 60)),
-    heading = rnorm(75, 0, 0.5)
-  )
-  ch <- add_critical_v_line(hd, mu0 = 0, group_col = "grp",
-                            per_group = TRUE)[[1]]$data
-  foot <- tapply(seq_len(nrow(ch)), ch$grp,
-                 function(i) (ch$x[i] + ch$xend[i]) / 2)
-  expect_gt(foot[["A"]], foot[["B"]])   # n=15 line further out than n=60
+test_that("add_critical_v_line attaches both facet columns in grid mode", {
+  set.seed(5)
+  hd <- data.frame(heading = runif(40, 0, 2 * pi),
+                   a = rep(c("x", "y"), 20), b = rep(c("p", "q"), each = 20))
+  layers <- add_critical_v_line(hd, mu0 = pi / 2, facets = c("a", "b"))
+  seg <- layers[[length(layers)]]            # the chord geom_segment
+  expect_true(all(c("a", "b") %in% names(seg$data)))
+  expect_equal(nrow(unique(seg$data[, c("a", "b")])), 4L)
+})
+
+test_that("add_critical_v_line single facet attaches one column", {
+  set.seed(6)
+  hd <- data.frame(heading = runif(20, 0, 2 * pi), a = rep(c("x", "y"), 10))
+  layers <- add_critical_v_line(hd, mu0 = pi / 2, facets = "a")
+  seg <- layers[[length(layers)]]
+  expect_true("a" %in% names(seg$data))
+})
+
+test_that("add_critical_v_line pooled draws a single boundary", {
+  set.seed(7)
+  hd <- data.frame(heading = runif(30, 0, 2 * pi))
+  layers <- add_critical_v_line(hd, mu0 = pi / 2)
+  seg <- layers[[length(layers)]]
+  expect_equal(length(unique(seg$data$.v_grp)), 1L)
 })
 
 test_that("add_critical_v_line requires mu0", {
