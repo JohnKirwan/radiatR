@@ -271,7 +271,7 @@ spec_to_plot <- function(spec, ts, hd) {
   # Build the per-cell interaction key for the stacked-headings overlay (which
   # needs a single group key spanning both facet dimensions). Arrow and stat
   # overlays now use facets = c(...) directly and no longer need this key.
-  if (grid_mode) {
+  if (grid_mode && identical(spec$heading_display, "stacked")) {
     hd[[".facet_cell"]] <- interaction(hd[[spec$facet_by]], hd[[spec$facet_cols]],
                                        drop = TRUE, sep = "\r")
   }

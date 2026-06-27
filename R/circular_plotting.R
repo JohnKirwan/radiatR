@@ -1322,11 +1322,11 @@ add_circ_interval <- function(interval_df,
   cols <- unique(c(facets, group_col))                 # c() already drops NULLs
   if (!length(cols))
     return(list(list(rows = df, keys = list())))
-  combos <- unique(df[cols])
+  combos <- unique(df[stats::complete.cases(df[cols]), cols, drop = FALSE])
   lapply(seq_len(nrow(combos)), function(i) {
     key <- combos[i, , drop = FALSE]
     sel <- rep(TRUE, nrow(df))
-    for (cc in cols) sel <- sel & (df[[cc]] == key[[cc]])
+    for (cc in cols) sel <- sel & !is.na(df[[cc]]) & df[[cc]] == key[[cc]]
     list(rows = df[sel, , drop = FALSE], keys = as.list(key))
   })
 }
@@ -3773,9 +3773,9 @@ add_critical_r <- function(hd, alpha = 0.05,
 #'   are attached to the returned data so \code{facet_wrap}/\code{facet_grid}
 #'   routes each boundary to the correct panel.  \code{NULL} (default) pools
 #'   across facets.
-#' @param group_col Column identifying groups (colour mapping).  Each occupied
-#'   value-combination of \code{facets} and \code{group_col} gets its own
-#'   boundary drawn in the fixed \code{colour}.  \code{NULL} pools all rows.
+#' @param group_col Optional single column. Subdivides each facet cell into
+#'   subgroups, one boundary per subgroup (each with its own n). All boundaries
+#'   are drawn in the fixed \code{colour} — \code{group_col} does not map colour.
 #' @param show_region Logical; shade the rejection segment.  Default
 #'   \code{FALSE}.
 #' @param colour Line colour.  Default \code{"firebrick"}.

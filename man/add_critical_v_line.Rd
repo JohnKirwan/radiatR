@@ -36,9 +36,9 @@ are attached to the returned data so \code{facet_wrap}/\code{facet_grid}
 routes each boundary to the correct panel.  \code{NULL} (default) pools
 across facets.}
 
-\item{group_col}{Column identifying groups (colour mapping).  Each occupied
-value-combination of \code{facets} and \code{group_col} gets its own
-boundary drawn in the fixed \code{colour}.  \code{NULL} pools all rows.}
+\item{group_col}{Optional single column. Subdivides each facet cell into
+subgroups, one boundary per subgroup (each with its own n). All boundaries
+are drawn in the fixed \code{colour} — \code{group_col} does not map colour.}
 
 \item{show_region}{Logical; shade the rejection segment.  Default
 \code{FALSE}.}

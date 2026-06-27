@@ -2283,3 +2283,11 @@ test_that(".facet_group_split accepts a two-column facets vector", {
   expect_true(all(vapply(g, function(e)
     all(c("a", "b") %in% names(e$keys)), logical(1))))
 })
+
+test_that(".facet_group_split drops NA-keyed cells and phantom NA rows", {
+  df <- data.frame(heading = 1:4 / 10, a = c("x", "x", NA, "y"))
+  g  <- .facet_group_split(df, facets = "a")
+  keys <- sort(unlist(lapply(g, function(e) e$keys$a)))
+  expect_identical(keys, c("x", "y"))                  # no NA cell
+  expect_false(any(vapply(g, function(e) anyNA(e$rows$a), logical(1L))))  # no phantom NA rows
+})

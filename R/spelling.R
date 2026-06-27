@@ -15,7 +15,6 @@
   arrow_color     = "arrow_colour",
   arrow_color_col = "arrow_colour_col",
   grid_color      = "grid_colour",
-  color_by_group  = "colour_by_group",
   color_minor     = "colour_minor",
   color_value     = "colour_value",
   origin_color    = "origin_colour",
