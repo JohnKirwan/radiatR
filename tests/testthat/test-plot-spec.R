@@ -223,7 +223,7 @@ test_that("spec_to_plot honours clip_tracks (beyond-circumference points)", {
   expect_lte(rho_max(FALSE), 1 + 1e-6)   # clip on (default) -> within the unit circle
 })
 
-test_that("build_plot_spec maps cond_col2 into facet_cols and gates overlays in grid mode", {
+test_that("build_plot_spec keeps overlays on in grid mode (un-gated)", {
   data(cpunctatus, package = "radiatR", envir = environment())
   ts <- cpunctatus; hd <- derive_headings(ts, rule = "distal")
   spec <- build_plot_spec(ts, hd, method = "distal",
@@ -233,10 +233,10 @@ test_that("build_plot_spec maps cond_col2 into facet_cols and gates overlays in 
                           show_boxplot = TRUE))
   expect_identical(spec$facet_by, "type")
   expect_identical(spec$facet_cols, "arc")
-  expect_false(isTRUE(spec$show$ci))
-  expect_false(isTRUE(spec$show$rayleigh))
-  expect_false(isTRUE(spec$show$vtest))
-  expect_false(isTRUE(spec$show$boxplot))
+  expect_true(isTRUE(spec$show$ci))
+  expect_true(isTRUE(spec$show$rayleigh))
+  expect_true(isTRUE(spec$show$vtest))
+  expect_true(isTRUE(spec$show$boxplot))
 })
 
 test_that("build_plot_spec keeps facet_cols NULL and overlays on in single-facet mode", {
@@ -247,4 +247,24 @@ test_that("build_plot_spec keeps facet_cols NULL and overlays on in single-facet
             inputs = list(show_tracks = TRUE, cond_col = "type", show_ci = TRUE))
   expect_null(spec$facet_cols)
   expect_true(isTRUE(spec$show$ci))
+})
+
+test_that("headings-mode grid sets facet_cols and emits the both-column hd merge", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  hd0  <- derive_headings(cpunctatus, rule = "distal", coords = "relative")
+  cond <- unique(as.data.frame(cpunctatus)[, c("trial_id", "type", "arc")])
+  hd0  <- merge(hd0, cond, by.x = "id", by.y = "trial_id", all.x = TRUE)
+  hd   <- build_headings_input(hd0, col = "heading", units = "radians",
+                               convention = "unit_circle")
+  spec <- build_plot_spec(
+    ts = NULL, hd = hd, method = NULL,
+    data = list(source = "example", mode = "headings", path = NULL,
+                col = "heading", units = "radians", convention = "unit_circle"),
+    inputs = list(colour_by = "type", cond_col = "type", hd_group2 = "arc",
+                  heading_display = "points", plot_theme = "void",
+                  angle_labels = "degrees", show_arrow = TRUE))
+  expect_identical(spec$facet_by, "type")
+  expect_identical(spec$facet_cols, "arc")
+  code <- spec_to_code(spec)
+  expect_match(code, 'c("trial_id", "type", "arc")', fixed = TRUE)  # merge covers both facet cols
 })

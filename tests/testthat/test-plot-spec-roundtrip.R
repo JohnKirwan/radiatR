@@ -486,3 +486,39 @@ test_that("emitted code reproduces spec_to_plot (grid + stacked headings per cel
   rt$hd[["arc"]]  <- df[["arc"]][match(rt$hd$id, df[[rt$ts@cols$id]])]
   expect_roundtrip(rt)
 })
+
+test_that("emitted code reproduces spec_to_plot (grid + Rayleigh per cell)", {
+  rt <- roundtrip_spec("points", "trajectory", "type", FALSE, FALSE,
+                       rayleigh = TRUE, facet_cols = "arc")
+  df <- as.data.frame(rt$ts)
+  rt$hd[["type"]] <- df[["type"]][match(rt$hd$id, df[[rt$ts@cols$id]])]
+  rt$hd[["arc"]]  <- df[["arc"]][match(rt$hd$id, df[[rt$ts@cols$id]])]
+  expect_roundtrip(rt)
+})
+
+test_that("emitted code reproduces spec_to_plot (grid + V-test per cell)", {
+  rt <- roundtrip_spec("points", "trajectory", "type", FALSE, FALSE,
+                       vtest = TRUE, facet_cols = "arc")
+  df <- as.data.frame(rt$ts)
+  rt$hd[["type"]] <- df[["type"]][match(rt$hd$id, df[[rt$ts@cols$id]])]
+  rt$hd[["arc"]]  <- df[["arc"]][match(rt$hd$id, df[[rt$ts@cols$id]])]
+  expect_roundtrip(rt)
+})
+
+test_that("emitted code reproduces spec_to_plot (grid + bootstrap CI per cell)", {
+  rt <- roundtrip_spec("points", "trajectory", "type", FALSE, FALSE,
+                       ci = TRUE, facet_cols = "arc")
+  df <- as.data.frame(rt$ts)
+  rt$hd[["type"]] <- df[["type"]][match(rt$hd$id, df[[rt$ts@cols$id]])]
+  rt$hd[["arc"]]  <- df[["arc"]][match(rt$hd$id, df[[rt$ts@cols$id]])]
+  expect_roundtrip(rt)
+})
+
+test_that("emitted code reproduces spec_to_plot (grid + circular boxplot per cell)", {
+  rt <- roundtrip_spec("points", "trajectory", "type", FALSE, FALSE,
+                       boxplot = TRUE, facet_cols = "arc")
+  df <- as.data.frame(rt$ts)
+  rt$hd[["type"]] <- df[["type"]][match(rt$hd$id, df[[rt$ts@cols$id]])]
+  rt$hd[["arc"]]  <- df[["arc"]][match(rt$hd$id, df[[rt$ts@cols$id]])]
+  suppressWarnings(expect_roundtrip(rt))
+})

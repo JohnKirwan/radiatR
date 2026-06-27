@@ -26,7 +26,7 @@ test_that("spec_to_code emits a runnable, exported-only script", {
   expect_true(grepl('assign_colour_key(ts, by = "trajectory")', code, fixed = TRUE))
   expect_true(grepl("bin_angles(hd$heading", code, fixed = TRUE))            # stacked
   expect_true(grepl('add_stacked_headings(hd, colour_col = ".colour", group = "type"', code, fixed = TRUE))
-  expect_true(grepl('compute_circ_mean(hd, colour_col = "type")', code, fixed = TRUE))
+  expect_true(grepl('compute_circ_mean(hd, facets = "type")', code, fixed = TRUE))
   expect_true(grepl('add_circ_mean(arrow_df, colour = "black")', code, fixed = TRUE))
   expect_silent(parse(text = code))
 })
@@ -136,8 +136,8 @@ test_that("spec_to_code emits axial = TRUE for axial headings specs", {
   sp$axial <- TRUE
   sp$show$ci <- TRUE
   code <- spec_to_code(sp)
-  expect_true(grepl("compute_circ_mean(hd, colour_col = \"type\", axial = TRUE)", code, fixed = TRUE))
+  expect_true(grepl("compute_circ_mean(hd, facets = \"type\", axial = TRUE)", code, fixed = TRUE))
   expect_true(grepl("add_circ_mean(arrow_df, colour = \"black\", axial = TRUE)", code, fixed = TRUE))
-  expect_true(grepl("add_heading_interval(hd, colour_col = \"type\", stat = \"bootstrap_ci\", axial = TRUE)", code, fixed = TRUE))
+  expect_true(grepl("add_heading_interval(hd, facets = \"type\", stat = \"bootstrap_ci\", axial = TRUE)", code, fixed = TRUE))
   expect_silent(parse(text = code))
 })

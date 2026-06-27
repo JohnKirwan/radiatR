@@ -935,12 +935,12 @@ test_that("compute_circ_interval returns NA bounds for n < 3", {
   expect_true(is.na(iv0$upper))
 })
 
-test_that("compute_circ_interval colour_col returns one row per group", {
+test_that("compute_circ_interval group_col returns one row per group", {
   hd <- data.frame(
     heading = c(0.1, 0.2, 0.15, 1.0, 1.1, 1.05),
     grp     = rep(c("A", "B"), each = 3)
   )
-  iv <- compute_circ_interval(hd, colour_col = "grp", stat = "sd")
+  iv <- compute_circ_interval(hd, group_col = "grp", stat = "sd")
   expect_equal(nrow(iv), 2L)
   expect_true("grp" %in% names(iv))
   expect_equal(sort(iv$grp), c("A", "B"))
@@ -1050,6 +1050,23 @@ test_that("add_heading_interval can be added to a radiate plot without error", {
   expect_silent(ggplot_build(p))
 })
 
+test_that("compute_circ_interval splits per facet cell and attaches columns", {
+  set.seed(8)
+  hd <- data.frame(heading = runif(40, 0, 2 * pi),
+                   a = rep(c("x", "y"), 20), b = rep(c("p", "q"), each = 20))
+  iv <- compute_circ_interval(hd, facets = c("a", "b"), stat = "sd")
+  expect_equal(nrow(iv), 4L)
+  expect_true(all(c("a", "b") %in% names(iv)))
+})
+
+test_that("add_heading_interval grid attaches both facet columns to the arc", {
+  set.seed(9)
+  hd <- data.frame(heading = runif(40, 0, 2 * pi),
+                   a = rep(c("x", "y"), 20), b = rep(c("p", "q"), each = 20))
+  layer <- add_heading_interval(hd, facets = c("a", "b"), stat = "sd")
+  expect_true(all(c("a", "b") %in% names(layer$data)))
+})
+
 # ---- compute_circ_mean -------------------------------------------------------
 
 test_that("compute_circ_mean returns correct mean_dir and R for UC angles", {
@@ -1062,7 +1079,7 @@ test_that("compute_circ_mean returns correct mean_dir and R for UC angles", {
 test_that("compute_circ_mean grouped output has one row per group", {
   hd <- data.frame(heading = c(0, 0, pi, pi),
                    grp     = c("A", "A", "B", "B"))
-  result <- compute_circ_mean(hd, colour_col = "grp")
+  result <- compute_circ_mean(hd, group_col = "grp")
   expect_equal(nrow(result), 2L)
   expect_true("grp" %in% names(result))
 })
@@ -1081,10 +1098,10 @@ test_that("compute_circ_mean handles all-NA input without error", {
   expect_true(is.na(result$mean_dir))
 })
 
-test_that("compute_circ_mean preserves factor levels on colour_col", {
+test_that("compute_circ_mean preserves factor levels on group_col", {
   hd <- data.frame(heading = c(0.1, 0.2, 0.3, 0.4),
                    grp     = factor(c("B", "A", "B", "A"), levels = c("A", "B", "C")))
-  result <- compute_circ_mean(hd, colour_col = "grp")
+  result <- compute_circ_mean(hd, group_col = "grp")
   expect_equal(levels(result$grp), c("A", "B", "C"))
 })
 
@@ -1097,6 +1114,15 @@ test_that("compute_circ_mean carries the input's display attribute onto its outp
   attr(hd, "display") <- disp
   result <- compute_circ_mean(hd)
   expect_equal(attr(result, "display", exact = TRUE), disp)
+})
+
+test_that("compute_circ_mean splits per facet cell and attaches both columns", {
+  set.seed(10)
+  hd <- data.frame(heading = runif(40, 0, 2 * pi),
+                   a = rep(c("x", "y"), 20), b = rep(c("p", "q"), each = 20))
+  sm <- compute_circ_mean(hd, facets = c("a", "b"))
+  expect_equal(nrow(sm), 4L)
+  expect_true(all(c("a", "b") %in% names(sm)))
 })
 
 # ---- add_circ_mean -----------------------------------------------------------
@@ -1424,47 +1450,38 @@ test_that("add_critical_r vtest radius matches formula", {
   expect_equal(r, stats::qnorm(0.95) / sqrt(2 * 30), tolerance = 1e-6)
 })
 
-test_that("add_critical_r conservative uses smallest n", {
-  hd <- data.frame(
-    grp     = rep(c("A", "B"), times = c(10, 40)),
-    heading = rnorm(50, 0, 0.5)
-  )
-  layer <- add_critical_r(hd, group_col = "grp", per_group = FALSE)
-  r <- sqrt(layer$data$x[1]^2 + layer$data$y[1]^2)
-  expect_equal(r, sqrt(-log(0.05) / 10), tolerance = 1e-6)  # n = 10, smaller
+test_that("add_critical_r attaches both facet columns in grid mode", {
+  set.seed(1)
+  hd <- data.frame(heading = runif(40, 0, 2 * pi),
+                   a = rep(c("x", "y"), 20), b = rep(c("p", "q"), each = 20))
+  layer <- add_critical_r(hd, test = "rayleigh", facets = c("a", "b"))
+  expect_s3_class(layer, "LayerInstance")
+  expect_true(all(c("a", "b") %in% names(layer$data)))
+  # one circle per occupied (a,b) cell
+  expect_equal(nrow(unique(layer$data[, c("a", "b")])), 4L)
 })
 
-test_that("add_critical_r per_group draws one circle per group", {
-  hd <- data.frame(
-    grp     = rep(c("A", "B", "C"), times = c(15, 30, 50)),
-    heading = rnorm(95, 0, 0.5)
-  )
-  layer <- add_critical_r(hd, group_col = "grp", per_group = TRUE)
-  expect_true("grp" %in% names(layer$data))
-  expect_equal(length(unique(layer$data$grp)), 3L)
-  # smaller n -> larger radius
-  radii <- tapply(sqrt(layer$data$x^2 + layer$data$y^2),
-                  layer$data$grp, function(v) v[1])
-  expect_gt(radii[["A"]], radii[["C"]])
+test_that("add_critical_r single facet attaches one column, fixed colour", {
+  set.seed(2)
+  hd <- data.frame(heading = runif(20, 0, 2 * pi), a = rep(c("x", "y"), 10))
+  layer <- add_critical_r(hd, test = "rayleigh", facets = "a")
+  expect_true("a" %in% names(layer$data))
+  expect_false("colour" %in% names(layer$mapping))   # no group_col -> not mapped
 })
 
-test_that("add_critical_r colour_by_group = FALSE keeps per-panel circles a fixed colour", {
-  hd <- data.frame(
-    grp     = rep(c("A", "B", "C"), times = c(15, 30, 50)),
-    heading = rnorm(95, 0, 0.5)
-  )
-  layer <- add_critical_r(hd, group_col = "grp", per_group = TRUE,
-                          colour_by_group = FALSE, colour = "firebrick")
-  # group column survives so the circles still facet alongside the parent plot
-  expect_true("grp" %in% names(layer$data))
-  expect_equal(length(unique(layer$data$grp)), 3L)
-  # but colour is NOT mapped (fixed), so it cannot collide with the parent scale
-  expect_false("colour" %in% names(layer$mapping))
-  expect_identical(layer$aes_params$colour, "firebrick")
-  # per-panel radii are still distinct (per-group n, not pooled)
-  radii <- tapply(sqrt(layer$data$x^2 + layer$data$y^2),
-                  layer$data$grp, function(v) v[1])
-  expect_gt(radii[["A"]], radii[["C"]])
+test_that("add_critical_r pooled draws one circle from all rows", {
+  set.seed(3)
+  hd <- data.frame(heading = runif(30, 0, 2 * pi))
+  layer <- add_critical_r(hd, test = "rayleigh")
+  expect_equal(length(unique(layer$data$.cr_grp)), 1L)
+})
+
+test_that("add_critical_r maps colour when group_col is set", {
+  set.seed(4)
+  hd <- data.frame(heading = runif(20, 0, 2 * pi), s = rep(c("m", "f"), 10))
+  layer <- add_critical_r(hd, test = "rayleigh", group_col = "s")
+  expect_true("colour" %in% names(layer$mapping))
+  expect_true("s" %in% names(layer$data))
 })
 
 test_that("add_critical_r higher alpha gives smaller circle", {
@@ -1515,16 +1532,30 @@ test_that("add_critical_v_line show_region adds a polygon layer", {
   expect_length(with_region, 2L)
 })
 
-test_that("add_critical_v_line per_group: smaller n is further from centre", {
-  hd <- data.frame(
-    grp     = rep(c("A", "B"), times = c(15, 60)),
-    heading = rnorm(75, 0, 0.5)
-  )
-  ch <- add_critical_v_line(hd, mu0 = 0, group_col = "grp",
-                            per_group = TRUE)[[1]]$data
-  foot <- tapply(seq_len(nrow(ch)), ch$grp,
-                 function(i) (ch$x[i] + ch$xend[i]) / 2)
-  expect_gt(foot[["A"]], foot[["B"]])   # n=15 line further out than n=60
+test_that("add_critical_v_line attaches both facet columns in grid mode", {
+  set.seed(5)
+  hd <- data.frame(heading = runif(40, 0, 2 * pi),
+                   a = rep(c("x", "y"), 20), b = rep(c("p", "q"), each = 20))
+  layers <- add_critical_v_line(hd, mu0 = pi / 2, facets = c("a", "b"))
+  seg <- layers[[length(layers)]]            # the chord geom_segment
+  expect_true(all(c("a", "b") %in% names(seg$data)))
+  expect_equal(nrow(unique(seg$data[, c("a", "b")])), 4L)
+})
+
+test_that("add_critical_v_line single facet attaches one column", {
+  set.seed(6)
+  hd <- data.frame(heading = runif(20, 0, 2 * pi), a = rep(c("x", "y"), 10))
+  layers <- add_critical_v_line(hd, mu0 = pi / 2, facets = "a")
+  seg <- layers[[length(layers)]]
+  expect_true("a" %in% names(seg$data))
+})
+
+test_that("add_critical_v_line pooled draws a single boundary", {
+  set.seed(7)
+  hd <- data.frame(heading = runif(30, 0, 2 * pi))
+  layers <- add_critical_v_line(hd, mu0 = pi / 2)
+  seg <- layers[[length(layers)]]
+  expect_equal(length(unique(seg$data$.v_grp)), 1L)
 })
 
 test_that("add_critical_v_line requires mu0", {
@@ -2211,4 +2242,52 @@ test_that(".clip_path_to_circle treats a point a hair over the rim as inside (no
   # geom = "point" likewise keeps a just-over-rim point
   outp <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "point")
   expect_equal(nrow(outp), nrow(d))
+})
+
+# ---- .facet_group_split ------------------------------------------------------
+
+test_that(".facet_group_split pools when no columns are given", {
+  df <- data.frame(heading = c(0.1, 0.2, 0.3), a = c("x", "y", "x"))
+  g  <- .facet_group_split(df)
+  expect_length(g, 1L)
+  expect_identical(g[[1]]$rows, df)
+  expect_identical(g[[1]]$keys, list())
+})
+
+test_that(".facet_group_split splits on a single facet column and attaches its value", {
+  df <- data.frame(heading = c(0.1, 0.2, 0.3, 0.4), a = c("x", "x", "y", "y"))
+  g  <- .facet_group_split(df, facets = "a")
+  expect_length(g, 2L)
+  keys <- sort(vapply(g, function(e) e$keys$a, character(1)))
+  expect_identical(keys, c("x", "y"))
+  gx <- Filter(function(e) e$keys$a == "x", g)[[1]]
+  expect_equal(nrow(gx$rows), 2L)
+})
+
+test_that(".facet_group_split splits on the union of facets and group_col", {
+  df <- data.frame(heading = 1:8 / 10,
+                   a = rep(c("x", "y"), each = 4),
+                   s = rep(c("m", "f"), 4))
+  g  <- .facet_group_split(df, facets = c("a"), group_col = "s")
+  expect_length(g, 4L)                              # 2 a-levels x 2 s-levels
+  expect_true(all(vapply(g, function(e)
+    all(c("a", "s") %in% names(e$keys)), logical(1))))
+  expect_true(all(vapply(g, function(e) nrow(e$rows) == 2L, logical(1))))
+})
+
+test_that(".facet_group_split accepts a two-column facets vector", {
+  df <- data.frame(heading = 1:4 / 10,
+                   a = c("x", "x", "y", "y"), b = c("p", "q", "p", "q"))
+  g  <- .facet_group_split(df, facets = c("a", "b"))
+  expect_length(g, 4L)
+  expect_true(all(vapply(g, function(e)
+    all(c("a", "b") %in% names(e$keys)), logical(1))))
+})
+
+test_that(".facet_group_split drops NA-keyed cells and phantom NA rows", {
+  df <- data.frame(heading = 1:4 / 10, a = c("x", "x", NA, "y"))
+  g  <- .facet_group_split(df, facets = "a")
+  keys <- sort(unlist(lapply(g, function(e) e$keys$a)))
+  expect_identical(keys, c("x", "y"))                  # no NA cell
+  expect_false(any(vapply(g, function(e) anyNA(e$rows$a), logical(1L))))  # no phantom NA rows
 })

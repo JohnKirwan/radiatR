@@ -9,8 +9,8 @@ add_critical_v_line(
   mu0,
   alpha = 0.05,
   angle_col = "heading",
+  facets = NULL,
   group_col = NULL,
-  per_group = FALSE,
   show_region = FALSE,
   colour = "firebrick",
   linetype = "dashed",
@@ -18,8 +18,7 @@ add_critical_v_line(
   region_fill = "firebrick",
   region_alpha = 0.08,
   axial = FALSE,
-  n_pts = 100L,
-  color = NULL
+  n_pts = 100L
 )
 }
 \arguments{
@@ -31,17 +30,20 @@ add_critical_v_line(
 
 \item{angle_col}{Heading column name.  Default \code{"heading"}.}
 
-\item{group_col}{Column identifying groups.  \code{NULL} pools all rows.}
+\item{facets}{Character vector of column names used for faceting (panel
+placement).  Each occupied combination gets its own boundary; the columns
+are attached to the returned data so \code{facet_wrap}/\code{facet_grid}
+routes each boundary to the correct panel.  \code{NULL} (default) pools
+across facets.}
 
-\item{per_group}{Logical.  Draw one boundary per group (\code{TRUE}) or a
-single conservative boundary (\code{FALSE}, default).  Ignored when
-faceting, where each panel gets its own boundary.}
+\item{group_col}{Optional single column. Subdivides each facet cell into
+subgroups, one boundary per subgroup (each with its own n). All boundaries
+are drawn in the fixed \code{colour} — \code{group_col} does not map colour.}
 
 \item{show_region}{Logical; shade the rejection segment.  Default
 \code{FALSE}.}
 
-\item{colour, color}{Line colour.  Default \code{"firebrick"}. \code{color} is
-the American-spelling alias.}
+\item{colour}{Line colour.  Default \code{"firebrick"}.}
 
 \item{linetype}{Line type.  Default \code{"dashed"}.}
 
@@ -76,10 +78,9 @@ The line is clipped to the unit circle (drawn as a chord).  With
 \code{show_region = TRUE} the circular segment beyond the line -- the
 rejection region -- is shaded.
 
-Sample size \code{n} is taken per group from \code{hd}, with the same
-options as \code{\link{add_critical_r}}: per-panel when faceting,
-per-group when \code{per_group = TRUE}, or a single conservative boundary
-(smallest \code{n}, largest \eqn{c}) otherwise.
+Sample size \code{n} is taken per boundary from \code{hd}: one boundary
+per occupied combination of \code{facets} and \code{group_col} columns,
+or a single pooled boundary when both are \code{NULL}.
 }
 \seealso{
 \code{\link{add_critical_r}}, \code{\link{add_heading_arrow}}

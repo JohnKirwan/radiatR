@@ -7,9 +7,9 @@
 compute_circ_mean(
   headings_df,
   heading_col = "heading",
-  colour_col = NULL,
-  axial = FALSE,
-  color_col = NULL
+  facets = NULL,
+  group_col = NULL,
+  axial = FALSE
 )
 }
 \arguments{
@@ -20,9 +20,15 @@ compute_circ_mean(
 \item{heading_col}{Name of the column containing heading angles. Default
 `"heading"`.}
 
-\item{colour_col, color_col}{Optional. Name of a column to group by. One row is
-returned per group. The same column maps to colour in [add_circ_mean()].
-`color_col` is the American-spelling alias.}
+\item{facets}{Character vector of column names used as faceting variables.
+One row is returned per unique combination of these columns. These columns
+are attached to the output so that [add_circ_mean()] can route each arrow
+to the correct facet panel.}
+
+\item{group_col}{Optional. Name of a single column to group by for colour
+mapping. One row is returned per unique combination of `c(facets,
+group_col)`. Map colour in [add_circ_mean()] via its `colour_col`
+argument.}
 
 \item{axial}{Logical. Treat the angles as axial (bidirectional, mod-pi)
 data: `mean_dir` is the axis in `[0, pi)` and `resultant_R` is the axial
@@ -30,8 +36,8 @@ resultant length, both via the angle-doubling method. Default `FALSE`.}
 }
 \value{
 A data frame with columns `mean_dir` (unit-circle radians, 0 to
-  2pi), `resultant_R` (0--1), and `colour_col` when supplied. Both are `NA`
-  when a group contains fewer than 2 finite angles.
+  2pi), `resultant_R` (0--1), plus any `facets`/`group_col` columns. Both
+  statistics are `NA` when a cell contains fewer than 2 finite angles.
 }
 \description{
 Computes the circular mean direction and resultant length (R) per group from

@@ -212,3 +212,13 @@ test_that("add_circular_boxplot: a non-drawable panel is skipped, others draw", 
                            logical(1)))[1]]]$data
   expect_setequal(unique(box$grp), "A")                            # only A drawn
 })
+
+test_that("add_circular_boxplot attaches both facet columns in grid mode", {
+  set.seed(11)
+  hd <- data.frame(heading = runif(80, 0, 2 * pi),
+                   a = rep(c("x", "y"), 40), b = rep(c("p", "q"), each = 40))
+  layers <- suppressWarnings(add_circular_boxplot(hd, facets = c("a", "b")))
+  box <- layers[[1]]$data                    # the box geom_polygon frame
+  expect_true(all(c("a", "b") %in% names(box)))
+  expect_equal(nrow(unique(box[, c("a", "b")])), 4L)
+})

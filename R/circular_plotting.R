@@ -1152,9 +1152,13 @@ add_heading_density <- function(headings_df,
 #'
 #' @param headings_df Data frame containing heading angles.
 #' @param heading_col Name of the heading column (radians). Default `"heading"`.
-#' @param colour_col,color_col Optional grouping column. When set, one row is
-#'   returned per group and the column is preserved in the output. `color_col` is
-#'   the American-spelling alias.
+#' @param facets Character vector of column names used for faceting (placement).
+#'   One row is returned per occupied combination of `facets` and `group_col`.
+#'   Each column is preserved in the output so `facet_grid()`/`facet_wrap()`
+#'   can place the layer correctly. Default `NULL`.
+#' @param group_col Single column name used for colour grouping. When set, one
+#'   row is returned per group and the column is preserved in the output for
+#'   colour mapping in [add_circ_interval()]. Default `NULL`.
 #' @param stat Statistic: `"bootstrap_ci"` (default) or `"sd"`.
 #' @param boot_reps Integer. Bootstrap replicates for `stat = "bootstrap_ci"`.
 #'   Default `1000L`. Ignored when `stat = "sd"`.
@@ -1174,31 +1178,28 @@ add_heading_density <- function(headings_df,
 #' @export
 compute_circ_interval <- function(headings_df,
                                   heading_col = "heading",
-                                  colour_col  = NULL,
+                                  facets      = NULL,
+                                  group_col   = NULL,
                                   stat        = c("bootstrap_ci", "sd"),
                                   boot_reps   = 1000L,
                                   boot_alpha  = 0.05,
-                                  axial       = FALSE,
-                                  color_col   = NULL) {
-  .apply_spelling_aliases()
+                                  axial       = FALSE) {
   stat <- match.arg(stat)
   if (!heading_col %in% names(headings_df))
     stop("`heading_col` '", heading_col, "' not found in headings_df.")
 
-  use_colour <- !is.null(colour_col) && colour_col %in% names(headings_df)
-  groups     <- if (use_colour) split(headings_df, headings_df[[colour_col]]) else list(headings_df)
-
-  out_list <- lapply(seq_along(groups), function(i) {
-    angles <- groups[[i]][[heading_col]]
-    row    <- .compute_one_interval(angles, stat, boot_reps, boot_alpha, axial)
-    if (use_colour) row[[colour_col]] <- names(groups)[[i]]
+  cells <- .facet_group_split(headings_df, facets = facets, group_col = group_col)
+  out_list <- lapply(cells, function(cell) {
+    row <- .compute_one_interval(cell$rows[[heading_col]], stat,
+                                 boot_reps, boot_alpha, axial)
+    for (nm in names(cell$keys)) row[[nm]] <- cell$keys[[nm]]
     row
   })
-
   out <- do.call(rbind, out_list)
-  if (use_colour && is.factor(headings_df[[colour_col]]))
-    out[[colour_col]] <- factor(out[[colour_col]],
-                                levels = levels(headings_df[[colour_col]]))
+  # Preserve factor levels of the colour group so its colour scale matches the plot.
+  if (!is.null(group_col) && group_col %in% names(out) &&
+      is.factor(headings_df[[group_col]]))
+    out[[group_col]] <- factor(out[[group_col]], levels = levels(headings_df[[group_col]]))
   out
 }
 
@@ -1263,6 +1264,11 @@ add_circ_interval <- function(interval_df,
   has_wraps     <- "wraps" %in% names(interval_df)
   disp_opts     <- hf_display(interval_df)
 
+  # Extra columns in interval_df (beyond the core interval spec) are forwarded
+  # to every arc row so facet_grid()/facet_wrap() can place the layer correctly.
+  core_cols  <- c("mean_dir", "lower", "upper", "wraps")
+  extra_cols <- setdiff(names(interval_df), core_cols)
+
   valid_rows <- which(!is.na(interval_df$lower) & !is.na(interval_df$upper))
 
   if (!length(valid_rows)) {
@@ -1281,7 +1287,7 @@ add_circ_interval <- function(interval_df,
     xy <- .uc_to_display_coords(radius * cos(theta_seq),
                                 radius * sin(theta_seq), disp_opts)
     d  <- data.frame(.x = xy$x, .y = xy$y, .group_id = gid)
-    if (has_group_col) d[[colour_col]] <- interval_df[[colour_col]][i]
+    for (nm in extra_cols) d[[nm]] <- interval_df[[nm]][i]
     d
   }
   parts <- lapply(valid_rows, function(i) {
@@ -1305,6 +1311,26 @@ add_circ_interval <- function(interval_df,
   do.call(ggplot2::geom_path, path_args)
 }
 
+# Split `df` into facet x group cells. `facets` (character vector) and
+# `group_col` (single column) name the columns whose union defines a cell; the
+# statistic-drawing overlays compute one piece per cell and attach every one of
+# these columns to the layer data so facet_grid()/facet_wrap() can place it.
+# Returns a list, one element per occupied combination: list(rows, keys), where
+# `keys` is a named list of the single value of each column for that cell. With
+# no columns, returns one pooled group with empty keys. Internal, not exported.
+.facet_group_split <- function(df, facets = NULL, group_col = NULL) {
+  cols <- unique(c(facets, group_col))                 # c() already drops NULLs
+  if (!length(cols))
+    return(list(list(rows = df, keys = list())))
+  combos <- unique(df[stats::complete.cases(df[cols]), cols, drop = FALSE])
+  lapply(seq_len(nrow(combos)), function(i) {
+    key <- combos[i, , drop = FALSE]
+    sel <- rep(TRUE, nrow(df))
+    for (cc in cols) sel <- sel & !is.na(df[[cc]]) & df[[cc]] == key[[cc]]
+    list(rows = df[sel, , drop = FALSE], keys = as.list(key))
+  })
+}
+
 #' Compute a circular interval arc and add it to a radial plot in one step
 #'
 #' Convenience wrapper that calls [compute_circ_interval()] followed by
@@ -1312,8 +1338,21 @@ add_circ_interval <- function(interval_df,
 #' directly when you need to replace `lower`/`upper` with Bayesian credible
 #' interval bounds before rendering.
 #'
-#' @inheritParams compute_circ_interval
 #' @inheritParams add_circ_interval
+#' @param headings_df Data frame containing heading angles.
+#' @param heading_col Name of the heading column (radians). Default `"heading"`.
+#' @param facets Character vector of column names used for faceting (placement).
+#'   Passed to [compute_circ_interval()]; each column is attached to the layer
+#'   data so `facet_grid()`/`facet_wrap()` can place the arc correctly.
+#'   Default `NULL`.
+#' @param group_col Single column name used for colour grouping. Passed to
+#'   [compute_circ_interval()] and then to [add_circ_interval()] as
+#'   `colour_col`. Default `NULL`.
+#' @param stat Statistic: `"bootstrap_ci"` (default) or `"sd"`.
+#' @param boot_reps Integer. Bootstrap replicates for `stat = "bootstrap_ci"`.
+#'   Default `1000L`. Ignored when `stat = "sd"`.
+#' @param boot_alpha Significance level for the bootstrap CI. Default `0.05`
+#'   produces a 95\% interval.
 #' @param display A [`circ_display`] object. When `NULL` (default), read from
 #'   `attr(headings_df, "display")`, falling back to `circ_display()`.
 #'
@@ -1329,7 +1368,8 @@ add_circ_interval <- function(interval_df,
 #' @export
 add_heading_interval <- function(headings_df,
                                  heading_col = "heading",
-                                 colour_col  = NULL,
+                                 facets      = NULL,
+                                 group_col   = NULL,
                                  display     = NULL,
                                  stat        = c("bootstrap_ci", "sd"),
                                  boot_reps   = 1000L,
@@ -1340,19 +1380,18 @@ add_heading_interval <- function(headings_df,
                                  linetype    = "solid",
                                  n_theta     = 500L,
                                  axial       = FALSE,
-                                 color_col   = NULL,
                                  color       = NULL) {
   .apply_spelling_aliases()
   if (is.null(display))
     display <- hf_display(headings_df)
   stat <- match.arg(stat)
   iv   <- compute_circ_interval(headings_df, heading_col = heading_col,
-                                colour_col = colour_col,
+                                facets = facets, group_col = group_col,
                                 stat = stat,
                                 boot_reps = boot_reps, boot_alpha = boot_alpha,
                                 axial = axial)
   attr(iv, "display") <- display
-  add_circ_interval(iv, colour_col = colour_col,
+  add_circ_interval(iv, colour_col = group_col,
                     radius = radius, linewidth = linewidth,
                     colour = colour, linetype = linetype, n_theta = n_theta,
                     axial = axial)
@@ -1373,35 +1412,36 @@ add_heading_interval <- function(headings_df,
 #'   `attr(headings_df, "coords")` automatically.
 #' @param heading_col Name of the column containing heading angles. Default
 #'   `"heading"`.
-#' @param colour_col,color_col Optional. Name of a column to group by. One row is
-#'   returned per group. The same column maps to colour in [add_circ_mean()].
-#'   `color_col` is the American-spelling alias.
+#' @param facets Character vector of column names used as faceting variables.
+#'   One row is returned per unique combination of these columns. These columns
+#'   are attached to the output so that [add_circ_mean()] can route each arrow
+#'   to the correct facet panel.
+#' @param group_col Optional. Name of a single column to group by for colour
+#'   mapping. One row is returned per unique combination of `c(facets,
+#'   group_col)`. Map colour in [add_circ_mean()] via its `colour_col`
+#'   argument.
 #' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
 #'   data: `mean_dir` is the axis in `[0, pi)` and `resultant_R` is the axial
 #'   resultant length, both via the angle-doubling method. Default `FALSE`.
 #' @return A data frame with columns `mean_dir` (unit-circle radians, 0 to
-#'   2pi), `resultant_R` (0--1), and `colour_col` when supplied. Both are `NA`
-#'   when a group contains fewer than 2 finite angles.
+#'   2pi), `resultant_R` (0--1), plus any `facets`/`group_col` columns. Both
+#'   statistics are `NA` when a cell contains fewer than 2 finite angles.
 #'
 #' @seealso [add_circ_mean()], [add_heading_arrow()]
 #' @importFrom circular circular mean.circular rho.circular
 #' @export
 compute_circ_mean <- function(headings_df,
                               heading_col = "heading",
-                              colour_col  = NULL,
-                              axial       = FALSE,
-                              color_col   = NULL) {
-  .apply_spelling_aliases()
+                              facets      = NULL,
+                              group_col   = NULL,
+                              axial       = FALSE) {
   if (!heading_col %in% names(headings_df))
     stop("`heading_col` '", heading_col, "' not found in headings_df.")
 
-  use_colour <- !is.null(colour_col) && colour_col %in% names(headings_df)
-  groups     <- if (use_colour) split(headings_df, headings_df[[colour_col]]) else list(headings_df)
-
-  out_list <- lapply(seq_along(groups), function(i) {
-    angles <- groups[[i]][[heading_col]]
+  cells <- .facet_group_split(headings_df, facets = facets, group_col = group_col)
+  out_list <- lapply(cells, function(cell) {
+    angles <- cell$rows[[heading_col]]
     angles <- angles[is.finite(angles)]
-
     if (length(angles) < 2L) {
       row <- data.frame(mean_dir = NA_real_, resultant_R = NA_real_,
                         stringsAsFactors = FALSE)
@@ -1414,14 +1454,13 @@ compute_circ_mean <- function(headings_df,
       R        <- as.numeric(circular::rho.circular(circ_obj, na.rm = TRUE))
       row <- data.frame(mean_dir = mean_dir, resultant_R = R, stringsAsFactors = FALSE)
     }
-
-    if (use_colour) row[[colour_col]] <- names(groups)[[i]]
+    for (nm in names(cell$keys)) row[[nm]] <- cell$keys[[nm]]
     row
   })
-
   out <- do.call(rbind, out_list)
-  if (use_colour && is.factor(headings_df[[colour_col]]))
-    out[[colour_col]] <- factor(out[[colour_col]], levels = levels(headings_df[[colour_col]]))
+  if (!is.null(group_col) && group_col %in% names(out) &&
+      is.factor(headings_df[[group_col]]))
+    out[[group_col]] <- factor(out[[group_col]], levels = levels(headings_df[[group_col]]))
   # Carry the input's display convention forward so add_circ_mean() orients the
   # arrow the same way as the rest of the figure (rbind drops attributes).
   attr(out, "display") <- attr(headings_df, "display", exact = TRUE)
@@ -1562,7 +1601,7 @@ add_heading_arrow <- function(headings_df,
   if (is.null(display))
     display <- hf_display(headings_df)
   sm <- compute_circ_mean(headings_df, heading_col = heading_col,
-                          colour_col = colour_col, axial = axial)
+                          group_col = colour_col, axial = axial)
   attr(sm, "display") <- display
   add_circ_mean(sm, colour_col = colour_col,
                 linewidth = linewidth, colour = colour,
@@ -3625,32 +3664,24 @@ add_wrappedcauchy_density <- function(fit, scale = 0.4, inner_r = 0,
 #'     \eqn{\mu_0}, so this circle is a lower bound.}
 #' }
 #'
-#' Sample size \code{n} is taken per group from \code{hd}.  When
-#' \code{group_col} matches the parent \code{radiate(facets = ...)} argument,
-#' one circle is drawn per panel at the radius appropriate to that panel's
-#' \code{n}.  For groups overlaid in a single panel, set \code{per_group = TRUE}
-#' to draw one circle per group (colour-matched), or \code{per_group = FALSE}
-#' (default) to draw a single conservative circle using the smallest \code{n}
-#' (largest critical radius).
+#' Sample size \code{n} is taken per occupied cell from \code{hd}.  Pass the
+#' same column(s) to \code{facets} as you pass to \code{radiate(rows=)/radiate(cols=)}
+#' so one circle is drawn per panel at the radius appropriate to that panel's
+#' \code{n}.  Pass \code{group_col} to split each cell further by colour.
 #'
 #' @param hd Data frame of headings with a heading column (radians).
 #' @param alpha Significance level.  Default \code{0.05}.
 #' @param test \code{"rayleigh"} (default) or \code{"vtest"}.
 #' @param angle_col Heading column name.  Default \code{"heading"}.
-#' @param group_col Column identifying groups.  \code{NULL} pools all rows.
-#' @param per_group Logical.  When \code{group_col} is set but the plot is not
-#'   faceted, draw one circle per group (\code{TRUE}) or a single conservative
-#'   circle (\code{FALSE}, default).  Ignored when faceting (always per panel).
-#' @param colour,color Circle colour.  Default \code{"firebrick"}.  When
-#'   \code{per_group = TRUE} and \code{colour_by_group = TRUE} this is overridden
-#'   by the colour scale.  \code{color} is the American-spelling alias.
-#' @param colour_by_group,color_by_group Logical.  When \code{per_group = TRUE},
-#'   map each circle's colour to its group (\code{TRUE}, default) or draw every
-#'   circle in the fixed \code{colour} while still attaching the group column so
-#'   the circles facet (\code{FALSE}).  Use \code{FALSE} to keep per-panel
-#'   circles a single colour without injecting the grouping levels into the
-#'   parent plot's colour scale.  Ignored unless \code{per_group = TRUE}.
-#'   \code{color_by_group} is the American-spelling alias.
+#' @param facets Character vector of column names that define the facet panels
+#'   (placement only). The critical radius is computed per facet cell and every
+#'   one of these columns is attached to the layer data so the circles land in
+#'   the right panel under facet_wrap()/facet_grid(). \code{NULL} pools all rows.
+#' @param group_col Optional single column. Splits each cell into subgroups (one
+#'   circle each) and maps the circle colour to that column. \code{NULL} draws
+#'   every circle in the fixed \code{colour}.
+#' @param colour Circle colour.  Default \code{"firebrick"}.  Overridden by the
+#'   colour scale when \code{group_col} is set.
 #' @param linetype Line type.  Default \code{"dashed"}.
 #' @param linewidth Line width.  Default \code{0.6}.
 #' @param n_pts Points used to approximate each circle.  Default \code{200L}.
@@ -3659,13 +3690,10 @@ add_wrappedcauchy_density <- function(fit, scale = 0.4, inner_r = 0,
 #' @export
 add_critical_r <- function(hd, alpha = 0.05,
                             test = c("rayleigh", "vtest"),
-                            angle_col = "heading", group_col = NULL,
-                            per_group = FALSE, colour = "firebrick",
-                            colour_by_group = TRUE,
+                            angle_col = "heading", facets = NULL,
+                            group_col = NULL, colour = "firebrick",
                             linetype = "dashed", linewidth = 0.6,
-                            n_pts = 200L, color = NULL,
-                            color_by_group = NULL) {
-  .apply_spelling_aliases()
+                            n_pts = 200L) {
   test <- match.arg(test)
   stopifnot(is.data.frame(hd), alpha > 0, alpha < 1)
   if (!angle_col %in% names(hd))
@@ -3678,77 +3706,41 @@ add_critical_r <- function(hd, alpha = 0.05,
       vtest    = stats::qnorm(1 - alpha) / sqrt(2 * n)
     )
   }
-
   .circle_df <- function(r, grp) {
     th <- seq(0, 2 * pi, length.out = n_pts)
     data.frame(x = r * cos(th), y = r * sin(th),
                .cr_grp = grp, stringsAsFactors = FALSE)
   }
 
-  # ---- no grouping: single circle from pooled n ----
-  if (is.null(group_col)) {
-    n <- sum(is.finite(hd[[angle_col]]))
+  cells <- .facet_group_split(hd, facets = facets, group_col = group_col)
+  parts <- lapply(seq_along(cells), function(i) {
+    n <- sum(is.finite(cells[[i]]$rows[[angle_col]]))
     r <- .r_crit(n)
     if (is.na(r)) return(NULL)
-    df <- .circle_df(r, "all")
-    return(ggplot2::geom_path(
-      data = df, mapping = ggplot2::aes(x = x, y = y, group = .cr_grp),
-      colour = colour, linetype = linetype, linewidth = linewidth,
-      inherit.aes = FALSE
-    ))
-  }
-
-  if (!group_col %in% names(hd))
-    stop("add_critical_r: '", group_col, "' not found")
-
-  groups <- unique(hd[[group_col]])
-  ns <- vapply(groups, function(g)
-    sum(is.finite(hd[[angle_col]][hd[[group_col]] == g])), integer(1L))
-
-  # ---- single conservative circle (overlaid, per_group = FALSE) ----
-  if (!per_group) {
-    n_min <- min(ns[ns >= 2L], na.rm = TRUE)
-    if (!is.finite(n_min)) return(NULL)
-    df <- .circle_df(.r_crit(n_min), "conservative")
-    return(ggplot2::geom_path(
-      data = df, mapping = ggplot2::aes(x = x, y = y, group = .cr_grp),
-      colour = colour, linetype = linetype, linewidth = linewidth,
-      inherit.aes = FALSE
-    ))
-  }
-
-  # ---- one circle per group (faceted, or overlaid colour-matched) ----
-  parts <- lapply(seq_along(groups), function(i) {
-    r <- .r_crit(ns[i])
-    if (is.na(r)) return(NULL)
-    df <- .circle_df(r, as.character(groups[i]))
-    df[[group_col]] <- groups[i]
+    df <- .circle_df(r, as.character(i))
+    for (nm in names(cells[[i]]$keys)) df[[nm]] <- cells[[i]]$keys[[nm]]
     df
   })
   parts <- parts[!vapply(parts, is.null, logical(1L))]
   if (!length(parts)) return(NULL)
   circ_df <- do.call(rbind, parts)
 
-  # When colour_by_group is FALSE the group column is retained (so the circles
-  # still facet alongside the parent plot) but colour is drawn as a fixed value
-  # rather than mapped -- this avoids injecting the grouping levels into the
-  # parent plot's colour scale (e.g. when the panels are already coloured by a
-  # different variable).
-  if (!colour_by_group)
-    return(ggplot2::geom_path(
+  map_colour <- !is.null(group_col) && group_col %in% names(circ_df)
+  if (map_colour) {
+    ggplot2::geom_path(
+      data = circ_df,
+      mapping = ggplot2::aes(x = x, y = y, group = .cr_grp,
+                             colour = .data[[group_col]]),
+      linetype = linetype, linewidth = linewidth, inherit.aes = FALSE
+    )
+  } else {
+    ggplot2::geom_path(
       data = circ_df,
       mapping = ggplot2::aes(x = x, y = y, group = .cr_grp),
       colour = colour, linetype = linetype, linewidth = linewidth,
       inherit.aes = FALSE
-    ))
-
-  ggplot2::geom_path(
-    data = circ_df,
-    mapping = ggplot2::aes(x = x, y = y,
-                           group = .cr_grp,
-                           colour = .data[[group_col]]),
-    linetype = linetype, linewidth = linewidth, inherit.aes = FALSE
-  )
+    )
+  }
 }
 
 # ---- add_critical_v_line -----------------------------------------------------
@@ -3768,23 +3760,25 @@ add_critical_r <- function(hd, alpha = 0.05,
 #' \code{show_region = TRUE} the circular segment beyond the line -- the
 #' rejection region -- is shaded.
 #'
-#' Sample size \code{n} is taken per group from \code{hd}, with the same
-#' options as \code{\link{add_critical_r}}: per-panel when faceting,
-#' per-group when \code{per_group = TRUE}, or a single conservative boundary
-#' (smallest \code{n}, largest \eqn{c}) otherwise.
+#' Sample size \code{n} is taken per boundary from \code{hd}: one boundary
+#' per occupied combination of \code{facets} and \code{group_col} columns,
+#' or a single pooled boundary when both are \code{NULL}.
 #'
 #' @param hd Data frame of headings with a heading column (radians).
 #' @param mu0 Hypothesised direction in radians (unit-circle convention).
 #' @param alpha Significance level.  Default \code{0.05}.
 #' @param angle_col Heading column name.  Default \code{"heading"}.
-#' @param group_col Column identifying groups.  \code{NULL} pools all rows.
-#' @param per_group Logical.  Draw one boundary per group (\code{TRUE}) or a
-#'   single conservative boundary (\code{FALSE}, default).  Ignored when
-#'   faceting, where each panel gets its own boundary.
+#' @param facets Character vector of column names used for faceting (panel
+#'   placement).  Each occupied combination gets its own boundary; the columns
+#'   are attached to the returned data so \code{facet_wrap}/\code{facet_grid}
+#'   routes each boundary to the correct panel.  \code{NULL} (default) pools
+#'   across facets.
+#' @param group_col Optional single column. Subdivides each facet cell into
+#'   subgroups, one boundary per subgroup (each with its own n). All boundaries
+#'   are drawn in the fixed \code{colour} — \code{group_col} does not map colour.
 #' @param show_region Logical; shade the rejection segment.  Default
 #'   \code{FALSE}.
-#' @param colour,color Line colour.  Default \code{"firebrick"}. \code{color} is
-#'   the American-spelling alias.
+#' @param colour Line colour.  Default \code{"firebrick"}.
 #' @param linetype Line type.  Default \code{"dashed"}.
 #' @param linewidth Line width.  Default \code{0.6}.
 #' @param region_fill Fill colour for the rejection region.  Default
@@ -3798,13 +3792,11 @@ add_critical_r <- function(hd, alpha = 0.05,
 #' @seealso \code{\link{add_critical_r}}, \code{\link{add_heading_arrow}}
 #' @export
 add_critical_v_line <- function(hd, mu0, alpha = 0.05,
-                                 angle_col = "heading", group_col = NULL,
-                                 per_group = FALSE, show_region = FALSE,
+                                 angle_col = "heading", facets = NULL,
+                                 group_col = NULL, show_region = FALSE,
                                  colour = "firebrick", linetype = "dashed",
                                  linewidth = 0.6, region_fill = "firebrick",
-                                 region_alpha = 0.08, axial = FALSE, n_pts = 100L,
-                                 color = NULL) {
-  .apply_spelling_aliases()
+                                 region_alpha = 0.08, axial = FALSE, n_pts = 100L) {
   stopifnot(is.data.frame(hd), alpha > 0, alpha < 1)
   if (missing(mu0)) stop("add_critical_v_line: 'mu0' (hypothesised direction) is required")
   if (!angle_col %in% names(hd))
@@ -3851,33 +3843,19 @@ add_critical_v_line <- function(hd, mu0, alpha = 0.05,
     )
   }
 
-  # Collect (c, group-key) pairs to draw
-  if (is.null(group_col)) {
-    keys <- list(list(cc = .c_of_n(sum(is.finite(hd[[angle_col]]))),
-                      g = "all", facet = NULL))
-  } else {
-    if (!group_col %in% names(hd))
-      stop("add_critical_v_line: '", group_col, "' not found")
-    groups <- unique(hd[[group_col]])
-    ns <- vapply(groups, function(g)
-      sum(is.finite(hd[[angle_col]][hd[[group_col]] == g])), integer(1L))
-    if (per_group) {
-      keys <- lapply(seq_along(groups), function(i)
-        list(cc = .c_of_n(ns[i]), g = as.character(groups[i]),
-             facet = groups[i]))
-    } else {
-      n_min <- min(ns[ns >= 2L], na.rm = TRUE)
-      if (!is.finite(n_min)) return(NULL)
-      keys <- list(list(cc = .c_of_n(n_min), g = "conservative", facet = NULL))
-    }
-  }
+  # One boundary per facet x group cell; c (perpendicular distance) from cell n.
+  cells <- .facet_group_split(hd, facets = facets, group_col = group_col)
+  keys <- lapply(seq_along(cells), function(i) {
+    n <- sum(is.finite(cells[[i]]$rows[[angle_col]]))
+    list(cc = .c_of_n(n), g = as.character(i), keys = cells[[i]]$keys)
+  })
 
   geoms <- lapply(keys, function(k) {
     g <- .geom(k$cc, k$g)
     if (is.null(g)) return(NULL)
-    if (!is.null(k$facet)) {
-      g$chord[[group_col]] <- k$facet
-      if (!is.null(g$region)) g$region[[group_col]] <- k$facet
+    for (nm in names(k$keys)) {
+      g$chord[[nm]] <- k$keys[[nm]]
+      if (!is.null(g$region)) g$region[[nm]] <- k$keys[[nm]]
     }
     g
   })

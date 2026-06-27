@@ -128,13 +128,13 @@ hd <- derive_headings(ts, rule = "crossing",
                       angle_convention = "unit_circle")
 
 # 3. Circular summary per condition
-compute_circ_mean(hd, colour_col = "condition")
+compute_circ_mean(hd, group_col = "condition")
 
 # 4. Visualise
 radiate(ts,
         group_col  = "trial_id",
         colour_col = "condition",
-        panel_by   = "condition",
+        facets     = "condition",
         show_arrow = TRUE) +
   add_heading_points(hd, colour_col = "condition")
 ```
@@ -255,7 +255,7 @@ circ_boxplot_stats(hd)$constant
 ```r
 # Three default conditions differing in concentration and tortuosity
 ts <- simulate_tracks(seed = 42, output = "trajset")
-radiate(ts, group_col = "trial_id", panel_by = "condition", show_arrow = TRUE)
+radiate(ts, group_col = "trial_id", facets = "condition", show_arrow = TRUE)
 
 # Custom conditions table
 conds <- data.frame(
