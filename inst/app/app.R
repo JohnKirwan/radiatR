@@ -1359,7 +1359,7 @@ server <- function(input, output, session) {
       # Read the mapping from rv$hd_map (set by Step 2 OR the example button) so
       # the spec is correct even when Step 2 was skipped (example path).
       map <- rv$hd_map %||% list(col = "heading", units = "radians",
-                                 convention = "unit_circle", group = NULL)
+                                 convention = "unit_circle", group = NULL, group2 = NULL)
       grp  <- map$group
       grp2 <- map$group2
       return(build_plot_spec(

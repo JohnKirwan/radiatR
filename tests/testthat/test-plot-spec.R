@@ -266,5 +266,5 @@ test_that("headings-mode grid sets facet_cols and emits the both-column hd merge
   expect_identical(spec$facet_by, "type")
   expect_identical(spec$facet_cols, "arc")
   code <- spec_to_code(spec)
-  expect_match(code, '"type", "arc"', fixed = TRUE)   # both cols merged onto hd
+  expect_match(code, 'c("trial_id", "type", "arc")', fixed = TRUE)  # merge covers both facet cols
 })
