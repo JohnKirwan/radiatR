@@ -1348,6 +1348,11 @@ add_circ_interval <- function(interval_df,
 #' @param group_col Single column name used for colour grouping. Passed to
 #'   [compute_circ_interval()] and then to [add_circ_interval()] as
 #'   `colour_col`. Default `NULL`.
+#' @param stat Statistic: `"bootstrap_ci"` (default) or `"sd"`.
+#' @param boot_reps Integer. Bootstrap replicates for `stat = "bootstrap_ci"`.
+#'   Default `1000L`. Ignored when `stat = "sd"`.
+#' @param boot_alpha Significance level for the bootstrap CI. Default `0.05`
+#'   produces a 95\% interval.
 #' @param display A [`circ_display`] object. When `NULL` (default), read from
 #'   `attr(headings_df, "display")`, falling back to `circ_display()`.
 #'

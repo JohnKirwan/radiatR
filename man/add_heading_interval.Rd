@@ -39,6 +39,14 @@ Default `NULL`.}
 \item{display}{A [`circ_display`] object. When `NULL` (default), read from
 `attr(headings_df, "display")`, falling back to `circ_display()`.}
 
+\item{stat}{Statistic: `"bootstrap_ci"` (default) or `"sd"`.}
+
+\item{boot_reps}{Integer. Bootstrap replicates for `stat = "bootstrap_ci"`.
+Default `1000L`. Ignored when `stat = "sd"`.}
+
+\item{boot_alpha}{Significance level for the bootstrap CI. Default `0.05`
+produces a 95\% interval.}
+
 \item{radius}{Radial position of the arc. Default `1.05`.}
 
 \item{linewidth}{Line width. Default `1.5`.}
