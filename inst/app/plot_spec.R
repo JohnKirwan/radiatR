@@ -350,9 +350,11 @@ spec_to_plot <- function(spec, ts, hd) {
     if (identical(spec$data$source, "example")) {
       add("data(cpunctatus)")
       add("hd <- derive_headings(cpunctatus, rule = \"distal\", coords = \"relative\")")
-      if (!is.null(spec$facet_by))
+      fcols <- unique(c(spec$facet_by, spec$facet_cols))
+      if (length(fcols))
         add("hd <- merge(hd, unique(as.data.frame(cpunctatus)[, c(\"trial_id\", ",
-            q(spec$facet_by), ")]), by.x = \"id\", by.y = \"trial_id\", all.x = TRUE)")
+            paste(vapply(fcols, q, character(1L)), collapse = ", "),
+            ")]), by.x = \"id\", by.y = \"trial_id\", all.x = TRUE)")
       add("hd <- headings_frame(hd, col = heading, units = \"radians\")")
     } else {
       add("df <- read.csv(", q(spec$data$path), ")")

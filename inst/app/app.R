@@ -649,15 +649,6 @@ server <- function(input, output, session) {
                     " (showing sequence position instead)."))
   })
 
-  output$facet_grid_note <- renderUI({
-    on2 <- !is.null(input$cond_col2) && nzchar(input$cond_col2)
-    on1 <- !is.null(input$cond_col)  && nzchar(input$cond_col)
-    if (!(on1 && on2)) return(NULL)
-    tags$div(class = "text-muted small mt-1",
-             "Grid mode: statistical overlays (CI, Rayleigh, V-test, boxplot) ",
-             "are shown in single-facet mode only for now.")
-  })
-
   # Live illustrative preview of the selected method on fixed demo tracks.
   output$method_preview <- renderPlot({
     method <- if (is.null(input$method)) "distal" else input$method
@@ -681,7 +672,9 @@ server <- function(input, output, session) {
         if (!is.null(rv$hd)) {
           grp <- if (!is.null(input$hd_group) && nzchar(input$hd_group))
             input$hd_group else NULL
-          hm <- rv$hd_map; hm$group <- grp; rv$hd_map <- hm
+          grp2 <- if (!is.null(input$hd_group2) && nzchar(input$hd_group2))
+            input$hd_group2 else NULL
+          hm <- rv$hd_map; hm$group <- grp; hm$group2 <- grp2; rv$hd_map <- hm
           rv$step <- 3L; rv$error <- NULL; return()
         }
         rv$error <- "Please upload a file of headings first."
@@ -689,6 +682,8 @@ server <- function(input, output, session) {
       }
       grp <- if (!is.null(input$hd_group) && nzchar(input$hd_group))
         input$hd_group else NULL
+      grp2 <- if (!is.null(input$hd_group2) && nzchar(input$hd_group2))
+        input$hd_group2 else NULL
       hd <- tryCatch(
         build_headings_input(rv$raw_hd, col = input$hd_col,
                              units = input$hd_units,
@@ -697,7 +692,7 @@ server <- function(input, output, session) {
       if (!is.null(hd)) {
         rv$hd     <- hd; rv$method <- NULL; rv$step <- 3L; rv$error <- NULL
         rv$hd_map <- list(col = input$hd_col, units = input$hd_units,
-                          convention = input$hd_convention, group = grp)
+                          convention = input$hd_convention, group = grp, group2 = grp2)
       }
       return()
     }
@@ -808,7 +803,7 @@ server <- function(input, output, session) {
     rv$hd        <- hd
     rv$hd_map    <- list(col = "heading", units = "radians",
                          convention = "unit_circle",
-                         group = detect_cond_col(ex))   # default facet (e.g. arc)
+                         group = detect_cond_col(ex), group2 = NULL)   # default facet (e.g. arc)
     rv$ts        <- NULL
     rv$raw_hd    <- NULL
     rv$source    <- "example"
@@ -883,9 +878,12 @@ server <- function(input, output, session) {
             choices  = c("Directional" = "directional", "Axial" = "axial"),
             selected = "directional", inline = TRUE
           ),
-          selectInput("hd_group", "Facet by (optional)",
+          selectInput("hd_group", "Facet rows",
                       choices  = c("(none)" = "", stats::setNames(choices, choices)),
                       selected = cur),
+          selectInput("hd_group2", "Facet cols (grid)",
+                      choices  = c("(none)" = "", stats::setNames(choices, choices)),
+                      selected = ""),
           err_box
         )
       } else {
@@ -908,6 +906,9 @@ server <- function(input, output, session) {
                                   "Compass (0° = North, clockwise)"            = "clock"),
                       selected = "unit_circle"),
           selectInput("hd_group", "Group column (optional)",
+                      choices = c("(none)" = "", stats::setNames(all_cols, all_cols)),
+                      selected = ""),
+          selectInput("hd_group2", "Facet cols (grid)",
                       choices = c("(none)" = "", stats::setNames(all_cols, all_cols)),
                       selected = ""),
           err_box
@@ -1301,8 +1302,7 @@ server <- function(input, output, session) {
     tagList(
       tags$hr(),
       selectInput("cond_col",  "Facet rows",        choices = choices, selected = col),
-      selectInput("cond_col2", "Facet cols (grid)", choices = choices, selected = ""),
-      uiOutput("facet_grid_note")
+      selectInput("cond_col2", "Facet cols (grid)", choices = choices, selected = "")
     )
   })
 
@@ -1360,7 +1360,8 @@ server <- function(input, output, session) {
       # the spec is correct even when Step 2 was skipped (example path).
       map <- rv$hd_map %||% list(col = "heading", units = "radians",
                                  convention = "unit_circle", group = NULL)
-      grp <- map$group
+      grp  <- map$group
+      grp2 <- map$group2
       return(build_plot_spec(
         ts = NULL, hd = rv$hd, method = NULL,
         data = list(
@@ -1369,7 +1370,7 @@ server <- function(input, output, session) {
           col = map$col, units = map$units,
           convention = map$convention, group = grp),
         inputs = list(
-          cond_col = grp, colour_by = input$colour_by,
+          cond_col = grp, hd_group2 = grp2, colour_by = input$colour_by,
           omnibus_test = input$omnibus_test,
           plot_theme = input$plot_theme, angle_labels = input$angle_labels,
           heading_display = input$heading_display,

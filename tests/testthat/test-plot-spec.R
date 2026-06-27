@@ -248,3 +248,23 @@ test_that("build_plot_spec keeps facet_cols NULL and overlays on in single-facet
   expect_null(spec$facet_cols)
   expect_true(isTRUE(spec$show$ci))
 })
+
+test_that("headings-mode grid sets facet_cols and emits the both-column hd merge", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  hd0  <- derive_headings(cpunctatus, rule = "distal", coords = "relative")
+  cond <- unique(as.data.frame(cpunctatus)[, c("trial_id", "type", "arc")])
+  hd0  <- merge(hd0, cond, by.x = "id", by.y = "trial_id", all.x = TRUE)
+  hd   <- build_headings_input(hd0, col = "heading", units = "radians",
+                               convention = "unit_circle")
+  spec <- build_plot_spec(
+    ts = NULL, hd = hd, method = NULL,
+    data = list(source = "example", mode = "headings", path = NULL,
+                col = "heading", units = "radians", convention = "unit_circle"),
+    inputs = list(colour_by = "type", cond_col = "type", hd_group2 = "arc",
+                  heading_display = "points", plot_theme = "void",
+                  angle_labels = "degrees", show_arrow = TRUE))
+  expect_identical(spec$facet_by, "type")
+  expect_identical(spec$facet_cols, "arc")
+  code <- spec_to_code(spec)
+  expect_match(code, '"type", "arc"', fixed = TRUE)   # both cols merged onto hd
+})
