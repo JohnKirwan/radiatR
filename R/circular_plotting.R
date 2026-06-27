@@ -1305,18 +1305,6 @@ add_circ_interval <- function(interval_df,
   do.call(ggplot2::geom_path, path_args)
 }
 
-#' Compute a circular interval arc and add it to a radial plot in one step
-#'
-#' Convenience wrapper that calls [compute_circ_interval()] followed by
-#' [add_circ_interval()]. Use [compute_circ_interval()] + [add_circ_interval()]
-#' directly when you need to replace `lower`/`upper` with Bayesian credible
-#' interval bounds before rendering.
-#'
-#' @inheritParams compute_circ_interval
-#' @inheritParams add_circ_interval
-#' @param display A [`circ_display`] object. When `NULL` (default), read from
-#'   `attr(headings_df, "display")`, falling back to `circ_display()`.
-#'
 # Split `df` into facet x group cells. `facets` (character vector) and
 # `group_col` (single column) name the columns whose union defines a cell; the
 # statistic-drawing overlays compute one piece per cell and attach every one of
@@ -1337,6 +1325,18 @@ add_circ_interval <- function(interval_df,
   })
 }
 
+#' Compute a circular interval arc and add it to a radial plot in one step
+#'
+#' Convenience wrapper that calls [compute_circ_interval()] followed by
+#' [add_circ_interval()]. Use [compute_circ_interval()] + [add_circ_interval()]
+#' directly when you need to replace `lower`/`upper` with Bayesian credible
+#' interval bounds before rendering.
+#'
+#' @inheritParams compute_circ_interval
+#' @inheritParams add_circ_interval
+#' @param display A [`circ_display`] object. When `NULL` (default), read from
+#'   `attr(headings_df, "display")`, falling back to `circ_display()`.
+#'
 #' @return A `geom_path()` layer.
 #'
 #' @param axial Logical. Render the overlay for axial (bidirectional, mod-pi)
