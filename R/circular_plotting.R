@@ -1152,9 +1152,13 @@ add_heading_density <- function(headings_df,
 #'
 #' @param headings_df Data frame containing heading angles.
 #' @param heading_col Name of the heading column (radians). Default `"heading"`.
-#' @param colour_col,color_col Optional grouping column. When set, one row is
-#'   returned per group and the column is preserved in the output. `color_col` is
-#'   the American-spelling alias.
+#' @param facets Character vector of column names used for faceting (placement).
+#'   One row is returned per occupied combination of `facets` and `group_col`.
+#'   Each column is preserved in the output so `facet_grid()`/`facet_wrap()`
+#'   can place the layer correctly. Default `NULL`.
+#' @param group_col Single column name used for colour grouping. When set, one
+#'   row is returned per group and the column is preserved in the output for
+#'   colour mapping in [add_circ_interval()]. Default `NULL`.
 #' @param stat Statistic: `"bootstrap_ci"` (default) or `"sd"`.
 #' @param boot_reps Integer. Bootstrap replicates for `stat = "bootstrap_ci"`.
 #'   Default `1000L`. Ignored when `stat = "sd"`.
@@ -1174,31 +1178,28 @@ add_heading_density <- function(headings_df,
 #' @export
 compute_circ_interval <- function(headings_df,
                                   heading_col = "heading",
-                                  colour_col  = NULL,
+                                  facets      = NULL,
+                                  group_col   = NULL,
                                   stat        = c("bootstrap_ci", "sd"),
                                   boot_reps   = 1000L,
                                   boot_alpha  = 0.05,
-                                  axial       = FALSE,
-                                  color_col   = NULL) {
-  .apply_spelling_aliases()
+                                  axial       = FALSE) {
   stat <- match.arg(stat)
   if (!heading_col %in% names(headings_df))
     stop("`heading_col` '", heading_col, "' not found in headings_df.")
 
-  use_colour <- !is.null(colour_col) && colour_col %in% names(headings_df)
-  groups     <- if (use_colour) split(headings_df, headings_df[[colour_col]]) else list(headings_df)
-
-  out_list <- lapply(seq_along(groups), function(i) {
-    angles <- groups[[i]][[heading_col]]
-    row    <- .compute_one_interval(angles, stat, boot_reps, boot_alpha, axial)
-    if (use_colour) row[[colour_col]] <- names(groups)[[i]]
+  cells <- .facet_group_split(headings_df, facets = facets, group_col = group_col)
+  out_list <- lapply(cells, function(cell) {
+    row <- .compute_one_interval(cell$rows[[heading_col]], stat,
+                                 boot_reps, boot_alpha, axial)
+    for (nm in names(cell$keys)) row[[nm]] <- cell$keys[[nm]]
     row
   })
-
   out <- do.call(rbind, out_list)
-  if (use_colour && is.factor(headings_df[[colour_col]]))
-    out[[colour_col]] <- factor(out[[colour_col]],
-                                levels = levels(headings_df[[colour_col]]))
+  # Preserve factor levels of the colour group so its colour scale matches the plot.
+  if (!is.null(group_col) && group_col %in% names(out) &&
+      is.factor(headings_df[[group_col]]))
+    out[[group_col]] <- factor(out[[group_col]], levels = levels(headings_df[[group_col]]))
   out
 }
 
@@ -1263,6 +1264,11 @@ add_circ_interval <- function(interval_df,
   has_wraps     <- "wraps" %in% names(interval_df)
   disp_opts     <- hf_display(interval_df)
 
+  # Extra columns in interval_df (beyond the core interval spec) are forwarded
+  # to every arc row so facet_grid()/facet_wrap() can place the layer correctly.
+  core_cols  <- c("mean_dir", "lower", "upper", "wraps")
+  extra_cols <- setdiff(names(interval_df), core_cols)
+
   valid_rows <- which(!is.na(interval_df$lower) & !is.na(interval_df$upper))
 
   if (!length(valid_rows)) {
@@ -1281,7 +1287,7 @@ add_circ_interval <- function(interval_df,
     xy <- .uc_to_display_coords(radius * cos(theta_seq),
                                 radius * sin(theta_seq), disp_opts)
     d  <- data.frame(.x = xy$x, .y = xy$y, .group_id = gid)
-    if (has_group_col) d[[colour_col]] <- interval_df[[colour_col]][i]
+    for (nm in extra_cols) d[[nm]] <- interval_df[[nm]][i]
     d
   }
   parts <- lapply(valid_rows, function(i) {
@@ -1332,8 +1338,16 @@ add_circ_interval <- function(interval_df,
 #' directly when you need to replace `lower`/`upper` with Bayesian credible
 #' interval bounds before rendering.
 #'
-#' @inheritParams compute_circ_interval
 #' @inheritParams add_circ_interval
+#' @param headings_df Data frame containing heading angles.
+#' @param heading_col Name of the heading column (radians). Default `"heading"`.
+#' @param facets Character vector of column names used for faceting (placement).
+#'   Passed to [compute_circ_interval()]; each column is attached to the layer
+#'   data so `facet_grid()`/`facet_wrap()` can place the arc correctly.
+#'   Default `NULL`.
+#' @param group_col Single column name used for colour grouping. Passed to
+#'   [compute_circ_interval()] and then to [add_circ_interval()] as
+#'   `colour_col`. Default `NULL`.
 #' @param display A [`circ_display`] object. When `NULL` (default), read from
 #'   `attr(headings_df, "display")`, falling back to `circ_display()`.
 #'
@@ -1349,7 +1363,8 @@ add_circ_interval <- function(interval_df,
 #' @export
 add_heading_interval <- function(headings_df,
                                  heading_col = "heading",
-                                 colour_col  = NULL,
+                                 facets      = NULL,
+                                 group_col   = NULL,
                                  display     = NULL,
                                  stat        = c("bootstrap_ci", "sd"),
                                  boot_reps   = 1000L,
@@ -1360,19 +1375,18 @@ add_heading_interval <- function(headings_df,
                                  linetype    = "solid",
                                  n_theta     = 500L,
                                  axial       = FALSE,
-                                 color_col   = NULL,
                                  color       = NULL) {
   .apply_spelling_aliases()
   if (is.null(display))
     display <- hf_display(headings_df)
   stat <- match.arg(stat)
   iv   <- compute_circ_interval(headings_df, heading_col = heading_col,
-                                colour_col = colour_col,
+                                facets = facets, group_col = group_col,
                                 stat = stat,
                                 boot_reps = boot_reps, boot_alpha = boot_alpha,
                                 axial = axial)
   attr(iv, "display") <- display
-  add_circ_interval(iv, colour_col = colour_col,
+  add_circ_interval(iv, colour_col = group_col,
                     radius = radius, linewidth = linewidth,
                     colour = colour, linetype = linetype, n_theta = n_theta,
                     axial = axial)

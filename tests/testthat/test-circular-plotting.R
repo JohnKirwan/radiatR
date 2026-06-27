@@ -935,12 +935,12 @@ test_that("compute_circ_interval returns NA bounds for n < 3", {
   expect_true(is.na(iv0$upper))
 })
 
-test_that("compute_circ_interval colour_col returns one row per group", {
+test_that("compute_circ_interval group_col returns one row per group", {
   hd <- data.frame(
     heading = c(0.1, 0.2, 0.15, 1.0, 1.1, 1.05),
     grp     = rep(c("A", "B"), each = 3)
   )
-  iv <- compute_circ_interval(hd, colour_col = "grp", stat = "sd")
+  iv <- compute_circ_interval(hd, group_col = "grp", stat = "sd")
   expect_equal(nrow(iv), 2L)
   expect_true("grp" %in% names(iv))
   expect_equal(sort(iv$grp), c("A", "B"))
@@ -1048,6 +1048,23 @@ test_that("add_heading_interval can be added to a radiate plot without error", {
     add_heading_interval(hd, stat = "sd", radius = 1.05)
   expect_s3_class(p, "ggplot")
   expect_silent(ggplot_build(p))
+})
+
+test_that("compute_circ_interval splits per facet cell and attaches columns", {
+  set.seed(8)
+  hd <- data.frame(heading = runif(40, 0, 2 * pi),
+                   a = rep(c("x", "y"), 20), b = rep(c("p", "q"), each = 20))
+  iv <- compute_circ_interval(hd, facets = c("a", "b"), stat = "sd")
+  expect_equal(nrow(iv), 4L)
+  expect_true(all(c("a", "b") %in% names(iv)))
+})
+
+test_that("add_heading_interval grid attaches both facet columns to the arc", {
+  set.seed(9)
+  hd <- data.frame(heading = runif(40, 0, 2 * pi),
+                   a = rep(c("x", "y"), 20), b = rep(c("p", "q"), each = 20))
+  layer <- add_heading_interval(hd, facets = c("a", "b"), stat = "sd")
+  expect_true(all(c("a", "b") %in% names(layer$data)))
 })
 
 # ---- compute_circ_mean -------------------------------------------------------
