@@ -166,12 +166,12 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
     show = list(tracks    = !headings_mode && isTRUE(inputs$show_tracks),
                 arrow     = isTRUE(inputs$show_arrow),
                 vectors   = isTRUE(inputs$show_vectors),
-                rayleigh  = !grid_mode && isTRUE(inputs$show_rayleigh),
-                ci        = !grid_mode && isTRUE(inputs$show_ci),
-                vtest     = !grid_mode && isTRUE(inputs$show_vtest),
+                rayleigh  = isTRUE(inputs$show_rayleigh),
+                ci        = isTRUE(inputs$show_ci),
+                vtest     = isTRUE(inputs$show_vtest),
                 quadrants = isTRUE(inputs$show_quadrants),
                 rings     = isTRUE(inputs$show_rings),
-                boxplot   = !grid_mode && isTRUE(inputs$show_boxplot))
+                boxplot   = isTRUE(inputs$show_boxplot))
   )
 }
 
@@ -268,9 +268,9 @@ spec_to_plot <- function(spec, ts, hd) {
     attr(hd, "display") <- disp
   }
 
-  # Build the per-cell interaction key once so both the stacked overlay and the
-  # mean arrow can reuse it without rebuilding (idempotent either way, but once
-  # is cleaner and keeps render + emit in strict lockstep).
+  # Build the per-cell interaction key for the stacked-headings overlay (which
+  # needs a single group key spanning both facet dimensions). Arrow and stat
+  # overlays now use facets = c(...) directly and no longer need this key.
   if (grid_mode) {
     hd[[".facet_cell"]] <- interaction(hd[[spec$facet_by]], hd[[spec$facet_cols]],
                                        drop = TRUE, sep = "\r")
@@ -298,15 +298,8 @@ spec_to_plot <- function(spec, ts, hd) {
   }
 
   if (spec$show$arrow) {
-    if (grid_mode) {
-      arrow_df <- compute_circ_mean(hd, colour_col = ".facet_cell",
-                                    axial = isTRUE(spec$axial))
-      cell_map <- unique(hd[, c(".facet_cell", spec$facet_by, spec$facet_cols)])
-      arrow_df <- merge(arrow_df, cell_map, by = ".facet_cell")
-    } else {
-      arrow_df <- compute_circ_mean(hd, colour_col = spec$facet_by,
-                                    axial = isTRUE(spec$axial))
-    }
+    arrow_df <- compute_circ_mean(hd, facets = c(spec$facet_by, spec$facet_cols),
+                                  axial = isTRUE(spec$axial))
     p <- p + add_circ_mean(arrow_df, colour = "black", axial = isTRUE(spec$axial))
   }
   if (spec$show$vectors && all(c("x_inner", "y_inner") %in% names(hd)))
@@ -316,21 +309,21 @@ spec_to_plot <- function(spec, ts, hd) {
   # Mean-direction bootstrap CI arc (per facet group when faceted). hd already
   # carries the display attribute (set above) so the arc orients correctly.
   if (isTRUE(spec$show$ci))
-    p <- p + add_heading_interval(hd, colour_col = spec$facet_by,
+    p <- p + add_heading_interval(hd, facets = c(spec$facet_by, spec$facet_cols),
                stat = "bootstrap_ci", axial = isTRUE(spec$axial))
 
   # Rayleigh critical circle (alpha = 0.05). Per-panel when faceted, drawn in a
   # fixed colour so it never collides with the trajectory colour scale.
   if (isTRUE(spec$show$rayleigh))
-    p <- p + add_critical_r(hd, test = "rayleigh", group_col = spec$facet_by,
-               per_group = !is.null(spec$facet_by), colour_by_group = FALSE,
+    p <- p + add_critical_r(hd, test = "rayleigh",
+               facets = c(spec$facet_by, spec$facet_cols),
                colour = SPEC_CRIT_COLOUR, linewidth = SPEC_CRIT_LWD)
 
   # V-test decision boundary against mu0 (display top). One boundary per panel
   # when faceting, a single pooled boundary otherwise. Always a fixed colour.
   if (isTRUE(spec$show$vtest)) {
     v <- add_critical_v_line(hd, mu0 = SPEC_VTEST_MU0, angle_col = "heading",
-           group_col = spec$facet_by, per_group = !is.null(spec$facet_by),
+           facets = c(spec$facet_by, spec$facet_cols),
            colour = SPEC_VTEST_COLOUR, linewidth = SPEC_VTEST_LWD,
            axial = isTRUE(spec$axial))
     if (!is.null(v)) p <- p + v
@@ -341,7 +334,7 @@ spec_to_plot <- function(spec, ts, hd) {
   if (isTRUE(spec$show$boxplot))
     p <- p + add_circular_boxplot(hd, axial = isTRUE(spec$axial),
                                   theme = spec$theme %||% "void",
-                                  facets = spec$facet_by)
+                                  facets = c(spec$facet_by, spec$facet_cols))
 
   p
 }
@@ -459,6 +452,12 @@ spec_to_code <- function(spec) {
   q   <- function(s) encodeString(s, quote = '"')
   L   <- character(0)
   add <- function(...) L[[length(L) + 1L]] <<- paste0(...)
+  emit_facets <- function() {
+    fc <- c(spec$facet_by, spec$facet_cols)
+    if (!length(fc)) return("")
+    if (length(fc) == 1L) return(paste0(", facets = ", q(fc)))
+    paste0(", facets = c(", paste(vapply(fc, q, character(1L)), collapse = ", "), ")")
+  }
 
   add("library(radiatR)")
   add("library(ggplot2)")
@@ -518,8 +517,7 @@ spec_to_code <- function(spec) {
   # consumer (stacked overlay or arrow) needs it — so it is never emitted twice
   # and never emitted when neither overlay uses it.
   grid_mode <- !is.null(spec$facet_cols)
-  needs_facet_cell <- grid_mode && has_hd &&
-    (identical(spec$heading_display, "stacked") || isTRUE(spec$show$arrow))
+  needs_facet_cell <- grid_mode && has_hd && identical(spec$heading_display, "stacked")
   if (needs_facet_cell) {
     add("")
     add("hd[[\".facet_cell\"]] <- interaction(hd[[", q(spec$facet_by), "]], hd[[",
@@ -527,14 +525,7 @@ spec_to_code <- function(spec) {
   }
   if (has_hd && spec$show$arrow) {
     add("")
-    if (grid_mode) {
-      add("arrow_df <- compute_circ_mean(hd, colour_col = \".facet_cell\"", ax, ")")
-      add("arrow_df <- merge(arrow_df, unique(hd[, c(\".facet_cell\", ",
-          q(spec$facet_by), ", ", q(spec$facet_cols), ")]), by = \".facet_cell\")")
-    } else {
-      cc <- if (is.null(spec$facet_by)) "" else paste0(", colour_col = ", q(spec$facet_by))
-      add("arrow_df <- compute_circ_mean(hd", cc, ax, ")")
-    }
+    add("arrow_df <- compute_circ_mean(hd", emit_facets(), ax, ")")
   }
 
   add("")
@@ -583,31 +574,21 @@ spec_to_code <- function(spec) {
     tail <- c(tail, paste0("add_circ_mean(arrow_df, colour = \"black\"", ax, ")"))
   if (has_hd && spec$show$vectors && identical(spec$headings$rule, "crossing"))
     tail <- c(tail, paste0("add_heading_vectors(hd, colour_col = \".colour\"", ax, ")"))
-  if (has_hd && isTRUE(spec$show$ci)) {
-    cc <- if (is.null(spec$facet_by)) "" else paste0(", colour_col = ", q(spec$facet_by))
+  if (has_hd && isTRUE(spec$show$ci))
     tail <- c(tail, paste0(
-      "add_heading_interval(hd", cc, ", stat = \"bootstrap_ci\"", ax, ")"))
-  }
-  if (has_hd && isTRUE(spec$show$rayleigh)) {
-    gca <- if (is.null(spec$facet_by)) ", group_col = NULL, per_group = FALSE"
-           else paste0(", group_col = ", q(spec$facet_by), ", per_group = TRUE")
+      "add_heading_interval(hd", emit_facets(), ", stat = \"bootstrap_ci\"", ax, ")"))
+  if (has_hd && isTRUE(spec$show$rayleigh))
     tail <- c(tail, paste0(
-      "add_critical_r(hd, test = \"rayleigh\"", gca,
-      ", colour_by_group = FALSE, colour = ", q(SPEC_CRIT_COLOUR),
-      ", linewidth = ", SPEC_CRIT_LWD, ")"))
-  }
-  if (has_hd && isTRUE(spec$show$vtest)) {
-    gpg <- if (is.null(spec$facet_by)) ", group_col = NULL, per_group = FALSE"
-           else paste0(", group_col = ", q(spec$facet_by), ", per_group = TRUE")
+      "add_critical_r(hd, test = \"rayleigh\"", emit_facets(),
+      ", colour = ", q(SPEC_CRIT_COLOUR), ", linewidth = ", SPEC_CRIT_LWD, ")"))
+  if (has_hd && isTRUE(spec$show$vtest))
     tail <- c(tail, paste0(
-      "add_critical_v_line(hd, mu0 = pi / 2, angle_col = \"heading\"", gpg,
+      "add_critical_v_line(hd, mu0 = pi / 2, angle_col = \"heading\"", emit_facets(),
       ", colour = ", q(SPEC_VTEST_COLOUR), ", linewidth = ", SPEC_VTEST_LWD, ax, ")"))
-  }
-  if (has_hd && isTRUE(spec$show$boxplot)) {
-    bpb <- if (is.null(spec$facet_by)) "" else paste0(", facets = ", q(spec$facet_by))
+  if (has_hd && isTRUE(spec$show$boxplot))
     tail <- c(tail, paste0("add_circular_boxplot(hd", ax,
-                           ", theme = ", q(spec$theme %||% "void"), bpb, ")"))
-  }
+                           ", theme = ", q(spec$theme %||% "void"), emit_facets(), ")"))
+
   lab_parts <- character(0)
   if (!is.null(spec$subtitle) && nzchar(spec$subtitle))
     lab_parts <- c(lab_parts, paste0("subtitle = ", q(spec$subtitle)))

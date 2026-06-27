@@ -9,15 +9,12 @@ add_critical_r(
   alpha = 0.05,
   test = c("rayleigh", "vtest"),
   angle_col = "heading",
+  facets = NULL,
   group_col = NULL,
-  per_group = FALSE,
   colour = "firebrick",
-  colour_by_group = TRUE,
   linetype = "dashed",
   linewidth = 0.6,
-  n_pts = 200L,
-  color = NULL,
-  color_by_group = NULL
+  n_pts = 200L
 )
 }
 \arguments{
@@ -29,23 +26,17 @@ add_critical_r(
 
 \item{angle_col}{Heading column name.  Default \code{"heading"}.}
 
-\item{group_col}{Column identifying groups.  \code{NULL} pools all rows.}
+\item{facets}{Character vector of column names that define the facet panels
+(placement only). The critical radius is computed per facet cell and every
+one of these columns is attached to the layer data so the circles land in
+the right panel under facet_wrap()/facet_grid(). \code{NULL} pools all rows.}
 
-\item{per_group}{Logical.  When \code{group_col} is set but the plot is not
-faceted, draw one circle per group (\code{TRUE}) or a single conservative
-circle (\code{FALSE}, default).  Ignored when faceting (always per panel).}
+\item{group_col}{Optional single column. Splits each cell into subgroups (one
+circle each) and maps the circle colour to that column. \code{NULL} draws
+every circle in the fixed \code{colour}.}
 
-\item{colour, color}{Circle colour.  Default \code{"firebrick"}.  When
-\code{per_group = TRUE} and \code{colour_by_group = TRUE} this is overridden
-by the colour scale.  \code{color} is the American-spelling alias.}
-
-\item{colour_by_group, color_by_group}{Logical.  When \code{per_group = TRUE},
-map each circle's colour to its group (\code{TRUE}, default) or draw every
-circle in the fixed \code{colour} while still attaching the group column so
-the circles facet (\code{FALSE}).  Use \code{FALSE} to keep per-panel
-circles a single colour without injecting the grouping levels into the
-parent plot's colour scale.  Ignored unless \code{per_group = TRUE}.
-\code{color_by_group} is the American-spelling alias.}
+\item{colour}{Circle colour.  Default \code{"firebrick"}.  Overridden by the
+colour scale when \code{group_col} is set.}
 
 \item{linetype}{Line type.  Default \code{"dashed"}.}
 
@@ -78,13 +69,10 @@ Two tests are supported:
     \eqn{\mu_0}, so this circle is a lower bound.}
 }
 
-Sample size \code{n} is taken per group from \code{hd}.  When
-\code{group_col} matches the parent \code{radiate(facets = ...)} argument,
-one circle is drawn per panel at the radius appropriate to that panel's
-\code{n}.  For groups overlaid in a single panel, set \code{per_group = TRUE}
-to draw one circle per group (colour-matched), or \code{per_group = FALSE}
-(default) to draw a single conservative circle using the smallest \code{n}
-(largest critical radius).
+Sample size \code{n} is taken per occupied cell from \code{hd}.  Pass the
+same column(s) to \code{facets} as you pass to \code{radiate(rows=)/radiate(cols=)}
+so one circle is drawn per panel at the radius appropriate to that panel's
+\code{n}.  Pass \code{group_col} to split each cell further by colour.
 }
 \seealso{
 \code{\link{add_heading_arrow}}, \code{\link{add_circ}}

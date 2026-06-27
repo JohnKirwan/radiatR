@@ -26,9 +26,9 @@ add_heading_arrow(
 \item{heading_col}{Name of the column containing heading angles. Default
 `"heading"`.}
 
-\item{colour_col, color_col}{Optional. Name of a column to group by. One row is
-returned per group. The same column maps to colour in [add_circ_mean()].
-`color_col` is the American-spelling alias.}
+\item{colour_col, color_col}{Optional. Name of a column in `summary_df` to map
+to the colour aesthetic. Ignored when `colour` is also supplied. `color_col`
+is the American-spelling alias.}
 
 \item{display}{A [`circ_display`] object. When `NULL` (default), read from
 `attr(headings_df, "display")`, falling back to `circ_display()`.}

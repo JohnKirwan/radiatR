@@ -7,12 +7,12 @@
 compute_circ_interval(
   headings_df,
   heading_col = "heading",
-  colour_col = NULL,
+  facets = NULL,
+  group_col = NULL,
   stat = c("bootstrap_ci", "sd"),
   boot_reps = 1000L,
   boot_alpha = 0.05,
-  axial = FALSE,
-  color_col = NULL
+  axial = FALSE
 )
 }
 \arguments{
@@ -20,9 +20,14 @@ compute_circ_interval(
 
 \item{heading_col}{Name of the heading column (radians). Default `"heading"`.}
 
-\item{colour_col, color_col}{Optional grouping column. When set, one row is
-returned per group and the column is preserved in the output. `color_col` is
-the American-spelling alias.}
+\item{facets}{Character vector of column names used for faceting (placement).
+One row is returned per occupied combination of `facets` and `group_col`.
+Each column is preserved in the output so `facet_grid()`/`facet_wrap()`
+can place the layer correctly. Default `NULL`.}
+
+\item{group_col}{Single column name used for colour grouping. When set, one
+row is returned per group and the column is preserved in the output for
+colour mapping in [add_circ_interval()]. Default `NULL`.}
 
 \item{stat}{Statistic: `"bootstrap_ci"` (default) or `"sd"`.}
 

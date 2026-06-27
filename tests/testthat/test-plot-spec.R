@@ -223,7 +223,7 @@ test_that("spec_to_plot honours clip_tracks (beyond-circumference points)", {
   expect_lte(rho_max(FALSE), 1 + 1e-6)   # clip on (default) -> within the unit circle
 })
 
-test_that("build_plot_spec maps cond_col2 into facet_cols and gates overlays in grid mode", {
+test_that("build_plot_spec keeps overlays on in grid mode (un-gated)", {
   data(cpunctatus, package = "radiatR", envir = environment())
   ts <- cpunctatus; hd <- derive_headings(ts, rule = "distal")
   spec <- build_plot_spec(ts, hd, method = "distal",
@@ -233,10 +233,10 @@ test_that("build_plot_spec maps cond_col2 into facet_cols and gates overlays in 
                           show_boxplot = TRUE))
   expect_identical(spec$facet_by, "type")
   expect_identical(spec$facet_cols, "arc")
-  expect_false(isTRUE(spec$show$ci))
-  expect_false(isTRUE(spec$show$rayleigh))
-  expect_false(isTRUE(spec$show$vtest))
-  expect_false(isTRUE(spec$show$boxplot))
+  expect_true(isTRUE(spec$show$ci))
+  expect_true(isTRUE(spec$show$rayleigh))
+  expect_true(isTRUE(spec$show$vtest))
+  expect_true(isTRUE(spec$show$boxplot))
 })
 
 test_that("build_plot_spec keeps facet_cols NULL and overlays on in single-facet mode", {
