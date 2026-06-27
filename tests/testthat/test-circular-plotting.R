@@ -1424,47 +1424,38 @@ test_that("add_critical_r vtest radius matches formula", {
   expect_equal(r, stats::qnorm(0.95) / sqrt(2 * 30), tolerance = 1e-6)
 })
 
-test_that("add_critical_r conservative uses smallest n", {
-  hd <- data.frame(
-    grp     = rep(c("A", "B"), times = c(10, 40)),
-    heading = rnorm(50, 0, 0.5)
-  )
-  layer <- add_critical_r(hd, group_col = "grp", per_group = FALSE)
-  r <- sqrt(layer$data$x[1]^2 + layer$data$y[1]^2)
-  expect_equal(r, sqrt(-log(0.05) / 10), tolerance = 1e-6)  # n = 10, smaller
+test_that("add_critical_r attaches both facet columns in grid mode", {
+  set.seed(1)
+  hd <- data.frame(heading = runif(40, 0, 2 * pi),
+                   a = rep(c("x", "y"), 20), b = rep(c("p", "q"), each = 20))
+  layer <- add_critical_r(hd, test = "rayleigh", facets = c("a", "b"))
+  expect_s3_class(layer, "LayerInstance")
+  expect_true(all(c("a", "b") %in% names(layer$data)))
+  # one circle per occupied (a,b) cell
+  expect_equal(nrow(unique(layer$data[, c("a", "b")])), 4L)
 })
 
-test_that("add_critical_r per_group draws one circle per group", {
-  hd <- data.frame(
-    grp     = rep(c("A", "B", "C"), times = c(15, 30, 50)),
-    heading = rnorm(95, 0, 0.5)
-  )
-  layer <- add_critical_r(hd, group_col = "grp", per_group = TRUE)
-  expect_true("grp" %in% names(layer$data))
-  expect_equal(length(unique(layer$data$grp)), 3L)
-  # smaller n -> larger radius
-  radii <- tapply(sqrt(layer$data$x^2 + layer$data$y^2),
-                  layer$data$grp, function(v) v[1])
-  expect_gt(radii[["A"]], radii[["C"]])
+test_that("add_critical_r single facet attaches one column, fixed colour", {
+  set.seed(2)
+  hd <- data.frame(heading = runif(20, 0, 2 * pi), a = rep(c("x", "y"), 10))
+  layer <- add_critical_r(hd, test = "rayleigh", facets = "a")
+  expect_true("a" %in% names(layer$data))
+  expect_false("colour" %in% names(layer$mapping))   # no group_col -> not mapped
 })
 
-test_that("add_critical_r colour_by_group = FALSE keeps per-panel circles a fixed colour", {
-  hd <- data.frame(
-    grp     = rep(c("A", "B", "C"), times = c(15, 30, 50)),
-    heading = rnorm(95, 0, 0.5)
-  )
-  layer <- add_critical_r(hd, group_col = "grp", per_group = TRUE,
-                          colour_by_group = FALSE, colour = "firebrick")
-  # group column survives so the circles still facet alongside the parent plot
-  expect_true("grp" %in% names(layer$data))
-  expect_equal(length(unique(layer$data$grp)), 3L)
-  # but colour is NOT mapped (fixed), so it cannot collide with the parent scale
-  expect_false("colour" %in% names(layer$mapping))
-  expect_identical(layer$aes_params$colour, "firebrick")
-  # per-panel radii are still distinct (per-group n, not pooled)
-  radii <- tapply(sqrt(layer$data$x^2 + layer$data$y^2),
-                  layer$data$grp, function(v) v[1])
-  expect_gt(radii[["A"]], radii[["C"]])
+test_that("add_critical_r pooled draws one circle from all rows", {
+  set.seed(3)
+  hd <- data.frame(heading = runif(30, 0, 2 * pi))
+  layer <- add_critical_r(hd, test = "rayleigh")
+  expect_equal(length(unique(layer$data$.cr_grp)), 1L)
+})
+
+test_that("add_critical_r maps colour when group_col is set", {
+  set.seed(4)
+  hd <- data.frame(heading = runif(20, 0, 2 * pi), s = rep(c("m", "f"), 10))
+  layer <- add_critical_r(hd, test = "rayleigh", group_col = "s")
+  expect_true("colour" %in% names(layer$mapping))
+  expect_true("s" %in% names(layer$data))
 })
 
 test_that("add_critical_r higher alpha gives smaller circle", {

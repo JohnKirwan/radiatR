@@ -3645,32 +3645,24 @@ add_wrappedcauchy_density <- function(fit, scale = 0.4, inner_r = 0,
 #'     \eqn{\mu_0}, so this circle is a lower bound.}
 #' }
 #'
-#' Sample size \code{n} is taken per group from \code{hd}.  When
-#' \code{group_col} matches the parent \code{radiate(facets = ...)} argument,
-#' one circle is drawn per panel at the radius appropriate to that panel's
-#' \code{n}.  For groups overlaid in a single panel, set \code{per_group = TRUE}
-#' to draw one circle per group (colour-matched), or \code{per_group = FALSE}
-#' (default) to draw a single conservative circle using the smallest \code{n}
-#' (largest critical radius).
+#' Sample size \code{n} is taken per occupied cell from \code{hd}.  Pass the
+#' same column(s) to \code{facets} as you pass to \code{radiate(rows=)/radiate(cols=)}
+#' so one circle is drawn per panel at the radius appropriate to that panel's
+#' \code{n}.  Pass \code{group_col} to split each cell further by colour.
 #'
 #' @param hd Data frame of headings with a heading column (radians).
 #' @param alpha Significance level.  Default \code{0.05}.
 #' @param test \code{"rayleigh"} (default) or \code{"vtest"}.
 #' @param angle_col Heading column name.  Default \code{"heading"}.
-#' @param group_col Column identifying groups.  \code{NULL} pools all rows.
-#' @param per_group Logical.  When \code{group_col} is set but the plot is not
-#'   faceted, draw one circle per group (\code{TRUE}) or a single conservative
-#'   circle (\code{FALSE}, default).  Ignored when faceting (always per panel).
-#' @param colour,color Circle colour.  Default \code{"firebrick"}.  When
-#'   \code{per_group = TRUE} and \code{colour_by_group = TRUE} this is overridden
-#'   by the colour scale.  \code{color} is the American-spelling alias.
-#' @param colour_by_group,color_by_group Logical.  When \code{per_group = TRUE},
-#'   map each circle's colour to its group (\code{TRUE}, default) or draw every
-#'   circle in the fixed \code{colour} while still attaching the group column so
-#'   the circles facet (\code{FALSE}).  Use \code{FALSE} to keep per-panel
-#'   circles a single colour without injecting the grouping levels into the
-#'   parent plot's colour scale.  Ignored unless \code{per_group = TRUE}.
-#'   \code{color_by_group} is the American-spelling alias.
+#' @param facets Character vector of column names that define the facet panels
+#'   (placement only). The critical radius is computed per facet cell and every
+#'   one of these columns is attached to the layer data so the circles land in
+#'   the right panel under facet_wrap()/facet_grid(). \code{NULL} pools all rows.
+#' @param group_col Optional single column. Splits each cell into subgroups (one
+#'   circle each) and maps the circle colour to that column. \code{NULL} draws
+#'   every circle in the fixed \code{colour}.
+#' @param colour Circle colour.  Default \code{"firebrick"}.  Overridden by the
+#'   colour scale when \code{group_col} is set.
 #' @param linetype Line type.  Default \code{"dashed"}.
 #' @param linewidth Line width.  Default \code{0.6}.
 #' @param n_pts Points used to approximate each circle.  Default \code{200L}.
@@ -3679,13 +3671,10 @@ add_wrappedcauchy_density <- function(fit, scale = 0.4, inner_r = 0,
 #' @export
 add_critical_r <- function(hd, alpha = 0.05,
                             test = c("rayleigh", "vtest"),
-                            angle_col = "heading", group_col = NULL,
-                            per_group = FALSE, colour = "firebrick",
-                            colour_by_group = TRUE,
+                            angle_col = "heading", facets = NULL,
+                            group_col = NULL, colour = "firebrick",
                             linetype = "dashed", linewidth = 0.6,
-                            n_pts = 200L, color = NULL,
-                            color_by_group = NULL) {
-  .apply_spelling_aliases()
+                            n_pts = 200L) {
   test <- match.arg(test)
   stopifnot(is.data.frame(hd), alpha > 0, alpha < 1)
   if (!angle_col %in% names(hd))
@@ -3698,77 +3687,41 @@ add_critical_r <- function(hd, alpha = 0.05,
       vtest    = stats::qnorm(1 - alpha) / sqrt(2 * n)
     )
   }
-
   .circle_df <- function(r, grp) {
     th <- seq(0, 2 * pi, length.out = n_pts)
     data.frame(x = r * cos(th), y = r * sin(th),
                .cr_grp = grp, stringsAsFactors = FALSE)
   }
 
-  # ---- no grouping: single circle from pooled n ----
-  if (is.null(group_col)) {
-    n <- sum(is.finite(hd[[angle_col]]))
+  cells <- .facet_group_split(hd, facets = facets, group_col = group_col)
+  parts <- lapply(seq_along(cells), function(i) {
+    n <- sum(is.finite(cells[[i]]$rows[[angle_col]]))
     r <- .r_crit(n)
     if (is.na(r)) return(NULL)
-    df <- .circle_df(r, "all")
-    return(ggplot2::geom_path(
-      data = df, mapping = ggplot2::aes(x = x, y = y, group = .cr_grp),
-      colour = colour, linetype = linetype, linewidth = linewidth,
-      inherit.aes = FALSE
-    ))
-  }
-
-  if (!group_col %in% names(hd))
-    stop("add_critical_r: '", group_col, "' not found")
-
-  groups <- unique(hd[[group_col]])
-  ns <- vapply(groups, function(g)
-    sum(is.finite(hd[[angle_col]][hd[[group_col]] == g])), integer(1L))
-
-  # ---- single conservative circle (overlaid, per_group = FALSE) ----
-  if (!per_group) {
-    n_min <- min(ns[ns >= 2L], na.rm = TRUE)
-    if (!is.finite(n_min)) return(NULL)
-    df <- .circle_df(.r_crit(n_min), "conservative")
-    return(ggplot2::geom_path(
-      data = df, mapping = ggplot2::aes(x = x, y = y, group = .cr_grp),
-      colour = colour, linetype = linetype, linewidth = linewidth,
-      inherit.aes = FALSE
-    ))
-  }
-
-  # ---- one circle per group (faceted, or overlaid colour-matched) ----
-  parts <- lapply(seq_along(groups), function(i) {
-    r <- .r_crit(ns[i])
-    if (is.na(r)) return(NULL)
-    df <- .circle_df(r, as.character(groups[i]))
-    df[[group_col]] <- groups[i]
+    df <- .circle_df(r, as.character(i))
+    for (nm in names(cells[[i]]$keys)) df[[nm]] <- cells[[i]]$keys[[nm]]
     df
   })
   parts <- parts[!vapply(parts, is.null, logical(1L))]
   if (!length(parts)) return(NULL)
   circ_df <- do.call(rbind, parts)
 
-  # When colour_by_group is FALSE the group column is retained (so the circles
-  # still facet alongside the parent plot) but colour is drawn as a fixed value
-  # rather than mapped -- this avoids injecting the grouping levels into the
-  # parent plot's colour scale (e.g. when the panels are already coloured by a
-  # different variable).
-  if (!colour_by_group)
-    return(ggplot2::geom_path(
+  map_colour <- !is.null(group_col) && group_col %in% names(circ_df)
+  if (map_colour) {
+    ggplot2::geom_path(
+      data = circ_df,
+      mapping = ggplot2::aes(x = x, y = y, group = .cr_grp,
+                             colour = .data[[group_col]]),
+      linetype = linetype, linewidth = linewidth, inherit.aes = FALSE
+    )
+  } else {
+    ggplot2::geom_path(
       data = circ_df,
       mapping = ggplot2::aes(x = x, y = y, group = .cr_grp),
       colour = colour, linetype = linetype, linewidth = linewidth,
       inherit.aes = FALSE
-    ))
-
-  ggplot2::geom_path(
-    data = circ_df,
-    mapping = ggplot2::aes(x = x, y = y,
-                           group = .cr_grp,
-                           colour = .data[[group_col]]),
-    linetype = linetype, linewidth = linewidth, inherit.aes = FALSE
-  )
+    )
+  }
 }
 
 # ---- add_critical_v_line -----------------------------------------------------
