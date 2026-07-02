@@ -38,3 +38,39 @@ test_that("radiate() baseline track plot renders", {
   fig <- radiate(cpunctatus, label_use_repel = FALSE)
   expect_fig("radiate-baseline", fig)
 })
+
+# Deterministic headings from the bundled Tracks (crossing rule; suppress the
+# expected "N trials produced no heading" attrition warning).
+vdiffr_headings <- function() {
+  suppressWarnings(
+    derive_headings(cpunctatus, rule = "crossing",
+                    circ0 = 0.3, circ1 = 0.6,
+                    coords = "absolute",
+                    angle_convention = "unit_circle")
+  )
+}
+
+test_that("radiate() with stacked headings + mean arrow + Rayleigh circle renders", {
+  hd  <- vdiffr_headings()
+  fig <- radiate(cpunctatus, group_col = "trial_id", colour_col = "arc",
+                 show_labels = FALSE, show_arrow = FALSE) +
+    add_stacked_headings(hd) +
+    add_heading_arrow(hd, colour = "black") +
+    add_critical_r(hd, test = "rayleigh")
+  expect_fig("radiate-overlays", fig)
+})
+
+test_that("radiate() with axial overlays renders", {
+  hd  <- vdiffr_headings()
+  fig <- radiate(cpunctatus, group_col = "trial_id",
+                 show_labels = FALSE, show_arrow = FALSE) +
+    add_stacked_headings(hd, axial = TRUE) +
+    add_heading_arrow(hd, axial = TRUE, colour = "black")
+  expect_fig("radiate-axial", fig)
+})
+
+test_that("radiate() faceted by type renders", {
+  fig <- radiate(cpunctatus, group_col = "trial_id", facets = "type",
+                 label_use_repel = FALSE)
+  expect_fig("radiate-faceted", fig)
+})

@@ -25,6 +25,10 @@
   attribute (the vestigial `display_convention`/`angle_convention` strings are
   removed). See `vignette("design")`.
 
+* Added vdiffr visual-regression snapshots for `radiate()` and the heading
+  overlays (`tests/testthat/test-vdiffr.R`). They compare locally and skip on
+  CI, guarding figure rendering against ggplot2 version drift.
+
 ## Statistics
 
 * New `circ_regression()` fits Fisher-Lee circular-linear regression of a heading
