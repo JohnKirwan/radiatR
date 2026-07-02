@@ -32,3 +32,31 @@ test_that(".fit_vm_uniform logLik beats a single von Mises on mixed data", {
   ll_vm <- sum(radiatR:::.dvm_log(th, vm$mu, vm$kappa))
   expect_gt(radiatR:::.fit_vm_uniform(th)$logLik, ll_vm)
 })
+
+test_that(".fit_two_vm recovers two non-antipodal modes", {
+  set.seed(3)
+  n <- 800; g <- 0.6
+  z <- runif(n) < g
+  th <- ifelse(z,
+    as.numeric(circular::rvonmises(n, mu = circular::circular(0.5), kappa = 8)),
+    as.numeric(circular::rvonmises(n, mu = circular::circular(2.5), kappa = 8))
+  ) %% (2 * pi)
+  fit <- radiatR:::.fit_two_vm(th)
+  expect_true(fit$converged)
+  expect_gte(fit$gamma, 0.5)
+  # the two fitted means should match {0.5, 2.5} up to labelling
+  got <- sort(c(fit$mu1, fit$mu2))
+  expect_equal(got, c(0.5, 2.5), tolerance = 0.25)
+})
+
+test_that(".fit_two_vm logLik is at least the axial logLik on axial data", {
+  set.seed(4)
+  th <- c(as.numeric(circular::rvonmises(200, circular::circular(0), kappa = 6)),
+          as.numeric(circular::rvonmises(200, circular::circular(pi), kappa = 6))) %% (2 * pi)
+  ax  <- vonmises_fit(data.frame(heading = th), axial = TRUE)
+  ll_ax <- sum(ax$kappa * (cos(2 * (th - ax$mu)) - 1)) -
+           length(th) * (log(2 * pi) + log(besselI(ax$kappa, 0, expon.scaled = TRUE)))
+  # the free 2-vM mixture generalises the constrained axial model, so its
+  # maximised logLik cannot be lower (allow tiny numerical slack)
+  expect_gte(radiatR:::.fit_two_vm(th)$logLik, ll_ax - 1e-3)
+})

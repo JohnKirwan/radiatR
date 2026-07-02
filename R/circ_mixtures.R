@@ -33,6 +33,50 @@
   else 1 / (rbar^3 - 4 * rbar^2 + 3 * rbar)
 }
 
+.fit_two_vm <- function(theta) {
+  theta <- theta[is.finite(theta)]
+  fail  <- list(logLik = NA_real_, gamma = NA_real_,
+                mu1 = NA_real_, kappa1 = NA_real_,
+                mu2 = NA_real_, kappa2 = NA_real_, converged = FALSE)
+  if (length(theta) < 5L) return(fail)
+  st  <- .circ_start(theta)
+  k0  <- max(.kappa_start(st$rbar), 0.5)
+
+  nll <- function(par) {
+    g  <- plogis(par[1])
+    l1 <- log(g)      + .dvm_log(theta, par[2], exp(par[3]))
+    l2 <- log1p(-g)   + .dvm_log(theta, par[4], exp(par[5]))
+    lf <- .logsumexp2(l1, l2)
+    if (any(!is.finite(lf))) return(1e18)
+    -sum(lf)
+  }
+
+  # Seed the two means from candidate pairs: antipodal, and offsets of +/-2pi/3
+  # around the circular mean. This spans symmetric and asymmetric configurations.
+  offs <- list(c(0, pi), c(0, 2 * pi / 3), c(0, -2 * pi / 3), c(0, pi / 2))
+  best <- fail; best_nll <- Inf
+  for (o in offs) {
+    init <- c(0, st$mu + o[1], log(k0), st$mu + o[2], log(k0))
+    opt  <- tryCatch(stats::optim(init, nll, method = "Nelder-Mead",
+                                  control = list(maxit = 800)),
+                     error = function(e) NULL)
+    if (is.null(opt) || !is.finite(opt$value)) next
+    if (opt$value < best_nll) {
+      g  <- plogis(opt$par[1])
+      m1 <- opt$par[2] %% (2 * pi); k1 <- exp(opt$par[3])
+      m2 <- opt$par[4] %% (2 * pi); k2 <- exp(opt$par[5])
+      # canonical order: larger-weight component first
+      if (g < 0.5) { g <- 1 - g; tmp <- c(m1, k1); m1 <- m2; k1 <- k2
+                     m2 <- tmp[1]; k2 <- tmp[2] }
+      best_nll <- opt$value
+      best <- list(logLik = -opt$value, gamma = g,
+                   mu1 = m1, kappa1 = k1, mu2 = m2, kappa2 = k2,
+                   converged = opt$convergence == 0)
+    }
+  }
+  best
+}
+
 .fit_vm_uniform <- function(theta) {
   theta <- theta[is.finite(theta)]
   fail  <- list(logLik = NA_real_, p = NA_real_, mu = NA_real_,
