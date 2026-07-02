@@ -161,8 +161,9 @@ Scope guard: only the parameters the two new models need — no general
 - **DESCRIPTION `Collate`:** add `R/circ_mixtures.R` (hand-maintained Collate — a
   new source file omitted from it breaks `R CMD check`/build).
 - **DESCRIPTION `Suggests`:** add `CircMLE`.
-- **NEWS:** new `0.4.2`/`0.5.0` heading (the #166–#177 block is still filed under
-  the tagged 0.4.1 heading; confirm the version/timing when cutting it).
+- **NEWS + DESCRIPTION `Version`:** cut a fresh `0.5.0` heading (minor bump from
+  0.4.1) and bump `DESCRIPTION`. The #166–#177 block currently filed under the
+  tagged 0.4.1 heading moves under 0.5.0 too.
 - **Docs:** update `circ_model_select()` Roxygen — the five models, their `k`, the
   M1–M5 correspondence table, and references (Schnute & Groot 1992 for the model
   family; Fitak & Johnsen 2017 for CircMLE). Update
