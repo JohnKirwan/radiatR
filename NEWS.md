@@ -1,5 +1,14 @@
 # radiatR 0.5.0
 
+## Breaking changes
+
+* The `panel_by` argument of `radiate()`, `gg_traj()`, `add_circular_boxplot()`,
+  and `plot_profile()` is renamed to **`facets`** (mirroring `ggplot2::facet_wrap()`).
+  No deprecation alias: existing `panel_by = ` calls error with "unused argument".
+  Behaviour is unchanged; `radiate()` also has `rows`/`cols` for `facet_grid()`.
+
+## Statistics
+
 * `circ_model_select()` now ranks five candidate models, adding
   `unimodal_uniform` (a directed von Mises over a uniform background) and
   `bimodal` (an asymmetric two-von-Mises mixture), fitted by numerical maximum
@@ -8,64 +17,39 @@
 * `simulate_tracks()` gains `modality = "unimodal_uniform"` and `"bimodal"` with
   `mix_weight`, `mode2_mean`, and `kappa2` condition columns.
 
-# radiatR 0.4.1
-
-## Breaking changes
-
-* The central S4 class `TrajSet` is renamed to **`Tracks`**, its constructor to
-  the lowercase `tracks()`, and the loader functions to snake_case:
-  `TrajSet_read()` -> `read_tracks()`, `TrajSet_read_dir()` -> `read_tracks_dir()`,
-  `TrajSet_read_format()` -> `read_tracks_format()`, `TrajSet_load_manifest()` ->
-  `load_manifest()`. No behaviour, slot, or output changed. Bundled `cpunctatus`
-  is now a `Tracks` object.
-
-* The `panel_by` argument of `radiate()`, `gg_traj()`, `add_circular_boxplot()`,
-  and `plot_profile()` is renamed to **`facets`** (mirroring `ggplot2::facet_wrap()`).
-  No deprecation alias: existing `panel_by = ` calls error with "unused argument".
-  Behaviour is unchanged; `radiate()` also has `rows`/`cols` for `facet_grid()`.
-
-## Infrastructure
-
-* `headings_frame` is now a tibble subclass whose class and display convention
-  survive dplyr verbs (`mutate`/`filter`/`select`/`bind_rows`) via the
-  `dplyr_reconstruct` contract, so the orientation no longer leaks. New exported
-  `hf_display()`/`hf_heading_col()`/`hf_colour_col()`/`hf_coords()` accessors read
-  the metadata (and work on a plain data frame). `derive_headings()` now returns
-  a `headings_frame`; orientation is consolidated into a single `display`
-  attribute (the vestigial `display_convention`/`angle_convention` strings are
-  removed). See `vignette("design")`.
-
-* Added vdiffr visual-regression snapshots for `radiate()` and the heading
-  overlays (`tests/testthat/test-vdiffr.R`). They compare locally and skip on
-  CI, guarding figure rendering against ggplot2 version drift.
-
-## Statistics
-
-* New `circ_regression()` fits Fisher-Lee circular-linear regression of a heading
-  on linear covariates (formula interface over `circular::lm.circular`), with
-  `summary()` (tidy coefficients), `predict()`/`fitted()`, and `print()` methods.
-  `simulate_tracks()` gains a per-condition `mean_slope` so the predictor shifts
-  the mean heading, enabling end-to-end recovery.
-
-* New `fitted_directions()` turns a `circ_regression()` fit into mean-direction
-  arrows for `add_circ_mean()`, so the fitted heading-vs-covariate relationship
-  can be drawn on the circular panel, colour-graded by the predictor.
-
-* `simulate_tracks()` is now modality- and shape-aware. Per-condition `modality`
-  (`uniform` / `unimodal` / `axial` / `multimodal` with `n_modes`) sets the
-  distribution of per-track headings, and `track_shape` (`directed` or
-  `oscillatory`) sets within-track geometry — `oscillatory` produces
-  back-and-forth axial tracks whose line-width (`line_width`) is independent of
-  tortuosity, so the per-track axial methods recover the axis at default
-  settings. The ground truth is recorded in new output columns and in the
-  `TrajSet` `meta$sim_conditions`. The default output is unchanged.
-
 ## Plotting
 
 * `radiate()` gains `rows` and `cols` arguments for `ggplot2::facet_grid()`
   faceting — a true row x column grid, mirroring ggplot (each accepts one or more
   column names, nesting per side). This complements the existing `facets`
   (`facet_wrap`); use one or the other, not both.
+
+## Visualisation
+
+* New `as_angle()` maps periodic **time / date / numeric** data onto circular
+  angles --- the data-side counterpart of the circumference labels. `as_angle(x,
+  period = "day" | "year" | <numeric>)` turns `POSIXct`/`Date`/numeric input into
+  unit-circle radians in the clock/calendar convention, so a `06:00` timestamp
+  lands on the `"6"` hours label (and the 1st of each month on its month label),
+  and the result feeds `headings_frame()` / `circ_summary()` / `radiate()` like
+  any heading column. Enables chronobiology (time of day) and phenology (time of
+  year) circular analyses.
+
+* `plot_profile()` gains `smooth` (a centered per-track sliding-window moving
+  average of the speed/turning series, in points; `1` = off) and `show_raw` (draw
+  the raw series faintly under the smoothed line). The Shiny app's Track-metrics
+  profile gains a smoothing slider and a "Show raw" checkbox.
+
+## Track metrics
+
+* New `restrict_to_circumference()` returns a `Tracks` with out-of-circumference
+  (`rho > 1`) data removed, so the kinematics (`track_speed()`,
+  `instantaneous_speed()`, `track_length()`, the `path_*` shape metrics) are
+  computed only on the within-circle portion of each trajectory. `mode =
+  "truncate"` (default) keeps each track up to its first excursion beyond the
+  circumference; `mode = "drop"` removes individual out-of-circumference points.
+  This is the data-filtering counterpart to the plot-only
+  `radiate(clip_tracks = TRUE)`.
 
 ## Bug fixes
 
@@ -98,16 +82,56 @@
   `0.9*sqrt(2)`) so the label text clears `add_circular_boxplot()`'s band, whose
   default `width` is also narrowed (`0.06` -> `0.05`) for a thinner ring.
 
-## Track metrics
+## Infrastructure
 
-* New `restrict_to_circumference()` returns a `Tracks` with out-of-circumference
-  (`rho > 1`) data removed, so the kinematics (`track_speed()`,
-  `instantaneous_speed()`, `track_length()`, the `path_*` shape metrics) are
-  computed only on the within-circle portion of each trajectory. `mode =
-  "truncate"` (default) keeps each track up to its first excursion beyond the
-  circumference; `mode = "drop"` removes individual out-of-circumference points.
-  This is the data-filtering counterpart to the plot-only
-  `radiate(clip_tracks = TRUE)`.
+* Added vdiffr visual-regression snapshots for `radiate()` and the heading
+  overlays (`tests/testthat/test-vdiffr.R`). They compare locally and skip on
+  CI, guarding figure rendering against ggplot2 version drift.
+
+# radiatR 0.4.1
+
+## Breaking changes
+
+* The central S4 class `TrajSet` is renamed to **`Tracks`**, its constructor to
+  the lowercase `tracks()`, and the loader functions to snake_case:
+  `TrajSet_read()` -> `read_tracks()`, `TrajSet_read_dir()` -> `read_tracks_dir()`,
+  `TrajSet_read_format()` -> `read_tracks_format()`, `TrajSet_load_manifest()` ->
+  `load_manifest()`. No behaviour, slot, or output changed. Bundled `cpunctatus`
+  is now a `Tracks` object.
+
+## Infrastructure
+
+* `headings_frame` is now a tibble subclass whose class and display convention
+  survive dplyr verbs (`mutate`/`filter`/`select`/`bind_rows`) via the
+  `dplyr_reconstruct` contract, so the orientation no longer leaks. New exported
+  `hf_display()`/`hf_heading_col()`/`hf_colour_col()`/`hf_coords()` accessors read
+  the metadata (and work on a plain data frame). `derive_headings()` now returns
+  a `headings_frame`; orientation is consolidated into a single `display`
+  attribute (the vestigial `display_convention`/`angle_convention` strings are
+  removed). See `vignette("design")`.
+
+## Statistics
+
+* New `circ_regression()` fits Fisher-Lee circular-linear regression of a heading
+  on linear covariates (formula interface over `circular::lm.circular`), with
+  `summary()` (tidy coefficients), `predict()`/`fitted()`, and `print()` methods.
+  `simulate_tracks()` gains a per-condition `mean_slope` so the predictor shifts
+  the mean heading, enabling end-to-end recovery.
+
+* New `fitted_directions()` turns a `circ_regression()` fit into mean-direction
+  arrows for `add_circ_mean()`, so the fitted heading-vs-covariate relationship
+  can be drawn on the circular panel, colour-graded by the predictor.
+
+* `simulate_tracks()` is now modality- and shape-aware. Per-condition `modality`
+  (`uniform` / `unimodal` / `axial` / `multimodal` with `n_modes`) sets the
+  distribution of per-track headings, and `track_shape` (`directed` or
+  `oscillatory`) sets within-track geometry — `oscillatory` produces
+  back-and-forth axial tracks whose line-width (`line_width`) is independent of
+  tortuosity, so the per-track axial methods recover the axis at default
+  settings. The ground truth is recorded in new output columns and in the
+  `TrajSet` `meta$sim_conditions`. The default output is unchanged.
+
+## Track metrics
 
 * New `path_sinuosity()` / `sinuosity()` add the turning-angle-based sinuosity
   index (Benhamou 2004) — the tortuosity complement to the displacement-based
@@ -181,15 +205,6 @@
   "hours" | "months" | "seconds")` selects them directly and aligns the tick
   count to the scale.
 
-* New `as_angle()` maps periodic **time / date / numeric** data onto circular
-  angles --- the data-side counterpart of the circumference labels. `as_angle(x,
-  period = "day" | "year" | <numeric>)` turns `POSIXct`/`Date`/numeric input into
-  unit-circle radians in the clock/calendar convention, so a `06:00` timestamp
-  lands on the `"6"` hours label (and the 1st of each month on its month label),
-  and the result feeds `headings_frame()` / `circ_summary()` / `radiate()` like
-  any heading column. Enables chronobiology (time of day) and phenology (time of
-  year) circular analyses.
-
 * `plot_profile()` draws a non-circular kinematics profile -- instantaneous speed
   or turning rate against elapsed time, one line per track (the ggplot sibling of
   `radiate()`). Needs a frame rate; distance-calibrated when a scale is set.
@@ -197,11 +212,6 @@
 * `plot_profile()` gains `metric = "direction"`, plotting the per-observation
   movement direction (`velocity_angle()`) over elapsed time as points (direction
   is circular, so it is drawn as points rather than a line).
-
-* `plot_profile()` gains `smooth` (a centered per-track sliding-window moving
-  average of the speed/turning series, in points; `1` = off) and `show_raw` (draw
-  the raw series faintly under the smoothed line). The Shiny app's Track-metrics
-  profile gains a smoothing slider and a "Show raw" checkbox.
 
 * New `plot_speed_direction()` scatters each observation's speed against its
   movement direction (`velocity_angle()`). Its speed axis -- and `plot_profile()`'s
