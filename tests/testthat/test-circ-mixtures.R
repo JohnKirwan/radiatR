@@ -60,3 +60,24 @@ test_that(".fit_two_vm logLik is at least the axial logLik on axial data", {
   # maximised logLik cannot be lower (allow tiny numerical slack)
   expect_gte(radiatR:::.fit_two_vm(th)$logLik, ll_ax - 1e-3)
 })
+
+test_that(".fit_two_vm agrees with CircMLE on the best bimodal model", {
+  skip_if_not_installed("CircMLE")
+  set.seed(31)
+  th <- c(as.numeric(circular::rvonmises(150, circular::circular(0.5), kappa = 6)),
+          as.numeric(circular::rvonmises(150, circular::circular(3.0), kappa = 6))) %% (2 * pi)
+
+  ours <- radiatR:::.fit_two_vm(th)$logLik
+
+  x   <- circular::circular(th, units = "radians", type = "angles")
+  res <- CircMLE::circ_mle(x)$results
+  # circ_mle reports -LogLik per model; the free 2-component von Mises mixtures
+  # are the M4/M5 family. Take the best (smallest -LogLik) mixture model as the
+  # oracle for our free two-vM fit.
+  mix_rows  <- grepl("^M[45]", rownames(res))
+  oracle_ll <- -min(res[mix_rows, "-LogLik"], na.rm = TRUE)
+
+  # our maximised logLik should match the best CircMLE mixture within tolerance
+  # (both maximise the same family; small differences from optimiser settings).
+  expect_equal(ours, oracle_ll, tolerance = 0.5)
+})
