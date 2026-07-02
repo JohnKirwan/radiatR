@@ -18,13 +18,17 @@
 
   ax <- vonmises_fit(df, axial = TRUE)
   ll_ax <- if (is.na(ax$kappa)) NA_real_ else {
-    # daxialvonmises(l = 2) is a density on the half circle [0, pi): it
-    # integrates to 2 over [0, 2*pi). Divide by l so the axial model is a proper
-    # full-circle density (integral 1), on the same support as uniform/unimodal,
-    # otherwise the comparison gives axial a spurious n*log(l) likelihood boost.
-    d <- as.numeric(circular::daxialvonmises(
-      th_c, mu = rad(ax$mu), kappa = ax$kappa, l = 2)) / 2
-    if (any(!is.finite(d)) || any(d <= 0)) NA_real_ else sum(log(d))
+    # Symmetric axial (antipodal, equal) von Mises density on the FULL circle:
+    #   f(theta) = exp(kappa * cos(2*(theta - mu))) / (2*pi * I0(kappa)),
+    # which integrates to 1 over [0, 2*pi). mu is on [0, pi) and kappa is on the
+    # doubled-angle scale, exactly as vonmises_fit(axial = TRUE) returns them.
+    # Uses the exponentially-scaled Bessel I0 for numerical stability at high
+    # kappa. Self-contained (no daxialvonmises), so the normalisation is explicit
+    # and scored on the same full-circle support as uniform/unimodal.
+    k  <- ax$kappa; mu <- ax$mu
+    ll <- sum(k * (cos(2 * (theta - mu)) - 1)) -
+          n * (log(2 * pi) + log(besselI(k, 0, expon.scaled = TRUE)))
+    if (is.finite(ll)) ll else NA_real_
   }
 
   data.frame(

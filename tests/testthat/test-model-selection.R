@@ -98,3 +98,17 @@ test_that("circ_model_select errors on a missing angle column", {
   expect_error(circ_model_select(data.frame(x = 1:5), angle_col = "heading"),
                "not found")
 })
+
+test_that("axial closed-form density integrates to 1", {
+  mu <- 0.7; kappa <- 2.3
+  dens <- function(x) exp(kappa * cos(2 * (x - mu))) / (2 * pi * besselI(kappa, 0))
+  area <- stats::integrate(dens, 0, 2 * pi, subdivisions = 400L)$value
+  expect_equal(area, 1, tolerance = 1e-6)
+})
+
+test_that("axial does not out-score uniform on a large uniform sample", {
+  set.seed(101)
+  unif <- data.frame(heading = runif(500, 0, 2 * pi))
+  r <- circ_model_select(unif)
+  expect_equal(r$model[1], "uniform")
+})
