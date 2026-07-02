@@ -15,8 +15,8 @@ circ_model_select(hd, angle_col = "heading", group_col = NULL)
 data frame as one sample.}
 }
 \value{
-Tidy data frame, one row per candidate model (five per group) when
-  \code{group_col} is supplied, sorted by \code{AICc} ascending (best first;
+Tidy data frame, one row per candidate model (five rows, or five per
+  group when \code{group_col} is supplied), sorted by \code{AICc} ascending (best first;
   \code{NA} last). Columns: \code{group_col} (if supplied), \code{model},
   \code{n}, \code{k} (free parameters), \code{logLik}, \code{AIC}, \code{AICc},
   \code{BIC}, \code{dAICc} (AICc minus the group minimum), and \code{weight}

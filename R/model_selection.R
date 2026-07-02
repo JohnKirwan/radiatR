@@ -1,8 +1,10 @@
 # Per-model maximised log-likelihood for circ_model_select(). Returns one row per
-# candidate model (uniform / unimodal von Mises / axial von Mises) with its number
-# of free parameters k and maximised logLik. Reuses vonmises_fit() for parameters
-# and circular's densities for the likelihoods. A fit failure (kappa = NA) yields
-# logLik = NA for that model; uniform always computes.
+# candidate model (uniform / unimodal von Mises / axial von Mises / unimodal +
+# uniform background / asymmetric bimodal mixture) with its number of free
+# parameters k and maximised logLik. The three closed-form models reuse
+# vonmises_fit() for parameters and circular's densities; the two mixtures are
+# fitted numerically by .fit_vm_uniform() / .fit_two_vm() (R/circ_mixtures.R). A
+# fit failure yields logLik = NA for that model; uniform always computes.
 .circ_model_loglik <- function(theta) {
   n    <- length(theta)
   th_c <- circular::circular(theta, units = "radians", type = "angles")
@@ -101,8 +103,8 @@
 #' @param angle_col Heading column name. Default \code{"heading"}.
 #' @param group_col Column to group by. \code{NULL} (default) treats the whole
 #'   data frame as one sample.
-#' @return Tidy data frame, one row per candidate model (five per group) when
-#'   \code{group_col} is supplied, sorted by \code{AICc} ascending (best first;
+#' @return Tidy data frame, one row per candidate model (five rows, or five per
+#'   group when \code{group_col} is supplied), sorted by \code{AICc} ascending (best first;
 #'   \code{NA} last). Columns: \code{group_col} (if supplied), \code{model},
 #'   \code{n}, \code{k} (free parameters), \code{logLik}, \code{AIC}, \code{AICc},
 #'   \code{BIC}, \code{dAICc} (AICc minus the group minimum), and \code{weight}
