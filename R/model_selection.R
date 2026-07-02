@@ -1,8 +1,10 @@
 # Per-model maximised log-likelihood for circ_model_select(). Returns one row per
-# candidate model (uniform / unimodal von Mises / axial von Mises) with its number
-# of free parameters k and maximised logLik. Reuses vonmises_fit() for parameters
-# and circular's densities for the likelihoods. A fit failure (kappa = NA) yields
-# logLik = NA for that model; uniform always computes.
+# candidate model (uniform / unimodal von Mises / axial von Mises / unimodal +
+# uniform background / asymmetric bimodal mixture) with its number of free
+# parameters k and maximised logLik. The three closed-form models reuse
+# vonmises_fit() for parameters and circular's densities; the two mixtures are
+# fitted numerically by .fit_vm_uniform() / .fit_two_vm() (R/circ_mixtures.R). A
+# fit failure yields logLik = NA for that model; uniform always computes.
 .circ_model_loglik <- function(theta) {
   n    <- length(theta)
   th_c <- circular::circular(theta, units = "radians", type = "angles")
@@ -18,19 +20,29 @@
 
   ax <- vonmises_fit(df, axial = TRUE)
   ll_ax <- if (is.na(ax$kappa)) NA_real_ else {
-    # daxialvonmises(l = 2) is a density on the half circle [0, pi): it
-    # integrates to 2 over [0, 2*pi). Divide by l so the axial model is a proper
-    # full-circle density (integral 1), on the same support as uniform/unimodal,
-    # otherwise the comparison gives axial a spurious n*log(l) likelihood boost.
-    d <- as.numeric(circular::daxialvonmises(
-      th_c, mu = rad(ax$mu), kappa = ax$kappa, l = 2)) / 2
-    if (any(!is.finite(d)) || any(d <= 0)) NA_real_ else sum(log(d))
+    # Symmetric axial (antipodal, equal) von Mises density on the FULL circle:
+    #   f(theta) = exp(kappa * cos(2*(theta - mu))) / (2*pi * I0(kappa)),
+    # which integrates to 1 over [0, 2*pi). mu is on [0, pi) and kappa is on the
+    # doubled-angle scale, exactly as vonmises_fit(axial = TRUE) returns them.
+    # Uses the exponentially-scaled Bessel I0 for numerical stability at high
+    # kappa. Self-contained (no daxialvonmises), so the normalisation is explicit
+    # and scored on the same full-circle support as uniform/unimodal.
+    k  <- ax$kappa; mu <- ax$mu
+    ll <- sum(k * (cos(2 * (theta - mu)) - 1)) -
+          n * (log(2 * pi) + log(besselI(k, 0, expon.scaled = TRUE)))
+    if (is.finite(ll)) ll else NA_real_
   }
 
+  vu <- .fit_vm_uniform(theta)
+  ll_vu <- if (isTRUE(vu$converged)) vu$logLik else NA_real_
+
+  bi <- .fit_two_vm(theta)
+  ll_bi <- if (isTRUE(bi$converged)) bi$logLik else NA_real_
+
   data.frame(
-    model  = c("uniform", "unimodal", "axial"),
-    k      = c(0L, 2L, 2L),
-    logLik = c(ll_unif, ll_uni, ll_ax),
+    model  = c("uniform", "unimodal", "axial", "unimodal_uniform", "bimodal"),
+    k      = c(0L, 2L, 2L, 3L, 5L),
+    logLik = c(ll_unif, ll_uni, ll_ax, ll_vu, ll_bi),
     stringsAsFactors = FALSE
   )
 }
@@ -62,24 +74,37 @@
 
 #' Select among candidate circular models by AICc
 #'
-#' Fits three candidate models to a heading sample and ranks them by the
-#' small-sample-corrected Akaike information criterion (AICc): a \code{uniform}
-#' distribution (no preferred direction), a \code{unimodal} von Mises (one
-#' preferred direction), and an \code{axial} (symmetric bimodal) von Mises (a
-#' preferred axis, two equal antipodal modes). Answers whether a sample is best
-#' described as uniform, directionally, or axially oriented.
+#' Fits five candidate models to a heading sample and ranks them by the
+#' small-sample-corrected Akaike information criterion (AICc):
+#' \describe{
+#'   \item{uniform}{no preferred direction (k = 0).}
+#'   \item{unimodal}{one von Mises mode (k = 2).}
+#'   \item{axial}{symmetric bimodal von Mises, two equal antipodal modes (k = 2).}
+#'   \item{unimodal_uniform}{a directed von Mises mode over a uniform background,
+#'     \eqn{p\,vM(\mu,\kappa) + (1-p)\,U} (k = 3).}
+#'   \item{bimodal}{an asymmetric two-component von Mises mixture with free means,
+#'     concentrations, and weight (k = 5).}
+#' }
+#' The mixture models (\code{unimodal_uniform}, \code{bimodal}) are fitted by
+#' numerical maximum likelihood; the other three are closed-form. This model set
+#' mirrors the Schnute-Groot family implemented by the \pkg{CircMLE} package
+#' (Fitak & Johnsen 2017): \code{uniform} = M1, \code{unimodal} = single von
+#' Mises, \code{axial} = symmetric bimodal, \code{unimodal_uniform} = a directed
+#' component over a uniform background, and \code{bimodal} = a free two-component
+#' mixture.
 #'
-#' Parameters are estimated with \code{\link{vonmises_fit}} (the axial model via
-#' its \code{axial = TRUE} doubled-angle fit) and likelihoods with the
-#' \code{circular} package densities. The table reports model comparison only;
-#' obtain the fitted parameters of a chosen model from \code{\link{vonmises_fit}}.
+#' Parameters for \code{uniform}, \code{unimodal}, and \code{axial} are estimated
+#' with \code{\link{vonmises_fit}} (the axial model via its \code{axial = TRUE}
+#' doubled-angle fit) and likelihoods with the \code{circular} package densities.
+#' The table reports model comparison only; obtain the fitted parameters of a
+#' chosen model from \code{\link{vonmises_fit}}.
 #'
 #' @param hd Data frame with a heading column in radians.
 #' @param angle_col Heading column name. Default \code{"heading"}.
 #' @param group_col Column to group by. \code{NULL} (default) treats the whole
 #'   data frame as one sample.
-#' @return Tidy data frame, one row per candidate model (per group when
-#'   \code{group_col} is supplied), sorted by \code{AICc} ascending (best first;
+#' @return Tidy data frame, one row per candidate model (five rows, or five per
+#'   group when \code{group_col} is supplied), sorted by \code{AICc} ascending (best first;
 #'   \code{NA} last). Columns: \code{group_col} (if supplied), \code{model},
 #'   \code{n}, \code{k} (free parameters), \code{logLik}, \code{AIC}, \code{AICc},
 #'   \code{BIC}, \code{dAICc} (AICc minus the group minimum), and \code{weight}
@@ -87,6 +112,13 @@
 #'   fit failed or when \code{n - k - 1 <= 0}; remaining weights sum to 1.
 #' @references Burnham, K.P. & Anderson, D.R. (2002). Model Selection and
 #'   Multimodel Inference, 2nd ed. Springer.
+#'
+#'   Schnute, J.T. & Groot, K. (1992). Statistical analysis of animal orientation
+#'   data. Animal Behaviour, 43(1), 15-33.
+#'
+#'   Fitak, R.R. & Johnsen, S. (2017). Bringing the analysis of animal
+#'   orientation data full circle: model-based approaches with maximum likelihood.
+#'   Journal of Experimental Biology, 220(21), 3878-3882.
 #' @seealso \code{\link{vonmises_fit}}, \code{\link{test_uniformity}}
 #' @export
 circ_model_select <- function(hd, angle_col = "heading", group_col = NULL) {

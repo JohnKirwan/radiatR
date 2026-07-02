@@ -165,6 +165,27 @@ Watson-Williams test above:
 test_concentration(hd, group_col = "arc")
 ```
 
+## Model selection
+
+`circ_model_select()` ranks five candidate distributions by AICc -- `uniform`,
+`unimodal`, `axial`, `unimodal_uniform` (a directed mode over a uniform
+background), and `bimodal` (an asymmetric two-mode mixture) -- and reports Akaike
+weights. It answers whether a heading sample is best described as undirected,
+singly directed, axially oriented, directed-with-scatter, or genuinely bimodal.
+
+```{r model-select}
+hd_ms <- derive_headings(cpunctatus, rule = "distal")
+arc_map <- unique(cpunctatus@data[, c("trial_id", "arc")])
+names(arc_map)[1] <- "id"
+hd_ms <- merge(as.data.frame(hd_ms), arc_map, by = "id")
+circ_model_select(hd_ms, group_col = "arc")
+```
+
+The five models mirror the Schnute-Groot family implemented by the CircMLE
+package (Fitak & Johnsen 2017); radiatR fits them natively (the two mixtures by
+numerical maximum likelihood) and uses human-readable labels rather than the
+`M1`-`M5` codes.
+
 ## Circular correlation
 
 `circ_cor()` measures the association between headings and a covariate. With

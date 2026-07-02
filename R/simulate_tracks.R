@@ -46,7 +46,10 @@
 #'   `n_trials`) overriding the generated values.
 #' - `modality` (character): the sample modality from which per-trial principal
 #'   headings are drawn. One of `"unimodal"` (default), `"uniform"`, `"axial"`,
-#'   or `"multimodal"`. Controls the *distribution of headings across trials*,
+#'   or `"multimodal"`, `"unimodal_uniform"` (a directed mode over a uniform
+#'   background; `mix_weight` sets the directed fraction), or `"bimodal"` (an
+#'   asymmetric two-von-Mises mixture; `mix_weight`, `mode2_mean`, `kappa2` set
+#'   the second mode). Controls the *distribution of headings across trials*,
 #'   not the within-trial path shape.
 #' - `n_modes` (integer): number of evenly spaced modes used when
 #'   `modality == "multimodal"` (default 1; ignored by other modalities).
@@ -227,7 +230,11 @@ simulate_tracks <- function(n_points = 200,
     stop("simulate_tracks: mean_slope must be numeric.")
   if (!"modality" %in% names(conditions))    conditions$modality    <- "unimodal"
   if (!"n_modes" %in% names(conditions))     conditions$n_modes     <- 1L
-  ok_mod <- conditions$modality %in% c("unimodal", "uniform", "axial", "multimodal")
+  if (!"mix_weight" %in% names(conditions))  conditions$mix_weight  <- 0.6
+  if (!"mode2_mean" %in% names(conditions))  conditions$mode2_mean  <- NA_real_
+  if (!"kappa2" %in% names(conditions))      conditions$kappa2      <- NA_real_
+  ok_mod <- conditions$modality %in%
+    c("unimodal", "uniform", "axial", "multimodal", "unimodal_uniform", "bimodal")
   if (!all(ok_mod))
     stop("simulate_tracks: unknown modality value(s): ",
          paste(unique(conditions$modality[!ok_mod]), collapse = ", "))
@@ -272,6 +279,9 @@ simulate_tracks <- function(n_points = 200,
       tortuosity_sd = condition_row$tortuosity_sd,
       modality = condition_row$modality,
       n_modes = condition_row$n_modes,
+      mix_weight = condition_row$mix_weight,
+      mode2_mean = condition_row$mode2_mean,
+      kappa2     = condition_row$kappa2,
       track_shape = condition_row$track_shape,
       n_reversals = condition_row$n_reversals,
       amplitude = condition_row$amplitude,
@@ -287,7 +297,9 @@ simulate_tracks <- function(n_points = 200,
 # the angle plus the true component it came from (ground truth). The "unimodal"
 # branch is byte-identical to the historical inline draw, so the default seeded
 # output is unchanged.
-.sim_principal_angle <- function(modality, ref_mean, kappa, n_modes) {
+.sim_principal_angle <- function(modality, ref_mean, kappa, n_modes,
+                                 mix_weight = 0.6, mode2_mean = NA_real_,
+                                 kappa2 = NA_real_) {
   rvm <- function(mu) {
     mu_c <- circular::circular(mu, units = "radians", type = "angles",
                                modulo = "asis", zero = 0, rotation = "counter")
@@ -306,8 +318,26 @@ simulate_tracks <- function(n_points = 200,
       mm <- ref_mean + (j - 1L) * 2 * pi / n_modes
       list(angle = rvm(mm), mode_id = j, mode_mean = mm)
     },
+    unimodal_uniform = {
+      if (stats::runif(1) < mix_weight)
+        list(angle = rvm(ref_mean), mode_id = 1L, mode_mean = ref_mean)
+      else
+        list(angle = stats::runif(1, 0, 2 * pi), mode_id = 2L, mode_mean = NA_real_)
+    },
+    bimodal = {
+      m2 <- if (is.na(mode2_mean)) ref_mean + 2 * pi / 3 else mode2_mean
+      k2 <- if (is.na(kappa2)) kappa else kappa2
+      if (stats::runif(1) < mix_weight)
+        list(angle = rvm(ref_mean), mode_id = 1L, mode_mean = ref_mean)
+      else {
+        mu_c <- circular::circular(m2, units = "radians", type = "angles",
+                                   modulo = "asis", zero = 0, rotation = "counter")
+        list(angle = as.numeric(circular::rvonmises(1, mu = mu_c, kappa = k2)),
+             mode_id = 2L, mode_mean = m2)
+      }
+    },
     stop("simulate_tracks: unknown modality '", modality,
-         "'. Use unimodal, uniform, axial, or multimodal.")
+         "'. Use unimodal, uniform, axial, multimodal, unimodal_uniform, or bimodal.")
   )
 }
 
@@ -325,7 +355,7 @@ simulate_tracks <- function(n_points = 200,
 .sim_single_trial <- function(condition, trial_index, predictor, n_points,
                               ref_mean, mean_slope, concentration_base, concentration_slope,
                               tortuosity_base, tortuosity_slope, tortuosity_sd,
-                              modality, n_modes,
+                              modality, n_modes, mix_weight, mode2_mean, kappa2,
                               track_shape, n_reversals, amplitude, line_width,
                               radial_noise, phi) {
   predictor <- as.numeric(predictor)
@@ -334,7 +364,10 @@ simulate_tracks <- function(n_points = 200,
   # Use modulo="asis" so rvonmises returns values in (-pi, pi], keeping
   # wrap_to_pi() downstream correct.  modulo="2pi" (from .as_circ) would
   # shift near-zero headings to near 2*pi, which wrap_to_pi maps to -pi.
-  pa            <- .sim_principal_angle(modality, ref_theta, kappa, n_modes)
+  pa            <- .sim_principal_angle(modality, ref_theta, kappa, n_modes,
+                                        mix_weight = mix_weight,
+                                        mode2_mean = mode2_mean,
+                                        kappa2     = kappa2)
   final_heading <- pa$angle
 
   sigma_mean <- tortuosity_base + tortuosity_slope * predictor

@@ -1,9 +1,10 @@
-test_that(".circ_model_loglik returns the three models with the uniform closed form", {
+test_that(".circ_model_loglik returns the five models with the uniform closed form", {
   set.seed(1)
   th <- rnorm(50, 1, 0.4) %% (2 * pi)
   ll <- radiatR:::.circ_model_loglik(th)
-  expect_equal(ll$model, c("uniform", "unimodal", "axial"))
-  expect_equal(ll$k, c(0L, 2L, 2L))
+  expect_equal(ll$model,
+    c("uniform", "unimodal", "axial", "unimodal_uniform", "bimodal"))
+  expect_equal(ll$k, c(0L, 2L, 2L, 3L, 5L))
   expect_equal(ll$logLik[ll$model == "uniform"], -length(th) * log(2 * pi))
   expect_gt(ll$logLik[ll$model == "unimodal"], ll$logLik[ll$model == "uniform"])
 })
@@ -73,8 +74,9 @@ test_that("circ_model_select returns the tidy table shape and a winning weight",
   set.seed(12)
   d <- data.frame(heading = rnorm(60, 2, 0.3) %% (2 * pi))
   r <- circ_model_select(d)
-  expect_equal(nrow(r), 3L)
-  expect_setequal(r$model, c("uniform", "unimodal", "axial"))
+  expect_equal(nrow(r), 5L)
+  expect_setequal(r$model,
+    c("uniform", "unimodal", "axial", "unimodal_uniform", "bimodal"))
   expect_true(all(c("model", "n", "k", "logLik", "AIC", "AICc", "BIC", "dAICc", "weight")
                   %in% names(r)))
   expect_equal(sum(r$weight, na.rm = TRUE), 1, tolerance = 1e-12)
@@ -88,7 +90,7 @@ test_that("circ_model_select supports group_col", {
     data.frame(heading = c(rnorm(25, 0, 0.2), rnorm(25, pi, 0.2)) %% (2 * pi), grp = "ax"))
   r <- circ_model_select(d, group_col = "grp")
   expect_true("grp" %in% names(r))
-  expect_equal(nrow(r), 6L)
+  expect_equal(nrow(r), 10L)
   best <- vapply(split(r, r$grp), function(x) x$model[which.min(x$AICc)], character(1))
   expect_equal(best[["uni"]], "unimodal")
   expect_equal(best[["ax"]],  "axial")
@@ -97,4 +99,31 @@ test_that("circ_model_select supports group_col", {
 test_that("circ_model_select errors on a missing angle column", {
   expect_error(circ_model_select(data.frame(x = 1:5), angle_col = "heading"),
                "not found")
+})
+
+test_that("axial closed-form density integrates to 1", {
+  mu <- 0.7; kappa <- 2.3
+  dens <- function(x) exp(kappa * cos(2 * (x - mu))) / (2 * pi * besselI(kappa, 0))
+  area <- stats::integrate(dens, 0, 2 * pi, subdivisions = 400L)$value
+  expect_equal(area, 1, tolerance = 1e-6)
+})
+
+test_that("axial does not out-score uniform on a large uniform sample", {
+  set.seed(101)
+  unif <- data.frame(heading = runif(500, 0, 2 * pi))
+  r <- circ_model_select(unif)
+  expect_equal(r$model[1], "uniform")
+})
+
+test_that("circ_model_select recovers unimodal_uniform and bimodal", {
+  set.seed(21)
+  n <- 400
+  du <- ifelse(runif(n) < 0.7,
+    as.numeric(circular::rvonmises(n, circular::circular(1), kappa = 8)),
+    runif(n, 0, 2 * pi)) %% (2 * pi)
+  bi <- ifelse(runif(n) < 0.6,
+    as.numeric(circular::rvonmises(n, circular::circular(0.4), kappa = 12)),
+    as.numeric(circular::rvonmises(n, circular::circular(2.6), kappa = 12))) %% (2 * pi)
+  expect_equal(circ_model_select(data.frame(heading = du))$model[1], "unimodal_uniform")
+  expect_equal(circ_model_select(data.frame(heading = bi))$model[1], "bimodal")
 })

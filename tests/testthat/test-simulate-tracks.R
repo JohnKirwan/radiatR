@@ -173,3 +173,27 @@ test_that("simulate_tracks(frame_rate=) sets the frame rate; default leaves outp
   expect_equal(head(s$final_heading[!duplicated(s$trial_id)], 3),
                c(5.9589157262, 0.0305034215, 5.5213237187), tolerance = 1e-8)
 })
+
+# Mirrors the existing `mk` helper above (rule = "net", output = "trajset"); a
+# headings_frame is accepted directly by circ_model_select(). Recovery is seeded;
+# if a run is marginal, raise n_trials / concentration_base rather than loosening
+# the assertion.
+test_that("simulate_tracks generates unimodal_uniform and bimodal recoverably", {
+  mk2 <- function(modality, extra = list()) {
+    cond <- tibble::tibble(condition = modality, n_trials = 200L, ref_mean = 1.0,
+                           concentration_base = 12, modality = modality)
+    for (nm in names(extra)) cond[[nm]] <- extra[[nm]]
+    ts <- simulate_tracks(n_points = 60, conditions = cond,
+                          output = "trajset", seed = 7)
+    derive_headings(ts, rule = "net")
+  }
+  du <- mk2("unimodal_uniform", list(mix_weight = 0.7))
+  bi <- mk2("bimodal", list(mix_weight = 0.6, mode2_mean = 3.5, kappa2 = 12))
+  expect_equal(circ_model_select(du)$model[1], "unimodal_uniform")
+  expect_equal(circ_model_select(bi)$model[1], "bimodal")
+})
+
+test_that("simulate_tracks rejects an unknown modality", {
+  cond <- data.frame(condition = "c", n_trials = 5, modality = "nope")
+  expect_error(simulate_tracks(conditions = cond, seed = 1), "unknown modality")
+})

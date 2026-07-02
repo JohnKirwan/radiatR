@@ -1502,8 +1502,8 @@ server <- function(input, output, session) {
          pooled = FALSE, gc = gc)
   })
 
-  # Candidate-model ranking (detection): all three models, independent of the
-  # Directionality control. NULL when there are no headings.
+  # Candidate-model ranking (detection): all five candidate models, independent of
+  # the Directionality control. NULL when there are no headings.
   model_sel <- reactive({
     ctx <- summary_ctx()
     if (!isTRUE(ctx$has_hd)) return(NULL)
