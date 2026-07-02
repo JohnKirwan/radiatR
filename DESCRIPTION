@@ -61,7 +61,8 @@ Suggests:
     jpeg,
     svglite,
     shinytest2,
-    chromote
+    chromote,
+    vdiffr
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Collate: 
