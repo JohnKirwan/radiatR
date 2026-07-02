@@ -1,3 +1,13 @@
+# radiatR 0.5.0
+
+* `circ_model_select()` now ranks five candidate models, adding
+  `unimodal_uniform` (a directed von Mises over a uniform background) and
+  `bimodal` (an asymmetric two-von-Mises mixture), fitted by numerical maximum
+  likelihood. The `axial` model is now scored with an explicit closed-form
+  density.
+* `simulate_tracks()` gains `modality = "unimodal_uniform"` and `"bimodal"` with
+  `mix_weight`, `mode2_mean`, and `kappa2` condition columns.
+
 # radiatR 0.4.1
 
 ## Breaking changes
