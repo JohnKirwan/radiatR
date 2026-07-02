@@ -1,22 +1,8 @@
 # Changelog
 
-## radiatR 0.4.1
+## radiatR 0.5.0
 
 ### Breaking changes
-
-- The central S4 class `TrajSet` is renamed to **`Tracks`**, its
-  constructor to the lowercase
-  [`tracks()`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md),
-  and the loader functions to snake_case: `TrajSet_read()` -\>
-  [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md),
-  `TrajSet_read_dir()` -\>
-  [`read_tracks_dir()`](https://johnkirwan.github.io/radiatR/reference/read_tracks_dir.md),
-  `TrajSet_read_format()` -\>
-  [`read_tracks_format()`](https://johnkirwan.github.io/radiatR/reference/read_tracks_format.md),
-  `TrajSet_load_manifest()` -\>
-  [`load_manifest()`](https://johnkirwan.github.io/radiatR/reference/load_manifest.md).
-  No behaviour, slot, or output changed. Bundled `cpunctatus` is now a
-  `Tracks` object.
 
 - The `panel_by` argument of
   [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md),
@@ -32,60 +18,16 @@
   also has `rows`/`cols` for
   [`facet_grid()`](https://ggplot2.tidyverse.org/reference/facet_grid.html).
 
-### Infrastructure
-
-- `headings_frame` is now a tibble subclass whose class and display
-  convention survive dplyr verbs
-  (`mutate`/`filter`/`select`/`bind_rows`) via the `dplyr_reconstruct`
-  contract, so the orientation no longer leaks. New exported
-  [`hf_display()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)/[`hf_heading_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)/[`hf_colour_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)/[`hf_coords()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
-  accessors read the metadata (and work on a plain data frame).
-  [`derive_headings()`](https://johnkirwan.github.io/radiatR/reference/derive_headings.md)
-  now returns a `headings_frame`; orientation is consolidated into a
-  single `display` attribute (the vestigial
-  `display_convention`/`angle_convention` strings are removed). See
-  [`vignette("design")`](https://johnkirwan.github.io/radiatR/articles/design.md).
-
-- Added vdiffr visual-regression snapshots for
-  [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
-  and the heading overlays (`tests/testthat/test-vdiffr.R`). They
-  compare locally and skip on CI, guarding figure rendering against
-  ggplot2 version drift.
-
 ### Statistics
 
-- New
-  [`circ_regression()`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
-  fits Fisher-Lee circular-linear regression of a heading on linear
-  covariates (formula interface over
-  [`circular::lm.circular`](https://rdrr.io/pkg/circular/man/lm.circular.html)),
-  with [`summary()`](https://rdrr.io/r/base/summary.html) (tidy
-  coefficients),
-  [`predict()`](https://rdrr.io/r/stats/predict.html)/[`fitted()`](https://rdrr.io/r/stats/fitted.values.html),
-  and [`print()`](https://rdrr.io/r/base/print.html) methods.
-  [`simulate_tracks()`](https://johnkirwan.github.io/radiatR/reference/simulate_tracks.md)
-  gains a per-condition `mean_slope` so the predictor shifts the mean
-  heading, enabling end-to-end recovery.
-
-- New
-  [`fitted_directions()`](https://johnkirwan.github.io/radiatR/reference/fitted_directions.md)
-  turns a
-  [`circ_regression()`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
-  fit into mean-direction arrows for
-  [`add_circ_mean()`](https://johnkirwan.github.io/radiatR/reference/add_circ_mean.md),
-  so the fitted heading-vs-covariate relationship can be drawn on the
-  circular panel, colour-graded by the predictor.
-
+- [`circ_model_select()`](https://johnkirwan.github.io/radiatR/reference/circ_model_select.md)
+  now ranks five candidate models, adding `unimodal_uniform` (a directed
+  von Mises over a uniform background) and `bimodal` (an asymmetric
+  two-von-Mises mixture), fitted by numerical maximum likelihood. The
+  `axial` model is now scored with an explicit closed-form density.
 - [`simulate_tracks()`](https://johnkirwan.github.io/radiatR/reference/simulate_tracks.md)
-  is now modality- and shape-aware. Per-condition `modality` (`uniform`
-  / `unimodal` / `axial` / `multimodal` with `n_modes`) sets the
-  distribution of per-track headings, and `track_shape` (`directed` or
-  `oscillatory`) sets within-track geometry — `oscillatory` produces
-  back-and-forth axial tracks whose line-width (`line_width`) is
-  independent of tortuosity, so the per-track axial methods recover the
-  axis at default settings. The ground truth is recorded in new output
-  columns and in the `TrajSet` `meta$sim_conditions`. The default output
-  is unchanged.
+  gains `modality = "unimodal_uniform"` and `"bimodal"` with
+  `mix_weight`, `mode2_mean`, and `kappa2` condition columns.
 
 ### Plotting
 
@@ -95,6 +37,48 @@
   faceting — a true row x column grid, mirroring ggplot (each accepts
   one or more column names, nesting per side). This complements the
   existing `facets` (`facet_wrap`); use one or the other, not both.
+
+### Visualisation
+
+- New
+  [`as_angle()`](https://johnkirwan.github.io/radiatR/reference/as_angle.md)
+  maps periodic **time / date / numeric** data onto circular angles —
+  the data-side counterpart of the circumference labels.
+  `as_angle(x, period = "day" | "year" | <numeric>)` turns
+  `POSIXct`/`Date`/numeric input into unit-circle radians in the
+  clock/calendar convention, so a `06:00` timestamp lands on the `"6"`
+  hours label (and the 1st of each month on its month label), and the
+  result feeds
+  [`headings_frame()`](https://johnkirwan.github.io/radiatR/reference/headings_frame.md)
+  /
+  [`circ_summary()`](https://johnkirwan.github.io/radiatR/reference/circ_summary.md)
+  /
+  [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  like any heading column. Enables chronobiology (time of day) and
+  phenology (time of year) circular analyses.
+
+- [`plot_profile()`](https://johnkirwan.github.io/radiatR/reference/plot_profile.md)
+  gains `smooth` (a centered per-track sliding-window moving average of
+  the speed/turning series, in points; `1` = off) and `show_raw` (draw
+  the raw series faintly under the smoothed line). The Shiny app’s
+  Track-metrics profile gains a smoothing slider and a “Show raw”
+  checkbox.
+
+### Track metrics
+
+- New
+  [`restrict_to_circumference()`](https://johnkirwan.github.io/radiatR/reference/restrict_to_circumference.md)
+  returns a `Tracks` with out-of-circumference (`rho > 1`) data removed,
+  so the kinematics
+  ([`track_speed()`](https://johnkirwan.github.io/radiatR/reference/track_speed.md),
+  [`instantaneous_speed()`](https://johnkirwan.github.io/radiatR/reference/instantaneous_speed.md),
+  [`track_length()`](https://johnkirwan.github.io/radiatR/reference/track_length.md),
+  the `path_*` shape metrics) are computed only on the within-circle
+  portion of each trajectory. `mode = "truncate"` (default) keeps each
+  track up to its first excursion beyond the circumference;
+  `mode = "drop"` removes individual out-of-circumference points. This
+  is the data-filtering counterpart to the plot-only
+  `radiate(clip_tracks = TRUE)`.
 
 ### Bug fixes
 
@@ -138,21 +122,82 @@
   band, whose default `width` is also narrowed (`0.06` -\> `0.05`) for a
   thinner ring.
 
-### Track metrics
+### Infrastructure
+
+- Added vdiffr visual-regression snapshots for
+  [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  and the heading overlays (`tests/testthat/test-vdiffr.R`). They
+  compare locally and skip on CI, guarding figure rendering against
+  ggplot2 version drift.
+
+## radiatR 0.4.1
+
+### Breaking changes
+
+- The central S4 class `TrajSet` is renamed to **`Tracks`**, its
+  constructor to the lowercase
+  [`tracks()`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md),
+  and the loader functions to snake_case: `TrajSet_read()` -\>
+  [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md),
+  `TrajSet_read_dir()` -\>
+  [`read_tracks_dir()`](https://johnkirwan.github.io/radiatR/reference/read_tracks_dir.md),
+  `TrajSet_read_format()` -\>
+  [`read_tracks_format()`](https://johnkirwan.github.io/radiatR/reference/read_tracks_format.md),
+  `TrajSet_load_manifest()` -\>
+  [`load_manifest()`](https://johnkirwan.github.io/radiatR/reference/load_manifest.md).
+  No behaviour, slot, or output changed. Bundled `cpunctatus` is now a
+  `Tracks` object.
+
+### Infrastructure
+
+- `headings_frame` is now a tibble subclass whose class and display
+  convention survive dplyr verbs
+  (`mutate`/`filter`/`select`/`bind_rows`) via the `dplyr_reconstruct`
+  contract, so the orientation no longer leaks. New exported
+  [`hf_display()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)/[`hf_heading_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)/[`hf_colour_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)/[`hf_coords()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  accessors read the metadata (and work on a plain data frame).
+  [`derive_headings()`](https://johnkirwan.github.io/radiatR/reference/derive_headings.md)
+  now returns a `headings_frame`; orientation is consolidated into a
+  single `display` attribute (the vestigial
+  `display_convention`/`angle_convention` strings are removed). See
+  [`vignette("design")`](https://johnkirwan.github.io/radiatR/articles/design.md).
+
+### Statistics
 
 - New
-  [`restrict_to_circumference()`](https://johnkirwan.github.io/radiatR/reference/restrict_to_circumference.md)
-  returns a `Tracks` with out-of-circumference (`rho > 1`) data removed,
-  so the kinematics
-  ([`track_speed()`](https://johnkirwan.github.io/radiatR/reference/track_speed.md),
-  [`instantaneous_speed()`](https://johnkirwan.github.io/radiatR/reference/instantaneous_speed.md),
-  [`track_length()`](https://johnkirwan.github.io/radiatR/reference/track_length.md),
-  the `path_*` shape metrics) are computed only on the within-circle
-  portion of each trajectory. `mode = "truncate"` (default) keeps each
-  track up to its first excursion beyond the circumference;
-  `mode = "drop"` removes individual out-of-circumference points. This
-  is the data-filtering counterpart to the plot-only
-  `radiate(clip_tracks = TRUE)`.
+  [`circ_regression()`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  fits Fisher-Lee circular-linear regression of a heading on linear
+  covariates (formula interface over
+  [`circular::lm.circular`](https://rdrr.io/pkg/circular/man/lm.circular.html)),
+  with [`summary()`](https://rdrr.io/r/base/summary.html) (tidy
+  coefficients),
+  [`predict()`](https://rdrr.io/r/stats/predict.html)/[`fitted()`](https://rdrr.io/r/stats/fitted.values.html),
+  and [`print()`](https://rdrr.io/r/base/print.html) methods.
+  [`simulate_tracks()`](https://johnkirwan.github.io/radiatR/reference/simulate_tracks.md)
+  gains a per-condition `mean_slope` so the predictor shifts the mean
+  heading, enabling end-to-end recovery.
+
+- New
+  [`fitted_directions()`](https://johnkirwan.github.io/radiatR/reference/fitted_directions.md)
+  turns a
+  [`circ_regression()`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  fit into mean-direction arrows for
+  [`add_circ_mean()`](https://johnkirwan.github.io/radiatR/reference/add_circ_mean.md),
+  so the fitted heading-vs-covariate relationship can be drawn on the
+  circular panel, colour-graded by the predictor.
+
+- [`simulate_tracks()`](https://johnkirwan.github.io/radiatR/reference/simulate_tracks.md)
+  is now modality- and shape-aware. Per-condition `modality` (`uniform`
+  / `unimodal` / `axial` / `multimodal` with `n_modes`) sets the
+  distribution of per-track headings, and `track_shape` (`directed` or
+  `oscillatory`) sets within-track geometry — `oscillatory` produces
+  back-and-forth axial tracks whose line-width (`line_width`) is
+  independent of tortuosity, so the per-track axial methods recover the
+  axis at default settings. The ground truth is recorded in new output
+  columns and in the `TrajSet` `meta$sim_conditions`. The default output
+  is unchanged.
+
+### Track metrics
 
 - New
   [`path_sinuosity()`](https://johnkirwan.github.io/radiatR/reference/path_sinuosity.md)
@@ -274,23 +319,6 @@
   `radiate(angle_labels = "cardinal" | "hours" | "months" | "seconds")`
   selects them directly and aligns the tick count to the scale.
 
-- New
-  [`as_angle()`](https://johnkirwan.github.io/radiatR/reference/as_angle.md)
-  maps periodic **time / date / numeric** data onto circular angles —
-  the data-side counterpart of the circumference labels.
-  `as_angle(x, period = "day" | "year" | <numeric>)` turns
-  `POSIXct`/`Date`/numeric input into unit-circle radians in the
-  clock/calendar convention, so a `06:00` timestamp lands on the `"6"`
-  hours label (and the 1st of each month on its month label), and the
-  result feeds
-  [`headings_frame()`](https://johnkirwan.github.io/radiatR/reference/headings_frame.md)
-  /
-  [`circ_summary()`](https://johnkirwan.github.io/radiatR/reference/circ_summary.md)
-  /
-  [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
-  like any heading column. Enables chronobiology (time of day) and
-  phenology (time of year) circular analyses.
-
 - [`plot_profile()`](https://johnkirwan.github.io/radiatR/reference/plot_profile.md)
   draws a non-circular kinematics profile – instantaneous speed or
   turning rate against elapsed time, one line per track (the ggplot
@@ -304,13 +332,6 @@
   ([`velocity_angle()`](https://johnkirwan.github.io/radiatR/reference/velocity_angle.md))
   over elapsed time as points (direction is circular, so it is drawn as
   points rather than a line).
-
-- [`plot_profile()`](https://johnkirwan.github.io/radiatR/reference/plot_profile.md)
-  gains `smooth` (a centered per-track sliding-window moving average of
-  the speed/turning series, in points; `1` = off) and `show_raw` (draw
-  the raw series faintly under the smoothed line). The Shiny app’s
-  Track-metrics profile gains a smoothing slider and a “Show raw”
-  checkbox.
 
 - New
   [`plot_speed_direction()`](https://johnkirwan.github.io/radiatR/reference/plot_speed_direction.md)

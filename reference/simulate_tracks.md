@@ -92,10 +92,14 @@ explicit values are not supplied. - \`predictor_values\` (list-column):
 optional explicit predictor values (length \`n_trials\`) overriding the
 generated values. - \`modality\` (character): the sample modality from
 which per-trial principal headings are drawn. One of \`"unimodal"\`
-(default), \`"uniform"\`, \`"axial"\`, or \`"multimodal"\`. Controls the
-\*distribution of headings across trials\*, not the within-trial path
-shape. - \`n_modes\` (integer): number of evenly spaced modes used when
-\`modality == "multimodal"\` (default 1; ignored by other modalities). -
+(default), \`"uniform"\`, \`"axial"\`, or \`"multimodal"\`,
+\`"unimodal_uniform"\` (a directed mode over a uniform background;
+\`mix_weight\` sets the directed fraction), or \`"bimodal"\` (an
+asymmetric two-von-Mises mixture; \`mix_weight\`, \`mode2_mean\`,
+\`kappa2\` set the second mode). Controls the \*distribution of headings
+across trials\*, not the within-trial path shape. - \`n_modes\`
+(integer): number of evenly spaced modes used when \`modality ==
+"multimodal"\` (default 1; ignored by other modalities). -
 \`track_shape\` (character): the \*within-track\* path shape. One of
 \`"directed"\` (default) – a single sweep towards \`final_heading\` – or
 \`"oscillatory"\` – back-and-forth motion along the principal axis

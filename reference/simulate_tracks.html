@@ -13,7 +13,7 @@ without relying on large raw tracking files."><meta property="og:image" content=
 
     <a class="navbar-brand me-2" href="../index.html">radiatR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -143,7 +143,10 @@ supplied when missing):</p>
   `n_trials`) overriding the generated values.
 - `modality` (character): the sample modality from which per-trial principal
   headings are drawn. One of `"unimodal"` (default), `"uniform"`, `"axial"`,
-  or `"multimodal"`. Controls the *distribution of headings across trials*,
+  or `"multimodal"`, `"unimodal_uniform"` (a directed mode over a uniform
+  background; `mix_weight` sets the directed fraction), or `"bimodal"` (an
+  asymmetric two-von-Mises mixture; `mix_weight`, `mode2_mean`, `kappa2` set
+  the second mode). Controls the *distribution of headings across trials*,
   not the within-trial path shape.
 - `n_modes` (integer): number of evenly spaced modes used when
   `modality == "multimodal"` (default 1; ignored by other modalities).

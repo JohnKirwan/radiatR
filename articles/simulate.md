@@ -413,9 +413,9 @@ do.call(rbind, lapply(split(ms, ms$condition), function(d) {
   d[which.min(d$AICc), c("condition", "model", "weight")]
 }))
 #>          condition    model    weight
-#> axial        axial    axial 1.0000000
-#> uniform    uniform unimodal 0.4775205
-#> unimodal  unimodal unimodal 1.0000000
+#> axial        axial    axial 0.8243673
+#> uniform    uniform unimodal 0.3306096
+#> unimodal  unimodal unimodal 0.7256195
 ```
 
 The `unimodal` and `axial` conditions are picked out cleanly (Akaike
