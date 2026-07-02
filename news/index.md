@@ -46,6 +46,12 @@
   `display_convention`/`angle_convention` strings are removed). See
   [`vignette("design")`](https://johnkirwan.github.io/radiatR/articles/design.md).
 
+- Added vdiffr visual-regression snapshots for
+  [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  and the heading overlays (`tests/testthat/test-vdiffr.R`). They
+  compare locally and skip on CI, guarding figure rendering against
+  ggplot2 version drift.
+
 ### Statistics
 
 - New
