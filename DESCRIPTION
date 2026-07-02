@@ -80,6 +80,7 @@ Collate:
     'headings_frame.R'
     'launch_app.R'
     'loaders.R'
+    'circ_mixtures.R'
     'model_selection.R'
     'circumference_labs.R'
     'periodic_angle.R'
