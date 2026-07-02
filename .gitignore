@@ -7,7 +7,8 @@ vignettes/*_files/
 vignettes/*.html
 /doc/
 /Meta/
-docs/
+docs/*
+!docs/superpowers/
 dev/
 _build/
 _site/
