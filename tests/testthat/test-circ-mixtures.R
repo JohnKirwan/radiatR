@@ -70,12 +70,17 @@ test_that(".fit_two_vm agrees with CircMLE on the best bimodal model", {
   ours <- radiatR:::.fit_two_vm(th)$logLik
 
   x   <- circular::circular(th, units = "radians", type = "angles")
-  res <- CircMLE::circ_mle(x)$results
-  # circ_mle reports -LogLik per model; the free 2-component von Mises mixtures
-  # are the M4/M5 family. Take the best (smallest -LogLik) mixture model as the
-  # oracle for our free two-vM fit.
+  # circ_mle emits a benign "Converting to modulo 2pi" notice on angle input.
+  res <- suppressWarnings(CircMLE::circ_mle(x))$results
+  # circ_mle reports the NEGATIVE log-likelihood per model. The column is named
+  # "Likelihood" in CircMLE >= 0.3.0 (older versions used "-LogLik"). The free
+  # two-component von Mises mixtures are the M4/M5 family; take the best (smallest
+  # negative log-likelihood) as the oracle for our free two-vM fit. Using min over
+  # the family also sidesteps the occasional M5B non-convergence in circ_mle's
+  # random restarts (the constrained M5A converges reliably on this data).
+  nll_col   <- if ("Likelihood" %in% colnames(res)) "Likelihood" else "-LogLik"
   mix_rows  <- grepl("^M[45]", rownames(res))
-  oracle_ll <- -min(res[mix_rows, "-LogLik"], na.rm = TRUE)
+  oracle_ll <- -min(res[mix_rows, nll_col], na.rm = TRUE)
 
   # our maximised logLik should match the best CircMLE mixture within tolerance
   # (both maximise the same family; small differences from optimiser settings).

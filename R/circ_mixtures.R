@@ -43,7 +43,7 @@
   k0  <- max(.kappa_start(st$rbar), 0.5)
 
   nll <- function(par) {
-    g  <- plogis(par[1])
+    g  <- stats::plogis(par[1])
     l1 <- log(g)      + .dvm_log(theta, par[2], exp(par[3]))
     l2 <- log1p(-g)   + .dvm_log(theta, par[4], exp(par[5]))
     lf <- .logsumexp2(l1, l2)
@@ -62,7 +62,7 @@
                      error = function(e) NULL)
     if (is.null(opt) || !is.finite(opt$value)) next
     if (opt$value < best_nll) {
-      g  <- plogis(opt$par[1])
+      g  <- stats::plogis(opt$par[1])
       m1 <- opt$par[2] %% (2 * pi); k1 <- exp(opt$par[3])
       m2 <- opt$par[4] %% (2 * pi); k2 <- exp(opt$par[5])
       # canonical order: larger-weight component first
@@ -86,7 +86,7 @@
   log_unif <- -log(2 * pi)
 
   nll <- function(par) {
-    p  <- plogis(par[1]); mu <- par[2]; kappa <- exp(par[3])
+    p  <- stats::plogis(par[1]); mu <- par[2]; kappa <- exp(par[3])
     lf <- .logsumexp2(log(p) + .dvm_log(theta, mu, kappa),
                       log1p(-p) + log_unif)
     if (any(!is.finite(lf))) return(1e18)
@@ -97,7 +97,7 @@
   starts <- expand.grid(p = c(0.5, 0.8), k = c(0.8, .kappa_start(st$rbar)))
   best <- fail; best_nll <- Inf
   for (i in seq_len(nrow(starts))) {
-    init <- c(qlogis(min(max(starts$p[i], 1e-3), 1 - 1e-3)),
+    init <- c(stats::qlogis(min(max(starts$p[i], 1e-3), 1 - 1e-3)),
               st$mu, log(max(starts$k[i], 1e-2)))
     opt <- tryCatch(stats::optim(init, nll, method = "Nelder-Mead",
                                  control = list(maxit = 500)),
@@ -105,7 +105,7 @@
     if (is.null(opt) || !is.finite(opt$value)) next
     if (opt$value < best_nll) {
       best_nll <- opt$value
-      best <- list(logLik = -opt$value, p = plogis(opt$par[1]),
+      best <- list(logLik = -opt$value, p = stats::plogis(opt$par[1]),
                    mu = opt$par[2] %% (2 * pi), kappa = exp(opt$par[3]),
                    converged = opt$convergence == 0)
     }
