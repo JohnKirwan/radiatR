@@ -1,0 +1,717 @@
+# Package index
+
+## Launch the app
+
+Browser-based interface – no R coding required.
+
+- [`launch_app()`](https://johnkirwan.github.io/radiatR/reference/launch_app.md)
+  : Launch the radiatR Shiny companion app
+
+## Loading tracking data
+
+Read and normalise trajectory files from 20+ tracking tools. Use
+dialect_args to pass tool-specific options (bodypart selection,
+likelihood thresholds, zone selection, etc.).
+
+- [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  : Construct a Tracks from a data.frame or file(s)
+- [`read_tracks_dir()`](https://johnkirwan.github.io/radiatR/reference/read_tracks_dir.md)
+  : Read all matching files from a directory and bind into a Tracks
+- [`read_tracks_format()`](https://johnkirwan.github.io/radiatR/reference/read_tracks_format.md)
+  : Construct a Tracks from a \*format\* spec (registered name or inline
+  list)
+- [`load_manifest()`](https://johnkirwan.github.io/radiatR/reference/load_manifest.md)
+  : Load trajectories listed in a file table into a Tracks
+- [`dtrack_read()`](https://johnkirwan.github.io/radiatR/reference/dtrack_read.md)
+  : Read a dtrack trajectory file into a Tracks
+- [`import_info()`](https://johnkirwan.github.io/radiatR/reference/import_info.md)
+  : Import landmark coordinates from text files
+- [`import_tracks()`](https://johnkirwan.github.io/radiatR/reference/import_tracks.md)
+  : Discover dtrack (or compatible) landmark/track file pairs in a
+  directory
+- [`load_tracks()`](https://johnkirwan.github.io/radiatR/reference/load_tracks.md)
+  : Legacy helper to merge manifest metadata with a track table
+- [`load_tracks2()`](https://johnkirwan.github.io/radiatR/reference/load_tracks2.md)
+  : Flexible metadata join for track tables
+- [`get_all_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.md)
+  : Aggregate track positions across all videos in a manifest.
+- [`get_trial_limits()`](https://johnkirwan.github.io/radiatR/reference/get_trial_limits.md)
+  : Summarise per-trial metadata for a single video.
+- [`get_tracked_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_tracked_object_pos.md)
+  : Derive trial-level track positions in polar coordinates.
+- [`guess_columns()`](https://johnkirwan.github.io/radiatR/reference/guess_columns.md)
+  : Guess the role of each column in a track table
+
+## Loader registry
+
+Register custom file formats or query which dialects are available.
+
+- [`register_loader_dialect()`](https://johnkirwan.github.io/radiatR/reference/register_loader_dialect.md)
+  : Register a custom loader dialect The function must accept (x, ...)
+  and return a data.frame in long form with columns at least id,time and
+  one of (angle) or (x,y)
+- [`list_loader_dialects()`](https://johnkirwan.github.io/radiatR/reference/list_loader_dialects.md)
+  : List registered loader dialects
+- [`register_loader_format()`](https://johnkirwan.github.io/radiatR/reference/register_loader_format.md)
+  : Register a declarative loader \*format\* (list or YAML/JSON file)
+  The spec maps cleanly onto read_tracks() args and supports regex-based
+  column finding.
+- [`list_loader_formats()`](https://johnkirwan.github.io/radiatR/reference/list_loader_formats.md)
+  : List registered declarative formats
+
+## The Tracks class
+
+S4 container holding a long-form trajectory data frame together with
+column mappings and metadata.
+
+- [`tracks()`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md)
+  [`length(`*`<Tracks>`*`)`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md)
+  [`` `[`( ``*`<Tracks>`*`,`*`<ANY>`*`,`*`<missing>`*`,`*`<missing>`*`)`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md)
+  [`c(`*`<Tracks>`*`)`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md)
+  : Tracks container for circular trajectories
+- [`transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
+  [`log_transform()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
+  [`set_transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
+  : Transform history helpers for Tracks objects
+
+## Simulation
+
+Generate synthetic circular-space trajectories for teaching, pipeline
+testing, and power analysis.
+
+- [`simulate_tracks()`](https://johnkirwan.github.io/radiatR/reference/simulate_tracks.md)
+  : Simulate trajectory sets under configurable experimental conditions
+
+## Deriving headings
+
+Extract one or more heading angles per trial from trajectory or pose
+data using built-in rules or custom functions.
+
+- [`derive_headings()`](https://johnkirwan.github.io/radiatR/reference/derive_headings.md)
+  : Derive heading angle(s) from trajectories using specified rule
+- [`circ_summary_headings()`](https://johnkirwan.github.io/radiatR/reference/circ_summary_headings.md)
+  : Circular statistics over derived headings
+- [`pose_to_headings()`](https://johnkirwan.github.io/radiatR/reference/pose_to_headings.md)
+  : Derive per-frame headings from pose data without a Tracks
+- [`headings_frame()`](https://johnkirwan.github.io/radiatR/reference/headings_frame.md)
+  : Construct a headings frame from a data frame of angles
+- [`new_headings_frame()`](https://johnkirwan.github.io/radiatR/reference/new_headings_frame.md)
+  : Low-level headings_frame constructor
+- [`hf_display()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  [`hf_heading_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  [`hf_colour_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  [`hf_color_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  [`hf_coords()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  : Read the canonical attributes of a heading frame
+- [`register_heading_rule()`](https://johnkirwan.github.io/radiatR/reference/register_heading_rule.md)
+  : Register a custom heading derivation rule
+- [`list_heading_rules()`](https://johnkirwan.github.io/radiatR/reference/list_heading_rules.md)
+  : List registered custom heading rules
+- [`bin_angles()`](https://johnkirwan.github.io/radiatR/reference/bin_angles.md)
+  : Snap angles to fixed-width circular bin centres
+
+## Circular statistics – summaries
+
+Mean direction, resultant length, concentration, and within-trial
+dispersion.
+
+- [`circ_summary()`](https://johnkirwan.github.io/radiatR/reference/circ_summary.md)
+  : Circular summaries per trajectory
+- [`circ_summarise()`](https://johnkirwan.github.io/radiatR/reference/circ_summarise.md)
+  : Tidy circular summary of a grouped data frame
+- [`circ_dispersion()`](https://johnkirwan.github.io/radiatR/reference/circ_dispersion.md)
+  : Per-group circular dispersion statistics for a dense heading series
+- [`circ_boxplot_stats()`](https://johnkirwan.github.io/radiatR/reference/circ_boxplot_stats.md)
+  : Circular boxplot statistics (Tukey-like, for circular and axial
+  data)
+- [`sector_summary()`](https://johnkirwan.github.io/radiatR/reference/sector_summary.md)
+  : Proportion of time spent in angular sectors
+- [`compute_circ_mean()`](https://johnkirwan.github.io/radiatR/reference/compute_circ_mean.md)
+  : Compute circular mean direction and resultant length from a headings
+  data frame
+- [`compute_circ_interval()`](https://johnkirwan.github.io/radiatR/reference/compute_circ_interval.md)
+  : Compute a circular interval arc from heading angles
+
+## Circular statistics – parametric fitting
+
+Fit von Mises or wrapped Cauchy distributions via MLE. Pass fitted
+objects to the density overlay functions for visual model comparison.
+
+- [`vonmises_fit()`](https://johnkirwan.github.io/radiatR/reference/vonmises_fit.md)
+  : Fit a von Mises distribution to per-group heading data
+- [`wrappedcauchy_fit()`](https://johnkirwan.github.io/radiatR/reference/wrappedcauchy_fit.md)
+  : Fit a wrapped Cauchy distribution to per-group heading data
+- [`circ_model_select()`](https://johnkirwan.github.io/radiatR/reference/circ_model_select.md)
+  : Select among candidate circular models by AICc
+
+## Circular statistics – correlation & regression
+
+Measure the association between heading directions and a continuous
+covariate (circular-linear) or a second set of angles
+(circular-circular), and model a heading on linear covariates
+(Fisher-Lee regression).
+
+- [`circ_cor()`](https://johnkirwan.github.io/radiatR/reference/circ_cor.md)
+  : Circular correlation between headings and a covariate
+- [`circ_regression()`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  [`summary(`*`<circ_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  [`predict(`*`<circ_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  [`fitted(`*`<circ_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  [`print(`*`<circ_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  : Circular-linear regression of a heading on linear covariates
+- [`concentration_regression()`](https://johnkirwan.github.io/radiatR/reference/concentration_regression.md)
+  [`summary(`*`<concentration_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/concentration_regression.md)
+  [`predict(`*`<concentration_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/concentration_regression.md)
+  [`fitted(`*`<concentration_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/concentration_regression.md)
+  [`print(`*`<concentration_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/concentration_regression.md)
+  : Von Mises regression of concentration on covariates
+- [`fitted_directions()`](https://johnkirwan.github.io/radiatR/reference/fitted_directions.md)
+  : Fitted mean directions from a circular regression, for plotting
+
+## Circular statistics – hypothesis tests
+
+Uniformity, equal mean directions, and equal concentrations. All
+functions return tidy data frames; use p_adjust for family-wise or FDR
+correction when testing multiple groups.
+
+- [`test_uniformity()`](https://johnkirwan.github.io/radiatR/reference/test_uniformity.md)
+  : Per-group tests of circular uniformity
+- [`test_mean_directions()`](https://johnkirwan.github.io/radiatR/reference/test_mean_directions.md)
+  : Test whether groups share the same mean direction
+- [`boot_mean_ci()`](https://johnkirwan.github.io/radiatR/reference/boot_mean_ci.md)
+  : Bootstrap confidence interval for a mean direction
+- [`test_concentration()`](https://johnkirwan.github.io/radiatR/reference/test_concentration.md)
+  : Test whether groups share the same concentration (dispersion)
+- [`boot_kappa_ci()`](https://johnkirwan.github.io/radiatR/reference/boot_kappa_ci.md)
+  : Bootstrap confidence intervals for circular concentration
+- [`boot_kappa_contrast()`](https://johnkirwan.github.io/radiatR/reference/boot_kappa_contrast.md)
+  : Bootstrap confidence interval for a between-condition concentration
+  contrast
+
+## Visualisation – core
+
+The main radiate() function and its building blocks.
+
+- [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  : Make ggplot object of tracks radiating from circle centre.
+- [`plot_profile()`](https://johnkirwan.github.io/radiatR/reference/plot_profile.md)
+  : Kinematics profile plot for a Tracks
+- [`plot_speed_direction()`](https://johnkirwan.github.io/radiatR/reference/plot_speed_direction.md)
+  : Speed-vs-direction scatter for a Tracks
+- [`plot_speed_histogram()`](https://johnkirwan.github.io/radiatR/reference/plot_speed_histogram.md)
+  : Speed distribution histogram for a Tracks
+- [`gg_traj()`](https://johnkirwan.github.io/radiatR/reference/gg_traj.md)
+  : Plot trajectories from a Tracks (overlay or faceted)
+- [`draw_tracks()`](https://johnkirwan.github.io/radiatR/reference/draw_tracks.md)
+  : Create geom layers for Cartesian track coordinates
+- [`add_ticks()`](https://johnkirwan.github.io/radiatR/reference/add_ticks.md)
+  : Create evenly spaced radial tick marks.
+- [`add_circ()`](https://johnkirwan.github.io/radiatR/reference/add_circ.md)
+  : Draw a circular guide.
+- [`degree_labs()`](https://johnkirwan.github.io/radiatR/reference/degree_labs.md)
+  : Label the four diagonal directions.
+- [`radial_theme()`](https://johnkirwan.github.io/radiatR/reference/radial_theme.md)
+  : Themes for radial track plots, named for the ggplot2 base themes.
+- [`directedness_arrow()`](https://johnkirwan.github.io/radiatR/reference/directedness_arrow.md)
+  : Make mean resultant length arrow
+- [`assign_cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.md)
+  [`assign_cycle_colors()`](https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.md)
+  : Assign cycling colour indices to trajectories
+- [`add_multiple_circles()`](https://johnkirwan.github.io/radiatR/reference/add_multiple_circles.md)
+  : Add multiple concentric circles to a ggplot object
+- [`circ_display()`](https://johnkirwan.github.io/radiatR/reference/circ_display.md)
+  : Circular display convention specification
+- [`add_radial_grid()`](https://johnkirwan.github.io/radiatR/reference/add_radial_grid.md)
+  : Radial grid layers (the radial analogue of a Cartesian grid)
+- [`add_origin_point()`](https://johnkirwan.github.io/radiatR/reference/add_origin_point.md)
+  : Mark the centre of a radial plot
+- [`assign_colour_key()`](https://johnkirwan.github.io/radiatR/reference/assign_colour_key.md)
+  [`assign_color_key()`](https://johnkirwan.github.io/radiatR/reference/assign_colour_key.md)
+  : Assign a shared colour-key column to a Tracks or data frame
+- [`cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/cycle_colours.md)
+  [`cycle_colors()`](https://johnkirwan.github.io/radiatR/reference/cycle_colours.md)
+  : Cycle a bounded set of colour indices over the values of a key
+
+## Visualisation – circumference scales
+
+Label the circumference of a radial plot in domain units – compass
+points, clock hours, months, or seconds.
+
+- [`circumference_labs()`](https://johnkirwan.github.io/radiatR/reference/circumference_labs.md)
+  : Label the circumference of a radial plot in domain units
+- [`scale_cardinal()`](https://johnkirwan.github.io/radiatR/reference/scale_cardinal.md)
+  : Circumference scale: cardinal compass directions
+- [`scale_clock()`](https://johnkirwan.github.io/radiatR/reference/scale_clock.md)
+  : Circumference scale: clock hours
+- [`scale_months()`](https://johnkirwan.github.io/radiatR/reference/scale_months.md)
+  : Circumference scale: months of the year
+- [`scale_seconds()`](https://johnkirwan.github.io/radiatR/reference/scale_seconds.md)
+  : Circumference scale: seconds (or minutes)
+- [`as_angle()`](https://johnkirwan.github.io/radiatR/reference/as_angle.md)
+  : Map periodic time, date, or numeric data onto circular angles
+
+## Visualisation – heading overlays
+
+Per-trial heading markers, vectors, and mean-direction arrows.
+
+- [`add_heading_points()`](https://johnkirwan.github.io/radiatR/reference/add_heading_points.md)
+  : Add heading endpoint markers on the unit circle
+- [`add_heading_vectors()`](https://johnkirwan.github.io/radiatR/reference/add_heading_vectors.md)
+  : Add heading vector segments from inner crossing to unit circle
+- [`add_heading_arrow()`](https://johnkirwan.github.io/radiatR/reference/add_heading_arrow.md)
+  : Compute a circular mean arrow and add it to a radial plot in one
+  step
+- [`add_heading_density()`](https://johnkirwan.github.io/radiatR/reference/add_heading_density.md)
+  : Compute a circular density and add it to a radial plot in one step
+- [`add_heading_interval()`](https://johnkirwan.github.io/radiatR/reference/add_heading_interval.md)
+  : Compute a circular interval arc and add it to a radial plot in one
+  step
+- [`add_stacked_headings()`](https://johnkirwan.github.io/radiatR/reference/add_stacked_headings.md)
+  : Add stacked heading dots as a ggplot2 layer
+- [`stack_headings()`](https://johnkirwan.github.io/radiatR/reference/stack_headings.md)
+  : Add stacking columns to a headings data frame
+- [`add_circ_mean()`](https://johnkirwan.github.io/radiatR/reference/add_circ_mean.md)
+  : Render pre-computed circular mean arrows on a radial plot
+- [`add_circ_interval()`](https://johnkirwan.github.io/radiatR/reference/add_circ_interval.md)
+  : Render a pre-computed circular interval arc on a radial plot
+- [`add_critical_r()`](https://johnkirwan.github.io/radiatR/reference/add_critical_r.md)
+  : Add a critical resultant-length circle to a radiate plot
+- [`add_critical_v_line()`](https://johnkirwan.github.io/radiatR/reference/add_critical_v_line.md)
+  : Add a V-test significance boundary to a radiate plot
+
+## Visualisation – distribution overlays
+
+Overlay empirical and fitted angular distributions on a radiate plot.
+Default colours: rose grey, von Mises steelblue, wrapped Cauchy
+darkorange, KDE tomato.
+
+- [`add_angle_rose()`](https://johnkirwan.github.io/radiatR/reference/add_angle_rose.md)
+  : Add a rose diagram of heading angles to a radiate plot
+- [`add_vonmises_density()`](https://johnkirwan.github.io/radiatR/reference/add_vonmises_density.md)
+  : Overlay a fitted von Mises density curve on a radiate plot
+- [`add_wrappedcauchy_density()`](https://johnkirwan.github.io/radiatR/reference/add_wrappedcauchy_density.md)
+  : Overlay a fitted wrapped Cauchy density curve on a radiate plot
+- [`add_circular_kde()`](https://johnkirwan.github.io/radiatR/reference/add_circular_kde.md)
+  : Overlay a non-parametric circular kernel density estimate on a
+  radiate plot
+- [`add_circular_density()`](https://johnkirwan.github.io/radiatR/reference/add_circular_density.md)
+  : Wrap a pre-computed circular density around the unit circle
+- [`add_circular_boxplot()`](https://johnkirwan.github.io/radiatR/reference/add_circular_boxplot.md)
+  : Add a circular boxplot layer to a radial plot
+- [`compute_circular_density()`](https://johnkirwan.github.io/radiatR/reference/compute_circular_density.md)
+  : Compute a circular density data frame from heading observations
+
+## Visualisation – zone & quadrant guides
+
+Zone dwell-time, quadrant lines, and goal-entry counting.
+
+- [`add_quadrant_lines()`](https://johnkirwan.github.io/radiatR/reference/add_quadrant_lines.md)
+  : Add quadrant lines to a radial plot
+- [`zone_dwell()`](https://johnkirwan.github.io/radiatR/reference/zone_dwell.md)
+  : Dwell-time proportions across quadrant x ring zones
+- [`count_goal_entries()`](https://johnkirwan.github.io/radiatR/reference/count_goal_entries.md)
+  : Count entries into a goal zone for trajectories in a circular field
+
+## Coordinate utilities
+
+Angle-convention conversions and geometric helpers.
+
+- [`rad_shepherd()`](https://johnkirwan.github.io/radiatR/reference/rad_shepherd.md)
+  : Wrap angles to the interval (-pi, pi\]
+- [`line_circle_intercept()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept.md)
+  : Find the intercept of a line with the unit circle
+- [`line_circle_intercept_df()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept_df.md)
+  : Intersection helper using track rows
+- [`line_circle_intercept_traj()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept_traj.md)
+  : Intersection helper for Tracks trajectories
+- [`derive_coords()`](https://johnkirwan.github.io/radiatR/reference/derive_coords.md)
+  : Derive polar and reference-relative coordinates from unit-circle
+  position
+
+## Reference frame & transforms
+
+Read or change a Tracks’s per-trajectory reference direction, and apply
+bespoke transformations (recorded in the transform history).
+
+- [`reference()`](https://johnkirwan.github.io/radiatR/reference/reference.md)
+  : Per-trajectory reference direction of a Tracks
+- [`set_reference()`](https://johnkirwan.github.io/radiatR/reference/set_reference.md)
+  : Set the per-trajectory reference and re-derive the relative frame
+- [`apply_transform()`](https://johnkirwan.github.io/radiatR/reference/apply_transform.md)
+  : Apply a bespoke transformation to a Tracks
+- [`restrict_to_circumference()`](https://johnkirwan.github.io/radiatR/reference/restrict_to_circumference.md)
+  : Restrict a Tracks to within the unit circle
+- [`transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
+  [`log_transform()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
+  [`set_transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
+  : Transform history helpers for Tracks objects
+
+## Path metrics
+
+Per-trajectory straightness and tortuosity of the movement path.
+
+- [`straightness_index()`](https://johnkirwan.github.io/radiatR/reference/straightness_index.md)
+  : Per-trajectory straightness index for a Tracks
+- [`tortuosity_ratio()`](https://johnkirwan.github.io/radiatR/reference/tortuosity_ratio.md)
+  : Per-trajectory tortuosity ratio for a Tracks
+- [`path_straightness()`](https://johnkirwan.github.io/radiatR/reference/path_straightness.md)
+  : Path straightness index for a single trajectory
+- [`path_tortuosity()`](https://johnkirwan.github.io/radiatR/reference/path_tortuosity.md)
+  : Tortuosity ratio for a single trajectory
+- [`track_speed()`](https://johnkirwan.github.io/radiatR/reference/track_speed.md)
+  : Per-trajectory speed for a Tracks, in real units
+- [`track_velocity()`](https://johnkirwan.github.io/radiatR/reference/track_velocity.md)
+  : Per-trajectory net velocity for a Tracks
+- [`track_turning()`](https://johnkirwan.github.io/radiatR/reference/track_turning.md)
+  : Per-trajectory turning-rate summary for a Tracks
+- [`track_length()`](https://johnkirwan.github.io/radiatR/reference/track_length.md)
+  : Per-trajectory path length for a Tracks
+- [`step_speed()`](https://johnkirwan.github.io/radiatR/reference/step_speed.md)
+  : Per-step speed along a trajectory
+- [`instantaneous_speed()`](https://johnkirwan.github.io/radiatR/reference/instantaneous_speed.md)
+  : Per-observation instantaneous speed for a Tracks
+- [`velocity_vector()`](https://johnkirwan.github.io/radiatR/reference/velocity_vector.md)
+  : Per-observation velocity vector for a Tracks
+- [`velocity_angle()`](https://johnkirwan.github.io/radiatR/reference/velocity_angle.md)
+  : Per-row movement direction
+- [`angular_velocity()`](https://johnkirwan.github.io/radiatR/reference/angular_velocity.md)
+  : Per-observation angular (turning-rate) velocity for a Tracks
+
+## Track timing
+
+Attach a capture frame rate to a Tracks object and report real elapsed
+time per observation or per trajectory.
+
+- [`frame_rate()`](https://johnkirwan.github.io/radiatR/reference/frame_rate.md)
+  [`set_frame_rate()`](https://johnkirwan.github.io/radiatR/reference/frame_rate.md)
+  : Frame rate of a Tracks object
+- [`elapsed_seconds()`](https://johnkirwan.github.io/radiatR/reference/elapsed_seconds.md)
+  : Elapsed time per observation of a Tracks object
+- [`track_duration()`](https://johnkirwan.github.io/radiatR/reference/track_duration.md)
+  : Duration of each track
+- [`distance_scale()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
+  [`distance_unit()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
+  [`set_distance_scale()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
+  [`calibrate_distance()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
+  : Distance calibration for a Tracks object
+
+## Datasets
+
+Bundled example data from a Cylindroiulus punctatus (millipede) visual
+orientation experiment (Kirwan & Nilsson 2019).
+
+- [`cpunctatus`](https://johnkirwan.github.io/radiatR/reference/cpunctatus.md)
+  : \*Cylindroiulus punctatus\* visual orientation trajectory dataset
+- [`cpunctatus_tracks`](https://johnkirwan.github.io/radiatR/reference/cpunctatus_tracks.md)
+  : \*Cylindroiulus punctatus\* trajectory tibble
+
+## Miscellaneous
+
+Any remaining exported topics.
+
+- [`tracks()`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md)
+  [`length(`*`<Tracks>`*`)`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md)
+  [`` `[`( ``*`<Tracks>`*`,`*`<ANY>`*`,`*`<missing>`*`,`*`<missing>`*`)`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md)
+  [`c(`*`<Tracks>`*`)`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md)
+  : Tracks container for circular trajectories
+- [`add_angle_rose()`](https://johnkirwan.github.io/radiatR/reference/add_angle_rose.md)
+  : Add a rose diagram of heading angles to a radiate plot
+- [`add_circ()`](https://johnkirwan.github.io/radiatR/reference/add_circ.md)
+  : Draw a circular guide.
+- [`add_circ_interval()`](https://johnkirwan.github.io/radiatR/reference/add_circ_interval.md)
+  : Render a pre-computed circular interval arc on a radial plot
+- [`add_circ_mean()`](https://johnkirwan.github.io/radiatR/reference/add_circ_mean.md)
+  : Render pre-computed circular mean arrows on a radial plot
+- [`add_circular_boxplot()`](https://johnkirwan.github.io/radiatR/reference/add_circular_boxplot.md)
+  : Add a circular boxplot layer to a radial plot
+- [`add_circular_density()`](https://johnkirwan.github.io/radiatR/reference/add_circular_density.md)
+  : Wrap a pre-computed circular density around the unit circle
+- [`add_circular_kde()`](https://johnkirwan.github.io/radiatR/reference/add_circular_kde.md)
+  : Overlay a non-parametric circular kernel density estimate on a
+  radiate plot
+- [`add_critical_r()`](https://johnkirwan.github.io/radiatR/reference/add_critical_r.md)
+  : Add a critical resultant-length circle to a radiate plot
+- [`add_critical_v_line()`](https://johnkirwan.github.io/radiatR/reference/add_critical_v_line.md)
+  : Add a V-test significance boundary to a radiate plot
+- [`add_heading_arrow()`](https://johnkirwan.github.io/radiatR/reference/add_heading_arrow.md)
+  : Compute a circular mean arrow and add it to a radial plot in one
+  step
+- [`add_heading_density()`](https://johnkirwan.github.io/radiatR/reference/add_heading_density.md)
+  : Compute a circular density and add it to a radial plot in one step
+- [`add_heading_interval()`](https://johnkirwan.github.io/radiatR/reference/add_heading_interval.md)
+  : Compute a circular interval arc and add it to a radial plot in one
+  step
+- [`add_heading_points()`](https://johnkirwan.github.io/radiatR/reference/add_heading_points.md)
+  : Add heading endpoint markers on the unit circle
+- [`add_heading_vectors()`](https://johnkirwan.github.io/radiatR/reference/add_heading_vectors.md)
+  : Add heading vector segments from inner crossing to unit circle
+- [`add_landmark()`](https://johnkirwan.github.io/radiatR/reference/add_landmark.md)
+  : Add a landmark marker to a circular plot
+- [`add_multiple_circles()`](https://johnkirwan.github.io/radiatR/reference/add_multiple_circles.md)
+  : Add multiple concentric circles to a ggplot object
+- [`add_origin_point()`](https://johnkirwan.github.io/radiatR/reference/add_origin_point.md)
+  : Mark the centre of a radial plot
+- [`add_quadrant_lines()`](https://johnkirwan.github.io/radiatR/reference/add_quadrant_lines.md)
+  : Add quadrant lines to a radial plot
+- [`add_radial_grid()`](https://johnkirwan.github.io/radiatR/reference/add_radial_grid.md)
+  : Radial grid layers (the radial analogue of a Cartesian grid)
+- [`add_stacked_headings()`](https://johnkirwan.github.io/radiatR/reference/add_stacked_headings.md)
+  : Add stacked heading dots as a ggplot2 layer
+- [`add_stimulus_arc()`](https://johnkirwan.github.io/radiatR/reference/add_stimulus_arc.md)
+  : Add a stimulus arc to a circular plot
+- [`add_ticks()`](https://johnkirwan.github.io/radiatR/reference/add_ticks.md)
+  : Create evenly spaced radial tick marks.
+- [`add_vonmises_density()`](https://johnkirwan.github.io/radiatR/reference/add_vonmises_density.md)
+  : Overlay a fitted von Mises density curve on a radiate plot
+- [`add_wrappedcauchy_density()`](https://johnkirwan.github.io/radiatR/reference/add_wrappedcauchy_density.md)
+  : Overlay a fitted wrapped Cauchy density curve on a radiate plot
+- [`angular_velocity()`](https://johnkirwan.github.io/radiatR/reference/angular_velocity.md)
+  : Per-observation angular (turning-rate) velocity for a Tracks
+- [`apply_transform()`](https://johnkirwan.github.io/radiatR/reference/apply_transform.md)
+  : Apply a bespoke transformation to a Tracks
+- [`as.data.frame(`*`<Tracks>`*`)`](https://johnkirwan.github.io/radiatR/reference/as.data.frame.Tracks.md)
+  : Coerce a Tracks to a data frame
+- [`as_angle()`](https://johnkirwan.github.io/radiatR/reference/as_angle.md)
+  : Map periodic time, date, or numeric data onto circular angles
+- [`assign_colour_key()`](https://johnkirwan.github.io/radiatR/reference/assign_colour_key.md)
+  [`assign_color_key()`](https://johnkirwan.github.io/radiatR/reference/assign_colour_key.md)
+  : Assign a shared colour-key column to a Tracks or data frame
+- [`assign_cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.md)
+  [`assign_cycle_colors()`](https://johnkirwan.github.io/radiatR/reference/assign_cycle_colours.md)
+  : Assign cycling colour indices to trajectories
+- [`bin_angles()`](https://johnkirwan.github.io/radiatR/reference/bin_angles.md)
+  : Snap angles to fixed-width circular bin centres
+- [`boot_kappa_ci()`](https://johnkirwan.github.io/radiatR/reference/boot_kappa_ci.md)
+  : Bootstrap confidence intervals for circular concentration
+- [`boot_kappa_contrast()`](https://johnkirwan.github.io/radiatR/reference/boot_kappa_contrast.md)
+  : Bootstrap confidence interval for a between-condition concentration
+  contrast
+- [`boot_mean_ci()`](https://johnkirwan.github.io/radiatR/reference/boot_mean_ci.md)
+  : Bootstrap confidence interval for a mean direction
+- [`circ_boxplot_stats()`](https://johnkirwan.github.io/radiatR/reference/circ_boxplot_stats.md)
+  : Circular boxplot statistics (Tukey-like, for circular and axial
+  data)
+- [`circ_cor()`](https://johnkirwan.github.io/radiatR/reference/circ_cor.md)
+  : Circular correlation between headings and a covariate
+- [`circ_dispersion()`](https://johnkirwan.github.io/radiatR/reference/circ_dispersion.md)
+  : Per-group circular dispersion statistics for a dense heading series
+- [`circ_display()`](https://johnkirwan.github.io/radiatR/reference/circ_display.md)
+  : Circular display convention specification
+- [`circ_model_select()`](https://johnkirwan.github.io/radiatR/reference/circ_model_select.md)
+  : Select among candidate circular models by AICc
+- [`circ_regression()`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  [`summary(`*`<circ_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  [`predict(`*`<circ_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  [`fitted(`*`<circ_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  [`print(`*`<circ_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/circ_regression.md)
+  : Circular-linear regression of a heading on linear covariates
+- [`circ_summarise()`](https://johnkirwan.github.io/radiatR/reference/circ_summarise.md)
+  : Tidy circular summary of a grouped data frame
+- [`circ_summary()`](https://johnkirwan.github.io/radiatR/reference/circ_summary.md)
+  : Circular summaries per trajectory
+- [`circ_summary_headings()`](https://johnkirwan.github.io/radiatR/reference/circ_summary_headings.md)
+  : Circular statistics over derived headings
+- [`circular_mapping`](https://johnkirwan.github.io/radiatR/reference/circular_mapping.md)
+  : Circular coordinate utilities
+- [`circumference_labs()`](https://johnkirwan.github.io/radiatR/reference/circumference_labs.md)
+  : Label the circumference of a radial plot in domain units
+- [`compute_circ_interval()`](https://johnkirwan.github.io/radiatR/reference/compute_circ_interval.md)
+  : Compute a circular interval arc from heading angles
+- [`compute_circ_mean()`](https://johnkirwan.github.io/radiatR/reference/compute_circ_mean.md)
+  : Compute circular mean direction and resultant length from a headings
+  data frame
+- [`compute_circular_density()`](https://johnkirwan.github.io/radiatR/reference/compute_circular_density.md)
+  : Compute a circular density data frame from heading observations
+- [`concentration_regression()`](https://johnkirwan.github.io/radiatR/reference/concentration_regression.md)
+  [`summary(`*`<concentration_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/concentration_regression.md)
+  [`predict(`*`<concentration_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/concentration_regression.md)
+  [`fitted(`*`<concentration_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/concentration_regression.md)
+  [`print(`*`<concentration_regression>`*`)`](https://johnkirwan.github.io/radiatR/reference/concentration_regression.md)
+  : Von Mises regression of concentration on covariates
+- [`count_goal_entries()`](https://johnkirwan.github.io/radiatR/reference/count_goal_entries.md)
+  : Count entries into a goal zone for trajectories in a circular field
+- [`cpunctatus`](https://johnkirwan.github.io/radiatR/reference/cpunctatus.md)
+  : \*Cylindroiulus punctatus\* visual orientation trajectory dataset
+- [`cpunctatus_tracks`](https://johnkirwan.github.io/radiatR/reference/cpunctatus_tracks.md)
+  : \*Cylindroiulus punctatus\* trajectory tibble
+- [`cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/cycle_colours.md)
+  [`cycle_colors()`](https://johnkirwan.github.io/radiatR/reference/cycle_colours.md)
+  : Cycle a bounded set of colour indices over the values of a key
+- [`degree_labs()`](https://johnkirwan.github.io/radiatR/reference/degree_labs.md)
+  : Label the four diagonal directions.
+- [`derive_coords()`](https://johnkirwan.github.io/radiatR/reference/derive_coords.md)
+  : Derive polar and reference-relative coordinates from unit-circle
+  position
+- [`derive_headings()`](https://johnkirwan.github.io/radiatR/reference/derive_headings.md)
+  : Derive heading angle(s) from trajectories using specified rule
+- [`directedness_arrow()`](https://johnkirwan.github.io/radiatR/reference/directedness_arrow.md)
+  : Make mean resultant length arrow
+- [`distance_scale()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
+  [`distance_unit()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
+  [`set_distance_scale()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
+  [`calibrate_distance()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
+  : Distance calibration for a Tracks object
+- [`.heading_registry`](https://johnkirwan.github.io/radiatR/reference/dot-heading_registry.md)
+  : Build a data frame of arrow segments representing mean direction
+  vectors Length equals resultant_R; angle equals mean_dir
+- [`draw_tracks()`](https://johnkirwan.github.io/radiatR/reference/draw_tracks.md)
+  : Create geom layers for Cartesian track coordinates
+- [`dtrack_read()`](https://johnkirwan.github.io/radiatR/reference/dtrack_read.md)
+  : Read a dtrack trajectory file into a Tracks
+- [`elapsed_seconds()`](https://johnkirwan.github.io/radiatR/reference/elapsed_seconds.md)
+  : Elapsed time per observation of a Tracks object
+- [`fitted_directions()`](https://johnkirwan.github.io/radiatR/reference/fitted_directions.md)
+  : Fitted mean directions from a circular regression, for plotting
+- [`frame_rate()`](https://johnkirwan.github.io/radiatR/reference/frame_rate.md)
+  [`set_frame_rate()`](https://johnkirwan.github.io/radiatR/reference/frame_rate.md)
+  : Frame rate of a Tracks object
+- [`get_all_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.md)
+  : Aggregate track positions across all videos in a manifest.
+- [`get_tracked_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_tracked_object_pos.md)
+  : Derive trial-level track positions in polar coordinates.
+- [`get_trial_limits()`](https://johnkirwan.github.io/radiatR/reference/get_trial_limits.md)
+  : Summarise per-trial metadata for a single video.
+- [`gg_traj()`](https://johnkirwan.github.io/radiatR/reference/gg_traj.md)
+  : Plot trajectories from a Tracks (overlay or faceted)
+- [`guess_columns()`](https://johnkirwan.github.io/radiatR/reference/guess_columns.md)
+  : Guess the role of each column in a track table
+- [`headings_frame()`](https://johnkirwan.github.io/radiatR/reference/headings_frame.md)
+  : Construct a headings frame from a data frame of angles
+- [`hf_display()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  [`hf_heading_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  [`hf_colour_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  [`hf_color_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  [`hf_coords()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
+  : Read the canonical attributes of a heading frame
+- [`ids()`](https://johnkirwan.github.io/radiatR/reference/ids.md) :
+  Trajectory identifiers of a Tracks
+- [`import_info()`](https://johnkirwan.github.io/radiatR/reference/import_info.md)
+  : Import landmark coordinates from text files
+- [`import_tracks()`](https://johnkirwan.github.io/radiatR/reference/import_tracks.md)
+  : Discover dtrack (or compatible) landmark/track file pairs in a
+  directory
+- [`instantaneous_speed()`](https://johnkirwan.github.io/radiatR/reference/instantaneous_speed.md)
+  : Per-observation instantaneous speed for a Tracks
+- [`launch_app()`](https://johnkirwan.github.io/radiatR/reference/launch_app.md)
+  : Launch the radiatR Shiny companion app
+- [`line_circle_intercept()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept.md)
+  : Find the intercept of a line with the unit circle
+- [`line_circle_intercept_df()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept_df.md)
+  : Intersection helper using track rows
+- [`line_circle_intercept_traj()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept_traj.md)
+  : Intersection helper for Tracks trajectories
+- [`list_heading_rules()`](https://johnkirwan.github.io/radiatR/reference/list_heading_rules.md)
+  : List registered custom heading rules
+- [`list_loader_dialects()`](https://johnkirwan.github.io/radiatR/reference/list_loader_dialects.md)
+  : List registered loader dialects
+- [`list_loader_formats()`](https://johnkirwan.github.io/radiatR/reference/list_loader_formats.md)
+  : List registered declarative formats
+- [`load_manifest()`](https://johnkirwan.github.io/radiatR/reference/load_manifest.md)
+  : Load trajectories listed in a file table into a Tracks
+- [`load_tracks()`](https://johnkirwan.github.io/radiatR/reference/load_tracks.md)
+  : Legacy helper to merge manifest metadata with a track table
+- [`load_tracks2()`](https://johnkirwan.github.io/radiatR/reference/load_tracks2.md)
+  : Flexible metadata join for track tables
+- [`new_headings_frame()`](https://johnkirwan.github.io/radiatR/reference/new_headings_frame.md)
+  : Low-level headings_frame constructor
+- [`path_sinuosity()`](https://johnkirwan.github.io/radiatR/reference/path_sinuosity.md)
+  : Sinuosity index for a single trajectory
+- [`path_straightness()`](https://johnkirwan.github.io/radiatR/reference/path_straightness.md)
+  : Path straightness index for a single trajectory
+- [`path_tortuosity()`](https://johnkirwan.github.io/radiatR/reference/path_tortuosity.md)
+  : Tortuosity ratio for a single trajectory
+- [`plot_profile()`](https://johnkirwan.github.io/radiatR/reference/plot_profile.md)
+  : Kinematics profile plot for a Tracks
+- [`plot_speed_direction()`](https://johnkirwan.github.io/radiatR/reference/plot_speed_direction.md)
+  : Speed-vs-direction scatter for a Tracks
+- [`plot_speed_histogram()`](https://johnkirwan.github.io/radiatR/reference/plot_speed_histogram.md)
+  : Speed distribution histogram for a Tracks
+- [`pose_to_headings()`](https://johnkirwan.github.io/radiatR/reference/pose_to_headings.md)
+  : Derive per-frame headings from pose data without a Tracks
+- [`rad_shepherd()`](https://johnkirwan.github.io/radiatR/reference/rad_shepherd.md)
+  : Wrap angles to the interval (-pi, pi\]
+- [`radial_theme()`](https://johnkirwan.github.io/radiatR/reference/radial_theme.md)
+  : Themes for radial track plots, named for the ggplot2 base themes.
+- [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  : Make ggplot object of tracks radiating from circle centre.
+- [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  : Construct a Tracks from a data.frame or file(s)
+- [`read_tracks_dir()`](https://johnkirwan.github.io/radiatR/reference/read_tracks_dir.md)
+  : Read all matching files from a directory and bind into a Tracks
+- [`read_tracks_format()`](https://johnkirwan.github.io/radiatR/reference/read_tracks_format.md)
+  : Construct a Tracks from a \*format\* spec (registered name or inline
+  list)
+- [`reference()`](https://johnkirwan.github.io/radiatR/reference/reference.md)
+  : Per-trajectory reference direction of a Tracks
+- [`register_heading_rule()`](https://johnkirwan.github.io/radiatR/reference/register_heading_rule.md)
+  : Register a custom heading derivation rule
+- [`register_loader_dialect()`](https://johnkirwan.github.io/radiatR/reference/register_loader_dialect.md)
+  : Register a custom loader dialect The function must accept (x, ...)
+  and return a data.frame in long form with columns at least id,time and
+  one of (angle) or (x,y)
+- [`register_loader_format()`](https://johnkirwan.github.io/radiatR/reference/register_loader_format.md)
+  : Register a declarative loader \*format\* (list or YAML/JSON file)
+  The spec maps cleanly onto read_tracks() args and supports regex-based
+  column finding.
+- [`restrict_to_circumference()`](https://johnkirwan.github.io/radiatR/reference/restrict_to_circumference.md)
+  : Restrict a Tracks to within the unit circle
+- [`scale_cardinal()`](https://johnkirwan.github.io/radiatR/reference/scale_cardinal.md)
+  : Circumference scale: cardinal compass directions
+- [`scale_clock()`](https://johnkirwan.github.io/radiatR/reference/scale_clock.md)
+  : Circumference scale: clock hours
+- [`scale_months()`](https://johnkirwan.github.io/radiatR/reference/scale_months.md)
+  : Circumference scale: months of the year
+- [`scale_seconds()`](https://johnkirwan.github.io/radiatR/reference/scale_seconds.md)
+  : Circumference scale: seconds (or minutes)
+- [`sector_summary()`](https://johnkirwan.github.io/radiatR/reference/sector_summary.md)
+  : Proportion of time spent in angular sectors
+- [`set_reference()`](https://johnkirwan.github.io/radiatR/reference/set_reference.md)
+  : Set the per-trajectory reference and re-derive the relative frame
+- [`simulate_tracks()`](https://johnkirwan.github.io/radiatR/reference/simulate_tracks.md)
+  : Simulate trajectory sets under configurable experimental conditions
+- [`sinuosity()`](https://johnkirwan.github.io/radiatR/reference/sinuosity.md)
+  : Per-trajectory sinuosity for a Tracks
+- [`stack_headings()`](https://johnkirwan.github.io/radiatR/reference/stack_headings.md)
+  : Add stacking columns to a headings data frame
+- [`step_speed()`](https://johnkirwan.github.io/radiatR/reference/step_speed.md)
+  : Per-step speed along a trajectory
+- [`straightness_index()`](https://johnkirwan.github.io/radiatR/reference/straightness_index.md)
+  : Per-trajectory straightness index for a Tracks
+- [`test_concentration()`](https://johnkirwan.github.io/radiatR/reference/test_concentration.md)
+  : Test whether groups share the same concentration (dispersion)
+- [`test_distributions()`](https://johnkirwan.github.io/radiatR/reference/test_distributions.md)
+  : Test whether groups share the same circular distribution
+- [`test_mean_directions()`](https://johnkirwan.github.io/radiatR/reference/test_mean_directions.md)
+  : Test whether groups share the same mean direction
+- [`test_symmetry()`](https://johnkirwan.github.io/radiatR/reference/test_symmetry.md)
+  : Test a circular distribution for reflective symmetry
+- [`test_uniformity()`](https://johnkirwan.github.io/radiatR/reference/test_uniformity.md)
+  : Per-group tests of circular uniformity
+- [`test_unimodality()`](https://johnkirwan.github.io/radiatR/reference/test_unimodality.md)
+  : Test a circular sample for unimodality against bimodality
+- [`tortuosity_ratio()`](https://johnkirwan.github.io/radiatR/reference/tortuosity_ratio.md)
+  : Per-trajectory tortuosity ratio for a Tracks
+- [`track_duration()`](https://johnkirwan.github.io/radiatR/reference/track_duration.md)
+  : Duration of each track
+- [`track_length()`](https://johnkirwan.github.io/radiatR/reference/track_length.md)
+  : Per-trajectory path length for a Tracks
+- [`track_speed()`](https://johnkirwan.github.io/radiatR/reference/track_speed.md)
+  : Per-trajectory speed for a Tracks, in real units
+- [`track_turning()`](https://johnkirwan.github.io/radiatR/reference/track_turning.md)
+  : Per-trajectory turning-rate summary for a Tracks
+- [`track_velocity()`](https://johnkirwan.github.io/radiatR/reference/track_velocity.md)
+  : Per-trajectory net velocity for a Tracks
+- [`transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
+  [`log_transform()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
+  [`set_transform_history()`](https://johnkirwan.github.io/radiatR/reference/transform_history.md)
+  : Transform history helpers for Tracks objects
+- [`velocity_angle()`](https://johnkirwan.github.io/radiatR/reference/velocity_angle.md)
+  : Per-row movement direction
+- [`velocity_vector()`](https://johnkirwan.github.io/radiatR/reference/velocity_vector.md)
+  : Per-observation velocity vector for a Tracks
+- [`vonmises_fit()`](https://johnkirwan.github.io/radiatR/reference/vonmises_fit.md)
+  : Fit a von Mises distribution to per-group heading data
+- [`wrappedcauchy_fit()`](https://johnkirwan.github.io/radiatR/reference/wrappedcauchy_fit.md)
+  : Fit a wrapped Cauchy distribution to per-group heading data
+- [`zone_dwell()`](https://johnkirwan.github.io/radiatR/reference/zone_dwell.md)
+  : Dwell-time proportions across quadrant x ring zones

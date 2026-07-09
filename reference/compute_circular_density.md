@@ -1,0 +1,142 @@
+# Compute a circular density data frame from heading observations
+
+Evaluates a directional density for a set of heading angles and returns
+a tidy data frame of \`(theta, density)\` pairs. The result can be
+passed directly to \[add_circular_density()\] for rendering, or
+inspected and modified before plotting – for example to replace the
+\`density\` column with a Bayesian posterior predictive density obtained
+from \`brms\` or another modelling package.
+
+## Usage
+
+``` r
+compute_circular_density(
+  headings_df,
+  heading_col = "heading",
+  colour_col = NULL,
+  method = c("vonmises", "kernel", "histogram"),
+  n_theta = 500L,
+  bins = 36L,
+  bw = NULL,
+  boot_reps = 0L,
+  boot_alpha = 0.05,
+  axial = FALSE,
+  color_col = NULL
+)
+```
+
+## Arguments
+
+- headings_df:
+
+  Data frame containing heading angles.
+
+- heading_col:
+
+  Name of the heading column (radians). Default \`"heading"\`.
+
+- colour_col, color_col:
+
+  Optional grouping column. When set, one density is computed per group
+  and the column is included in the output. \`color_col\` is the
+  American-spelling alias.
+
+- method:
+
+  Estimation method: \`"vonmises"\` (default), \`"kernel"\`, or
+  \`"histogram"\`.
+
+- n_theta:
+
+  Number of angular evaluation points for smooth methods. Default
+  \`500\`.
+
+- bins:
+
+  Number of angular bins for the histogram method. Default \`36\`
+  (10degrees each).
+
+- bw:
+
+  Bandwidth passed to \[circular::density.circular()\]. \`NULL\` uses
+  \[circular::bw.nrd.circular()\].
+
+- boot_reps:
+
+  Integer. Number of bootstrap replicates for a \`"vonmises"\`
+  confidence band. \`0\` (default) skips the bootstrap. Ignored for
+  \`"kernel"\` and \`"histogram"\`.
+
+- boot_alpha:
+
+  Significance level for the bootstrap band. Default \`0.05\` produces a
+  95% interval.
+
+- axial:
+
+  Logical; when \`TRUE\`, mirror each observation to \`heading_col +
+  pi\` before density estimation, producing a period-pi
+  (bidirectional/axial) density. Default \`FALSE\`.
+
+## Value
+
+A data frame with columns \`theta\` (radians, -pi to pi) and \`density\`
+(non-negative), plus \`colour_col\` if supplied. When \`boot_reps \> 0\`
+and \`method = "vonmises"\`, also includes \`density_lower\` and
+\`density_upper\`. Suitable for passing to \[add_circular_density()\].
+
+## Details
+
+Three built-in estimation methods are provided:
+
+\* \`"vonmises"\` – fit a von Mises distribution by MLE
+(\[circular::mle.vonmises()\]) and evaluate the fitted density on a
+regular grid of \`n_theta\` angles. Bootstrap confidence bands are
+available via \`boot_reps\`. \* \`"kernel"\` – circular kernel density
+estimate (\[circular::density.circular()\]) with bandwidth chosen by
+\[circular::bw.nrd.circular()\] unless \`bw\` is supplied. \*
+\`"histogram"\` – angular bin counts (a circular rose diagram); \`bins\`
+controls the number of bins.
+
+When \`colour_col\` is supplied the density is computed independently
+for each group and the group label is preserved in the output, enabling
+per-panel use with \[radiate()\]'s \`facets\`.
+
+When \`boot_reps \> 0\` and \`method = "vonmises"\`, a non-parametric
+bootstrap is run: \`boot_reps\` samples are drawn with replacement, a
+von Mises MLE is fitted to each, and the density is evaluated on the
+same grid. The \`boot_alpha / 2\` and \`1 - boot_alpha / 2\` quantiles
+across replicates are returned as \`density_lower\` and
+\`density_upper\` columns. These can be rendered as a confidence band by
+\[add_circular_density()\], or replaced with interval values from a
+Bayesian model before plotting.
+
+## See also
+
+\[add_circular_density()\], \[add_heading_density()\]
+
+## Examples
+
+``` r
+hd <- data.frame(heading = c(0.2, 0.3, 0.4, 0.5, -0.1, 0.1, 0.6, 0.2))
+dens_df <- compute_circular_density(hd)
+head(dens_df)
+#>       theta      density
+#> 1 -3.141593 4.967676e-20
+#> 2 -3.129026 4.600775e-20
+#> 3 -3.116460 4.275929e-20
+#> 4 -3.103894 3.988015e-20
+#> 5 -3.091327 3.732628e-20
+#> 6 -3.078761 3.505975e-20
+
+# Bootstrap CI band (vonmises only):
+if (FALSE) { # \dontrun{
+dens_df <- compute_circular_density(hd, boot_reps = 999L)
+# density_lower / density_upper can be replaced with Bayesian interval values
+# before passing to add_circular_density()
+} # }
+
+# Replace the density column with values from an external model before plotting:
+# dens_df$density <- my_bayesian_density(dens_df$theta)
+# ggplot() + coord_fixed() + add_circular_density(dens_df)
+```

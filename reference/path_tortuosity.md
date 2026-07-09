@@ -1,0 +1,47 @@
+# Tortuosity ratio for a single trajectory
+
+The (classic) tortuosity ratio is the total path length travelled
+divided by the net (start-to-end) displacement – the reciprocal of the
+straightness index (\[path_straightness()\]). It ranges from 1 (a
+perfectly straight path) upward; larger values indicate a more
+convoluted path.
+
+## Usage
+
+``` r
+path_tortuosity(x, y)
+```
+
+## Arguments
+
+- x, y:
+
+  Numeric vectors of ordered (in time) coordinates for one trajectory.
+
+## Value
+
+A single tortuosity value \`\>= 1\`, \`Inf\` when the net displacement
+is zero, or \`NA_real\_\` when fewer than two finite points are
+available or the path has zero length.
+
+## Details
+
+The ratio is unbounded: when a trajectory returns to its starting point
+the net displacement is zero and the ratio is \`Inf\`. For a bounded
+alternative, or when start and end points may coincide, use
+\[path_straightness()\].
+
+Like the straightness index it is scale-invariant.
+
+## See also
+
+\[tortuosity_ratio()\] for a whole \`Tracks\`; \[path_straightness()\].
+
+## Examples
+
+``` r
+path_tortuosity(x = c(0, 1, 2), y = c(0, 0, 0))     # straight -> 1
+#> [1] 1
+path_tortuosity(x = c(0, 0, 1), y = c(0, 1, 1))     # L-shaped -> sqrt(2)
+#> [1] 1.414214
+```
