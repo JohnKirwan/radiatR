@@ -1,0 +1,649 @@
+---
+title: "radiatR"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{radiatR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+if (requireNamespace("pkgload", quietly = TRUE)) {
+  # Always load from source so the vignette reflects the current development state.
+  pkgload::load_all("..", export_all = FALSE, helpers = FALSE, quiet = TRUE)
+} else if (requireNamespace("radiatR", quietly = TRUE)) {
+  library(radiatR)
+} else {
+  stop("Package 'radiatR' not installed and 'pkgload' not available.")
+}
+library(ggplot2)
+```
+
+## Overview
+
+`radiatR` streamlines the journey from headings and trajectories in circular space to publication-ready radial plots. Angles can be supplied directly, or reconstructed from movement trajectories. The package includes:
+
+-   utilities for importing paired landmark/track text files produced by popular tracking suites;
+-   helpers for extracting trial limits and computing circular summary statistics;
+-   polished `ggplot2` layers for drawing concentric guides and annotated paths.
+
+Prefer a point-and-click interface? `launch_app()` opens an interactive Shiny
+companion to upload tracks or headings, configure the analysis, and view the
+figures together with the radiatR code that reproduces them.
+
+```{r launch-app, eval=FALSE}
+launch_app()
+```
+
+## Import Pipeline
+
+The package ships a full set of example tracks (a millipede orientation experiment) that demonstrate the import workflow. Landmark files (`_point01.txt`) record two pixel-space reference points per trial (the origin and a target location on the circumference); track files (`_point02.txt`) contain the full xy trajectory.
+
+```{r load-demo}
+track_dir     <- system.file("extdata", "tracks", package = "radiatR")
+manifest_path <- system.file("extdata", "millipede_trials.csv", package = "radiatR")
+
+file_tbl  <- import_tracks(track_dir)
+manifest  <- import_info(manifest_path)
+file_tbl  <- load_tracks(file_tbl, manifest, track_dir)
+
+ts_demo <- suppressWarnings(get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir))
+ts_demo
+```
+
+`get_all_object_pos()` reads each landmark/track pair, normalises coordinates to a unit circle (radius = 1), and returns a `Tracks`. Trial metadata (physical radius, target position, frame limits) is in `ts_demo@meta$trial_limits`.
+
+## Full Millipede Dataset
+
+The package also provides `cpunctatus`, a pre-computed `Tracks` of all 235 *Cylindroiulus punctatus* trajectories across the stimulus conditions (target half-widths of 5, 10, 15, 20, 30, 40, 50 degrees, plus a featureless control with `arc = 0`). Loading it is instant, and the per-trial target half-width is already attached as the `arc` column.
+
+```{r load-full}
+data(cpunctatus)
+cpunctatus
+```
+
+## Plotting Trajectories
+
+`radiate()` draws trajectories on a unit circle with concentric reference rings. Colouring by the `arc` factor shows how paths cluster by condition.
+
+```{r plot-all}
+radiate(cpunctatus,
+        group_col  = "trial_id",
+        colour_col = "arc",
+        show_labels = FALSE,
+        show_arrow  = FALSE,
+        display    = circ_display(zero = 0))
+```
+
+By default `radiate()` plots the landmark-**relative** frame --- each
+trajectory rotated so its trial landmark (e.g. the stimulus) sits at the same
+direction. To inspect the un-rotated frame as an experimental control (for
+instance, to check the apparatus carries no directional bias of its own), pass
+`coords = "absolute"`:
+
+```{r plot-absolute}
+radiate(cpunctatus, coords = "absolute")
+```
+
+The circumference can be labelled in domain units instead of degrees --- useful
+for time-of-year or compass data. `angle_labels` selects a built-in scale and
+aligns the tick count to it:
+
+```{r plot-circumference-labs}
+radiate(cpunctatus, angle_labels = "months")
+```
+
+The other built-in scales are `"cardinal"` (compass), `"hours"` (24-hour clock),
+and `"seconds"`. For finer control --- an 8-point compass, a 12-hour clock,
+different month formats --- add an explicit `circumference_labs()` layer built
+from `scale_cardinal()`, `scale_clock()`, `scale_months()`, or `scale_seconds()`:
+
+```{r plot-circumference-explicit}
+radiate(cpunctatus, ticks = FALSE, show_labels = FALSE, show_arrow = FALSE) +
+  circumference_labs(scale_clock(hours = 12))
+```
+
+`n_labels` sets how many equally-spaced ticks and numeric labels to draw ---
+e.g. `12` for a clock face, `4` for cardinals only, `0` for a bare circle ---
+and `angle_label_position` places the numeric labels `"outside"` (default),
+`"inside"`, or `"split"` (cardinals inside, diagonals outside):
+
+```{r plot-label-count}
+radiate(cpunctatus, n_labels = 12, angle_label_position = "split",
+        show_labels = FALSE, show_arrow = FALSE)
+```
+
+### Reference frame: relative vs absolute
+
+By default `radiate()` plots the landmark-**relative** frame: each trajectory is
+rotated so its trial landmark (e.g. the stimulus) sits at the same direction.
+Pass `coords = "absolute"` to plot the absolute (native) frame instead --- useful as
+an experimental control, for instance to check the apparatus carries no
+directional bias of its own. (`set_reference()` sets the per-trajectory landmark
+direction that defines the relative frame.)
+
+```{r plot-absolute-frame}
+radiate(cpunctatus, coords = "absolute")
+```
+
+### Colour tracks by position
+
+Setting `track_colour = "sequence"` shades each path along its own length, so the
+direction of travel reads at a glance: a per-track gradient from start (dark) to
+finish (bright), with a continuous "start → finish" colourbar. This mode owns the
+colour aesthetic, so it is not combined with `colour_col`/`colour_cycle`.
+
+```{r plot-sequence}
+# colour each track from start (dark) to finish (bright)
+radiate(cpunctatus, show_tracks = TRUE, track_colour = "sequence")
+```
+
+### Representing time
+
+Attach a capture **frame rate** (frames per second) to a `Tracks` object and the
+time aspect of frame-indexed tracks can be reported in real seconds and shown on
+the plot. The frame rate is stored in the object's metadata; the time/frame
+column itself is never altered. `track_duration()` reports the elapsed seconds of
+each trajectory, and `track_colour = "time"` colours each path by elapsed time
+(POSIXct time works without a frame rate).
+
+```{r plot-time}
+# attach a capture rate, then represent the time aspect
+ts <- set_frame_rate(cpunctatus, fps = 30)
+head(track_duration(ts))                                 # seconds per track
+radiate(ts, show_tracks = TRUE, track_colour = "time")   # colour by elapsed time
+```
+
+A frame rate also lets `track_speed()` report each trajectory's speed in real
+units. With the default unit-circle coordinates that is radii per second.
+
+```{r track-speed}
+# speed in radii per second once a frame rate is set
+ts <- set_frame_rate(cpunctatus, fps = 30)
+head(track_speed(ts))            # mean speed per track
+head(track_speed(ts, stat = "max"))
+```
+
+The same frame rate lets `radiate()` colour each path by its instantaneous
+speed, the per-observation sibling of `track_speed()`.
+
+```{r plot-speed}
+# colour each path by its instantaneous speed (needs a frame rate)
+ts <- set_frame_rate(cpunctatus, fps = 30)
+radiate(ts, show_tracks = TRUE, track_colour = "speed")
+```
+
+If you know a physical scale, calibrate distances so lengths and speeds report
+in real units. The scale is physical units per coordinate unit (e.g. mm per
+radius); unset, everything stays in coordinate units (radii).
+
+```{r distance-calibration}
+# calibrate distance (optional): 50 mm per coordinate unit (radius)
+ts <- set_distance_scale(set_frame_rate(cpunctatus, 30), 50, unit = "mm")
+head(track_length(ts))      # path length per track, in mm
+head(track_speed(ts))       # mean speed per track, in mm/s
+# or from two measured landmarks:
+# ts <- calibrate_distance(ts, coord_distance = 0.8, real_distance = 40, unit = "mm")
+```
+
+A frame rate also unlocks per-observation kinematics: `velocity_vector()` gives
+the velocity components (`vx`, `vy`; distance-calibrated when a scale is set) and
+`angular_velocity()` the signed turning rate (counter-clockwise positive).
+
+```{r velocity-angular}
+# velocity components and turning rate (need a frame rate; vx/vy use the distance scale)
+ts <- set_frame_rate(cpunctatus, fps = 30)
+head(velocity_vector(ts))                 # vx, vy per observation
+head(angular_velocity(ts, units = "degrees"))   # turning rate, deg/s (CCW +)
+```
+
+`velocity_angle()` gives the direction of travel at each observation, in the same
+convention as headings --- so it feeds straight into the circular tools:
+
+```{r velocity-angle}
+ts <- set_frame_rate(cpunctatus, fps = 30)
+head(velocity_angle(ts, units = "degrees"))   # movement direction per observation
+```
+
+Reduced to one row per track, `track_velocity()` gives each path's net
+(average) velocity vector and `track_turning()` summarises its turning rate.
+
+```{r velocity-turning}
+# per-track summaries (need a frame rate; velocity uses the distance scale)
+ts <- set_frame_rate(cpunctatus, fps = 30)
+head(track_velocity(ts))                       # net velocity vector (vx, vy) per track
+head(track_turning(ts, units = "degrees"))     # typical turning rate (deg/s) per track
+```
+
+For a non-circular view, `plot_profile()` draws a per-observation kinematics
+metric — instantaneous speed or turning rate — against elapsed time, one line
+per track. It is the ggplot sibling of `radiate()`.
+
+```{r plot-profile}
+# speed (or turning rate) along each track over time
+ts <- set_frame_rate(cpunctatus, fps = 30)
+plot_profile(ts, metric = "speed")
+plot_profile(ts, metric = "turning", units = "degrees")
+```
+
+`metric = "direction"` plots the movement direction over time (as points, since
+direction is circular):
+
+```{r profile-direction}
+plot_profile(ts, metric = "direction", units = "degrees")
+```
+
+`plot_speed_direction()` crosses the two — each observation's speed against its
+movement direction. The speed axis is robustly clipped by default so a few
+single-frame tracking artifacts do not crush the display:
+
+```{r speed-direction}
+plot_speed_direction(ts)
+```
+
+The pooled speed distribution, with median and CV, comes from
+`plot_speed_histogram()`:
+
+```{r speed-histogram}
+plot_speed_histogram(ts)
+```
+
+## Heading Overlays
+
+The **crossing method** — projecting the vector between two concentric-ring crossings to the unit circle — assigns one directional heading per trial. `derive_headings()` with `return_coords = TRUE` returns both the heading angle and the inner-ring crossing position.
+
+```{r headings}
+hd <- derive_headings(cpunctatus, rule = "crossing",
+                      circ0 = 0.2, circ1 = 0.4,
+                      return_coords = TRUE)
+names(hd)[names(hd) == "id"] <- "trial_id"
+# join the target half-width (arc) from the dataset for grouping/faceting
+arc_map <- unique(cpunctatus@data[, c("trial_id", "arc")])
+hd       <- merge(hd, arc_map, by = "trial_id")
+hd$arc   <- factor(hd$arc)
+attr(hd, "colour_col") <- "arc"
+attr(hd, "display")    <- circ_display(zero = 0)
+head(hd[, c("trial_id", "arc", "heading", "x_inner", "y_inner")])
+```
+
+Overlaying the heading endpoints (one hollow circle per trial) and the grand mean direction on the combined trajectory plot gives a compact summary of the full dataset:
+
+```{r headings-overlay}
+p_all <- radiate(cpunctatus,
+                 group_col   = "trial_id",
+                 colour_col  = "arc",
+                 show_labels = FALSE,
+                 show_arrow  = FALSE,
+                 display     = circ_display(zero = 0)) +
+  add_heading_points(hd, colour_col = "arc", size = 1, alpha = 0.6)
+
+p_all + add_heading_arrow(hd)
+```
+
+```{r summ-display, include=FALSE}
+summ_hd <- compute_circ_mean(hd)
+# Convert UC mean_dir to display degrees: circ_display(zero=0, clockwise=TRUE)
+# => display_deg = (-uc_angle %% 2pi) * 180/pi
+summ_hd_deg <- round(((-summ_hd$mean_dir) %% (2 * pi)) * 180 / pi, 1)
+summ_hd_R   <- round(summ_hd$resultant_R, 2)
+```
+
+The grand mean arrow points at `r summ_hd_deg`° relative to the reference direction (clock convention; 0° = toward reference) with *R* = `r summ_hd_R`, reflecting the overall reference-relative tendency across all conditions.
+
+## Circular Interval Arc
+
+Three functions handle directional uncertainty arcs in parallel with the density overlay functions:
+
+| Function | Role |
+|---|---|
+| `compute_circ_interval()` | Computes arc bounds from raw headings; returns a data frame with `lower`, `upper`, `mean_dir`, and `wraps` |
+| `add_circ_interval()` | Renders any bounds data frame as an arc at a configurable radius — agnostic to how the bounds were produced |
+| `add_heading_interval()` | Convenience wrapper: calls the two above in sequence |
+
+Two statistics are supported: `stat = "bootstrap_ci"` bootstraps the von Mises MLE confidence interval for the mean direction; `stat = "sd"` draws a ±1 circular SD arc. The split design lets you substitute Bayesian credible bounds into the data frame before rendering:
+
+```{r interval-concept, eval=FALSE}
+iv <- compute_circ_interval(hd, group_col = "arc", stat = "bootstrap_ci")
+# replace with Bayesian posteriors: iv$lower <- ...; iv$upper <- ...
+add_circ_interval(iv, colour_col = "arc")
+```
+
+## Building Up a Panel
+
+Layers compose with the standard `ggplot2` `+` operator, so a plot can be assembled feature by feature. The four chunks below start from trajectories only and add heading endpoints, the grand mean arrow, and finally a bootstrap CI arc.
+
+**Trajectories:**
+
+```{r build-1}
+p <- radiate(cpunctatus,
+             group_col   = "trial_id",
+             colour_col  = "arc",
+             show_labels = FALSE,
+             show_arrow  = FALSE,
+             display     = circ_display(zero = 0))
+p
+```
+
+**+ Heading endpoints** at each trial's crossing location:
+
+```{r build-2}
+p <- p + add_heading_points(hd, colour_col = "arc", size = 1.5, alpha = 0.7)
+p
+```
+
+**+ Grand mean direction arrow:**
+
+```{r build-3}
+p <- p + add_heading_arrow(hd)
+p
+```
+
+
+
+The arc at radius 1.05 spans the 95 % bootstrap confidence interval for the grand mean direction pooled across all arc conditions.
+
+## Circular Boxplot
+
+`add_circular_boxplot()` overlays a Tukey-like boxplot for circular data (Buttarazzi, Pandolfo & Porzio, 2018): the box spans the central 50 % around the circular median, whiskers reach a concentration-adjusted fence, and far-out values are marked individually. It composes onto a `radiate()` plot like the other overlay helpers.
+
+```{r boxplot, fig.width=6, fig.height=6}
+radiate(cpunctatus) + add_circular_boxplot(hd)
+```
+
+`circ_boxplot_stats()` returns the underlying numeric summary — the circular median, box hinges, fences, far-out values, and the closed-form von Mises fence multiplier — so the boxplot can be inspected or reproduced independently of the plot:
+
+```{r boxplot-stats}
+circ_boxplot_stats(hd)$constant
+```
+
+The boxplot is not recommended for uniform or multimodal data: with no clear central direction the box spans roughly half the circle and the summary is uninformative. `circ_boxplot_stats()` flags such cases via its `drawable` and `reason` fields, and `add_circular_boxplot()` emits a warning rather than drawing a misleading box. Position-based axial data is supported via `axial = TRUE`, which draws the box and whiskers at both poles of the median axis.
+
+## Colour Options
+
+Three strategies control how trajectories are coloured.
+
+**Option 1 — single colour.** Pass a colour string directly to the heading-overlay helpers; omit `colour_col` from `radiate()` to draw all tracks in the default grey.
+
+**Option 2 — cycling palette.** `colour_cycle` assigns each trajectory a colour index that cycles back to 1 after every *n* trajectories. When `facets` is set the cycle restarts independently within each panel so that trajectory 1 in every panel always gets colour 1. Pass an integer for automatic palette assignment, or a character vector to specify colours explicitly.
+
+**Option 3 — variable mapping.** `colour_col` maps any data column to colour (e.g. the `arc` factor used in the combined-trajectory plot above).
+
+## Per-Condition Panels
+
+Faceting by arc angle shows each condition separately. Within each panel, `assign_cycle_colours()` distinguishes individual trajectories by cycling through 10 colours, resetting at each panel boundary. Calling it explicitly on both the track data and the headings data frame (joining by trial id) means heading markers inherit the exact per-trajectory colour — not a single per-condition colour — when `colour_col` is used for both.
+
+```{r arc-panels-colours}
+# Pre-compute cycling colours: 10 colours, restarting within each arc panel.
+# Join to headings so heading layers can use the same column.
+cpunctatus_cc        <- cpunctatus
+cpunctatus_cc@data   <- assign_cycle_colours(cpunctatus@data,
+                                            id_col    = "trial_id",
+                                            n         = 10,
+                                            panel_col = "arc")
+colour_map <- unique(cpunctatus_cc@data[, c("trial_id", "cycle_colour")])
+hd_cc      <- merge(hd, colour_map,
+                    by      = "trial_id", all.x = TRUE)
+attr(hd_cc, "display")    <- attr(hd, "display", exact = TRUE)
+attr(hd_cc, "colour_col") <- "cycle_colour"
+```
+
+```{r arc-panels-simple, fig.width=8, fig.height=5}
+p <- radiate(cpunctatus_cc,
+        group_col    = "trial_id",
+        colour_col   = "cycle_colour",
+        facets     = "arc",
+        ncol         = 3,
+        show_labels  = FALSE,
+        show_arrow   = FALSE,
+        display      = circ_display(zero = 0))
+p
+```
+
+For a two-way layout, `rows` and `cols` facet into a grid via
+`ggplot2::facet_grid()` (mirroring ggplot --- each takes one or more columns):
+
+```{r facet-grid, eval = FALSE}
+radiate(cpunctatus, group_col = "trial_id", rows = "type", cols = "arc")
+```
+
+Use `rows`/`cols` (grid) or `facets` (wrap), not both.
+
+**+ Bootstrap CI arc** added first so it sits behind heading markers:
+
+```{r build-4, fig.width=8, fig.height=5}
+p <- p + add_heading_interval(hd_cc, group_col = "arc", colour = "black",
+                               stat = "bootstrap_ci", boot_reps = 999L)
+p
+```
+
+**+ Heading vectors** (dotted lines from inner crossing to the circumference):
+
+```{r arc-panels-vectors, fig.width=8, fig.height=5}
+p <- p + add_heading_vectors(hd_cc)
+p
+```
+
+**+ Heading points** on top of the CI arc:
+
+```{r arc-panels-headings, fig.width=8, fig.height=5}
+p <- p + add_heading_points(hd_cc, size = 4)
+p
+```
+
+```{r arc-panels, fig.width=8, fig.height=5}
+p <- p + add_heading_arrow(hd_cc, colour_col = "arc", colour = "black")
+p
+```
+
+Each panel shows trajectories and heading markers coloured by per-trajectory cycling palette, a bootstrap CI arc at radius 1.05 in the condition colour (rendered behind the heading points), a solid mean direction arrow, and degree labels. All in clock convention (0° = toward reference, clockwise). Use `strip_position = "inside"` to place the label inside the plot area, or `strip_labels = FALSE` to suppress it.
+
+## Circular Density Overlays
+
+Three functions handle directional density overlays; they are designed to compose cleanly with any density source:
+
+| Function | Role |
+|---|---|
+| `compute_circular_density()` | Estimates density from raw headings; returns a plain data frame of `(theta, density)` pairs |
+| `add_circular_density()` | Renders any `(theta, density)` data frame as a radial overlay — agnostic to how the density was produced |
+| `add_heading_density()` | Convenience wrapper: calls the two above in sequence |
+
+Three built-in methods are available in `compute_circular_density()`: `"vonmises"` (MLE via `circular::mle.vonmises()`), `"kernel"` (circular KDE), and `"histogram"` (bin counts). Because the computation and rendering steps are separate, the `density` column can be replaced with values from any other model — including a Bayesian posterior predictive density from `brms` — before calling `add_circular_density()`:
+
+```{r density-concept, eval=FALSE}
+dens_df <- compute_circular_density(hd, colour_col = "arc", method = "vonmises")
+# replace with Bayesian posterior: dens_df$density <- my_brms_fitted_density(dens_df$theta)
+add_circular_density(dens_df, colour_col = "arc", fill = "grey80", alpha = 0.35)
+```
+
+The convenience wrapper `add_heading_density()` skips the intermediate step when no substitution is needed. The combined panel plot below uses it to shade a per-condition von Mises density alongside the heading vectors:
+
+```{r density-overlay, fig.width=8, fig.height=5}
+radiate(cpunctatus_cc,
+        group_col    = "trial_id",
+        colour_col   = "cycle_colour",
+        facets     = "arc",
+        ncol         = 3,
+        show_labels  = FALSE,
+        show_arrow   = FALSE,
+        display      = circ_display(zero = 0)) +
+  add_heading_density(hd_cc, colour_col = "arc",
+                      method = "vonmises", scale = 0.4,
+                      fill = "grey80", alpha = 0.35) +
+  add_heading_vectors(hd_cc) +
+  add_heading_arrow(hd_cc, colour_col = "arc", colour = "black")
+```
+
+The shaded region is the von Mises density fitted to the crossing headings within each arc condition. A narrower, taller peak indicates more concentrated directional responses. Switch to `method = "kernel"` for a non-parametric estimate, or `method = "histogram"` for a raw count display.
+
+## Bootstrap Confidence Band
+
+`compute_circular_density()` with `boot_reps > 0` runs a non-parametric bootstrap: heading samples are drawn with replacement, a von Mises MLE is fitted to each replicate, and the density is re-evaluated on the same angular grid. The `boot_alpha / 2` and `1 - boot_alpha / 2` quantiles across replicates become `density_lower` and `density_upper` columns, which `add_circular_density()` renders as a shaded band around the fitted curve.
+
+```{r bootstrap-ci, fig.width=8, fig.height=5}
+dens_boot <- compute_circular_density(hd, colour_col = "arc",
+                                      method = "vonmises",
+                                      boot_reps = 499L, boot_alpha = 0.05,
+                                      n_theta = 300L)
+
+radiate(cpunctatus,
+        group_col    = "trial_id",
+        colour_cycle = 10,
+        facets     = "arc",
+        ncol         = 3,
+        show_labels  = FALSE,
+        show_arrow   = FALSE,
+        display      = circ_display(zero = 0)) +
+  add_circular_density(dens_boot, colour_col = "arc",
+                       scale = 0.4, fill = "grey80", alpha = 0.35,
+                       ci_fill = "grey60", ci_alpha = 0.35) +
+  add_heading_arrow(hd, colour_col = "arc", colour = "black")
+```
+
+The darker band is the 95% bootstrap confidence interval for the fitted von Mises density. A wider band reflects greater parametric uncertainty, typically seen in the smaller or more diffuse conditions. The `density_lower` and `density_upper` columns in `dens_boot` can be replaced with interval values from a Bayesian model (e.g. the 2.5th and 97.5th percentiles of a `brms` posterior predictive distribution) before passing to `add_circular_density()`.
+
+## Circular Summary Statistics
+
+`compute_circ_mean()` returns the per-condition statistics behind the arrows above:
+
+```{r stats}
+compute_circ_mean(hd, group_col = "arc")[, c("arc", "mean_dir", "resultant_R")]
+```
+
+For within-trial path consistency (tortuosity), `circ_summary()` operates on the step-by-step angle distribution:
+
+```{r within-trial}
+circ_summary(ts_demo)
+```
+
+High resultant lengths (close to 1) indicate very consistent step directions within a trial.
+
+## Alternative Heading Rules
+
+`derive_headings()` supports fourteen built-in rules. `"crossing"` is well
+suited to echinoderm-style tracks — moderate tortuosity, consistent outward
+movement — but other rules may be more appropriate depending on the taxon and
+experimental design. Use `list_heading_rules()` to see all available names;
+custom rules can be added with `register_heading_rule()`.
+
+Two parameter-free alternatives are especially useful:
+
+| Rule | What it returns | Typical use |
+|---|---|---|
+| `"distal"` | Angular position of the frame with the largest radius | Straight outward paths (dung beetles, ballistic homing) |
+| `"net"` | Direction of the start-to-end displacement vector | Sinuous or multi-phase paths where only net displacement matters |
+
+### distal
+
+The **distal** rule takes `atan2(y, x)` at the frame where the subject is
+farthest from the centre. It requires no ring parameters and never
+returns `NA` because every trial has a most-distal frame.
+
+```{r hd-distal}
+hd_distal <- derive_headings(cpunctatus, rule = "distal",
+                              return_coords = TRUE)
+names(hd_distal)[names(hd_distal) == "id"] <- "trial_id"
+# join the target half-width (arc) from the dataset, as for the crossing rule
+hd_distal     <- merge(hd_distal, arc_map, by = "trial_id")
+hd_distal$arc <- factor(hd_distal$arc)
+attr(hd_distal, "display") <- circ_display(zero = 0)
+```
+
+Per-condition resultant lengths from `"distal"` are very close to those from
+`"crossing"`, consistent with millipede tracks being fairly direct:
+
+```{r hd-compare-R}
+sm_cross  <- compute_circ_mean(hd,       group_col = "arc")[, c("arc", "resultant_R")]
+sm_distal <- compute_circ_mean(hd_distal, group_col = "arc")[, c("arc", "resultant_R")]
+names(sm_cross)[2]  <- "crossing"
+names(sm_distal)[2] <- "distal"
+merge(sm_cross, sm_distal, by = "arc")
+```
+
+Visualising the distal headings on the per-condition panel confirms that the
+spatial pattern is consistent with the crossing method:
+
+```{r hd-distal-panel, fig.width=8, fig.height=5}
+cpunctatus_cc_d        <- cpunctatus
+cpunctatus_cc_d@data   <- assign_cycle_colours(cpunctatus@data,
+                                              id_col    = "trial_id",
+                                              n         = 10,
+                                              panel_col = "arc")
+colour_map_d <- unique(cpunctatus_cc_d@data[, c("trial_id", "cycle_colour")])
+hd_distal_cc <- merge(hd_distal, colour_map_d, by = "trial_id", all.x = TRUE)
+attr(hd_distal_cc, "display")    <- attr(hd_distal, "display", exact = TRUE)
+attr(hd_distal_cc, "colour_col") <- "cycle_colour"
+
+radiate(cpunctatus_cc_d,
+        group_col   = "trial_id",
+        colour_col  = "cycle_colour",
+        facets    = "arc",
+        ncol        = 3,
+        show_labels = FALSE,
+        show_arrow  = FALSE,
+        display     = circ_display(zero = 0)) +
+  add_heading_interval(hd_distal_cc, group_col = "arc", colour = "black",
+                       stat = "bootstrap_ci", boot_reps = 999L) +
+  add_heading_points(hd_distal_cc, size = 4) +
+  add_heading_arrow(hd_distal_cc, colour_col = "arc", colour = "black")
+```
+
+Because millipede tracks are nearly radial, the heading estimates agree
+closely across methods. For more sinuous species (moths, pigeons) the choice
+of rule has a larger influence on the result.
+
+### net
+
+The **net** rule returns the direction of the vector from the first recorded
+position to the last, ignoring all intermediate points. It is the fastest
+possible estimate and is the natural match for GPS vanishing-bearing studies
+where only the release and final observed positions are available.
+
+```{r hd-net}
+hd_net <- derive_headings(cpunctatus, rule = "net")
+names(hd_net)[names(hd_net) == "id"] <- "trial_id"
+# join the target half-width (arc) from the dataset, as for the crossing rule
+hd_net     <- merge(hd_net, arc_map, by = "trial_id")
+hd_net$arc <- factor(hd_net$arc)
+
+sm_net <- compute_circ_mean(hd_net, group_col = "arc")[, c("arc", "resultant_R")]
+names(sm_net)[2] <- "net"
+Reduce(function(a, b) merge(a, b, by = "arc"),
+       list(sm_cross, sm_distal, sm_net))
+```
+
+For these tracks the three methods give very similar resultant lengths. Larger
+differences would be expected for species with complex search behaviour
+before committing to a direction.
+
+## Simulating Demo Data
+
+`simulate_tracks()` generates synthetic trajectories without any files, useful for testing and demonstrations. The `kappa` parameter controls directedness:
+
+```{r simulate}
+sim_df <- simulate_tracks(
+  conditions = data.frame(n_trials = c(5L, 5L), kappa = c(2, 8)),
+  n_points = 150,
+  seed = 42
+)
+ts_sim <- tracks(
+  sim_df,
+  id = "trial_id", time = "frame",
+  angle = "rel_theta", x = "rel_x", y = "rel_y",
+  angle_unit = "radians", normalize_xy = FALSE
+)
+radiate(ts_sim,
+        group_col    = "trial_id",
+        colour_cycle = 5,
+        facets     = "condition",
+        ncol         = 2,
+        show_arrow   = TRUE)
+```
+
+The left panel (low `kappa`) shows tortuous paths; the right (high `kappa`) shows straighter, more directed tracks. The mean resultant arrow is computed independently per panel.

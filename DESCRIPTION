@@ -1,0 +1,97 @@
+Package: radiatR
+Type: Package
+Title: Analysis and Visualisation of Headings and Trajectories in Circular Space
+Version: 0.5.0.9001
+Authors@R:
+    person("John D.", "Kirwan", email = "john@jkirwan.org",
+           role = c("aut", "cre"))
+Description: A complete pipeline for analysing directional data -- headings and
+    trajectories in circular space. Supply a table of angles directly, or
+    reconstruct headings from movement trajectories imported from 20+ tracking
+    tools (EthoVision, DeepLabCut, SLEAP, TRex, ANY-maze, TrackMate,
+    idtracker.ai, Ctrax, and others) via a unified dialect-based loader system,
+    including multi-bodypart pose estimation with likelihood-weighted centroid.
+    Derives per-trial heading directions using multiple rules (ring-crossing,
+    distal point, pose body-axis, velocity-based, and more). Computes circular
+    statistics including mean direction, resultant length, von Mises and
+    wrapped Cauchy parametric fits, circular correlation (circular-linear and
+    circular-circular), and multi-sample hypothesis tests (Watson-Williams,
+    Rayleigh, and others) with multiple-comparison correction. Renders
+    publication-quality ggplot2 radial plots with overlaid rose diagrams,
+    parametric density curves, and non-parametric kernel density estimates.
+    Includes a browser-based graphical interface requiring no R coding via
+    launch_app().
+URL: https://johnkirwan.github.io/radiatR/, https://github.com/JohnKirwan/radiatR
+BugReports: https://github.com/JohnKirwan/radiatR/issues
+License: GPL (>= 3)
+Encoding: UTF-8
+LazyData: true
+LazyDataCompression: gzip
+Depends: R (>= 4.1.0)
+Imports: 
+    rlang,
+    ggplot2,
+    tibble,
+    purrr,
+    circular,
+    methods,
+    utils,
+    stats
+Suggests:
+    bpDir,
+    dplyr (>= 1.0.0),
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown,
+    ggrepel,
+    arrow,
+    data.table,
+    jsonlite,
+    readr,
+    readxl,
+    yaml,
+    withr,
+    writexl,
+    R.matlab,
+    xml2,
+    shiny (>= 1.7.0),
+    bslib (>= 0.5.0),
+    pkgload,
+    png,
+    jpeg,
+    svglite,
+    shinytest2,
+    chromote,
+    CircMLE,
+    vdiffr
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+Collate: 
+    'Tracks.R'
+    'circular_boxplot.R'
+    'circular_mapping.R'
+    'circular_regression.R'
+    'concentration_regression.R'
+    'coords.R'
+    'circular_plotting.R'
+    'circular_statistics.R'
+    'circular_trials.R'
+    'data.R'
+    'globals.R'
+    'headings.R'
+    'headings_frame.R'
+    'launch_app.R'
+    'loaders.R'
+    'circ_mixtures.R'
+    'model_selection.R'
+    'circumference_labs.R'
+    'periodic_angle.R'
+    'profile_plot.R'
+    'radiatR-package.R'
+    'simulate_tracks.R'
+    'spelling.R'
+    'stimulus_landmarks.R'
+    'time.R'
+    'track_metrics.R'
+    'transforms.R'
+Config/roxygen2/version: 8.0.0

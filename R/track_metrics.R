@@ -1,0 +1,565 @@
+# Spatial track metrics derived from trajectory geometry (as opposed to the
+# circular heading statistics in circular_statistics.R): the straightness index
+# and its reciprocal, the tortuosity ratio.
+
+#' Path straightness index for a single trajectory
+#'
+#' The straightness index is the net (start-to-end) displacement divided by the
+#' total path length travelled. It ranges from 0 (a maximally convoluted path
+#' that returns to its starting point) to 1 (a perfectly straight path), and is
+#' the reciprocal of the tortuosity ratio ([path_tortuosity()]). Unlike that
+#' ratio it is bounded and does not blow up when the net displacement is small.
+#'
+#' The index is scale-invariant: multiplying all coordinates by a constant
+#' leaves it unchanged, so absolute or relative coordinates give the same value
+#' (provided the transformation is a similarity, i.e. uniform in x and y).
+#'
+#' @param x,y Numeric vectors of ordered (in time) coordinates for one
+#'   trajectory.
+#' @return A single straightness value in `[0, 1]`, or `NA_real_` when fewer
+#'   than two finite points are available or the path has zero length.
+#' @seealso [straightness_index()] for a whole `Tracks`; [path_tortuosity()].
+#' @export
+#' @examples
+#' path_straightness(x = c(0, 1, 2), y = c(0, 0, 0))   # straight -> 1
+#' path_straightness(x = c(0, 1, 0), y = c(0, 1, 0))   # returns to start -> 0
+path_straightness <- function(x, y) {
+  ok <- is.finite(x) & is.finite(y)
+  x <- x[ok]
+  y <- y[ok]
+  n <- length(x)
+  if (n < 2L) return(NA_real_)
+  total <- sum(sqrt(diff(x)^2 + diff(y)^2))
+  if (!is.finite(total) || total == 0) return(NA_real_)
+  net <- sqrt((x[n] - x[1L])^2 + (y[n] - y[1L])^2)
+  net / total
+}
+
+#' Tortuosity ratio for a single trajectory
+#'
+#' The (classic) tortuosity ratio is the total path length travelled divided by
+#' the net (start-to-end) displacement -- the reciprocal of the straightness
+#' index ([path_straightness()]). It ranges from 1 (a perfectly straight path)
+#' upward; larger values indicate a more convoluted path.
+#'
+#' The ratio is unbounded: when a trajectory returns to its starting point the
+#' net displacement is zero and the ratio is `Inf`. For a bounded alternative,
+#' or when start and end points may coincide, use [path_straightness()].
+#'
+#' Like the straightness index it is scale-invariant.
+#'
+#' @param x,y Numeric vectors of ordered (in time) coordinates for one
+#'   trajectory.
+#' @return A single tortuosity value `>= 1`, `Inf` when the net displacement is
+#'   zero, or `NA_real_` when fewer than two finite points are available or the
+#'   path has zero length.
+#' @seealso [tortuosity_ratio()] for a whole `Tracks`; [path_straightness()].
+#' @export
+#' @examples
+#' path_tortuosity(x = c(0, 1, 2), y = c(0, 0, 0))     # straight -> 1
+#' path_tortuosity(x = c(0, 0, 1), y = c(0, 1, 1))     # L-shaped -> sqrt(2)
+path_tortuosity <- function(x, y) {
+  ok <- is.finite(x) & is.finite(y)
+  x <- x[ok]
+  y <- y[ok]
+  n <- length(x)
+  if (n < 2L) return(NA_real_)
+  total <- sum(sqrt(diff(x)^2 + diff(y)^2))
+  if (!is.finite(total) || total == 0) return(NA_real_)
+  net <- sqrt((x[n] - x[1L])^2 + (y[n] - y[1L])^2)
+  if (net == 0) return(Inf)
+  total / net
+}
+
+# Total path length (sum of step distances) over the finite points; 0 for < 2 points.
+.path_length <- function(x, y) {
+  ok <- is.finite(x) & is.finite(y)
+  x <- x[ok]; y <- y[ok]
+  if (length(x) < 2L) return(0)
+  sum(sqrt(diff(x)^2 + diff(y)^2))
+}
+
+#' Per-trajectory path length for a Tracks
+#'
+#' Total distance travelled along each trajectory. With a distance calibration
+#' set ([set_distance_scale()]) the result is in physical units; otherwise in the
+#' units of the recorded `x`/`y` coordinates.
+#'
+#' @param ts A `Tracks`.
+#' @param x_col,y_col Names of the coordinate columns. Default to the `Tracks`'s
+#'   recorded x/y columns.
+#' @return A `data.frame` with one row per trajectory: the id column and a
+#'   numeric `length` column.
+#' @seealso [set_distance_scale()], [track_speed()], [straightness_index()]
+#' @export
+track_length <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
+  out <- .trajectory_metric(ts, x_col, y_col, "length", .path_length)
+  out$length <- out$length * (distance_scale(ts) %||% 1)
+  out
+}
+
+# Apply a per-trajectory scalar metric `fun(x, y)` to each trajectory in `ts`,
+# ordering each trajectory's points by the time column when one is recorded.
+# Returns a data.frame with the id column and a `value_name` column.
+.trajectory_metric <- function(ts, x_col, y_col, value_name, fun) {
+  if (!methods::is(ts, "Tracks"))
+    stop("'ts' must be a Tracks.")
+  d   <- ts@data
+  idc <- ts@cols$id
+  tc  <- ts@cols$time
+  for (cc in c(idc, x_col, y_col)) {
+    if (is.null(cc) || !cc %in% names(d))
+      stop("column '", cc, "' not found in the Tracks.")
+  }
+  ids <- unique(d[[idc]])
+  vals <- vapply(ids, function(i) {
+    sub <- d[d[[idc]] == i, , drop = FALSE]
+    if (!is.null(tc) && tc %in% names(sub))
+      sub <- sub[order(sub[[tc]]), , drop = FALSE]
+    fun(sub[[x_col]], sub[[y_col]])
+  }, numeric(1L))
+  out <- data.frame(ids, vals, stringsAsFactors = FALSE)
+  names(out) <- c(idc, value_name)
+  out
+}
+
+#' Per-trajectory straightness index for a Tracks
+#'
+#' Computes [path_straightness()] for each trajectory in a `Tracks`, ordering
+#' each trajectory's points by its time column when one is recorded.
+#'
+#' @param ts A `Tracks`.
+#' @param x_col,y_col Names of the coordinate columns to use. Default to the
+#'   `Tracks`'s recorded x/y columns (the real recorded positions), so the metric
+#'   reflects the physical path rather than any display transform.
+#' @return A `data.frame` with one row per trajectory: the `Tracks`'s id column
+#'   and a numeric `straightness` column.
+#' @seealso [path_straightness()], [tortuosity_ratio()]
+#' @export
+straightness_index <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
+  .trajectory_metric(ts, x_col, y_col, "straightness", path_straightness)
+}
+
+#' Per-trajectory tortuosity ratio for a Tracks
+#'
+#' Computes [path_tortuosity()] for each trajectory in a `Tracks`, ordering
+#' each trajectory's points by its time column when one is recorded.
+#'
+#' @param ts A `Tracks`.
+#' @param x_col,y_col Names of the coordinate columns to use. Default to the
+#'   `Tracks`'s recorded x/y columns (the real recorded positions), so the metric
+#'   reflects the physical path rather than any display transform.
+#' @return A `data.frame` with one row per trajectory: the `Tracks`'s id column
+#'   and a numeric `tortuosity` column (`>= 1`, possibly `Inf`).
+#' @seealso [path_tortuosity()], [straightness_index()]
+#' @export
+tortuosity_ratio <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
+  .trajectory_metric(ts, x_col, y_col, "tortuosity", path_tortuosity)
+}
+
+#' Sinuosity index for a single trajectory
+#'
+#' The sinuosity index of Benhamou (2004), a turning-angle-based measure of path
+#' tortuosity that — unlike the displacement-based [path_straightness()] /
+#' [path_tortuosity()] — does not rely on net start-to-end displacement, so it
+#' is well-behaved for convoluted or random-search paths:
+#' \deqn{S = 2 \left[ p\,\frac{1+c}{1-c} + b^2 \right]^{-1/2}}
+#' where \eqn{p} is the mean step length, \eqn{c} the mean cosine of the interior
+#' turning angles, and \eqn{b} the coefficient of variation of step length. A
+#' perfectly straight path gives `0`; more winding paths give larger values.
+#'
+#' Unlike the straightness index, sinuosity is **not** scale-invariant: it has
+#' units of \eqn{1/\sqrt{\mathrm{length}}}. For the most reliable comparison
+#' across trajectories the path should be resampled to a common step length
+#' (rediscretisation); the \eqn{b} term mitigates variable step length but does
+#' not fully replace it.
+#'
+#' @param x,y Numeric vectors of ordered (in time) coordinates for one
+#'   trajectory.
+#' @return A single sinuosity value `>= 0`, or `NA_real_` when fewer than three
+#'   finite points are available or all steps have zero length.
+#' @references Benhamou, S. (2004). How to reliably estimate the tortuosity of an
+#'   animal's path. \emph{Journal of Theoretical Biology} 229(2), 209--220.
+#'   \doi{10.1016/j.jtbi.2004.03.016}
+#' @seealso [sinuosity()] for a whole `Tracks`; [path_straightness()],
+#'   [path_tortuosity()].
+#' @export
+#' @examples
+#' path_sinuosity(x = 0:5, y = rep(0, 6))              # straight -> 0
+path_sinuosity <- function(x, y) {
+  ok <- is.finite(x) & is.finite(y)
+  x <- x[ok]; y <- y[ok]
+  if (length(x) < 3L) return(NA_real_)
+  L <- sqrt(diff(x)^2 + diff(y)^2)
+  p <- mean(L)
+  if (!is.finite(p) || p == 0) return(NA_real_)
+  b <- stats::sd(L) / p                         # CV of step length
+  cc <- mean(cos(.step_turns(x, y)))            # mean cosine of turning angles
+  if (!is.finite(cc) || cc >= 1 - 1e-12) return(0)   # straight path
+  2 / sqrt(p * (1 + cc) / (1 - cc) + b^2)
+}
+
+#' Per-trajectory sinuosity for a Tracks
+#'
+#' Computes [path_sinuosity()] (Benhamou 2004) for each trajectory in a `Tracks`,
+#' ordering each trajectory's points by its time column when one is recorded.
+#' Distance-calibrated: with a `distance_scale` set the step lengths are in real
+#' units, so the reported sinuosity is in \eqn{1/\sqrt{\mathrm{unit}}}.
+#'
+#' @param ts A `Tracks`.
+#' @param x_col,y_col Names of the coordinate columns to use. Default to the
+#'   `Tracks`'s recorded x/y columns (the real recorded positions).
+#' @return A `data.frame` with one row per trajectory: the `Tracks`'s id column
+#'   and a numeric `sinuosity` column (`>= 0`).
+#' @seealso [path_sinuosity()], [straightness_index()], [tortuosity_ratio()],
+#'   [set_distance_scale()]
+#' @export
+sinuosity <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
+  scl <- distance_scale(ts) %||% 1
+  .trajectory_metric(ts, x_col, y_col, "sinuosity",
+                     function(x, y) path_sinuosity(x * scl, y * scl))
+}
+
+#' Per-step speed along a trajectory
+#'
+#' Speed of each step as straight-line step distance divided by the elapsed time
+#' of that step: `sqrt(diff(x)^2 + diff(y)^2) / diff(seconds)`. The unit is the
+#' distance unit of `x`/`y` per second; for radiatR's unit-circle coordinates that
+#' is radii per second.
+#'
+#' @param x,y Numeric vectors of ordered (in time) coordinates for one trajectory.
+#' @param seconds Numeric vector, the elapsed time of each point in seconds (same
+#'   length as `x`/`y`).
+#' @return A numeric vector of per-step speeds, length `length(x) - 1`. A step is
+#'   `NA` when either endpoint is non-finite or its time increment is `<= 0`;
+#'   `numeric(0)` when fewer than two points are given.
+#' @seealso [track_speed()] for a whole `Tracks`; [elapsed_seconds()].
+#' @export
+#' @examples
+#' step_speed(x = 0:3, y = rep(0, 4), seconds = (0:3) / 30)   # 30 units/s
+step_speed <- function(x, y, seconds) {
+  n <- length(x)
+  if (n < 2L) return(numeric(0))
+  dist <- sqrt(diff(x)^2 + diff(y)^2)
+  dt   <- diff(seconds)
+  spd  <- dist / dt
+  bad  <- !is.finite(dt) | dt <= 0 |
+          !is.finite(x[-n]) | !is.finite(x[-1L]) |
+          !is.finite(y[-n]) | !is.finite(y[-1L])
+  spd[bad] <- NA_real_
+  spd
+}
+
+#' Per-trajectory speed for a Tracks, in real units
+#'
+#' Summarises each trajectory's speed (distance per second). Step speeds come
+#' from [step_speed()] using the track's elapsed time from [elapsed_seconds()];
+#' the per-track summary is the chosen `stat` of those step speeds.
+#'
+#' Numeric (frame) time requires a frame rate ([set_frame_rate()]); POSIXct time
+#' is used directly. With the default coordinate columns the unit is radii
+#' per second, because radiatR normalises trajectories to a unit circle.
+#'
+#' @param ts A `Tracks`.
+#' @param stat Per-track reduction of the step speeds: `"mean"` (default),
+#'   `"max"`, or `"median"`.
+#' @param x_col,y_col Names of the coordinate columns. Default to the `Tracks`'s
+#'   recorded x/y columns.
+#' @return A `data.frame` with one row per trajectory: the id column and a
+#'   numeric `speed` column (`NA` for tracks with fewer than two usable points).
+#' @seealso [step_speed()], [elapsed_seconds()], [track_duration()],
+#'   [straightness_index()]
+#' @export
+track_speed <- function(ts, stat = c("mean", "max", "median"),
+                        x_col = ts@cols$x, y_col = ts@cols$y) {
+  if (!methods::is(ts, "Tracks")) stop("'ts' must be a Tracks.")
+  stat <- match.arg(stat)
+  reduce <- switch(stat, mean = mean, max = max, median = stats::median)
+  d   <- ts@data
+  idc <- ts@cols$id
+  tc  <- ts@cols$time
+  for (cc in c(idc, x_col, y_col, tc)) {
+    if (is.null(cc) || !cc %in% names(d))
+      stop("column '", cc, "' not found in the Tracks.")
+  }
+  el  <- elapsed_seconds(ts)                 # validates frame rate / handles POSIXct
+  scl <- distance_scale(ts) %||% 1
+  ids <- unique(d[[idc]])
+  vals <- vapply(ids, function(i) {
+    sel <- d[[idc]] == i
+    sub <- d[sel, , drop = FALSE]
+    ord <- order(sub[[tc]])
+    s   <- step_speed(sub[[x_col]][ord], sub[[y_col]][ord], el[sel][ord])
+    s   <- s[is.finite(s)]
+    if (!length(s)) NA_real_ else reduce(s) * scl
+  }, numeric(1L))
+  out <- data.frame(ids, vals, stringsAsFactors = FALSE)
+  names(out) <- c(idc, "speed")
+  out
+}
+
+#' Per-observation instantaneous speed for a Tracks
+#'
+#' Instantaneous speed at each point, aligned to the `Tracks`'s rows (the
+#' per-observation sibling of [elapsed_seconds()]). Each point carries the speed
+#' of the step that ends at it; the first point of every trajectory is `NA`.
+#' Speeds come from [step_speed()] using the track's elapsed time from
+#' [elapsed_seconds()].
+#'
+#' Numeric (frame) time requires a frame rate ([set_frame_rate()]); POSIXct time
+#' is used directly. With the default coordinate columns the unit is radii
+#' per second.
+#'
+#' @param ts A `Tracks`.
+#' @param x_col,y_col Names of the coordinate columns. Default to the `Tracks`'s
+#'   recorded x/y columns.
+#' @return A numeric vector, one value per observation in `ts@data` order, `NA`
+#'   at each trajectory's first point.
+#' @seealso [step_speed()], [track_speed()], [elapsed_seconds()]
+#' @export
+instantaneous_speed <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
+  if (!methods::is(ts, "Tracks")) stop("'ts' must be a Tracks.")
+  d   <- ts@data
+  idc <- ts@cols$id
+  tc  <- ts@cols$time
+  for (cc in c(idc, x_col, y_col, tc)) {
+    if (is.null(cc) || !cc %in% names(d))
+      stop("column '", cc, "' not found in the Tracks.")
+  }
+  el  <- elapsed_seconds(ts)                  # validates frame rate / handles POSIXct
+  out <- rep(NA_real_, nrow(d))
+  for (i in unique(d[[idc]])) {
+    sel <- which(d[[idc]] == i)               # rows are time-ordered within id (validity)
+    if (length(sel) >= 2L)
+      out[sel[-1L]] <- step_speed(d[[x_col]][sel], d[[y_col]][sel], el[sel])
+  }
+  out * (distance_scale(ts) %||% 1)
+}
+
+#' Per-observation velocity vector for a Tracks
+#'
+#' The velocity components (`vx`, `vy`) at each point, aligned to the `Tracks`'s
+#' rows. Each point carries the velocity of the step that ends at it (step
+#' displacement divided by its elapsed time); the first point of every trajectory
+#' is `NA`. The magnitude is [instantaneous_speed()] and the direction is
+#' `atan2(vy, vx)`.
+#'
+#' Numeric (frame) time requires a frame rate ([set_frame_rate()]); POSIXct time
+#' is used directly. With a distance calibration ([set_distance_scale()]) the
+#' components are in physical units per second; otherwise coordinate units per
+#' second.
+#'
+#' @param ts A `Tracks`.
+#' @param x_col,y_col Names of the coordinate columns. Default to the `Tracks`'s
+#'   recorded x/y columns.
+#' @return A `data.frame` with columns `vx` and `vy`, one row per observation in
+#'   `ts@data` order (`NA` at each trajectory's first point).
+#' @seealso [instantaneous_speed()], [angular_velocity()], [set_distance_scale()]
+#' @export
+velocity_vector <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
+  if (!methods::is(ts, "Tracks")) stop("'ts' must be a Tracks.")
+  d   <- ts@data
+  idc <- ts@cols$id
+  tc  <- ts@cols$time
+  for (cc in c(idc, x_col, y_col, tc)) {
+    if (is.null(cc) || !cc %in% names(d))
+      stop("column '", cc, "' not found in the Tracks.")
+  }
+  el  <- elapsed_seconds(ts)
+  vx  <- rep(NA_real_, nrow(d)); vy <- rep(NA_real_, nrow(d))
+  for (i in unique(d[[idc]])) {
+    sel <- which(d[[idc]] == i)
+    if (length(sel) >= 2L) {
+      dt <- diff(el[sel]); dt[!is.finite(dt) | dt <= 0] <- NA_real_
+      vx[sel[-1L]] <- diff(d[[x_col]][sel]) / dt
+      vy[sel[-1L]] <- diff(d[[y_col]][sel]) / dt
+    }
+  }
+  scl <- distance_scale(ts) %||% 1
+  data.frame(vx = vx * scl, vy = vy * scl)
+}
+
+#' Per-row movement direction
+#'
+#' The heading of the velocity vector at each observation -- the direction of
+#' travel from the previous point -- as a per-row vector aligned to the Tracks'
+#' rows. The directional sibling of [instantaneous_speed()]; the per-observation
+#' counterpart of a velocity-based [derive_headings()] rule (which gives one
+#' heading per track).
+#'
+#' Returned in the package's heading convention: radians in `[0, 2*pi)` (or
+#' degrees in `[0, 360)`), `0` = the positive x-axis, increasing
+#' counterclockwise -- the same frame as [derive_headings()] output, so it drops
+#' straight into [circ_summary()] / [radiate()]. Map to a display orientation
+#' with [circ_display()] when plotting.
+#'
+#' Direction needs a step, so the first row of each track is `NA`. The result is
+#' invariant to any [set_distance_scale()] (the scale cancels in the ratio).
+#'
+#' @param ts A [Tracks-class] object.
+#' @param units `"radians"` (default, `[0, 2*pi)`) or `"degrees"` (`[0, 360)`).
+#' @param x_col,y_col Position columns. Default the Tracks' `x`/`y`.
+#' @return A numeric vector, one element per row of `ts`, `NA` at each track's
+#'   first row.
+#' @seealso [velocity_vector()], [instantaneous_speed()], [angular_velocity()],
+#'   [circ_summary()]
+#' @examples
+#' ts <- simulate_tracks(conditions = data.frame(n_trials = 3L),
+#'                       n_points = 20, seed = 1, output = "trajset")
+#' ts <- set_frame_rate(ts, 30)
+#' head(velocity_angle(ts))
+#' @export
+velocity_angle <- function(ts, units = c("radians", "degrees"),
+                           x_col = ts@cols$x, y_col = ts@cols$y) {
+  units <- match.arg(units)
+  v   <- velocity_vector(ts, x_col = x_col, y_col = y_col)
+  ang <- .wrap_to_2pi(atan2(v$vy, v$vx))     # [0, 2*pi); NA propagates from velocity_vector
+  if (units == "degrees") ang * 180 / pi else ang
+}
+
+# Signed turn (CCW positive, in (-pi, pi]) between each pair of consecutive
+# steps of a trajectory; length(x) - 2 values (one per interior point). Mirrors
+# the geometry in R/headings.R without altering it.
+.step_turns <- function(x, y) {
+  vx <- diff(x); vy <- diff(y)
+  m  <- length(vx)
+  if (m < 2L) return(numeric(0))
+  cross <- vx[-m] * vy[-1L] - vy[-m] * vx[-1L]
+  dot   <- vx[-1L] * vx[-m] + vy[-1L] * vy[-m]
+  atan2(cross, dot)
+}
+
+#' Per-observation angular (turning-rate) velocity for a Tracks
+#'
+#' The signed rate of change of travel direction at each point -- how fast, and
+#' which way, the trajectory is turning. Positive is counter-clockwise (a left
+#' turn). Each interior point's turn (the angle between its incoming and outgoing
+#' step) is divided by the centred time step; the first and last point of every
+#' trajectory are `NA`.
+#'
+#' Numeric (frame) time requires a frame rate ([set_frame_rate()]); POSIXct time
+#' is used directly. The result is scale-free (an angle), so no distance
+#' calibration is applied.
+#'
+#' @param ts A `Tracks`.
+#' @param units `"radians"` per second (default) or `"degrees"` per second.
+#' @param x_col,y_col Names of the coordinate columns. Default to the `Tracks`'s
+#'   recorded x/y columns.
+#' @return A numeric vector, one value per observation in `ts@data` order, `NA`
+#'   at each trajectory's first and last point.
+#' @seealso [velocity_vector()], [instantaneous_speed()], [frame_rate()]
+#' @export
+angular_velocity <- function(ts, units = c("radians", "degrees"),
+                             x_col = ts@cols$x, y_col = ts@cols$y) {
+  if (!methods::is(ts, "Tracks")) stop("'ts' must be a Tracks.")
+  units <- match.arg(units)
+  d   <- ts@data
+  idc <- ts@cols$id
+  tc  <- ts@cols$time
+  for (cc in c(idc, x_col, y_col, tc)) {
+    if (is.null(cc) || !cc %in% names(d))
+      stop("column '", cc, "' not found in the Tracks.")
+  }
+  el  <- elapsed_seconds(ts)
+  out <- rep(NA_real_, nrow(d))
+  for (i in unique(d[[idc]])) {
+    sel <- which(d[[idc]] == i)
+    n   <- length(sel)
+    if (n >= 3L) {
+      turns <- .step_turns(d[[x_col]][sel], d[[y_col]][sel])    # n-2 interior turns
+      mid   <- sel[2:(n - 1L)]
+      dt_c  <- (el[sel[3:n]] - el[sel[1:(n - 2L)]]) / 2
+      dt_c[!is.finite(dt_c) | dt_c <= 0] <- NA_real_
+      out[mid] <- turns / dt_c
+    }
+  }
+  if (units == "degrees") out <- out * 180 / pi
+  out
+}
+
+#' Per-trajectory net velocity for a Tracks
+#'
+#' The net (average) velocity vector of each trajectory: its straight-line
+#' displacement divided by its elapsed duration. The magnitude is the net speed
+#' and `atan2(vy, vx)` the overall direction of travel (so a path returning to
+#' its start has zero net velocity). Distance-calibrated when a scale is set.
+#'
+#' Numeric (frame) time requires a frame rate ([set_frame_rate()]); POSIXct time
+#' is used directly.
+#'
+#' @param ts A `Tracks`.
+#' @param x_col,y_col Names of the coordinate columns. Default to the `Tracks`'s
+#'   recorded x/y columns.
+#' @return A `data.frame` with one row per trajectory: the id column and numeric
+#'   `vx`, `vy` (`NA` for tracks with fewer than two points or zero duration).
+#' @seealso [velocity_vector()], [track_speed()], [track_turning()],
+#'   [set_distance_scale()]
+#' @export
+track_velocity <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
+  if (!methods::is(ts, "Tracks")) stop("'ts' must be a Tracks.")
+  d   <- ts@data
+  idc <- ts@cols$id
+  tc  <- ts@cols$time
+  for (cc in c(idc, x_col, y_col, tc)) {
+    if (is.null(cc) || !cc %in% names(d))
+      stop("column '", cc, "' not found in the Tracks.")
+  }
+  el  <- elapsed_seconds(ts)
+  scl <- distance_scale(ts) %||% 1
+  ids <- unique(d[[idc]])
+  comp <- function(i) {
+    sel <- which(d[[idc]] == i)
+    if (length(sel) < 2L) return(c(NA_real_, NA_real_))
+    ord <- order(d[[tc]][sel])
+    s   <- sel[ord]
+    dur <- el[s[length(s)]]
+    if (!is.finite(dur) || dur <= 0) return(c(NA_real_, NA_real_))
+    c((d[[x_col]][s[length(s)]] - d[[x_col]][s[1L]]) / dur,
+      (d[[y_col]][s[length(s)]] - d[[y_col]][s[1L]]) / dur) * scl
+  }
+  m <- vapply(ids, comp, numeric(2L))         # 2 x n_ids (rows vx, vy)
+  out <- data.frame(ids, m[1L, ], m[2L, ], stringsAsFactors = FALSE)
+  names(out) <- c(idc, "vx", "vy")
+  out
+}
+
+#' Per-trajectory turning-rate summary for a Tracks
+#'
+#' Summarises each trajectory's [angular_velocity()] (signed turning rate,
+#' counter-clockwise positive) by the chosen statistic.
+#'
+#' @param ts A `Tracks`.
+#' @param stat `"mean_abs"` (default) the typical turning magnitude; `"mean"` the
+#'   signed net bias (opposite turns cancel); `"max_abs"` the sharpest turn;
+#'   `"median_abs"` a robust turning magnitude.
+#' @param units `"radians"` per second (default) or `"degrees"` per second.
+#' @param x_col,y_col Names of the coordinate columns. Default to the `Tracks`'s
+#'   recorded x/y columns.
+#' @return A `data.frame` with one row per trajectory: the id column and a numeric
+#'   `turning` column (`NA` for tracks with fewer than three points).
+#' @seealso [angular_velocity()], [track_velocity()], [track_speed()]
+#' @export
+track_turning <- function(ts, stat = c("mean_abs", "mean", "max_abs", "median_abs"),
+                          units = c("radians", "degrees"),
+                          x_col = ts@cols$x, y_col = ts@cols$y) {
+  if (!methods::is(ts, "Tracks")) stop("'ts' must be a Tracks.")
+  stat   <- match.arg(stat)
+  units  <- match.arg(units)
+  reduce <- switch(stat,
+    mean_abs   = function(z) mean(abs(z)),
+    mean       = function(z) mean(z),
+    max_abs    = function(z) max(abs(z)),
+    median_abs = function(z) stats::median(abs(z)))
+  w   <- angular_velocity(ts, units = units, x_col = x_col, y_col = y_col)
+  d   <- ts@data
+  idc <- ts@cols$id
+  ids <- unique(d[[idc]])
+  vals <- vapply(ids, function(i) {
+    z <- w[d[[idc]] == i]
+    z <- z[is.finite(z)]
+    if (!length(z)) NA_real_ else reduce(z)
+  }, numeric(1L))
+  out <- data.frame(ids, vals, stringsAsFactors = FALSE)
+  names(out) <- c(idc, "turning")
+  out
+}

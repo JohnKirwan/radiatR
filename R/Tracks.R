@@ -1,0 +1,699 @@
+# Tracks: an S4 container for sets of circular trajectories
+# Stores long-form observations (id, time, angle [radians], optional x, y, weight, covariates)
+
+#' @importFrom methods setClass setValidity setGeneric setMethod new setAs slot
+#' @importFrom circular circular mean.circular rho.circular
+#' @keywords internal
+
+## ---- helpers -----------------------------------------------------------------
+.wrap_to_2pi <- function(x) x %% (2 * pi)
+.as_radians <- function(x, unit) as_radians(x, unit)
+
+# Fallback approximation for kappa from resultant length Rbar (Mardia & Jupp)
+.kappa_from_Rbar <- function(R) {
+  out <- R
+  low  <- R < 0.53
+  mid  <- R >= 0.53 & R < 0.85
+  high <- R >= 0.85
+  out[low]  <- 2*R[low] + R[low]^3 + (5*R[low]^5)/6
+  out[mid]  <- -0.4 + 1.39*R[mid] + 0.43/(1 - R[mid])
+  out[high] <- 1/(R[high]^3 - 4*R[high]^2 + 3*R[high])
+  out
+}
+
+.as_circ <- function(theta) {
+  circular::circular(theta, units = "radians", type = "angles", modulo = "2pi", zero = 0)
+}
+
+.est_kappa_safe <- function(tc, fallback = NA_real_, ...) {
+  if (exists("est.kappa", envir = asNamespace("circular"), inherits = FALSE)) {
+    fun <- get("est.kappa", envir = asNamespace("circular"), inherits = FALSE)
+    res <- tryCatch(fun(tc, ...), error = function(e) NA_real_)
+    if (is.numeric(res) && length(res)) {
+      res <- as.numeric(res)[1]
+      if (is.finite(res)) return(res)
+    }
+  }
+  fallback
+}
+
+.empty_transform_history <- function() {
+  tibble::tibble(
+    step = character(),
+    order = integer(),
+    id = character(),
+    implementation = character(),
+    params = list(),
+    depends_on = list()
+  )
+}
+
+.ensure_transform_history <- function(history) {
+  if (is.null(history)) {
+    return(.empty_transform_history())
+  }
+  if (inherits(history, "Tracks")) {
+    history <- transform_history(history)
+  } else if (is.list(history) && !inherits(history, "data.frame")) {
+    history <- tibble::as_tibble(history)
+  }
+  required <- c("step", "order", "id", "implementation", "params", "depends_on")
+  missing_cols <- setdiff(required, names(history))
+  if (length(missing_cols)) {
+    stop("Transform history is missing column(s): ", paste(missing_cols, collapse = ", "))
+  }
+  history$step <- as.character(history$step)
+  history$order <- as.integer(history$order)
+  history$id <- as.character(history$id)
+  history$implementation <- as.character(history$implementation)
+  if (!is.list(history$params)) {
+    history$params <- as.list(history$params)
+  }
+  if (!is.list(history$depends_on)) {
+    history$depends_on <- as.list(history$depends_on)
+  }
+  history
+}
+
+.append_transform_history <- function(history, step, ids, implementation,
+                                      params, order = NULL, depends_on = NULL) {
+  history <- .ensure_transform_history(history)
+  if (is.null(ids)) stop("`ids` cannot be NULL when logging a transform step.")
+  ids <- as.character(ids)
+  # A step over zero ids logs one row per id -> zero rows: a no-op. Return before
+  # the params/depends_on length checks, which otherwise reject length-0 ids.
+  if (!length(ids)) return(history)
+  if (is.null(params)) {
+    params <- vector("list", length(ids))
+  } else if (!is.list(params)) {
+    params <- rep(list(params), length(ids))
+  } else if (length(params) == 1L && length(ids) > 1L) {
+    params <- rep(params, length(ids))
+  } else if (length(params) != length(ids)) {
+    stop("Length of `params` (", length(params),
+         ") must equal length of `ids` (", length(ids), ").")
+  }
+  if (is.null(order)) {
+    current <- if (nrow(history)) max(history$order, na.rm = TRUE) else 0L
+    order <- current + 1L
+  }
+  depends_on <- if (is.null(depends_on)) list(character()) else as.list(rep(list(depends_on), length(ids)))
+  if (length(depends_on) == 1L && length(ids) > 1L) {
+    depends_on <- rep(depends_on, length(ids))
+  } else if (length(depends_on) != length(ids)) {
+    stop("Length of `depends_on` (", length(depends_on),
+         ") must equal length of `ids` (", length(ids), ").")
+  }
+  for (i in seq_along(ids)) {
+    history <- tibble::add_row(
+      history,
+      step = as.character(step),
+      order = as.integer(order),
+      id = ids[i],
+      implementation = as.character(implementation),
+      params = list(params[[i]]),
+      depends_on = list(depends_on[[i]])
+    )
+  }
+  history
+}
+
+.combine_transform_histories <- function(histories) {
+  out <- .empty_transform_history()
+  if (!length(histories)) return(out)
+  for (hist in histories) {
+    hist <- .ensure_transform_history(hist)
+    if (!nrow(hist)) next
+    for (i in seq_len(nrow(hist))) {
+      out <- tibble::add_row(
+        out,
+        step = hist$step[[i]],
+        order = hist$order[[i]],
+        id = hist$id[[i]],
+        implementation = hist$implementation[[i]],
+        params = list(hist$params[[i]]),
+        depends_on = list(hist$depends_on[[i]])
+      )
+    }
+  }
+  out
+}
+
+## ---- class -------------------------------------------------------------------
+#' Tracks container for circular trajectories
+#'
+#' @slot data data.frame of trajectory observations in long form
+#' @slot cols list mapping required column names (id/time/angle/optional x,y,weight)
+#' @slot angle_unit character describing the original angle unit supplied
+#' @slot meta list of additional metadata attached to the set
+#' @rdname Tracks-class
+#' @exportClass Tracks
+setClass(
+  "Tracks",
+  slots = c(
+    data       = "data.frame",   # long: id, time, angle(rad), optional x,y,weight,covars
+    cols       = "list",         # list(id=, time=, angle=, x=NULL, y=NULL, weight=NULL)
+    angle_unit = "character",    # recorded input units (always stored as radians)
+    meta       = "list"
+  )
+)
+
+setValidity("Tracks", function(object) {
+  d  <- object@data
+  cl <- object@cols
+  req <- c("id","time","angle")
+  if (!all(req %in% names(cl))) return("cols must name 'id','time','angle'")
+
+  miss <- setdiff(c(cl$id, cl$time, cl$angle), names(d))
+  if (length(miss)) return(paste("missing required column(s):", paste(miss, collapse=", ")))
+
+  if (!is.numeric(d[[cl$angle]])) return("angle column must be numeric (radians)")
+  bad <- which(is.na(d[[cl$angle]]) | d[[cl$angle]] < 0 | d[[cl$angle]] >= 2*pi)
+  if (length(bad)) return("angle values must be in [0, 2*pi) or NA only")
+
+  if (!inherits(d[[cl$time]], "POSIXct") && !is.numeric(d[[cl$time]]))
+    return("time must be POSIXct or numeric")
+
+  if (!is.null(cl$x) || !is.null(cl$y)) {
+    if (is.null(cl$x) || is.null(cl$y)) return("both x and y must be named in cols if either is used")
+    if (!all(c(cl$x, cl$y) %in% names(d))) return("x/y columns not present in data")
+    if (!is.numeric(d[[cl$x]]) || !is.numeric(d[[cl$y]])) return("x/y must be numeric")
+  }
+  if (!is.null(cl$raw_x) || !is.null(cl$raw_y)) {
+    if (is.null(cl$raw_x) || is.null(cl$raw_y)) return("both raw_x and raw_y must be named in cols if either is used")
+    if (!all(c(cl$raw_x, cl$raw_y) %in% names(d))) return("raw x/y columns not present in data")
+    if (!is.numeric(d[[cl$raw_x]]) || !is.numeric(d[[cl$raw_y]])) return("raw x/y must be numeric")
+  }
+  if (!is.null(cl$rel_x) || !is.null(cl$rel_y)) {
+    if (is.null(cl$rel_x) || is.null(cl$rel_y)) return("both rel_x and rel_y must be in cols if either is used")
+    present <- c(cl$rel_x, cl$rel_y) %in% names(d)
+    if (any(present) && !all(present)) return("rel_x and rel_y must both be present or both absent")
+    if (all(present) && (!is.numeric(d[[cl$rel_x]]) || !is.numeric(d[[cl$rel_y]])))
+      return("rel_x/rel_y must be numeric")
+  }
+  if (!is.null(cl$rho) && cl$rho %in% names(d) && !is.numeric(d[[cl$rho]])) {
+    return("rho column must be numeric")
+  }
+
+  # enforce that rows are grouped by id (each id forms one contiguous block)
+  # and sorted by time within each block. A global ordering across distinct id
+  # labels is not required -- and is not locale-independent -- only that each
+  # trajectory's rows are contiguous and internally time-ordered.
+  id_vals <- d[[cl$id]]
+  if (nrow(d) > 1L) {
+    run_id   <- cumsum(c(TRUE, id_vals[-1] != id_vals[-length(id_vals)]))
+    n_blocks <- length(unique(run_id))
+    n_ids    <- length(unique(id_vals))
+    if (n_blocks != n_ids) return("rows must be grouped by id (each id contiguous)")
+
+    time_vals <- d[[cl$time]]
+    not_sorted <- tapply(time_vals, run_id, function(t) any(diff(as.numeric(t)) < 0))
+    if (any(unlist(not_sorted))) return("rows must be sorted by time within each id")
+  }
+
+  TRUE
+})
+
+# Per-trajectory affine map into the unit circle: centre each trajectory on its
+# bounding-box midpoint and scale so the furthest point sits at radius 1. Used by
+# the Tracks constructor when normalize_xy = TRUE. Preserves trajectory shape and
+# places the centre at the origin (what the radius-based heading rules
+# assume). Degenerate (zero-extent or all-NA) trajectories map to the origin.
+.normalize_to_unit_circle <- function(x, y, id) {
+  xo <- rep(NA_real_, length(x))
+  yo <- rep(NA_real_, length(y))
+  # Group by id; rows with a missing id are treated as one group (rather than
+  # dropped, which would discard their coordinates) since `NA == NA` is NA.
+  grp <- as.character(id)
+  grp[is.na(grp)] <- ".__na_id__"
+  for (g in unique(grp)) {
+    idx <- which(grp == g)
+    gx  <- x[idx]; gy <- y[idx]
+    fin <- is.finite(gx) & is.finite(gy)
+    if (!any(fin)) next
+    cx <- (min(gx[fin]) + max(gx[fin])) / 2
+    cy <- (min(gy[fin]) + max(gy[fin])) / 2
+    rx <- gx - cx; ry <- gy - cy
+    rmax <- max(sqrt(rx[fin]^2 + ry[fin]^2))
+    s <- if (is.finite(rmax) && rmax > 0) 1 / rmax else 1
+    xo[idx] <- rx * s
+    yo[idx] <- ry * s
+  }
+  list(x = xo, y = yo)
+}
+
+#' Construct a Tracks
+#'
+#' @param df data.frame in long form
+#' @param id,time Columns naming trajectory id and time
+#' @param angle Optional angle column (radians or degrees, see angle_unit)
+#' @param x,y Optional cartesian columns; if provided, converted to unit circle and angle inferred
+#' @param rel_x,rel_y Optional column names for pre-transformed relative
+#'   coordinates (centred on the origin, unit-circle scaled).  Both must be supplied
+#'   together or not at all.
+#' @param angle_unit Units of provided angle ("radians" or "degrees"); stored internally as radians
+#' @param weight Optional weight column name
+#' @param normalize_xy If TRUE (default), (x,y) are scaled to the unit circle per trajectory:
+#'   each trajectory is centred on its bounding-box midpoint and scaled so its
+#'   furthest point sits at radius 1. This preserves trajectory shape and places
+#'   the origin at the centre (what the radius-based heading rules expect).
+#'   Raw coordinates are retained in `<x>_raw`/`<y>_raw`. If FALSE, (x,y) are kept
+#'   as supplied. (Landmark-based mapping, when available, is more accurate; this
+#'   is the no-landmark fallback.)
+#' @param meta Free-form list of metadata
+#' @param transform_history Optional tibble describing transformation steps applied to the
+#'   trajectories. Must contain columns `step`, `order`, `id`, `implementation`, `params`,
+#'   and `depends_on`.
+#' @return A Tracks S4 object
+#' @rdname Tracks-class
+#' @export
+tracks <- function(df,
+                    id = "id", time = "time",
+                    angle = NULL,
+                    x = NULL, y = NULL,
+                    rel_x = NULL, rel_y = NULL,
+                    angle_unit = NULL,
+                    weight = NULL,
+                    normalize_xy = TRUE,
+                    meta = list(),
+                    transform_history = NULL) {
+  stopifnot(is.data.frame(df))
+  if (is.null(meta)) meta <- list()
+
+  if (!id %in% names(df))   stop("Column '", id, "' not found")
+  if (!time %in% names(df)) stop("Column '", time, "' not found")
+
+  have_angle <- !is.null(angle) && angle %in% names(df)
+  have_xy    <- !is.null(x) && !is.null(y) && all(c(x,y) %in% names(df))
+  if (!have_angle && !have_xy)
+    stop("Provide either an angle column or both x and y columns")
+
+  if (have_angle) {
+    if (is.null(angle_unit))
+      stop("'angle_unit' must be specified when an angle column is provided: ",
+           "use \"radians\" or \"degrees\".")
+    angle_unit <- match.arg(angle_unit, c("radians", "degrees"))
+    .check_angle_units(df[[angle]], angle_unit, col_name = angle)
+  } else {
+    angle_unit <- "radians"  # angles derived from x/y via atan2, always radians
+  }
+
+  # Validate rel_x/rel_y pairing. The columns are derivable, so a role may be
+  # registered without the column being stored; require numeric only if present.
+  have_rel <- !is.null(rel_x) || !is.null(rel_y)
+  if (have_rel) {
+    if (is.null(rel_x) || is.null(rel_y))
+      stop("Both rel_x and rel_y must be supplied if either is provided.")
+    if (rel_x %in% names(df) && !is.numeric(df[[rel_x]]))
+      stop("rel_x column '", rel_x, "' must be numeric.")
+    if (rel_y %in% names(df) && !is.numeric(df[[rel_y]]))
+      stop("rel_y column '", rel_y, "' must be numeric.")
+  }
+
+  d <- df
+
+  # Ensure consistent polar/cartesian representation
+  make_unique_name <- function(existing, proposal) {
+    if (proposal %in% existing) {
+      make.unique(c(existing, proposal))[length(existing) + 1]
+    } else {
+      proposal
+    }
+  }
+
+  theta_from_xy <- NULL
+  rho_col <- NULL
+  raw_cols <- list(x = NULL, y = NULL)
+  if (have_xy) {
+    if (isTRUE(normalize_xy)) {
+      raw_x_name <- make_unique_name(names(d), paste0(x, "_raw"))
+      raw_y_name <- make_unique_name(names(d), paste0(y, "_raw"))
+      d[[raw_x_name]] <- d[[x]]
+      d[[raw_y_name]] <- d[[y]]
+      raw_cols$x <- raw_x_name
+      raw_cols$y <- raw_y_name
+      norm <- .normalize_to_unit_circle(d[[x]], d[[y]], d[[id]])
+      xy_x <- norm$x; xy_y <- norm$y
+    } else {
+      xy_x <- d[[x]]; xy_y <- d[[y]]
+    }
+
+    conv <- cartesian_to_polar(xy_x, xy_y, normalize = FALSE)
+    d[[x]] <- conv$x
+    d[[y]] <- conv$y
+    theta_from_xy <- conv$theta
+    # Register a radius role when radius information is available. The column is
+    # derivable from the position, so it is materialized on demand by
+    # as.data.frame() rather than stored.
+    if (!all(is.na(conv$rho))) {
+      rho_col <- make_unique_name(names(d), if (normalize_xy) "rho" else "radius")
+    }
+  }
+
+  theta_from_ang <- NULL
+  if (have_angle) {
+    theta_from_ang <- .as_radians(d[[angle]], angle_unit)
+  }
+
+  if (have_angle) {
+    d$..theta_tmp <- theta_from_ang
+  } else {
+    d$..theta_tmp <- theta_from_xy
+  }
+
+  if (is.null(d$..theta_tmp)) {
+    stop("Unable to derive angles from the supplied inputs.")
+  }
+
+  # Optional weights sanity
+  if (!is.null(weight)) {
+    if (!weight %in% names(d)) stop("weight column '", weight, "' not found")
+    if (!is.numeric(d[[weight]])) stop("weight must be numeric")
+  }
+
+  # Sort by (id,time)
+  d <- d[order(d[[id]], d[[time]]), , drop = FALSE]
+
+  # Finalize angle column
+  angle_col <- if (have_angle) angle else "angle"
+  if (!have_angle) {
+    angle_col <- make_unique_name(names(d), angle_col)
+    d[[angle_col]] <- d$..theta_tmp
+  } else {
+    d[[angle_col]] <- d$..theta_tmp
+  }
+  d$..theta_tmp <- NULL
+
+  if (!have_xy) {
+    cart_out <- polar_to_cartesian(d[[angle_col]])
+    existing <- names(d)
+    x <- make_unique_name(existing, if (is.null(x)) "x" else x)
+    d[[x]] <- cart_out$x
+    existing <- names(d)
+    y <- make_unique_name(existing, if (is.null(y)) "y" else y)
+    d[[y]] <- cart_out$y
+  }
+
+  meta[["normalize_xy"]] <- isTRUE(normalize_xy)
+  meta[["raw_xy_cols"]] <- raw_cols
+  if (is.null(transform_history) && !is.null(meta$transform_history)) {
+    transform_history <- meta$transform_history
+  }
+  meta$transform_history <- .ensure_transform_history(transform_history)
+
+  new("Tracks",
+      data = d,
+      cols = list(id = id, time = time, angle = angle_col,
+                  x = if (!is.null(x)) x else NULL,
+                  y = if (!is.null(y)) y else NULL,
+                  rel_x = if (have_rel) rel_x else NULL,
+                  rel_y = if (have_rel) rel_y else NULL,
+                  raw_x = raw_cols$x,
+                  raw_y = raw_cols$y,
+                  rho = rho_col,
+                  weight = weight),
+      angle_unit = angle_unit,
+      meta = meta)
+}
+
+## ---- accessors & show --------------------------------------------------------
+#' Trajectory identifiers of a Tracks
+#'
+#' @param x A [Tracks-class] object.
+#' @return The unique trajectory ids, in first-appearance order.
+#' @examples
+#' ids(cpunctatus)
+#' @name ids
+#' @export
+setGeneric("ids", function(x) standardGeneric("ids"))
+
+#' @rdname ids
+#' @export
+setMethod("ids", "Tracks", function(x) unique(x@data[[x@cols$id]]))
+
+#' @rdname Tracks-class
+#' @export
+setMethod("length", "Tracks", function(x) length(ids(x)))
+
+setGeneric("angles", function(x, as = c("numeric","circular"), unit = c("radians","degrees")) standardGeneric("angles"))
+setMethod("angles", "Tracks", function(x, as = c("numeric","circular"), unit = c("radians","degrees")) {
+  as <- match.arg(as); unit <- match.arg(unit)
+  th <- x@data[[x@cols$angle]]
+  if (unit == "degrees") th <- th * 180/pi
+  if (as == "circular") return(.as_circ(if (unit=="degrees") th * pi/180 else th))
+  th
+})
+
+setMethod("show", "Tracks", function(object) {
+  id <- object@cols$id; tm <- object@cols$time; th <- object@cols$angle
+  xy <- if (!is.null(object@cols$x)) paste0(", x='", object@cols$x, "', y='", object@cols$y, "'") else ""
+  rel_xy <- if (!is.null(object@cols$rel_x)) paste0(", rel_x='", object@cols$rel_x, "', rel_y='", object@cols$rel_y, "'") else ""
+  raw_xy <- if (!is.null(object@cols$raw_x)) paste0(", raw_x='", object@cols$raw_x, "', raw_y='", object@cols$raw_y, "'") else ""
+  cat(sprintf("Tracks: %d trajectories, %d observations\n", length(ids(object)), nrow(object@data)))
+  cat(sprintf("Columns: id='%s', time='%s', angle='%s' (radians)%s%s%s\n", id, tm, th, xy, rel_xy, raw_xy))
+  hist <- transform_history(object)
+  if (nrow(hist)) {
+    steps <- unique(hist$step[order(hist$order, hist$step)])
+    cat("Transform steps:", paste(steps, collapse = " -> "), "\n")
+  }
+  print(utils::head(object@data, 6))
+})
+
+## ---- transform history helpers ----------------------------------------------
+#' Transform history helpers for Tracks objects
+#'
+#' @param x A `Tracks` object.
+#' @param step Character identifier for the transform step.
+#' @param traj_ids Character vector of trajectory identifiers affected by the step.
+#'   Defaults to all trajectories in `x` when `NULL`.
+#' @param implementation Character label for the implementation used to apply
+#'   the step. Defaults to `step`.
+#' @param params List-column of per-trajectory parameter sets (recycled when a
+#'   single entry is provided).
+#' @param order Optional integer giving the execution order. When omitted the
+#'   step is appended to the end of the log.
+#' @param depends_on Optional character vector naming prerequisite step(s).
+#' @param history Tibble or list describing the full transform history to
+#'   replace.
+#'
+#' @return For `transform_history`, a tibble describing the recorded steps. For
+#'   `log_transform` and `set_transform_history`, the updated `Tracks` object.
+#' @name transform_history
+NULL
+
+#' @rdname transform_history
+#' @export
+setGeneric("transform_history", function(x) standardGeneric("transform_history"))
+
+#' @rdname transform_history
+#' @export
+setMethod("transform_history", "Tracks", function(x) {
+  .ensure_transform_history(x@meta$transform_history)
+})
+
+#' @rdname transform_history
+#' @export
+setGeneric("log_transform", function(x, step, traj_ids = NULL,
+                                     implementation = step, params = NULL,
+                                     order = NULL, depends_on = NULL)
+  standardGeneric("log_transform"))
+
+#' @rdname transform_history
+#' @export
+setMethod("log_transform", "Tracks", function(x, step, traj_ids = NULL,
+                                               implementation = step, params = NULL,
+                                               order = NULL, depends_on = NULL) {
+  if (is.null(traj_ids)) {
+    traj_ids <- ids(x)
+  }
+  history <- .append_transform_history(
+    transform_history(x),
+    step = step,
+    ids = traj_ids,
+    implementation = implementation,
+    params = params,
+    order = order,
+    depends_on = depends_on
+  )
+  x@meta$transform_history <- history
+  methods::validObject(x)
+  x
+})
+
+#' @rdname transform_history
+#' @export
+setGeneric("set_transform_history", function(x, history) standardGeneric("set_transform_history"))
+
+#' @rdname transform_history
+#' @export
+setMethod("set_transform_history", "Tracks", function(x, history) {
+  x@meta$transform_history <- .ensure_transform_history(history)
+  methods::validObject(x)
+  x
+})
+
+## ---- subsetting & extraction -------------------------------------------------
+#' @param i Trajectory identifiers (character ids, numeric indices, or logical vector)
+#' @rdname Tracks-class
+#' @export
+setMethod(
+  f = "[",
+  signature = c(x="Tracks", i="ANY", j="missing", drop="missing"),
+  definition = function(x, i) {
+    idcol <- x@cols$id
+    all_ids <- ids(x)
+    if (missing(i)) return(x)
+
+    if (is.logical(i)) i <- which(i)
+    if (is.numeric(i)) {
+      if (any(i < 1 | i > length(all_ids))) stop("id index out of bounds")
+      i <- all_ids[i]
+    }
+    if (is.character(i)) {
+      miss <- setdiff(i, all_ids)
+      if (length(miss)) stop("unknown id(s): ", paste(miss, collapse=", "))
+      keep <- x@data[[idcol]] %in% i
+    } else {
+      stop("unsupported index type for Tracks")
+    }
+
+    new("Tracks", data = x@data[keep, , drop=FALSE],
+        cols = x@cols, angle_unit = x@angle_unit, meta = x@meta)
+  }
+)
+
+setGeneric("trajectory", function(x, id) standardGeneric("trajectory"))
+setMethod("trajectory", "Tracks", function(x, id) {
+  idcol <- x@cols$id
+  d <- x@data[x@data[[idcol]] == id, , drop = FALSE]
+  if (!nrow(d)) stop("id not found: ", id)
+  d
+})
+
+## ---- summaries ---------------------------------------------------------------
+#' Circular summaries per trajectory
+#' @param x Tracks
+#' @param w Optional weight column name (defaults to x@cols$weight if present)
+#' @return data.frame(id, n, t_start, t_end, mean_dir, resultant_R, kappa)
+#' @export
+setGeneric("circ_summary", function(x, w = NULL) standardGeneric("circ_summary"))
+
+setMethod("circ_summary", "Tracks", function(x, w = NULL) {
+  id <- x@cols$id; tm <- x@cols$time; th <- x@cols$angle
+  wcol <- if (is.null(w)) x@cols$weight else w
+  if (!is.null(wcol) && !wcol %in% names(x@data)) stop("weight column '", wcol, "' not found")
+
+  d <- x@data
+  idx <- split(seq_len(nrow(d)), d[[id]])
+
+  rows <- lapply(names(idx), function(k) {
+    ii <- idx[[k]]
+    theta <- d[[th]][ii]
+    wts <- if (!is.null(wcol)) d[[wcol]][ii] else NULL
+
+    tc <- .as_circ(theta)
+    mu <- circular::mean.circular(tc, na.rm = TRUE, weights = wts)
+    R  <- circular::rho.circular(tc,  na.rm = TRUE, weights = wts)
+    kap <- .est_kappa_safe(tc, fallback = .kappa_from_Rbar(as.numeric(R)), w = wts)
+
+    data.frame(
+      id          = k,
+      n           = sum(!is.na(theta)),
+      t_start     = d[[tm]][ii[1]],
+      t_end       = d[[tm]][ii[length(ii)]],
+      mean_dir    = .wrap_to_2pi(as.numeric(mu)),  # radians
+      resultant_R = as.numeric(R),
+      kappa       = as.numeric(kap),
+      stringsAsFactors = FALSE
+    )
+  })
+
+  do.call(rbind, rows)
+})
+
+## ---- coercions ---------------------------------------------------------------
+
+#' Coerce a Tracks to a data frame
+#'
+#' Returns the long-form trajectory table held in the Tracks's `data` slot.
+#'
+#' Registered as an S3 method so that `as.data.frame(ts)` dispatches correctly
+#' from any caller. (A bare S4 method on the base S3 generic is only reached
+#' from within the package's own namespace, not from user code using the
+#' installed package.)
+#'
+#' @param x A [Tracks-class] object.
+#' @param row.names,optional Accepted for S3 generic consistency; ignored.
+#' @param ... Ignored.
+#' @return A data frame: the Tracks's `data` slot.
+#' @exportS3Method base::as.data.frame
+as.data.frame.Tracks <- function(x, row.names = NULL, optional = FALSE, ...) {
+  d    <- x@data
+  cols <- x@cols
+  if (is.null(cols$x) || is.null(cols$y)) return(d)   # no position -> cannot derive
+
+  # Stored derived column name -> field of derive_coords() output.
+  want <- list()
+  if (!is.null(cols$angle)) want[[cols$angle]] <- "rel_theta_unit"
+  if (!is.null(cols$rel_x)) want[[cols$rel_x]] <- "rel_x"
+  if (!is.null(cols$rel_y)) want[[cols$rel_y]] <- "rel_y"
+  if (!is.null(cols$rho))   want[[cols$rho]]   <- "trans_rho"
+  want[["trans_rho"]] <- "trans_rho"
+  want[["abs_theta"]] <- "abs_theta_unit"
+
+  missing_cols <- names(want)[!names(want) %in% names(d)]
+  if (!length(missing_cols)) return(d)               # all present -> no-op
+
+  lut     <- .reference_lookup(x)
+  ids_chr <- as.character(d[[cols$id]])
+  for (cname in missing_cols) d[[cname]] <- if (nrow(d) == 0L) numeric(0) else NA_real_
+  for (id in unique(ids_chr)) {
+    rows <- which(ids_chr %in% id)
+    idx  <- match(id, names(lut))
+    ref  <- if (!is.na(idx)) lut[[idx]] else 0
+    dc <- derive_coords(d[[cols$x]][rows], d[[cols$y]][rows], reference = ref)
+    for (cname in missing_cols) d[[cname]][rows] <- dc[[ want[[cname]] ]]
+  }
+  d
+}
+
+setAs("data.frame", "Tracks", function(from) {
+  guess <- function(nms, candidates) {
+    hit <- intersect(candidates, nms)
+    if (length(hit)) hit[1] else NULL
+  }
+  id <- guess(names(from), c("id","ID","track","trajectory","animal","subject"))
+  tm <- guess(names(from), c("time","t","timestamp","datetime","frame"))
+  th <- guess(names(from), c("theta","angle","phi","bearing"))
+  xx <- guess(names(from), c("x","X","x_pos","xcoord"))
+  yy <- guess(names(from), c("y","Y","y_pos","ycoord"))
+
+  if (is.null(id) || is.null(tm)) stop("Could not guess 'id' and 'time' columns")
+  if (is.null(th) && (is.null(xx) || is.null(yy)))
+    stop("Provide angle OR both x and y in the data frame")
+
+  tracks(from, id = id, time = tm, angle = th, x = xx, y = yy, angle_unit = "radians")
+})
+
+## ---- combine -----------------------------------------------------------------
+#' @param ... Additional Tracks objects to append
+#' @param recursive Ignored; maintained for signature compatibility
+#' @rdname Tracks-class
+#' @export
+setMethod("c", signature(x="Tracks"), function(x, ..., recursive = FALSE) {
+  xs <- list(x, ...)
+  same_map <- vapply(xs, function(z) identical(z@cols, x@cols) && identical(z@angle_unit, x@angle_unit), logical(1))
+  if (!all(same_map)) stop("All Tracks objects must share identical column mapping")
+  df <- do.call(rbind, lapply(xs, slot, "data"))
+  # Tracks requires rows ordered by (id, time); inputs may be concatenated in
+  # any order, so sort the combined data before validation.
+  df <- df[order(df[[x@cols$id]], df[[x@cols$time]]), , drop = FALSE]
+  histories <- lapply(xs, transform_history)
+  meta <- x@meta
+  meta$transform_history <- .combine_transform_histories(histories)
+  new("Tracks",
+      data = df,
+      cols = x@cols,
+      angle_unit = x@angle_unit,
+      meta = meta)
+})

@@ -1,0 +1,17 @@
+.vs/
+/.quarto/
+**/*.quarto_ipynb
+vignettes/*_files/
+vignettes/*.html
+/Meta/
+docs/
+dev/
+_build/
+_site/
+figure/
+TODO.md
+/.*/
+!/.github/
+
+# R graphics device default output
+Rplots.pdf

@@ -1,0 +1,286 @@
+test_that("circ_boxplot_stats recovers the median and brackets ~50% in the box", {
+  set.seed(1)
+  ang <- as.numeric(circular::rvonmises(200, mu = circular::circular(pi/2), kappa = 4))
+  s <- circ_boxplot_stats(data.frame(heading = ang))
+  expect_true(s$drawable)
+  dmed <- abs(((s$median - pi/2 + pi) %% (2*pi)) - pi)
+  expect_lt(dmed, 0.25)
+  rel <- ((ang - s$median + pi) %% (2*pi)) - pi
+  h   <- ((s$hinges - s$median + pi) %% (2*pi)) - pi
+  inside <- mean(rel >= min(h) & rel <= max(h))
+  expect_gt(inside, 0.40); expect_lt(inside, 0.60)
+})
+
+test_that("the fence multiplier is ~1.5 when concentrated and ~0.5 near uniform", {
+  set.seed(2)
+  conc <- as.numeric(circular::rvonmises(300, mu = circular::circular(0), kappa = 12))
+  near_u <- as.numeric(circular::rvonmises(300, mu = circular::circular(0), kappa = 0.1))
+  cc <- circ_boxplot_stats(data.frame(heading = conc))$constant
+  cu <- circ_boxplot_stats(data.frame(heading = near_u))$constant
+  expect_gt(cc, 1.3); expect_lt(cc, 1.9)
+  expect_gt(cu, 0.45); expect_lt(cu, 0.70)
+})
+
+test_that("far-out values fall outside the whiskers", {
+  set.seed(3)
+  ang <- c(as.numeric(circular::rvonmises(120, mu = circular::circular(0), kappa = 20)), pi)
+  s <- circ_boxplot_stats(data.frame(heading = ang))
+  expect_true(s$drawable)
+  expect_true(length(s$far_out) >= 1)
+  rel_fo <- ((s$far_out - s$median + pi) %% (2*pi)) - pi
+  f <- ((s$fences - s$median + pi) %% (2*pi)) - pi
+  expect_true(all(rel_fo > max(f) | rel_fo < min(f)))
+})
+
+test_that("not-drawable cases are flagged (uniform median, too few points)", {
+  set.seed(4)
+  uni <- runif(200, 0, 2*pi)
+  su  <- circ_boxplot_stats(data.frame(heading = uni))
+  expect_true(!is.na(su$reason))
+  few <- circ_boxplot_stats(data.frame(heading = c(0.1, 0.2, 0.3)))
+  expect_false(few$drawable)
+  expect_match(few$reason, "4")
+})
+
+test_that("highly concentrated / near-identical data does not crash and gives ~1.5 constant", {
+  s8 <- circ_boxplot_stats(data.frame(heading = rep(1, 8)))
+  expect_true(s8$drawable)
+  expect_true(is.finite(s8$constant))
+  expect_gt(s8$constant, 1.3); expect_lt(s8$constant, 1.8)
+  expect_true(all(is.finite(s8$fences)))
+  expect_true(is.na(s8$reason))                # not flagged near-uniform
+  tight <- 1 + c(-1e-3, 1e-3, rep(0, 6))
+  expect_silent(circ_boxplot_stats(data.frame(heading = tight)))
+})
+
+test_that("circ_boxplot_stats matches bpDir::CircularBoxplot as an oracle", {
+  skip_if_not_installed("bpDir")
+  set.seed(5)
+  ang <- as.numeric(circular::rvonmises(150, mu = circular::circular(1), kappa = 3))
+  s <- circ_boxplot_stats(data.frame(heading = ang))
+  grDevices::pdf(tempfile(fileext = ".pdf")); on.exit(grDevices::dev.off())
+  ref <- bpDir::CircularBoxplot(circular::circular(ang, units = "radians", modulo = "2pi"),
+                                units = "radians", constant = "optimal")
+  expect_equal(s$constant, as.numeric(ref$constant), tolerance = 1e-3)
+})
+
+test_that("axial boxplot recovers the median axis in [0, pi) from antipodal data", {
+  set.seed(6)
+  axis <- pi/3
+  half <- as.numeric(circular::rvonmises(150, mu = circular::circular(2*axis), kappa = 8)) / 2
+  ang  <- c(half, (half + pi) %% (2*pi))
+  s <- circ_boxplot_stats(data.frame(heading = ang), axial = TRUE)
+  expect_true(s$axial); expect_true(s$drawable)
+  expect_true(s$median >= 0 && s$median < pi)
+  daxis <- abs(((s$median - axis + pi/2) %% pi) - pi/2)
+  expect_lt(daxis, 0.2)
+  expect_true(all(s$far_out >= 0 & s$far_out < pi))
+})
+
+# Oracle for the axial fence multiplier. Per Buttarazzi et al. (2018) section
+# 4.4 the axial multiplier is the concentration measured on the DOUBLED
+# (transformed) data -- "spread is NOT back transformed" -- where the axial
+# distribution is unimodal von Mises. So radiatR's axial constant must equal
+# what bpDir's *directional* CircularBoxplot computes on the doubled angles.
+#
+# We deliberately do NOT compare against bpDir::AxialBoxplot: its code computes
+# the concentration as A1inv(rho.circular(A)) on the UNDOUBLED data (contrary to
+# its own paper's 4.4), which is internally inconsistent (it takes the median on
+# the doubled data) and representation-sensitive (degenerates to ~0.49 on
+# full-circle antipodal input). radiatR follows the paper; this oracle pins it.
+test_that("axial constant matches bpDir's directional boxplot on the doubled data (paper 4.4)", {
+  skip_if_not_installed("bpDir")
+  set.seed(7)
+  half <- as.numeric(circular::rvonmises(120, mu = circular::circular(2), kappa = 5)) / 2
+  s <- circ_boxplot_stats(data.frame(heading = half), axial = TRUE)
+  doubled <- (2 * half) %% (2 * pi)
+  grDevices::pdf(tempfile(fileext = ".pdf")); on.exit(grDevices::dev.off())
+  ref <- bpDir::CircularBoxplot(circular::circular(doubled, units = "radians", modulo = "2pi"),
+                                units = "radians", constant = "optimal")
+  expect_equal(s$constant, as.numeric(ref$constant), tolerance = 1e-3)
+  # and it is the meaningful Tukey-like value, not the degenerate near-uniform one
+  expect_gt(s$constant, 1.3)
+})
+
+test_that("add_circular_boxplot returns ggplot layers that compose with radiate", {
+  set.seed(8)
+  hd <- data.frame(heading = as.numeric(circular::rvonmises(150, mu = circular::circular(1), kappa = 5)))
+  lyr <- add_circular_boxplot(hd)
+  expect_true(is.list(lyr))
+  expect_true(all(vapply(lyr, function(x) inherits(x, "Layer"), logical(1))))
+  p <- ggplot2::ggplot() + ggplot2::coord_fixed() + lyr
+  expect_s3_class(ggplot2::ggplot_build(p), "ggplot_built")
+})
+
+test_that("axial add_circular_boxplot mirrors elements at theta and theta+pi", {
+  set.seed(9)
+  half <- as.numeric(circular::rvonmises(150, mu = circular::circular(2), kappa = 8)) / 2
+  hd <- data.frame(heading = c(half, (half + pi) %% (2*pi)))
+  # the antipodal data has a non-unique median directionally (expected warning)
+  ld <- suppressWarnings(add_circular_boxplot(hd, axial = FALSE))
+  la <- add_circular_boxplot(hd, axial = TRUE)
+  poly_rows <- function(lyrs) sum(vapply(lyrs, function(L)
+    if (inherits(L, "Layer") && inherits(L$geom, "GeomPolygon")) nrow(L$data) else 0L, integer(1)))
+  expect_gt(poly_rows(la), poly_rows(ld))
+})
+
+test_that("not-drawable input warns and adds no boxplot geoms", {
+  hd <- data.frame(heading = c(0.1, 0.2, 0.3))   # n < 4
+  expect_warning(out <- add_circular_boxplot(hd), "not drawn|4")
+  expect_null(out)
+  p <- ggplot2::ggplot() + out
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("axial boxplot draws correctly when the axis sits on the 0/pi seam", {
+  set.seed(42)
+  half <- (as.numeric(circular::rvonmises(200, mu = circular::circular(2*0.05), kappa = 10))/2) %% pi
+  la <- add_circular_boxplot(data.frame(heading = half), axial = TRUE)
+  poly <- la[[which(vapply(la, function(L) inherits(L$geom, "GeomPolygon"), logical(1)))[1]]]$data
+  ang <- atan2(poly$.y - 0, poly$.x - 0)
+  expect_true(is.data.frame(poly) && nrow(poly) > 0)
+  p <- ggplot2::ggplot() + ggplot2::coord_fixed() + la
+  expect_s3_class(ggplot2::ggplot_build(p), "ggplot_built")
+})
+
+test_that("add_circular_boxplot: arrow off by default, thin band outside the circle", {
+  set.seed(8)
+  hd <- data.frame(heading = as.numeric(
+    circular::rvonmises(150, mu = circular::circular(1), kappa = 5)))
+  lyr <- add_circular_boxplot(hd)
+  has_arrow <- function(L) inherits(L, "Layer") && !is.null(L$geom_params$arrow)
+  expect_false(any(vapply(lyr, has_arrow, logical(1))))          # no arrow by default
+  poly <- lyr[[which(vapply(lyr, function(L) inherits(L$geom, "GeomPolygon"),
+                            logical(1)))[1]]]$data
+  r <- sqrt(poly$.x^2 + poly$.y^2)
+  expect_true(min(r) > 1.0)                                      # entirely outside the circle
+  expect_true(max(r) > 1.05 && max(r) < 1.2)                     # ~1.1 band
+  expect_true((max(r) - min(r)) < 0.1)                           # thin (width 0.06)
+  lyr2 <- add_circular_boxplot(hd, show_median_arrow = TRUE)
+  expect_true(any(vapply(lyr2, has_arrow, logical(1))))          # opt back in
+})
+
+test_that("add_circular_boxplot: theme sets the chrome colour", {
+  set.seed(8)
+  hd <- data.frame(heading = as.numeric(
+    circular::rvonmises(150, mu = circular::circular(1), kappa = 5)))
+  poly_col <- function(lyr) {
+    L <- lyr[[which(vapply(lyr, function(z) inherits(z$geom, "GeomPolygon"),
+                           logical(1)))[1]]]
+    L$aes_params$colour
+  }
+  expect_equal(poly_col(add_circular_boxplot(hd, theme = "void")), "black")
+  dk <- radiatR:::.radial_style("dark")
+  expect_equal(poly_col(add_circular_boxplot(hd, theme = "dark")),
+               dk$col_of(dk$ax$line))
+  expect_equal(poly_col(add_circular_boxplot(hd)), "black")       # NULL theme -> colour default
+})
+
+test_that("add_circular_boxplot: facets draws a per-group boxplot", {
+  set.seed(9)
+  hd <- data.frame(
+    heading = c(as.numeric(circular::rvonmises(80, circular::circular(0.5), 6)),
+                as.numeric(circular::rvonmises(80, circular::circular(pi),  6))),
+    grp = rep(c("A", "B"), each = 80))
+  box_data <- function(lyr) lyr[[which(vapply(lyr,
+    function(L) inherits(L$geom, "GeomPolygon"), logical(1)))[1]]]$data
+
+  # Pooled (no facets): one boxplot, no panel column.
+  pooled <- box_data(add_circular_boxplot(hd))
+  expect_false("grp" %in% names(pooled))
+
+  # Per-panel: the box layer carries the grp column with both levels, and the
+  # two groups have clearly different median directions (one box per panel).
+  faceted <- box_data(add_circular_boxplot(hd, facets = "grp"))
+  expect_true("grp" %in% names(faceted))
+  expect_setequal(unique(faceted$grp), c("A", "B"))
+  med_dir <- function(df) atan2(mean(df$.y), mean(df$.x))
+  dA <- med_dir(faceted[faceted$grp == "A", ])
+  dB <- med_dir(faceted[faceted$grp == "B", ])
+  expect_gt(abs(((dA - dB + pi) %% (2 * pi)) - pi), 1.5)          # well separated
+})
+
+test_that("add_circular_boxplot: a non-drawable panel is skipped, others draw", {
+  set.seed(10)
+  hd <- data.frame(
+    heading = c(as.numeric(circular::rvonmises(80, circular::circular(0.5), 6)),
+                c(0, 0.1, 0.2)),                                   # group B has n < 4
+    grp = c(rep("A", 80), rep("B", 3)))
+  expect_warning(lyr <- add_circular_boxplot(hd, facets = "grp"),
+                 "B", fixed = TRUE)
+  box <- lyr[[which(vapply(lyr, function(L) inherits(L$geom, "GeomPolygon"),
+                           logical(1)))[1]]]$data
+  expect_setequal(unique(box$grp), "A")                            # only A drawn
+})
+
+test_that("add_circular_boxplot attaches both facet columns in grid mode", {
+  set.seed(11)
+  hd <- data.frame(heading = runif(80, 0, 2 * pi),
+                   a = rep(c("x", "y"), 40), b = rep(c("p", "q"), each = 40))
+  layers <- suppressWarnings(add_circular_boxplot(hd, facets = c("a", "b")))
+  box <- layers[[1]]$data                    # the box geom_polygon frame
+  expect_true(all(c("a", "b") %in% names(box)))
+  expect_equal(nrow(unique(box[, c("a", "b")])), 4L)
+})
+
+test_that("add_circular_boxplot group_col draws one coloured ring per group", {
+  set.seed(1)
+  hd <- data.frame(
+    heading = c(rnorm(30, 0, 0.4), rnorm(30, pi/2, 0.4)) %% (2*pi),
+    grp     = rep(c("a", "b"), each = 30)
+  )
+  layers <- add_circular_boxplot(hd, group_col = "grp")
+  box <- layers[[1]]                       # geom_polygon (box band)
+
+  # (a) colour is mapped to the group column, not a fixed value
+  expect_true("colour" %in% names(box$mapping))
+  expect_identical(rlang::as_label(box$mapping$colour), "grp")
+
+  # (b) two rings at stepped radii: outer band radius differs by group_gap
+  rad <- sqrt(box$data$.x^2 + box$data$.y^2)
+  grp <- box$data$grp
+  r_a <- max(rad[grp == "a"]); r_b <- max(rad[grp == "b"])
+  expect_equal(abs(r_b - r_a), 0.06, tolerance = 1e-6)   # one group_gap apart
+})
+
+test_that("add_circular_boxplot facets + group_col: rings align across facet cells", {
+  set.seed(3)
+  n <- 30
+  # Two facet panels (p, q); a two-level FACTOR group so the level-order path
+  # (droplevels + match) is exercised. Panel q lists group "b" before "a" in row
+  # order, so a per-cell ordering would flip the rings; a global level order must
+  # keep each group's ring at the same radius in both panels.
+  hd <- data.frame(
+    heading = c(rnorm(n, 0, 0.4), rnorm(n, pi/2, 0.4),
+                rnorm(n, pi/2, 0.4), rnorm(n, 0, 0.4)) %% (2*pi),
+    grp   = factor(c(rep("a", n), rep("b", n), rep("b", n), rep("a", n)),
+                   levels = c("a", "b")),
+    panel = c(rep("p", 2*n), rep("q", 2*n))
+  )
+  box <- add_circular_boxplot(hd, group_col = "grp", facets = "panel")[[1]]
+  rad <- sqrt(box$data$.x^2 + box$data$.y^2)
+  r <- function(pnl, g) max(rad[box$data$panel == pnl & box$data$grp == g])
+  # group "a" (ring k=0) sits at the same radius in both panels; likewise "b".
+  expect_equal(r("p", "a"), r("q", "a"), tolerance = 1e-9)
+  expect_equal(r("p", "b"), r("q", "b"), tolerance = 1e-9)
+  # and the two rings are one group_gap apart within each panel.
+  expect_equal(r("p", "b") - r("p", "a"), 0.06, tolerance = 1e-6)
+})
+
+test_that("add_circular_boxplot group_col skips a non-drawable group but draws the rest", {
+  hd <- data.frame(
+    heading = c(rnorm(30, 0, 0.4) %% (2*pi), c(0, 1, 2)),  # group b has n=3 (<4)
+    grp     = c(rep("a", 30), rep("b", 3))
+  )
+  expect_warning(layers <- add_circular_boxplot(hd, group_col = "grp"),
+                 "b\\]")                                   # warns naming group b
+  expect_true("grp" %in% names(layers[[1]]$data))
+  expect_setequal(unique(layers[[1]]$data$grp), "a")      # only a drawn
+})
+
+test_that("add_circular_boxplot without group_col is unchanged (single fixed-colour band)", {
+  set.seed(2)
+  hd <- data.frame(heading = rnorm(40, 0, 0.5) %% (2*pi))
+  box <- add_circular_boxplot(hd)[[1]]
+  expect_false("colour" %in% names(box$mapping))          # fixed colour, not mapped
+})

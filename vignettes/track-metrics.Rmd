@@ -1,0 +1,172 @@
+---
+title: "Quantifying path shape"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Quantifying path shape}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  fig.width  = 6,
+  fig.height = 5
+)
+```
+
+```{r load}
+if (requireNamespace("pkgload", quietly = TRUE)) {
+  pkgload::load_all("..", export_all = FALSE, helpers = FALSE, quiet = TRUE)
+} else if (requireNamespace("radiatR", quietly = TRUE)) {
+  library(radiatR)
+} else {
+  stop("Package 'radiatR' not installed and 'pkgload' not available.")
+}
+```
+
+## Overview
+
+Alongside the circular *heading* statistics (see
+`vignette("circular-statistics")`), radiatR provides **spatial** metrics that
+describe the geometry of each trajectory: how far it travelled, how straight it
+was, and how tortuous. These are per-track scalars, returned as tidy data frames
+keyed by the trajectory id, computed on the recorded `x`/`y` coordinates.
+
+There are two complementary notions of tortuosity:
+
+- **Displacement-based** --- `straightness_index()` / `tortuosity_ratio()` ---
+  compare the net start-to-end displacement with the total distance walked. They
+  are simple and scale-invariant, but rely on net displacement, which is
+  unreliable for convoluted or random-search paths that end up near where they
+  started.
+- **Turning-based** --- `sinuosity()` (Benhamou 2004) --- is built from the
+  turning angles and step lengths, so it stays meaningful when net displacement
+  is small.
+
+The per-observation **kinematics** (instantaneous speed, velocity, turning rate,
+`plot_profile()`) live in the main vignette --- see the kinematics section of
+`vignette("radiatR")`.
+
+We use the bundled millipede dataset throughout.
+
+```{r data}
+data(cpunctatus)
+cpunctatus
+```
+
+## Path length
+
+`track_length()` is the total distance walked along each trajectory. With the
+default unit-circle coordinates it is in unit-circle radii; attach a calibration with
+`set_distance_scale()` (or `calibrate_distance()`) and it is reported in physical
+units.
+
+```{r length}
+head(track_length(cpunctatus))                         # unit-circle radii
+head(track_length(set_distance_scale(cpunctatus, 50, unit = "mm")))   # mm
+```
+
+The single-path helpers `path_*` operate on plain `x`/`y` vectors if you want a
+metric for one trajectory outside a `Tracks`.
+
+## Restricting to within the circumference
+
+Tracks can wander past the circumference (`rho > 1`) -- the animal reaching the
+edge, or an occasional tracking outlier. `restrict_to_circumference()` returns a
+`Tracks` with that out-of-circumference data removed, so the metrics see only the
+within-circle path. `mode = "truncate"` (the default) keeps each track up to its
+first excursion beyond the circumference; `mode = "drop"` removes individual
+out-of-circumference points.
+
+```{r restrict}
+within <- restrict_to_circumference(cpunctatus, mode = "truncate")
+head(track_length(within))
+```
+
+This is the data counterpart to the plot-only `radiate(clip_tracks = TRUE)`.
+
+## Straightness and tortuosity
+
+The straightness index is net displacement / total length, in `[0, 1]`
+(1 = perfectly straight). The tortuosity ratio is its reciprocal, in
+`[1, Inf)`.
+
+```{r straightness}
+si <- straightness_index(cpunctatus)
+tr <- tortuosity_ratio(cpunctatus)
+head(si)
+# single-path versions on bare coordinates
+path_straightness(x = c(0, 1, 2), y = c(0, 0, 0))      # straight -> 1
+path_tortuosity(x = c(0, 0, 1), y = c(0, 1, 1))        # L-shaped  -> sqrt(2)
+```
+
+## Sinuosity
+
+`sinuosity()` implements the Benhamou (2004) index
+`S = 2 / sqrt(p (1 + c) / (1 - c) + b^2)` (`p` mean step length, `c` mean cosine
+of turning angles, `b` the CV of step length). A straight path gives `0`; more
+winding paths give larger values. Unlike the straightness index it is **not**
+scale-invariant --- it has units of `1 / sqrt(length)`, so for the most reliable
+comparison across trajectories the path should be sampled at a common step
+length.
+
+```{r sinuosity}
+sn <- sinuosity(cpunctatus)
+head(sn)
+```
+
+The three tortuosity measures can be read side by side. Here we join them per
+track and average within each stimulus condition (`arc` = target half-width in
+degrees, `0` = featureless control):
+
+```{r compare}
+metrics <- Reduce(
+  function(a, b) merge(a, b, by = "trial_id"),
+  list(straightness_index(cpunctatus), tortuosity_ratio(cpunctatus),
+       sinuosity(cpunctatus))
+)
+arc <- unique(as.data.frame(cpunctatus)[, c("trial_id", "arc")])
+metrics <- merge(metrics, arc, by = "trial_id")
+
+aggregate(cbind(straightness, tortuosity, sinuosity) ~ arc,
+          data = metrics, FUN = function(v) round(mean(v, na.rm = TRUE), 2))
+```
+
+## Goal-directed paths and zone occupancy
+
+A second family of spatial metrics summarises *where* a track went relative to a
+**target direction** --- the water-maze idiom (probe-trial quadrant dwell, and
+crossings of a goal zone). On `cpunctatus` the natural target is the stimulus;
+in the landmark-**relative** frame the stimulus sits at angle `0`, so we pass
+`coords = "relative"` and `target_angle = 0`.
+
+`count_goal_entries()` counts how many times each track enters a small goal zone
+at the target (a `FALSE -> TRUE` crossing of `distance < crossing_radius`):
+
+```{r goal-entries}
+head(count_goal_entries(cpunctatus, target_angle = 0, coords = "relative"))
+```
+
+`zone_dwell()` gives the proportion of frames each track spends in every
+quadrant--ring zone (`Q1` is the target quadrant, the outer ring is the rim):
+
+```{r zone-dwell}
+dwell <- zone_dwell(cpunctatus, target_angle = 0, coords = "relative")
+head(dwell)
+# mean occupancy of the target quadrant (Q1) across tracks
+mean(tapply(dwell$proportion[dwell$quadrant == 1],
+            dwell$id[dwell$quadrant == 1], sum), na.rm = TRUE)
+```
+
+Tune the goal zone with `target_radius` / `crossing_radius` and the annuli with
+`ring_breaks` --- see `?count_goal_entries` and `?zone_dwell`.
+
+## See also
+
+The Shiny companion app surfaces these per-track metrics interactively (a
+caption of mean straightness / sinuosity and a downloadable metrics table) ---
+launch it with `launch_app()`. The per-observation kinematics
+(`instantaneous_speed()`, `velocity_vector()`, `angular_velocity()`,
+`plot_profile()`) are covered in `vignette("radiatR")`.

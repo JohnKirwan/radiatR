@@ -1,0 +1,308 @@
+url: https://johnkirwan.github.io/radiatR/
+
+template:
+  bootstrap: 5
+  bootswatch: flatly
+  includes:
+    # GoatCounter: cookieless, privacy-friendly page-view analytics for this
+    # documentation site only. No cookies, no personal data, no consent banner
+    # required. The package itself and the app's data path are untouched. For
+    # data to flow, register the subdomain below (free for non-commercial use)
+    # at https://www.goatcounter.com/.
+    in_header: |
+      <script data-goatcounter="https://radiatr.goatcounter.com/count"
+              async src="//gc.zgo.at/count.js"></script>
+
+home:
+  title: "radiatR -- Headings & Trajectories in Circular Space"
+  description: >
+    Analyse and visualise headings and trajectories in circular space --
+    directional (angular) data of any kind. Supply a table of angles directly,
+    or reconstruct headings from movement trajectories with import from 20+
+    tracking tools. Covers the full pipeline: data input, coordinate
+    transformation, heading derivation, circular statistics, and ggplot2
+    visualisation.
+
+navbar:
+  structure:
+    left: [intro, reference, articles, news, app]
+  components:
+    app:
+      text: App
+      # Full URL (not a relative href) so it resolves from every page depth.
+      # Points at the server-side shinyapps.io deploy (shinyapps.yaml). The old
+      # in-browser shinylive build at /radiatR/app/ is retired -- that path now
+      # redirects here (pkgdown/assets/app/index.html).
+      href: https://johnkirwan.shinyapps.io/radiatR/
+      aria-label: Launch the radiatR Shiny app
+    articles:
+      text: Vignettes
+      menu:
+        - text: "Main workflow"
+          href: articles/radiatR.html
+        - text: "Quantifying path shape"
+          href: articles/track-metrics.html
+        - text: "Loaders"
+          href: articles/loaders.html
+        - text: "Circular statistics & distribution overlays"
+          href: articles/circular-statistics.html
+        - text: "Simulating trajectories"
+          href: articles/simulate.html
+        - text: "Design contract"
+          href: articles/design.html
+
+reference:
+  - title: "Launch the app"
+    desc: >
+      Browser-based interface -- no R coding required.
+    contents:
+      - launch_app
+
+  - title: "Loading tracking data"
+    desc: >
+      Read and normalise trajectory files from 20+ tracking tools.
+      Use dialect_args to pass tool-specific options (bodypart selection,
+      likelihood thresholds, zone selection, etc.).
+    contents:
+      - read_tracks
+      - read_tracks_dir
+      - read_tracks_format
+      - load_manifest
+      - dtrack_read
+      - import_info
+      - import_tracks
+      - load_tracks
+      - load_tracks2
+      - get_all_object_pos
+      - get_trial_limits
+      - get_tracked_object_pos
+      - guess_columns
+
+  - title: "Loader registry"
+    desc: >
+      Register custom file formats or query which dialects are available.
+    contents:
+      - register_loader_dialect
+      - list_loader_dialects
+      - register_loader_format
+      - list_loader_formats
+
+  - title: "The Tracks class"
+    desc: >
+      S4 container holding a long-form trajectory data frame together
+      with column mappings and metadata.
+    contents:
+      - Tracks-class
+      - transform_history
+
+  - title: "Simulation"
+    desc: >
+      Generate synthetic circular-space trajectories for teaching,
+      pipeline testing, and power analysis.
+    contents:
+      - simulate_tracks
+
+  - title: "Deriving headings"
+    desc: >
+      Extract one or more heading angles per trial from trajectory or
+      pose data using built-in rules or custom functions.
+    contents:
+      - derive_headings
+      - circ_summary_headings
+      - pose_to_headings
+      - headings_frame
+      - new_headings_frame
+      - hf_accessors
+      - register_heading_rule
+      - list_heading_rules
+      - bin_angles
+
+  - title: "Circular statistics -- summaries"
+    desc: >
+      Mean direction, resultant length, concentration, and within-trial
+      dispersion.
+    contents:
+      - circ_summary
+      - circ_summarise
+      - circ_dispersion
+      - circ_boxplot_stats
+      - sector_summary
+      - compute_circ_mean
+      - compute_circ_interval
+
+  - title: "Circular statistics -- parametric fitting"
+    desc: >
+      Fit von Mises or wrapped Cauchy distributions via MLE.
+      Pass fitted objects to the density overlay functions for
+      visual model comparison.
+    contents:
+      - vonmises_fit
+      - wrappedcauchy_fit
+      - circ_model_select
+
+  - title: "Circular statistics -- correlation & regression"
+    desc: >
+      Measure the association between heading directions and a continuous
+      covariate (circular-linear) or a second set of angles (circular-circular),
+      and model a heading on linear covariates (Fisher-Lee regression).
+    contents:
+      - circ_cor
+      - circ_regression
+      - concentration_regression
+      - fitted_directions
+
+  - title: "Circular statistics -- hypothesis tests"
+    desc: >
+      Uniformity, equal mean directions, and equal concentrations.
+      All functions return tidy data frames; use p_adjust for
+      family-wise or FDR correction when testing multiple groups.
+    contents:
+      - test_uniformity
+      - test_mean_directions
+      - boot_mean_ci
+      - test_concentration
+      - boot_kappa_ci
+      - boot_kappa_contrast
+
+  - title: "Visualisation -- core"
+    desc: >
+      The main radiate() function and its building blocks.
+    contents:
+      - radiate
+      - plot_profile
+      - plot_speed_direction
+      - plot_speed_histogram
+      - gg_traj
+      - draw_tracks
+      - add_ticks
+      - add_circ
+      - degree_labs
+      - radial_theme
+      - directedness_arrow
+      - assign_cycle_colours
+      - assign_cycle_colors
+      - add_multiple_circles
+      - circ_display
+      - add_radial_grid
+      - add_origin_point
+      - assign_colour_key
+      - assign_color_key
+      - cycle_colours
+      - cycle_colors
+
+  - title: "Visualisation -- circumference scales"
+    desc: >
+      Label the circumference of a radial plot in domain units -- compass
+      points, clock hours, months, or seconds.
+    contents:
+      - circumference_labs
+      - scale_cardinal
+      - scale_clock
+      - scale_months
+      - scale_seconds
+      - as_angle
+
+  - title: "Visualisation -- heading overlays"
+    desc: >
+      Per-trial heading markers, vectors, and mean-direction arrows.
+    contents:
+      - add_heading_points
+      - add_heading_vectors
+      - add_heading_arrow
+      - add_heading_density
+      - add_heading_interval
+      - add_stacked_headings
+      - stack_headings
+      - add_circ_mean
+      - add_circ_interval
+      - add_critical_r
+      - add_critical_v_line
+
+  - title: "Visualisation -- distribution overlays"
+    desc: >
+      Overlay empirical and fitted angular distributions on a radiate plot.
+      Default colours: rose grey, von Mises steelblue, wrapped Cauchy
+      darkorange, KDE tomato.
+    contents:
+      - add_angle_rose
+      - add_vonmises_density
+      - add_wrappedcauchy_density
+      - add_circular_kde
+      - add_circular_density
+      - add_circular_boxplot
+      - compute_circular_density
+
+  - title: "Visualisation -- zone & quadrant guides"
+    desc: >
+      Zone dwell-time, quadrant lines, and goal-entry counting.
+    contents:
+      - add_quadrant_lines
+      - zone_dwell
+      - count_goal_entries
+
+  - title: "Coordinate utilities"
+    desc: >
+      Angle-convention conversions and geometric helpers.
+    contents:
+      - rad_shepherd
+      - line_circle_intercept
+      - line_circle_intercept_df
+      - line_circle_intercept_traj
+      - derive_coords
+
+  - title: "Reference frame & transforms"
+    desc: >
+      Read or change a Tracks's per-trajectory reference direction, and apply
+      bespoke transformations (recorded in the transform history).
+    contents:
+      - reference
+      - set_reference
+      - apply_transform
+      - restrict_to_circumference
+      - set_transform_history
+      - log_transform
+
+  - title: "Path metrics"
+    desc: >
+      Per-trajectory straightness and tortuosity of the movement path.
+    contents:
+      - straightness_index
+      - tortuosity_ratio
+      - path_straightness
+      - path_tortuosity
+      - track_speed
+      - track_velocity
+      - track_turning
+      - track_length
+      - step_speed
+      - instantaneous_speed
+      - velocity_vector
+      - velocity_angle
+      - angular_velocity
+
+  - title: "Track timing"
+    desc: >
+      Attach a capture frame rate to a Tracks object and report real elapsed
+      time per observation or per trajectory.
+    contents:
+      - frame_rate
+      - set_frame_rate
+      - elapsed_seconds
+      - track_duration
+      - distance_scale
+      - set_distance_scale
+      - distance_unit
+      - calibrate_distance
+
+  - title: "Datasets"
+    desc: >
+      Bundled example data from a Cylindroiulus punctatus (millipede) visual
+      orientation experiment (Kirwan & Nilsson 2019).
+    contents:
+      - cpunctatus
+      - cpunctatus_tracks
+
+  - title: "Miscellaneous"
+    desc: Any remaining exported topics.
+    contents:
+      - matches(".")
