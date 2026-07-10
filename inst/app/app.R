@@ -370,6 +370,57 @@ circ_summary_table <- function(hd, by_col, axial = FALSE,
   cm
 }
 
+# Between-group comparison: mean direction, concentration, and whole-
+# distribution tests, one fixed row each (no method picker -- see the
+# 2026-07-10 group-comparison-stats design). Each call is independently
+# tryCatch'd so one failing test (e.g. too few observations in a group)
+# degrades to a dash row instead of blanking the whole table.
+group_compare_table <- function(hd, by_col, axial = FALSE) {
+  fmt_stat <- function(x) if (length(x) && is.finite(x)) sprintf("%.2f", x) else "—"
+  fmt_df   <- function(x) if (length(x) && !is.na(x)) as.character(x) else "—"
+  fmt_p    <- function(p) {
+    if (!length(p) || is.na(p)) return("—")
+    if (p < 0.001) return("< 0.001")
+    sprintf("%.3f", p)
+  }
+  dash_row <- function(test_label)
+    data.frame(Test = test_label, Method = "—", Statistic = "—", df = "—",
+               `p-value` = "—", check.names = FALSE, stringsAsFactors = FALSE)
+
+  n_groups <- length(unique(hd[[by_col]]))
+
+  r_mean <- tryCatch(test_mean_directions(hd, by_col, axial = axial),
+                      error = function(e) NULL)
+  row_mean <- if (is.null(r_mean)) dash_row("Mean direction") else
+    data.frame(Test = "Mean direction", Method = r_mean$test[1],
+               Statistic = fmt_stat(r_mean$statistic[1]),
+               df = paste(r_mean$df1[1], r_mean$df2[1], sep = ", "),
+               `p-value` = fmt_p(r_mean$p_value[1]),
+               check.names = FALSE, stringsAsFactors = FALSE)
+
+  r_conc <- tryCatch(test_concentration(hd, by_col, axial = axial),
+                      error = function(e) NULL)
+  row_conc <- if (is.null(r_conc)) dash_row("Concentration") else
+    data.frame(Test = "Concentration", Method = r_conc$test[1],
+               Statistic = fmt_stat(r_conc$statistic[1]),
+               df = fmt_df(r_conc$df[1]),
+               `p-value` = fmt_p(r_conc$p_value[1]),
+               check.names = FALSE, stringsAsFactors = FALSE)
+
+  dist_method <- if (identical(n_groups, 2L)) "watson_two" else "watson_wheeler"
+  r_dist <- tryCatch(
+    test_distributions(hd, by_col, axial = axial, method = dist_method),
+    error = function(e) NULL)
+  row_dist <- if (is.null(r_dist)) dash_row("Distribution") else
+    data.frame(Test = "Distribution", Method = r_dist$method[1],
+               Statistic = fmt_stat(r_dist$statistic[1]),
+               df = fmt_df(r_dist$df[1]),
+               `p-value` = fmt_p(r_dist$p_value[1]),
+               check.names = FALSE, stringsAsFactors = FALSE)
+
+  rbind(row_mean, row_conc, row_dist)
+}
+
 plain_error <- function(e) {
   m <- conditionMessage(e)
   if (grepl("id|time|mapping", m, ignore.case = TRUE))
