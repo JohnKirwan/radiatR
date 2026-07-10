@@ -1,4 +1,4 @@
-# radiatR (development version)
+# radiatR 0.1.1
 
 ## App
 

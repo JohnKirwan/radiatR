@@ -1,7 +1,7 @@
 Package: radiatR
 Type: Package
 Title: Analysis and Visualisation of Headings and Trajectories in Circular Space
-Version: 0.1.0
+Version: 0.1.1
 Authors@R:
     person("John D.", "Kirwan", email = "john@jkirwan.org",
            role = c("aut", "cre"))
