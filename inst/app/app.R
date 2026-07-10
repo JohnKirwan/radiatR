@@ -387,7 +387,7 @@ group_compare_table <- function(hd, by_col, axial = FALSE) {
     data.frame(Test = test_label, Method = "—", Statistic = "—", df = "—",
                `p-value` = "—", check.names = FALSE, stringsAsFactors = FALSE)
 
-  n_groups <- length(unique(hd[[by_col]]))
+  n_groups <- length(unique(stats::na.omit(hd[[by_col]])))
 
   r_mean <- tryCatch(test_mean_directions(hd, by_col, axial = axial),
                       error = function(e) NULL)
