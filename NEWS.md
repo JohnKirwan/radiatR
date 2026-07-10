@@ -1,3 +1,13 @@
+# radiatR (development version)
+
+## App
+
+* Summary & stats now has a "Group comparison" card: `test_mean_directions`,
+  `test_concentration`, and `test_distributions` run automatically across the
+  selected Group-by column, showing whether groups differ in mean direction,
+  concentration, or overall distribution (not just whether each is
+  individually non-uniform).
+
 # radiatR 0.1.0
 
 * First public release.
