@@ -54,3 +54,36 @@ test_that("headings: group_by drives stats, decoupled from the facet", {
     expect_equal(current_spec()$group_by, "type")
   })
 })
+
+test_that("group comparison card shows a placeholder note when pooled", {
+  skip_if_not_installed("shiny")
+  app_dir <- system.file("app", package = "radiatR")
+  if (!nzchar(app_dir)) app_dir <- testthat::test_path("..", "..", "inst", "app")
+  skip_if(!dir.exists(app_dir), "app dir not found")
+
+  shiny::testServer(app_dir, {
+    session$setInputs(load_example = 1)
+    session$setInputs(method = "distal", go3 = 1)
+    session$setInputs(cond_col = "", cond_col2 = "", group_by = "")
+    tbl <- paste(output$group_compare_tbl, collapse = " ")
+    expect_true(grepl("Select a Group by column", tbl, fixed = TRUE))
+  })
+})
+
+test_that("group comparison card renders three rows once a Group by column is set", {
+  skip_if_not_installed("shiny")
+  app_dir <- system.file("app", package = "radiatR")
+  if (!nzchar(app_dir)) app_dir <- testthat::test_path("..", "..", "inst", "app")
+  skip_if(!dir.exists(app_dir), "app dir not found")
+
+  shiny::testServer(app_dir, {
+    session$setInputs(load_example = 1)
+    session$setInputs(method = "distal", go3 = 1)
+    session$setInputs(cond_col = "type", cond_col2 = "", group_by = "arc")
+    tbl <- paste(output$group_compare_tbl, collapse = " ")
+    expect_true(grepl("Mean direction", tbl, fixed = TRUE))
+    expect_true(grepl("Concentration", tbl, fixed = TRUE))
+    expect_true(grepl("Distribution", tbl, fixed = TRUE))
+    expect_false(grepl("Select a Group by column", tbl, fixed = TRUE))
+  })
+})

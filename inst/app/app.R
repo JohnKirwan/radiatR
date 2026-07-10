@@ -1185,7 +1185,10 @@ server <- function(input, output, session) {
                   tableOutput("summary_tbl"),
                   tags$hr(class = "my-2"),
                   tags$strong("Model selection (AICc)"),
-                  tableOutput("model_sel_tbl")
+                  tableOutput("model_sel_tbl"),
+                  tags$hr(class = "my-2"),
+                  tags$strong("Group comparison"),
+                  tableOutput("group_compare_tbl")
                 )
               )
             )
@@ -1667,6 +1670,23 @@ server <- function(input, output, session) {
   # NULL) until the user first clicks onto that tab. Keep them live so the
   # summary/model tables — and the CSV download that reads them — are populated
   # as soon as Results is reached, regardless of which sub-tab is in front.
+  output$group_compare_tbl <- renderTable({
+    ctx <- summary_ctx()
+    no_group_note <- data.frame(
+      Note = "Select a Group by column with 2+ groups to compare")
+
+    if (!isTRUE(ctx$has_hd) || isTRUE(ctx$pooled)) return(no_group_note)
+
+    hd <- ctx$hd; by_col <- ctx$by_col
+    if (!by_col %in% names(hd)) return(no_group_note)
+    grp_counts <- table(hd[[by_col]])
+    if (sum(grp_counts >= 2L) < 2L) return(no_group_note)
+
+    tryCatch(group_compare_table(hd, by_col, axial = is_axial()),
+             error = function(e) data.frame(Note = "Group comparison not available"))
+  }, striped = TRUE, hover = TRUE, align = "c")
+  outputOptions(output, "group_compare_tbl", suspendWhenHidden = FALSE)
+
   outputOptions(output, "summary_tbl",   suspendWhenHidden = FALSE)
   outputOptions(output, "model_sel_tbl", suspendWhenHidden = FALSE)
 
