@@ -5,7 +5,7 @@ source(.p, local = TRUE)
 
 # Build a stats spec for the bundled example, grouped by a condition column.
 stats_spec <- function(by_col = "arc", omnibus = "rao", axial = FALSE,
-                       headings = FALSE) {
+                       headings = FALSE, n_groups = NULL) {
   list(
     mode     = if (headings) "headings" else "trajectory",
     data     = list(source = "example"),
@@ -14,7 +14,7 @@ stats_spec <- function(by_col = "arc", omnibus = "rao", axial = FALSE,
     show     = list(vectors = FALSE),
     colour   = list(by = "trajectory"),
     stats    = list(by_col = by_col, pooled = is.null(by_col),
-                    omnibus = omnibus, axial = axial)
+                    omnibus = omnibus, axial = axial, n_groups = n_groups)
   )
 }
 
@@ -68,4 +68,25 @@ test_that("headings-grouped emitted script runs (regression: quoted source id)",
   e <- new.env()
   expect_error(suppressWarnings(suppressMessages(eval(parse(text = code), envir = e))), NA)  # runs cleanly
   expect_true(is.data.frame(e$summ))
+})
+
+test_that("spec_to_stats_code emits the three group-comparison calls when grouped", {
+  code <- spec_to_stats_code(stats_spec(n_groups = 3L))
+  expect_match(code, 'test_mean_directions(hd, group_col = "arc"', fixed = TRUE)
+  expect_match(code, 'test_concentration(hd, group_col = "arc"', fixed = TRUE)
+  expect_match(code, 'test_distributions(hd, group_col = "arc"', fixed = TRUE)
+  expect_match(code, 'method = "watson_wheeler"', fixed = TRUE)
+  expect_silent(parse(text = code))
+})
+
+test_that("spec_to_stats_code picks watson_two for exactly two groups", {
+  code <- spec_to_stats_code(stats_spec(n_groups = 2L))
+  expect_match(code, 'method = "watson_two"', fixed = TRUE)
+})
+
+test_that("spec_to_stats_code omits group-comparison calls when pooled", {
+  code <- spec_to_stats_code(stats_spec(by_col = NULL))
+  expect_false(grepl("test_mean_directions(", code, fixed = TRUE))
+  expect_false(grepl("test_concentration(", code, fixed = TRUE))
+  expect_false(grepl("test_distributions(", code, fixed = TRUE))
 })

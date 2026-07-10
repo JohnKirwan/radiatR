@@ -177,17 +177,16 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
     # ".all" sentinel); trajectory mode groups by the condition column or "id".
     # Consumed by spec_to_stats_code() so the emitted analysis matches the table.
     stats = local({
-      if (headings_mode) {
-        list(by_col  = group_by %||% ".all",
-             pooled  = is.null(group_by),
-             omnibus = inputs$omnibus_test %||% "rao",
-             axial   = isTRUE(inputs$axial))
-      } else {
-        list(by_col  = group_by %||% gc %||% id_col,
-             pooled  = FALSE,
-             omnibus = inputs$omnibus_test %||% "rao",
-             axial   = isTRUE(inputs$axial))
-      }
+      by_col <- if (headings_mode) group_by %||% ".all"
+                else group_by %||% gc %||% id_col
+      pooled <- if (headings_mode) is.null(group_by) else FALSE
+      n_groups <- if (!pooled && by_col %in% names(df))
+        length(unique(stats::na.omit(df[[by_col]]))) else NULL
+      list(by_col   = by_col,
+           pooled   = pooled,
+           omnibus  = inputs$omnibus_test %||% "rao",
+           axial    = isTRUE(inputs$axial),
+           n_groups = n_groups)
     }),
     show = list(tracks    = !headings_mode && isTRUE(inputs$show_tracks),
                 arrow     = isTRUE(inputs$show_arrow),
@@ -495,6 +494,12 @@ spec_to_stats_code <- function(spec) {
   if (!is.null(by_col)) {
     add("")
     add("circ_model_select(hd, group_col = ", q(by_col), ")")
+    add("")
+    add("test_mean_directions(hd, group_col = ", q(by_col), axial, ")")
+    add("test_concentration(hd, group_col = ", q(by_col), axial, ")")
+    dist_method <- if (identical(st$n_groups, 2L)) "watson_two" else "watson_wheeler"
+    add("test_distributions(hd, group_col = ", q(by_col),
+        ", method = ", q(dist_method), axial, ")")
   } else if (isTRUE(pre$has_hd)) {
     add("")
     add("circ_model_select(hd)")

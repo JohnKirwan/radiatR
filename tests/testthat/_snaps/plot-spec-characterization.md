@@ -48,6 +48,10 @@
       
       circ_model_select(hd, group_col = "trial_id")
       
+      test_mean_directions(hd, group_col = "trial_id")
+      test_concentration(hd, group_col = "trial_id")
+      test_distributions(hd, group_col = "trial_id", method = "watson_wheeler")
+      
       straightness_index(ts)
 
 # default (group unset) figure code is frozen — faceted
@@ -100,6 +104,10 @@
       test_uniformity(hd, test = "rao")
       
       circ_model_select(hd, group_col = "type")
+      
+      test_mean_directions(hd, group_col = "type")
+      test_concentration(hd, group_col = "type")
+      test_distributions(hd, group_col = "type", method = "watson_two")
       
       straightness_index(ts)
 
