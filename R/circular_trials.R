@@ -183,6 +183,15 @@ get_trial_limits <- function(landmarks, track, file_tbl, vid_num) {
   )
 }
 
+# Shared wording for the out-of-bounds notice so single-file and aggregated
+# reports stay identical.
+.oob_message <- function(points, trials) {
+  sprintf(
+    "%d point%s across %d trial%s exceeded the unit circle boundary (radius > 1); coordinates left unscaled.",
+    points, if (points == 1L) "" else "s",
+    trials, if (trials == 1L) "" else "s")
+}
+
 #' Derive trial-level track positions in polar coordinates.
 #'
 #' Using the trial limits returned by [get_trial_limits()], this helper extracts
@@ -199,6 +208,10 @@ get_trial_limits <- function(landmarks, track, file_tbl, vid_num) {
 #' @param radius_criterion Strategy for choosing the radius landmarks. `"first_past"`
 #'   selects the first point beyond each threshold, while `"closest"` chooses the
 #'   closest sample to the specified radius.
+#' @param .report_oob Internal. When `TRUE` (default), emit a single message
+#'   summarising any track points that fall outside the unit circle. Callers that
+#'   loop over many files (e.g. [get_all_object_pos()]) set this to `FALSE` and
+#'   read the tally from `meta$oob_points`/`meta$oob_trials` to report once.
 #' @return A `Tracks` containing all valid trial observations. The corresponding
 #'   trial limits (including `valid_track` flags) are stored in
 #'   `meta$trial_limits`.
@@ -208,7 +221,8 @@ get_trial_limits <- function(landmarks, track, file_tbl, vid_num) {
 #' @export
 get_tracked_object_pos <- function(
     trial_limits, track,
-    circ0 = 0.1, circ1 = 0.2, radius_criterion = c("first_past", "closest")) {
+    circ0 = 0.1, circ1 = 0.2, radius_criterion = c("first_past", "closest"),
+    .report_oob = TRUE) {
 
   radius_criterion <- match.arg(radius_criterion)
   track_df <- .coerce_xy_frame(track, "track")
@@ -248,11 +262,8 @@ get_tracked_object_pos <- function(
     }
   }
 
-  if (oob_points > 0L) {
-    message(sprintf(
-      "%d point%s across %d trial%s exceeded the unit circle boundary (radius > 1); coordinates left unscaled.",
-      oob_points, if (oob_points == 1L) "" else "s",
-      oob_trials, if (oob_trials == 1L) "" else "s"))
+  if (.report_oob && oob_points > 0L) {
+    message(.oob_message(oob_points, oob_trials))
   }
 
   trial_tracks <- purrr::compact(trial_tracks)
@@ -305,6 +316,10 @@ get_tracked_object_pos <- function(
   trajset@meta$display_convention  <- "clock"
   trajset@meta$plot_x_col          <- "rel_x"
   trajset@meta$plot_y_col          <- "rel_y"
+  # Carry the out-of-bounds tally so callers that loop over many files (e.g.
+  # get_all_object_pos()) can aggregate and report once instead of per file.
+  trajset@meta$oob_points <- oob_points
+  trajset@meta$oob_trials <- oob_trials
 
   trajset
 }
@@ -333,6 +348,8 @@ get_all_object_pos <- function(landmarks = NULL, track = NULL,
                                file_tbl, track_dir) {
   trajsets <- list()
   trial_limits_list <- list()
+  oob_points <- 0L
+  oob_trials <- 0L
 
   for (i in seq_len(nrow(file_tbl))) {
     track_df <- utils::read.delim(
@@ -349,11 +366,19 @@ get_all_object_pos <- function(landmarks = NULL, track = NULL,
       warning("Odd number of landmarks: ", file_tbl$basename[i])
     }
     trial_limits <- get_trial_limits(landmarks_df, track_df, file_tbl, i)
-    ts <- get_tracked_object_pos(trial_limits, track_df)
+    # Suppress the per-file out-of-bounds notice; tally instead and report once
+    # after the loop so a large manifest emits a single aggregated message.
+    ts <- get_tracked_object_pos(trial_limits, track_df, .report_oob = FALSE)
     if (!is.null(ts)) {
       trajsets <- c(trajsets, list(ts))
       trial_limits_list <- c(trial_limits_list, list(ts@meta$trial_limits))
+      oob_points <- oob_points + (ts@meta$oob_points %||% 0L)
+      oob_trials <- oob_trials + (ts@meta$oob_trials %||% 0L)
     }
+  }
+
+  if (oob_points > 0L) {
+    message(.oob_message(oob_points, oob_trials))
   }
 
   if (!length(trajsets)) {
