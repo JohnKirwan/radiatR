@@ -1798,6 +1798,32 @@ test_that("radiate(): tick/label presence is argument-controlled, not theme-gate
     0L)
 })
 
+test_that("resolve_label_column: id/group fallback only fires for few groups", {
+  # Explicit label_col is always honoured, regardless of cardinality.
+  df_many <- data.frame(trial_id = as.character(1:50), x = 1)
+  expect_equal(
+    radiatR:::resolve_label_column(df_many, "trial_id", "trial_id"),
+    "trial_id")
+  # Automatic fallback to the group/id column is suppressed when it has many
+  # distinct values (would bury a many-track plot under id labels).
+  expect_null(radiatR:::resolve_label_column(df_many, NULL, "trial_id"))
+  # A handful of groups still auto-labels.
+  df_few <- data.frame(grp = rep(c("a", "b", "c"), 4), x = 1)
+  expect_equal(radiatR:::resolve_label_column(df_few, NULL, "grp"), "grp")
+})
+
+test_that("radiate(): many-track plots draw no automatic id labels", {
+  data(cpunctatus, package = "radiatR")
+  n_trial_lbl <- function(p) sum(vapply(p$layers, function(l) {
+    d <- l$data
+    if (is.data.frame(d) && "label_value" %in% names(d)) nrow(d) else 0L
+  }, integer(1)))
+  expect_equal(n_trial_lbl(radiate(cpunctatus)), 0L)
+  expect_equal(n_trial_lbl(radiate(cpunctatus, coords = "absolute")), 0L)
+  # Explicit label_col overrides the guard.
+  expect_gt(n_trial_lbl(radiate(cpunctatus, label_col = "trial_id")), 0L)
+})
+
 test_that("radiate(): chrome styling comes from the named theme", {
   data(cpunctatus, package = "radiatR")
   cl   <- radiate(cpunctatus, theme = "classic")

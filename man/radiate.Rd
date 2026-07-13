@@ -246,9 +246,15 @@ Default `TRUE`. Styled from the theme's `axis.line` (else the axis ink). On
 grid-bearing themes the grid's outer ring marks the boundary instead, so this
 has no effect there.}
 
-\item{show_labels}{Whether to place labels at the circumference.}
+\item{show_labels}{Whether to place labels at the circumference. When `TRUE`
+(default) and no `label_col` is given, `radiate()` falls back to the
+id/group column only if it has at most 12 distinct values, so many-track
+plots are not buried under per-trial id labels. Set `label_col` to force
+labelling regardless of track count.}
 
-\item{label_col}{Column containing label values.}
+\item{label_col}{Column containing label values. When supplied explicitly,
+labels are always drawn (the many-track guard applies only to the
+automatic fallback).}
 
 \item{label_size}{Text size for circumference labels.}
 

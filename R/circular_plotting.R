@@ -2542,8 +2542,14 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   grid lines.
 #' @param x_col Name of the x-coordinate column.  Default \code{"rel_x"}.
 #' @param y_col Name of the y-coordinate column.  Default \code{"rel_y"}.
-#' @param show_labels Whether to place labels at the circumference.
-#' @param label_col Column containing label values.
+#' @param show_labels Whether to place labels at the circumference. When `TRUE`
+#'   (default) and no `label_col` is given, `radiate()` falls back to the
+#'   id/group column only if it has at most 12 distinct values, so many-track
+#'   plots are not buried under per-trial id labels. Set `label_col` to force
+#'   labelling regardless of track count.
+#' @param label_col Column containing label values. When supplied explicitly,
+#'   labels are always drawn (the many-track guard applies only to the
+#'   automatic fallback).
 #' @param label_size Text size for circumference labels.
 #' @param label_padding Multiplier applied to the unit circle when placing labels.
 #' @param label_use_repel Use `ggrepel::geom_text_repel()` when available.
@@ -3202,17 +3208,27 @@ radiate.headings_frame <- function(
   g
 }
 
-resolve_label_column <- function(data, label_col, group_col) {
+resolve_label_column <- function(data, label_col, group_col,
+                                 max_auto_labels = 12L) {
+  # An explicit label_col is always honoured, regardless of cardinality.
   if (!is.null(label_col) && label_col %in% names(data)) {
     return(label_col)
   }
-  if (!is.null(group_col) && group_col %in% names(data)) {
+  # Automatic fallbacks (group/id column, then common id names) only kick in
+  # when the column has few distinct values. Labelling every trial by its id is
+  # useful for a handful of named tracks but buries a many-track plot (e.g. the
+  # 235-trial `cpunctatus`) under overlapping ids. Callers who really want the
+  # dense labelling pass `label_col` explicitly, which bypasses this guard.
+  few_levels <- function(col) {
+    length(unique(data[[col]][!is.na(data[[col]])])) <= max_auto_labels
+  }
+  if (!is.null(group_col) && group_col %in% names(data) && few_levels(group_col)) {
     return(group_col)
   }
   fallback_cols <- c("trial_num", "id", "vid_ord", "group")
   available <- fallback_cols[fallback_cols %in% names(data)]
-  if (length(available) > 0) {
-    return(available[[1]])
+  for (col in available) {
+    if (few_levels(col)) return(col)
   }
   NULL
 }

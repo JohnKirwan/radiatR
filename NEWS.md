@@ -1,5 +1,14 @@
 # radiatR 0.1.1
 
+## Bug fixes
+
+* `radiate()` no longer labels every trajectory by its id when a plot has many
+  tracks. The automatic fallback to the id/group column now applies only when
+  that column has at most 12 distinct values, so many-track plots (e.g. the
+  235-trial `cpunctatus`) render cleanly instead of being buried under
+  overlapping trial-id labels. Pass `label_col` explicitly to force labelling
+  regardless of track count.
+
 ## App
 
 * Summary & stats now has a "Group comparison" card: `test_mean_directions`,
