@@ -573,6 +573,84 @@ test_that("circ_summary_table adds a Best model column from model_sel", {
   expect_false("Best model" %in% names(e$circ_summary_table(hd, "grp")))
 })
 
+test_that("group_compare_table returns three labelled rows for two groups", {
+  skip_if_not_installed("shiny")
+  app_file <- system.file("app", "app.R", package = "radiatR")
+  if (!nzchar(app_file))
+    app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
+  skip_if(!file.exists(app_file), "app.R not found")
+  e <- new.env()
+  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
+
+  set.seed(10)
+  hd <- data.frame(
+    heading = c(rnorm(20, 1, 0.3), rnorm(20, 2.5, 0.3)) %% (2 * pi),
+    grp     = rep(c("a", "b"), each = 20)
+  )
+  r <- e$group_compare_table(hd, "grp")
+  expect_equal(nrow(r), 3L)
+  expect_equal(r$Test, c("Mean direction", "Concentration", "Distribution"))
+  expect_true(all(c("Method", "Statistic", "df", "p-value") %in% names(r)))
+})
+
+test_that("group_compare_table picks watson_two for exactly two groups", {
+  skip_if_not_installed("shiny")
+  app_file <- system.file("app", "app.R", package = "radiatR")
+  if (!nzchar(app_file))
+    app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
+  skip_if(!file.exists(app_file), "app.R not found")
+  e <- new.env()
+  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
+
+  set.seed(11)
+  hd <- data.frame(
+    heading = c(rnorm(20, 1, 0.3), rnorm(20, 2.5, 0.3)) %% (2 * pi),
+    grp     = rep(c("a", "b"), each = 20)
+  )
+  r <- e$group_compare_table(hd, "grp")
+  expect_equal(r$Method[r$Test == "Distribution"], "watson_two")
+})
+
+test_that("group_compare_table picks watson_wheeler for three or more groups", {
+  skip_if_not_installed("shiny")
+  app_file <- system.file("app", "app.R", package = "radiatR")
+  if (!nzchar(app_file))
+    app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
+  skip_if(!file.exists(app_file), "app.R not found")
+  e <- new.env()
+  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
+
+  set.seed(12)
+  hd <- data.frame(
+    heading = c(rnorm(15, 0, 0.3), rnorm(15, 2, 0.3), rnorm(15, 4, 0.3)) %% (2 * pi),
+    grp     = rep(c("a", "b", "c"), each = 15)
+  )
+  r <- e$group_compare_table(hd, "grp")
+  expect_equal(r$Method[r$Test == "Distribution"], "watson_wheeler")
+})
+
+test_that("group_compare_table degrades one row to a dash instead of erroring", {
+  skip_if_not_installed("shiny")
+  app_file <- system.file("app", "app.R", package = "radiatR")
+  if (!nzchar(app_file))
+    app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
+  skip_if(!file.exists(app_file), "app.R not found")
+  e <- new.env()
+  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
+
+  # Group "b" has only 1 observation: after the package's own internal
+  # >=2-observations filter, fewer than 2 groups remain, so each of the three
+  # package functions throws. group_compare_table must catch each independently
+  # and still return a 3-row table with dashes, not propagate the error.
+  set.seed(13)
+  hd <- data.frame(heading = c(rnorm(20, 1, 0.3), 2.1) %% (2 * pi),
+                    grp = c(rep("a", 20), "b"))
+  expect_no_error(r <- e$group_compare_table(hd, "grp"))
+  expect_equal(nrow(r), 3L)
+  expect_true(all(r$Statistic == "—"))
+  expect_true(all(r[["p-value"]] == "—"))
+})
+
 test_that("the omnibus selector switches the summary omnibus column", {
   skip_if_not_installed("shiny")
   app_dir <- system.file("app", package = "radiatR")
