@@ -1,5 +1,3 @@
-.vs/
-/.quarto/
 **/*.quarto_ipynb
 vignettes/*_files/
 vignettes/*.html

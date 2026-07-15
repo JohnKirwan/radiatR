@@ -9,7 +9,8 @@ get_tracked_object_pos(
   track,
   circ0 = 0.1,
   circ1 = 0.2,
-  radius_criterion = c("first_past", "closest")
+  radius_criterion = c("first_past", "closest"),
+  .report_oob = TRUE
 )
 }
 \arguments{
@@ -25,6 +26,11 @@ entire video.}
 \item{radius_criterion}{Strategy for choosing the radius landmarks. `"first_past"`
 selects the first point beyond each threshold, while `"closest"` chooses the
 closest sample to the specified radius.}
+
+\item{.report_oob}{Internal. When `TRUE` (default), emit a single message
+summarising any track points that fall outside the unit circle. Callers that
+loop over many files (e.g. [get_all_object_pos()]) set this to `FALSE` and
+read the tally from `meta$oob_points`/`meta$oob_trials` to report once.}
 }
 \value{
 A `Tracks` containing all valid trial observations. The corresponding

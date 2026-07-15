@@ -86,6 +86,34 @@ test_that("get_tracked_object_pos reports out-of-bounds points once, aggregated 
   expect_match(oob, "across 2 trials")   # aggregated across both trials
 })
 
+test_that("get_all_object_pos reports out-of-bounds points once, aggregated over files", {
+  # unit radius = 1 px; each video has two trials with points beyond radius 1.
+  landmarks <- data.frame(frame = c(1, 2, 6, 7),
+                          x = c(0, 1, 0, 1), y = c(0, 0, 0, 0))
+  track <- data.frame(frame = 1:10,
+                       x = c(0, 0.5, 1.2, 1.5, 0.3, 0, 0.5, 1.3, 1.6, 0.2),
+                       y = 0)
+
+  tmp <- withr::local_tempdir()
+  rows <- lapply(1:3, function(k) {
+    base <- sprintf("video%d", k)
+    lm_path <- file.path(tmp, sprintf("%s_point01.txt", base))
+    tr_path <- file.path(tmp, sprintf("%s_point02.txt", base))
+    utils::write.table(landmarks, lm_path, sep = "\t", col.names = FALSE, row.names = FALSE)
+    utils::write.table(track, tr_path, sep = "\t", col.names = FALSE, row.names = FALSE)
+    tibble::tibble(basename = base,
+                   landmark = basename(lm_path),
+                   track = basename(tr_path))
+  })
+  file_tbl_disk <- do.call(rbind, rows)
+
+  msgs <- testthat::capture_messages(
+    suppressWarnings(get_all_object_pos(file_tbl = file_tbl_disk, track_dir = tmp)))
+  oob <- grep("exceeded the unit circle boundary", msgs, value = TRUE)
+  expect_length(oob, 1L)                 # one message, not one per file
+  expect_match(oob, "across 6 trials")   # aggregated across 3 files x 2 trials
+})
+
 test_that("the loader pipeline exposes `track`, not `animal_track`", {
   for (fn in list(get_trial_limits, get_tracked_object_pos, get_all_object_pos)) {
     args <- names(formals(fn))
