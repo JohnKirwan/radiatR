@@ -954,6 +954,13 @@ test_that(".pycke_statistic handles n < 2", {
   expect_equal(radiatR:::.pycke_statistic(1.0), 0)
 })
 
+test_that(".pycke_statistic returns Inf, not NaN, for exact duplicate angles", {
+  theta <- c(0, 0, 1, 2, 3)
+  stat <- radiatR:::.pycke_statistic(theta)
+  expect_true(is.infinite(stat))
+  expect_false(is.nan(stat))
+})
+
 test_that("test_uniformity(hermans_rasson) rejects clustered, not uniform data", {
   set.seed(101)
   clustered <- data.frame(heading = rnorm(40, 1, 0.3) %% (2 * pi))
