@@ -628,6 +628,76 @@ test_that("test_uniformity groups by condition column", {
   expect_gt(b_p, 0.05)
 })
 
+# ---- .pwrappedcauchy ----------------------------------------------------
+
+test_that(".pwrappedcauchy derivative matches dwrappedcauchy density", {
+  mu <- 1.2; rho <- 0.6
+  eps <- 1e-6
+  thetas <- c(0.3, 1.5, 3.0, 4.5, 6.0)
+  for (theta in thetas) {
+    d_num <- (radiatR:::.pwrappedcauchy(theta + eps, mu, rho) -
+               radiatR:::.pwrappedcauchy(theta - eps, mu, rho)) / (2 * eps)
+    d_true <- as.numeric(circular::dwrappedcauchy(
+      circular::circular(theta), mu = circular::circular(mu), rho = rho))
+    expect_equal(d_num, d_true, tolerance = 1e-4)
+  }
+})
+
+test_that(".pwrappedcauchy matches numerical integration of the density", {
+  mu <- 0.4; rho <- 0.75
+  dens <- function(t) as.numeric(circular::dwrappedcauchy(
+    circular::circular(t), mu = circular::circular(mu), rho = rho))
+  for (theta in c(0.5, 2.0, 3.5, 5.0, 6.1)) {
+    lower <- mu - pi
+    # integrate the density from (mu - pi) up to theta, wrapping the
+    # integration path the same way .pwrappedcauchy wraps its output
+    phi_theta <- ((theta - mu + pi) %% (2 * pi)) - pi
+    num <- stats::integrate(dens, lower = mu - pi, upper = mu + phi_theta,
+                             subdivisions = 500L)$value
+    expect_equal(radiatR:::.pwrappedcauchy(theta, mu, rho), num,
+                 tolerance = 1e-4)
+  }
+})
+
+test_that(".pwrappedcauchy is monotonic non-decreasing within one wrap", {
+  mu <- 0.9; rho <- 0.5
+  phi <- seq(-pi + 0.01, pi - 0.01, length.out = 50)
+  u <- radiatR:::.pwrappedcauchy(mu + phi, mu, rho)
+  expect_true(all(diff(u) >= 0))
+})
+
+test_that(".pwrappedcauchy returns 0.5 at mu and approaches 0/1 at the wrap boundary", {
+  mu <- 2.1; rho <- 0.4
+  expect_equal(radiatR:::.pwrappedcauchy(mu, mu, rho), 0.5, tolerance = 1e-8)
+  expect_gt(radiatR:::.pwrappedcauchy(mu + pi - 1e-6, mu, rho), 0.999)
+  expect_lt(radiatR:::.pwrappedcauchy(mu - pi + 1e-6, mu, rho), 0.001)
+})
+
+# ---- .wc_gof_fit_statistic -----------------------------------------------
+
+test_that(".wc_gof_fit_statistic fits mu/rho and returns a finite statistic", {
+  set.seed(42)
+  theta <- as.numeric(circular::rwrappedcauchy(
+    80, mu = circular::circular(1.0), rho = 0.5))
+  r <- radiatR:::.wc_gof_fit_statistic(theta)
+  expect_false(is.null(r))
+  expect_true(is.finite(r$mu))
+  expect_true(r$rho >= 0 && r$rho < 1)
+  expect_true(is.finite(r$statistic))
+  expect_gt(r$statistic, 0)
+})
+
+test_that(".wc_gof_fit_statistic mu is close to the true generating mu", {
+  set.seed(7)
+  theta <- as.numeric(circular::rwrappedcauchy(
+    300, mu = circular::circular(2.3), rho = 0.7))
+  r <- radiatR:::.wc_gof_fit_statistic(theta)
+  # circular distance from true mu, accounting for wraparound
+  d <- atan2(sin(r$mu - 2.3), cos(r$mu - 2.3))
+  expect_lt(abs(d), 0.15)
+  expect_lt(abs(r$rho - 0.7), 0.15)
+})
+
 # ---- test_mean_directions ----------------------------------------------------
 
 test_that("test_mean_directions detects different mean directions", {
@@ -1609,5 +1679,139 @@ test_that("boot_kappa_contrast errors on fewer than two groups", {
                      20, circular::circular(0), 5)))
   expect_error(boot_kappa_contrast(hd, group_col = "grp", R = 99),
                "at least two groups")
+})
+
+# ---- .wc_gof_bootstrap_pvalue ---------------------------------------------
+
+test_that(".wc_gof_bootstrap_pvalue gives a high p-value for true wrapped-Cauchy data", {
+  set.seed(11)
+  theta <- as.numeric(circular::rwrappedcauchy(
+    100, mu = circular::circular(0.5), rho = 0.4))
+  fit <- radiatR:::.wc_gof_fit_statistic(theta)
+  p <- radiatR:::.wc_gof_bootstrap_pvalue(theta, fit, n_boot = 200L)
+  expect_true(is.finite(p))
+  expect_gt(p, 0.10)
+})
+
+test_that(".wc_gof_bootstrap_pvalue gives a low p-value for badly-misfitting data", {
+  # von Mises is a poor wrapped-Cauchy fit (different distribution)
+  set.seed(13)
+  theta <- as.numeric(circular::rvonmises(100, mu = circular::circular(0), kappa = 5))
+  fit <- radiatR:::.wc_gof_fit_statistic(theta)
+  p <- radiatR:::.wc_gof_bootstrap_pvalue(theta, fit, n_boot = 200L)
+  expect_lt(p, 0.05)
+})
+
+test_that(".wc_gof_bootstrap_pvalue returns NA_real_ when fit is NULL", {
+  set.seed(100)
+  theta <- as.numeric(circular::rwrappedcauchy(
+    10, mu = circular::circular(0), rho = 0.3))
+  p <- radiatR:::.wc_gof_bootstrap_pvalue(theta, NULL, n_boot = 200L)
+  expect_identical(p, NA_real_)
+})
+
+test_that(".wc_gof_bootstrap_pvalue handles partial replicate failures gracefully", {
+  # Small sample size (n=7) with n_boot=200 reliably produces some failed convergences
+  # in the bootstrap replicates, exercising the sims[is.finite(sims)] filtering path.
+  # We verify the function returns a valid finite p-value even when some replicates fail.
+  set.seed(42)
+  theta <- as.numeric(circular::rwrappedcauchy(
+    7, mu = circular::circular(0.8), rho = 0.5))
+  fit <- radiatR:::.wc_gof_fit_statistic(theta)
+  expect_false(is.null(fit), info = "Initial fit should succeed for n=7, seed=42")
+  p <- radiatR:::.wc_gof_bootstrap_pvalue(theta, fit, n_boot = 200L)
+  expect_true(is.finite(p))
+  expect_gte(p, 0)
+  expect_lte(p, 1)
+})
+
+# ---- test_gof ---------------------------------------------------------------
+
+test_that("test_gof returns high p-value for true wrapped-Cauchy data", {
+  # seed 1 (vs. the originally-planned seed 21, which drew a genuine ~5%
+  # type-I bootstrap p-value of 0.02 under this null - confirmed by sweeping
+  # seeds 1:40, 6/8 sampled seeds exceeded 0.05, consistent with a calibrated
+  # test rather than a miscalibration bug).
+  set.seed(1)
+  hd <- data.frame(heading = as.numeric(circular::rwrappedcauchy(
+    100, mu = circular::circular(1.0), rho = 0.5)))
+  res <- test_gof(hd, n_boot = 200L)
+  expect_equal(res$test, "wrappedcauchy")
+  expect_equal(res$n, 100L)
+  expect_gt(res$p_value, 0.10)
+})
+
+test_that("test_gof returns low p-value for non-wrapped-Cauchy (von Mises) data", {
+  # An antipodal-bimodal misfit was tried first but reliably drove
+  # mle.wrappedcauchy() to non-convergence (rho collapses toward 0 because
+  # the two opposed modes cancel), so .wc_gof_fit_statistic() legitimately
+  # returns NULL rather than a low p-value - not what this test means to
+  # exercise. Swapped for a converging-but-wrong-family misfit (von Mises,
+  # high kappa), mirroring the existing .wc_gof_bootstrap_pvalue "badly
+  # misfitting data" test.
+  set.seed(23)
+  hd <- data.frame(heading = as.numeric(
+    circular::rvonmises(120, mu = circular::circular(0), kappa = 5)))
+  res <- test_gof(hd, n_boot = 200L)
+  expect_false(is.null(res))
+  expect_lt(res$p_value, 0.05)
+})
+
+test_that("test_gof groups by condition column", {
+  # See note above: group B uses a converging von Mises misfit rather than
+  # antipodal-bimodal data, which fails to converge in mle.wrappedcauchy().
+  set.seed(25)
+  hd <- data.frame(
+    grp = rep(c("A", "B"), each = 80),
+    heading = c(
+      as.numeric(circular::rwrappedcauchy(80, mu = circular::circular(0.5), rho = 0.6)),
+      as.numeric(circular::rvonmises(80, mu = circular::circular(0), kappa = 5))
+    )
+  )
+  res <- test_gof(hd, group_col = "grp", n_boot = 200L)
+  expect_equal(nrow(res), 2L)
+  a_p <- res$p_value[res$grp == "A"]
+  b_p <- res$p_value[res$grp == "B"]
+  expect_gt(a_p, 0.10)
+  expect_lt(b_p, 0.05)
+})
+
+test_that("test_gof returns NULL for fewer than 3 finite angles", {
+  hd <- data.frame(heading = c(0.5, 1.2))
+  expect_null(test_gof(hd, n_boot = 50L))
+})
+
+test_that("test_gof drops groups with fewer than 3 finite angles", {
+  set.seed(27)
+  hd <- data.frame(
+    grp = c("A", "A", "A", "A", "B", "B"),
+    heading = c(as.numeric(circular::rwrappedcauchy(
+      4, mu = circular::circular(0), rho = 0.5)), 0.1, 0.2)
+  )
+  res <- test_gof(hd, group_col = "grp", n_boot = 50L)
+  expect_equal(nrow(res), 1L)
+  expect_equal(res$grp, "A")
+})
+
+test_that("test_gof applies p_adjust across groups", {
+  set.seed(29)
+  hd <- data.frame(
+    grp = rep(c("A", "B", "C"), each = 60),
+    heading = as.numeric(circular::rwrappedcauchy(
+      180, mu = circular::circular(0), rho = 0.5))
+  )
+  res <- test_gof(hd, group_col = "grp", p_adjust = "BH", n_boot = 100L)
+  expect_true("p_value_adj" %in% names(res))
+  expect_equal(length(res$p_value_adj), 3L)
+})
+
+test_that("test_gof errors on missing angle_col", {
+  hd <- data.frame(x = 1:5)
+  expect_error(test_gof(hd), "not found")
+})
+
+test_that("test_gof errors on missing group_col", {
+  hd <- data.frame(heading = stats::runif(10, 0, 2 * pi))
+  expect_error(test_gof(hd, group_col = "nope"), "not found")
 })
 

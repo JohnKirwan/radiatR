@@ -871,6 +871,65 @@ circ_cor <- function(hd, x_col, angle_col = "heading",
   list(statistic = t0, p_value = (1 + sum(sims >= t0)) / (n_sim + 1))
 }
 
+# Closed-form wrapped-Cauchy CDF, used for the probability-integral transform
+# (PIT) in test_gof(). Derived from the Poisson-kernel antiderivative:
+# F(theta) = 1/2 + (1/pi) * atan[((1+rho)/(1-rho)) * tan(phi/2)], where
+# phi = theta - mu wrapped to (-pi, pi]. The rotation origin (mu - pi) is
+# arbitrary: Watson's U^2, the only statistic .pwrappedcauchy feeds, is
+# rotation-invariant, so any consistent wrap point gives the same GOF result.
+.pwrappedcauchy <- function(theta, mu, rho) {
+  phi <- ((theta - mu + pi) %% (2 * pi)) - pi
+  k   <- (1 + rho) / (1 - rho)
+  0.5 + (1 / pi) * atan(k * tan(phi / 2))
+}
+
+# Fit a wrapped Cauchy to `theta` via circular::mle.wrappedcauchy(), then
+# compute Watson's U^2 on the probability-integral-transformed sample as the
+# GOF statistic. Reused for both the observed sample and every bootstrap
+# replicate in .wc_gof_bootstrap_pvalue(). Returns NULL on any fit failure
+# (non-convergence, non-finite parameters, rho at/beyond the boundary) so
+# callers can skip/NA that row rather than erroring the whole test_gof() call.
+.wc_gof_fit_statistic <- function(theta) {
+  a_circ <- circular::circular(theta, units = "radians", type = "angles")
+  fit <- tryCatch(circular::mle.wrappedcauchy(a_circ), error = function(e) NULL)
+  if (is.null(fit) || !isTRUE(fit$convergence)) return(NULL)
+
+  mu  <- as.numeric(fit$mu) %% (2 * pi)
+  rho <- as.numeric(fit$rho)
+  if (!is.finite(mu) || !is.finite(rho) || rho < 0 || rho >= 1) return(NULL)
+  rho <- min(rho, 1 - 1e-8)
+
+  u <- .pwrappedcauchy(theta, mu, rho)
+  a_pit <- circular::circular(u * 2 * pi, units = "radians", type = "angles")
+  stat <- tryCatch(
+    as.numeric(suppressWarnings(circular::watson.test(a_pit)$statistic)),
+    error = function(e) NA_real_)
+  if (!is.finite(stat)) return(NULL)
+
+  list(mu = mu, rho = rho, statistic = stat)
+}
+
+# Parametric bootstrap p-value for the wrapped-Cauchy GOF statistic. Table
+# p-values from watson.test() are invalid here because mu/rho were estimated
+# from the same sample the statistic is computed on (the circular analogue of
+# the Lilliefors problem, biasing naively-tabled p-values toward
+# under-rejection). Simulates n_boot samples from the fitted wrapped Cauchy,
+# refits + recomputes the statistic on each, and counts how many simulated
+# statistics meet or exceed the observed one (upper-tail rejection, like the
+# package's other Monte-Carlo uniformity p-values).
+.wc_gof_bootstrap_pvalue <- function(theta, fit, n_boot) {
+  if (is.null(fit)) return(NA_real_)
+  n <- length(theta)
+  mu_c <- circular::circular(fit$mu, units = "radians", type = "angles")
+  sims <- vapply(seq_len(n_boot), function(i) {
+    sim_theta <- as.numeric(circular::rwrappedcauchy(n, mu = mu_c, rho = fit$rho))
+    r <- .wc_gof_fit_statistic(sim_theta)
+    if (is.null(r)) NA_real_ else r$statistic
+  }, numeric(1))
+  sims <- sims[is.finite(sims)]
+  (1 + sum(sims >= fit$statistic)) / (length(sims) + 1)
+}
+
 #' Per-group tests of circular uniformity
 #'
 #' Tests whether each group's headings are uniformly distributed (i.e. no
@@ -1022,6 +1081,82 @@ test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
     if (is.null(r)) return(NULL)
     r[[group_col]] <- g
     r[, c(group_col, "statistic", "p_value", "n", "test")]
+  })
+  out <- do.call(rbind, rows[!vapply(rows, is.null, logical(1L))])
+  if (p_adjust != "none")
+    out$p_value_adj <- stats::p.adjust(out$p_value, method = p_adjust)
+  out
+}
+
+# ---- test_gof -----------------------------------------------------------
+
+#' Goodness-of-fit test against a wrapped Cauchy distribution
+#'
+#' Tests whether each group's headings plausibly come from a wrapped Cauchy
+#' distribution, using Watson's U^2 statistic on the probability-integral
+#' transform of the fitted distribution, with a parametric-bootstrap p-value
+#' (the bootstrap accounts for the mean direction and concentration having
+#' been estimated from the same sample, which invalidates the naive tabled
+#' p-value for \code{watson.test()}). Unlike \code{\link{test_uniformity}},
+#' which tests "is this uniform?", \code{test_gof} tests a different null
+#' hypothesis: "does this fit a wrapped Cauchy?" — useful when a unimodal but
+#' non-von-Mises shape (heavier or lighter tails) is suspected.
+#'
+#' @param hd Data frame with a heading column in radians.
+#' @param group_col Column to group by. \code{NULL} tests the whole data
+#'   frame as one group.
+#' @param angle_col Heading column name. Default \code{"heading"}.
+#' @param dist Candidate distribution family. Currently only
+#'   \code{"wrappedcauchy"} is implemented.
+#' @param p_adjust Multiple-comparison correction method passed to
+#'   \code{\link[stats]{p.adjust}}. Default \code{"none"}. Applies only when
+#'   \code{group_col} is supplied; a \code{p_value_adj} column is added to
+#'   the result.
+#' @param n_boot Number of parametric bootstrap replicates for the p-value.
+#'   Default \code{999}. Each replicate refits the wrapped-Cauchy MLE, so this
+#'   is more expensive per-replicate than the package's other Monte-Carlo
+#'   p-values; lower it for quick exploratory calls. Set the RNG seed with
+#'   \code{\link{set.seed}} for reproducible p-values.
+#' @return Tidy data frame with columns \code{group_col} (if supplied),
+#'   \code{statistic}, \code{p_value}, \code{n}, \code{mu} (fitted mean
+#'   direction, radians), \code{rho} (fitted concentration, \code{[0, 1)}),
+#'   \code{test}, and \code{p_value_adj} (when \code{p_adjust != "none"}).
+#'   Returns \code{NULL} (ungrouped) or omits a group's row (grouped) when
+#'   that sample has fewer than 3 finite angles or the fit fails to converge.
+#'   If the wrapped-Cauchy fit succeeds but the bootstrap step itself fails,
+#'   the row is kept with valid \code{statistic}/\code{mu}/\code{rho} but
+#'   \code{p_value} set to \code{NA}.
+#' @export
+test_gof <- function(hd, group_col = NULL, angle_col = "heading",
+                      dist = c("wrappedcauchy"), p_adjust = "none",
+                      n_boot = 999L) {
+  dist <- match.arg(dist)
+  stopifnot(is.data.frame(hd))
+  if (!angle_col %in% names(hd))
+    stop("test_gof: column '", angle_col, "' not found")
+
+  .one <- function(sub) {
+    a <- as.numeric(sub[[angle_col]]); a <- a[is.finite(a)]
+    if (length(a) < 3L) return(NULL)
+    fit <- tryCatch(.wc_gof_fit_statistic(a), error = function(e) NULL)
+    if (is.null(fit)) return(NULL)
+    p <- tryCatch(.wc_gof_bootstrap_pvalue(a, fit, n_boot),
+                  error = function(e) NA_real_)
+    data.frame(statistic = fit$statistic, p_value = p, n = length(a),
+               mu = fit$mu, rho = fit$rho, test = dist,
+               stringsAsFactors = FALSE)
+  }
+
+  if (is.null(group_col)) return(.one(hd))
+  if (!group_col %in% names(hd))
+    stop("test_gof: '", group_col, "' not found")
+
+  groups <- unique(hd[[group_col]])
+  rows <- lapply(groups, function(g) {
+    r <- .one(hd[hd[[group_col]] == g, , drop = FALSE])
+    if (is.null(r)) return(NULL)
+    r[[group_col]] <- g
+    r[, c(group_col, "statistic", "p_value", "n", "mu", "rho", "test")]
   })
   out <- do.call(rbind, rows[!vapply(rows, is.null, logical(1L))])
   if (p_adjust != "none")
