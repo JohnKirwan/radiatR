@@ -2560,8 +2560,8 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   to the unit circle, so beyond-circumference (`rho > 1`) excursions are truncated at
 #'   the circumference (segment-intercept, leaving a gap until the track
 #'   re-enters) rather than drawn past it. Set `FALSE` to draw tracks unclipped.
-#'   Plot-only: kinematics are unaffected. Applies in the relative frame;
-#'   ignored when `coords = "absolute"`.
+#'   Plot-only: kinematics are unaffected. `rho` is unchanged by the
+#'   relative-frame rotation, so this applies equally when `coords = "absolute"`.
 #' @param show_arrow Whether to draw a mean resultant arrow from the centre.
 #' @param arrow_angle_col Column containing angles (radians) to summarise for the arrow.
 #' @param arrow_colour,arrow_color Arrow colour (a single fixed colour). Ignored
@@ -2857,7 +2857,7 @@ function(
 
   if (show_tracks) {
     track_data <- data
-    if (isTRUE(clip_tracks) && identical(coords, "relative"))
+    if (isTRUE(clip_tracks))
       track_data <- .clip_path_to_circle(track_data, x_col, y_col, group_col, geom)
     g <- g + draw_tracks(
       data = track_data, x_col = x_col, y_col = y_col,
