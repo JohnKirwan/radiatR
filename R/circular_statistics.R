@@ -909,6 +909,26 @@ circ_cor <- function(hd, x_col, angle_col = "heading",
   list(mu = mu, rho = rho, statistic = stat)
 }
 
+# Parametric bootstrap p-value for the wrapped-Cauchy GOF statistic. Table
+# p-values from watson.test() are invalid here because mu/rho were estimated
+# from the same sample the statistic is computed on (the circular analogue of
+# the Lilliefors problem, biasing naively-tabled p-values toward
+# under-rejection). Simulates n_boot samples from the fitted wrapped Cauchy,
+# refits + recomputes the statistic on each, and counts how many simulated
+# statistics meet or exceed the observed one (upper-tail rejection, like the
+# package's other Monte-Carlo uniformity p-values).
+.wc_gof_bootstrap_pvalue <- function(theta, fit, n_boot) {
+  n <- length(theta)
+  mu_c <- circular::circular(fit$mu, units = "radians", type = "angles")
+  sims <- vapply(seq_len(n_boot), function(i) {
+    sim_theta <- as.numeric(circular::rwrappedcauchy(n, mu = mu_c, rho = fit$rho))
+    r <- .wc_gof_fit_statistic(sim_theta)
+    if (is.null(r)) NA_real_ else r$statistic
+  }, numeric(1))
+  sims <- sims[is.finite(sims)]
+  (1 + sum(sims >= fit$statistic)) / (length(sims) + 1)
+}
+
 #' Per-group tests of circular uniformity
 #'
 #' Tests whether each group's headings are uniformly distributed (i.e. no

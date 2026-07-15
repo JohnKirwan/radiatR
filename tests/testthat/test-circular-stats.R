@@ -1681,3 +1681,24 @@ test_that("boot_kappa_contrast errors on fewer than two groups", {
                "at least two groups")
 })
 
+# ---- .wc_gof_bootstrap_pvalue ---------------------------------------------
+
+test_that(".wc_gof_bootstrap_pvalue gives a high p-value for true wrapped-Cauchy data", {
+  set.seed(11)
+  theta <- as.numeric(circular::rwrappedcauchy(
+    100, mu = circular::circular(0.5), rho = 0.4))
+  fit <- radiatR:::.wc_gof_fit_statistic(theta)
+  p <- radiatR:::.wc_gof_bootstrap_pvalue(theta, fit, n_boot = 200L)
+  expect_true(is.finite(p))
+  expect_gt(p, 0.05)
+})
+
+test_that(".wc_gof_bootstrap_pvalue gives a low p-value for badly-misfitting data", {
+  # von Mises is a poor wrapped-Cauchy fit (different distribution)
+  set.seed(13)
+  theta <- as.numeric(circular::rvonmises(100, mu = circular::circular(0), kappa = 5))
+  fit <- radiatR:::.wc_gof_fit_statistic(theta)
+  p <- radiatR:::.wc_gof_bootstrap_pvalue(theta, fit, n_boot = 200L)
+  expect_lt(p, 0.05)
+})
+
