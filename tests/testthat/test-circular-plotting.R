@@ -2214,6 +2214,15 @@ test_that("radiate(clip_tracks = FALSE) preserves beyond-circumference overshoot
   expect_true(any(rho > 1, na.rm = TRUE))       # the original bug, on demand
 })
 
+test_that("radiate() clips tracks to the unit circle in the absolute frame too", {
+  data(cpunctatus, package = "radiatR")
+  p <- radiate(cpunctatus, coords = "absolute")  # clip_tracks defaults TRUE
+  b <- ggplot2::ggplot_build(p)
+  trk <- b$data[[1]]
+  rho <- sqrt(trk$x^2 + trk$y^2)
+  expect_true(all(rho <= 1 + 1e-6, na.rm = TRUE))
+})
+
 test_that(".clip_path_to_circle isolates groups (one clipped, one all-inside)", {
   d <- data.frame(
     g = c("A","A","A", "B","B","B"),
