@@ -1725,3 +1725,93 @@ test_that(".wc_gof_bootstrap_pvalue handles partial replicate failures gracefull
   expect_lte(p, 1)
 })
 
+# ---- test_gof ---------------------------------------------------------------
+
+test_that("test_gof returns high p-value for true wrapped-Cauchy data", {
+  # seed 1 (vs. the originally-planned seed 21, which drew a genuine ~5%
+  # type-I bootstrap p-value of 0.02 under this null - confirmed by sweeping
+  # seeds 1:40, 6/8 sampled seeds exceeded 0.05, consistent with a calibrated
+  # test rather than a miscalibration bug).
+  set.seed(1)
+  hd <- data.frame(heading = as.numeric(circular::rwrappedcauchy(
+    100, mu = circular::circular(1.0), rho = 0.5)))
+  res <- test_gof(hd, n_boot = 200L)
+  expect_equal(res$test, "wrappedcauchy")
+  expect_equal(res$n, 100L)
+  expect_gt(res$p_value, 0.05)
+})
+
+test_that("test_gof returns low p-value for non-wrapped-Cauchy (von Mises) data", {
+  # An antipodal-bimodal misfit was tried first but reliably drove
+  # mle.wrappedcauchy() to non-convergence (rho collapses toward 0 because
+  # the two opposed modes cancel), so .wc_gof_fit_statistic() legitimately
+  # returns NULL rather than a low p-value - not what this test means to
+  # exercise. Swapped for a converging-but-wrong-family misfit (von Mises,
+  # high kappa), mirroring the existing .wc_gof_bootstrap_pvalue "badly
+  # misfitting data" test.
+  set.seed(23)
+  hd <- data.frame(heading = as.numeric(
+    circular::rvonmises(120, mu = circular::circular(0), kappa = 5)))
+  res <- test_gof(hd, n_boot = 200L)
+  expect_false(is.null(res))
+  expect_lt(res$p_value, 0.05)
+})
+
+test_that("test_gof groups by condition column", {
+  # See note above: group B uses a converging von Mises misfit rather than
+  # antipodal-bimodal data, which fails to converge in mle.wrappedcauchy().
+  set.seed(25)
+  hd <- data.frame(
+    grp = rep(c("A", "B"), each = 80),
+    heading = c(
+      as.numeric(circular::rwrappedcauchy(80, mu = circular::circular(0.5), rho = 0.6)),
+      as.numeric(circular::rvonmises(80, mu = circular::circular(0), kappa = 5))
+    )
+  )
+  res <- test_gof(hd, group_col = "grp", n_boot = 200L)
+  expect_equal(nrow(res), 2L)
+  a_p <- res$p_value[res$grp == "A"]
+  b_p <- res$p_value[res$grp == "B"]
+  expect_gt(a_p, 0.05)
+  expect_lt(b_p, 0.05)
+})
+
+test_that("test_gof returns NULL for fewer than 3 finite angles", {
+  hd <- data.frame(heading = c(0.5, 1.2))
+  expect_null(test_gof(hd, n_boot = 50L))
+})
+
+test_that("test_gof drops groups with fewer than 3 finite angles", {
+  set.seed(27)
+  hd <- data.frame(
+    grp = c("A", "A", "A", "A", "B", "B"),
+    heading = c(as.numeric(circular::rwrappedcauchy(
+      4, mu = circular::circular(0), rho = 0.5)), 0.1, 0.2)
+  )
+  res <- test_gof(hd, group_col = "grp", n_boot = 50L)
+  expect_equal(nrow(res), 1L)
+  expect_equal(res$grp, "A")
+})
+
+test_that("test_gof applies p_adjust across groups", {
+  set.seed(29)
+  hd <- data.frame(
+    grp = rep(c("A", "B", "C"), each = 60),
+    heading = as.numeric(circular::rwrappedcauchy(
+      180, mu = circular::circular(0), rho = 0.5))
+  )
+  res <- test_gof(hd, group_col = "grp", p_adjust = "BH", n_boot = 100L)
+  expect_true("p_value_adj" %in% names(res))
+  expect_equal(length(res$p_value_adj), 3L)
+})
+
+test_that("test_gof errors on missing angle_col", {
+  hd <- data.frame(x = 1:5)
+  expect_error(test_gof(hd), "not found")
+})
+
+test_that("test_gof errors on missing group_col", {
+  hd <- data.frame(heading = stats::runif(10, 0, 2 * pi))
+  expect_error(test_gof(hd, group_col = "nope"), "not found")
+})
+

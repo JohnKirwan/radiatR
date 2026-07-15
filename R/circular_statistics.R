@@ -1088,6 +1088,79 @@ test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
   out
 }
 
+# ---- test_gof -----------------------------------------------------------
+
+#' Goodness-of-fit test against a wrapped Cauchy distribution
+#'
+#' Tests whether each group's headings plausibly come from a wrapped Cauchy
+#' distribution, using Watson's U^2 statistic on the probability-integral
+#' transform of the fitted distribution, with a parametric-bootstrap p-value
+#' (the bootstrap accounts for the mean direction and concentration having
+#' been estimated from the same sample, which invalidates the naive tabled
+#' p-value for \code{watson.test()}). Unlike \code{\link{test_uniformity}},
+#' which tests "is this uniform?", \code{test_gof} tests a different null
+#' hypothesis: "does this fit a wrapped Cauchy?" — useful when a unimodal but
+#' non-von-Mises shape (heavier or lighter tails) is suspected.
+#'
+#' @param hd Data frame with a heading column in radians.
+#' @param group_col Column to group by. \code{NULL} tests the whole data
+#'   frame as one group.
+#' @param angle_col Heading column name. Default \code{"heading"}.
+#' @param dist Candidate distribution family. Currently only
+#'   \code{"wrappedcauchy"} is implemented.
+#' @param p_adjust Multiple-comparison correction method passed to
+#'   \code{\link[stats]{p.adjust}}. Default \code{"none"}. Applies only when
+#'   \code{group_col} is supplied; a \code{p_value_adj} column is added to
+#'   the result.
+#' @param n_boot Number of parametric bootstrap replicates for the p-value.
+#'   Default \code{999}. Each replicate refits the wrapped-Cauchy MLE, so this
+#'   is more expensive per-replicate than the package's other Monte-Carlo
+#'   p-values; lower it for quick exploratory calls. Set the RNG seed with
+#'   \code{\link{set.seed}} for reproducible p-values.
+#' @return Tidy data frame with columns \code{group_col} (if supplied),
+#'   \code{statistic}, \code{p_value}, \code{n}, \code{mu} (fitted mean
+#'   direction, radians), \code{rho} (fitted concentration, \code{[0, 1)}),
+#'   \code{test}, and \code{p_value_adj} (when \code{p_adjust != "none"}).
+#'   Returns \code{NULL} (ungrouped) or omits a group's row (grouped) when
+#'   that sample has fewer than 3 finite angles or the fit fails to converge.
+#' @export
+test_gof <- function(hd, group_col = NULL, angle_col = "heading",
+                      dist = c("wrappedcauchy"), p_adjust = "none",
+                      n_boot = 999L) {
+  dist <- match.arg(dist)
+  stopifnot(is.data.frame(hd))
+  if (!angle_col %in% names(hd))
+    stop("test_gof: column '", angle_col, "' not found")
+
+  .one <- function(sub) {
+    a <- as.numeric(sub[[angle_col]]); a <- a[is.finite(a)]
+    if (length(a) < 3L) return(NULL)
+    fit <- tryCatch(.wc_gof_fit_statistic(a), error = function(e) NULL)
+    if (is.null(fit)) return(NULL)
+    p <- tryCatch(.wc_gof_bootstrap_pvalue(a, fit, n_boot),
+                  error = function(e) NA_real_)
+    data.frame(statistic = fit$statistic, p_value = p, n = length(a),
+               mu = fit$mu, rho = fit$rho, test = dist,
+               stringsAsFactors = FALSE)
+  }
+
+  if (is.null(group_col)) return(.one(hd))
+  if (!group_col %in% names(hd))
+    stop("test_gof: '", group_col, "' not found")
+
+  groups <- unique(hd[[group_col]])
+  rows <- lapply(groups, function(g) {
+    r <- .one(hd[hd[[group_col]] == g, , drop = FALSE])
+    if (is.null(r)) return(NULL)
+    r[[group_col]] <- g
+    r[, c(group_col, "statistic", "p_value", "n", "mu", "rho", "test")]
+  })
+  out <- do.call(rbind, rows[!vapply(rows, is.null, logical(1L))])
+  if (p_adjust != "none")
+    out$p_value_adj <- stats::p.adjust(out$p_value, method = p_adjust)
+  out
+}
+
 # ---- test_mean_directions ----------------------------------------------------
 
 # Between/within resultant-length ratio for a list of numeric angle vectors:
