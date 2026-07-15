@@ -918,6 +918,7 @@ circ_cor <- function(hd, x_col, angle_col = "heading",
 # statistics meet or exceed the observed one (upper-tail rejection, like the
 # package's other Monte-Carlo uniformity p-values).
 .wc_gof_bootstrap_pvalue <- function(theta, fit, n_boot) {
+  if (is.null(fit)) return(NA_real_)
   n <- length(theta)
   mu_c <- circular::circular(fit$mu, units = "radians", type = "angles")
   sims <- vapply(seq_len(n_boot), function(i) {

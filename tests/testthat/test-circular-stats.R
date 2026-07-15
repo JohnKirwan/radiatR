@@ -1702,3 +1702,26 @@ test_that(".wc_gof_bootstrap_pvalue gives a low p-value for badly-misfitting dat
   expect_lt(p, 0.05)
 })
 
+test_that(".wc_gof_bootstrap_pvalue returns NA_real_ when fit is NULL", {
+  set.seed(100)
+  theta <- as.numeric(circular::rwrappedcauchy(
+    10, mu = circular::circular(0), rho = 0.3))
+  p <- radiatR:::.wc_gof_bootstrap_pvalue(theta, NULL, n_boot = 200L)
+  expect_identical(p, NA_real_)
+})
+
+test_that(".wc_gof_bootstrap_pvalue handles partial replicate failures gracefully", {
+  # Small sample size (n=7) with n_boot=200 reliably produces some failed convergences
+  # in the bootstrap replicates, exercising the sims[is.finite(sims)] filtering path.
+  # We verify the function returns a valid finite p-value even when some replicates fail.
+  set.seed(42)
+  theta <- as.numeric(circular::rwrappedcauchy(
+    7, mu = circular::circular(0.8), rho = 0.5))
+  fit <- radiatR:::.wc_gof_fit_statistic(theta)
+  expect_false(is.null(fit), info = "Initial fit should succeed for n=7, seed=42")
+  p <- radiatR:::.wc_gof_bootstrap_pvalue(theta, fit, n_boot = 200L)
+  expect_true(is.finite(p))
+  expect_gte(p, 0)
+  expect_lte(p, 1)
+})
+
