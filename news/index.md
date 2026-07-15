@@ -1,6 +1,11 @@
 # Changelog
 
-## radiatR 0.1.1
+## radiatR (development version)
+
+- [`get_all_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.md)
+  now reports out-of-bounds track points (radius \> 1) with a single
+  aggregated message across the whole manifest, instead of one message
+  per file. \# radiatR 0.1.1
 
 ### App
 

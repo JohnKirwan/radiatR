@@ -66,7 +66,8 @@ radius crossings are selected.</p>
 <span>  <span class="va">track</span>,</span>
 <span>  circ0 <span class="op">=</span> <span class="fl">0.1</span>,</span>
 <span>  circ1 <span class="op">=</span> <span class="fl">0.2</span>,</span>
-<span>  radius_criterion <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"first_past"</span>, <span class="st">"closest"</span><span class="op">)</span></span>
+<span>  radius_criterion <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"first_past"</span>, <span class="st">"closest"</span><span class="op">)</span>,</span>
+<span>  .report_oob <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -95,6 +96,13 @@ entire video.</p></dd>
 <dd><p>Strategy for choosing the radius landmarks. `"first_past"`
 selects the first point beyond each threshold, while `"closest"` chooses the
 closest sample to the specified radius.</p></dd>
+
+
+<dt id="arg--report-oob">.report_oob<a class="anchor" aria-label="anchor" href="#arg--report-oob"></a></dt>
+<dd><p>Internal. When `TRUE` (default), emit a single message
+summarising any track points that fall outside the unit circle. Callers that
+loop over many files (e.g. [get_all_object_pos()]) set this to `FALSE` and
+read the tally from `meta$oob_points`/`meta$oob_trials` to report once.</p></dd>
 
 </dl></div>
     <div class="section level2">
