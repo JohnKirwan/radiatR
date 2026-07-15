@@ -628,6 +628,51 @@ test_that("test_uniformity groups by condition column", {
   expect_gt(b_p, 0.05)
 })
 
+# ---- .pwrappedcauchy ----------------------------------------------------
+
+test_that(".pwrappedcauchy derivative matches dwrappedcauchy density", {
+  mu <- 1.2; rho <- 0.6
+  eps <- 1e-6
+  thetas <- c(0.3, 1.5, 3.0, 4.5, 6.0)
+  for (theta in thetas) {
+    d_num <- (radiatR:::.pwrappedcauchy(theta + eps, mu, rho) -
+               radiatR:::.pwrappedcauchy(theta - eps, mu, rho)) / (2 * eps)
+    d_true <- as.numeric(circular::dwrappedcauchy(
+      circular::circular(theta), mu = circular::circular(mu), rho = rho))
+    expect_equal(d_num, d_true, tolerance = 1e-4)
+  }
+})
+
+test_that(".pwrappedcauchy matches numerical integration of the density", {
+  mu <- 0.4; rho <- 0.75
+  dens <- function(t) as.numeric(circular::dwrappedcauchy(
+    circular::circular(t), mu = circular::circular(mu), rho = rho))
+  for (theta in c(0.5, 2.0, 3.5, 5.0, 6.1)) {
+    lower <- mu - pi
+    # integrate the density from (mu - pi) up to theta, wrapping the
+    # integration path the same way .pwrappedcauchy wraps its output
+    phi_theta <- ((theta - mu + pi) %% (2 * pi)) - pi
+    num <- stats::integrate(dens, lower = mu - pi, upper = mu + phi_theta,
+                             subdivisions = 500L)$value
+    expect_equal(radiatR:::.pwrappedcauchy(theta, mu, rho), num,
+                 tolerance = 1e-4)
+  }
+})
+
+test_that(".pwrappedcauchy is monotonic non-decreasing within one wrap", {
+  mu <- 0.9; rho <- 0.5
+  phi <- seq(-pi + 0.01, pi - 0.01, length.out = 50)
+  u <- radiatR:::.pwrappedcauchy(mu + phi, mu, rho)
+  expect_true(all(diff(u) >= 0))
+})
+
+test_that(".pwrappedcauchy returns 0.5 at mu and approaches 0/1 at the wrap boundary", {
+  mu <- 2.1; rho <- 0.4
+  expect_equal(radiatR:::.pwrappedcauchy(mu, mu, rho), 0.5, tolerance = 1e-8)
+  expect_gt(radiatR:::.pwrappedcauchy(mu + pi - 1e-6, mu, rho), 0.999)
+  expect_lt(radiatR:::.pwrappedcauchy(mu - pi + 1e-6, mu, rho), 0.001)
+})
+
 # ---- test_mean_directions ----------------------------------------------------
 
 test_that("test_mean_directions detects different mean directions", {

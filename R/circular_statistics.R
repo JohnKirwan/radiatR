@@ -871,6 +871,18 @@ circ_cor <- function(hd, x_col, angle_col = "heading",
   list(statistic = t0, p_value = (1 + sum(sims >= t0)) / (n_sim + 1))
 }
 
+# Closed-form wrapped-Cauchy CDF, used for the probability-integral transform
+# (PIT) in test_gof(). Derived from the Poisson-kernel antiderivative:
+# F(theta) = 1/2 + (1/pi) * atan[((1+rho)/(1-rho)) * tan(phi/2)], where
+# phi = theta - mu wrapped to (-pi, pi]. The rotation origin (mu - pi) is
+# arbitrary: Watson's U^2, the only statistic .pwrappedcauchy feeds, is
+# rotation-invariant, so any consistent wrap point gives the same GOF result.
+.pwrappedcauchy <- function(theta, mu, rho) {
+  phi <- ((theta - mu + pi) %% (2 * pi)) - pi
+  k   <- (1 + rho) / (1 - rho)
+  0.5 + (1 / pi) * atan(k * tan(phi / 2))
+}
+
 #' Per-group tests of circular uniformity
 #'
 #' Tests whether each group's headings are uniformly distributed (i.e. no
