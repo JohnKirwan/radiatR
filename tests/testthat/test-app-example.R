@@ -184,12 +184,14 @@ test_that("the app exports a vector plot download", {
   )
   app$wait_for_idle(timeout = 30 * 1000)
 
-  # Format affects only the download, not any rendered output, but the
-  # session still needs to process the input before the download handler
-  # reads it -- skipping this wait races the download request against the
-  # server on slower CI runners. PDF is the default; set it explicitly for
-  # clarity.
-  app$set_inputs(plot_fmt = "pdf")
+  # Format affects only the download, not any rendered output, so the
+  # default set_inputs() wait (which waits for an output to invalidate)
+  # would time out here. Use wait_ = FALSE, but then wait for the server's
+  # busy/idle signal explicitly -- otherwise the download request can race
+  # ahead of the session processing the input change on slower CI runners.
+  # PDF is the default; set it explicitly for clarity.
+  app$set_inputs(plot_fmt = "pdf", wait_ = FALSE)
+  app$wait_for_idle(timeout = 30 * 1000)
   out <- app$get_download("dl_plot")
   expect_true(file.exists(out))
   expect_gt(file.info(out)$size, 0)
