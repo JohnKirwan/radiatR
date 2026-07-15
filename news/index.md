@@ -12,7 +12,12 @@
   frame is a rotation of the absolute one, so `rho` is identical in
   both; the previous relative-only restriction let `coords = "absolute"`
   plots (e.g. in the package vignette) draw tracks visibly outside the
-  unit circle. \# radiatR 0.1.1
+  unit circle.
+- [`test_uniformity()`](https://johnkirwan.github.io/radiatR/reference/test_uniformity.md)
+  gains `test = "pycke"`, the Pycke (2010) omnibus uniformity test —
+  like Hermans-Rasson, powerful against multimodal and asymmetric
+  departures from uniformity, with a Monte-Carlo p-value. \# radiatR
+  0.1.1
 
 ### Bug fixes
 

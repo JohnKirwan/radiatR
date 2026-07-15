@@ -16,7 +16,7 @@ test_uniformity(
   hd,
   group_col = NULL,
   angle_col = "heading",
-  test = c("rayleigh", "vtest", "kuiper", "rao", "watson", "hermans_rasson"),
+  test = c("rayleigh", "vtest", "kuiper", "rao", "watson", "hermans_rasson", "pycke"),
   p_adjust = "none",
   axial = FALSE,
   n_sim = 9999L,
@@ -42,12 +42,12 @@ test_uniformity(
 - test:
 
   One of `"rayleigh"` (default), `"vtest"`, `"kuiper"`, `"rao"`,
-  `"watson"`, or `"hermans_rasson"`. `"vtest"` is the V-test: uniformity
-  against a *specified* mean direction `mu`, considerably more powerful
-  than the Rayleigh test when a bearing is expected a priori. The
-  Hermans-Rasson omnibus test (Landler, Ruxton & Malkemper 2019) is far
-  more powerful than Rayleigh against multimodal / non-symmetric
-  alternatives; its `p_value` is obtained by Monte-Carlo simulation.
+  `"watson"`, `"hermans_rasson"`, or `"pycke"`. `"vtest"` is the V-test:
+  uniformity against a *specified* mean direction `mu`, considerably
+  more powerful than the Rayleigh test when a bearing is expected a
+  priori. The Hermans-Rasson and Pycke omnibus tests are far more
+  powerful than Rayleigh against multimodal / non-symmetric
+  alternatives; both obtain `p_value` by Monte-Carlo simulation.
 
 - p_adjust:
 
@@ -56,8 +56,8 @@ test_uniformity(
   Applies only when `group_col` is supplied; a `p_value_adj` column is
   added to the result. Recommended: `"BH"` (Benjamini-Hochberg) when
   testing many conditions. Meaningful only for tests with continuous
-  p-values: Rayleigh, the V-test, Hermans-Rasson, and any test run with
-  `p_method = "monte_carlo"`.
+  p-values: Rayleigh, the V-test, Hermans-Rasson, Pycke, and any test
+  run with `p_method = "monte_carlo"`.
 
 - axial:
 
@@ -67,10 +67,10 @@ test_uniformity(
 
 - n_sim:
 
-  Number of Monte-Carlo replicates for the `"hermans_rasson"` p-value
-  and for `p_method = "monte_carlo"`. Default `9999`. Set the RNG seed
-  with [`set.seed`](https://rdrr.io/r/base/Random.html) for reproducible
-  p-values.
+  Number of Monte-Carlo replicates for the `"hermans_rasson"` and
+  `"pycke"` p-values and for `p_method = "monte_carlo"`. Default `9999`.
+  Set the RNG seed with [`set.seed`](https://rdrr.io/r/base/Random.html)
+  for reproducible p-values.
 
 - mu:
 
@@ -96,4 +96,10 @@ Landler, L., Ruxton, G.D. & Malkemper, E.P. (2019). The Hermans-Rasson
 test as a powerful alternative to the Rayleigh test for circular
 statistics in biology. BMC Ecology 19:30.
 [doi:10.1186/s12898-019-0246-8](https://doi.org/10.1186/s12898-019-0246-8)
+.
+
+Pycke, S.-R. (2010). Some tests for uniformity of circular distributions
+powered by the multivariate Rayleigh test. Annals of the Institute of
+Statistical Mathematics, 62(2), 323-340.
+[doi:10.1007/s10463-008-0179-9](https://doi.org/10.1007/s10463-008-0179-9)
 .

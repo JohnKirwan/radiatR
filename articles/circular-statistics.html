@@ -249,8 +249,12 @@ two concentration estimates side by side for comparison.</p>
 <p><code><a href="../reference/test_uniformity.html">test_uniformity()</a></code> asks, per group, whether the headings
 have <em>any</em> preferred direction. The Rayleigh test gives an exact
 p-value; when testing many conditions at once, pass
-<code>p_adjust</code> for a corrected <code>p_value_adj</code>
-column:</p>
+<code>p_adjust</code> for a corrected <code>p_value_adj</code> column.
+For multimodal or non-symmetric alternatives where Rayleigh has low
+power, the <code>hermans_rasson</code> and <code>pycke</code> omnibus
+tests (<code>test = "hermans_rasson"</code> /
+<code>test = "pycke"</code>) are more powerful, at the cost of a
+Monte-Carlo p-value:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/test_uniformity.html">test_uniformity</a></span><span class="op">(</span><span class="va">hd</span>, group_col <span class="op">=</span> <span class="st">"arc"</span>, test <span class="op">=</span> <span class="st">"rayleigh"</span>, p_adjust <span class="op">=</span> <span class="st">"BH"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   arc  statistic     p_value  n     test p_value_adj</span></span>

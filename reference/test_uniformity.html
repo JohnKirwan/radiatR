@@ -74,7 +74,7 @@ with <code>p_adjust</code>).</p>
 <span>  <span class="va">hd</span>,</span>
 <span>  group_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  angle_col <span class="op">=</span> <span class="st">"heading"</span>,</span>
-<span>  test <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rayleigh"</span>, <span class="st">"vtest"</span>, <span class="st">"kuiper"</span>, <span class="st">"rao"</span>, <span class="st">"watson"</span>, <span class="st">"hermans_rasson"</span><span class="op">)</span>,</span>
+<span>  test <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rayleigh"</span>, <span class="st">"vtest"</span>, <span class="st">"kuiper"</span>, <span class="st">"rao"</span>, <span class="st">"watson"</span>, <span class="st">"hermans_rasson"</span>, <span class="st">"pycke"</span><span class="op">)</span>,</span>
 <span>  p_adjust <span class="op">=</span> <span class="st">"none"</span>,</span>
 <span>  axial <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  n_sim <span class="op">=</span> <span class="fl">9999L</span>,</span>
@@ -102,13 +102,13 @@ as one group.</p></dd>
 
 <dt id="arg-test">test<a class="anchor" aria-label="anchor" href="#arg-test"></a></dt>
 <dd><p>One of <code>"rayleigh"</code> (default), <code>"vtest"</code>,
-<code>"kuiper"</code>, <code>"rao"</code>, <code>"watson"</code>, or <code>"hermans_rasson"</code>.
+<code>"kuiper"</code>, <code>"rao"</code>, <code>"watson"</code>, <code>"hermans_rasson"</code>,
+or <code>"pycke"</code>.
 <code>"vtest"</code> is the V-test: uniformity against a <em>specified</em> mean
 direction <code>mu</code>, considerably more powerful than the Rayleigh test when
-a bearing is expected a priori. The Hermans-Rasson omnibus test (Landler,
-Ruxton &amp; Malkemper 2019) is far more powerful than Rayleigh against
-multimodal / non-symmetric alternatives; its <code>p_value</code> is obtained by
-Monte-Carlo simulation.</p></dd>
+a bearing is expected a priori. The Hermans-Rasson and Pycke omnibus tests
+are far more powerful than Rayleigh against multimodal / non-symmetric
+alternatives; both obtain <code>p_value</code> by Monte-Carlo simulation.</p></dd>
 
 
 <dt id="arg-p-adjust">p_adjust<a class="anchor" aria-label="anchor" href="#arg-p-adjust"></a></dt>
@@ -117,7 +117,7 @@ Monte-Carlo simulation.</p></dd>
 <code>group_col</code> is supplied; a <code>p_value_adj</code> column is added to the
 result.  Recommended: <code>"BH"</code> (Benjamini-Hochberg) when testing many
 conditions.  Meaningful only for tests with continuous p-values: Rayleigh,
-the V-test, Hermans-Rasson, and any test run with
+the V-test, Hermans-Rasson, Pycke, and any test run with
 <code>p_method = "monte_carlo"</code>.</p></dd>
 
 
@@ -129,8 +129,9 @@ an axis). Default `FALSE` (ordinary directional data).</p></dd>
 
 <dt id="arg-n-sim">n_sim<a class="anchor" aria-label="anchor" href="#arg-n-sim"></a></dt>
 <dd><p>Number of Monte-Carlo replicates for the <code>"hermans_rasson"</code>
-p-value and for <code>p_method = "monte_carlo"</code>. Default <code>9999</code>. Set
-the RNG seed with <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></code> for reproducible p-values.</p></dd>
+and <code>"pycke"</code> p-values and for <code>p_method = "monte_carlo"</code>.
+Default <code>9999</code>. Set the RNG seed with <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></code> for
+reproducible p-values.</p></dd>
 
 
 <dt id="arg-mu">mu<a class="anchor" aria-label="anchor" href="#arg-mu"></a></dt>
@@ -158,6 +159,11 @@ to obtain a continuous p-value. Ignored by the other tests.</p></dd>
   Hermans-Rasson test as a powerful alternative to the Rayleigh test for
   circular statistics in biology. BMC Ecology 19:30.
   <a href="https://doi.org/10.1186/s12898-019-0246-8" class="external-link">doi:10.1186/s12898-019-0246-8</a>
+.</p>
+<p>Pycke, S.-R. (2010). Some tests for uniformity of circular
+  distributions powered by the multivariate Rayleigh test. Annals of the
+  Institute of Statistical Mathematics, 62(2), 323-340.
+  <a href="https://doi.org/10.1007/s10463-008-0179-9" class="external-link">doi:10.1007/s10463-008-0179-9</a>
 .</p>
     </div>
 

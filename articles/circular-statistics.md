@@ -193,7 +193,11 @@ concentration estimates side by side for comparison.
 [`test_uniformity()`](https://johnkirwan.github.io/radiatR/reference/test_uniformity.md)
 asks, per group, whether the headings have *any* preferred direction.
 The Rayleigh test gives an exact p-value; when testing many conditions
-at once, pass `p_adjust` for a corrected `p_value_adj` column:
+at once, pass `p_adjust` for a corrected `p_value_adj` column. For
+multimodal or non-symmetric alternatives where Rayleigh has low power,
+the `hermans_rasson` and `pycke` omnibus tests
+(`test = "hermans_rasson"` / `test = "pycke"`) are more powerful, at the
+cost of a Monte-Carlo p-value:
 
 ``` r
 
