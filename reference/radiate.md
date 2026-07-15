@@ -432,4 +432,6 @@ tracks_demo <- simulate_tracks(conditions = data.frame(n_trials = 1L),
 radiate(tracks_demo, x_col = "rel_x", y_col = "rel_y", group_col = "trial_id")
 
 radiate(cpunctatus, coords = "absolute")
+#> Warning: Removed 105 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 ```

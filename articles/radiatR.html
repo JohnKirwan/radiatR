@@ -205,7 +205,9 @@ inspect the un-rotated frame as an experimental control (for instance,
 to check the apparatus carries no directional bias of its own), pass
 <code>coords = "absolute"</code>:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, coords <span class="op">=</span> <span class="st">"absolute"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, coords <span class="op">=</span> <span class="st">"absolute"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 105 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/plot-absolute-1.png" class="r-plt" alt="" width="700"></p>
 <p>The circumference can be labelled in domain units instead of degrees
 — useful for time-of-year or compass data. <code>angle_labels</code>
@@ -251,7 +253,9 @@ apparatus carries no directional bias of its own.
 (<code><a href="../reference/set_reference.html">set_reference()</a></code> sets the per-trajectory landmark direction
 that defines the relative frame.)</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, coords <span class="op">=</span> <span class="st">"absolute"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/radiate.html">radiate</a></span><span class="op">(</span><span class="va">cpunctatus</span>, coords <span class="op">=</span> <span class="st">"absolute"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 105 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_path()`).</span></span></code></pre></div>
 <p><img src="radiatR_files/figure-html/plot-absolute-frame-1.png" class="r-plt" alt="" width="700"></p>
 </div>
 <div class="section level3">

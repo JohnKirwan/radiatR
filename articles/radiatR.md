@@ -150,6 +150,8 @@ to check the apparatus carries no directional bias of its own), pass
 ``` r
 
 radiate(cpunctatus, coords = "absolute")
+#> Warning: Removed 105 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 ```
 
 ![](radiatR_files/figure-html/plot-absolute-1.png)
@@ -220,6 +222,8 @@ frame.)
 ``` r
 
 radiate(cpunctatus, coords = "absolute")
+#> Warning: Removed 105 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
 ```
 
 ![](radiatR_files/figure-html/plot-absolute-frame-1.png)

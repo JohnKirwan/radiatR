@@ -5,7 +5,14 @@
 - [`get_all_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.md)
   now reports out-of-bounds track points (radius \> 1) with a single
   aggregated message across the whole manifest, instead of one message
-  per file. \# radiatR 0.1.1
+  per file.
+- `radiate(clip_tracks = TRUE)` (the default) now also clips
+  beyond-circumference overshoot in the absolute frame
+  (`coords = "absolute"`), not just the relative frame. The relative
+  frame is a rotation of the absolute one, so `rho` is identical in
+  both; the previous relative-only restriction let `coords = "absolute"`
+  plots (e.g. in the package vignette) draw tracks visibly outside the
+  unit circle. \# radiatR 0.1.1
 
 ### Bug fixes
 
