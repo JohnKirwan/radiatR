@@ -1,7 +1,9 @@
-# R CMD check via r-lib/actions. Runs on Ubuntu, where GitHub-hosted runners
-# ship a headless Google Chrome, so the shinytest2 browser tests
-# (tests/testthat/test-app-example.R) run rather than skip. NOT_CRAN is set so
-# their skip_on_cran() guards do not short-circuit them.
+# R CMD check via r-lib/actions, on Ubuntu/Windows/macOS. On Ubuntu,
+# GitHub-hosted runners ship a headless Google Chrome, so the shinytest2
+# browser tests (tests/testthat/test-app-example.R) run rather than skip.
+# NOT_CRAN is set so their skip_on_cran() guards do not short-circuit them;
+# on Windows/macOS (no preinstalled Chrome) those tests still skip cleanly
+# via their own skip_if(is.null(chromote::find_chrome())) guard.
 on:
   push:
     branches: [main, master]
@@ -22,6 +24,8 @@ jobs:
         config:
           - {os: ubuntu-latest, r: 'release'}
           - {os: ubuntu-latest, r: 'oldrel-1'}
+          - {os: windows-latest, r: 'release'}
+          - {os: macos-latest, r: 'release'}
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
