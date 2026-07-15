@@ -931,6 +931,29 @@ test_that(".hr_statistic is larger for clustered than for spread data", {
   expect_gt(radiatR:::.hr_statistic(clustered), radiatR:::.hr_statistic(spread))
 })
 
+# ---- .pycke_statistic (internal helper) ---------------------------------
+
+test_that(".pycke_statistic matches the sphunif reference implementation", {
+  skip_if_not_installed("sphunif")
+  set.seed(1)
+  theta <- runif(6, 0, 2 * pi)
+  ref <- as.numeric(sphunif::cir_stat_Pycke(matrix(theta, ncol = 1)))
+  expect_equal(radiatR:::.pycke_statistic(theta), ref, tolerance = 1e-10)
+})
+
+test_that(".pycke_statistic is larger for concentrated than uniform data", {
+  set.seed(1)
+  unif_theta <- runif(200, 0, 2 * pi)
+  conc_theta <- rnorm(200, 0, 0.2) %% (2 * pi)
+  expect_gt(radiatR:::.pycke_statistic(conc_theta),
+            radiatR:::.pycke_statistic(unif_theta))
+})
+
+test_that(".pycke_statistic handles n < 2", {
+  expect_equal(radiatR:::.pycke_statistic(numeric(0)), 0)
+  expect_equal(radiatR:::.pycke_statistic(1.0), 0)
+})
+
 test_that("test_uniformity(hermans_rasson) rejects clustered, not uniform data", {
   set.seed(101)
   clustered <- data.frame(heading = rnorm(40, 1, 0.3) %% (2 * pi))

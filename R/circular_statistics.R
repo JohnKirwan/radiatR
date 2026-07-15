@@ -70,6 +70,20 @@ setGeneric("circ_summary", function(x, w = NULL, by = c("id","global"), axial = 
   sum(abs(pi - abs(dt)) - .HR_BETA * abs(sin(dt)))
 }
 
+# Pycke (2010) omnibus statistic of circular uniformity on a numeric radian
+# vector. Sums a pairwise kernel -2*log(2*(1-cos(theta_i - theta_j))) over
+# unordered pairs, normalized by (n-1). Rotation-invariant; rejects in the
+# upper tail (larger statistic = more evidence against uniformity). Verified
+# against the reference C++ implementation in the `sphunif` package
+# (cir_stat_Pycke) to full double precision.
+.pycke_statistic <- function(theta) {
+  n <- length(theta)
+  if (n < 2L) return(0)
+  d  <- outer(theta, theta, "-")
+  dt <- d[upper.tri(d)]
+  sum(-2 * log(2 * (1 - cos(dt)))) / (n - 1)
+}
+
 #' @rdname circ_summary
 #' @export
 setMethod("circ_summary", "Tracks", function(x, w = NULL, by = c("id","global"), axial = FALSE) {
