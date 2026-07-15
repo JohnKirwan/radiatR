@@ -1285,36 +1285,3 @@ Reduce(function(a, b) merge(a, b, by = "arc"),
 For these tracks the three methods give very similar resultant lengths.
 Larger differences would be expected for species with complex search
 behaviour before committing to a direction.
-
-## Simulating Demo Data
-
-[`simulate_tracks()`](https://johnkirwan.github.io/radiatR/reference/simulate_tracks.md)
-generates synthetic trajectories without any files, useful for testing
-and demonstrations. The `kappa` parameter controls directedness:
-
-``` r
-
-sim_df <- simulate_tracks(
-  conditions = data.frame(n_trials = c(5L, 5L), kappa = c(2, 8)),
-  n_points = 150,
-  seed = 42
-)
-ts_sim <- tracks(
-  sim_df,
-  id = "trial_id", time = "frame",
-  angle = "rel_theta", x = "rel_x", y = "rel_y",
-  angle_unit = "radians", normalize_xy = FALSE
-)
-radiate(ts_sim,
-        group_col    = "trial_id",
-        colour_cycle = 5,
-        facets     = "condition",
-        ncol         = 2,
-        show_arrow   = TRUE)
-```
-
-![](radiatR_files/figure-html/simulate-1.png)
-
-The left panel (low `kappa`) shows tortuous paths; the right (high
-`kappa`) shows straighter, more directed tracks. The mean resultant
-arrow is computed independently per panel.
