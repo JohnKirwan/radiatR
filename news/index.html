@@ -47,6 +47,11 @@
 <ul><li>
 <code><a href="../reference/get_all_object_pos.html">get_all_object_pos()</a></code> now reports out-of-bounds track points (radius &gt; 1) with a single aggregated message across the whole manifest, instead of one message per file. # radiatR 0.1.1</li>
 </ul><div class="section level3">
+<h3 id="bug-fixes-development-version">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-development-version"></a></h3>
+<ul><li>
+<code><a href="../reference/radiate.html">radiate()</a></code> no longer labels every trajectory by its id when a plot has many tracks. The automatic fallback to the id/group column now applies only when that column has at most 12 distinct values, so many-track plots (e.g. the 235-trial <code>cpunctatus</code>) render cleanly instead of being buried under overlapping trial-id labels. Pass <code>label_col</code> explicitly to force labelling regardless of track count.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="app-development-version">App<a class="anchor" aria-label="anchor" href="#app-development-version"></a></h3>
 <ul><li>Summary &amp; stats now has a “Group comparison” card: <code>test_mean_directions</code>, <code>test_concentration</code>, and <code>test_distributions</code> run automatically across the selected Group-by column, showing whether groups differ in mean direction, concentration, or overall distribution (not just whether each is individually non-uniform).</li>
 </ul></div>

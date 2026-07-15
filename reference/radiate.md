@@ -320,11 +320,17 @@ radiate(
 
 - show_labels:
 
-  Whether to place labels at the circumference.
+  Whether to place labels at the circumference. When \`TRUE\` (default)
+  and no \`label_col\` is given, \`radiate()\` falls back to the
+  id/group column only if it has at most 12 distinct values, so
+  many-track plots are not buried under per-trial id labels. Set
+  \`label_col\` to force labelling regardless of track count.
 
 - label_col:
 
-  Column containing label values.
+  Column containing label values. When supplied explicitly, labels are
+  always drawn (the many-track guard applies only to the automatic
+  fallback).
 
 - label_size:
 

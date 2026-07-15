@@ -360,11 +360,17 @@ has no effect there.</p></dd>
 
 
 <dt id="arg-show-labels">show_labels<a class="anchor" aria-label="anchor" href="#arg-show-labels"></a></dt>
-<dd><p>Whether to place labels at the circumference.</p></dd>
+<dd><p>Whether to place labels at the circumference. When `TRUE`
+(default) and no `label_col` is given, `radiate()` falls back to the
+id/group column only if it has at most 12 distinct values, so many-track
+plots are not buried under per-trial id labels. Set `label_col` to force
+labelling regardless of track count.</p></dd>
 
 
 <dt id="arg-label-col">label_col<a class="anchor" aria-label="anchor" href="#arg-label-col"></a></dt>
-<dd><p>Column containing label values.</p></dd>
+<dd><p>Column containing label values. When supplied explicitly,
+labels are always drawn (the many-track guard applies only to the
+automatic fallback).</p></dd>
 
 
 <dt id="arg-label-size">label_size<a class="anchor" aria-label="anchor" href="#arg-label-size"></a></dt>
