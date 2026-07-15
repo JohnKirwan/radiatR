@@ -883,6 +883,32 @@ circ_cor <- function(hd, x_col, angle_col = "heading",
   0.5 + (1 / pi) * atan(k * tan(phi / 2))
 }
 
+# Fit a wrapped Cauchy to `theta` via circular::mle.wrappedcauchy(), then
+# compute Watson's U^2 on the probability-integral-transformed sample as the
+# GOF statistic. Reused for both the observed sample and every bootstrap
+# replicate in .wc_gof_bootstrap_pvalue(). Returns NULL on any fit failure
+# (non-convergence, non-finite parameters, rho at/beyond the boundary) so
+# callers can skip/NA that row rather than erroring the whole test_gof() call.
+.wc_gof_fit_statistic <- function(theta) {
+  a_circ <- circular::circular(theta, units = "radians", type = "angles")
+  fit <- tryCatch(circular::mle.wrappedcauchy(a_circ), error = function(e) NULL)
+  if (is.null(fit) || !isTRUE(fit$convergence)) return(NULL)
+
+  mu  <- as.numeric(fit$mu) %% (2 * pi)
+  rho <- as.numeric(fit$rho)
+  if (!is.finite(mu) || !is.finite(rho) || rho < 0 || rho >= 1) return(NULL)
+  rho <- min(rho, 1 - 1e-8)
+
+  u <- .pwrappedcauchy(theta, mu, rho)
+  a_pit <- circular::circular(u * 2 * pi, units = "radians", type = "angles")
+  stat <- tryCatch(
+    as.numeric(suppressWarnings(circular::watson.test(a_pit)$statistic)),
+    error = function(e) NA_real_)
+  if (!is.finite(stat)) return(NULL)
+
+  list(mu = mu, rho = rho, statistic = stat)
+}
+
 #' Per-group tests of circular uniformity
 #'
 #' Tests whether each group's headings are uniformly distributed (i.e. no

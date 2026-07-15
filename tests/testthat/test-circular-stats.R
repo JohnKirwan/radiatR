@@ -673,6 +673,31 @@ test_that(".pwrappedcauchy returns 0.5 at mu and approaches 0/1 at the wrap boun
   expect_lt(radiatR:::.pwrappedcauchy(mu - pi + 1e-6, mu, rho), 0.001)
 })
 
+# ---- .wc_gof_fit_statistic -----------------------------------------------
+
+test_that(".wc_gof_fit_statistic fits mu/rho and returns a finite statistic", {
+  set.seed(42)
+  theta <- as.numeric(circular::rwrappedcauchy(
+    80, mu = circular::circular(1.0), rho = 0.5))
+  r <- radiatR:::.wc_gof_fit_statistic(theta)
+  expect_false(is.null(r))
+  expect_true(is.finite(r$mu))
+  expect_true(r$rho >= 0 && r$rho < 1)
+  expect_true(is.finite(r$statistic))
+  expect_gt(r$statistic, 0)
+})
+
+test_that(".wc_gof_fit_statistic mu is close to the true generating mu", {
+  set.seed(7)
+  theta <- as.numeric(circular::rwrappedcauchy(
+    300, mu = circular::circular(2.3), rho = 0.7))
+  r <- radiatR:::.wc_gof_fit_statistic(theta)
+  # circular distance from true mu, accounting for wraparound
+  d <- atan2(sin(r$mu - 2.3), cos(r$mu - 2.3))
+  expect_lt(abs(d), 0.15)
+  expect_lt(abs(r$rho - 0.7), 0.15)
+})
+
 # ---- test_mean_directions ----------------------------------------------------
 
 test_that("test_mean_directions detects different mean directions", {
