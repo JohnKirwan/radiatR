@@ -1690,7 +1690,7 @@ test_that(".wc_gof_bootstrap_pvalue gives a high p-value for true wrapped-Cauchy
   fit <- radiatR:::.wc_gof_fit_statistic(theta)
   p <- radiatR:::.wc_gof_bootstrap_pvalue(theta, fit, n_boot = 200L)
   expect_true(is.finite(p))
-  expect_gt(p, 0.05)
+  expect_gt(p, 0.10)
 })
 
 test_that(".wc_gof_bootstrap_pvalue gives a low p-value for badly-misfitting data", {
@@ -1738,7 +1738,7 @@ test_that("test_gof returns high p-value for true wrapped-Cauchy data", {
   res <- test_gof(hd, n_boot = 200L)
   expect_equal(res$test, "wrappedcauchy")
   expect_equal(res$n, 100L)
-  expect_gt(res$p_value, 0.05)
+  expect_gt(res$p_value, 0.10)
 })
 
 test_that("test_gof returns low p-value for non-wrapped-Cauchy (von Mises) data", {
@@ -1772,7 +1772,7 @@ test_that("test_gof groups by condition column", {
   expect_equal(nrow(res), 2L)
   a_p <- res$p_value[res$grp == "A"]
   b_p <- res$p_value[res$grp == "B"]
-  expect_gt(a_p, 0.05)
+  expect_gt(a_p, 0.10)
   expect_lt(b_p, 0.05)
 })
 

@@ -1123,6 +1123,9 @@ test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
 #'   \code{test}, and \code{p_value_adj} (when \code{p_adjust != "none"}).
 #'   Returns \code{NULL} (ungrouped) or omits a group's row (grouped) when
 #'   that sample has fewer than 3 finite angles or the fit fails to converge.
+#'   If the wrapped-Cauchy fit succeeds but the bootstrap step itself fails,
+#'   the row is kept with valid \code{statistic}/\code{mu}/\code{rho} but
+#'   \code{p_value} set to \code{NA}.
 #' @export
 test_gof <- function(hd, group_col = NULL, angle_col = "heading",
                       dist = c("wrappedcauchy"), p_adjust = "none",

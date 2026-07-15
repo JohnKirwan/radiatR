@@ -42,6 +42,9 @@ Tidy data frame with columns \code{group_col} (if supplied),
   \code{test}, and \code{p_value_adj} (when \code{p_adjust != "none"}).
   Returns \code{NULL} (ungrouped) or omits a group's row (grouped) when
   that sample has fewer than 3 finite angles or the fit fails to converge.
+  If the wrapped-Cauchy fit succeeds but the bootstrap step itself fails,
+  the row is kept with valid \code{statistic}/\code{mu}/\code{rho} but
+  \code{p_value} set to \code{NA}.
 }
 \description{
 Tests whether each group's headings plausibly come from a wrapped Cauchy
