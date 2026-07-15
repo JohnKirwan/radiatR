@@ -3542,6 +3542,12 @@ add_circular_kde <- function(hd, angle_col = "heading", group_col = NULL,
     } else {
       bw
     }
+    # Highly concentrated data can drive the MLE kappa used by
+    # bw.nrd.circular() to a besselI ratio that underflows to a subnormal
+    # bandwidth; that value sits at the edge of floating-point precision and
+    # its exact rounding is platform-dependent, so fall back deterministically
+    # rather than risk density.circular() erroring on some platforms only.
+    if (!is.finite(bw_use) || bw_use <= 0) bw_use <- 5
     kde <- tryCatch(
       circular::density.circular(a_circ, bw = bw_use,
                                   n = n_pts, kernel = kernel),
