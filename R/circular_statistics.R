@@ -924,7 +924,7 @@ circ_cor <- function(hd, x_col, angle_col = "heading",
 #' @export
 test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
                              test = c("rayleigh", "vtest", "kuiper", "rao",
-                                      "watson", "hermans_rasson"),
+                                      "watson", "hermans_rasson", "pycke"),
                              p_adjust = "none", axial = FALSE, n_sim = 9999L,
                              mu = NULL,
                              p_method = c("table", "monte_carlo")) {
@@ -983,6 +983,14 @@ test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
         t0   <- .hr_statistic(a)
         sims <- replicate(n_sim,
                   .hr_statistic(stats::runif(length(a), 0, 2 * pi)))
+        p    <- (1 + sum(sims >= t0)) / (n_sim + 1)
+        list(statistic = t0, p_value = p)
+      },
+      pycke = {
+        a    <- as.numeric(a_circ)
+        t0   <- .pycke_statistic(a)
+        sims <- replicate(n_sim,
+                  .pycke_statistic(stats::runif(length(a), 0, 2 * pi)))
         p    <- (1 + sum(sims >= t0)) / (n_sim + 1)
         list(statistic = t0, p_value = p)
       }
