@@ -1,22 +1,16 @@
 # radiatR (development version)
 
-* `get_all_object_pos()` now reports out-of-bounds track points (radius > 1)
-  with a single aggregated message across the whole manifest, instead of one
-  message per file.
+# radiatR 0.1.1
+
+## New features
+
 * New `test_gof()` tests whether a sample of headings fits a wrapped Cauchy
   distribution (Watson's U^2 on the probability-integral transform, with a
   parametric-bootstrap p-value), closing the wrapped-Cauchy half of the
   non-von-Mises goodness-of-fit gap. Jones-Pewsey GOF remains deferred.
-* `radiate(clip_tracks = TRUE)` (the default) now also clips beyond-circumference
-  overshoot in the absolute frame (`coords = "absolute"`), not just the
-  relative frame. The relative frame is a rotation of the absolute one, so
-  `rho` is identical in both; the previous relative-only restriction let
-  `coords = "absolute"` plots (e.g. in the package vignette) draw tracks
-  visibly outside the unit circle.
 * `test_uniformity()` gains `test = "pycke"`, the Pycke (2010) omnibus
   uniformity test — like Hermans-Rasson, powerful against multimodal and
   asymmetric departures from uniformity, with a Monte-Carlo p-value.
-# radiatR 0.1.1
 
 ## Bug fixes
 
@@ -26,6 +20,15 @@
   235-trial `cpunctatus`) render cleanly instead of being buried under
   overlapping trial-id labels. Pass `label_col` explicitly to force labelling
   regardless of track count.
+* `radiate(clip_tracks = TRUE)` (the default) now also clips beyond-circumference
+  overshoot in the absolute frame (`coords = "absolute"`), not just the
+  relative frame. The relative frame is a rotation of the absolute one, so
+  `rho` is identical in both; the previous relative-only restriction let
+  `coords = "absolute"` plots (e.g. in the package vignette) draw tracks
+  visibly outside the unit circle.
+* `get_all_object_pos()` now reports out-of-bounds track points (radius > 1)
+  with a single aggregated message across the whole manifest, instead of one
+  message per file.
 
 ## App
 
