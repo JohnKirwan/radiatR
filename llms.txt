@@ -1088,6 +1088,8 @@ Any remaining exported topics.
   : Test whether groups share the same concentration (dispersion)
 - [`test_distributions()`](https://johnkirwan.github.io/radiatR/reference/test_distributions.md)
   : Test whether groups share the same circular distribution
+- [`test_gof()`](https://johnkirwan.github.io/radiatR/reference/test_gof.md)
+  : Goodness-of-fit test against a wrapped Cauchy distribution
 - [`test_mean_directions()`](https://johnkirwan.github.io/radiatR/reference/test_mean_directions.md)
   : Test whether groups share the same mean direction
 - [`test_symmetry()`](https://johnkirwan.github.io/radiatR/reference/test_symmetry.md)

@@ -6,6 +6,12 @@
   now reports out-of-bounds track points (radius \> 1) with a single
   aggregated message across the whole manifest, instead of one message
   per file.
+- New
+  [`test_gof()`](https://johnkirwan.github.io/radiatR/reference/test_gof.md)
+  tests whether a sample of headings fits a wrapped Cauchy distribution
+  (Watson’s U^2 on the probability-integral transform, with a
+  parametric-bootstrap p-value), closing the wrapped-Cauchy half of the
+  non-von-Mises goodness-of-fit gap. Jones-Pewsey GOF remains deferred.
 - `radiate(clip_tracks = TRUE)` (the default) now also clips
   beyond-circumference overshoot in the absolute frame
   (`coords = "absolute"`), not just the relative frame. The relative
