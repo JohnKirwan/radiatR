@@ -931,6 +931,36 @@ test_that(".hr_statistic is larger for clustered than for spread data", {
   expect_gt(radiatR:::.hr_statistic(clustered), radiatR:::.hr_statistic(spread))
 })
 
+# ---- .pycke_statistic (internal helper) ---------------------------------
+
+test_that(".pycke_statistic matches the sphunif reference implementation", {
+  skip_if_not_installed("sphunif")
+  set.seed(1)
+  theta <- runif(6, 0, 2 * pi)
+  ref <- as.numeric(sphunif::cir_stat_Pycke(matrix(theta, ncol = 1)))
+  expect_equal(radiatR:::.pycke_statistic(theta), ref, tolerance = 1e-10)
+})
+
+test_that(".pycke_statistic is larger for concentrated than uniform data", {
+  set.seed(1)
+  unif_theta <- runif(200, 0, 2 * pi)
+  conc_theta <- rnorm(200, 0, 0.2) %% (2 * pi)
+  expect_gt(radiatR:::.pycke_statistic(conc_theta),
+            radiatR:::.pycke_statistic(unif_theta))
+})
+
+test_that(".pycke_statistic handles n < 2", {
+  expect_equal(radiatR:::.pycke_statistic(numeric(0)), 0)
+  expect_equal(radiatR:::.pycke_statistic(1.0), 0)
+})
+
+test_that(".pycke_statistic returns Inf, not NaN, for exact duplicate angles", {
+  theta <- c(0, 0, 1, 2, 3)
+  stat <- radiatR:::.pycke_statistic(theta)
+  expect_true(is.infinite(stat))
+  expect_false(is.nan(stat))
+})
+
 test_that("test_uniformity(hermans_rasson) rejects clustered, not uniform data", {
   set.seed(101)
   clustered <- data.frame(heading = rnorm(40, 1, 0.3) %% (2 * pi))
@@ -969,6 +999,60 @@ test_that("test_uniformity(hermans_rasson) is reproducible and integrates with g
                        n_sim = 299, p_adjust = "BH")
   expect_equal(nrow(g), 2L)
   expect_true(all(c("grp", "statistic", "p_value", "n", "test", "p_value_adj") %in% names(g)))
+})
+
+# ---- test_uniformity: Pycke ---------------------------------------------
+
+test_that("test_uniformity(pycke) rejects clustered, not uniform data", {
+  set.seed(101)
+  clustered <- data.frame(heading = rnorm(40, 1, 0.3) %% (2 * pi))
+  uniform   <- data.frame(heading = seq(0, 2 * pi, length.out = 41)[-41])
+
+  rc <- test_uniformity(clustered, test = "pycke", n_sim = 499)
+  ru <- test_uniformity(uniform,   test = "pycke", n_sim = 499)
+
+  expect_equal(rc$test, "pycke")
+  expect_lt(rc$p_value, 0.05)
+  expect_gt(ru$p_value, 0.10)
+  expect_gt(rc$p_value, 0)
+  expect_lte(ru$p_value, 1)
+})
+
+test_that("test_uniformity(pycke) catches bimodal data the Rayleigh test misses", {
+  set.seed(102)
+  bimodal <- data.frame(heading = c(rnorm(30, 0, 0.2), rnorm(30, pi, 0.2)) %% (2 * pi))
+  ray <- test_uniformity(bimodal, test = "rayleigh")
+  py  <- test_uniformity(bimodal, test = "pycke", n_sim = 499)
+  expect_gt(ray$p_value, 0.10)
+  expect_lt(py$p_value, 0.05)
+})
+
+test_that("test_uniformity(pycke) is reproducible and integrates with grouping", {
+  set.seed(7); a <- test_uniformity(
+    data.frame(heading = rnorm(30, 1, 0.3)), test = "pycke", n_sim = 299)
+  set.seed(7); b <- test_uniformity(
+    data.frame(heading = rnorm(30, 1, 0.3)), test = "pycke", n_sim = 299)
+  expect_equal(a$p_value, b$p_value)
+
+  set.seed(8)
+  hd <- data.frame(heading = c(rnorm(25, 0, 0.3), rnorm(25, 2, 0.3)),
+                   grp = rep(c("a", "b"), each = 25))
+  g <- test_uniformity(hd, group_col = "grp", test = "pycke",
+                       n_sim = 299, p_adjust = "BH")
+  expect_equal(nrow(g), 2L)
+  expect_true(all(c("grp", "statistic", "p_value", "n", "test", "p_value_adj") %in% names(g)))
+})
+
+test_that("test_uniformity(pycke, axial=TRUE) detects an axis the directional test misses", {
+  set.seed(9)
+  a  <- c(rnorm(30, 0, 0.2), rnorm(30, pi, 0.2)) %% (2 * pi)
+  hd <- data.frame(heading = a)
+  dir <- test_uniformity(hd, test = "pycke", n_sim = 499)
+  # Monte-Carlo p-value is floored at 1/(n_sim+1); 9999 sims give the
+  # resolution needed to distinguish "more significant" from the 499-sim floor.
+  ax  <- test_uniformity(hd, test = "pycke", axial = TRUE, n_sim = 9999)
+  expect_lt(dir$p_value, 0.05)  # already bimodal-detectable directionally too
+  expect_lt(ax$p_value,  0.001) # but axially even more strongly non-uniform
 })
 
 # ---- test_uniformity: V-test -------------------------------------------------

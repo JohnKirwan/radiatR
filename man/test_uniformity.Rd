@@ -8,7 +8,7 @@ test_uniformity(
   hd,
   group_col = NULL,
   angle_col = "heading",
-  test = c("rayleigh", "vtest", "kuiper", "rao", "watson", "hermans_rasson"),
+  test = c("rayleigh", "vtest", "kuiper", "rao", "watson", "hermans_rasson", "pycke"),
   p_adjust = "none",
   axial = FALSE,
   n_sim = 9999L,
@@ -25,20 +25,20 @@ as one group.}
 \item{angle_col}{Heading column name.  Default \code{"heading"}.}
 
 \item{test}{One of \code{"rayleigh"} (default), \code{"vtest"},
-\code{"kuiper"}, \code{"rao"}, \code{"watson"}, or \code{"hermans_rasson"}.
+\code{"kuiper"}, \code{"rao"}, \code{"watson"}, \code{"hermans_rasson"},
+or \code{"pycke"}.
 \code{"vtest"} is the V-test: uniformity against a \emph{specified} mean
 direction \code{mu}, considerably more powerful than the Rayleigh test when
-a bearing is expected a priori. The Hermans-Rasson omnibus test (Landler,
-Ruxton & Malkemper 2019) is far more powerful than Rayleigh against
-multimodal / non-symmetric alternatives; its \code{p_value} is obtained by
-Monte-Carlo simulation.}
+a bearing is expected a priori. The Hermans-Rasson and Pycke omnibus tests
+are far more powerful than Rayleigh against multimodal / non-symmetric
+alternatives; both obtain \code{p_value} by Monte-Carlo simulation.}
 
 \item{p_adjust}{Multiple-comparison correction method passed to
 \code{\link[stats]{p.adjust}}.  Default \code{"none"}.  Applies only when
 \code{group_col} is supplied; a \code{p_value_adj} column is added to the
 result.  Recommended: \code{"BH"} (Benjamini-Hochberg) when testing many
 conditions.  Meaningful only for tests with continuous p-values: Rayleigh,
-the V-test, Hermans-Rasson, and any test run with
+the V-test, Hermans-Rasson, Pycke, and any test run with
 \code{p_method = "monte_carlo"}.}
 
 \item{axial}{Logical. Treat the angles as axial (bidirectional, mod-pi)
@@ -46,8 +46,9 @@ data: the uniformity test is run via the angle-doubling method (testing for
 an axis). Default `FALSE` (ordinary directional data).}
 
 \item{n_sim}{Number of Monte-Carlo replicates for the \code{"hermans_rasson"}
-p-value and for \code{p_method = "monte_carlo"}. Default \code{9999}. Set
-the RNG seed with \code{\link{set.seed}} for reproducible p-values.}
+and \code{"pycke"} p-values and for \code{p_method = "monte_carlo"}.
+Default \code{9999}. Set the RNG seed with \code{\link{set.seed}} for
+reproducible p-values.}
 
 \item{mu}{Numeric scalar, radians. The expected mean direction for the V-test
 (\code{test = "vtest"}); required for that test and ignored otherwise.}
@@ -78,4 +79,9 @@ Landler, L., Ruxton, G.D. & Malkemper, E.P. (2019). The
   Hermans-Rasson test as a powerful alternative to the Rayleigh test for
   circular statistics in biology. BMC Ecology 19:30.
   \doi{10.1186/s12898-019-0246-8}.
+
+Pycke, S.-R. (2010). Some tests for uniformity of circular
+  distributions powered by the multivariate Rayleigh test. Annals of the
+  Institute of Statistical Mathematics, 62(2), 323-340.
+  \doi{10.1007/s10463-008-0179-9}.
 }

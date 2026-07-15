@@ -70,6 +70,20 @@ setGeneric("circ_summary", function(x, w = NULL, by = c("id","global"), axial = 
   sum(abs(pi - abs(dt)) - .HR_BETA * abs(sin(dt)))
 }
 
+# Pycke (2010) omnibus statistic of circular uniformity on a numeric radian
+# vector. Sums a pairwise kernel -2*log(2*(1-cos(theta_i - theta_j))) over
+# unordered pairs, normalized by (n-1). Rotation-invariant; rejects in the
+# upper tail (larger statistic = more evidence against uniformity). Verified
+# against the reference C++ implementation in the `sphunif` package
+# (cir_stat_Pycke) to full double precision.
+.pycke_statistic <- function(theta) {
+  n <- length(theta)
+  if (n < 2L) return(0)
+  d  <- outer(theta, theta, "-")
+  dt <- d[upper.tri(d)]
+  sum(-2 * log(2 * (1 - cos(dt)))) / (n - 1)
+}
+
 #' @rdname circ_summary
 #' @export
 setMethod("circ_summary", "Tracks", function(x, w = NULL, by = c("id","global"), axial = FALSE) {
@@ -873,13 +887,13 @@ circ_cor <- function(hd, x_col, angle_col = "heading",
 #'   as one group.
 #' @param angle_col Heading column name.  Default \code{"heading"}.
 #' @param test One of \code{"rayleigh"} (default), \code{"vtest"},
-#'   \code{"kuiper"}, \code{"rao"}, \code{"watson"}, or \code{"hermans_rasson"}.
+#'   \code{"kuiper"}, \code{"rao"}, \code{"watson"}, \code{"hermans_rasson"},
+#'   or \code{"pycke"}.
 #'   \code{"vtest"} is the V-test: uniformity against a \emph{specified} mean
 #'   direction \code{mu}, considerably more powerful than the Rayleigh test when
-#'   a bearing is expected a priori. The Hermans-Rasson omnibus test (Landler,
-#'   Ruxton & Malkemper 2019) is far more powerful than Rayleigh against
-#'   multimodal / non-symmetric alternatives; its \code{p_value} is obtained by
-#'   Monte-Carlo simulation.
+#'   a bearing is expected a priori. The Hermans-Rasson and Pycke omnibus tests
+#'   are far more powerful than Rayleigh against multimodal / non-symmetric
+#'   alternatives; both obtain \code{p_value} by Monte-Carlo simulation.
 #' @param mu Numeric scalar, radians. The expected mean direction for the V-test
 #'   (\code{test = "vtest"}); required for that test and ignored otherwise.
 #' @param p_adjust Multiple-comparison correction method passed to
@@ -887,7 +901,7 @@ circ_cor <- function(hd, x_col, angle_col = "heading",
 #'   \code{group_col} is supplied; a \code{p_value_adj} column is added to the
 #'   result.  Recommended: \code{"BH"} (Benjamini-Hochberg) when testing many
 #'   conditions.  Meaningful only for tests with continuous p-values: Rayleigh,
-#'   the V-test, Hermans-Rasson, and any test run with
+#'   the V-test, Hermans-Rasson, Pycke, and any test run with
 #'   \code{p_method = "monte_carlo"}.
 #' @param p_method For \code{"kuiper"}, \code{"rao"}, and \code{"watson"} only:
 #'   \code{"table"} (default) reports the tabled significance level from the
@@ -901,16 +915,21 @@ circ_cor <- function(hd, x_col, angle_col = "heading",
 #'   data: the uniformity test is run via the angle-doubling method (testing for
 #'   an axis). Default `FALSE` (ordinary directional data).
 #' @param n_sim Number of Monte-Carlo replicates for the \code{"hermans_rasson"}
-#'   p-value and for \code{p_method = "monte_carlo"}. Default \code{9999}. Set
-#'   the RNG seed with \code{\link{set.seed}} for reproducible p-values.
+#'   and \code{"pycke"} p-values and for \code{p_method = "monte_carlo"}.
+#'   Default \code{9999}. Set the RNG seed with \code{\link{set.seed}} for
+#'   reproducible p-values.
 #' @references Landler, L., Ruxton, G.D. & Malkemper, E.P. (2019). The
 #'   Hermans-Rasson test as a powerful alternative to the Rayleigh test for
 #'   circular statistics in biology. BMC Ecology 19:30.
 #'   \doi{10.1186/s12898-019-0246-8}.
+#' @references Pycke, S.-R. (2010). Some tests for uniformity of circular
+#'   distributions powered by the multivariate Rayleigh test. Annals of the
+#'   Institute of Statistical Mathematics, 62(2), 323-340.
+#'   \doi{10.1007/s10463-008-0179-9}.
 #' @export
 test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
                              test = c("rayleigh", "vtest", "kuiper", "rao",
-                                      "watson", "hermans_rasson"),
+                                      "watson", "hermans_rasson", "pycke"),
                              p_adjust = "none", axial = FALSE, n_sim = 9999L,
                              mu = NULL,
                              p_method = c("table", "monte_carlo")) {
@@ -969,6 +988,14 @@ test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
         t0   <- .hr_statistic(a)
         sims <- replicate(n_sim,
                   .hr_statistic(stats::runif(length(a), 0, 2 * pi)))
+        p    <- (1 + sum(sims >= t0)) / (n_sim + 1)
+        list(statistic = t0, p_value = p)
+      },
+      pycke = {
+        a    <- as.numeric(a_circ)
+        t0   <- .pycke_statistic(a)
+        sims <- replicate(n_sim,
+                  .pycke_statistic(stats::runif(length(a), 0, 2 * pi)))
         p    <- (1 + sum(sims >= t0)) / (n_sim + 1)
         list(statistic = t0, p_value = p)
       }

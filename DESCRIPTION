@@ -63,7 +63,8 @@ Suggests:
     shinytest2,
     chromote,
     CircMLE,
-    vdiffr
+    vdiffr,
+    sphunif
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Collate: 
