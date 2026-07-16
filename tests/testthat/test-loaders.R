@@ -773,3 +773,45 @@ test_that("read_tracks errors on multi-file input with no id column and id_from_
     regexp = "id_from_filename = FALSE"
   )
 })
+
+test_that("read_tracks_dir(recursive = TRUE) detects a synthesized-id collision across same-named files in different subdirectories", {
+  tmp <- withr::local_tempdir()
+  sub1 <- file.path(tmp, "sub1")
+  sub2 <- file.path(tmp, "sub2")
+  dir.create(sub1)
+  dir.create(sub2)
+  # Same file name ("left.csv") in two different subdirectories, non-overlapping
+  # time ranges so the duplicate-(id,time)-key safety net does NOT mask this:
+  # only the id-collision check (keyed on full source path) can catch it.
+  utils::write.csv(data.frame(time = c(1, 2), x = c(0, 1), y = c(0, 1)),
+                   file.path(sub1, "left.csv"), row.names = FALSE)
+  utils::write.csv(data.frame(time = c(100, 101), x = c(5, 6), y = c(2, 3)),
+                   file.path(sub2, "left.csv"), row.names = FALSE)
+
+  err <- tryCatch(
+    suppressMessages(suppressWarnings(
+      read_tracks_dir(tmp, recursive = TRUE, normalize_xy = FALSE))),
+    error = function(e) conditionMessage(e))
+  expect_match(err, "collide")
+  expect_match(err, "id 'left'")
+  expect_match(err, "left.csv")
+})
+
+test_that("id_collision = 'namespace' resolves ids before the duplicate-key check runs", {
+  tmp <- withr::local_tempdir()
+  path_a <- file.path(tmp, "a.csv")
+  path_b <- file.path(tmp, "b.csv")
+  # Same real id "1" reused across files AND overlapping times, so leaving the
+  # id un-namespaced would trip both the id-collision check and (once ids
+  # collide) the duplicate-(id,time)-key check. Namespacing must resolve the
+  # id before the duplicate-key check runs, so this should succeed cleanly.
+  utils::write.csv(data.frame(id = "1", time = c(1, 2), x = c(0, 1), y = c(0, 1)),
+                   path_a, row.names = FALSE)
+  utils::write.csv(data.frame(id = "1", time = c(1, 2), x = c(2, 3), y = c(1, 0)),
+                   path_b, row.names = FALSE)
+
+  ts <- suppressMessages(suppressWarnings(
+    read_tracks(c(path_a, path_b), normalize_xy = FALSE, id_collision = "namespace")))
+  expect_s4_class(ts, "Tracks")
+  expect_equal(sort(as.character(ids(ts))), c("a::1", "b::1"))
+})

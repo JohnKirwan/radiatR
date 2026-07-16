@@ -440,6 +440,10 @@ guess_columns <- function(data, mapping = list()) {
   dfl <- Map(function(d, p) {
     if (synth) d[[id_col]] <- tools::file_path_sans_ext(basename(p))
     d[["..source_file"]] <- basename(p)
+    # Internal only: full/relative path, used to distinguish same-named files
+    # in different directories for collision detection. Dropped before the
+    # final Tracks data is built (not in keep_cols selection below).
+    d[["..source_path"]] <- p
     d
   }, dfl, paths)
 
@@ -643,9 +647,13 @@ read_tracks <- function(x,
   # subdirectories (read_tracks_dir(recursive = TRUE)); for real ids it handles
   # the same id value reused across files.
   if (!is.null(id) && "..source_file" %in% names(df)) {
-    id_vals  <- as.character(df[[id]])
-    src_vals <- as.character(df[["..source_file"]])
-    n_src    <- tapply(src_vals, id_vals, function(s) length(unique(s)))
+    id_vals   <- as.character(df[[id]])
+    src_vals  <- as.character(df[["..source_file"]])
+    # Collision existence is determined by distinct source PATHS (so same-
+    # named files in different directories are correctly seen as distinct
+    # sources); the user-facing message still lists basenames for readability.
+    path_vals <- as.character(df[["..source_path"]])
+    n_src    <- tapply(path_vals, id_vals, function(s) length(unique(s)))
     colliding <- names(n_src)[n_src > 1L]
     if (length(colliding)) {
       if (id_collision == "error") {
