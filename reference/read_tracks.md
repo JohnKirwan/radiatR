@@ -12,7 +12,7 @@ read_tracks(
   time_type = c("auto", "posix", "seconds", "frames"),
   tz = "UTC",
   fps = NULL,
-  normalize_xy = TRUE,
+  normalize_xy = FALSE,
   dialect = NULL,
   dialect_args = list(),
   read_opts = list(delim = NULL, decimal = NULL, sheet = NULL),
@@ -50,14 +50,21 @@ read_tracks(
 
 - fps:
 
-  Frames-per-second. Used to convert frame indices to seconds when
-  time_type = "frames", and, when a single finite positive value is
-  supplied, stored as the Tracks capture frame rate (see
-  \[frame_rate()\]) so kinematics and the app adopt it automatically.
+  Frames-per-second. Required when time_type = "frames" (the time column
+  is kept as a raw frame index). When a single finite positive value is
+  supplied and the time column is frame-indexed, it is stored as the
+  Tracks capture frame rate (see \[frame_rate()\]);
+  \[elapsed_seconds()\] then performs the frame -\> seconds conversion
+  once, on demand, so kinematics and the app adopt it automatically
+  without converting twice.
 
 - normalize_xy:
 
-  TRUE to normalize (x,y) to unit circle when both provided
+  FALSE (default) keeps (x,y) as supplied. TRUE independently centres
+  each trajectory on its own bounding-box midpoint and scales it to the
+  unit circle – shape-preserving only, NOT calibration (it does not
+  preserve bearing from a fixed arena origin). See \[tracks()\] for the
+  full explanation.
 
 - dialect:
 

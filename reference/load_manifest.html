@@ -68,7 +68,7 @@ each track file using [read_tracks()], and merges the results into a single
 <span>  time_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"posix"</span>, <span class="st">"seconds"</span>, <span class="st">"frames"</span><span class="op">)</span>,</span>
 <span>  tz <span class="op">=</span> <span class="st">"UTC"</span>,</span>
 <span>  fps <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  normalize_xy <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  normalize_xy <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  dialect <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  keep <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  drop <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -109,7 +109,9 @@ column names in `file_tbl` to column names present in `manifest`. When
 
 
 <dt id="arg-normalize-xy">normalize_xy<a class="anchor" aria-label="anchor" href="#arg-normalize-xy"></a></dt>
-<dd><p>Logical; normalise x/y to unit circle. Default <code>TRUE</code>.</p></dd>
+<dd><p>Logical; normalise x/y to unit circle. Default
+<code>FALSE</code>. See [tracks()] for why <code>TRUE</code> is shape-preserving
+only, not calibration.</p></dd>
 
 
 <dt id="arg-dialect">dialect<a class="anchor" aria-label="anchor" href="#arg-dialect"></a></dt>

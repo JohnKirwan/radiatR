@@ -63,7 +63,7 @@ Construct a Tracks"><meta property="og:image" content="https://johnkirwan.github
 <span>  rel_y <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  angle_unit <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  weight <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  normalize_xy <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  normalize_xy <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  meta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  transform_history <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
@@ -113,13 +113,16 @@ together or not at all.</p></dd>
 
 
 <dt id="arg-normalize-xy">normalize_xy<a class="anchor" aria-label="anchor" href="#arg-normalize-xy"></a></dt>
-<dd><p>If TRUE (default), (x,y) are scaled to the unit circle per trajectory:
-each trajectory is centred on its bounding-box midpoint and scaled so its
-furthest point sits at radius 1. This preserves trajectory shape and places
-the origin at the centre (what the radius-based heading rules expect).
-Raw coordinates are retained in `&lt;x&gt;_raw`/`&lt;y&gt;_raw`. If FALSE, (x,y) are kept
-as supplied. (Landmark-based mapping, when available, is more accurate; this
-is the no-landmark fallback.)</p></dd>
+<dd><p>If FALSE (default), (x,y) are kept as supplied. If TRUE,
+each trajectory is independently centred on its own bounding-box midpoint
+and scaled so its furthest point sits at radius 1. This is a
+shape-preserving transform ONLY: because each trajectory is translated by
+a different amount, it does NOT preserve bearing relative to a fixed
+arena origin, and must not be used as a substitute for metric
+calibration. Raw coordinates are retained in `&lt;x&gt;_raw`/`&lt;y&gt;_raw` when
+enabled. Prefer pre-calibrated input, or the landmark-relative frame
+(`rel_x`/`rel_y`, see `coords = "relative"` in [derive_headings()]) when a
+per-trial reference direction is available.</p></dd>
 
 
 <dt id="arg-meta">meta<a class="anchor" aria-label="anchor" href="#arg-meta"></a></dt>

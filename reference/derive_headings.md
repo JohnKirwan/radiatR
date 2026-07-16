@@ -45,8 +45,10 @@ derive_headings(
 - coords:
 
   Character. Which Cartesian columns to use: \`"absolute"\` (default,
-  uses \`x\`/\`y\` from \`Tracks@cols\`) or \`"relative"\` (uses
-  \`rel_x\`/\`rel_y\`; errors if not registered).
+  uses whatever \`x\`/\`y\` the \`Tracks\` currently holds in
+  \`Tracks@cols\` – calibrated only if the caller supplied or normalized
+  them that way) or \`"relative"\` (uses \`rel_x\`/\`rel_y\`, the
+  landmark-rotated frame; errors if not registered).
 
 - first_only:
 

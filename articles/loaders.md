@@ -245,21 +245,21 @@ ts_dlc <- read_tracks(dlc_path, dialect = "deeplabcut_multiheader")
 #> • `Pranav` -> `Pranav...9`
 ts_dlc
 #> Tracks: 1 trajectories, 116 observations
-#> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'
-#>   id time          x           y snout_x snout_y leftear_x leftear_y rightear_x
-#> 1  1    1 -0.3997793 -0.12643666  21.521 265.428    33.819   265.941     19.984
-#> 2  1    2 -0.4308106  0.07229848  10.248 288.487    19.984   297.198     12.298
-#> 3  1    3 -0.3700675  0.34696056  24.596 354.075    38.431   354.075     23.058
-#> 4  1    4 -0.2010454  0.43873493  73.787 374.572    78.911   366.373     57.390
-#> 5  1    5 -0.2736712  0.30866595  38.431 333.066    50.729   341.777     39.968
-#> 6  1    6 -0.3337533  0.35422263  23.571 327.430    30.745   339.215     28.183
-#>   rightear_y tailbase_x tailbase_y    x_raw    y_raw    angle
-#> 1    250.056     87.110    152.698 40.60850 233.5307 3.447905
-#> 2    281.313     95.821    221.361 34.58775 272.0897 2.975322
-#> 3    337.166     99.408    256.205 46.37325 325.3802 2.388409
-#> 4    361.761    106.581    270.040 79.16725 343.1865 2.000481
-#> 5    323.331    131.177    273.627 65.07625 317.9502 2.296173
-#> 6    321.793    131.177    318.719 53.41900 326.7892 2.326450
+#> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y'
+#>   id time        x        y snout_x snout_y leftear_x leftear_y rightear_x
+#> 1  1    1 40.60850 233.5307  21.521 265.428    33.819   265.941     19.984
+#> 2  1    2 34.58775 272.0897  10.248 288.487    19.984   297.198     12.298
+#> 3  1    3 46.37325 325.3802  24.596 354.075    38.431   354.075     23.058
+#> 4  1    4 79.16725 343.1865  73.787 374.572    78.911   366.373     57.390
+#> 5  1    5 65.07625 317.9502  38.431 333.066    50.729   341.777     39.968
+#> 6  1    6 53.41900 326.7892  23.571 327.430    30.745   339.215     28.183
+#>   rightear_y tailbase_x tailbase_y    angle
+#> 1    250.056     87.110    152.698 1.398629
+#> 2    281.313     95.821    221.361 1.444356
+#> 3    337.166     99.408    256.205 1.429230
+#> 4    361.761    106.581    270.040 1.344079
+#> 5    323.331    131.177    273.627 1.368910
+#> 6    321.793    131.177    318.719 1.408763
 ```
 
 **SLEAP** — an analysis CSV with `<node>.x` / `.y` / `.score` columns,
@@ -271,9 +271,9 @@ sleap_path <- system.file("extdata", "sleap_example.csv", package = "radiatR")
 ts_sleap <- read_tracks(sleap_path, dialect = "sleap")
 ts_sleap
 #> Tracks: 1 trajectories, 1 observations
-#> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'
-#>     id time x y      a_x      a_y      b_x      b_y    x_raw    y_raw angle
-#> 1 <NA>    0 0 0 205.9301 187.8896 278.6352 203.3659 242.2826 195.6278     0
+#> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y'
+#>     id time        x        y      a_x      a_y      b_x      b_y     angle
+#> 1 <NA>    0 242.2826 195.6278 205.9301 187.8896 278.6352 203.3659 0.6792588
 ```
 
 **Tracktor** — a tidy `frame` / `pos_x` / `pos_y` CSV (one individual
@@ -289,14 +289,14 @@ ts_tracktor <- read_tracks(tracktor_path, dialect = "tracktor")
 #> • `` -> `...1`
 ts_tracktor
 #> Tracks: 1 trajectories, 547 observations
-#> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'
-#>   id time         x          y    x_raw    y_raw    angle
-#> 1  1    3 0.8793455 -0.4750115 1528.267 330.3940 5.787907
-#> 2  1    4 0.8790113 -0.4745446 1528.014 330.7465 5.788159
-#> 3  1    5 0.8783770 -0.4737024 1527.535 331.3825 5.788600
-#> 4  1    6 0.8783105 -0.4734975 1527.485 331.5372 5.788749
-#> 5  1    7 0.8781524 -0.4735463 1527.366 331.5003 5.788631
-#> 6  1    8 0.8783783 -0.4734931 1527.536 331.5405 5.788785
+#> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y'
+#>   id time        x        y     angle
+#> 1  1    3 1528.267 330.3940 0.2129121
+#> 2  1    4 1528.014 330.7465 0.2131666
+#> 3  1    5 1527.535 331.3825 0.2136291
+#> 4  1    6 1527.485 331.5372 0.2137326
+#> 5  1    7 1527.366 331.5003 0.2137258
+#> 6  1    8 1527.536 331.5405 0.2137277
 ```
 
 The bundled dtrack example is larger and is shown in full in the
@@ -320,14 +320,14 @@ example_df <- data.frame(
 ts_df <- read_tracks(example_df, mapping = list(id = "id", time = "time", x = "x", y = "y"))
 ts_df
 #> Tracks: 2 trajectories, 8 observations
-#> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'
-#>   id time          x          y x_raw y_raw     angle
-#> 1  A    0 -0.7808688 -0.6246950   1.0   0.0 3.8163336
-#> 2  A    1 -0.1561738 -0.3123475   1.2   0.1 4.2487414
-#> 3  A    2  0.4685213  0.3123475   1.4   0.3 0.5880026
-#> 4  A    3  0.7808688  0.6246950   1.5   0.4 0.6747409
-#> 5  B    0 -0.5734623 -0.8192319  -0.2   1.0 4.1016630
-#> 6  B    1 -0.2457696 -0.4915392  -0.1   1.1 4.2487414
+#> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y'
+#>   id time    x   y      angle
+#> 1  A    0  1.0 0.0 0.00000000
+#> 2  A    1  1.2 0.1 0.08314123
+#> 3  A    2  1.4 0.3 0.21109333
+#> 4  A    3  1.5 0.4 0.26060239
+#> 5  B    0 -0.2 1.0 1.76819189
+#> 6  B    1 -0.1 1.1 1.66145621
 ```
 
 To batch a directory of CSV files,
@@ -426,14 +426,14 @@ formats such as JSON require this two-step approach.)
 ts_json <- read_tracks(json_tracks_fn(fake_json))
 ts_json
 #> Tracks: 2 trajectories, 6 observations
-#> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'
-#>     id time          x           y x_raw y_raw     angle
-#> A.1  A    0 -0.9701425 -0.24253563   0.0   0.0 3.3865713
-#> A.2  A    1  0.0000000 -0.04850713   1.0   0.2 4.7123890
-#> A.3  A    2  0.9701425  0.24253563   2.0   0.5 0.2449787
-#> B.1  B    0 -0.9284767  0.37139068   1.0   0.0 2.7610863
-#> B.2  B    1  0.1856953  0.00000000   1.3  -0.1 0.0000000
-#> B.3  B    2  0.9284767 -0.37139068   1.5  -0.2 5.9026789
+#> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y'
+#>     id time   x    y     angle
+#> A.1  A    0 0.0  0.0 0.0000000
+#> A.2  A    1 1.0  0.2 0.1973956
+#> A.3  A    2 2.0  0.5 0.2449787
+#> B.1  B    0 1.0  0.0 0.0000000
+#> B.2  B    1 1.3 -0.1 6.2064134
+#> B.3  B    2 1.5 -0.2 6.1506338
 ```
 
 Dialects live in-memory for the current session. To persist them across

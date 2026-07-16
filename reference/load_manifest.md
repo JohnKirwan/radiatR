@@ -18,7 +18,7 @@ load_manifest(
   time_type = c("auto", "posix", "seconds", "frames"),
   tz = "UTC",
   fps = NULL,
-  normalize_xy = TRUE,
+  normalize_xy = FALSE,
   dialect = NULL,
   keep = NULL,
   drop = NULL,
@@ -58,7 +58,8 @@ load_manifest(
 
 - normalize_xy:
 
-  Logical; normalise x/y to unit circle. Default `TRUE`.
+  Logical; normalise x/y to unit circle. Default `FALSE`. See
+  \[tracks()\] for why `TRUE` is shape-preserving only, not calibration.
 
 - dialect:
 
