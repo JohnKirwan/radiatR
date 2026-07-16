@@ -91,17 +91,19 @@ wrapped Cauchy via the doubled-angle method: `mu`/`mu_deg` are the mean
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Data frame with columns <code>group_col</code> (if supplied), <code>mu</code>
   (MLE mean direction, radians), <code>mu_deg</code> (degrees), <code>rho</code>
-  (concentration, 0–1), <code>convergence</code> (0 = converged), <code>n</code>.</p>
+  (concentration, 0–1), <code>convergence</code> (<code>0</code> = converged,
+  <code>1</code> = not converged; <code>NA</code> when the fit could not be attempted),
+  <code>n</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>\(\rho = 0\) is a uniform distribution (no preferred direction);
 \(\rho = 1\) is a point mass (perfect concentration).  Unlike von Mises
 \(\kappa\), the wrapped Cauchy \(\rho\) is bounded to \([0, 1)\).</p>
-<p>Standard errors are not computed by <code>mle.wrappedcauchy</code>; check
-<code>convergence</code> is the <code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">optim</a></code> return code (0 = fully
-converged; 1 = iteration limit reached but estimates are typically still
-reliable).  For uncertainty
+<p>Standard errors are not computed by <code>mle.wrappedcauchy</code>; check the
+<code>convergence</code> flag (<code>0</code> = the fixed-point MLE iteration converged;
+<code>1</code> = it did not, so treat that row's estimates with caution). For
+uncertainty
 estimation use <code><a href="vonmises_fit.html">vonmises_fit</a></code> with the same data and compare
 model fits visually via <code><a href="add_vonmises_density.html">add_vonmises_density</a></code> and
 <code><a href="add_wrappedcauchy_density.html">add_wrappedcauchy_density</a></code>.</p>

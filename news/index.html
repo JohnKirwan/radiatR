@@ -44,6 +44,11 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="radiatr-development-version">radiatR (development version)<a class="anchor" aria-label="anchor" href="#radiatr-development-version"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-development-version">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-development-version"></a></h3>
+<ul><li>
+<code><a href="../reference/wrappedcauchy_fit.html">wrappedcauchy_fit()</a></code>’s <code>convergence</code> column now matches its documentation. <code><a href="https://rdrr.io/pkg/circular/man/mle.wrappedcauchy.html" class="external-link">circular::mle.wrappedcauchy()</a></code> reports convergence as a logical, which the previous code passed through <code><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer()</a></code>, yielding <code>1</code> for a <em>converged</em> fit – the opposite of the documented “<code>0</code> = converged”. The column is now <code>0</code> when the fit converged and <code>1</code> when it did not, and the (incorrect) “optim return code” wording in the docs has been corrected.</li>
+</ul></div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.1" id="radiatr-011">radiatR 0.1.1<a class="anchor" aria-label="anchor" href="#radiatr-011"></a></h2>

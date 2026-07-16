@@ -38,7 +38,8 @@ wrappedcauchy_fit(hd, group_col = NULL, angle_col = "heading", axial = FALSE)
 
 Data frame with columns `group_col` (if supplied), `mu` (MLE mean
 direction, radians), `mu_deg` (degrees), `rho` (concentration, 0–1),
-`convergence` (0 = converged), `n`.
+`convergence` (`0` = converged, `1` = not converged; `NA` when the fit
+could not be attempted), `n`.
 
 ## Details
 
@@ -46,10 +47,10 @@ direction, radians), `mu_deg` (degrees), `rho` (concentration, 0–1),
 = 1\\ is a point mass (perfect concentration). Unlike von Mises
 \\\kappa\\, the wrapped Cauchy \\\rho\\ is bounded to \\\[0, 1)\\.
 
-Standard errors are not computed by `mle.wrappedcauchy`; check
-`convergence` is the [`optim`](https://rdrr.io/r/stats/optim.html)
-return code (0 = fully converged; 1 = iteration limit reached but
-estimates are typically still reliable). For uncertainty estimation use
+Standard errors are not computed by `mle.wrappedcauchy`; check the
+`convergence` flag (`0` = the fixed-point MLE iteration converged; `1` =
+it did not, so treat that row's estimates with caution). For uncertainty
+estimation use
 [`vonmises_fit`](https://johnkirwan.github.io/radiatR/reference/vonmises_fit.md)
 with the same data and compare model fits visually via
 [`add_vonmises_density`](https://johnkirwan.github.io/radiatR/reference/add_vonmises_density.md)
