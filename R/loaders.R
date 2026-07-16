@@ -631,6 +631,35 @@ read_tracks <- function(x,
   id <- guessed$id; time <- guessed$time; angle <- guessed$angle
   xcol <- guessed$x; ycol <- guessed$y; wcol <- guessed$weight
 
+  # Multi-file id-collision policy. Only runs for multi-file imports (the combine
+  # path tags rows with ..source_file); single-file / data.frame input is
+  # untouched. For synthesized ids this handles same-stem files in different
+  # subdirectories (read_tracks_dir(recursive = TRUE)); for real ids it handles
+  # the same id value reused across files.
+  if (!is.null(id) && "..source_file" %in% names(df)) {
+    id_vals  <- as.character(df[[id]])
+    src_vals <- as.character(df[["..source_file"]])
+    n_src    <- tapply(src_vals, id_vals, function(s) length(unique(s)))
+    colliding <- names(n_src)[n_src > 1L]
+    if (length(colliding)) {
+      if (id_collision == "error") {
+        details <- vapply(colliding, function(idv) {
+          files <- unique(src_vals[id_vals == idv])
+          sprintf("  id '%s' appears in: %s", idv, paste(files, collapse = ", "))
+        }, character(1))
+        stop("read_tracks: trajectory id(s) collide across source files:\n",
+             paste(details, collapse = "\n"),
+             "\nPass id_collision = \"namespace\" to prefix ids with the file ",
+             "stem, or supply a mapping that yields file-unique ids.",
+             call. = FALSE)
+      } else {
+        # "namespace": prefix ALL ids (not just colliding ones) so id "1" means
+        # the same thing everywhere it appears.
+        df[[id]] <- paste0(tools::file_path_sans_ext(src_vals), "::", id_vals)
+      }
+    }
+  }
+
   if (is.null(angle) && (is.null(xcol) || is.null(ycol)))
     stop("Need either an angle column or both x and y columns; specify mapping=")
 
