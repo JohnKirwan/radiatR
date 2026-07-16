@@ -550,6 +550,11 @@ read_tracks_format <- function(x, format, ...) {
 #' @param drop drop these columns after mapping
 #' @param id_from_filename if TRUE and id missing, derive id from file stem when reading multiple files
 #' @param validate if TRUE run S4 validity checks
+#' @param id_collision how to handle a trajectory id that appears under more
+#'   than one source file during a multi-file import: `"error"` (default) stops
+#'   with a message naming the colliding id(s) and files; `"namespace"` rewrites
+#'   every id to `paste0(file_stem, "::", id)` so ids are unique per file. Has no
+#'   effect on single-file or data.frame input.
 #' @param format Optional loader format name or list spec registered via [register_loader_format()]
 #' @return Tracks
 #' @export
