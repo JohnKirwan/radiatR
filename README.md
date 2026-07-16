@@ -139,11 +139,18 @@ radiate(ts,
   add_heading_points(hd, colour_col = "condition")
 ```
 
-> **Coordinates.** radiatR normalises each trajectory to a unit circle, so its
-> outputs (headings, mean direction, resultant length, circular statistics) are
-> scale-invariant and need no metric calibration. Correct lens distortion and
-> any scaling to real-world units in your tracking pipeline (e.g. your tracker's
-> own calibration, or OpenCV `undistort`) before importing.
+> **Coordinates.** radiatR does not calibrate your data. By default,
+> `(x, y)` are used exactly as supplied, so headings, mean direction,
+> resultant length, and other circular statistics are only as
+> arena-accurate as your input coordinates. Correct lens distortion and any
+> scaling to real-world units in your tracking pipeline (e.g. your tracker's
+> own calibration, or OpenCV `undistort`) before importing. `normalize_xy =
+> TRUE` is available when only trajectory *shape* matters (each trajectory is
+> independently centred on its own bounding box and scaled to the unit
+> circle) -- it is not a substitute for calibration and does not preserve
+> bearing relative to a fixed arena origin. When a per-trial reference
+> direction is available, the landmark-relative frame (`rel_x`/`rel_y`,
+> `coords = "relative"` in [derive_headings()]) is the accurate option.
 
 ### Label the circumference in domain units
 
