@@ -20,7 +20,7 @@ tracks(
   rel_y = NULL,
   angle_unit = NULL,
   weight = NULL,
-  normalize_xy = TRUE,
+  normalize_xy = FALSE,
   meta = list(),
   transform_history = NULL
 )
@@ -48,13 +48,16 @@ together or not at all.}
 
 \item{weight}{Optional weight column name}
 
-\item{normalize_xy}{If TRUE (default), (x,y) are scaled to the unit circle per trajectory:
-each trajectory is centred on its bounding-box midpoint and scaled so its
-furthest point sits at radius 1. This preserves trajectory shape and places
-the origin at the centre (what the radius-based heading rules expect).
-Raw coordinates are retained in `<x>_raw`/`<y>_raw`. If FALSE, (x,y) are kept
-as supplied. (Landmark-based mapping, when available, is more accurate; this
-is the no-landmark fallback.)}
+\item{normalize_xy}{If FALSE (default), (x,y) are kept as supplied. If TRUE,
+each trajectory is independently centred on its own bounding-box midpoint
+and scaled so its furthest point sits at radius 1. This is a
+shape-preserving transform ONLY: because each trajectory is translated by
+a different amount, it does NOT preserve bearing relative to a fixed
+arena origin, and must not be used as a substitute for metric
+calibration. Raw coordinates are retained in `<x>_raw`/`<y>_raw` when
+enabled. Prefer pre-calibrated input, or the landmark-relative frame
+(`rel_x`/`rel_y`, see `coords = "relative"` in [derive_headings()]) when a
+per-trial reference direction is available.}
 
 \item{meta}{Free-form list of metadata}
 

@@ -14,7 +14,7 @@ load_manifest(
   time_type = c("auto", "posix", "seconds", "frames"),
   tz = "UTC",
   fps = NULL,
-  normalize_xy = TRUE,
+  normalize_xy = FALSE,
   dialect = NULL,
   keep = NULL,
   drop = NULL,
@@ -38,7 +38,9 @@ column names in `file_tbl` to column names present in `manifest`. When
 
 \item{angle_unit, time_type, tz, fps}{Passed to [read_tracks()].}
 
-\item{normalize_xy}{Logical; normalise x/y to unit circle. Default \code{TRUE}.}
+\item{normalize_xy}{Logical; normalise x/y to unit circle. Default
+\code{FALSE}. See [tracks()] for why \code{TRUE} is shape-preserving
+only, not calibration.}
 
 \item{dialect}{Optional dialect name; passed to [read_tracks()].}
 
