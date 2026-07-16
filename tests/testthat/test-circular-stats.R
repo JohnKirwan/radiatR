@@ -839,7 +839,10 @@ test_that("wrappedcauchy_fit recovers rho near true value", {
       150, circular::circular(0), rho = 0.6))
   )
   fit <- wrappedcauchy_fit(hd)
-  expect_true(is.integer(fit$convergence))  # code passed through; 1 is common
+  expect_true(is.integer(fit$convergence))
+  # 0 = converged / 1 = not (documented convention); a clean 150-point wrapped
+  # Cauchy sample fits, so the MLE iteration should report convergence (0).
+  expect_identical(fit$convergence, 0L)
   expect_equal(fit$n, 150L)
   expect_equal(fit$rho, 0.6, tolerance = 0.15)
   # mu near 0: check minimum circular distance to 0 is small
