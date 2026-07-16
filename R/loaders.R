@@ -402,6 +402,55 @@ guess_columns <- function(data, mapping = list()) {
     stringsAsFactors = FALSE, ...)
 }
 
+# Read and combine multiple track files into one long data frame, preserving
+# per-file trajectory identity. Schema is detected from the FIRST file: a batch
+# is assumed to share one schema (standard for batch imports; mixed-schema
+# batches are out of scope). Returns the combined data frame, the resolved id
+# column name, and whether that id was synthesized from file names.
+#
+#   - Real id column? Resolved with the same order guess_columns() uses:
+#     mapping$id if supplied, else .guess_col(names(first), id candidates).
+#   - No real id + id_from_filename = FALSE -> stop (was the silent
+#     "(multiple)" collapse bug; now a deliberate, informative failure).
+#   - No real id + id_from_filename = TRUE -> synthesize id_col from each
+#     file's basename stem.
+#   - Every row is tagged with ..source_file = basename(path).
+#   - Bound with dplyr::bind_rows() (NA-tolerant across differing columns).
+.combine_track_files <- function(paths, mapping, id_from_filename, read_opts) {
+  read_opts <- read_opts %||% list()
+  dfl <- lapply(paths, function(p) {
+    .read_any(p, delim = read_opts$delim,
+              decimal = read_opts$decimal, sheet = read_opts$sheet)
+  })
+
+  first_names <- names(dfl[[1L]])
+  real_id <- mapping$id %||%
+    .guess_col(first_names, c("id", "track", "trajectory", "animal", "subject"))
+  synth <- is.null(real_id)
+
+  if (synth && !isTRUE(id_from_filename)) {
+    stop("read_tracks: no id column was found in the first file and ",
+         "id_from_filename = FALSE, so no per-file trajectory id can be ",
+         "assigned. Supply mapping = list(id = <column>) or set ",
+         "id_from_filename = TRUE.", call. = FALSE)
+  }
+
+  id_col <- if (synth) (mapping$id %||% "..id") else real_id
+
+  dfl <- Map(function(d, p) {
+    if (synth) d[[id_col]] <- tools::file_path_sans_ext(basename(p))
+    d[["..source_file"]] <- basename(p)
+    # Internal only: full/relative path, used to distinguish same-named files
+    # in different directories for collision detection. Dropped before the
+    # final Tracks data is built (not in keep_cols selection below).
+    d[["..source_path"]] <- p
+    d
+  }, dfl, paths)
+
+  df <- dplyr::bind_rows(dfl)
+  list(df = df, id_col = id_col, synth = synth)
+}
+
 # ---- core: read_tracks ------------------------------------------------------
 #' Construct a Tracks from a *format* spec (registered name or inline list)
 #' @param x data.frame or path(s)
@@ -467,7 +516,8 @@ read_tracks_format <- function(x, format, ...) {
     keep           = spec$keep %||% NULL,
     drop           = spec$drop %||% NULL,
     id_from_filename = if (!is.null(spec$id_from_filename)) isTRUE(spec$id_from_filename) else TRUE,
-    validate       = if (!is.null(spec$validate)) isTRUE(spec$validate) else TRUE
+    validate       = if (!is.null(spec$validate)) isTRUE(spec$validate) else TRUE,
+    id_collision   = spec$id_collision %||% "error"
   )
 
   # Allow explicit overrides via ...
@@ -504,6 +554,11 @@ read_tracks_format <- function(x, format, ...) {
 #' @param drop drop these columns after mapping
 #' @param id_from_filename if TRUE and id missing, derive id from file stem when reading multiple files
 #' @param validate if TRUE run S4 validity checks
+#' @param id_collision how to handle a trajectory id that appears under more
+#'   than one source file during a multi-file import: `"error"` (default) stops
+#'   with a message naming the colliding id(s) and files; `"namespace"` rewrites
+#'   every id to `paste0(file_stem, "::", id)` so ids are unique per file. Has no
+#'   effect on single-file or data.frame input.
 #' @param format Optional loader format name or list spec registered via [register_loader_format()]
 #' @return Tracks
 #' @export
@@ -519,9 +574,11 @@ read_tracks <- function(x,
                          keep = NULL, drop = NULL,
                          id_from_filename = TRUE,
                          validate = TRUE,
-                         format = NULL) {
+                         format = NULL,
+                         id_collision = c("error", "namespace")) {
   angle_unit <- match.arg(angle_unit)
   time_type  <- match.arg(time_type)
+  id_collision <- match.arg(id_collision)
 
   if (!is.null(format)) {
     return(read_tracks_format(
@@ -538,7 +595,8 @@ read_tracks <- function(x,
       keep = keep,
       drop = drop,
       id_from_filename = id_from_filename,
-      validate = validate
+      validate = validate,
+      id_collision = id_collision
     ))
   }
 
@@ -551,16 +609,11 @@ read_tracks <- function(x,
                     decimal = read_opts$decimal, sheet = read_opts$sheet)
     src <- basename(x)
   } else if (is.character(x) && length(x) > 1L) {
-    dfl <- lapply(x, function(p) {
-      d <- .read_any(p, delim = read_opts$delim,
-                     decimal = read_opts$decimal, sheet = read_opts$sheet)
-      if (id_from_filename && !is.null(mapping$id) && !(mapping$id %in% names(d))) {
-        d[[mapping$id]] <- tools::file_path_sans_ext(basename(p))
-      }
-      d$..source_file <- basename(p)
-      d
-    })
-    df <- do.call(rbind, dfl)
+    combined <- .combine_track_files(x, mapping, id_from_filename, read_opts)
+    df <- combined$df
+    # Force the synthesized id column to be picked up by guess_columns() below,
+    # so multi-file input never falls into the single-track "(multiple)" path.
+    if (isTRUE(combined$synth)) mapping$id <- combined$id_col
     src <- "(multiple)"
   } else if (is.character(x) && length(x) == 1L && !file.exists(x) && exists(x, envir = .loader_registry, inherits = FALSE)) {
     dialect <- x
@@ -588,6 +641,39 @@ read_tracks <- function(x,
   id <- guessed$id; time <- guessed$time; angle <- guessed$angle
   xcol <- guessed$x; ycol <- guessed$y; wcol <- guessed$weight
 
+  # Multi-file id-collision policy. Only runs for multi-file imports (the combine
+  # path tags rows with ..source_file); single-file / data.frame input is
+  # untouched. For synthesized ids this handles same-stem files in different
+  # subdirectories (read_tracks_dir(recursive = TRUE)); for real ids it handles
+  # the same id value reused across files.
+  if (!is.null(id) && "..source_file" %in% names(df)) {
+    id_vals   <- as.character(df[[id]])
+    src_vals  <- as.character(df[["..source_file"]])
+    # Collision existence is determined by distinct source PATHS (so same-
+    # named files in different directories are correctly seen as distinct
+    # sources); the user-facing message still lists basenames for readability.
+    path_vals <- as.character(df[["..source_path"]])
+    n_src    <- tapply(path_vals, id_vals, function(s) length(unique(s)))
+    colliding <- names(n_src)[n_src > 1L]
+    if (length(colliding)) {
+      if (id_collision == "error") {
+        details <- vapply(colliding, function(idv) {
+          files <- unique(src_vals[id_vals == idv])
+          sprintf("  id '%s' appears in: %s", idv, paste(files, collapse = ", "))
+        }, character(1))
+        stop("read_tracks: trajectory id(s) collide across source files:\n",
+             paste(details, collapse = "\n"),
+             "\nPass id_collision = \"namespace\" to prefix ids with the file ",
+             "stem, or supply a mapping that yields file-unique ids.",
+             call. = FALSE)
+      } else {
+        # "namespace": prefix ALL ids (not just colliding ones) so id "1" means
+        # the same thing everywhere it appears.
+        df[[id]] <- paste0(tools::file_path_sans_ext(src_vals), "::", id_vals)
+      }
+    }
+  }
+
   if (is.null(angle) && (is.null(xcol) || is.null(ycol)))
     stop("Need either an angle column or both x and y columns; specify mapping=")
 
@@ -603,6 +689,30 @@ read_tracks <- function(x,
     message("No time/frame column found; using row order as time.")
     df[["..time"]] <- seq_len(nrow(df))
     time <- "..time"
+  }
+  # Duplicate (id, time) safety net, multi-file imports only. Uses raw
+  # pre-coercion time. Broader Tracks validity hardening (single-file dup keys,
+  # NA angles, ...) is out of scope here (see the "Strengthen Tracks validity"
+  # TODO).
+  if ("..source_file" %in% names(df)) {
+    key <- paste(as.character(df[[id]]), as.character(df[[time]]), sep = "\r")
+    dup <- duplicated(key) | duplicated(key, fromLast = TRUE)
+    if (any(dup)) {
+      d_id   <- as.character(df[[id]])[dup]
+      d_time <- as.character(df[[time]])[dup]
+      d_src  <- as.character(df[["..source_file"]])[dup]
+      d_key  <- key[dup]
+      first  <- !duplicated(d_key)
+      details <- vapply(which(first), function(i) {
+        files <- unique(d_src[d_key == d_key[i]])
+        sprintf("  id '%s' at time '%s' in: %s",
+                d_id[i], d_time[i], paste(files, collapse = ", "))
+      }, character(1))
+      stop("read_tracks: duplicate (id, time) key(s) after combining files:\n",
+           paste(details, collapse = "\n"),
+           "\nEach (id, time) pair must be unique across the combined import.",
+           call. = FALSE)
+    }
   }
   # Drop rows with non-finite coordinates (position-based load).
   if (!is.null(xcol) && !is.null(ycol)) {

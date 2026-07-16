@@ -670,3 +670,148 @@ test_that("manifest load persists fps as frame_rate", {
   expect_equal(length(ts), 2L)          # merge really combined two tracks
   expect_equal(frame_rate(ts), 60)
 })
+
+# ---- multi-file id preservation ----------------------------------------------
+
+test_that("read_tracks(character vector) derives one id per file when no id column", {
+  tmp <- withr::local_tempdir()
+  path_a <- file.path(tmp, "a.csv")
+  path_b <- file.path(tmp, "b.csv")
+  utils::write.csv(data.frame(time = c(1, 2, 3), x = c(0, 1, 2), y = c(0, 0, 1)),
+                   path_a, row.names = FALSE)
+  utils::write.csv(data.frame(time = c(1, 2, 3), x = c(5, 6, 7), y = c(1, 1, 0)),
+                   path_b, row.names = FALSE)
+
+  ts <- suppressMessages(suppressWarnings(
+    read_tracks(c(path_a, path_b), normalize_xy = FALSE)))
+
+  found <- sort(as.character(ids(ts)))
+  expect_equal(found, c("a", "b"))                 # file stems, not "(multiple)"
+  expect_false("(multiple)" %in% found)
+
+  d <- as.data.frame(ts)
+  # rows of file a precede rows of file b -> no cross-file time interleaving
+  expect_equal(as.character(d[["..id"]]), c("a", "a", "a", "b", "b", "b"))
+})
+
+test_that("read_tracks_dir() reads a directory of id-less files, one id per file", {
+  tmp <- withr::local_tempdir()
+  utils::write.csv(data.frame(time = c(1, 2), x = c(0, 1), y = c(0, 1)),
+                   file.path(tmp, "left.csv"), row.names = FALSE)
+  utils::write.csv(data.frame(time = c(1, 2), x = c(2, 3), y = c(1, 0)),
+                   file.path(tmp, "right.csv"), row.names = FALSE)
+
+  ts <- suppressMessages(suppressWarnings(
+    read_tracks_dir(tmp, normalize_xy = FALSE)))
+  expect_s4_class(ts, "Tracks")
+  expect_equal(sort(as.character(ids(ts))), c("left", "right"))
+})
+
+test_that("id_collision = 'error' (default) stops on a real id shared across files", {
+  tmp <- withr::local_tempdir()
+  path_a <- file.path(tmp, "a.csv")
+  path_b <- file.path(tmp, "b.csv")
+  utils::write.csv(data.frame(id = "1", time = c(1, 2), x = c(0, 1), y = c(0, 1)),
+                   path_a, row.names = FALSE)
+  utils::write.csv(data.frame(id = "1", time = c(1, 2), x = c(2, 3), y = c(1, 0)),
+                   path_b, row.names = FALSE)
+
+  err <- tryCatch(
+    suppressMessages(suppressWarnings(
+      read_tracks(c(path_a, path_b), normalize_xy = FALSE))),
+    error = function(e) conditionMessage(e))
+  expect_match(err, "collide")
+  expect_match(err, "id '1'")
+  expect_match(err, "a.csv")
+  expect_match(err, "b.csv")
+})
+
+test_that("id_collision = 'namespace' prefixes ids by file stem and succeeds", {
+  tmp <- withr::local_tempdir()
+  path_a <- file.path(tmp, "a.csv")
+  path_b <- file.path(tmp, "b.csv")
+  utils::write.csv(data.frame(id = "1", time = c(1, 2), x = c(0, 1), y = c(0, 1)),
+                   path_a, row.names = FALSE)
+  utils::write.csv(data.frame(id = "1", time = c(1, 2), x = c(2, 3), y = c(1, 0)),
+                   path_b, row.names = FALSE)
+
+  ts <- suppressMessages(suppressWarnings(
+    read_tracks(c(path_a, path_b), normalize_xy = FALSE, id_collision = "namespace")))
+  expect_equal(sort(as.character(ids(ts))), c("a::1", "b::1"))
+})
+
+test_that("read_tracks errors on a duplicate (id, time) key across combined files", {
+  tmp <- withr::local_tempdir()
+  path_a <- file.path(tmp, "a.csv")
+  path_b <- file.path(tmp, "b.csv")
+  # file a repeats (id = x, time = 1); id x lives only in file a (no collision),
+  # so the duplicate-key check is what fires.
+  utils::write.csv(data.frame(id = "x", time = c(1, 1), x = c(0, 9), y = c(0, 9)),
+                   path_a, row.names = FALSE)
+  utils::write.csv(data.frame(id = "y", time = c(2, 3), x = c(2, 3), y = c(1, 0)),
+                   path_b, row.names = FALSE)
+
+  expect_error(
+    suppressMessages(suppressWarnings(
+      read_tracks(c(path_a, path_b), normalize_xy = FALSE))),
+    regexp = "duplicate \\(id, time\\)"
+  )
+})
+
+test_that("read_tracks errors on multi-file input with no id column and id_from_filename = FALSE", {
+  tmp <- withr::local_tempdir()
+  path_a <- file.path(tmp, "a.csv")
+  path_b <- file.path(tmp, "b.csv")
+  utils::write.csv(data.frame(time = c(1, 2), x = c(0, 1), y = c(0, 1)),
+                   path_a, row.names = FALSE)
+  utils::write.csv(data.frame(time = c(1, 2), x = c(2, 3), y = c(1, 0)),
+                   path_b, row.names = FALSE)
+
+  expect_error(
+    suppressMessages(suppressWarnings(
+      read_tracks(c(path_a, path_b), normalize_xy = FALSE, id_from_filename = FALSE))),
+    regexp = "id_from_filename = FALSE"
+  )
+})
+
+test_that("read_tracks_dir(recursive = TRUE) detects a synthesized-id collision across same-named files in different subdirectories", {
+  tmp <- withr::local_tempdir()
+  sub1 <- file.path(tmp, "sub1")
+  sub2 <- file.path(tmp, "sub2")
+  dir.create(sub1)
+  dir.create(sub2)
+  # Same file name ("left.csv") in two different subdirectories, non-overlapping
+  # time ranges so the duplicate-(id,time)-key safety net does NOT mask this:
+  # only the id-collision check (keyed on full source path) can catch it.
+  utils::write.csv(data.frame(time = c(1, 2), x = c(0, 1), y = c(0, 1)),
+                   file.path(sub1, "left.csv"), row.names = FALSE)
+  utils::write.csv(data.frame(time = c(100, 101), x = c(5, 6), y = c(2, 3)),
+                   file.path(sub2, "left.csv"), row.names = FALSE)
+
+  err <- tryCatch(
+    suppressMessages(suppressWarnings(
+      read_tracks_dir(tmp, recursive = TRUE, normalize_xy = FALSE))),
+    error = function(e) conditionMessage(e))
+  expect_match(err, "collide")
+  expect_match(err, "id 'left'")
+  expect_match(err, "left.csv")
+})
+
+test_that("id_collision = 'namespace' resolves ids before the duplicate-key check runs", {
+  tmp <- withr::local_tempdir()
+  path_a <- file.path(tmp, "a.csv")
+  path_b <- file.path(tmp, "b.csv")
+  # Same real id "1" reused across files AND overlapping times, so leaving the
+  # id un-namespaced would trip both the id-collision check and (once ids
+  # collide) the duplicate-(id,time)-key check. Namespacing must resolve the
+  # id before the duplicate-key check runs, so this should succeed cleanly.
+  utils::write.csv(data.frame(id = "1", time = c(1, 2), x = c(0, 1), y = c(0, 1)),
+                   path_a, row.names = FALSE)
+  utils::write.csv(data.frame(id = "1", time = c(1, 2), x = c(2, 3), y = c(1, 0)),
+                   path_b, row.names = FALSE)
+
+  ts <- suppressMessages(suppressWarnings(
+    read_tracks(c(path_a, path_b), normalize_xy = FALSE, id_collision = "namespace")))
+  expect_s4_class(ts, "Tracks")
+  expect_equal(sort(as.character(ids(ts))), c("a::1", "b::1"))
+})
