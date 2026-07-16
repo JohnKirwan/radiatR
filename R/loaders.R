@@ -676,6 +676,30 @@ read_tracks <- function(x,
     df[["..time"]] <- seq_len(nrow(df))
     time <- "..time"
   }
+  # Duplicate (id, time) safety net, multi-file imports only. Uses raw
+  # pre-coercion time. Broader Tracks validity hardening (single-file dup keys,
+  # NA angles, ...) is out of scope here (see the "Strengthen Tracks validity"
+  # TODO).
+  if ("..source_file" %in% names(df)) {
+    key <- paste(as.character(df[[id]]), as.character(df[[time]]), sep = "\r")
+    dup <- duplicated(key) | duplicated(key, fromLast = TRUE)
+    if (any(dup)) {
+      d_id   <- as.character(df[[id]])[dup]
+      d_time <- as.character(df[[time]])[dup]
+      d_src  <- as.character(df[["..source_file"]])[dup]
+      d_key  <- key[dup]
+      first  <- !duplicated(d_key)
+      details <- vapply(which(first), function(i) {
+        files <- unique(d_src[d_key == d_key[i]])
+        sprintf("  id '%s' at time '%s' in: %s",
+                d_id[i], d_time[i], paste(files, collapse = ", "))
+      }, character(1))
+      stop("read_tracks: duplicate (id, time) key(s) after combining files:\n",
+           paste(details, collapse = "\n"),
+           "\nEach (id, time) pair must be unique across the combined import.",
+           call. = FALSE)
+    }
+  }
   # Drop rows with non-finite coordinates (position-based load).
   if (!is.null(xcol) && !is.null(ycol)) {
     finite <- is.finite(df[[xcol]]) & is.finite(df[[ycol]])
