@@ -7,14 +7,14 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/JohnKirwan/radiatR/blob/v0.1.1/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/JohnKirwan/radiatR/blob/master/DESCRIPTION)
 
 Kirwan J (2026). *radiatR: Analysis and Visualisation of Headings and
-Trajectories in Circular Space*. R package version 0.1.1,
+Trajectories on the unit disk*. R package version 0.1.1,
 <https://johnkirwan.github.io/radiatR/>.
 
     @Manual{,
-      title = {radiatR: Analysis and Visualisation of Headings and Trajectories in Circular Space},
+      title = {radiatR: Analysis and Visualisation of Headings and Trajectories on the unit disk},
       author = {John D. Kirwan},
       year = {2026},
       note = {R package version 0.1.1},

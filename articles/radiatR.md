@@ -15,8 +15,8 @@ library(ggplot2)
 
 ## Overview
 
-`radiatR` streamlines the journey from headings and trajectories in
-circular space to publication-ready radial plots. Angles can be supplied
+`radiatR` streamlines the journey from headings and trajectories on the
+unit disk to publication-ready radial plots. Angles can be supplied
 directly, or reconstructed from movement trajectories. The package
 includes:
 

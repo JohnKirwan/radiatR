@@ -1,7 +1,7 @@
-# radiatR: Analysis and Visualisation of Headings and Trajectories in Circular Space
+# radiatR: Analysis and Visualisation of Headings and Trajectories on the unit disk
 
 A complete pipeline for analysing directional data – headings and
-trajectories in circular space. Supply a table of angles directly, or
+trajectories on the unit disk. Supply a table of angles directly, or
 reconstruct headings from movement trajectories imported from 20+
 tracking tools (EthoVision, DeepLabCut, SLEAP, TRex, ANY-maze,
 TrackMate, idtracker.ai, Ctrax, and others) via a unified dialect-based
