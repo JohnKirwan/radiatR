@@ -5,7 +5,7 @@
 [![r-universe](https://johnkirwan.r-universe.dev/badges/radiatR)](https://johnkirwan.r-universe.dev/radiatR)
 <!-- badges: end -->
 
-An R package for analysing and visualising **headings and trajectories in circular space** — directional (angular) data of any kind. It covers the full pipeline: angle/trajectory input → coordinate transformation → circular statistics → ggplot2 visualisation. Bring a table of headings directly, or reconstruct them from movement trajectories, with import from 20+ tracking tools.
+An R package for analysing and visualising **headings and trajectories on the unit disk** — directional (angular) data of any kind. It covers the full pipeline: angle/trajectory input → coordinate transformation → circular statistics → ggplot2 visualisation. Bring a table of headings directly, or reconstruct them from movement trajectories, with import from 20+ tracking tools.
 
 ## Key Features
 

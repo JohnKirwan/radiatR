@@ -14,9 +14,9 @@ template:
               async src="//gc.zgo.at/count.js"></script>
 
 home:
-  title: "radiatR -- Headings & Trajectories in Circular Space"
+  title: "radiatR -- Headings & Trajectories on the unit disk"
   description: >
-    Analyse and visualise headings and trajectories in circular space --
+    Analyse and visualise headings and trajectories on the unit disk --
     directional (angular) data of any kind. Supply a table of angles directly,
     or reconstruct headings from movement trajectories with import from 20+
     tracking tools. Covers the full pipeline: data input, coordinate
