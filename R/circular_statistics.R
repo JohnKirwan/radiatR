@@ -1753,9 +1753,7 @@ test_symmetry <- function(hd, group_col = NULL, angle_col = "heading",
 #'   \code{statistic} (the likelihood-ratio statistic), \code{p_value}, \code{n},
 #'   and \code{test}. Groups with fewer than ten finite angles, or where the
 #'   von Mises fit fails, yield \code{NA} statistics.
-#' @references Silverman, B.W. (1981). Using kernel density estimates to
-#'   investigate multimodality. \emph{JRSS B} 43(1), 97--99. Fisher, N.I. &
-#'   Marron, J.S. (2001). Mode testing via the excess mass estimate.
+#' @references Marron, J.S. (2001). Mode testing via the excess mass estimate.
 #'   \emph{Biometrika} 88(2), 499--517.
 #' @seealso \code{\link{circ_model_select}}, \code{\link{test_symmetry}}
 #' @export
