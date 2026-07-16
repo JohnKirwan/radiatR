@@ -21,7 +21,9 @@ wrapped Cauchy via the doubled-angle method: `mu`/`mu_deg` are the mean
 \value{
 Data frame with columns \code{group_col} (if supplied), \code{mu}
   (MLE mean direction, radians), \code{mu_deg} (degrees), \code{rho}
-  (concentration, 0--1), \code{convergence} (0 = converged), \code{n}.
+  (concentration, 0--1), \code{convergence} (\code{0} = converged,
+  \code{1} = not converged; \code{NA} when the fit could not be attempted),
+  \code{n}.
 }
 \description{
 Estimates the mean direction \eqn{\mu} and concentration \eqn{\rho} of a
@@ -35,10 +37,10 @@ visually poor on a rose diagram.
 \eqn{\rho = 1} is a point mass (perfect concentration).  Unlike von Mises
 \eqn{\kappa}, the wrapped Cauchy \eqn{\rho} is bounded to \eqn{[0, 1)}.
 
-Standard errors are not computed by \code{mle.wrappedcauchy}; check
-\code{convergence} is the \code{\link[stats]{optim}} return code (0 = fully
-converged; 1 = iteration limit reached but estimates are typically still
-reliable).  For uncertainty
+Standard errors are not computed by \code{mle.wrappedcauchy}; check the
+\code{convergence} flag (\code{0} = the fixed-point MLE iteration converged;
+\code{1} = it did not, so treat that row's estimates with caution). For
+uncertainty
 estimation use \code{\link{vonmises_fit}} with the same data and compare
 model fits visually via \code{\link{add_vonmises_density}} and
 \code{\link{add_wrappedcauchy_density}}.

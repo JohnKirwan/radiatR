@@ -1,5 +1,14 @@
 # radiatR (development version)
 
+## Bug fixes
+
+* `wrappedcauchy_fit()`'s `convergence` column now matches its documentation.
+  `circular::mle.wrappedcauchy()` reports convergence as a logical, which the
+  previous code passed through `as.integer()`, yielding `1` for a *converged*
+  fit -- the opposite of the documented "`0` = converged". The column is now
+  `0` when the fit converged and `1` when it did not, and the (incorrect)
+  "optim return code" wording in the docs has been corrected.
+
 # radiatR 0.1.1
 
 ## New features
