@@ -675,7 +675,10 @@ setAs("data.frame", "Tracks", function(from) {
   if (is.null(th) && (is.null(xx) || is.null(yy)))
     stop("Provide angle OR both x and y in the data frame")
 
-  tracks(from, id = id, time = tm, angle = th, x = xx, y = yy, angle_unit = "radians")
+  # Explicit: this coercion has no calibration context, so it must not
+  # silently re-centre (x,y) on a per-object bounding box.
+  tracks(from, id = id, time = tm, angle = th, x = xx, y = yy, angle_unit = "radians",
+         normalize_xy = FALSE)
 })
 
 ## ---- combine -----------------------------------------------------------------

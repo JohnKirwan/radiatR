@@ -150,7 +150,7 @@ radiate(ts,
 > circle) -- it is not a substitute for calibration and does not preserve
 > bearing relative to a fixed arena origin. When a per-trial reference
 > direction is available, the landmark-relative frame (`rel_x`/`rel_y`,
-> `coords = "relative"` in [derive_headings()]) is the accurate option.
+> `coords = "relative"` in `derive_headings()`) is the accurate option.
 
 ### Label the circumference in domain units
 
