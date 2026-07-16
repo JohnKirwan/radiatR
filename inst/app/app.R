@@ -145,9 +145,14 @@ detect_cond_col <- function(ts) {
 }
 
 load_ts <- function(path, dialect, mapping = list(), read_opts = list(delim = NULL)) {
+  # Pinned to TRUE (unlike the package default) to preserve existing app
+  # behavior: the app has no UI control for this yet, so silently switching
+  # to raw coordinates would break the app's radius-based rule defaults
+  # (crossing circ0/circ1, distal max_radius, clip_tracks) for uploads.
+  # See TODO.md: "Expose normalize_xy / calibration control in the app".
   if (is.null(dialect) || dialect %in% c("auto", "generic"))
-    return(read_tracks(path, mapping = mapping, read_opts = read_opts))
-  read_tracks(path, dialect = dialect, mapping = mapping, read_opts = read_opts)
+    return(read_tracks(path, mapping = mapping, read_opts = read_opts, normalize_xy = TRUE))
+  read_tracks(path, dialect = dialect, mapping = mapping, read_opts = read_opts, normalize_xy = TRUE)
 }
 
 # Map the app's delimiter dropdown to a read_opts override. "auto" -> sniff.

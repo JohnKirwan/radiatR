@@ -462,7 +462,7 @@ read_tracks_format <- function(x, format, ...) {
     time_type      = spec$time$type  %||% spec$time_type %||% "auto",
     tz             = spec$time$tz    %||% spec$tz %||% "UTC",
     fps            = spec$time$fps   %||% spec$fps %||% NULL,
-    normalize_xy   = if (!is.null(spec$normalize_xy)) isTRUE(spec$normalize_xy) else TRUE,
+    normalize_xy   = if (!is.null(spec$normalize_xy)) isTRUE(spec$normalize_xy) else FALSE,
     mutate         = spec$mutate %||% NULL,
     keep           = spec$keep %||% NULL,
     drop           = spec$drop %||% NULL,
@@ -488,7 +488,11 @@ read_tracks_format <- function(x, format, ...) {
 #'   Tracks capture frame rate (see [frame_rate()]); [elapsed_seconds()] then
 #'   performs the frame -> seconds conversion once, on demand, so kinematics
 #'   and the app adopt it automatically without converting twice.
-#' @param normalize_xy TRUE to normalize (x,y) to unit circle when both provided
+#' @param normalize_xy FALSE (default) keeps (x,y) as supplied. TRUE
+#'   independently centres each trajectory on its own bounding-box midpoint
+#'   and scales it to the unit circle -- shape-preserving only, NOT
+#'   calibration (it does not preserve bearing from a fixed arena origin).
+#'   See [tracks()] for the full explanation.
 #' @param read_opts list of file-reading overrides: `delim` (field separator),
 #'   `decimal` (decimal mark), and `sheet` (Excel worksheet name or number).
 #'   Any `NULL` element is auto-detected. Defaults to all-auto.
@@ -507,7 +511,7 @@ read_tracks <- function(x,
                          mapping = list(id=NULL, time=NULL, x=NULL, y=NULL, angle=NULL, weight=NULL),
                          angle_unit = c("radians","degrees","auto"),
                          time_type = c("auto","posix","seconds","frames"), tz = "UTC", fps = NULL,
-                         normalize_xy = TRUE,
+                         normalize_xy = FALSE,
                          dialect = NULL,
                          dialect_args = list(),
                          read_opts = list(delim = NULL, decimal = NULL, sheet = NULL),
@@ -760,7 +764,9 @@ read_tracks_dir <- function(dir, pattern = "\\.(csv|tsv|txt|parquet|feather)$", 
 #'   `NULL`, all columns aside from `file` are carried over with the same names.
 #' @param mapping Optional explicit column mapping passed to [read_tracks()].
 #' @param angle_unit,time_type,tz,fps Passed to [read_tracks()].
-#' @param normalize_xy Logical; normalise x/y to unit circle. Default \code{TRUE}.
+#' @param normalize_xy Logical; normalise x/y to unit circle. Default
+#'   \code{FALSE}. See [tracks()] for why \code{TRUE} is shape-preserving
+#'   only, not calibration.
 #' @param dialect Optional dialect name; passed to [read_tracks()].
 #' @param keep,drop Column selection vectors passed to [read_tracks()].
 #' @param ... Additional arguments forwarded to [read_tracks()].
@@ -773,7 +779,7 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
                                   angle_unit = c("radians","degrees","auto"),
                                   time_type = c("auto","posix","seconds","frames"),
                                   tz = "UTC", fps = NULL,
-                                  normalize_xy = TRUE,
+                                  normalize_xy = FALSE,
                                   dialect = NULL,
                                   keep = NULL, drop = NULL, ...) {
   angle_unit <- match.arg(angle_unit)

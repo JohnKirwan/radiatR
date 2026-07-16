@@ -54,9 +54,11 @@
 #' @param x Tracks
 #' @param rule one of "crossing", "distal", "straight"
 #' @param ... rule-specific parameters, including `return_coords` (see below)
-#' @param coords Character. Which Cartesian columns to use: `"absolute"` (default,
-#'   uses `x`/`y` from `Tracks@@cols`) or `"relative"` (uses `rel_x`/`rel_y`;
-#'   errors if not registered).
+#' @param coords Character. Which Cartesian columns to use: `"absolute"`
+#'   (default, uses whatever `x`/`y` the `Tracks` currently holds in
+#'   `Tracks@@cols` -- calibrated only if the caller supplied or normalized
+#'   them that way) or `"relative"` (uses `rel_x`/`rel_y`, the
+#'   landmark-rotated frame; errors if not registered).
 #' @param on_missing One of `"warn"` (default), `"error"`, or `"quiet"`,
 #'   controlling what happens when a rule produces no heading (`NA`) for one or
 #'   more trials. The `NA` rows are always retained; the returned object carries

@@ -62,3 +62,42 @@ test_that("normalize_xy=TRUE scales each trajectory independently", {
   expect_equal(max(ra), 1, tolerance = 1e-9)
   expect_equal(max(rb), 1, tolerance = 1e-9)
 })
+
+test_that("normalize_xy defaults to FALSE: (x,y) pass through unchanged", {
+  df <- data.frame(id = "a", time = 1:3,
+                   x = c(0, 0.25, 0.5), y = c(0, 0, 0))
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y")
+  expect_false(ts@meta$normalize_xy)
+  expect_equal(ts@data[[ts@cols$x]], df$x)
+  expect_equal(ts@data[[ts@cols$y]], df$y)
+})
+
+test_that("an eastward path reports an eastward bearing by default (TODO regression)", {
+  # x = c(0, 0.25, 0.5), y = 0: strictly eastward motion from a fixed arena
+  # origin. Under the old normalize_xy=TRUE default this became
+  # x = c(-1, 0, 1), flipping the reported bearing to west.
+  df <- data.frame(id = "a", time = 1:3,
+                   x = c(0, 0.25, 0.5), y = c(0, 0, 0))
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y")
+
+  distal <- derive_headings(ts, rule = "distal", on_missing = "quiet")$heading
+  net    <- derive_headings(ts, rule = "net",    on_missing = "quiet")$heading
+
+  expect_equal(as.numeric(distal), 0, tolerance = 1e-8)  # east = 0 radians
+  expect_equal(as.numeric(net),    0, tolerance = 1e-8)
+})
+
+test_that("normalize_xy=TRUE deliberately reports the shape-only, translation-affected bearing", {
+  # Same fixture as above, but with the per-trajectory bounding-box transform
+  # opted into explicitly. This documents intentional, opt-in behavior: the
+  # eastward path is centred on its own midpoint and its `distal` bearing
+  # flips to west, because "distal" (furthest point from the new origin) is
+  # position-based, not displacement-based. This is NOT a bug when
+  # normalize_xy=TRUE is requested explicitly -- see the `tracks()` docs.
+  df <- data.frame(id = "a", time = 1:3,
+                   x = c(0, 0.25, 0.5), y = c(0, 0, 0))
+  ts <- tracks(df, id = "id", time = "time", x = "x", y = "y", normalize_xy = TRUE)
+
+  distal <- derive_headings(ts, rule = "distal", on_missing = "quiet")$heading
+  expect_equal(as.numeric(distal), pi, tolerance = 1e-8)  # west = pi radians
+})

@@ -95,7 +95,7 @@ test_that("dialect_args are forwarded to the dialect function", {
                    head_x = c(0, .1, .2, .3), head_y = rep(0.1, 4),
                    head_likelihood = rep(0.99, 4))
   ts <- read_tracks(df, dialect = "deeplabcut",
-                     dialect_args = list(bodypart = "head"))
+                     dialect_args = list(bodypart = "head"), normalize_xy = TRUE)
   expect_s4_class(ts, "Tracks")
   d <- as.data.frame(ts)
   expect_true(all(c("head_x", "head_y") %in% names(d)))
@@ -111,7 +111,7 @@ test_that("deeplabcut multi-bodypart centroid is likelihood-weighted", {
     tail_x       = c(0, 0, 0), tail_y       = c(0, 0, 0),
     tail_likelihood = c(0, 0, 0)   # zero weight
   )
-  ts <- read_tracks(df, dialect = "deeplabcut")
+  ts <- read_tracks(df, dialect = "deeplabcut", normalize_xy = TRUE)
   d  <- as.data.frame(ts)
   # tail excluded by zero likelihood -> centroid = head position
   expect_equal(d$x_raw[1], 1, tolerance = 1e-9)
@@ -122,7 +122,7 @@ test_that("deeplabcut multi-bodypart appends per-bodypart columns", {
                    head_x = c(0, .1, .2), head_y = c(.1, .1, .1),
                    thorax_x = c(0, .1, .2), thorax_y = c(0, 0, 0))
   ts <- read_tracks(df, dialect = "deeplabcut",
-                     dialect_args = list(bodypart = c("head", "thorax")))
+                     dialect_args = list(bodypart = c("head", "thorax")), normalize_xy = TRUE)
   d  <- as.data.frame(ts)
   expect_true(all(c("head_x", "head_y", "thorax_x", "thorax_y") %in% names(d)))
   expect_equal(d$y_raw[1], 0.05, tolerance = 1e-9)  # mean of 0.1 and 0
@@ -135,7 +135,7 @@ test_that("ethovision detects prefix-style body zones and appends columns", {
                    x_center = c(0, .1, .2), y_center = c(0, 0, 0),
                    x_nose   = c(.1, .2, .3), y_nose   = c(.1, .1, .1),
                    x_tail   = c(-.1, 0, .1), y_tail   = c(-.1, -.1, -.1))
-  ts <- read_tracks(df, dialect = "ethovision")
+  ts <- read_tracks(df, dialect = "ethovision", normalize_xy = TRUE)
   d  <- as.data.frame(ts)
   expect_true(all(c("nose_x", "nose_y", "tail_x", "tail_y") %in% names(d)))
 })
@@ -146,7 +146,7 @@ test_that("ethovision zone centroid uses selected zones", {
                    x_nose   = c(1, 1, 1),   y_nose   = c(0, 0, 0),
                    x_tail   = c(-1, -1, -1), y_tail  = c(0, 0, 0))
   ts <- read_tracks(df, dialect = "ethovision",
-                     dialect_args = list(zone = c("nose", "tail")))
+                     dialect_args = list(zone = c("nose", "tail")), normalize_xy = TRUE)
   d  <- as.data.frame(ts)
   expect_equal(d$x_raw[1], 0, tolerance = 1e-9)  # centroid of 1 and -1
 })
@@ -162,7 +162,7 @@ test_that("anymaze detects <zone> X Centre columns and normalises them", {
     "Nose Y Centre" = c(11, 12, 13),
     check.names = FALSE
   )
-  ts <- read_tracks(df, dialect = "anymaze")
+  ts <- read_tracks(df, dialect = "anymaze", normalize_xy = TRUE)
   d  <- as.data.frame(ts)
   expect_true(all(c("nose_x", "nose_y") %in% names(d)))
 })
@@ -176,7 +176,7 @@ test_that("anymaze zone centroid averages selected zones", {
     check.names = FALSE
   )
   ts <- read_tracks(df, dialect = "anymaze",
-                     dialect_args = list(zone = c("nose", "tail")))
+                     dialect_args = list(zone = c("nose", "tail")), normalize_xy = TRUE)
   d  <- as.data.frame(ts)
   expect_equal(d$x_raw[1], 5, tolerance = 1e-9)  # mean of 10 and 0
 })
@@ -195,7 +195,7 @@ test_that("trex dialect infers id from numeric filename suffix", {
   write.csv(data.frame(frame = 1:3, X = c(0, .1, .2), Y = c(0, 0, 0)), tmp,
             row.names = FALSE)
   on.exit(unlink(tmp))
-  ts <- read_tracks(tmp, dialect = "trex")
+  ts <- read_tracks(tmp, dialect = "trex", normalize_xy = TRUE)
   expect_s4_class(ts, "Tracks")
   expect_equal(nrow(as.data.frame(ts)), 3L)
 })
@@ -204,7 +204,7 @@ test_that("trex dialect accepts individual column", {
   df <- data.frame(individual = rep(c("A","B"), each = 3),
                    frame = rep(1:3, 2),
                    X = c(0,.1,.2, 1,1.1,1.2), Y = rep(0, 6))
-  ts <- read_tracks(df, dialect = "trex")
+  ts <- read_tracks(df, dialect = "trex", normalize_xy = TRUE)
   expect_equal(length(unique(as.data.frame(ts)$id)), 2L)
 })
 
@@ -213,7 +213,7 @@ test_that("trex dialect auto-detects centroid-variant columns", {
                    "X#wcentroid" = c(0, 0.5, 1),
                    "Y#wcentroid" = c(0, 0, 0),
                    check.names = FALSE)
-  ts <- read_tracks(df, dialect = "trex")
+  ts <- read_tracks(df, dialect = "trex", normalize_xy = TRUE)
   expect_equal(as.data.frame(ts)$x_raw[3], 1, tolerance = 1e-9)
 })
 
@@ -222,7 +222,7 @@ test_that("trex dialect prefers plain X/Y over centroid variants", {
                    X = c(9, 9), "X#wcentroid" = c(1, 1),
                    Y = c(0, 0), "Y#wcentroid" = c(0, 0),
                    check.names = FALSE)
-  ts <- read_tracks(df, dialect = "trex")
+  ts <- read_tracks(df, dialect = "trex", normalize_xy = TRUE)
   expect_equal(as.data.frame(ts)$x_raw[1], 9, tolerance = 1e-9)
 })
 
@@ -232,7 +232,7 @@ test_that("trex centroid argument forces a specific source", {
                    Y = c(0, 0), "Y#wcentroid" = c(0, 0),
                    check.names = FALSE)
   ts <- read_tracks(df, dialect = "trex",
-                     dialect_args = list(centroid = "wcentroid"))
+                     dialect_args = list(centroid = "wcentroid"), normalize_xy = TRUE)
   expect_equal(as.data.frame(ts)$x_raw[1], 1, tolerance = 1e-9)
 })
 
@@ -240,7 +240,7 @@ test_that("trex centroid argument errors when variant absent", {
   df <- data.frame(frame = 1:2, X = c(1, 1), Y = c(0, 0))
   expect_error(
     read_tracks(df, dialect = "trex",
-                 dialect_args = list(centroid = "pcentroid")),
+                 dialect_args = list(centroid = "pcentroid"), normalize_xy = TRUE),
     "pcentroid"
   )
 })
@@ -253,7 +253,7 @@ test_that("trex dialect strips TRex unit annotations in column headers", {
     "Y#wcentroid (cm)" = c(0, 0, 0),
     check.names = FALSE
   )
-  ts <- read_tracks(df, dialect = "trex")
+  ts <- read_tracks(df, dialect = "trex", normalize_xy = TRUE)
   expect_s4_class(ts, "Tracks")
   expect_equal(as.data.frame(ts)$x_raw[3], 1, tolerance = 1e-9)
 })
@@ -265,7 +265,7 @@ test_that("tracktor dialect reads identity and frame columns", {
                    identity = rep(c("A","B"), each = 4),
                    x = c(0,.1,.2,.3, 1,1.1,1.2,1.3),
                    y = rep(0, 8))
-  ts <- read_tracks(df, dialect = "tracktor")
+  ts <- read_tracks(df, dialect = "tracktor", normalize_xy = TRUE)
   expect_s4_class(ts, "Tracks")
   expect_equal(length(unique(as.data.frame(ts)$id)), 2L)
 })
@@ -274,7 +274,7 @@ test_that("tracktor dialect reads the bundled real Tracktor export", {
   path <- system.file("extdata", "tracktor_example.csv", package = "radiatR")
   skip_if(nchar(path) == 0L, "tracktor_example.csv not found in extdata")
   ts <- suppressMessages(suppressWarnings(
-    read_tracks(path, dialect = "tracktor")
+    read_tracks(path, dialect = "tracktor", normalize_xy = TRUE)
   ))
   d <- as.data.frame(ts)
   expect_s4_class(ts, "Tracks")
@@ -294,7 +294,7 @@ test_that("tracktor dialect ignores a leading pandas index column", {
     pos_y = c(50, 51, 52, 53)
   )
   ts <- suppressMessages(suppressWarnings(
-    read_tracks(df, dialect = "tracktor")
+    read_tracks(df, dialect = "tracktor", normalize_xy = TRUE)
   ))
   d <- as.data.frame(ts)
   expect_equal(d$x_raw, c(100, 110, 120, 130))
@@ -308,7 +308,7 @@ test_that("tracktor dialect keeps a genuine x column when there is no index", {
     y     = c(50, 51, 52, 53)
   )
   ts <- suppressMessages(suppressWarnings(
-    read_tracks(df, dialect = "tracktor")
+    read_tracks(df, dialect = "tracktor", normalize_xy = TRUE)
   ))
   d <- as.data.frame(ts)
   expect_equal(d$x_raw, c(100, 110, 120, 130))
@@ -324,7 +324,7 @@ test_that("sleap dialect detects nodes and computes score-weighted centroid", {
     thorax_x  = c(0, 0, 0), thorax_y  = c(0, 0, 0), thorax_score  = c(0.01, 0.01, 0.01)
   )
   ts <- read_tracks(df, dialect = "sleap",
-                     dialect_args = list(score_min = 0.5))
+                     dialect_args = list(score_min = 0.5), normalize_xy = TRUE)
   d  <- as.data.frame(ts)
   # thorax below score_min -> centroid = head position
   expect_equal(d$x_raw[1], 1, tolerance = 1e-9)
@@ -334,14 +334,14 @@ test_that("sleap dialect detects nodes and computes score-weighted centroid", {
 test_that("sleap dialect uses track as id and frame_idx as time", {
   df <- data.frame(frame_idx = 1:3, track = "A",
                    head_x = c(0,.1,.2), head_y = rep(0,3), head_score = rep(0.9,3))
-  ts <- read_tracks(df, dialect = "sleap", dialect_args = list(bodypart = "head"))
+  ts <- read_tracks(df, dialect = "sleap", dialect_args = list(bodypart = "head"), normalize_xy = TRUE)
   expect_equal(as.data.frame(ts)$id[1], "A")
 })
 
 test_that("deeplabcut_multiheader reads official DLC labeled-data fixture", {
   path <- system.file("extdata", "dlc_CollectedData_Pranav.csv", package = "radiatR")
   skip_if(nchar(path) == 0L, "dlc_CollectedData_Pranav.csv not found in extdata")
-  ts <- suppressMessages(read_tracks(path, dialect = "deeplabcut_multiheader"))
+  ts <- suppressMessages(read_tracks(path, dialect = "deeplabcut_multiheader", normalize_xy = TRUE))
   d  <- as.data.frame(ts)
   expect_s4_class(ts, "Tracks")
   expect_equal(nrow(d), 116L)
@@ -355,7 +355,7 @@ test_that("deeplabcut_multiheader reads official DLC labeled-data fixture", {
 test_that("sleap dialect reads official SLEAP CSV fixture and handles NA scores", {
   path <- system.file("extdata", "sleap_example.csv", package = "radiatR")
   skip_if(nchar(path) == 0L, "sleap_example.csv not found in extdata")
-  ts <- read_tracks(path, dialect = "sleap")
+  ts <- read_tracks(path, dialect = "sleap", normalize_xy = TRUE)
   d  <- as.data.frame(ts)
   expect_s4_class(ts, "Tracks")
   expect_equal(nrow(d), 1L)

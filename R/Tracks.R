@@ -253,13 +253,16 @@ setValidity("Tracks", function(object) {
 #'   together or not at all.
 #' @param angle_unit Units of provided angle ("radians" or "degrees"); stored internally as radians
 #' @param weight Optional weight column name
-#' @param normalize_xy If TRUE (default), (x,y) are scaled to the unit circle per trajectory:
-#'   each trajectory is centred on its bounding-box midpoint and scaled so its
-#'   furthest point sits at radius 1. This preserves trajectory shape and places
-#'   the origin at the centre (what the radius-based heading rules expect).
-#'   Raw coordinates are retained in `<x>_raw`/`<y>_raw`. If FALSE, (x,y) are kept
-#'   as supplied. (Landmark-based mapping, when available, is more accurate; this
-#'   is the no-landmark fallback.)
+#' @param normalize_xy If FALSE (default), (x,y) are kept as supplied. If TRUE,
+#'   each trajectory is independently centred on its own bounding-box midpoint
+#'   and scaled so its furthest point sits at radius 1. This is a
+#'   shape-preserving transform ONLY: because each trajectory is translated by
+#'   a different amount, it does NOT preserve bearing relative to a fixed
+#'   arena origin, and must not be used as a substitute for metric
+#'   calibration. Raw coordinates are retained in `<x>_raw`/`<y>_raw` when
+#'   enabled. Prefer pre-calibrated input, or the landmark-relative frame
+#'   (`rel_x`/`rel_y`, see `coords = "relative"` in [derive_headings()]) when a
+#'   per-trial reference direction is available.
 #' @param meta Free-form list of metadata
 #' @param transform_history Optional tibble describing transformation steps applied to the
 #'   trajectories. Must contain columns `step`, `order`, `id`, `implementation`, `params`,
@@ -274,7 +277,7 @@ tracks <- function(df,
                     rel_x = NULL, rel_y = NULL,
                     angle_unit = NULL,
                     weight = NULL,
-                    normalize_xy = TRUE,
+                    normalize_xy = FALSE,
                     meta = list(),
                     transform_history = NULL) {
   stopifnot(is.data.frame(df))
@@ -672,7 +675,10 @@ setAs("data.frame", "Tracks", function(from) {
   if (is.null(th) && (is.null(xx) || is.null(yy)))
     stop("Provide angle OR both x and y in the data frame")
 
-  tracks(from, id = id, time = tm, angle = th, x = xx, y = yy, angle_unit = "radians")
+  # Explicit: this coercion has no calibration context, so it must not
+  # silently re-centre (x,y) on a per-object bounding box.
+  tracks(from, id = id, time = tm, angle = th, x = xx, y = yy, angle_unit = "radians",
+         normalize_xy = FALSE)
 })
 
 ## ---- combine -----------------------------------------------------------------

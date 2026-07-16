@@ -33,9 +33,11 @@ derive_headings(
 
 \item{...}{rule-specific parameters, including `return_coords` (see below)}
 
-\item{coords}{Character. Which Cartesian columns to use: `"absolute"` (default,
-uses `x`/`y` from `Tracks@cols`) or `"relative"` (uses `rel_x`/`rel_y`;
-errors if not registered).}
+\item{coords}{Character. Which Cartesian columns to use: `"absolute"`
+(default, uses whatever `x`/`y` the `Tracks` currently holds in
+`Tracks@cols` -- calibrated only if the caller supplied or normalized
+them that way) or `"relative"` (uses `rel_x`/`rel_y`, the
+landmark-rotated frame; errors if not registered).}
 
 \item{first_only}{logical; if TRUE, return only the first matching heading per trajectory}
 
