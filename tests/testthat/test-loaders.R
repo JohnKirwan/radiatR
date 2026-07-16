@@ -549,13 +549,27 @@ test_that("read_tracks persists a valid fps as frame_rate (frames)", {
   expect_equal(frame_rate(ts), 60)
 })
 
-test_that("read_tracks persists fps even when time is in seconds", {
+test_that("read_tracks rejects non-positive or non-finite fps for time_type = 'frames'", {
+  df <- data.frame(id = "A", frame = 1:4,
+                   x = c(0, .1, .2, .3), y = c(0, 0, 0, 0))
+  map <- list(id = "id", time = "frame", x = "x", y = "y")
+  for (bad_fps in c(0, -5, Inf, NaN)) {
+    expect_error(read_tracks(df, mapping = map, time_type = "frames", fps = bad_fps),
+                 "positive, finite")
+  }
+  expect_error(read_tracks(df, mapping = map, time_type = "frames", fps = NULL),
+               "positive, finite")
+})
+
+test_that("read_tracks does not store frame_rate when time is already in seconds", {
+  # time_type = "seconds" means the column is real elapsed time already; a
+  # stored frame_rate would make elapsed_seconds() divide it by fps again.
   df <- data.frame(id = "A", time = c(0, 1, 2, 3),
                    x = c(0, .1, .2, .3), y = c(0, 0, 0, 0))
   ts <- read_tracks(df,
                     mapping = list(id = "id", time = "time", x = "x", y = "y"),
                     time_type = "seconds", fps = 60)
-  expect_equal(frame_rate(ts), 60)
+  expect_null(frame_rate(ts))
 })
 
 test_that("read_tracks leaves frame_rate NULL when no fps given", {
@@ -589,7 +603,42 @@ test_that("a Tracks loaded with fps feeds track_speed without set_frame_rate", {
                     mapping = list(id = "id", time = "frame", x = "x", y = "y"),
                     time_type = "frames", fps = 2, normalize_xy = FALSE)
   sp <- track_speed(ts)
-  expect_true(is.finite(sp$speed[1]))
+  # frame indices 1:4 at 2 fps -> 0.5 s between steps; unit x-step of 1 -> 2 units/s.
+  # A test asserting only is.finite() would not have caught the fps being
+  # applied twice (elapsed time divided by fps at load AND again on demand).
+  expect_equal(sp$speed[1], 2)
+})
+
+test_that("read_tracks(time_type = 'frames', fps = ) does not double-convert elapsed time", {
+  df <- data.frame(id = "A", frame = 1:4,
+                    x = c(0, 1, 2, 3), y = c(0, 0, 0, 0))
+  ts <- read_tracks(df,
+                     mapping = list(id = "id", time = "frame", x = "x", y = "y"),
+                     time_type = "frames", fps = 60, normalize_xy = FALSE)
+  expect_equal(frame_rate(ts), 60)
+  expect_equal(elapsed_seconds(ts), (0:3) / 60)
+  expect_equal(track_duration(ts)$duration, 3 / 60)
+  sp <- track_speed(ts)
+  expect_equal(sp$speed[1], 1 / (1 / 60))       # unit step distance / dt
+})
+
+test_that("read_tracks(time_type = 'auto', fps = ) on a numeric time column does not double-convert", {
+  df <- data.frame(id = "A", t = 1:4, x = c(0, 1, 2, 3), y = c(0, 0, 0, 0))
+  ts <- read_tracks(df,
+                     mapping = list(id = "id", time = "t", x = "x", y = "y"),
+                     fps = 2, normalize_xy = FALSE)     # time_type left at default "auto"
+  expect_equal(frame_rate(ts), 2)
+  expect_equal(elapsed_seconds(ts), (0:3) / 2)
+  expect_equal(track_speed(ts)$speed[1], 2)
+})
+
+test_that("a dialect-only fps (dialect_args) still becomes frame_rate without double-converting", {
+  df <- data.frame(id = "A", frame = 1:4, x = c(0, 1, 2, 3), y = c(0, 0, 0, 0))
+  ts <- read_tracks(df, dialect = "toxtrac", dialect_args = list(fps = 2),
+                     normalize_xy = FALSE)
+  expect_equal(frame_rate(ts), 2)
+  expect_equal(elapsed_seconds(ts), (0:3) / 2)
+  expect_equal(track_speed(ts)$speed[1], 2)
 })
 
 test_that("manifest load persists fps as frame_rate", {

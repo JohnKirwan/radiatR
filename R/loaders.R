@@ -294,14 +294,28 @@ guess_columns <- function(data, mapping = list()) {
   if (frac_deg > 0.5) "degrees" else "radians"
 }
 
-# Coerce time column to POSIXct or numeric seconds
+.assert_valid_fps <- function(fps) {
+  if (is.null(fps) || !is.numeric(fps) || length(fps) != 1L ||
+      !is.finite(fps) || fps <= 0)
+    stop("`fps` must be a single positive, finite number (frames per second).",
+         call. = FALSE)
+}
+
+# Coerce time column to POSIXct or numeric seconds. Numeric time under
+# time_type = "frames" (or "auto" with fps supplied) is kept as a raw frame
+# index: read_tracks() stores `fps` as the Tracks frame_rate, and
+# elapsed_seconds()/.elapsed_time() perform the single frame -> seconds
+# division on demand. Converting here as well as there double-divides by fps.
 .coerce_time <- function(v, time_type = c("auto","posix","seconds","frames"),
                          tz = "UTC", fps = NULL, origin = "1970-01-01") {
   time_type <- match.arg(time_type)
   if (time_type == "auto") {
     # try POSIX
     if (inherits(v, "POSIXt")) return(as.POSIXct(v, tz = tz))
-    if (is.numeric(v) && !is.null(fps)) return(as.numeric(v)/fps)
+    if (is.numeric(v) && !is.null(fps)) {
+      .assert_valid_fps(fps)
+      return(as.numeric(v))
+    }
     # try character timestamp
     if (is.character(v)) {
       suppressWarnings({
@@ -311,14 +325,14 @@ guess_columns <- function(data, mapping = list()) {
     }
     # numeric seconds since origin
     if (is.numeric(v)) return(as.numeric(v))
-    # fallback: integer-ish 
+    # fallback: integer-ish
     return(as.numeric(v))
   }
   if (time_type == "posix") return(as.POSIXct(v, tz = tz, origin = origin))
   if (time_type == "seconds") return(as.numeric(v))
   if (time_type == "frames") {
-    if (is.null(fps)) stop("time_type='frames' requires fps")
-    return(as.numeric(v)/fps)
+    .assert_valid_fps(fps)
+    return(as.numeric(v))
   }
 }
 
@@ -468,10 +482,12 @@ read_tracks_format <- function(x, format, ...) {
 #' @param angle_unit "radians","degrees", or "auto" to guess from values
 #' @param time_type one of "auto","posix","seconds","frames"
 #' @param tz timezone for POSIX times (default "UTC")
-#' @param fps Frames-per-second. Used to convert frame indices to seconds when
-#'   time_type = "frames", and, when a single finite positive value is supplied,
-#'   stored as the Tracks capture frame rate (see [frame_rate()]) so kinematics
-#'   and the app adopt it automatically.
+#' @param fps Frames-per-second. Required when time_type = "frames" (the time
+#'   column is kept as a raw frame index). When a single finite positive value
+#'   is supplied and the time column is frame-indexed, it is stored as the
+#'   Tracks capture frame rate (see [frame_rate()]); [elapsed_seconds()] then
+#'   performs the frame -> seconds conversion once, on demand, so kinematics
+#'   and the app adopt it automatically without converting twice.
 #' @param normalize_xy TRUE to normalize (x,y) to unit circle when both provided
 #' @param read_opts list of file-reading overrides: `delim` (field separator),
 #'   `decimal` (decimal mark), and `sheet` (Excel worksheet name or number).
@@ -554,6 +570,10 @@ read_tracks <- function(x,
     if (!exists(dialect, envir = .loader_registry, inherits = FALSE)) stop("Unknown dialect '", dialect, "'")
     prep <- get(dialect, envir = .loader_registry, inherits = FALSE)
     df <- do.call(prep, c(list(x), dialect_args))
+    # Dialects no longer convert frame indices to seconds themselves (that
+    # single conversion now happens once, on demand, via elapsed_seconds());
+    # adopt a dialect-only fps so it still becomes the Tracks frame_rate.
+    if (is.null(fps) && !is.null(dialect_args$fps)) fps <- dialect_args$fps
   }
   # Extra columns emitted by a dialect are kept unless explicitly dropped.
   dialect_extra <- if (!is.null(dialect)) names(df) else character(0)
@@ -592,7 +612,12 @@ read_tracks <- function(x,
 
   # coarse type fixes
   if (!is.numeric(df[[id]])) df[[id]] <- as.character(df[[id]])
-  # time coercion
+  # time coercion. `time_is_frames` records whether the *stored* time column
+  # is still a raw frame index needing a frame_rate-driven division (done
+  # once, on demand, by elapsed_seconds()) rather than already being real
+  # seconds/POSIXct -- storing frame_rate for the latter would double-convert.
+  time_is_frames <- time_type == "frames" ||
+    (time_type == "auto" && is.numeric(df[[time]]) && !inherits(df[[time]], "POSIXt") && !is.null(fps))
   df[[time]] <- .coerce_time(df[[time]], time_type = time_type, tz = tz, fps = fps)
 
   # angle unit
@@ -619,9 +644,12 @@ read_tracks <- function(x,
   }
 
   # Hand off to Tracks constructor. A valid capture rate supplied via `fps`
-  # is stored durably so kinematics and the app adopt it without re-entry.
+  # is stored durably so kinematics and the app adopt it without re-entry --
+  # but only when the time column is still frame-indexed; otherwise the time
+  # column already carries real seconds/POSIXct and no further division
+  # should happen downstream.
   meta <- list(source = src)
-  if (is.numeric(fps) && length(fps) == 1L && is.finite(fps) && fps > 0)
+  if (time_is_frames && is.numeric(fps) && length(fps) == 1L && is.finite(fps) && fps > 0)
     meta$frame_rate <- as.numeric(fps)
   ts <- tracks(df,
                 id = id, time = time, angle = angle,
