@@ -512,7 +512,8 @@ read_tracks_format <- function(x, format, ...) {
     keep           = spec$keep %||% NULL,
     drop           = spec$drop %||% NULL,
     id_from_filename = if (!is.null(spec$id_from_filename)) isTRUE(spec$id_from_filename) else TRUE,
-    validate       = if (!is.null(spec$validate)) isTRUE(spec$validate) else TRUE
+    validate       = if (!is.null(spec$validate)) isTRUE(spec$validate) else TRUE,
+    id_collision   = spec$id_collision %||% "error"
   )
 
   # Allow explicit overrides via ...
