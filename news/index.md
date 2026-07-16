@@ -4,6 +4,21 @@
 
 ### Bug fixes
 
+- `read_tracks(..., time_type = "frames", fps = )` no longer converts
+  frame indices to seconds twice. The time column is now kept as a raw
+  frame index and
+  [`elapsed_seconds()`](https://johnkirwan.github.io/radiatR/reference/elapsed_seconds.md)
+  (and everything built on it:
+  [`track_duration()`](https://johnkirwan.github.io/radiatR/reference/track_duration.md),
+  [`track_speed()`](https://johnkirwan.github.io/radiatR/reference/track_speed.md),
+  velocity, and turning-rate) performs the frame -\> seconds division
+  exactly once, on demand, using the stored
+  [`frame_rate()`](https://johnkirwan.github.io/radiatR/reference/frame_rate.md).
+  Previously the loader divided by `fps` immediately and then stored the
+  same `fps` as the frame rate, so downstream kinematics divided by
+  `fps` a second time – e.g. an expected 60 units/s speed came out as
+  3600 units/s. Loading with `time_type = "seconds"` no longer stores a
+  spurious frame rate either.
 - [`wrappedcauchy_fit()`](https://johnkirwan.github.io/radiatR/reference/wrappedcauchy_fit.md)’s
   `convergence` column now matches its documentation.
   [`circular::mle.wrappedcauchy()`](https://rdrr.io/pkg/circular/man/mle.wrappedcauchy.html)
