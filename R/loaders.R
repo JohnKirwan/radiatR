@@ -564,9 +564,11 @@ read_tracks <- function(x,
                          keep = NULL, drop = NULL,
                          id_from_filename = TRUE,
                          validate = TRUE,
-                         format = NULL) {
+                         format = NULL,
+                         id_collision = c("error", "namespace")) {
   angle_unit <- match.arg(angle_unit)
   time_type  <- match.arg(time_type)
+  id_collision <- match.arg(id_collision)
 
   if (!is.null(format)) {
     return(read_tracks_format(
@@ -583,7 +585,8 @@ read_tracks <- function(x,
       keep = keep,
       drop = drop,
       id_from_filename = id_from_filename,
-      validate = validate
+      validate = validate,
+      id_collision = id_collision
     ))
   }
 
@@ -596,16 +599,11 @@ read_tracks <- function(x,
                     decimal = read_opts$decimal, sheet = read_opts$sheet)
     src <- basename(x)
   } else if (is.character(x) && length(x) > 1L) {
-    dfl <- lapply(x, function(p) {
-      d <- .read_any(p, delim = read_opts$delim,
-                     decimal = read_opts$decimal, sheet = read_opts$sheet)
-      if (id_from_filename && !is.null(mapping$id) && !(mapping$id %in% names(d))) {
-        d[[mapping$id]] <- tools::file_path_sans_ext(basename(p))
-      }
-      d$..source_file <- basename(p)
-      d
-    })
-    df <- do.call(rbind, dfl)
+    combined <- .combine_track_files(x, mapping, id_from_filename, read_opts)
+    df <- combined$df
+    # Force the synthesized id column to be picked up by guess_columns() below,
+    # so multi-file input never falls into the single-track "(multiple)" path.
+    if (isTRUE(combined$synth)) mapping$id <- combined$id_col
     src <- "(multiple)"
   } else if (is.character(x) && length(x) == 1L && !file.exists(x) && exists(x, envir = .loader_registry, inherits = FALSE)) {
     dialect <- x
