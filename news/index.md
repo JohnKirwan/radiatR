@@ -4,6 +4,23 @@
 
 ### Bug fixes
 
+- [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  and
+  [`read_tracks_dir()`](https://johnkirwan.github.io/radiatR/reference/read_tracks_dir.md)
+  now preserve trajectory identity when importing multiple files.
+  Previously, reading a character vector of paths with no id column (the
+  common case, relying on `id_from_filename = TRUE`) silently collapsed
+  every file into a single `"(multiple)"` trajectory whose rows were
+  then interleaved by time across files. Each file now yields its own
+  trajectory keyed by the file-name stem. A new
+  `id_collision = c("error", "namespace")` argument controls what
+  happens when a real id value appears under more than one file:
+  `"error"` (the default) stops with a message naming the colliding id
+  and files, and `"namespace"` prefixes every id with its file stem
+  (`file::id`). Multi-file imports with no id column and
+  `id_from_filename = FALSE` now fail with a clear error instead of the
+  silent collapse, and duplicate `(id, time)` keys produced by combining
+  files are reported rather than passed through.
 - `read_tracks(..., time_type = "frames", fps = )` no longer converts
   frame indices to seconds twice. The time column is now kept as a raw
   frame index and

@@ -65,7 +65,8 @@
 <span>  drop <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  id_from_filename <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  validate <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  format <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  format <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  id_collision <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"error"</span>, <span class="st">"namespace"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -147,6 +148,14 @@ Any `NULL` element is auto-detected. Defaults to all-auto.</p></dd>
 
 <dt id="arg-format">format<a class="anchor" aria-label="anchor" href="#arg-format"></a></dt>
 <dd><p>Optional loader format name or list spec registered via [register_loader_format()]</p></dd>
+
+
+<dt id="arg-id-collision">id_collision<a class="anchor" aria-label="anchor" href="#arg-id-collision"></a></dt>
+<dd><p>how to handle a trajectory id that appears under more
+than one source file during a multi-file import: `"error"` (default) stops
+with a message naming the colliding id(s) and files; `"namespace"` rewrites
+every id to `paste0(file_stem, "::", id)` so ids are unique per file. Has no
+effect on single-file or data.frame input.</p></dd>
 
 </dl></div>
     <div class="section level2">

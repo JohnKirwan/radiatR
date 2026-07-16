@@ -356,8 +356,9 @@ radiate(
   unit circle, so beyond-circumference (\`rho \> 1\`) excursions are
   truncated at the circumference (segment-intercept, leaving a gap until
   the track re-enters) rather than drawn past it. Set \`FALSE\` to draw
-  tracks unclipped. Plot-only: kinematics are unaffected. Applies in the
-  relative frame; ignored when \`coords = "absolute"\`.
+  tracks unclipped. Plot-only: kinematics are unaffected. \`rho\` is
+  unchanged by the relative-frame rotation, so this applies equally when
+  \`coords = "absolute"\`.
 
 - show_arrow:
 

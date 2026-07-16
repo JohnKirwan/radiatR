@@ -21,7 +21,8 @@ read_tracks(
   drop = NULL,
   id_from_filename = TRUE,
   validate = TRUE,
-  format = NULL
+  format = NULL,
+  id_collision = c("error", "namespace")
 )
 ```
 
@@ -107,6 +108,14 @@ read_tracks(
 
   Optional loader format name or list spec registered via
   \[register_loader_format()\]
+
+- id_collision:
+
+  how to handle a trajectory id that appears under more than one source
+  file during a multi-file import: \`"error"\` (default) stops with a
+  message naming the colliding id(s) and files; \`"namespace"\` rewrites
+  every id to \`paste0(file_stem, "::", id)\` so ids are unique per
+  file. Has no effect on single-file or data.frame input.
 
 ## Value
 

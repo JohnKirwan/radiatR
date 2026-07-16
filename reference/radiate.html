@@ -396,8 +396,8 @@ without the track geometry.</p></dd>
 to the unit circle, so beyond-circumference (`rho &gt; 1`) excursions are truncated at
 the circumference (segment-intercept, leaving a gap until the track
 re-enters) rather than drawn past it. Set `FALSE` to draw tracks unclipped.
-Plot-only: kinematics are unaffected. Applies in the relative frame;
-ignored when `coords = "absolute"`.</p></dd>
+Plot-only: kinematics are unaffected. `rho` is unchanged by the
+relative-frame rotation, so this applies equally when `coords = "absolute"`.</p></dd>
 
 
 <dt id="arg-show-arrow">show_arrow<a class="anchor" aria-label="anchor" href="#arg-show-arrow"></a></dt>
