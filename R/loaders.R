@@ -402,6 +402,51 @@ guess_columns <- function(data, mapping = list()) {
     stringsAsFactors = FALSE, ...)
 }
 
+# Read and combine multiple track files into one long data frame, preserving
+# per-file trajectory identity. Schema is detected from the FIRST file: a batch
+# is assumed to share one schema (standard for batch imports; mixed-schema
+# batches are out of scope). Returns the combined data frame, the resolved id
+# column name, and whether that id was synthesized from file names.
+#
+#   - Real id column? Resolved with the same order guess_columns() uses:
+#     mapping$id if supplied, else .guess_col(names(first), id candidates).
+#   - No real id + id_from_filename = FALSE -> stop (was the silent
+#     "(multiple)" collapse bug; now a deliberate, informative failure).
+#   - No real id + id_from_filename = TRUE -> synthesize id_col from each
+#     file's basename stem.
+#   - Every row is tagged with ..source_file = basename(path).
+#   - Bound with dplyr::bind_rows() (NA-tolerant across differing columns).
+.combine_track_files <- function(paths, mapping, id_from_filename, read_opts) {
+  read_opts <- read_opts %||% list()
+  dfl <- lapply(paths, function(p) {
+    .read_any(p, delim = read_opts$delim,
+              decimal = read_opts$decimal, sheet = read_opts$sheet)
+  })
+
+  first_names <- names(dfl[[1L]])
+  real_id <- mapping$id %||%
+    .guess_col(first_names, c("id", "track", "trajectory", "animal", "subject"))
+  synth <- is.null(real_id)
+
+  if (synth && !isTRUE(id_from_filename)) {
+    stop("read_tracks: no id column was found in the first file and ",
+         "id_from_filename = FALSE, so no per-file trajectory id can be ",
+         "assigned. Supply mapping = list(id = <column>) or set ",
+         "id_from_filename = TRUE.", call. = FALSE)
+  }
+
+  id_col <- if (synth) (mapping$id %||% "..id") else real_id
+
+  dfl <- Map(function(d, p) {
+    if (synth) d[[id_col]] <- tools::file_path_sans_ext(basename(p))
+    d[["..source_file"]] <- basename(p)
+    d
+  }, dfl, paths)
+
+  df <- dplyr::bind_rows(dfl)
+  list(df = df, id_col = id_col, synth = synth)
+}
+
 # ---- core: read_tracks ------------------------------------------------------
 #' Construct a Tracks from a *format* spec (registered name or inline list)
 #' @param x data.frame or path(s)
