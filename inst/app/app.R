@@ -144,15 +144,15 @@ detect_cond_col <- function(ts) {
   if (length(hits)) hits[1L] else NULL
 }
 
-load_ts <- function(path, dialect, mapping = list(), read_opts = list(delim = NULL)) {
-  # Pinned to TRUE (unlike the package default) to preserve existing app
-  # behavior: the app has no UI control for this yet, so silently switching
-  # to raw coordinates would break the app's radius-based rule defaults
-  # (crossing circ0/circ1, distal max_radius, clip_tracks) for uploads.
-  # See TODO.md: "Expose normalize_xy / calibration control in the app".
+# normalize_xy is a load-time choice surfaced by the Coordinates radio in step 1
+# (output$normalize_box); the resolved logical is recorded on rv$normalize_xy.
+load_ts <- function(path, dialect, mapping = list(), read_opts = list(delim = NULL),
+                    normalize_xy = TRUE) {
   if (is.null(dialect) || dialect %in% c("auto", "generic"))
-    return(read_tracks(path, mapping = mapping, read_opts = read_opts, normalize_xy = TRUE))
-  read_tracks(path, dialect = dialect, mapping = mapping, read_opts = read_opts, normalize_xy = TRUE)
+    return(read_tracks(path, mapping = mapping, read_opts = read_opts,
+                       normalize_xy = normalize_xy))
+  read_tracks(path, dialect = dialect, mapping = mapping, read_opts = read_opts,
+              normalize_xy = normalize_xy)
 }
 
 # Map the app's delimiter dropdown to a read_opts override. "auto" -> sniff.
@@ -616,21 +616,27 @@ server <- function(input, output, session) {
       list(x = pick(input$map_x), y = pick(input$map_y),
            time = pick(input$map_time), id = pick(input$map_id))
     } else list()
+    # radioButtons yields a character; resolve to a logical exactly once here.
+    # NULL means the control never rendered -- fall back to the TRUE default.
+    nrm <- if (is.null(input$normalize_sel)) TRUE
+           else identical(input$normalize_sel, "TRUE")
     ts <- tryCatch(
       suppressMessages(suppressWarnings(
         load_ts(rv$path, d, mapping = map,
-                read_opts = delim_read_opts(input$delim_sel)))),
+                read_opts = delim_read_opts(input$delim_sel),
+                normalize_xy = nrm))),
       error = function(e) {
         rv$error <- plain_error(e)
         NULL
       }
     )
     if (!is.null(ts)) {
-      rv$ts       <- ts
-      rv$dialect  <- d
-      rv$cond_col <- detect_cond_col(ts)
-      rv$step     <- 2L
-      rv$error    <- NULL
+      rv$ts            <- ts
+      rv$dialect       <- d
+      rv$normalize_xy  <- nrm
+      rv$cond_col      <- detect_cond_col(ts)
+      rv$step          <- 2L
+      rv$error         <- NULL
     }
   })
 
@@ -918,6 +924,7 @@ server <- function(input, output, session) {
         },
         uiOutput("format_box"),
         uiOutput("delim_box"),
+        uiOutput("normalize_box"),
         uiOutput("mapping_box"),
         uiOutput("preview_section"),
         err_box
@@ -1302,6 +1309,27 @@ server <- function(input, output, session) {
                 choices = c("Auto-detect" = "auto", "Comma" = ",",
                             "Semicolon" = ";", "Tab" = "\t"),
                 selected = "auto")
+  })
+
+  # The per-trajectory shape transform (normalize_xy). Own renderUI, like
+  # delim_box: the wizard re-renders on rv$mode/rv$error changes and a shared
+  # render would reset the user's choice. Trajectories only -- normalize_xy is
+  # x/y-only, and the bundled example bypasses load_ts entirely.
+  output$normalize_box <- renderUI({
+    req(rv$path)
+    if (identical(rv$mode, "headings")) return(NULL)
+    tagList(
+      radioButtons(
+        "normalize_sel", "Coordinates",
+        choices = c("Keep raw coordinates as supplied" = "FALSE",
+                    "Fit each trajectory to the unit circle (shape only)" = "TRUE"),
+        selected = "TRUE"
+      ),
+      div(class = "text-muted small mb-2",
+          "Rescales each trajectory independently to its own bounding box.",
+          " Preserves path shape, not bearings from a fixed arena origin.",
+          " This is not a calibration.")
+    )
   })
 
   # Column mapping for a Generic CSV upload. Kept in its OWN renderUI (not in
