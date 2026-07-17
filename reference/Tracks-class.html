@@ -64,6 +64,8 @@ Construct a Tracks"><meta property="og:image" content="https://johnkirwan.github
 <span>  angle_unit <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  weight <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  normalize_xy <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  origin <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  radius <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  meta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  transform_history <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
@@ -123,6 +125,22 @@ calibration. Raw coordinates are retained in `&lt;x&gt;_raw`/`&lt;y&gt;_raw` whe
 enabled. Prefer pre-calibrated input, or the landmark-relative frame
 (`rel_x`/`rel_y`, see `coords = "relative"` in [derive_headings()]) when a
 per-trial reference direction is available.</p></dd>
+
+
+<dt id="arg-origin">origin<a class="anchor" aria-label="anchor" href="#arg-origin"></a></dt>
+<dd><p>Optional length-2 numeric `c(x, y)` giving a fixed unit-circle
+centre in the raw coordinate units. Supplied together with `radius`, it
+calibrates every trajectory uniformly via `(xy - origin) / radius`, a
+similarity that preserves bearings measured from the origin (unlike
+`normalize_xy`, which centres each trajectory on its own bounding box).
+Mutually exclusive with `normalize_xy = TRUE`. Raw coordinates are retained
+in `&lt;x&gt;_raw`/`&lt;y&gt;_raw`. For example, in an experimental arena `origin` is the
+arena centre and `radius` its edge distance in pixels.</p></dd>
+
+
+<dt id="arg-radius">radius<a class="anchor" aria-label="anchor" href="#arg-radius"></a></dt>
+<dd><p>Optional positive finite scalar: the raw distance mapping to
+`rho = 1`. Required together with `origin`.</p></dd>
 
 
 <dt id="arg-meta">meta<a class="anchor" aria-label="anchor" href="#arg-meta"></a></dt>
