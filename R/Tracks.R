@@ -276,6 +276,16 @@ setValidity("Tracks", function(object) {
 #'   enabled. Prefer pre-calibrated input, or the landmark-relative frame
 #'   (`rel_x`/`rel_y`, see `coords = "relative"` in [derive_headings()]) when a
 #'   per-trial reference direction is available.
+#' @param origin Optional length-2 numeric `c(x, y)` giving a fixed unit-circle
+#'   centre in the raw coordinate units. Supplied together with `radius`, it
+#'   calibrates every trajectory uniformly via `(xy - origin) / radius`, a
+#'   similarity that preserves bearings measured from the origin (unlike
+#'   `normalize_xy`, which centres each trajectory on its own bounding box).
+#'   Mutually exclusive with `normalize_xy = TRUE`. Raw coordinates are retained
+#'   in `<x>_raw`/`<y>_raw`. For example, in an experimental arena `origin` is the
+#'   arena centre and `radius` its edge distance in pixels.
+#' @param radius Optional positive finite scalar: the raw distance mapping to
+#'   `rho = 1`. Required together with `origin`.
 #' @param meta Free-form list of metadata
 #' @param transform_history Optional tibble describing transformation steps applied to the
 #'   trajectories. Must contain columns `step`, `order`, `id`, `implementation`, `params`,
@@ -291,6 +301,8 @@ tracks <- function(df,
                     angle_unit = NULL,
                     weight = NULL,
                     normalize_xy = FALSE,
+                    origin = NULL,
+                    radius = NULL,
                     meta = list(),
                     transform_history = NULL) {
   stopifnot(is.data.frame(df))
@@ -326,6 +338,22 @@ tracks <- function(df,
       stop("rel_y column '", rel_y, "' must be numeric.")
   }
 
+  # Fixed-reference unit-circle calibration: translate/scale all trajectories by
+  # a single shared origin and radius. Mutually exclusive with normalize_xy.
+  have_calibration <- !is.null(origin) || !is.null(radius)
+  if (have_calibration) {
+    if (is.null(origin) || is.null(radius))
+      stop("Both `origin` and `radius` are required together for calibration.")
+    if (isTRUE(normalize_xy))
+      stop("`normalize_xy = TRUE` and `origin`/`radius` calibration are mutually exclusive; supply only one.")
+    if (!have_xy)
+      stop("`origin`/`radius` calibration requires x and y columns.")
+    if (!is.numeric(origin) || length(origin) != 2L || any(!is.finite(origin)))
+      stop("`origin` must be a length-2 finite numeric vector c(x, y).")
+    if (!is.numeric(radius) || length(radius) != 1L || !is.finite(radius) || radius <= 0)
+      stop("`radius` must be a single positive finite number.")
+  }
+
   d <- df
 
   # Ensure consistent polar/cartesian representation
@@ -350,6 +378,15 @@ tracks <- function(df,
       raw_cols$y <- raw_y_name
       norm <- .normalize_to_unit_circle(d[[x]], d[[y]], d[[id]])
       xy_x <- norm$x; xy_y <- norm$y
+    } else if (have_calibration) {
+      raw_x_name <- make_unique_name(names(d), paste0(x, "_raw"))
+      raw_y_name <- make_unique_name(names(d), paste0(y, "_raw"))
+      d[[raw_x_name]] <- d[[x]]
+      d[[raw_y_name]] <- d[[y]]
+      raw_cols$x <- raw_x_name
+      raw_cols$y <- raw_y_name
+      cal <- .calibrate_to_unit_circle(d[[x]], d[[y]], origin, radius)
+      xy_x <- cal$x; xy_y <- cal$y
     } else {
       xy_x <- d[[x]]; xy_y <- d[[y]]
     }
@@ -412,10 +449,24 @@ tracks <- function(df,
 
   meta[["normalize_xy"]] <- isTRUE(normalize_xy)
   meta[["raw_xy_cols"]] <- raw_cols
+  if (have_calibration) {
+    meta[["calibration"]] <- list(origin = as.numeric(origin),
+                                  radius = as.numeric(radius))
+  }
   if (is.null(transform_history) && !is.null(meta$transform_history)) {
     transform_history <- meta$transform_history
   }
-  meta$transform_history <- .ensure_transform_history(transform_history)
+  transform_history <- .ensure_transform_history(transform_history)
+  if (have_calibration) {
+    transform_history <- .append_transform_history(
+      transform_history,
+      step = "calibrate_unit_circle",
+      ids = unique(as.character(d[[id]])),
+      implementation = ".calibrate_to_unit_circle",
+      params = list(origin = as.numeric(origin), radius = as.numeric(radius))
+    )
+  }
+  meta$transform_history <- transform_history
 
   new("Tracks",
       data = d,
