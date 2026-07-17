@@ -76,6 +76,7 @@
 <div class="section level3">
 <h3 id="app-0-1-1">App<a class="anchor" aria-label="anchor" href="#app-0-1-1"></a></h3>
 <ul><li>Summary &amp; stats now has a “Group comparison” card: <code>test_mean_directions</code>, <code>test_concentration</code>, and <code>test_distributions</code> run automatically across the selected Group-by column, showing whether groups differ in mean direction, concentration, or overall distribution (not just whether each is individually non-uniform).</li>
+<li>The app now exposes an explicit <strong>Coordinates</strong> control for the per-trajectory shape transform (<code>normalize_xy</code>), which was previously pinned on with no way to opt out. The transform fits each trajectory to the unit circle independently and preserves path shape, not bearings from a fixed arena origin; the control labels it as such rather than as a calibration. Downloaded figure, statistics, and kinematics scripts now emit the <code>normalize_xy</code> value the app actually loaded with, instead of silently falling back to the package default.</li>
 </ul></div>
 </div>
     <div class="section level2">
