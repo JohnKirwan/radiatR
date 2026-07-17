@@ -242,6 +242,19 @@ setValidity("Tracks", function(object) {
   list(x = xo, y = yo)
 }
 
+# Fixed-reference affine map into the unit circle: translate every point by a
+# single shared `origin` and scale by a single shared `radius`, so
+# (x, y) -> ((x - origin[1]) / radius, (y - origin[2]) / radius). Unlike
+# .normalize_to_unit_circle this is NOT grouped by id -- one similarity about the
+# origin applied to all rows -- so bearings measured from the origin are
+# preserved exactly. Inputs are validated by the tracks() constructor.
+.calibrate_to_unit_circle <- function(x, y, origin, radius) {
+  list(
+    x = (x - origin[1]) / radius,
+    y = (y - origin[2]) / radius
+  )
+}
+
 #' Construct a Tracks
 #'
 #' @param df data.frame in long form
