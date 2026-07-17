@@ -682,7 +682,12 @@ setAs("data.frame", "Tracks", function(from) {
 })
 
 ## ---- combine -----------------------------------------------------------------
-#' @param ... Additional Tracks objects to append
+#' @param ... Additional Tracks objects to append. All inputs must share
+#'   identical column mapping and angle unit, have no colliding trajectory
+#'   ids, and agree on frame_rate/distance_scale/distance_unit/normalize_xy
+#'   metadata (including all-unset); mismatches error rather than silently
+#'   picking one input's values. Per-id metadata (e.g. `reference`) is merged
+#'   across all inputs.
 #' @param recursive Ignored; maintained for signature compatibility
 #' @rdname Tracks-class
 #' @export
@@ -690,6 +695,26 @@ setMethod("c", signature(x="Tracks"), function(x, ..., recursive = FALSE) {
   xs <- list(x, ...)
   same_map <- vapply(xs, function(z) identical(z@cols, x@cols) && identical(z@angle_unit, x@angle_unit), logical(1))
   if (!all(same_map)) stop("All Tracks objects must share identical column mapping")
+
+  id_lists <- lapply(xs, function(z) unique(as.character(z@data[[z@cols$id]])))
+  id_counts <- table(unlist(id_lists))
+  colliding <- names(id_counts)[id_counts > 1L]
+  if (length(colliding)) {
+    stop("c(): trajectory id(s) collide across combined Tracks objects: ",
+         paste(sprintf("'%s'", colliding), collapse = ", "),
+         call. = FALSE)
+  }
+
+  for (field in c("frame_rate", "distance_scale", "distance_unit", "normalize_xy")) {
+    vals <- lapply(xs, function(z) z@meta[[field]])
+    if (length(unique(vals)) > 1L) {
+      stop("c(): Tracks objects have conflicting '", field, "' metadata: ",
+           paste(vapply(vals, function(v) if (is.null(v)) "NULL" else format(v), character(1)),
+                 collapse = ", "),
+           call. = FALSE)
+    }
+  }
+
   df <- do.call(rbind, lapply(xs, slot, "data"))
   # Tracks requires rows ordered by (id, time); inputs may be concatenated in
   # any order, so sort the combined data before validation.
@@ -697,6 +722,20 @@ setMethod("c", signature(x="Tracks"), function(x, ..., recursive = FALSE) {
   histories <- lapply(xs, transform_history)
   meta <- x@meta
   meta$transform_history <- .combine_transform_histories(histories)
+
+  ref_tbls <- Filter(Negate(is.null), lapply(xs, function(z) z@meta$reference))
+  if (length(ref_tbls)) meta$reference <- do.call(rbind, ref_tbls)
+
+  tl_tbls <- Filter(Negate(is.null), lapply(xs, function(z) z@meta$trial_limits))
+  if (length(tl_tbls)) meta$trial_limits <- do.call(rbind, tl_tbls)
+
+  sim_tbls <- Filter(Negate(is.null), lapply(xs, function(z) z@meta$sim_conditions))
+  if (length(sim_tbls)) meta$sim_conditions <- do.call(rbind, sim_tbls)
+
+  oob_points <- Filter(Negate(is.null), lapply(xs, function(z) z@meta$oob_points))
+  if (length(oob_points)) meta$oob_points <- Reduce(`+`, oob_points)
+  oob_trials <- Filter(Negate(is.null), lapply(xs, function(z) z@meta$oob_trials))
+  if (length(oob_trials)) meta$oob_trials <- Reduce(`+`, oob_trials)
   new("Tracks",
       data = df,
       cols = x@cols,
