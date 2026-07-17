@@ -90,9 +90,11 @@ SPEC_VTEST_LWD       <- 0.8
 #   ts     : the loaded Tracks.
 #   hd     : the headings frame, or NULL (rule "none").
 #   method : the heading rule name (or "none").
-#   data   : list(source = "file"|"example", path, dialect, normalize_xy).
-#            normalize_xy is a logical recorded at load time, or NULL when the
-#            spec predates/omits it (then the package default applies).
+#   data   : list(source = "file"|"example", path, dialect, normalize_xy,
+#            origin, radius). normalize_xy is a logical recorded at load time, or
+#            NULL when the spec predates/omits it (then the package default
+#            applies). origin (length-2 numeric) and radius (scalar) are recorded
+#            only in calibrate mode -- mutually exclusive with normalize_xy = TRUE.
 #   inputs : a plain list of the relevant input values (see fields used below).
 build_plot_spec <- function(ts, hd, method, data, inputs) {
   mode <- data$mode %||% "trajectories"
@@ -437,7 +439,12 @@ spec_to_plot <- function(spec, ts, hd) {
       # the spec never recorded it; omit and let the default apply.
       nrm <- if (!is.null(spec$data$normalize_xy))
         paste0(", normalize_xy = ", if (isTRUE(spec$data$normalize_xy)) "TRUE" else "FALSE") else ""
-      add("ts <- read_tracks(", q(spec$data$path), dia, nrm, ")")
+      # Fixed-reference calibration is emitted only when both were recorded; the
+      # numerics interpolate directly (as circ0/circ1 do) for a stable round-trip.
+      cal <- if (!is.null(spec$data$origin) && !is.null(spec$data$radius))
+        paste0(", origin = c(", spec$data$origin[1], ", ", spec$data$origin[2],
+               "), radius = ", spec$data$radius) else ""
+      add("ts <- read_tracks(", q(spec$data$path), dia, nrm, cal, ")")
     }
     if (has_hd) {
       add("")

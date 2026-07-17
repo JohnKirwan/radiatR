@@ -147,12 +147,12 @@ detect_cond_col <- function(ts) {
 # normalize_xy is a load-time choice surfaced by the Coordinates radio in step 1
 # (output$normalize_box); the resolved logical is recorded on rv$normalize_xy.
 load_ts <- function(path, dialect, mapping = list(), read_opts = list(delim = NULL),
-                    normalize_xy = TRUE) {
+                    normalize_xy = TRUE, origin = NULL, radius = NULL) {
   if (is.null(dialect) || dialect %in% c("auto", "generic"))
     return(read_tracks(path, mapping = mapping, read_opts = read_opts,
-                       normalize_xy = normalize_xy))
+                       normalize_xy = normalize_xy, origin = origin, radius = radius))
   read_tracks(path, dialect = dialect, mapping = mapping, read_opts = read_opts,
-              normalize_xy = normalize_xy)
+              normalize_xy = normalize_xy, origin = origin, radius = radius)
 }
 
 # Map the app's delimiter dropdown to a read_opts override. "auto" -> sniff.
@@ -618,13 +618,24 @@ server <- function(input, output, session) {
     } else list()
     # radioButtons yields a character; resolve to a logical exactly once here.
     # NULL means the control never rendered -- fall back to the TRUE default.
+    # "calibrate" is a third mode: normalize_xy is off and a fixed origin/radius
+    # is read from the conditional inputs. Gating origin/radius on the mode (not
+    # merely their presence) keeps stale typed values from leaking into a
+    # raw/normalize load.
+    calibrate <- identical(input$normalize_sel, "calibrate")
     nrm <- if (is.null(input$normalize_sel)) TRUE
            else identical(input$normalize_sel, "TRUE")
+    # Coerce blanks to NA (never let c() drop a NULL to a shorter vector): an
+    # unfilled reference must reach the package as a non-finite value so its
+    # finite-check errors, rather than collapsing to a silent uncalibrated load.
+    origin <- if (calibrate)
+      c(input$origin_x %||% NA_real_, input$origin_y %||% NA_real_) else NULL
+    radius <- if (calibrate) input$radius %||% NA_real_ else NULL
     ts <- tryCatch(
       suppressMessages(suppressWarnings(
         load_ts(rv$path, d, mapping = map,
                 read_opts = delim_read_opts(input$delim_sel),
-                normalize_xy = nrm))),
+                normalize_xy = nrm, origin = origin, radius = radius))),
       error = function(e) {
         rv$error <- plain_error(e)
         NULL
@@ -634,6 +645,8 @@ server <- function(input, output, session) {
       rv$ts            <- ts
       rv$dialect       <- d
       rv$normalize_xy  <- nrm
+      rv$origin        <- origin
+      rv$radius        <- radius
       rv$cond_col      <- detect_cond_col(ts)
       rv$step          <- 2L
       rv$error         <- NULL
@@ -1322,13 +1335,29 @@ server <- function(input, output, session) {
       radioButtons(
         "normalize_sel", "Coordinates",
         choices = c("Keep raw coordinates as supplied" = "FALSE",
-                    "Fit each trajectory to the unit circle (shape only)" = "TRUE"),
+                    "Fit each trajectory to the unit circle (shape only)" = "TRUE",
+                    "Calibrate to a fixed origin and radius" = "calibrate"),
         selected = "TRUE"
       ),
       div(class = "text-muted small mb-2",
-          "Rescales each trajectory independently to its own bounding box.",
-          " Preserves path shape, not bearings from a fixed arena origin.",
-          " This is not a calibration.")
+          "Fit rescales each trajectory independently to its own bounding box.",
+          " It preserves path shape, not bearings from a fixed origin, so it is",
+          " not a calibration."),
+      # Shown only in calibrate mode. A single radio makes calibrate and the
+      # shape normalizer mutually exclusive by construction. Inputs default
+      # blank: calibration is never applied until real values are entered.
+      conditionalPanel(
+        "input.normalize_sel == 'calibrate'",
+        div(class = "text-muted small mb-2",
+            "Translate and scale every trajectory by one shared reference:",
+            " (x, y) becomes (x - origin) / radius, preserving bearings from",
+            " the origin. In an experimental arena the origin is the arena",
+            " centre and the radius its edge distance, in the raw coordinate",
+            " units."),
+        numericInput("origin_x", "Origin x", value = NA),
+        numericInput("origin_y", "Origin y", value = NA),
+        numericInput("radius",   "Radius",   value = NA)
+      )
     )
   })
 
@@ -1509,7 +1538,8 @@ server <- function(input, output, session) {
         path    = rv$file_name %||% "your_tracks.csv",
         dialect = if (is.null(rv$dialect) || rv$dialect %in% c("auto", "generic"))
           NULL else rv$dialect,
-        normalize_xy = rv$normalize_xy),
+        normalize_xy = rv$normalize_xy,
+        origin = rv$origin, radius = rv$radius),
       inputs = list(
         cond_col = input$cond_col, cond_col2 = input$cond_col2,
         group_by = input$group_by,
@@ -1841,7 +1871,8 @@ server <- function(input, output, session) {
         path    = rv$file_name %||% "your_tracks.csv",
         dialect = if (is.null(rv$dialect) || rv$dialect %in% c("auto", "generic"))
           NULL else rv$dialect,
-        normalize_xy = rv$normalize_xy)))
+        normalize_xy = rv$normalize_xy,
+        origin = rv$origin, radius = rv$radius)))
   })
 
   # fps is required only for numeric-frame Tracks; POSIXct time needs none.
