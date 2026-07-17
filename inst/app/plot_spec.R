@@ -90,7 +90,9 @@ SPEC_VTEST_LWD       <- 0.8
 #   ts     : the loaded Tracks.
 #   hd     : the headings frame, or NULL (rule "none").
 #   method : the heading rule name (or "none").
-#   data   : list(source = "file"|"example", path, dialect).
+#   data   : list(source = "file"|"example", path, dialect, normalize_xy).
+#            normalize_xy is a logical recorded at load time, or NULL when the
+#            spec predates/omits it (then the package default applies).
 #   inputs : a plain list of the relevant input values (see fields used below).
 build_plot_spec <- function(ts, hd, method, data, inputs) {
   mode <- data$mode %||% "trajectories"
@@ -430,7 +432,12 @@ spec_to_plot <- function(spec, ts, hd) {
     } else {
       dia <- if (!is.null(spec$data$dialect))
         paste0(", dialect = ", q(spec$data$dialect)) else ""
-      add("ts <- read_tracks(", q(spec$data$path), dia, ")")
+      # Emitted explicitly whenever recorded (both TRUE and FALSE) so the script
+      # reproduces the app's load regardless of the package default. NULL means
+      # the spec never recorded it; omit and let the default apply.
+      nrm <- if (!is.null(spec$data$normalize_xy))
+        paste0(", normalize_xy = ", if (isTRUE(spec$data$normalize_xy)) "TRUE" else "FALSE") else ""
+      add("ts <- read_tracks(", q(spec$data$path), dia, nrm, ")")
     }
     if (has_hd) {
       add("")

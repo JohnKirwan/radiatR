@@ -141,3 +141,36 @@ test_that("spec_to_code emits axial = TRUE for axial headings specs", {
   expect_true(grepl("add_heading_interval(hd, facets = \"type\", stat = \"bootstrap_ci\", axial = TRUE)", code, fixed = TRUE))
   expect_silent(parse(text = code))
 })
+
+test_that("spec_to_code: normalize_xy is emitted when the spec records it", {
+  sp <- example_spec()
+  sp$data$normalize_xy <- TRUE
+  code <- spec_to_code(sp)
+  expect_true(grepl(
+    'read_tracks("tracks.csv", dialect = "ethovision", normalize_xy = TRUE)',
+    code, fixed = TRUE))
+  expect_silent(parse(text = code))
+
+  sp$data$normalize_xy <- FALSE
+  code <- spec_to_code(sp)
+  expect_true(grepl(
+    'read_tracks("tracks.csv", dialect = "ethovision", normalize_xy = FALSE)',
+    code, fixed = TRUE))
+  expect_silent(parse(text = code))
+})
+
+test_that("spec_to_code: an unrecorded normalize_xy emits no argument", {
+  sp <- example_spec()
+  sp$data$normalize_xy <- NULL
+  code <- spec_to_code(sp)
+  expect_false(grepl("normalize_xy", code, fixed = TRUE))
+})
+
+test_that("spec_to_code: example source never emits normalize_xy", {
+  sp <- example_spec()
+  sp$data <- list(source = "example", path = NULL, dialect = NULL,
+                  normalize_xy = TRUE)
+  code <- spec_to_code(sp)
+  expect_true(grepl("data(cpunctatus)", code, fixed = TRUE))
+  expect_false(grepl("normalize_xy", code, fixed = TRUE))
+})
