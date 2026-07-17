@@ -112,6 +112,41 @@ test_that("calibration rejects invalid inputs", {
     "mutually exclusive")
 })
 
+test_that("calibration rejects a malformed origin", {
+  df <- .calib_df()
+  expect_error(
+    tracks(df, id = "id", time = "time", x = "x", y = "y",
+           origin = c(512, 384, 1), radius = 300),
+    "length-2 finite")
+  expect_error(
+    tracks(df, id = "id", time = "time", x = "x", y = "y",
+           origin = c(512, NA), radius = 300),
+    "length-2 finite")
+})
+
+test_that("calibration rejects a non-finite radius", {
+  df <- .calib_df()
+  expect_error(
+    tracks(df, id = "id", time = "time", x = "x", y = "y",
+           origin = c(512, 384), radius = Inf),
+    "positive finite")
+  expect_error(
+    tracks(df, id = "id", time = "time", x = "x", y = "y",
+           origin = c(512, 384), radius = NaN),
+    "positive finite")
+  expect_error(
+    tracks(df, id = "id", time = "time", x = "x", y = "y",
+           origin = c(512, 384), radius = NA_real_),
+    "positive finite")
+})
+
+test_that("calibration rejects a lone radius", {
+  df <- .calib_df()
+  expect_error(
+    tracks(df, id = "id", time = "time", x = "x", y = "y", radius = 300),
+    "required together")
+})
+
 test_that("calibration requires x/y (not angle-only) input", {
   ang_df <- data.frame(id = "a", time = 1:3, theta = c(0, 1, 2))
   expect_error(
@@ -127,6 +162,19 @@ test_that("read_tracks forwards origin/radius to tracks()", {
   ts <- read_tracks(path, mapping = list(id = "id", time = "time",
                                          x = "x", y = "y"),
                     origin = c(512, 384), radius = 300)
+  expect_equal(ts@meta$calibration, list(origin = c(512, 384), radius = 300))
+  d <- as.data.frame(ts)
+  a <- d[d$id == "a", ]
+  ang <- a$angle[which.max(sqrt(a$x^2 + a$y^2))]
+  expect_equal(as.numeric(ang) %% (2 * pi), 0, tolerance = 1e-8)
+})
+
+test_that("read_tracks forwards origin/radius through the format path", {
+  path <- tempfile(fileext = ".csv")
+  on.exit(unlink(path), add = TRUE)
+  utils::write.csv(.calib_df(), path, row.names = FALSE)
+  fmt <- list(mapping = list(id = "id", time = "time", x = "x", y = "y"))
+  ts <- read_tracks(path, format = fmt, origin = c(512, 384), radius = 300)
   expect_equal(ts@meta$calibration, list(origin = c(512, 384), radius = 300))
   d <- as.data.frame(ts)
   a <- d[d$id == "a", ]
