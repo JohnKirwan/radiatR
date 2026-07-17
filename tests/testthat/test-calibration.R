@@ -73,6 +73,24 @@ test_that("calibration records provenance in metadata and transform_history", {
   th <- transform_history(ts)
   expect_true("calibrate_unit_circle" %in% th$step)
   expect_setequal(th$id[th$step == "calibrate_unit_circle"], c("a", "b"))
+  cal_rows <- th[th$step == "calibrate_unit_circle", ]
+  expect_equal(cal_rows$params[[1]], list(origin = c(512, 384), radius = 300))
+})
+
+test_that("calibration works for a non-2-id trajectory count (3 ids)", {
+  df3 <- data.frame(
+    id   = rep(c("a", "b", "c"), each = 3),
+    time = rep(1:3, 3),
+    x = c(562, 662, 812,  512, 512, 512,  462, 362, 212),
+    y = c(384, 384, 384,  434, 534, 684,  434, 534, 684)
+  )
+  ts3 <- tracks(df3, id = "id", time = "time", x = "x", y = "y",
+                origin = c(512, 384), radius = 300)
+  th3 <- transform_history(ts3)
+  cal3 <- th3[th3$step == "calibrate_unit_circle", ]
+  expect_setequal(cal3$id, c("a", "b", "c"))
+  expect_true(all(vapply(cal3$params, identical, logical(1),
+                         list(origin = c(512, 384), radius = 300))))
 })
 
 test_that("calibration rejects invalid inputs", {

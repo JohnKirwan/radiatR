@@ -463,7 +463,7 @@ tracks <- function(df,
       step = "calibrate_unit_circle",
       ids = unique(as.character(d[[id]])),
       implementation = ".calibrate_to_unit_circle",
-      params = list(origin = as.numeric(origin), radius = as.numeric(radius))
+      params = list(list(origin = as.numeric(origin), radius = as.numeric(radius)))
     )
   }
   meta$transform_history <- transform_history
