@@ -98,7 +98,12 @@ c(x, ..., recursive = FALSE)
 
 - ...:
 
-  Additional Tracks objects to append
+  Additional Tracks objects to append. All inputs must share identical
+  column mapping and angle unit, have no colliding trajectory ids, and
+  agree on frame_rate/distance_scale/distance_unit/normalize_xy metadata
+  (including all-unset); mismatches error rather than silently picking
+  one input's values. Per-id metadata (e.g. \`reference\`) is merged
+  across all inputs.
 
 - recursive:
 
