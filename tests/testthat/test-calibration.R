@@ -119,3 +119,17 @@ test_that("calibration requires x/y (not angle-only) input", {
            origin = c(512, 384), radius = 300),
     "requires x and y")
 })
+
+test_that("read_tracks forwards origin/radius to tracks()", {
+  path <- tempfile(fileext = ".csv")
+  on.exit(unlink(path), add = TRUE)
+  utils::write.csv(.calib_df(), path, row.names = FALSE)
+  ts <- read_tracks(path, mapping = list(id = "id", time = "time",
+                                         x = "x", y = "y"),
+                    origin = c(512, 384), radius = 300)
+  expect_equal(ts@meta$calibration, list(origin = c(512, 384), radius = 300))
+  d <- as.data.frame(ts)
+  a <- d[d$id == "a", ]
+  ang <- a$angle[which.max(sqrt(a$x^2 + a$y^2))]
+  expect_equal(as.numeric(ang) %% (2 * pi), 0, tolerance = 1e-8)
+})

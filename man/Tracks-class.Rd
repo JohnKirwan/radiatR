@@ -21,6 +21,8 @@ tracks(
   angle_unit = NULL,
   weight = NULL,
   normalize_xy = FALSE,
+  origin = NULL,
+  radius = NULL,
   meta = list(),
   transform_history = NULL
 )
@@ -58,6 +60,18 @@ calibration. Raw coordinates are retained in `<x>_raw`/`<y>_raw` when
 enabled. Prefer pre-calibrated input, or the landmark-relative frame
 (`rel_x`/`rel_y`, see `coords = "relative"` in [derive_headings()]) when a
 per-trial reference direction is available.}
+
+\item{origin}{Optional length-2 numeric `c(x, y)` giving a fixed unit-circle
+centre in the raw coordinate units. Supplied together with `radius`, it
+calibrates every trajectory uniformly via `(xy - origin) / radius`, a
+similarity that preserves bearings measured from the origin (unlike
+`normalize_xy`, which centres each trajectory on its own bounding box).
+Mutually exclusive with `normalize_xy = TRUE`. Raw coordinates are retained
+in `<x>_raw`/`<y>_raw`. For example, in an experimental arena `origin` is the
+arena centre and `radius` its edge distance in pixels.}
+
+\item{radius}{Optional positive finite scalar: the raw distance mapping to
+`rho = 1`. Required together with `origin`.}
 
 \item{meta}{Free-form list of metadata}
 

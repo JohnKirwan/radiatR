@@ -12,6 +12,8 @@ read_tracks(
   tz = "UTC",
   fps = NULL,
   normalize_xy = FALSE,
+  origin = NULL,
+  radius = NULL,
   dialect = NULL,
   dialect_args = list(),
   read_opts = list(delim = NULL, decimal = NULL, sheet = NULL),
@@ -47,6 +49,12 @@ independently centres each trajectory on its own bounding-box midpoint
 and scales it to the unit circle -- shape-preserving only, NOT
 calibration (it does not preserve bearing from a fixed arena origin).
 See [tracks()] for the full explanation.}
+
+\item{origin, radius}{Optional fixed unit-circle calibration forwarded to
+[tracks()]: `origin = c(x, y)` centre and positive scalar `radius` in raw
+coordinate units. Supplied together, they map every trajectory uniformly via
+`(xy - origin) / radius`, preserving bearings from the origin. Mutually
+exclusive with `normalize_xy = TRUE`.}
 
 \item{dialect}{optional registered dialect name to pre-process raw input}
 

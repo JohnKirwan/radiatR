@@ -543,6 +543,11 @@ read_tracks_format <- function(x, format, ...) {
 #'   and scales it to the unit circle -- shape-preserving only, NOT
 #'   calibration (it does not preserve bearing from a fixed arena origin).
 #'   See [tracks()] for the full explanation.
+#' @param origin,radius Optional fixed unit-circle calibration forwarded to
+#'   [tracks()]: `origin = c(x, y)` centre and positive scalar `radius` in raw
+#'   coordinate units. Supplied together, they map every trajectory uniformly via
+#'   `(xy - origin) / radius`, preserving bearings from the origin. Mutually
+#'   exclusive with `normalize_xy = TRUE`.
 #' @param read_opts list of file-reading overrides: `delim` (field separator),
 #'   `decimal` (decimal mark), and `sheet` (Excel worksheet name or number).
 #'   Any `NULL` element is auto-detected. Defaults to all-auto.
@@ -567,6 +572,8 @@ read_tracks <- function(x,
                          angle_unit = c("radians","degrees","auto"),
                          time_type = c("auto","posix","seconds","frames"), tz = "UTC", fps = NULL,
                          normalize_xy = FALSE,
+                         origin = NULL,
+                         radius = NULL,
                          dialect = NULL,
                          dialect_args = list(),
                          read_opts = list(delim = NULL, decimal = NULL, sheet = NULL),
@@ -590,6 +597,8 @@ read_tracks <- function(x,
       tz = tz,
       fps = fps,
       normalize_xy = normalize_xy,
+      origin = origin,
+      radius = radius,
       dialect = dialect,
       mutate = mutate,
       keep = keep,
@@ -771,6 +780,8 @@ read_tracks <- function(x,
                 angle_unit = ang_unit,
                 weight = wcol,
                 normalize_xy = normalize_xy,
+                origin = origin,
+                radius = radius,
                 meta = meta)
 
   if (isTRUE(validate)) validObject(ts)
