@@ -68,6 +68,14 @@
   selected Group-by column, showing whether groups differ in mean direction,
   concentration, or overall distribution (not just whether each is
   individually non-uniform).
+* The app now exposes an explicit **Coordinates** control for the per-trajectory
+  shape transform (`normalize_xy`), which was previously pinned on with no way
+  to opt out. The transform fits each trajectory to the unit circle
+  independently and preserves path shape, not bearings from a fixed arena
+  origin; the control labels it as such rather than as a calibration. Downloaded
+  figure, statistics, and kinematics scripts now emit the `normalize_xy` value
+  the app actually loaded with, instead of silently falling back to the package
+  default.
 
 # radiatR 0.1.0
 

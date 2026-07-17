@@ -1508,7 +1508,8 @@ server <- function(input, output, session) {
         mode    = "trajectories",
         path    = rv$file_name %||% "your_tracks.csv",
         dialect = if (is.null(rv$dialect) || rv$dialect %in% c("auto", "generic"))
-          NULL else rv$dialect),
+          NULL else rv$dialect,
+        normalize_xy = rv$normalize_xy),
       inputs = list(
         cond_col = input$cond_col, cond_col2 = input$cond_col2,
         group_by = input$group_by,
@@ -1839,7 +1840,8 @@ server <- function(input, output, session) {
         mode    = "trajectories",
         path    = rv$file_name %||% "your_tracks.csv",
         dialect = if (is.null(rv$dialect) || rv$dialect %in% c("auto", "generic"))
-          NULL else rv$dialect)))
+          NULL else rv$dialect,
+        normalize_xy = rv$normalize_xy)))
   })
 
   # fps is required only for numeric-frame Tracks; POSIXct time needs none.

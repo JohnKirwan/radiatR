@@ -78,3 +78,23 @@ test_that("the Coordinates control renders for a trajectory upload only", {
     expect_null(output$normalize_box)
   })
 })
+
+test_that("downloaded code reproduces the normalize_xy the app loaded with", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  csv <- write_demo_csv()
+
+  shiny::testServer(app_dir(), {
+    load_generic(session, csv, "FALSE")
+    session$setInputs(method = "distal", go3 = 1)
+    expect_false(current_spec()$data$normalize_xy)
+    expect_true(grepl("normalize_xy = FALSE", figure_code_text(), fixed = TRUE))
+  })
+
+  shiny::testServer(app_dir(), {
+    load_generic(session, csv, "TRUE")
+    session$setInputs(method = "distal", go3 = 1)
+    expect_true(current_spec()$data$normalize_xy)
+    expect_true(grepl("normalize_xy = TRUE", figure_code_text(), fixed = TRUE))
+  })
+})
