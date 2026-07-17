@@ -2,6 +2,15 @@
 
 ## Bug fixes
 
+* `c(Tracks, ...)` now rejects trajectory ids that collide across the objects
+  being combined, and errors when the inputs carry conflicting `frame_rate`,
+  `distance_scale`, `distance_unit`, or `normalize_xy` metadata (including one
+  input having it set and another not). Previously these were silently merged,
+  discarding one object's calibration in favour of the other's, and could
+  interleave rows from two different trajectories that happened to share an
+  id. Per-id/per-run metadata (`reference`, `trial_limits`, `sim_conditions`,
+  `oob_points`, `oob_trials`) is now merged/summed across all combined inputs
+  instead of only the first object's being kept.
 * `read_tracks()` and `read_tracks_dir()` now preserve trajectory identity when
   importing multiple files. Previously, reading a character vector of paths with
   no id column (the common case, relying on `id_from_filename = TRUE`) silently
