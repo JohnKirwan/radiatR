@@ -55,6 +55,10 @@
 <li>
 <code><a href="../reference/wrappedcauchy_fit.html">wrappedcauchy_fit()</a></code>’s <code>convergence</code> column now matches its documentation. <code><a href="https://rdrr.io/pkg/circular/man/mle.wrappedcauchy.html" class="external-link">circular::mle.wrappedcauchy()</a></code> reports convergence as a logical, which the previous code passed through <code><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer()</a></code>, yielding <code>1</code> for a <em>converged</em> fit – the opposite of the documented “<code>0</code> = converged”. The column is now <code>0</code> when the fit converged and <code>1</code> when it did not, and the (incorrect) “optim return code” wording in the docs has been corrected.</li>
 </ul></div>
+<div class="section level3">
+<h3 id="app-development-version">App<a class="anchor" aria-label="anchor" href="#app-development-version"></a></h3>
+<ul><li>The app no longer assumes a capture rate of 30 fps. The frame-rate controls now start unset, and time/speed colouring, the kinematics plot and its downloads, and the generated kinematics code stay disabled until a positive finite frame rate is entered or carried by the loaded data. The app shows whether the active rate came from the data or was entered by the user, and downloaded kinematics code no longer emits a fabricated <code>set_frame_rate(ts, 30)</code> when no rate is set. Previously, uncalibrated numeric-frame data produced plausible-looking speed and turning-rate results based on the unsupported default.</li>
+</ul></div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.1" id="radiatr-011">radiatR 0.1.1<a class="anchor" aria-label="anchor" href="#radiatr-011"></a></h2>
