@@ -736,10 +736,11 @@ build_kinematics_spec <- function(ts, inputs) {
 }
 
 kinematics_spec_to_plot <- function(spec, ts) {
-  # No `%||% 30` fallback: the app only renders time/speed kinematics once fps is
-  # valid (kin_fps_ok gate), so spec$fps is a real capture rate here.
+  # No `%||% 30` fallback. Numeric-frame kinematics only render once fps is valid
+  # (kin_fps_ok gate). POSIXct-time Tracks carry real seconds and need no fps, so
+  # only set one when it is a usable rate -- set_frame_rate() rejects NA.
   if (!is.null(spec$track)) ts <- ts[spec$track]
-  ts <- set_frame_rate(ts, spec$fps)
+  if (.fps_is_set(spec$fps)) ts <- set_frame_rate(ts, spec$fps)
   plot_profile(ts, metric = spec$metric, units = spec$units,
                colour_by = spec$colour_by,
                smooth = spec$smooth %||% 1, show_raw = isTRUE(spec$show_raw))
