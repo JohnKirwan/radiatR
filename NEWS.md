@@ -40,6 +40,18 @@
   `0` when the fit converged and `1` when it did not, and the (incorrect)
   "optim return code" wording in the docs has been corrected.
 
+## App
+
+* The app no longer assumes a capture rate of 30 fps. The frame-rate controls
+  now start unset, and time/speed colouring, the kinematics plot and its
+  downloads, and the generated kinematics code stay disabled until a positive
+  finite frame rate is entered or carried by the loaded data. The app shows
+  whether the active rate came from the data or was entered by the user, and
+  downloaded kinematics code no longer emits a fabricated `set_frame_rate(ts,
+  30)` when no rate is set. Previously, uncalibrated numeric-frame data produced
+  plausible-looking speed and turning-rate results based on the unsupported
+  default.
+
 # radiatR 0.1.1
 
 ## New features

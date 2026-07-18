@@ -130,3 +130,32 @@ test_that("spec_to_kinematics_code emits the track subset; round-trips", {
   evald <- eval(parse(text = code), envir = new.env(parent = globalenv()))
   expect_equal(.kfingerprint(evald), .kfingerprint(live))
 })
+
+test_that("spec_to_kinematics_code emits a comment, not a fabricated 30, when fps is unset", {
+  ts <- kin_ts()
+  sp <- build_kinematics_spec(ts, list(kin_metric = "speed", kin_colour_by = "",
+                                       fps = NA_real_, data = example_data_block))
+  code <- paste(spec_to_kinematics_code(sp), collapse = "\n")
+  expect_false(grepl("set_frame_rate(ts, 30)", code, fixed = TRUE))
+  expect_match(code, "set a frame rate to enable kinematics")
+})
+
+test_that("spec_to_kinematics_code emits the real fps when set", {
+  ts <- kin_ts()
+  sp <- build_kinematics_spec(ts, list(kin_metric = "speed", kin_colour_by = "",
+                                       fps = 60, data = example_data_block))
+  code <- paste(spec_to_kinematics_code(sp), collapse = "\n")
+  expect_match(code, "set_frame_rate(ts, 60)", fixed = TRUE)
+})
+
+test_that("kinematics render with POSIXct time needs no fps (set_frame_rate not called on NA)", {
+  t0 <- as.POSIXct("2020-01-01", tz = "UTC")
+  d <- data.frame(id = "a", frame = t0 + c(0, 1, 2, 3),
+                  x = c(0, 1, 2, 3), y = c(0, 1, 0, 1), angle = 0)
+  ts <- methods::new("Tracks", data = d,
+    cols = list(id = "id", time = "frame", angle = "angle", x = "x", y = "y"),
+    angle_unit = "radians", meta = list())
+  sp <- build_kinematics_spec(ts, list(kin_metric = "speed", kin_colour_by = "",
+                                       fps = NA_real_, data = example_data_block))
+  expect_s3_class(kinematics_spec_to_plot(sp, ts), "ggplot")
+})
