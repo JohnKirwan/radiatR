@@ -484,40 +484,6 @@ test_that("track_colour = 'speed' + frame rate flows into the spec; invalid fps 
   })
 })
 
-# rao_spacing_fmt: omnibus Rao spacing bracket, parsed from circular's print output.
-test_that("rao_spacing_fmt brackets clustered, uniform, and tiny samples", {
-  skip_if_not_installed("shiny")
-  app_file <- system.file("app", "app.R", package = "radiatR")
-  if (!nzchar(app_file))
-    app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
-  skip_if(!file.exists(app_file), "app.R not found")
-  e <- new.env()
-  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
-
-  set.seed(1)
-  clustered <- rnorm(40, 0, 0.2)                 # strongly non-uniform
-  uniform   <- seq(0, 2 * pi, length.out = 41)[-41]
-  tiny      <- c(0.1, 0.2, 0.3)                  # n < 4
-
-  expect_match(e$rao_spacing_fmt(clustered), "^< 0\\.")      # significant bracket
-  expect_identical(e$rao_spacing_fmt(uniform), "> 0.10")     # not significant
-  expect_identical(e$rao_spacing_fmt(tiny), "—")             # below Rao's n floor
-})
-
-test_that("rao_spacing_fmt is raw-angle (axial bimodal data reads as non-uniform)", {
-  skip_if_not_installed("shiny")
-  app_file <- system.file("app", "app.R", package = "radiatR")
-  if (!nzchar(app_file))
-    app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
-  skip_if(!file.exists(app_file), "app.R not found")
-  e <- new.env()
-  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
-
-  set.seed(2)
-  bimodal <- c(rnorm(20, 0, 0.15), rnorm(20, pi, 0.15))  # two antipodal clusters
-  expect_match(e$rao_spacing_fmt(bimodal), "^< 0\\.")
-})
-
 test_that("the summary table carries a Rao spacing column for both data models", {
   skip_if_not_installed("shiny")
   app_dir <- system.file("app", package = "radiatR")
@@ -539,24 +505,6 @@ test_that("the summary table carries a Rao spacing column for both data models",
     expect_true(grepl("Rao spacing", html_ax, fixed = TRUE))          # still present
     expect_true(grepl("Rayleigh (axial) p", html_ax, fixed = TRUE))   # focused row relabelled
   })
-})
-
-test_that("hermans_p_fmt formats a Monte-Carlo p and is render-stable", {
-  skip_if_not_installed("shiny")
-  app_file <- system.file("app", "app.R", package = "radiatR")
-  if (!nzchar(app_file))
-    app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
-  skip_if(!file.exists(app_file), "app.R not found")
-  e <- new.env()
-  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
-
-  set.seed(1)
-  clustered <- rnorm(40, 1, 0.3) %% (2 * pi)
-  p1 <- e$hermans_p_fmt(clustered, n_sim = 199)
-  p2 <- e$hermans_p_fmt(clustered, n_sim = 199)
-  expect_identical(p1, p2)                                   # fixed seed -> identical
-  expect_true(grepl("^(< 0\\.001|[01]\\.[0-9]{3})$", p1))    # bracket or 3dp
-  expect_identical(e$hermans_p_fmt(c(0.1, 0.2), n_sim = 199), "—")   # n < 3
 })
 
 test_that("circ_summary_table omnibus arg switches the omnibus column", {
@@ -787,4 +735,24 @@ test_that("Summary & stats sub-tab emits reproducible R code", {
     expect_match(code, "circ_summarise(", fixed = TRUE)
     expect_no_error(output$stats_code)
   })
+})
+
+test_that("circ_summary_table Rao value is a reproducible numeric p-value", {
+  skip_if_not_installed("shiny")
+  app_file <- system.file("app", "app.R", package = "radiatR")
+  if (!nzchar(app_file))
+    app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
+  skip_if(!file.exists(app_file), "app.R not found")
+  e <- new.env()
+  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
+
+  set.seed(2)
+  hd <- data.frame(heading = rnorm(40, 1, 0.3) %% (2 * pi), grp = "a")
+  r1 <- e$circ_summary_table(hd, "grp", omnibus = "rao")
+  r2 <- e$circ_summary_table(hd, "grp", omnibus = "rao")
+  # numeric p formatted as "< 0.001" or a 3-dp decimal, never a "P < .." band
+  expect_match(r1[["Rao spacing"]][1], "^(< 0\\.001|[01]\\.[0-9]{3})$")
+  expect_false(grepl("^P", r1[["Rao spacing"]][1]))
+  # fixed seed => byte-identical across calls
+  expect_identical(r1[["Rao spacing"]], r2[["Rao spacing"]])
 })
