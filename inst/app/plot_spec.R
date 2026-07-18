@@ -509,9 +509,11 @@ spec_to_stats_code <- function(spec) {
       ", display = circ_display(zero = 0)", axial, ")")
   add("summ")
   add("")
-  add("test_uniformity(hd, test = \"rayleigh\"", axial, ")")
+  gc_arg <- if (!is.null(by_col)) paste0(", group_col = ", q(by_col)) else ""
+  add("test_uniformity(hd", gc_arg, ", test = \"rayleigh\"", axial, ")")
   omni <- if (identical(st$omnibus, "hermans_rasson")) "hermans_rasson" else "rao"
-  add("test_uniformity(hd, test = ", q(omni), ")")
+  add("set.seed(20260617L)  # mirror the app's fixed Monte-Carlo seed")
+  add("test_uniformity(hd", gc_arg, ", test = ", q(omni), ", n_sim = 999L, p_method = \"monte_carlo\")")
   if (!is.null(by_col)) {
     add("")
     add("circ_model_select(hd, group_col = ", q(by_col), ")")

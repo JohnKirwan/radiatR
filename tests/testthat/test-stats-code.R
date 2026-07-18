@@ -21,15 +21,24 @@ stats_spec <- function(by_col = "arc", omnibus = "rao", axial = FALSE,
 test_that("spec_to_stats_code emits the analysis calls and the chosen omnibus", {
   code <- spec_to_stats_code(stats_spec(omnibus = "hermans_rasson"))
   expect_match(code, "circ_summarise(", fixed = TRUE)
-  expect_match(code, 'test_uniformity(hd, test = "rayleigh"', fixed = TRUE)
-  expect_match(code, 'test_uniformity(hd, test = "hermans_rasson"', fixed = TRUE)
+  expect_match(code, 'test_uniformity(hd, group_col = "arc", test = "rayleigh"', fixed = TRUE)
+  expect_match(code, "set.seed(20260617L)", fixed = TRUE)
+  expect_match(code, 'test_uniformity(hd, group_col = "arc", test = "hermans_rasson", n_sim = 999L, p_method = "monte_carlo")', fixed = TRUE)
   expect_match(code, "circ_model_select(", fixed = TRUE)
   expect_match(code, "straightness_index(ts)", fixed = TRUE)   # trajectory mode
   expect_match(code, "derive_headings(", fixed = TRUE)
   # rao when omnibus = rao
   expect_match(spec_to_stats_code(stats_spec(omnibus = "rao")),
-               'test_uniformity(hd, test = "rao"', fixed = TRUE)
+               'test_uniformity(hd, group_col = "arc", test = "rao", n_sim = 999L, p_method = "monte_carlo")', fixed = TRUE)
   expect_silent(parse(text = code))   # parses
+})
+
+test_that("pooled spec emits ungrouped seeded uniformity calls", {
+  code <- spec_to_stats_code(stats_spec(by_col = NULL))
+  expect_match(code, 'test_uniformity(hd, test = "rayleigh"', fixed = TRUE)
+  expect_match(code, "set.seed(20260617L)", fixed = TRUE)
+  expect_match(code, ', test = "rao", n_sim = 999L, p_method = "monte_carlo")', fixed = TRUE)
+  expect_false(grepl("group_col", code))
 })
 
 test_that("spec_to_stats_code value round-trip: emitted circ_summarise == app's internal", {
