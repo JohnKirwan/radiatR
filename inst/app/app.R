@@ -719,13 +719,16 @@ server <- function(input, output, session) {
   output$track_time_note <- renderUI({
     if (!identical(input$track_colour, "time") && !identical(input$track_colour, "speed"))
       return(NULL)
-    fps <- input$frame_rate
-    ok  <- is.numeric(fps) && length(fps) == 1L && is.finite(fps) && fps > 0
-    if (ok) return(NULL)
-    what <- if (identical(input$track_colour, "speed")) "by speed" else "by elapsed time"
-    tags$div(class = "alert alert-secondary py-1 px-2 small mb-2",
-             paste0("Enter a positive frame rate to colour ", what,
-                    " (showing sequence position instead)."))
+    if (!.fps_is_set(input$frame_rate)) {
+      what <- if (identical(input$track_colour, "speed")) "by speed" else "by elapsed time"
+      return(tags$div(class = "alert alert-secondary py-1 px-2 small mb-2",
+                      paste0("Enter a positive frame rate to colour ", what,
+                             " (showing sequence position instead).")))
+    }
+    if (identical(fps_source_rv(), "data"))
+      return(tags$div(class = "alert alert-info py-1 px-2 small mb-2",
+                      paste0("From data (", input$frame_rate, " fps).")))
+    NULL
   })
 
   # Live illustrative preview of the selected method on fixed demo tracks.
@@ -1121,7 +1124,7 @@ server <- function(input, output, session) {
                     ),
                     conditionalPanel(
                       condition = "input.track_colour == 'time' || input.track_colour == 'speed'",
-                      numericInput("frame_rate", "Frame rate (fps)", value = 30, min = 0, step = 1),
+                      numericInput("frame_rate", "Frame rate (fps)", value = NA, min = 0, step = 1),
                       uiOutput("track_time_note")
                     ),
                     uiOutput("group_by_ui"),
@@ -1250,7 +1253,7 @@ server <- function(input, output, session) {
                                     value = FALSE)
                     ),
                     numericInput("kin_frame_rate", "Frame rate (fps)",
-                                 value = 30, min = 0, step = 1),
+                                 value = NA, min = 0, step = 1),
                     uiOutput("kin_note")
                   ),
                   ui_image_export("kin_"),
@@ -1475,23 +1478,42 @@ server <- function(input, output, session) {
   # Single app-wide capture frame rate. Both the Circular time/speed colouring
   # and the Kinematics tab read this one value; the per-sidebar numeric inputs
   # (frame_rate, kin_frame_rate) mirror it. Equality guards prevent feedback loops.
-  fps_rv <- reactiveVal(30)
-  # When a loaded Tracks carries its own capture rate, adopt it as the app fps.
+  fps_rv <- reactiveVal(NA_real_)
+  # Provenance of the current fps: "none" (unset), "data" (from a loaded Tracks),
+  # or "user" (typed into a control). Drives the frame-rate helper text.
+  fps_source_rv <- reactiveVal("none")
+  # both-unset -> TRUE (suppress the sync feedback loop); exactly-one-set -> FALSE
+  # (a real change to propagate); both-set -> numeric equality.
+  fps_equal <- function(a, b) {
+    sa <- .fps_is_set(a); sb <- .fps_is_set(b)
+    if (!sa && !sb) return(TRUE)
+    if (sa != sb)   return(FALSE)
+    isTRUE(all.equal(a, b))
+  }
+  # When a loaded Tracks carries its own capture rate, adopt it as the app fps
+  # and mark the source as data-provided.
   observeEvent(rv$ts, {
     fr <- if (is.null(rv$ts)) NULL else frame_rate(rv$ts)
-    if (!is.null(fr) && is.finite(fr) && fr > 0 &&
-        !isTRUE(all.equal(fr, fps_rv()))) fps_rv(fr)
+    if (.fps_is_set(fr) && !fps_equal(fr, fps_rv())) {
+      fps_rv(fr)
+      fps_source_rv("data")
+    }
   }, ignoreNULL = FALSE)
   observeEvent(input$frame_rate, {
-    if (!isTRUE(all.equal(input$frame_rate, fps_rv()))) fps_rv(input$frame_rate)
-  }, ignoreInit = TRUE)
+    if (!fps_equal(input$frame_rate, fps_rv())) {
+      fps_rv(input$frame_rate)
+      # A genuine user edit (not the programmatic echo, which compares equal and
+      # never reaches here): valid -> user, cleared -> none.
+      fps_source_rv(if (.fps_is_set(input$frame_rate)) "user" else "none")
+    }
+  }, ignoreInit = TRUE, ignoreNULL = FALSE)
   observeEvent(fps_rv(), {
     v <- fps_rv()
-    if (!isTRUE(all.equal(input$frame_rate, v)))
+    if (!fps_equal(input$frame_rate, v))
       updateNumericInput(session, "frame_rate", value = v)
-    if (!isTRUE(all.equal(input$kin_frame_rate, v)))   # no-op until Task 3 adds the input
+    if (!fps_equal(input$kin_frame_rate, v))
       updateNumericInput(session, "kin_frame_rate", value = v)
-  })
+  }, ignoreNULL = FALSE)
 
   # The plot spec resolved from the current inputs (shared by the figure and the
   # code export so they cannot drift).
@@ -1834,9 +1856,11 @@ server <- function(input, output, session) {
 
   # Sync the Kinematics frame-rate widget into the single shared fps value.
   observeEvent(input$kin_frame_rate, {
-    if (!isTRUE(all.equal(input$kin_frame_rate, fps_rv())))
+    if (!fps_equal(input$kin_frame_rate, fps_rv())) {
       fps_rv(input$kin_frame_rate)
-  }, ignoreInit = TRUE)
+      fps_source_rv(if (.fps_is_set(input$kin_frame_rate)) "user" else "none")
+    }
+  }, ignoreInit = TRUE, ignoreNULL = FALSE)
 
   output$kin_track_ui <- renderUI({
     if (is.null(rv$ts)) return(NULL)
@@ -1879,7 +1903,7 @@ server <- function(input, output, session) {
   kin_fps_ok <- reactive({
     if (is.null(rv$ts)) return(FALSE)
     if (inherits(as.data.frame(rv$ts)[[rv$ts@cols$time]], "POSIXct")) return(TRUE)
-    f <- fps_rv(); is.numeric(f) && length(f) == 1L && is.finite(f) && f > 0
+    .fps_is_set(fps_rv())
   })
 
   output$kin_note <- renderUI({
@@ -1888,7 +1912,10 @@ server <- function(input, output, session) {
                  "Kinematics needs trajectory data (load tracks, not headings)."))
     if (!isTRUE(kin_fps_ok()))
       return(div(class = "alert alert-warning py-1 px-2 small mb-2",
-                 "Set a positive frame rate to convert frames to seconds."))
+                 "Enter a positive frame rate to enable time/speed plots & kinematics."))
+    if (identical(fps_source_rv(), "data") && .fps_is_set(fps_rv()))
+      return(div(class = "alert alert-info py-1 px-2 small mb-2",
+                 paste0("From data (", fps_rv(), " fps).")))
     NULL
   })
 

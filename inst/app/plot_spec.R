@@ -5,6 +5,13 @@
 
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
+# One predicate for "is this a usable capture rate?", shared by the server's
+# fps gating and the kinematics spec/emit. A positive finite scalar; NA/NULL/<=0
+# are all "unset".
+.fps_is_set <- function(x) {
+  is.numeric(x) && length(x) == 1L && is.finite(x) && x > 0
+}
+
 # Resolve the effective track-colour mode for the Results figure. "time" colours
 # by elapsed time but needs a valid frame rate (the package hard-errors otherwise),
 # so an unset/invalid fps falls back to "sequence" -- the app never asks radiate()
@@ -729,10 +736,10 @@ build_kinematics_spec <- function(ts, inputs) {
 }
 
 kinematics_spec_to_plot <- function(spec, ts) {
-  # `%||% 30` mirrors spec_to_kinematics_code so render and emit never diverge on
-  # an unset fps (the app always supplies one; this keeps the triad self-consistent).
+  # No `%||% 30` fallback: the app only renders time/speed kinematics once fps is
+  # valid (kin_fps_ok gate), so spec$fps is a real capture rate here.
   if (!is.null(spec$track)) ts <- ts[spec$track]
-  ts <- set_frame_rate(ts, spec$fps %||% 30)
+  ts <- set_frame_rate(ts, spec$fps)
   plot_profile(ts, metric = spec$metric, units = spec$units,
                colour_by = spec$colour_by,
                smooth = spec$smooth %||% 1, show_raw = isTRUE(spec$show_raw))
@@ -748,7 +755,11 @@ spec_to_kinematics_code <- function(spec) {
   .emit_data_preamble(spec, add, q)              # trajectory ts-load only
   add("")
   if (!is.null(spec$track)) add("ts <- ts[", q(spec$track), "]")
-  add("ts <- set_frame_rate(ts, ", spec$fps %||% 30, ")")
+  if (.fps_is_set(spec$fps)) {
+    add("ts <- set_frame_rate(ts, ", spec$fps, ")")
+  } else {
+    add("# set a frame rate to enable kinematics: set_frame_rate(ts, <your_fps>)")
+  }
   unit_arg <- if (identical(spec$metric, "turning"))
     paste0(", units = ", q(spec$units)) else ""
   col_arg  <- if (!is.null(spec$colour_by))

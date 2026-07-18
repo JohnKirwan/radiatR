@@ -130,3 +130,20 @@ test_that("spec_to_kinematics_code emits the track subset; round-trips", {
   evald <- eval(parse(text = code), envir = new.env(parent = globalenv()))
   expect_equal(.kfingerprint(evald), .kfingerprint(live))
 })
+
+test_that("spec_to_kinematics_code emits a comment, not a fabricated 30, when fps is unset", {
+  ts <- kin_ts()
+  sp <- build_kinematics_spec(ts, list(kin_metric = "speed", kin_colour_by = "",
+                                       fps = NA_real_, data = example_data_block))
+  code <- paste(spec_to_kinematics_code(sp), collapse = "\n")
+  expect_false(grepl("set_frame_rate(ts, 30)", code, fixed = TRUE))
+  expect_match(code, "set a frame rate to enable kinematics")
+})
+
+test_that("spec_to_kinematics_code emits the real fps when set", {
+  ts <- kin_ts()
+  sp <- build_kinematics_spec(ts, list(kin_metric = "speed", kin_colour_by = "",
+                                       fps = 60, data = example_data_block))
+  code <- paste(spec_to_kinematics_code(sp), collapse = "\n")
+  expect_match(code, "set_frame_rate(ts, 60)", fixed = TRUE)
+})
