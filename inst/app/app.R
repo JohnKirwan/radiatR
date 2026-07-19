@@ -545,7 +545,9 @@ server <- function(input, output, session) {
     if (identical(rv$mode, "headings")) {
       if (is.null(rv$raw_hd)) {
         # Example headings are already loaded (no file to map) -> straight to results.
-        if (!is.null(rv$hd)) { rv$step <- 3L; rv$error <- NULL; return() }
+        if (identical(rv$source, "example") && !is.null(rv$hd)) {
+          rv$step <- 3L; rv$error <- NULL; return()
+        }
         rv$error <- "Please upload a file of headings first."
         return()
       }
@@ -714,7 +716,7 @@ server <- function(input, output, session) {
     if (identical(rv$mode, "headings")) {
       if (is.null(rv$raw_hd)) {
         # Example headings already built; apply the chosen facet -> show results.
-        if (!is.null(rv$hd)) {
+        if (identical(rv$source, "example") && !is.null(rv$hd)) {
           grp <- if (!is.null(input$hd_group) && nzchar(input$hd_group))
             input$hd_group else NULL
           grp2 <- if (!is.null(input$hd_group2) && nzchar(input$hd_group2))
@@ -790,11 +792,20 @@ server <- function(input, output, session) {
     rv$source    <- "file"
     rv$file_name <- input$file$name
     if (identical(rv$mode, "headings")) {
-      rv$raw_hd <- tryCatch(
+      # Drop any prior analysis BEFORE reading, so a failed parse cannot leave
+      # stale headings to be mistaken for a valid example (rv$source is already
+      # set to "file" above).
+      rv$hd     <- NULL
+      rv$hd_map <- NULL
+      rv$method <- NULL
+      rv$ts     <- NULL
+      rv$error  <- NULL
+      rv$step   <- 1L
+      parsed <- tryCatch(
         utils::read.csv(input$file$datapath, stringsAsFactors = FALSE,
                         check.names = TRUE),
         error = function(e) { rv$error <- plain_error(e); NULL })
-      rv$ts <- NULL
+      rv$raw_hd <- parsed   # committed only after the read returns (NULL on failure)
       return()
     }
     rv$dialect   <- guess_dialect(rv$path)
