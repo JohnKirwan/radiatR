@@ -4,6 +4,14 @@
 
 ### Bug fixes
 
+- The Shiny app no longer shows a previous analysis’s results after a
+  new headings upload. In headings mode a failed file upload used to
+  leave the earlier (e.g. example) headings in place, and the “example
+  headings already loaded” shortcut could then display them as if they
+  belonged to the file just selected. The upload now clears any prior
+  analysis before reading and commits the parsed data only on success,
+  and the shortcut to Results fires only for genuinely example-sourced
+  headings.
 - `c(Tracks, ...)` now rejects trajectory ids that collide across the
   objects being combined, and errors when the inputs carry conflicting
   `frame_rate`, `distance_scale`, `distance_unit`, or `normalize_xy`
