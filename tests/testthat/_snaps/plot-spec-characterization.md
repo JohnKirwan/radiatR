@@ -43,8 +43,9 @@
       summ <- circ_summarise(hd, "heading", units = "radians", .by = "trial_id", stats = c("n", "n_missing", "mean_dir_deg", "resultant_R"), display = circ_display(zero = 0))
       summ
       
-      test_uniformity(hd, test = "rayleigh")
-      test_uniformity(hd, test = "rao")
+      test_uniformity(hd, group_col = "trial_id", test = "rayleigh")
+      set.seed(20260617L)  # mirror the app's fixed Monte-Carlo seed
+      test_uniformity(hd, group_col = "trial_id", test = "rao", n_sim = 999L, p_method = "monte_carlo")
       
       circ_model_select(hd, group_col = "trial_id")
       
@@ -100,8 +101,9 @@
       summ <- circ_summarise(hd, "heading", units = "radians", .by = "type", stats = c("n", "n_missing", "mean_dir_deg", "resultant_R"), display = circ_display(zero = 0))
       summ
       
-      test_uniformity(hd, test = "rayleigh")
-      test_uniformity(hd, test = "rao")
+      test_uniformity(hd, group_col = "type", test = "rayleigh")
+      set.seed(20260617L)  # mirror the app's fixed Monte-Carlo seed
+      test_uniformity(hd, group_col = "type", test = "rao", n_sim = 999L, p_method = "monte_carlo")
       
       circ_model_select(hd, group_col = "type")
       

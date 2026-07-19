@@ -275,54 +275,17 @@ derive_hd <- function(ts, method, circ0, circ1, coords = "relative") {
   do.call(derive_headings, args)
 }
 
-rayleigh_p_fmt <- function(angles, axial = FALSE) {
-  tryCatch({
-    ang <- angles[is.finite(angles)]
-    if (isTRUE(axial)) ang <- (2 * ang) %% (2 * pi)
-    a <- circular::circular(ang, units = "radians", type = "angles")
-    p <- circular::rayleigh.test(a)$p.value
-    if (is.na(p))   return("—")
-    if (p < 0.001)  return("< 0.001")
-    sprintf("%.3f", p)
-  }, error = function(e) "—")
-}
+# Fixed Monte-Carlo policy for the Summary & stats uniformity tests. The seed is
+# set immediately before each grouped MC call so the UI and the downloaded script
+# (spec_to_stats_code) share the exact RNG stream and produce identical p-values.
+STATS_MC_SEED <- 20260617L
+STATS_MC_NSIM <- 999L
 
-# Omnibus Rao spacing test, formatted as a coarse significance bracket. Unlike
-# the focused Rayleigh row this is model-agnostic: always computed on RAW angles
-# (never doubled), as an always-on departure-from-uniformity backstop.
-# rao.spacing.test only carries the bracket in its print method (the returned
-# object's $alpha is the input parameter, not the achieved level), so parse the
-# printed "P-value" line. Brackets: "< 0.001" / "< 0.01" / "< 0.05" / "< 0.10" /
-# "> 0.10". n < 4 (Rao's table floor) or any error -> "—".
-rao_spacing_fmt <- function(angles) {
-  tryCatch({
-    ang <- angles[is.finite(angles)]
-    if (length(ang) < 4L) return("—")
-    a   <- circular::circular(ang, units = "radians", type = "angles")
-    out <- utils::capture.output(suppressWarnings(circular::rao.spacing.test(a)))
-    line <- grep("P-value", out, value = TRUE)
-    if (length(line) == 0L) return("—")
-    m <- regmatches(line[1L], regexpr("[<>] ?0?\\.[0-9]+", line[1L]))
-    if (length(m) == 0L) return("—")
-    gsub("\\s+", " ", trimws(m))
-  }, error = function(e) "—")
-}
-
-# Omnibus Hermans-Rasson test p-value, formatted for the summary. Monte-Carlo, so
-# a fixed seed is set per call for render stability (identical inputs -> identical
-# p across re-renders). A modest n_sim keeps the reactive responsive. n < 3 or any
-# error -> "—".
-hermans_p_fmt <- function(angles, n_sim = 999L) {
-  tryCatch({
-    a <- angles[is.finite(angles)]
-    if (length(a) < 3L) return("—")
-    set.seed(20260617L)
-    p <- test_uniformity(data.frame(heading = a),
-                         test = "hermans_rasson", n_sim = n_sim)$p_value
-    if (is.na(p))  return("—")
-    if (p < 0.001) return("< 0.001")
-    sprintf("%.3f", p)
-  }, error = function(e) "—")
+# numeric uniformity p-value -> display string. NA / absent -> em dash.
+.fmt_p <- function(p) {
+  if (length(p) != 1L || is.na(p)) return("—")
+  if (p < 0.001) return("< 0.001")
+  sprintf("%.3f", p)
 }
 
 # Display-ready circular summary (n, mean direction, resultant R, Rayleigh p) for
@@ -336,18 +299,18 @@ circ_summary_table <- function(hd, by_col, axial = FALSE,
     stats = c("n", "n_missing", "mean_dir_deg", "resultant_R"),
     display = circ_display(zero = 0), axial = axial
   )
+  # Per-group Rayleigh + omnibus via the package function so the downloaded
+  # code (spec_to_stats_code) reproduces these numbers exactly. Omnibus runs on
+  # raw angles (axial = FALSE); Rayleigh honours the axial toggle.
   groups <- unique(hd[[by_col]])
-  p_vals <- vapply(groups, function(g)
-    rayleigh_p_fmt(hd$heading[hd[[by_col]] == g], axial = axial), character(1L))
-  if (identical(omnibus, "hermans_rasson")) {
-    omni_label <- "Hermans-Rasson p"
-    omni_vals  <- vapply(groups, function(g)
-      hermans_p_fmt(hd$heading[hd[[by_col]] == g]), character(1L))
-  } else {
-    omni_label <- "Rao spacing"
-    omni_vals  <- vapply(groups, function(g)
-      rao_spacing_fmt(hd$heading[hd[[by_col]] == g]), character(1L))
-  }
+  ray <- test_uniformity(hd, group_col = by_col, test = "rayleigh", axial = axial)
+  set.seed(STATS_MC_SEED)
+  omn <- test_uniformity(hd, group_col = by_col, test = omnibus,
+                         n_sim = STATS_MC_NSIM, axial = FALSE,
+                         p_method = "monte_carlo")
+  p_vals   <- vapply(ray$p_value[match(groups, ray[[by_col]])], .fmt_p, character(1L))
+  omni_vals <- vapply(omn$p_value[match(groups, omn[[by_col]])], .fmt_p, character(1L))
+  omni_label <- if (identical(omnibus, "hermans_rasson")) "Hermans-Rasson p" else "Rao spacing"
   rayleigh_label <- if (isTRUE(axial)) "Rayleigh (axial) p" else "Rayleigh p"
   p_df <- stats::setNames(
     data.frame(groups, p_vals, omni_vals, stringsAsFactors = FALSE),
