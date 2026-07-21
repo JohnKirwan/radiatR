@@ -589,7 +589,9 @@ server <- function(input, output, session) {
     ts <- tryCatch(
       suppressMessages(suppressWarnings(
         load_ts(rv$path, d, mapping = map,
-                read_opts = delim_read_opts(input$delim_sel),
+                read_opts = c(delim_read_opts(input$delim_sel),
+                              list(ext = tolower(tools::file_ext(rv$file_name %||% "")),
+                                   sheet = input$sheet_sel)),
                 normalize_xy = nrm, origin = origin, radius = radius))),
       error = function(e) {
         rv$error <- plain_error(e)
@@ -1520,7 +1522,7 @@ server <- function(input, output, session) {
           col = map$col, units = map$units,
           convention = map$convention, group = grp,
           delim = input$delim_sel, sheet = input$sheet_sel,
-          ext = tolower(tools::file_ext(rv$file_name %||% "")),
+          ext = tolower(tools::file_ext(rv$file_name %||% ""))),
         inputs = list(
           cond_col = grp, hd_group2 = grp2, group_by = input$group_by,
           colour_by = input$colour_by,
