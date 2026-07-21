@@ -367,8 +367,8 @@ guess_columns <- function(data, mapping = list()) {
 # read file with soft dependencies. Delimited formats are content-sniffed
 # (separator + decimal mark) unless delim/decimal are supplied; Excel and
 # Arrow formats dispatch by extension. `sheet` selects an Excel worksheet.
-.read_any <- function(path, delim = NULL, decimal = NULL, sheet = NULL, ...) {
-  ext <- tolower(sub(".*\\.", "", path))
+.read_any <- function(path, ext = NULL, delim = NULL, decimal = NULL, sheet = NULL, ...) {
+  ext <- if (!is.null(ext)) tolower(sub("^\\.", "", ext)) else tolower(sub(".*\\.", "", path))
 
   if (ext %in% c("xlsx", "xls")) {
     if (!.is_installed("readxl"))
@@ -419,7 +419,7 @@ guess_columns <- function(data, mapping = list()) {
 .combine_track_files <- function(paths, mapping, id_from_filename, read_opts) {
   read_opts <- read_opts %||% list()
   dfl <- lapply(paths, function(p) {
-    .read_any(p, delim = read_opts$delim,
+    .read_any(p, ext = read_opts$ext, delim = read_opts$delim,
               decimal = read_opts$decimal, sheet = read_opts$sheet)
   })
 
@@ -614,7 +614,7 @@ read_tracks <- function(x,
     df <- x
     src <- NULL
   } else if (is.character(x) && length(x) == 1L && file.exists(x)) {
-    df <- .read_any(x, delim = read_opts$delim,
+    df <- .read_any(x, ext = read_opts$ext, delim = read_opts$delim,
                     decimal = read_opts$decimal, sheet = read_opts$sheet)
     src <- basename(x)
   } else if (is.character(x) && length(x) > 1L) {
