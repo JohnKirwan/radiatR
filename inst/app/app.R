@@ -894,7 +894,7 @@ server <- function(input, output, session) {
         ),
         fileInput(
           "file", NULL,
-          accept      = c(".csv", ".CSV", ".tsv", ".txt", ".xlsx", ".xls", ".mat"),
+          accept      = accepted_exts(rv$mode),
           buttonLabel = "Browse…",
           placeholder = "No file selected"
         ),

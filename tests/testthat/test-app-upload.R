@@ -89,3 +89,11 @@ test_that("sheet_box does not render for a delimited (non-Excel) upload", {
     expect_true(is.null(sb) || identical(sb, ""))
   })
 })
+
+test_that("accept list excludes .mat and gates Excel on readxl", {
+  # .mat never advertised (ctrax removed)
+  expect_false(".mat" %in% accepted_exts("trajectories"))
+  expect_false(".mat" %in% accepted_exts("headings"))
+  # delimited always present
+  expect_true(all(c(".csv", ".tsv", ".txt") %in% accepted_exts("headings")))
+})
