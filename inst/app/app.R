@@ -1518,7 +1518,9 @@ server <- function(input, output, session) {
           source = if (identical(rv$source, "example")) "example" else "file",
           mode = "headings", path = rv$file_name %||% "your_headings.csv",
           col = map$col, units = map$units,
-          convention = map$convention, group = grp),
+          convention = map$convention, group = grp,
+          delim = input$delim_sel, sheet = input$sheet_sel,
+          ext = tolower(tools::file_ext(rv$file_name %||% "")),
         inputs = list(
           cond_col = grp, hd_group2 = grp2, group_by = input$group_by,
           colour_by = input$colour_by,
@@ -1548,7 +1550,8 @@ server <- function(input, output, session) {
         dialect = if (is.null(rv$dialect) || rv$dialect %in% c("auto", "generic"))
           NULL else rv$dialect,
         normalize_xy = rv$normalize_xy,
-        origin = rv$origin, radius = rv$radius),
+        origin = rv$origin, radius = rv$radius,
+        delim = input$delim_sel, sheet = input$sheet_sel),
       inputs = list(
         cond_col = input$cond_col, cond_col2 = input$cond_col2,
         group_by = input$group_by,
@@ -1883,7 +1886,8 @@ server <- function(input, output, session) {
         dialect = if (is.null(rv$dialect) || rv$dialect %in% c("auto", "generic"))
           NULL else rv$dialect,
         normalize_xy = rv$normalize_xy,
-        origin = rv$origin, radius = rv$radius)))
+        origin = rv$origin, radius = rv$radius,
+        delim = input$delim_sel, sheet = input$sheet_sel)))
   })
 
   # fps is required only for numeric-frame Tracks; POSIXct time needs none.
