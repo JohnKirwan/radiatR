@@ -2,6 +2,14 @@
 
 ## radiatR (development version)
 
+### Breaking changes
+
+- The `ctrax` loader dialect and its optional `R.matlab` dependency have
+  been removed. `.mat` files are no longer supported;
+  `read_tracks(dialect = "ctrax")` now errors as an unknown dialect.
+  Pre-computed orientation angles remain supported through the general
+  `ellipse_axis` heading rule on any column.
+
 ### Bug fixes
 
 - The Shiny app no longer shows a previous analysis’s results after a

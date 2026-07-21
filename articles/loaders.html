@@ -249,8 +249,7 @@ limitations are general:</p>
 <strong>Tabular text only.</strong> Dialects read CSV/TSV (and,
 where the optional packages are installed, JSON/XML/Parquet). Native
 binary formats — such as NumPy <code>.npz</code> or MATLAB
-<code>.mat</code> — are not read except where noted (<code>ctrax</code>
-reads <code>.mat</code> via the <code>R.matlab</code> package).</li>
+<code>.mat</code> — are not read.</li>
 <li>
 <strong>Position, not posture.</strong> <code>radiatR</code> models
 a single position per individual per frame. Per-frame <em>posture</em>
@@ -318,14 +317,6 @@ centroid or single-zone selection.</td>
 <td>Native TrackMate <code>.xml</code>.</td>
 </tr>
 <tr class="odd">
-<td><code>ctrax</code></td>
-<td>
-<code>.mat</code> file with the <code>trx</code> struct (centroid +
-ellipse <code>theta</code>/<code>a</code>/<code>b</code>); needs
-<code>R.matlab</code>.</td>
-<td>—</td>
-</tr>
-<tr class="even">
 <td>
 <code>idtrackerai_wide</code>, <code>toxtrac</code>,
 <code>boris_xy</code>, <code>tracktor</code>, <code>dtrack</code>

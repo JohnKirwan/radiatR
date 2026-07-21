@@ -190,8 +190,7 @@ limitations are general:
 
 - **Tabular text only.** Dialects read CSV/TSV (and, where the optional
   packages are installed, JSON/XML/Parquet). Native binary formats —
-  such as NumPy `.npz` or MATLAB `.mat` — are not read except where
-  noted (`ctrax` reads `.mat` via the `R.matlab` package).
+  such as NumPy `.npz` or MATLAB `.mat` — are not read.
 - **Position, not posture.** `radiatR` models a single position per
   individual per frame. Per-frame *posture* data (variable-length
   midline or outline polylines) is outside this model. Where a tool
@@ -208,7 +207,6 @@ limitations are general:
 | `ethovision` | Centre position, and multi-zone exports (nose, tail, etc.); zone centroid or single-zone selection. | Native `.xlsx` (export to CSV first). |
 | `anymaze` | Centre position, optional nose/tail zones, units row. | — |
 | `trackmate` | `TRACK_ID` / `FRAME` / `POSITION_X` / `POSITION_Y` CSV. | Native TrackMate `.xml`. |
-| `ctrax` | `.mat` file with the `trx` struct (centroid + ellipse `theta`/`a`/`b`); needs `R.matlab`. | — |
 | `idtrackerai_wide`, `toxtrac`, `boris_xy`, `tracktor`, `dtrack` | Their standard CSV/TSV column layouts. | Tool-specific binary or session formats. |
 
 When a tool’s export is not directly supported, two escape hatches

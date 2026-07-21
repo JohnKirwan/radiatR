@@ -45,6 +45,10 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="radiatr-development-version">radiatR (development version)<a class="anchor" aria-label="anchor" href="#radiatr-development-version"></a></h2>
 <div class="section level3">
+<h3 id="breaking-changes-development-version">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-development-version"></a></h3>
+<ul><li>The <code>ctrax</code> loader dialect and its optional <code>R.matlab</code> dependency have been removed. <code>.mat</code> files are no longer supported; <code>read_tracks(dialect = "ctrax")</code> now errors as an unknown dialect. Pre-computed orientation angles remain supported through the general <code>ellipse_axis</code> heading rule on any column.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="bug-fixes-development-version">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-development-version"></a></h3>
 <ul><li>The Shiny app no longer shows a previous analysis’s results after a new headings upload. In headings mode a failed file upload used to leave the earlier (e.g. example) headings in place, and the “example headings already loaded” shortcut could then display them as if they belonged to the file just selected. The upload now clears any prior analysis before reading and commits the parsed data only on success, and the shortcut to Results fires only for genuinely example-sourced headings.</li>
 <li>
