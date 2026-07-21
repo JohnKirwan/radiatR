@@ -338,9 +338,10 @@ circ_summary_table <- function(hd, by_col, axial = FALSE,
 
 # Between-group comparison: mean direction, concentration, and whole-
 # distribution tests, one fixed row each (no method picker -- see the
-# 2026-07-10 group-comparison-stats design). Each call is independently
-# tryCatch'd so one failing test (e.g. too few observations in a group)
-# degrades to a dash row instead of blanking the whole table.
+# 2026-07-10 group-comparison-stats design). Each call is run through
+# run_group_test(): a genuinely non-estimable input (radiatR_nonestimable,
+# e.g. too few observations in a group) degrades to a dash row that states
+# the reason; any other error is a bug and propagates to the caller.
 group_compare_table <- function(hd, by_col, axial = FALSE) {
   fmt_stat <- function(x) if (length(x) && is.finite(x)) sprintf("%.2f", x) else "—"
   fmt_df   <- function(x) if (length(x) && !is.na(x)) as.character(x) else "—"
@@ -349,40 +350,57 @@ group_compare_table <- function(hd, by_col, axial = FALSE) {
     if (p < 0.001) return("< 0.001")
     sprintf("%.3f", p)
   }
-  dash_row <- function(test_label)
-    data.frame(Test = test_label, Method = "—", Statistic = "—", df = "—",
+  # Run one between-group test. A radiatR_nonestimable condition -> a dash
+  # row whose Method column states the reason. Any other error is a bug and
+  # is NOT caught here, so it propagates to the caller (re-raise).
+  run_group_test <- function(expr) {
+    tryCatch(
+      list(ok = TRUE, value = expr),
+      radiatR_nonestimable = function(e)
+        list(ok = FALSE, reason = e$reason %||% "not estimable")
+    )
+  }
+
+  dash_row_reason <- function(test_label, reason)
+    data.frame(Test = test_label, Method = reason, Statistic = "—", df = "—",
                `p-value` = "—", check.names = FALSE, stringsAsFactors = FALSE)
 
   n_groups <- length(unique(stats::na.omit(hd[[by_col]])))
 
-  r_mean <- tryCatch(test_mean_directions(hd, by_col, axial = axial),
-                      error = function(e) NULL)
-  row_mean <- if (is.null(r_mean)) dash_row("Mean direction") else
-    data.frame(Test = "Mean direction", Method = r_mean$test[1],
-               Statistic = fmt_stat(r_mean$statistic[1]),
-               df = paste(r_mean$df1[1], r_mean$df2[1], sep = ", "),
-               `p-value` = fmt_p(r_mean$p_value[1]),
-               check.names = FALSE, stringsAsFactors = FALSE)
+  res_mean <- run_group_test(test_mean_directions(hd, by_col, axial = axial))
+  row_mean <- if (!res_mean$ok)
+    dash_row_reason("Mean direction", res_mean$reason) else {
+      r_mean <- res_mean$value
+      data.frame(Test = "Mean direction", Method = r_mean$test[1],
+                 Statistic = fmt_stat(r_mean$statistic[1]),
+                 df = paste(r_mean$df1[1], r_mean$df2[1], sep = ", "),
+                 `p-value` = fmt_p(r_mean$p_value[1]),
+                 check.names = FALSE, stringsAsFactors = FALSE)
+    }
 
-  r_conc <- tryCatch(test_concentration(hd, by_col, axial = axial),
-                      error = function(e) NULL)
-  row_conc <- if (is.null(r_conc)) dash_row("Concentration") else
-    data.frame(Test = "Concentration", Method = r_conc$test[1],
-               Statistic = fmt_stat(r_conc$statistic[1]),
-               df = fmt_df(r_conc$df[1]),
-               `p-value` = fmt_p(r_conc$p_value[1]),
-               check.names = FALSE, stringsAsFactors = FALSE)
+  res_conc <- run_group_test(test_concentration(hd, by_col, axial = axial))
+  row_conc <- if (!res_conc$ok)
+    dash_row_reason("Concentration", res_conc$reason) else {
+      r_conc <- res_conc$value
+      data.frame(Test = "Concentration", Method = r_conc$test[1],
+                 Statistic = fmt_stat(r_conc$statistic[1]),
+                 df = fmt_df(r_conc$df[1]),
+                 `p-value` = fmt_p(r_conc$p_value[1]),
+                 check.names = FALSE, stringsAsFactors = FALSE)
+    }
 
   dist_method <- if (identical(n_groups, 2L)) "watson_two" else "watson_wheeler"
-  r_dist <- tryCatch(
-    test_distributions(hd, by_col, axial = axial, method = dist_method),
-    error = function(e) NULL)
-  row_dist <- if (is.null(r_dist)) dash_row("Distribution") else
-    data.frame(Test = "Distribution", Method = r_dist$method[1],
-               Statistic = fmt_stat(r_dist$statistic[1]),
-               df = fmt_df(r_dist$df[1]),
-               `p-value` = fmt_p(r_dist$p_value[1]),
-               check.names = FALSE, stringsAsFactors = FALSE)
+  res_dist <- run_group_test(
+    test_distributions(hd, by_col, axial = axial, method = dist_method))
+  row_dist <- if (!res_dist$ok)
+    dash_row_reason("Distribution", res_dist$reason) else {
+      r_dist <- res_dist$value
+      data.frame(Test = "Distribution", Method = r_dist$method[1],
+                 Statistic = fmt_stat(r_dist$statistic[1]),
+                 df = fmt_df(r_dist$df[1]),
+                 `p-value` = fmt_p(r_dist$p_value[1]),
+                 check.names = FALSE, stringsAsFactors = FALSE)
+    }
 
   rbind(row_mean, row_conc, row_dist)
 }
