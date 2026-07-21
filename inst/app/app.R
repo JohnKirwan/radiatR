@@ -147,12 +147,15 @@ detect_cond_col <- function(ts) {
 # normalize_xy is a load-time choice surfaced by the Coordinates radio in step 1
 # (output$normalize_box); the resolved logical is recorded on rv$normalize_xy.
 load_ts <- function(path, dialect, mapping = list(), read_opts = list(delim = NULL),
-                    normalize_xy = TRUE, origin = NULL, radius = NULL) {
+                    normalize_xy = TRUE, origin = NULL, radius = NULL,
+                    on_invalid = "error") {
   if (is.null(dialect) || dialect %in% c("auto", "generic"))
     return(read_tracks(path, mapping = mapping, read_opts = read_opts,
-                       normalize_xy = normalize_xy, origin = origin, radius = radius))
+                       normalize_xy = normalize_xy, origin = origin, radius = radius,
+                       on_invalid = on_invalid))
   read_tracks(path, dialect = dialect, mapping = mapping, read_opts = read_opts,
-              normalize_xy = normalize_xy, origin = origin, radius = radius)
+              normalize_xy = normalize_xy, origin = origin, radius = radius,
+              on_invalid = on_invalid)
 }
 
 # The bundled Cylindroiulus punctatus millipede example, as a Tracks, so
@@ -335,9 +338,10 @@ circ_summary_table <- function(hd, by_col, axial = FALSE,
 
 # Between-group comparison: mean direction, concentration, and whole-
 # distribution tests, one fixed row each (no method picker -- see the
-# 2026-07-10 group-comparison-stats design). Each call is independently
-# tryCatch'd so one failing test (e.g. too few observations in a group)
-# degrades to a dash row instead of blanking the whole table.
+# 2026-07-10 group-comparison-stats design). Each call is run through
+# run_group_test(): a genuinely non-estimable input (radiatR_nonestimable,
+# e.g. too few observations in a group) degrades to a dash row that states
+# the reason; any other error is a bug and propagates to the caller.
 group_compare_table <- function(hd, by_col, axial = FALSE) {
   fmt_stat <- function(x) if (length(x) && is.finite(x)) sprintf("%.2f", x) else "—"
   fmt_df   <- function(x) if (length(x) && !is.na(x)) as.character(x) else "—"
@@ -346,40 +350,57 @@ group_compare_table <- function(hd, by_col, axial = FALSE) {
     if (p < 0.001) return("< 0.001")
     sprintf("%.3f", p)
   }
-  dash_row <- function(test_label)
-    data.frame(Test = test_label, Method = "—", Statistic = "—", df = "—",
+  # Run one between-group test. A radiatR_nonestimable condition -> a dash
+  # row whose Method column states the reason. Any other error is a bug and
+  # is NOT caught here, so it propagates to the caller (re-raise).
+  run_group_test <- function(expr) {
+    tryCatch(
+      list(ok = TRUE, value = expr),
+      radiatR_nonestimable = function(e)
+        list(ok = FALSE, reason = e$reason %||% "not estimable")
+    )
+  }
+
+  dash_row_reason <- function(test_label, reason)
+    data.frame(Test = test_label, Method = reason, Statistic = "—", df = "—",
                `p-value` = "—", check.names = FALSE, stringsAsFactors = FALSE)
 
   n_groups <- length(unique(stats::na.omit(hd[[by_col]])))
 
-  r_mean <- tryCatch(test_mean_directions(hd, by_col, axial = axial),
-                      error = function(e) NULL)
-  row_mean <- if (is.null(r_mean)) dash_row("Mean direction") else
-    data.frame(Test = "Mean direction", Method = r_mean$test[1],
-               Statistic = fmt_stat(r_mean$statistic[1]),
-               df = paste(r_mean$df1[1], r_mean$df2[1], sep = ", "),
-               `p-value` = fmt_p(r_mean$p_value[1]),
-               check.names = FALSE, stringsAsFactors = FALSE)
+  res_mean <- run_group_test(test_mean_directions(hd, by_col, axial = axial))
+  row_mean <- if (!res_mean$ok)
+    dash_row_reason("Mean direction", res_mean$reason) else {
+      r_mean <- res_mean$value
+      data.frame(Test = "Mean direction", Method = r_mean$test[1],
+                 Statistic = fmt_stat(r_mean$statistic[1]),
+                 df = paste(r_mean$df1[1], r_mean$df2[1], sep = ", "),
+                 `p-value` = fmt_p(r_mean$p_value[1]),
+                 check.names = FALSE, stringsAsFactors = FALSE)
+    }
 
-  r_conc <- tryCatch(test_concentration(hd, by_col, axial = axial),
-                      error = function(e) NULL)
-  row_conc <- if (is.null(r_conc)) dash_row("Concentration") else
-    data.frame(Test = "Concentration", Method = r_conc$test[1],
-               Statistic = fmt_stat(r_conc$statistic[1]),
-               df = fmt_df(r_conc$df[1]),
-               `p-value` = fmt_p(r_conc$p_value[1]),
-               check.names = FALSE, stringsAsFactors = FALSE)
+  res_conc <- run_group_test(test_concentration(hd, by_col, axial = axial))
+  row_conc <- if (!res_conc$ok)
+    dash_row_reason("Concentration", res_conc$reason) else {
+      r_conc <- res_conc$value
+      data.frame(Test = "Concentration", Method = r_conc$test[1],
+                 Statistic = fmt_stat(r_conc$statistic[1]),
+                 df = fmt_df(r_conc$df[1]),
+                 `p-value` = fmt_p(r_conc$p_value[1]),
+                 check.names = FALSE, stringsAsFactors = FALSE)
+    }
 
   dist_method <- if (identical(n_groups, 2L)) "watson_two" else "watson_wheeler"
-  r_dist <- tryCatch(
-    test_distributions(hd, by_col, axial = axial, method = dist_method),
-    error = function(e) NULL)
-  row_dist <- if (is.null(r_dist)) dash_row("Distribution") else
-    data.frame(Test = "Distribution", Method = r_dist$method[1],
-               Statistic = fmt_stat(r_dist$statistic[1]),
-               df = fmt_df(r_dist$df[1]),
-               `p-value` = fmt_p(r_dist$p_value[1]),
-               check.names = FALSE, stringsAsFactors = FALSE)
+  res_dist <- run_group_test(
+    test_distributions(hd, by_col, axial = axial, method = dist_method))
+  row_dist <- if (!res_dist$ok)
+    dash_row_reason("Distribution", res_dist$reason) else {
+      r_dist <- res_dist$value
+      data.frame(Test = "Distribution", Method = r_dist$method[1],
+                 Statistic = fmt_stat(r_dist$statistic[1]),
+                 df = fmt_df(r_dist$df[1]),
+                 `p-value` = fmt_p(r_dist$p_value[1]),
+                 check.names = FALSE, stringsAsFactors = FALSE)
+    }
 
   rbind(row_mean, row_conc, row_dist)
 }
@@ -402,6 +423,21 @@ plain_error <- function(e) {
       "Try adjusting the ring radii or choosing a different method."
     ))
   paste("Unexpected error:", m)
+}
+
+# The full technical detail behind a friendly ingest error: the original
+# exception message, plus row numbers / ids when the loader raised a
+# structured radiatR_invalid_rows condition.
+ingest_detail <- function(e) {
+  detail <- conditionMessage(e)
+  if (inherits(e, "radiatR_invalid_rows")) {
+    detail <- paste0(
+      detail,
+      "\n\nAffected rows: ", paste(e$rows, collapse = ", "),
+      "\nAffected ids: ", paste(utils::head(unique(e$ids), 20L), collapse = ", ")
+    )
+  }
+  detail
 }
 
 # ---- ui ----------------------------------------------------------------------
@@ -460,6 +496,7 @@ server <- function(input, output, session) {
     hd        = NULL,
     method    = NULL,
     error     = NULL,
+    error_detail = NULL,
     mode      = "trajectories",
     raw_hd    = NULL,
     hd_map    = NULL    # list(col, units, convention, group) for the headings spec
@@ -503,6 +540,7 @@ server <- function(input, output, session) {
     if (rv$step > 1L) {
       rv$step  <- rv$step - 1L
       rv$error <- NULL
+      rv$error_detail <- NULL
     }
   })
 
@@ -514,6 +552,7 @@ server <- function(input, output, session) {
     rv$raw_hd <- NULL
     rv$hd_map <- NULL
     rv$error  <- NULL
+    rv$error_detail <- NULL
   })
 
   observeEvent(input$restart, {
@@ -524,6 +563,7 @@ server <- function(input, output, session) {
     rv$cond_col <- NULL
     rv$hd       <- NULL
     rv$error    <- NULL
+    rv$error_detail <- NULL
     rv$mode     <- "trajectories"
     rv$raw_hd   <- NULL
     rv$hd_map   <- NULL
@@ -536,17 +576,19 @@ server <- function(input, output, session) {
       if (is.null(rv$raw_hd)) {
         # Example headings are already loaded (no file to map) -> straight to results.
         if (identical(rv$source, "example") && !is.null(rv$hd)) {
-          rv$step <- 3L; rv$error <- NULL; return()
+          rv$step <- 3L; rv$error <- NULL; rv$error_detail <- NULL; return()
         }
         rv$error <- "Please upload a file of headings first."
+        rv$error_detail <- NULL
         return()
       }
       num_cols <- names(rv$raw_hd)[vapply(rv$raw_hd, is.numeric, logical(1))]
       if (!length(num_cols)) {
         rv$error <- "No numeric angle column found; headings input needs a column of angles."
+        rv$error_detail <- NULL
         return()
       }
-      rv$step <- 2L; rv$error <- NULL
+      rv$step <- 2L; rv$error <- NULL; rv$error_detail <- NULL
       return()
     }
     if (is.null(rv$path)) {
@@ -554,9 +596,11 @@ server <- function(input, output, session) {
       if (!is.null(rv$ts)) {
         rv$step  <- 2L
         rv$error <- NULL
+        rv$error_detail <- NULL
         return()
       }
       rv$error <- "Please upload a file first."
+      rv$error_detail <- NULL
       return()
     }
     d <- if (!is.null(input$dialect_sel) &&
@@ -586,16 +630,23 @@ server <- function(input, output, session) {
     origin <- if (calibrate)
       c(input$origin_x %||% NA_real_, input$origin_y %||% NA_real_) else NULL
     radius <- if (calibrate) input$radius %||% NA_real_ else NULL
-    ts <- tryCatch(
-      suppressMessages(suppressWarnings(
+    captured_warn <- character(0)
+    ts <- withCallingHandlers(
+      tryCatch(
         load_ts(rv$path, d, mapping = map,
                 read_opts = c(delim_read_opts(input$delim_sel),
                               list(ext = tolower(tools::file_ext(rv$file_name %||% "")),
                                    sheet = input$sheet_sel)),
-                normalize_xy = nrm, origin = origin, radius = radius))),
-      error = function(e) {
-        rv$error <- plain_error(e)
-        NULL
+                normalize_xy = nrm, origin = origin, radius = radius),
+        error = function(e) {
+          rv$error        <- plain_error(e)
+          rv$error_detail <- ingest_detail(e)
+          NULL
+        }
+      ),
+      warning = function(w) {
+        captured_warn <<- c(captured_warn, conditionMessage(w))
+        invokeRestart("muffleWarning")
       }
     )
     if (!is.null(ts)) {
@@ -607,6 +658,8 @@ server <- function(input, output, session) {
       rv$cond_col      <- detect_cond_col(ts)
       rv$step          <- 2L
       rv$error         <- NULL
+      rv$error_detail  <- if (length(captured_warn))
+                            paste(captured_warn, collapse = "\n") else NULL
     }
   })
 
@@ -660,12 +713,17 @@ server <- function(input, output, session) {
   output$boxplot_note <- renderUI({
     if (!isTRUE(input$show_boxplot) || is.null(rv$hd)) return(NULL)
     notes <- list()
+    boxplot_err <- NULL
     s <- tryCatch(circ_boxplot_stats(rv$hd, axial = is_axial()),
-                  error = function(e) NULL)
+                  error = function(e) { boxplot_err <<- conditionMessage(e); NULL })
     if (!is.null(s) && !isTRUE(s$drawable))
       notes <- c(notes, list(tags$div(
         class = "alert alert-secondary py-1 px-2 small mb-2",
         paste0("Circular boxplot not drawn: ", s$reason, "."))))
+    if (!is.null(boxplot_err))
+      notes <- c(notes, list(tags$div(
+        class = "alert alert-secondary py-1 px-2 small mb-2",
+        paste0("Circular boxplot error: ", boxplot_err, "."))))
     if (!length(notes)) return(NULL)
     do.call(tagList, notes)
   })
@@ -714,9 +772,10 @@ server <- function(input, output, session) {
           grp2 <- if (!is.null(input$hd_group2) && nzchar(input$hd_group2))
             input$hd_group2 else NULL
           hm <- rv$hd_map; hm$group <- grp; hm$group2 <- grp2; rv$hd_map <- hm
-          rv$step <- 3L; rv$error <- NULL; return()
+          rv$step <- 3L; rv$error <- NULL; rv$error_detail <- NULL; return()
         }
         rv$error <- "Please upload a file of headings first."
+        rv$error_detail <- NULL
         return()
       }
       grp <- if (!is.null(input$hd_group) && nzchar(input$hd_group))
@@ -727,9 +786,14 @@ server <- function(input, output, session) {
         build_headings_input(rv$raw_hd, col = input$hd_col,
                              units = input$hd_units,
                              convention = input$hd_convention, group = grp),
-        error = function(e) { rv$error <- plain_error(e); NULL })
+        error = function(e) {
+          rv$error        <- plain_error(e)
+          rv$error_detail <- ingest_detail(e)
+          NULL
+        })
       if (!is.null(hd)) {
-        rv$hd     <- hd; rv$method <- NULL; rv$step <- 3L; rv$error <- NULL
+        rv$hd     <- hd; rv$method <- NULL; rv$step <- 3L
+        rv$error  <- NULL; rv$error_detail <- NULL
         rv$hd_map <- list(col = input$hd_col, units = input$hd_units,
                           convention = input$hd_convention, group = grp, group2 = grp2)
       }
@@ -742,6 +806,7 @@ server <- function(input, output, session) {
       rv$method <- method
       rv$step   <- 3L
       rv$error  <- NULL
+      rv$error_detail <- NULL
       return()
     }
     c0     <- if (is.null(input$circ0))  0.3 else input$circ0
@@ -749,7 +814,8 @@ server <- function(input, output, session) {
     hd <- tryCatch(
       derive_hd(rv$ts, method, c0, c1, input$frame %||% "relative"),
       error = function(e) {
-        rv$error <- plain_error(e)
+        rv$error        <- plain_error(e)
+        rv$error_detail <- ingest_detail(e)
         NULL
       }
     )
@@ -774,6 +840,7 @@ server <- function(input, output, session) {
       rv$frame  <- input$frame %||% "relative"
       rv$step   <- 3L
       rv$error  <- NULL
+      rv$error_detail <- NULL
     }
   })
 
@@ -791,6 +858,7 @@ server <- function(input, output, session) {
       rv$method <- NULL
       rv$ts     <- NULL
       rv$error  <- NULL
+      rv$error_detail <- NULL
       rv$raw_hd <- NULL          # the lazy reader (below) repopulates this
       rv$step   <- 1L
       return()
@@ -800,6 +868,7 @@ server <- function(input, output, session) {
     rv$cond_col  <- NULL
     rv$hd        <- NULL
     rv$error     <- NULL
+    rv$error_detail <- NULL
   })
 
   # Lazy headings read: fires on the file path and the format controls, so the
@@ -812,7 +881,11 @@ server <- function(input, output, session) {
     ss <- input$sheet_sel
     parsed <- tryCatch(
       as.data.frame(upload_read(rv$path, rv$file_name, ds, ss)),
-      error = function(e) { rv$error <- plain_error(e); NULL })
+      error = function(e) {
+        rv$error        <- plain_error(e)
+        rv$error_detail <- ingest_detail(e)
+        NULL
+      })
     rv$raw_hd <- if (is.null(parsed) || !ncol(parsed)) NULL else parsed
   })
 
@@ -825,6 +898,7 @@ server <- function(input, output, session) {
     )
     if (is.null(ts)) {
       rv$error <- "Could not load the bundled example dataset."
+      rv$error_detail <- NULL
       return()
     }
     rv$ts        <- ts
@@ -836,13 +910,16 @@ server <- function(input, output, session) {
     rv$hd        <- NULL
     rv$step      <- 2L
     rv$error     <- NULL
+    rv$error_detail <- NULL
   })
 
   observeEvent(input$load_example_hd, {
     ensure_pkgs()
     ex <- tryCatch(example_ts(), error = function(e) NULL)
     if (is.null(ex)) {
-      rv$error <- "Could not load the bundled example dataset."; return()
+      rv$error <- "Could not load the bundled example dataset."
+      rv$error_detail <- NULL
+      return()
     }
     # Carry EVERY condition column (e.g. arc, type), not just one, so the facet
     # is selectable in Configure rather than hard-coded.
@@ -855,7 +932,11 @@ server <- function(input, output, session) {
       build_headings_input(hd0, col = "heading", units = "radians",
                            convention = "unit_circle")
     }, error = function(e) NULL)
-    if (is.null(hd)) { rv$error <- "Could not build the example headings."; return() }
+    if (is.null(hd)) {
+      rv$error <- "Could not build the example headings."
+      rv$error_detail <- NULL
+      return()
+    }
     rv$mode      <- "headings"
     rv$hd        <- hd
     rv$hd_map    <- list(col = "heading", units = "radians",
@@ -868,13 +949,26 @@ server <- function(input, output, session) {
     rv$method    <- NULL
     rv$step      <- 2L     # land on Configure so the facet can be chosen
     rv$error     <- NULL
+    rv$error_detail <- NULL
   })
 
   # ---- wizard ----------------------------------------------------------------
   output$wizard <- renderUI({
 
     err_box <- if (!is.null(rv$error))
-      div(class = "alert alert-danger mt-3 mb-0", rv$error)
+      div(class = "alert alert-danger mt-3 mb-0",
+          div(rv$error),
+          if (!is.null(rv$error_detail))
+            tags$details(class = "small mt-1",
+              tags$summary("Technical details"),
+              tags$pre(class = "mb-0", rv$error_detail)))
+    else if (!is.null(rv$error_detail))
+      # A successful ingest can still emit warnings (captured above); surface
+      # them in a muted notes box rather than dropping them silently.
+      div(class = "alert alert-secondary mt-3 mb-0",
+          tags$details(class = "small mb-0",
+            tags$summary("Notes"),
+            tags$pre(class = "mb-0", rv$error_detail)))
 
     # ---- Step 1: upload ----
     if (rv$step == 1L) {
@@ -1639,6 +1733,11 @@ server <- function(input, output, session) {
         note)
   })
 
+  # Single gate for every download: no active error, and a results object present.
+  results_ok <- reactive({
+    is.null(rv$error) && !is.null(rv$ts %||% rv$hd)
+  })
+
   # Single source of truth for the summary's headings frame + group column, used
   # by output$summary_tbl, model_sel(), and output$model_sel_tbl so they cannot
   # drift. has_hd = FALSE means no headings (none-mode / not yet loaded).
@@ -1761,7 +1860,8 @@ server <- function(input, output, session) {
     if (sum(grp_counts >= 2L) < 2L) return(no_group_note)
 
     tryCatch(group_compare_table(hd, by_col, axial = is_axial()),
-             error = function(e) data.frame(Note = "Group comparison not available"))
+             error = function(e) data.frame(
+               Note = paste("Group comparison error:", conditionMessage(e))))
   }, striped = TRUE, hover = TRUE, align = "c")
   outputOptions(output, "group_compare_tbl", suspendWhenHidden = FALSE)
 
@@ -1776,7 +1876,10 @@ server <- function(input, output, session) {
   output$figure_code <- renderText(figure_code_text())
   output$dl_code <- downloadHandler(
     filename = function() paste0("radiatR_figure_", Sys.Date(), ".R"),
-    content  = function(file) writeLines(figure_code_text(), file)
+    content  = function(file) {
+      req(results_ok())
+      writeLines(figure_code_text(), file)
+    }
   )
 
   # The radiatR script reproducing the Summary & stats analysis.
@@ -1787,7 +1890,10 @@ server <- function(input, output, session) {
   output$stats_code <- renderText(stats_code_text())
   output$dl_stats_code <- downloadHandler(
     filename = function() paste0("radiatR_stats_", Sys.Date(), ".R"),
-    content  = function(file) writeLines(stats_code_text(), file)
+    content  = function(file) {
+      req(results_ok())
+      writeLines(stats_code_text(), file)
+    }
   )
 
   output$dl_plot <- downloadHandler(
@@ -1796,6 +1902,7 @@ server <- function(input, output, session) {
       paste0("radiatR_plot_", Sys.Date(), ".", fmt)
     },
     content = function(file) {
+      req(results_ok())
       req(rv$ts %||% rv$hd)
       fmt <- if (is.null(input$plot_fmt)) "pdf" else input$plot_fmt
       # Transparent background applies to every format except JPG (no alpha).
@@ -1827,6 +1934,7 @@ server <- function(input, output, session) {
       paste0(stem, Sys.Date(), ".csv")
     },
     content = function(file) {
+      req(results_ok())
       req(rv$ts %||% rv$hd)
       dat <- if (is.null(rv$hd)) path_metrics_table(rv$ts) else rv$hd
       utils::write.csv(dat, file, row.names = FALSE)
@@ -1926,7 +2034,10 @@ server <- function(input, output, session) {
   output$kinematics_code <- renderText(kinematics_code_text())
   output$dl_kinematics_code <- downloadHandler(
     filename = function() paste0("radiatR_kinematics_", Sys.Date(), ".R"),
-    content  = function(file) writeLines(kinematics_code_text(), file)
+    content  = function(file) {
+      req(results_ok())
+      writeLines(kinematics_code_text(), file)
+    }
   )
 
   # Image export for the kinematics profile, mirroring dl_plot for the figure.
@@ -1936,6 +2047,7 @@ server <- function(input, output, session) {
       paste0("radiatR_kinematics_", Sys.Date(), ".", fmt)
     },
     content = function(file) {
+      req(results_ok())
       req(rv$ts, isTRUE(kin_fps_ok()))
       fmt <- if (is.null(input$kin_plot_fmt)) "pdf" else input$kin_plot_fmt
       transparent <- isTRUE(input$kin_plot_transparent) && fmt != "jpg"
@@ -2001,6 +2113,7 @@ server <- function(input, output, session) {
   output$dl_track_metrics <- downloadHandler(
     filename = function() paste0("radiatR_track_metrics_", Sys.Date(), ".csv"),
     content  = function(file) {
+      req(results_ok())
       req(rv$ts)
       utils::write.csv(track_metrics_tbl(), file, row.names = FALSE)
     }

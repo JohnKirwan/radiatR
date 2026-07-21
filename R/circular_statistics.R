@@ -1259,7 +1259,10 @@ test_mean_directions <- function(hd, group_col, angle_col = "heading",
   }), as.character(groups))
   circ_list <- Filter(function(x) length(x) >= 2L, circ_list)
   if (length(circ_list) < 2L)
-    stop("test_mean_directions: need >= 2 groups with >= 2 observations each")
+    radiatR_abort_nonestimable(
+      method = "Watson-Williams", group = NULL,
+      n = length(circ_list),
+      reason = "need at least 2 groups with at least 2 observations each")
 
   test_label <- if (method == "watson_williams") "Watson-Williams" else "permutation"
 
@@ -1291,7 +1294,10 @@ test_mean_directions <- function(hd, group_col, angle_col = "heading",
 
   if (!pairwise) {
     out <- .one(circ_list)
-    if (is.null(out)) stop("test_mean_directions: test failed")
+    if (is.null(out))
+      radiatR_abort_nonestimable(
+        method = test_label, group = NULL, n = length(circ_list),
+        reason = "the underlying test could not be computed for these groups")
     out$n_groups <- length(circ_list)
     out$test     <- test_label
     return(out[, c("n_groups", "statistic", "df1", "df2", "p_value", "test")])
@@ -1347,10 +1353,22 @@ test_concentration <- function(hd, group_col, angle_col = "heading",
   a_c <- circular::circular(.fold_angles(a[keep], axial), units = "radians", type = "angles")
   grp <- hd[[group_col]][keep]
 
+  test_label <- if (parametric) "equal.kappa" else "wallraff"
+  tab          <- table(grp)
+  usable_grps  <- sum(tab >= 2L)
+  n_groups     <- length(tab)
+  if (usable_grps < 2L)
+    radiatR_abort_nonestimable(
+      method = test_label, group = NULL, n = n_groups,
+      reason = "need at least 2 groups with at least 2 observations each to compare concentration")
+
   if (parametric) {
     r <- tryCatch(
       suppressWarnings(circular::equal.kappa.test(a_c, grp)),
-      error = function(e) stop("test_concentration (equal.kappa): ", e$message)
+      error = function(e)
+        radiatR_abort_nonestimable(
+          method = test_label, group = NULL, n = n_groups,
+          reason = e$message)
     )
     data.frame(statistic = as.numeric(r$statistic),
                df        = as.integer(r$df),
@@ -1360,7 +1378,10 @@ test_concentration <- function(hd, group_col, angle_col = "heading",
   } else {
     r <- tryCatch(
       circular::wallraff.test(a_c, grp),
-      error = function(e) stop("test_concentration (wallraff): ", e$message)
+      error = function(e)
+        radiatR_abort_nonestimable(
+          method = test_label, group = NULL, n = n_groups,
+          reason = e$message)
     )
     data.frame(statistic = as.numeric(r$statistic),
                df        = NA_integer_,
@@ -1511,8 +1532,17 @@ test_distributions <- function(hd, group_col, angle_col = "heading",
     circular::circular(.fold_angles(a, axial), units = "radians", type = "angles")
   }), as.character(groups))
   circ_list <- Filter(function(x) length(x) >= 2L, circ_list)
-  if (length(circ_list) < 2L)
-    stop("test_distributions: need >= 2 groups with >= 2 observations each")
+  if (length(circ_list) < 2L) {
+    method_label <- switch(method,
+      watson_wheeler = "Watson-Wheeler",
+      watson_two     = "Watson two-sample",
+      rao            = "Rao"
+    )
+    radiatR_abort_nonestimable(
+      method = method_label, group = NULL,
+      n = length(circ_list),
+      reason = "need at least 2 groups with at least 2 observations each")
+  }
 
   if (!pairwise) {
     if (method == "watson_two" && length(circ_list) != 2L)

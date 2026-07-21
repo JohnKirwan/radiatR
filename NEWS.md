@@ -1,4 +1,4 @@
-# radiatR (development version)
+# radiatR 0.1.2
 
 ## Breaking changes
 
@@ -6,6 +6,9 @@
   removed. `.mat` files are no longer supported; `read_tracks(dialect = "ctrax")`
   now errors as an unknown dialect. Pre-computed orientation angles remain
   supported through the general `ellipse_axis` heading rule on any column.
+* `read_tracks()` now fails on non-finite coordinate rows by default, reporting
+  the affected row numbers and ids; pass `on_invalid = "drop"` to drop them with
+  a warning instead of the previous silent drop (**breaking**).
 
 ## Bug fixes
 
@@ -53,6 +56,10 @@
   fit -- the opposite of the documented "`0` = converged". The column is now
   `0` when the fit converged and `1` when it did not, and the (incorrect)
   "optim return code" wording in the docs has been corrected.
+* Between-group tests (`test_mean_directions()`, `test_concentration()`,
+  `test_distributions()`) now signal a structured `radiatR_nonestimable`
+  condition (carrying method, group, n, and reason) for non-estimable inputs,
+  so callers can distinguish expected non-estimable cases from bugs.
 
 ## App
 
@@ -65,6 +72,11 @@
   30)` when no rate is set. Previously, uncalibrated numeric-frame data produced
   plausible-looking speed and turning-rate results based on the unsupported
   default.
+* Ingest failures now show the original exception (with affected rows/ids)
+  under "Technical details" and no longer suppress ingest warnings; the
+  group-comparison table shows the non-estimable reason instead of a blank dash
+  and re-raises unexpected errors; downloads are gated (`results_ok()`) so a
+  failed or partial run cannot emit an apparently-valid result.
 
 # radiatR 0.1.1
 

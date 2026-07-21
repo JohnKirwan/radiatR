@@ -412,7 +412,9 @@ test_that("read_tracks loads a single-track custom CSV, dropping non-finite rows
                    Track1_X = c(0, 1, 2, NaN, 4, 5),
                    Track1_Y = c(0, 0, 1, NaN, 2, 3))
   utils::write.csv(df, tmp, row.names = FALSE)
-  ts <- suppressMessages(read_tracks(tmp, normalize_xy = FALSE))
+  ts <- suppressMessages(suppressWarnings(
+    read_tracks(tmp, normalize_xy = FALSE, on_invalid = "drop")
+  ))
   expect_s4_class(ts, "Tracks")
   expect_equal(length(ids(ts)), 1L)                 # synthetic single-track id
   expect_equal(nrow(as.data.frame(ts)), 5L)          # the NaN row dropped
