@@ -407,6 +407,21 @@ plain_error <- function(e) {
   paste("Unexpected error:", m)
 }
 
+# The full technical detail behind a friendly ingest error: the original
+# exception message, plus row numbers / ids when the loader raised a
+# structured radiatR_invalid_rows condition.
+ingest_detail <- function(e) {
+  detail <- conditionMessage(e)
+  if (inherits(e, "radiatR_invalid_rows")) {
+    detail <- paste0(
+      detail,
+      "\n\nAffected rows: ", paste(e$rows, collapse = ", "),
+      "\nAffected ids: ", paste(utils::head(unique(e$ids), 20L), collapse = ", ")
+    )
+  }
+  detail
+}
+
 # ---- ui ----------------------------------------------------------------------
 
 ui <- page_fillable(
@@ -463,6 +478,7 @@ server <- function(input, output, session) {
     hd        = NULL,
     method    = NULL,
     error     = NULL,
+    error_detail = NULL,
     mode      = "trajectories",
     raw_hd    = NULL,
     hd_map    = NULL    # list(col, units, convention, group) for the headings spec
@@ -506,6 +522,7 @@ server <- function(input, output, session) {
     if (rv$step > 1L) {
       rv$step  <- rv$step - 1L
       rv$error <- NULL
+      rv$error_detail <- NULL
     }
   })
 
@@ -517,6 +534,7 @@ server <- function(input, output, session) {
     rv$raw_hd <- NULL
     rv$hd_map <- NULL
     rv$error  <- NULL
+    rv$error_detail <- NULL
   })
 
   observeEvent(input$restart, {
@@ -527,6 +545,7 @@ server <- function(input, output, session) {
     rv$cond_col <- NULL
     rv$hd       <- NULL
     rv$error    <- NULL
+    rv$error_detail <- NULL
     rv$mode     <- "trajectories"
     rv$raw_hd   <- NULL
     rv$hd_map   <- NULL
@@ -539,17 +558,19 @@ server <- function(input, output, session) {
       if (is.null(rv$raw_hd)) {
         # Example headings are already loaded (no file to map) -> straight to results.
         if (identical(rv$source, "example") && !is.null(rv$hd)) {
-          rv$step <- 3L; rv$error <- NULL; return()
+          rv$step <- 3L; rv$error <- NULL; rv$error_detail <- NULL; return()
         }
         rv$error <- "Please upload a file of headings first."
+        rv$error_detail <- NULL
         return()
       }
       num_cols <- names(rv$raw_hd)[vapply(rv$raw_hd, is.numeric, logical(1))]
       if (!length(num_cols)) {
         rv$error <- "No numeric angle column found; headings input needs a column of angles."
+        rv$error_detail <- NULL
         return()
       }
-      rv$step <- 2L; rv$error <- NULL
+      rv$step <- 2L; rv$error <- NULL; rv$error_detail <- NULL
       return()
     }
     if (is.null(rv$path)) {
@@ -557,9 +578,11 @@ server <- function(input, output, session) {
       if (!is.null(rv$ts)) {
         rv$step  <- 2L
         rv$error <- NULL
+        rv$error_detail <- NULL
         return()
       }
       rv$error <- "Please upload a file first."
+      rv$error_detail <- NULL
       return()
     }
     d <- if (!is.null(input$dialect_sel) &&
@@ -589,16 +612,23 @@ server <- function(input, output, session) {
     origin <- if (calibrate)
       c(input$origin_x %||% NA_real_, input$origin_y %||% NA_real_) else NULL
     radius <- if (calibrate) input$radius %||% NA_real_ else NULL
-    ts <- tryCatch(
-      suppressMessages(suppressWarnings(
+    captured_warn <- character(0)
+    ts <- withCallingHandlers(
+      tryCatch(
         load_ts(rv$path, d, mapping = map,
                 read_opts = c(delim_read_opts(input$delim_sel),
                               list(ext = tolower(tools::file_ext(rv$file_name %||% "")),
                                    sheet = input$sheet_sel)),
-                normalize_xy = nrm, origin = origin, radius = radius))),
-      error = function(e) {
-        rv$error <- plain_error(e)
-        NULL
+                normalize_xy = nrm, origin = origin, radius = radius),
+        error = function(e) {
+          rv$error        <- plain_error(e)
+          rv$error_detail <- ingest_detail(e)
+          NULL
+        }
+      ),
+      warning = function(w) {
+        captured_warn <<- c(captured_warn, conditionMessage(w))
+        invokeRestart("muffleWarning")
       }
     )
     if (!is.null(ts)) {
@@ -610,6 +640,8 @@ server <- function(input, output, session) {
       rv$cond_col      <- detect_cond_col(ts)
       rv$step          <- 2L
       rv$error         <- NULL
+      rv$error_detail  <- if (length(captured_warn))
+                            paste(captured_warn, collapse = "\n") else NULL
     }
   })
 
@@ -717,9 +749,10 @@ server <- function(input, output, session) {
           grp2 <- if (!is.null(input$hd_group2) && nzchar(input$hd_group2))
             input$hd_group2 else NULL
           hm <- rv$hd_map; hm$group <- grp; hm$group2 <- grp2; rv$hd_map <- hm
-          rv$step <- 3L; rv$error <- NULL; return()
+          rv$step <- 3L; rv$error <- NULL; rv$error_detail <- NULL; return()
         }
         rv$error <- "Please upload a file of headings first."
+        rv$error_detail <- NULL
         return()
       }
       grp <- if (!is.null(input$hd_group) && nzchar(input$hd_group))
@@ -730,9 +763,14 @@ server <- function(input, output, session) {
         build_headings_input(rv$raw_hd, col = input$hd_col,
                              units = input$hd_units,
                              convention = input$hd_convention, group = grp),
-        error = function(e) { rv$error <- plain_error(e); NULL })
+        error = function(e) {
+          rv$error        <- plain_error(e)
+          rv$error_detail <- ingest_detail(e)
+          NULL
+        })
       if (!is.null(hd)) {
-        rv$hd     <- hd; rv$method <- NULL; rv$step <- 3L; rv$error <- NULL
+        rv$hd     <- hd; rv$method <- NULL; rv$step <- 3L
+        rv$error  <- NULL; rv$error_detail <- NULL
         rv$hd_map <- list(col = input$hd_col, units = input$hd_units,
                           convention = input$hd_convention, group = grp, group2 = grp2)
       }
@@ -745,6 +783,7 @@ server <- function(input, output, session) {
       rv$method <- method
       rv$step   <- 3L
       rv$error  <- NULL
+      rv$error_detail <- NULL
       return()
     }
     c0     <- if (is.null(input$circ0))  0.3 else input$circ0
@@ -752,7 +791,8 @@ server <- function(input, output, session) {
     hd <- tryCatch(
       derive_hd(rv$ts, method, c0, c1, input$frame %||% "relative"),
       error = function(e) {
-        rv$error <- plain_error(e)
+        rv$error        <- plain_error(e)
+        rv$error_detail <- ingest_detail(e)
         NULL
       }
     )
@@ -777,6 +817,7 @@ server <- function(input, output, session) {
       rv$frame  <- input$frame %||% "relative"
       rv$step   <- 3L
       rv$error  <- NULL
+      rv$error_detail <- NULL
     }
   })
 
@@ -794,6 +835,7 @@ server <- function(input, output, session) {
       rv$method <- NULL
       rv$ts     <- NULL
       rv$error  <- NULL
+      rv$error_detail <- NULL
       rv$raw_hd <- NULL          # the lazy reader (below) repopulates this
       rv$step   <- 1L
       return()
@@ -803,6 +845,7 @@ server <- function(input, output, session) {
     rv$cond_col  <- NULL
     rv$hd        <- NULL
     rv$error     <- NULL
+    rv$error_detail <- NULL
   })
 
   # Lazy headings read: fires on the file path and the format controls, so the
@@ -815,7 +858,11 @@ server <- function(input, output, session) {
     ss <- input$sheet_sel
     parsed <- tryCatch(
       as.data.frame(upload_read(rv$path, rv$file_name, ds, ss)),
-      error = function(e) { rv$error <- plain_error(e); NULL })
+      error = function(e) {
+        rv$error        <- plain_error(e)
+        rv$error_detail <- ingest_detail(e)
+        NULL
+      })
     rv$raw_hd <- if (is.null(parsed) || !ncol(parsed)) NULL else parsed
   })
 
@@ -828,6 +875,7 @@ server <- function(input, output, session) {
     )
     if (is.null(ts)) {
       rv$error <- "Could not load the bundled example dataset."
+      rv$error_detail <- NULL
       return()
     }
     rv$ts        <- ts
@@ -839,13 +887,16 @@ server <- function(input, output, session) {
     rv$hd        <- NULL
     rv$step      <- 2L
     rv$error     <- NULL
+    rv$error_detail <- NULL
   })
 
   observeEvent(input$load_example_hd, {
     ensure_pkgs()
     ex <- tryCatch(example_ts(), error = function(e) NULL)
     if (is.null(ex)) {
-      rv$error <- "Could not load the bundled example dataset."; return()
+      rv$error <- "Could not load the bundled example dataset."
+      rv$error_detail <- NULL
+      return()
     }
     # Carry EVERY condition column (e.g. arc, type), not just one, so the facet
     # is selectable in Configure rather than hard-coded.
@@ -858,7 +909,11 @@ server <- function(input, output, session) {
       build_headings_input(hd0, col = "heading", units = "radians",
                            convention = "unit_circle")
     }, error = function(e) NULL)
-    if (is.null(hd)) { rv$error <- "Could not build the example headings."; return() }
+    if (is.null(hd)) {
+      rv$error <- "Could not build the example headings."
+      rv$error_detail <- NULL
+      return()
+    }
     rv$mode      <- "headings"
     rv$hd        <- hd
     rv$hd_map    <- list(col = "heading", units = "radians",
@@ -871,13 +926,19 @@ server <- function(input, output, session) {
     rv$method    <- NULL
     rv$step      <- 2L     # land on Configure so the facet can be chosen
     rv$error     <- NULL
+    rv$error_detail <- NULL
   })
 
   # ---- wizard ----------------------------------------------------------------
   output$wizard <- renderUI({
 
     err_box <- if (!is.null(rv$error))
-      div(class = "alert alert-danger mt-3 mb-0", rv$error)
+      div(class = "alert alert-danger mt-3 mb-0",
+          div(rv$error),
+          if (!is.null(rv$error_detail))
+            tags$details(class = "small mt-1",
+              tags$summary("Technical details"),
+              tags$pre(class = "mb-0", rv$error_detail)))
 
     # ---- Step 1: upload ----
     if (rv$step == 1L) {
