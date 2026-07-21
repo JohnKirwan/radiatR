@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">radiatR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -68,7 +68,8 @@
 <span>  id_from_filename <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  validate <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  format <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  id_collision <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"error"</span>, <span class="st">"namespace"</span><span class="op">)</span></span>
+<span>  id_collision <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"error"</span>, <span class="st">"namespace"</span><span class="op">)</span>,</span>
+<span>  on_invalid <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"error"</span>, <span class="st">"drop"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -166,6 +167,13 @@ than one source file during a multi-file import: `"error"` (default) stops
 with a message naming the colliding id(s) and files; `"namespace"` rewrites
 every id to `paste0(file_stem, "::", id)` so ids are unique per file. Has no
 effect on single-file or data.frame input.</p></dd>
+
+
+<dt id="arg-on-invalid">on_invalid<a class="anchor" aria-label="anchor" href="#arg-on-invalid"></a></dt>
+<dd><p>How to handle rows with non-finite x/y coordinates:
+"error" (default) aborts with a radiatR_invalid_rows condition listing the
+affected rows and ids; "drop" removes them and signals a
+radiatR_dropped_rows warning with the same payload.</p></dd>
 
 </dl></div>
     <div class="section level2">

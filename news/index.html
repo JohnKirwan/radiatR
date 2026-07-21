@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">radiatR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,13 +43,15 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="radiatr-development-version">radiatR (development version)<a class="anchor" aria-label="anchor" href="#radiatr-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.1.2" id="radiatr-012">radiatR 0.1.2<a class="anchor" aria-label="anchor" href="#radiatr-012"></a></h2>
 <div class="section level3">
-<h3 id="breaking-changes-development-version">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-development-version"></a></h3>
+<h3 id="breaking-changes-0-1-2">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-1-2"></a></h3>
 <ul><li>The <code>ctrax</code> loader dialect and its optional <code>R.matlab</code> dependency have been removed. <code>.mat</code> files are no longer supported; <code>read_tracks(dialect = "ctrax")</code> now errors as an unknown dialect. Pre-computed orientation angles remain supported through the general <code>ellipse_axis</code> heading rule on any column.</li>
+<li>
+<code><a href="../reference/read_tracks.html">read_tracks()</a></code> now fails on non-finite coordinate rows by default, reporting the affected row numbers and ids; pass <code>on_invalid = "drop"</code> to drop them with a warning instead of the previous silent drop (<strong>breaking</strong>).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-development-version">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-development-version"></a></h3>
+<h3 id="bug-fixes-0-1-2">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-1-2"></a></h3>
 <ul><li>The Shiny app no longer shows a previous analysis’s results after a new headings upload. In headings mode a failed file upload used to leave the earlier (e.g. example) headings in place, and the “example headings already loaded” shortcut could then display them as if they belonged to the file just selected. The upload now clears any prior analysis before reading and commits the parsed data only on success, and the shortcut to Results fires only for genuinely example-sourced headings.</li>
 <li>
 <code>c(Tracks, ...)</code> now rejects trajectory ids that collide across the objects being combined, and errors when the inputs carry conflicting <code>frame_rate</code>, <code>distance_scale</code>, <code>distance_unit</code>, or <code>normalize_xy</code> metadata (including one input having it set and another not). Previously these were silently merged, discarding one object’s calibration in favour of the other’s, and could interleave rows from two different trajectories that happened to share an id. Per-id/per-run metadata (<code>reference</code>, <code>trial_limits</code>, <code>sim_conditions</code>, <code>oob_points</code>, <code>oob_trials</code>) is now merged/summed across all combined inputs instead of only the first object’s being kept.</li>
@@ -59,10 +61,12 @@
 <code>read_tracks(..., time_type = "frames", fps = )</code> no longer converts frame indices to seconds twice. The time column is now kept as a raw frame index and <code><a href="../reference/elapsed_seconds.html">elapsed_seconds()</a></code> (and everything built on it: <code><a href="../reference/track_duration.html">track_duration()</a></code>, <code><a href="../reference/track_speed.html">track_speed()</a></code>, velocity, and turning-rate) performs the frame -&gt; seconds division exactly once, on demand, using the stored <code><a href="../reference/frame_rate.html">frame_rate()</a></code>. Previously the loader divided by <code>fps</code> immediately and then stored the same <code>fps</code> as the frame rate, so downstream kinematics divided by <code>fps</code> a second time – e.g. an expected 60 units/s speed came out as 3600 units/s. Loading with <code>time_type = "seconds"</code> no longer stores a spurious frame rate either.</li>
 <li>
 <code><a href="../reference/wrappedcauchy_fit.html">wrappedcauchy_fit()</a></code>’s <code>convergence</code> column now matches its documentation. <code><a href="https://rdrr.io/pkg/circular/man/mle.wrappedcauchy.html" class="external-link">circular::mle.wrappedcauchy()</a></code> reports convergence as a logical, which the previous code passed through <code><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer()</a></code>, yielding <code>1</code> for a <em>converged</em> fit – the opposite of the documented “<code>0</code> = converged”. The column is now <code>0</code> when the fit converged and <code>1</code> when it did not, and the (incorrect) “optim return code” wording in the docs has been corrected.</li>
+<li>Between-group tests (<code><a href="../reference/test_mean_directions.html">test_mean_directions()</a></code>, <code><a href="../reference/test_concentration.html">test_concentration()</a></code>, <code><a href="../reference/test_distributions.html">test_distributions()</a></code>) now signal a structured <code>radiatR_nonestimable</code> condition (carrying method, group, n, and reason) for non-estimable inputs, so callers can distinguish expected non-estimable cases from bugs.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="app-development-version">App<a class="anchor" aria-label="anchor" href="#app-development-version"></a></h3>
+<h3 id="app-0-1-2">App<a class="anchor" aria-label="anchor" href="#app-0-1-2"></a></h3>
 <ul><li>The app no longer assumes a capture rate of 30 fps. The frame-rate controls now start unset, and time/speed colouring, the kinematics plot and its downloads, and the generated kinematics code stay disabled until a positive finite frame rate is entered or carried by the loaded data. The app shows whether the active rate came from the data or was entered by the user, and downloaded kinematics code no longer emits a fabricated <code>set_frame_rate(ts, 30)</code> when no rate is set. Previously, uncalibrated numeric-frame data produced plausible-looking speed and turning-rate results based on the unsupported default.</li>
+<li>Ingest failures now show the original exception (with affected rows/ids) under “Technical details” and no longer suppress ingest warnings; the group-comparison table shows the non-estimable reason instead of a blank dash and re-raises unexpected errors; downloads are gated (<code>results_ok()</code>) so a failed or partial run cannot emit an apparently-valid result.</li>
 </ul></div>
 </div>
     <div class="section level2">
