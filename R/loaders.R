@@ -564,6 +564,10 @@ read_tracks_format <- function(x, format, ...) {
 #'   with a message naming the colliding id(s) and files; `"namespace"` rewrites
 #'   every id to `paste0(file_stem, "::", id)` so ids are unique per file. Has no
 #'   effect on single-file or data.frame input.
+#' @param on_invalid How to handle rows with non-finite x/y coordinates:
+#'   "error" (default) aborts with a radiatR_invalid_rows condition listing the
+#'   affected rows and ids; "drop" removes them and signals a
+#'   radiatR_dropped_rows warning with the same payload.
 #' @param format Optional loader format name or list spec registered via [register_loader_format()]
 #' @return Tracks
 #' @export
@@ -582,10 +586,12 @@ read_tracks <- function(x,
                          id_from_filename = TRUE,
                          validate = TRUE,
                          format = NULL,
-                         id_collision = c("error", "namespace")) {
+                         id_collision = c("error", "namespace"),
+                         on_invalid = c("error", "drop")) {
   angle_unit <- match.arg(angle_unit)
   time_type  <- match.arg(time_type)
   id_collision <- match.arg(id_collision)
+  on_invalid <- match.arg(on_invalid)
 
   if (!is.null(format)) {
     return(read_tracks_format(
@@ -605,7 +611,8 @@ read_tracks <- function(x,
       drop = drop,
       id_from_filename = id_from_filename,
       validate = validate,
-      id_collision = id_collision
+      id_collision = id_collision,
+      on_invalid = on_invalid
     ))
   }
 
@@ -723,12 +730,16 @@ read_tracks <- function(x,
            call. = FALSE)
     }
   }
-  # Drop rows with non-finite coordinates (position-based load).
+  # Report / drop rows with non-finite coordinates (position-based load).
   if (!is.null(xcol) && !is.null(ycol)) {
     finite <- is.finite(df[[xcol]]) & is.finite(df[[ycol]])
-    n_bad <- sum(!finite)
-    if (n_bad > 0L) {
-      message(sprintf("Dropped %d row(s) with non-finite coordinates.", n_bad))
+    if (any(!finite)) {
+      bad  <- which(!finite)
+      ids  <- as.character(df[[id]])[bad]
+      vals <- paste(df[[xcol]][bad], df[[ycol]][bad], sep = "/")
+      if (identical(on_invalid, "error"))
+        radiatR_abort_invalid_rows(bad, ids, c(xcol, ycol), vals, call = NULL)
+      radiatR_warn_dropped_rows(bad, ids, c(xcol, ycol), vals)
       df <- df[finite, , drop = FALSE]
     }
   }

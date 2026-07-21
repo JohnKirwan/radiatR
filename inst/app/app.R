@@ -147,12 +147,15 @@ detect_cond_col <- function(ts) {
 # normalize_xy is a load-time choice surfaced by the Coordinates radio in step 1
 # (output$normalize_box); the resolved logical is recorded on rv$normalize_xy.
 load_ts <- function(path, dialect, mapping = list(), read_opts = list(delim = NULL),
-                    normalize_xy = TRUE, origin = NULL, radius = NULL) {
+                    normalize_xy = TRUE, origin = NULL, radius = NULL,
+                    on_invalid = "error") {
   if (is.null(dialect) || dialect %in% c("auto", "generic"))
     return(read_tracks(path, mapping = mapping, read_opts = read_opts,
-                       normalize_xy = normalize_xy, origin = origin, radius = radius))
+                       normalize_xy = normalize_xy, origin = origin, radius = radius,
+                       on_invalid = on_invalid))
   read_tracks(path, dialect = dialect, mapping = mapping, read_opts = read_opts,
-              normalize_xy = normalize_xy, origin = origin, radius = radius)
+              normalize_xy = normalize_xy, origin = origin, radius = radius,
+              on_invalid = on_invalid)
 }
 
 # The bundled Cylindroiulus punctatus millipede example, as a Tracks, so

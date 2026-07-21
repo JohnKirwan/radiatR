@@ -23,7 +23,8 @@ read_tracks(
   id_from_filename = TRUE,
   validate = TRUE,
   format = NULL,
-  id_collision = c("error", "namespace")
+  id_collision = c("error", "namespace"),
+  on_invalid = c("error", "drop")
 )
 }
 \arguments{
@@ -82,6 +83,11 @@ than one source file during a multi-file import: `"error"` (default) stops
 with a message naming the colliding id(s) and files; `"namespace"` rewrites
 every id to `paste0(file_stem, "::", id)` so ids are unique per file. Has no
 effect on single-file or data.frame input.}
+
+\item{on_invalid}{How to handle rows with non-finite x/y coordinates:
+"error" (default) aborts with a radiatR_invalid_rows condition listing the
+affected rows and ids; "drop" removes them and signals a
+radiatR_dropped_rows warning with the same payload.}
 }
 \value{
 Tracks
