@@ -913,6 +913,7 @@ server <- function(input, output, session) {
         },
         uiOutput("format_box"),
         uiOutput("delim_box"),
+        uiOutput("sheet_box"),
         uiOutput("normalize_box"),
         uiOutput("mapping_box"),
         uiOutput("preview_section"),
@@ -1298,6 +1299,19 @@ server <- function(input, output, session) {
                 choices = c("Auto-detect" = "auto", "Comma" = ",",
                             "Semicolon" = ";", "Tab" = "\t"),
                 selected = "auto")
+  })
+
+  # Worksheet selector for Excel uploads. Own renderUI (like delim_box) so a
+  # wizard re-render does not reset the choice. Mutually exclusive with
+  # delim_box by construction: delim_box returns NULL for Excel, this NULL
+  # for non-Excel.
+  output$sheet_box <- renderUI({
+    req(rv$path)
+    ext <- tolower(tools::file_ext(rv$file_name %||% rv$path))
+    if (!ext %in% c("xlsx", "xls")) return(NULL)
+    sheets <- tryCatch(readxl::excel_sheets(rv$path), error = function(e) character(0))
+    if (!length(sheets)) return(NULL)
+    selectInput("sheet_sel", "Worksheet", choices = sheets, selected = sheets[1L])
   })
 
   # The per-trajectory shape transform (normalize_xy). Own renderUI, like

@@ -47,3 +47,21 @@ test_that("a failed headings upload clears stale example state (PR #20 guard)", 
     expect_null(rv$raw_hd)
   })
 })
+
+test_that("Excel upload lists worksheets and reads the selected sheet", {
+  skip_if_not_installed("shiny")
+  skip_if_not_installed("readxl")
+  skip_if_not_installed("writexl")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  xl <- tempfile(fileext = ".xlsx")
+  writexl::write_xlsx(
+    list(one = data.frame(bearing = c(1, 2)),
+         two = data.frame(bearing = c(90, 180, 270))), xl)
+  shiny::testServer(app_dir(), {
+    session$setInputs(input_type = "headings")
+    session$setInputs(file = list(datapath = xl, name = "book.xlsx"))
+    session$setInputs(delim_sel = "auto")
+    session$setInputs(sheet_sel = "two")
+    expect_equal(nrow(rv$raw_hd), 3L)   # sheet "two" has 3 rows
+  })
+})
