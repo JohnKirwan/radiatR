@@ -1721,6 +1721,11 @@ server <- function(input, output, session) {
         note)
   })
 
+  # Single gate for every download: no active error, and a results object present.
+  results_ok <- reactive({
+    is.null(rv$error) && !is.null(rv$ts %||% rv$hd)
+  })
+
   # Single source of truth for the summary's headings frame + group column, used
   # by output$summary_tbl, model_sel(), and output$model_sel_tbl so they cannot
   # drift. has_hd = FALSE means no headings (none-mode / not yet loaded).
@@ -1858,7 +1863,10 @@ server <- function(input, output, session) {
   output$figure_code <- renderText(figure_code_text())
   output$dl_code <- downloadHandler(
     filename = function() paste0("radiatR_figure_", Sys.Date(), ".R"),
-    content  = function(file) writeLines(figure_code_text(), file)
+    content  = function(file) {
+      req(results_ok())
+      writeLines(figure_code_text(), file)
+    }
   )
 
   # The radiatR script reproducing the Summary & stats analysis.
@@ -1869,7 +1877,10 @@ server <- function(input, output, session) {
   output$stats_code <- renderText(stats_code_text())
   output$dl_stats_code <- downloadHandler(
     filename = function() paste0("radiatR_stats_", Sys.Date(), ".R"),
-    content  = function(file) writeLines(stats_code_text(), file)
+    content  = function(file) {
+      req(results_ok())
+      writeLines(stats_code_text(), file)
+    }
   )
 
   output$dl_plot <- downloadHandler(
@@ -1878,6 +1889,7 @@ server <- function(input, output, session) {
       paste0("radiatR_plot_", Sys.Date(), ".", fmt)
     },
     content = function(file) {
+      req(results_ok())
       req(rv$ts %||% rv$hd)
       fmt <- if (is.null(input$plot_fmt)) "pdf" else input$plot_fmt
       # Transparent background applies to every format except JPG (no alpha).
@@ -1909,6 +1921,7 @@ server <- function(input, output, session) {
       paste0(stem, Sys.Date(), ".csv")
     },
     content = function(file) {
+      req(results_ok())
       req(rv$ts %||% rv$hd)
       dat <- if (is.null(rv$hd)) path_metrics_table(rv$ts) else rv$hd
       utils::write.csv(dat, file, row.names = FALSE)
@@ -2083,6 +2096,7 @@ server <- function(input, output, session) {
   output$dl_track_metrics <- downloadHandler(
     filename = function() paste0("radiatR_track_metrics_", Sys.Date(), ".csv"),
     content  = function(file) {
+      req(results_ok())
       req(rv$ts)
       utils::write.csv(track_metrics_tbl(), file, row.names = FALSE)
     }
