@@ -406,6 +406,23 @@ spec_to_plot <- function(spec, ts, hd) {
   p
 }
 
+# Emit a public-function read expression for a headings upload that matches the
+# resolved delimiter / Excel sheet, so the downloaded script reproduces ingest.
+.emit_headings_read <- function(data, q) {
+  ext <- tolower(data$ext %||% tools::file_ext(data$path))
+  if (ext %in% c("xlsx", "xls")) {
+    sh <- if (!is.null(data$sheet) && nzchar(data$sheet))
+      paste0(", sheet = ", q(data$sheet)) else ""
+    return(paste0("df <- as.data.frame(readxl::read_excel(", q(data$path), sh, "))"))
+  }
+  d <- data$delim
+  if (!is.null(d) && identical(d, ";"))
+    return(paste0("df <- read.csv2(", q(data$path), ")"))
+  if (!is.null(d) && identical(d, "\t"))
+    return(paste0("df <- read.delim(", q(data$path), ")"))
+  paste0("df <- read.csv(", q(data$path), ")")
+}
+
 # Emit the data-load + headings-derivation lines shared by the figure-code and
 # stats-code scripts: `data(cpunctatus)`/`read.csv`/`read_tracks` + `ts`/`hd`
 # (+ the facet merge). Figure-specific lines (colour keys, frame rate, disp) stay
@@ -425,7 +442,7 @@ spec_to_plot <- function(spec, ts, hd) {
             ")]), by.x = \"id\", by.y = \"trial_id\", all.x = TRUE)")
       add("hd <- headings_frame(hd, col = heading, units = \"radians\")")
     } else {
-      add("df <- read.csv(", q(spec$data$path), ")")
+      add(.emit_headings_read(spec$data, q))
       add("hd <- headings_frame(df, col = ", spec$data$col,
           ", units = ", q(spec$data$units),
           ", angle_convention = ", q(spec$data$convention), ")")
@@ -451,7 +468,16 @@ spec_to_plot <- function(spec, ts, hd) {
       cal <- if (!is.null(spec$data$origin) && !is.null(spec$data$radius))
         paste0(", origin = c(", spec$data$origin[1], ", ", spec$data$origin[2],
                "), radius = ", spec$data$radius) else ""
-      add("ts <- read_tracks(", q(spec$data$path), dia, nrm, cal, ")")
+      # read_opts carries a non-default delimiter/Excel sheet so the emitted
+      # read_tracks() call reproduces the app's upload ingest.
+      ropts <- character(0)
+      if (!is.null(spec$data$delim) && !identical(spec$data$delim, "auto"))
+        ropts <- c(ropts, paste0("delim = ", q(spec$data$delim)))
+      if (!is.null(spec$data$sheet) && nzchar(spec$data$sheet %||% ""))
+        ropts <- c(ropts, paste0("sheet = ", q(spec$data$sheet)))
+      ro <- if (length(ropts))
+        paste0(", read_opts = list(", paste(ropts, collapse = ", "), ")") else ""
+      add("ts <- read_tracks(", q(spec$data$path), dia, ro, nrm, cal, ")")
     }
     if (has_hd) {
       add("")

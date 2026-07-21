@@ -52,7 +52,6 @@ Suggests:
     yaml,
     withr,
     writexl,
-    R.matlab,
     xml2,
     shiny (>= 1.7.0),
     bslib (>= 0.5.0),

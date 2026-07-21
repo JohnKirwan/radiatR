@@ -857,7 +857,7 @@ register_heading_rule("bodypart_axis", function(df, cols, anterior, posterior,
              stringsAsFactors = FALSE)
 })
 
-# Heading from a pre-computed orientation angle column (e.g. Ctrax theta).
+# Heading from a pre-computed orientation angle column (e.g. a theta column).
 # Use when the tool has already fitted a body-axis angle per frame — no separate
 # anterior/posterior point columns are needed.
 # theta_col: name of the angle column in the Tracks data (default "theta").
@@ -867,7 +867,7 @@ register_heading_rule("ellipse_axis", function(df, cols, theta_col = "theta",
   frame_select <- match.arg(frame_select)
   if (!theta_col %in% names(df))
     stop("ellipse_axis: column '", theta_col, "' not found. ",
-         "Load Ctrax .mat files with dialect='ctrax' to get theta.")
+         "ellipse_axis needs a pre-computed orientation column (e.g. 'theta').")
   id_col   <- cols$id   %||% "id"
   time_col <- cols$time %||% "time"
   xc       <- cols$x    %||% "x"

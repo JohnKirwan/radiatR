@@ -23,6 +23,7 @@ source("preview_constructions.R", local = FALSE)
 source("download_helpers.R", local = FALSE)
 source("ui_helpers.R", local = FALSE)
 source("plot_spec.R", local = FALSE)
+source("upload.R", local = FALSE)
 
 # ---- dialect registry --------------------------------------------------------
 
@@ -39,7 +40,6 @@ DIALECT_CHOICES <- c(
   "ToxTrac"                       = "toxtrac",
   "BORIS (with XY)"               = "boris_xy",
   "Tracktor"                      = "tracktor",
-  "Ctrax (.mat file)"             = "ctrax",
   "Generic CSV"                   = "generic"
 )
 
@@ -153,11 +153,6 @@ load_ts <- function(path, dialect, mapping = list(), read_opts = list(delim = NU
                        normalize_xy = normalize_xy, origin = origin, radius = radius))
   read_tracks(path, dialect = dialect, mapping = mapping, read_opts = read_opts,
               normalize_xy = normalize_xy, origin = origin, radius = radius)
-}
-
-# Map the app's delimiter dropdown to a read_opts override. "auto" -> sniff.
-delim_read_opts <- function(sel) {
-  if (is.null(sel) || identical(sel, "auto")) list(delim = NULL) else list(delim = sel)
 }
 
 # The bundled Cylindroiulus punctatus millipede example, as a Tracks, so
@@ -406,11 +401,6 @@ plain_error <- function(e) {
       "No ring crossings found.",
       "Try adjusting the ring radii or choosing a different method."
     ))
-  if (grepl("R\\.matlab|mat file", m, ignore.case = TRUE))
-    return(paste(
-      "Reading .mat files requires the R.matlab package:",
-      "install.packages('R.matlab')"
-    ))
   paste("Unexpected error:", m)
 }
 
@@ -599,7 +589,9 @@ server <- function(input, output, session) {
     ts <- tryCatch(
       suppressMessages(suppressWarnings(
         load_ts(rv$path, d, mapping = map,
-                read_opts = delim_read_opts(input$delim_sel),
+                read_opts = c(delim_read_opts(input$delim_sel),
+                              list(ext = tolower(tools::file_ext(rv$file_name %||% "")),
+                                   sheet = input$sheet_sel)),
                 normalize_xy = nrm, origin = origin, radius = radius))),
       error = function(e) {
         rv$error <- plain_error(e)
@@ -792,20 +784,15 @@ server <- function(input, output, session) {
     rv$source    <- "file"
     rv$file_name <- input$file$name
     if (identical(rv$mode, "headings")) {
-      # Drop any prior analysis BEFORE reading, so a failed parse cannot leave
-      # stale headings to be mistaken for a valid example (rv$source is already
-      # set to "file" above).
+      # Clear stale analysis BEFORE anything reads, so a failed parse cannot
+      # leave stale headings mistaken for a valid example (PR #20 contract).
       rv$hd     <- NULL
       rv$hd_map <- NULL
       rv$method <- NULL
       rv$ts     <- NULL
       rv$error  <- NULL
+      rv$raw_hd <- NULL          # the lazy reader (below) repopulates this
       rv$step   <- 1L
-      parsed <- tryCatch(
-        utils::read.csv(input$file$datapath, stringsAsFactors = FALSE,
-                        check.names = TRUE),
-        error = function(e) { rv$error <- plain_error(e); NULL })
-      rv$raw_hd <- parsed   # committed only after the read returns (NULL on failure)
       return()
     }
     rv$dialect   <- guess_dialect(rv$path)
@@ -813,6 +800,20 @@ server <- function(input, output, session) {
     rv$cond_col  <- NULL
     rv$hd        <- NULL
     rv$error     <- NULL
+  })
+
+  # Lazy headings read: fires on the file path and the format controls, so the
+  # delimiter/sheet selectors are live (the read no longer happens eagerly in
+  # the upload observer above). Commits rv$raw_hd only on success (NULL on
+  # failure).
+  observe({
+    req(identical(rv$mode, "headings"), rv$source == "file", rv$path)
+    ds <- input$delim_sel
+    ss <- input$sheet_sel
+    parsed <- tryCatch(
+      as.data.frame(upload_read(rv$path, rv$file_name, ds, ss)),
+      error = function(e) { rv$error <- plain_error(e); NULL })
+    rv$raw_hd <- if (is.null(parsed) || !ncol(parsed)) NULL else parsed
   })
 
   # ---- example dataset -------------------------------------------------------
@@ -895,7 +896,7 @@ server <- function(input, output, session) {
         ),
         fileInput(
           "file", NULL,
-          accept      = c(".csv", ".CSV", ".tsv", ".txt", ".xlsx", ".xls", ".mat"),
+          accept      = accepted_exts(rv$mode),
           buttonLabel = "Browse…",
           placeholder = "No file selected"
         ),
@@ -914,6 +915,7 @@ server <- function(input, output, session) {
         },
         uiOutput("format_box"),
         uiOutput("delim_box"),
+        uiOutput("sheet_box"),
         uiOutput("normalize_box"),
         uiOutput("mapping_box"),
         uiOutput("preview_section"),
@@ -1301,6 +1303,19 @@ server <- function(input, output, session) {
                 selected = "auto")
   })
 
+  # Worksheet selector for Excel uploads. Own renderUI (like delim_box) so a
+  # wizard re-render does not reset the choice. Mutually exclusive with
+  # delim_box by construction: delim_box returns NULL for Excel, this NULL
+  # for non-Excel.
+  output$sheet_box <- renderUI({
+    req(rv$path)
+    ext <- tolower(tools::file_ext(rv$file_name %||% rv$path))
+    if (!ext %in% c("xlsx", "xls")) return(NULL)
+    sheets <- tryCatch(readxl::excel_sheets(rv$path), error = function(e) character(0))
+    if (!length(sheets)) return(NULL)
+    selectInput("sheet_sel", "Worksheet", choices = sheets, selected = sheets[1L])
+  })
+
   # The per-trajectory shape transform (normalize_xy). Own renderUI, like
   # delim_box: the wizard re-renders on rv$mode/rv$error changes and a shared
   # render would reset the user's choice. Trajectories only -- normalize_xy is
@@ -1347,7 +1362,7 @@ server <- function(input, output, session) {
       input$dialect_sel else rv$dialect
     if (!identical(d, "generic")) return(NULL)
     df <- tryCatch(
-      radiatR:::.read_any(rv$path, delim = delim_read_opts(input$delim_sel)$delim),
+      upload_read(rv$path, rv$file_name, input$delim_sel, input$sheet_sel),
       error = function(e) NULL)
     if (is.null(df) || !ncol(df)) return(NULL)
     df   <- utils::head(as.data.frame(df), 200L)
@@ -1379,7 +1394,7 @@ server <- function(input, output, session) {
   output$preview_tbl <- renderTable({
     req(rv$path)
     df <- tryCatch(
-      radiatR:::.read_any(rv$path, delim = delim_read_opts(input$delim_sel)$delim),
+      upload_read(rv$path, rv$file_name, input$delim_sel, input$sheet_sel),
       error = function(e) NULL)
     if (is.null(df))
       return(data.frame(Note = "Could not preview this file"))
@@ -1505,7 +1520,9 @@ server <- function(input, output, session) {
           source = if (identical(rv$source, "example")) "example" else "file",
           mode = "headings", path = rv$file_name %||% "your_headings.csv",
           col = map$col, units = map$units,
-          convention = map$convention, group = grp),
+          convention = map$convention, group = grp,
+          delim = input$delim_sel, sheet = input$sheet_sel,
+          ext = tolower(tools::file_ext(rv$file_name %||% ""))),
         inputs = list(
           cond_col = grp, hd_group2 = grp2, group_by = input$group_by,
           colour_by = input$colour_by,
@@ -1535,7 +1552,8 @@ server <- function(input, output, session) {
         dialect = if (is.null(rv$dialect) || rv$dialect %in% c("auto", "generic"))
           NULL else rv$dialect,
         normalize_xy = rv$normalize_xy,
-        origin = rv$origin, radius = rv$radius),
+        origin = rv$origin, radius = rv$radius,
+        delim = input$delim_sel, sheet = input$sheet_sel),
       inputs = list(
         cond_col = input$cond_col, cond_col2 = input$cond_col2,
         group_by = input$group_by,
@@ -1870,7 +1888,8 @@ server <- function(input, output, session) {
         dialect = if (is.null(rv$dialect) || rv$dialect %in% c("auto", "generic"))
           NULL else rv$dialect,
         normalize_xy = rv$normalize_xy,
-        origin = rv$origin, radius = rv$radius)))
+        origin = rv$origin, radius = rv$radius,
+        delim = input$delim_sel, sheet = input$sheet_sel)))
   })
 
   # fps is required only for numeric-frame Tracks; POSIXct time needs none.
