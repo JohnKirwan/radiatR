@@ -62,6 +62,30 @@ test_that("Excel upload lists worksheets and reads the selected sheet", {
     session$setInputs(file = list(datapath = xl, name = "book.xlsx"))
     session$setInputs(delim_sel = "auto")
     session$setInputs(sheet_sel = "two")
+
+    # The worksheet selector must actually render for an Excel upload,
+    # listing every sheet in the workbook (not just read the chosen one).
+    sb <- output$sheet_box
+    expect_false(is.null(sb))
+    html <- as.character(if (is.list(sb) && !is.null(sb$html)) sb$html else sb)
+    expect_true(grepl("sheet_sel", html, fixed = TRUE))
+    expect_true(grepl("one", html, fixed = TRUE))
+    expect_true(grepl("two", html, fixed = TRUE))
+
     expect_equal(nrow(rv$raw_hd), 3L)   # sheet "two" has 3 rows
+  })
+})
+
+test_that("sheet_box does not render for a delimited (non-Excel) upload", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  tmp <- tempfile(fileext = ".csv")
+  writeLines(c("bearing", "10", "20", "30"), tmp)
+  shiny::testServer(app_dir(), {
+    session$setInputs(input_type = "headings")
+    session$setInputs(file = list(datapath = tmp, name = "angles.csv"))
+    session$setInputs(delim_sel = "auto")
+    sb <- output$sheet_box
+    expect_true(is.null(sb) || identical(sb, ""))
   })
 })
