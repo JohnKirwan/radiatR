@@ -10,7 +10,7 @@ An R package for analysing and visualising **headings and trajectories on the un
 ## Key Features
 
 - **Flexible loader framework** — read data from 20+ tracking tools via registered dialects; extend with custom formats
-- **Pose-estimation support** — multi-bodypart centroid and body-axis heading from DeepLabCut, EthoVision multi-zone, ANY-maze nose/tail, Ctrax ellipse
+- **Pose-estimation support** — multi-bodypart centroid and body-axis heading from DeepLabCut, EthoVision multi-zone, ANY-maze nose/tail
 - **Heading rule registry** — derive per-trial headings by any of 15+ built-in rules or register your own
 - **Circular statistics** — mean direction, resultant length, concentration, and grouped summaries via the `circular` package
 - **ggplot2 visualisation** — `radiate()` renders unit-circle plots of headings and trajectories with concentric guides, mean-direction arrows, tick marks, and faceting; composable with `add_*` layer helpers
@@ -29,7 +29,6 @@ An R package for analysing and visualising **headings and trajectories on the un
 | `trex` | TRex (positional CSV; plain `X`/`Y` or `#wcentroid`/`#centroid`/`#pcentroid` variants) |
 | `anymaze` | ANY-maze (including nose/tail zones) |
 | `tracktor` | Tracktor |
-| `ctrax` | Ctrax (`.mat` files; preserves `theta`, `a`, `b`) |
 | `motchallenge` | MOTChallenge / SORT / DeepSORT |
 | `geojson_linestring` | GeoJSON LineString |
 | `gpx` | GPX tracks |
@@ -53,7 +52,7 @@ Register additional formats with `register_loader_dialect()` or the declarative 
 | `ransac_straight` | RANSAC-fitted straight-segment direction |
 | `origin_mean` | Distance-weighted mean angle from origin |
 | `bodypart_axis` | Axis between two tracked keypoints (pose data) |
-| `ellipse_axis` | Pre-computed orientation angle column (e.g. Ctrax `theta`) |
+| `ellipse_axis` | Pre-computed orientation angle column (e.g. a `theta` column) |
 | … | `straight`, `window_net`, `goal_bias`, `pca_axis`, `maxspeed_window`, `entry`, `ring_tangent` |
 
 Register custom rules with `register_heading_rule()`.
@@ -350,5 +349,4 @@ rsconnect::deployApp(system.file("app", package = "radiatR"))
 | `readr` / `data.table` | Faster CSV reading |
 | `jsonlite` | GeoJSON and JSON dialect loaders |
 | `xml2` | GPX dialect loader |
-| `R.matlab` | Ctrax `.mat` file loader |
 | `arrow` | Parquet/Feather file support |

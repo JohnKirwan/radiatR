@@ -181,11 +181,21 @@ test_that("anymaze zone centroid averages selected zones", {
   expect_equal(d$x_raw[1], 5, tolerance = 1e-9)  # mean of 10 and 0
 })
 
-# ---- ctrax theta/a/b preservation -------------------------------------------
+# ---- ctrax dialect removed --------------------------------------------------
+test_that("ctrax dialect is gone (unknown dialect error)", {
+  expect_false(exists("ctrax", envir = radiatR:::.loader_registry, inherits = FALSE))
+  tmp <- tempfile(fileext = ".csv")
+  writeLines(c("id,time,x,y", "1,0,0,0", "1,1,1,1"), tmp)
+  expect_error(read_tracks(tmp, dialect = "ctrax"), "Unknown dialect")
+})
 
-test_that("ctrax dialect errors when called on a nonexistent file", {
-  ctrax_fn <- get("ctrax", envir = radiatR:::.loader_registry)
-  expect_error(ctrax_fn("nonexistent.mat"), "provide a path|R.matlab")
+test_that("ellipse_axis heading rule survives ctrax removal", {
+  df <- data.frame(id = "a", time = 0:2, x = c(0, 1, 2), y = c(0, 0, 0),
+                   theta = c(0, pi / 4, pi / 2))
+  ts <- read_tracks(df)
+  hd <- derive_headings(ts, rule = "ellipse_axis")
+  expect_s3_class(hd, "headings_frame")
+  expect_true(all(is.finite(hd$heading)))
 })
 
 # ---- trex dialect ------------------------------------------------------------

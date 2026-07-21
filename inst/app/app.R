@@ -39,7 +39,6 @@ DIALECT_CHOICES <- c(
   "ToxTrac"                       = "toxtrac",
   "BORIS (with XY)"               = "boris_xy",
   "Tracktor"                      = "tracktor",
-  "Ctrax (.mat file)"             = "ctrax",
   "Generic CSV"                   = "generic"
 )
 
@@ -405,11 +404,6 @@ plain_error <- function(e) {
     return(paste(
       "No ring crossings found.",
       "Try adjusting the ring radii or choosing a different method."
-    ))
-  if (grepl("R\\.matlab|mat file", m, ignore.case = TRUE))
-    return(paste(
-      "Reading .mat files requires the R.matlab package:",
-      "install.packages('R.matlab')"
     ))
   paste("Unexpected error:", m)
 }

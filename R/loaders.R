@@ -1522,42 +1522,6 @@ register_loader_dialect("tracktor", function(x, id_col = NULL, time_col = NULL, 
   )
 })
 
-# Ctrax (http://ctrax.sourceforge.net): multi-animal MATLAB tracker.
-# Primary output is a .mat file whose 'trx' field is a 1xN struct array --
-# one element per tracked individual -- with fields x, y, theta, a, b,
-# firstframe, nframes.  Requires the 'R.matlab' package.
-# ids: optional integer vector selecting a subset of individuals (1-indexed).
-register_loader_dialect("ctrax", function(x, ids = NULL) {
-  if (!.is_installed("R.matlab")) stop("Please install 'R.matlab' to read Ctrax .mat files")
-  if (!is.character(x) || !file.exists(x)) stop("ctrax: provide a path to a Ctrax .mat file")
-  mat <- R.matlab::readMat(x)
-  trx <- mat[["trx"]]
-  if (is.null(trx)) stop("ctrax: no 'trx' field found in .mat file")
-  d <- dim(trx)
-  if (length(d) < 3L) stop("ctrax: unexpected trx structure -- expected a 3-D struct array from R.matlab")
-  n_ind <- d[3L]
-  fly_ids <- seq_len(n_ind)
-  if (!is.null(ids)) fly_ids <- intersect(fly_ids, as.integer(ids))
-  rows <- lapply(fly_ids, function(i) {
-    traj <- trx[, , i]
-    xs <- as.numeric(traj$x)
-    ys <- as.numeric(traj$y)
-    if (!length(xs) || !length(ys)) return(NULL)
-    ff <- if (!is.null(traj$firstframe)) as.integer(traj$firstframe[[1L]]) else 1L
-    frames <- seq(ff, by = 1L, length.out = length(xs))
-    data.frame(
-      id    = as.character(i),
-      time  = frames,
-      x     = xs,
-      y     = ys,
-      theta = if (!is.null(traj$theta)) as.numeric(traj$theta) else rep(NA_real_, length(xs)),
-      a     = if (!is.null(traj$a))     as.numeric(traj$a)     else rep(NA_real_, length(xs)),
-      b     = if (!is.null(traj$b))     as.numeric(traj$b)     else rep(NA_real_, length(xs)),
-      stringsAsFactors = FALSE
-    )
-  })
-  do.call(rbind, rows[!vapply(rows, is.null, logical(1L))])
-})
 
 # ---- built-in dialects: general (non-animal) ---------------------------------
 # 1) MOTChallenge / SORT / DeepSORT-like track files
