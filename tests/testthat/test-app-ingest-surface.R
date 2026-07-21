@@ -18,3 +18,19 @@ test_that("a failed trajectory ingest records the original exception in detail",
     expect_true(!is.null(rv$error_detail))       # original exception captured
   })
 })
+
+test_that("a successful ingest's captured warnings are surfaced, not dropped", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  shiny::testServer(app_dir(), {
+    # Simulate the success path: rv$error cleared but rv$error_detail carries
+    # warnings captured during a successful load (see app.R ~line 660-662).
+    rv$step <- 1L
+    rv$error <- NULL
+    rv$error_detail <- "some warning message from ingest"
+    html <- paste(as.character(output$wizard), collapse = "\n")
+    expect_match(html, "Notes")
+    expect_match(html, "some warning message from ingest", fixed = TRUE)
+    expect_no_match(html, "alert-danger")
+  })
+})

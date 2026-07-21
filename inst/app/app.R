@@ -713,12 +713,17 @@ server <- function(input, output, session) {
   output$boxplot_note <- renderUI({
     if (!isTRUE(input$show_boxplot) || is.null(rv$hd)) return(NULL)
     notes <- list()
+    boxplot_err <- NULL
     s <- tryCatch(circ_boxplot_stats(rv$hd, axial = is_axial()),
-                  error = function(e) NULL)
+                  error = function(e) { boxplot_err <<- conditionMessage(e); NULL })
     if (!is.null(s) && !isTRUE(s$drawable))
       notes <- c(notes, list(tags$div(
         class = "alert alert-secondary py-1 px-2 small mb-2",
         paste0("Circular boxplot not drawn: ", s$reason, "."))))
+    if (!is.null(boxplot_err))
+      notes <- c(notes, list(tags$div(
+        class = "alert alert-secondary py-1 px-2 small mb-2",
+        paste0("Circular boxplot error: ", boxplot_err, "."))))
     if (!length(notes)) return(NULL)
     do.call(tagList, notes)
   })
@@ -957,6 +962,13 @@ server <- function(input, output, session) {
             tags$details(class = "small mt-1",
               tags$summary("Technical details"),
               tags$pre(class = "mb-0", rv$error_detail)))
+    else if (!is.null(rv$error_detail))
+      # A successful ingest can still emit warnings (captured above); surface
+      # them in a muted notes box rather than dropping them silently.
+      div(class = "alert alert-secondary mt-3 mb-0",
+          tags$details(class = "small mb-0",
+            tags$summary("Notes"),
+            tags$pre(class = "mb-0", rv$error_detail)))
 
     # ---- Step 1: upload ----
     if (rv$step == 1L) {
@@ -1848,7 +1860,8 @@ server <- function(input, output, session) {
     if (sum(grp_counts >= 2L) < 2L) return(no_group_note)
 
     tryCatch(group_compare_table(hd, by_col, axial = is_axial()),
-             error = function(e) data.frame(Note = "Group comparison not available"))
+             error = function(e) data.frame(
+               Note = paste("Group comparison error:", conditionMessage(e))))
   }, striped = TRUE, hover = TRUE, align = "c")
   outputOptions(output, "group_compare_tbl", suspendWhenHidden = FALSE)
 
