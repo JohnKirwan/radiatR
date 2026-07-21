@@ -2021,7 +2021,10 @@ server <- function(input, output, session) {
   output$kinematics_code <- renderText(kinematics_code_text())
   output$dl_kinematics_code <- downloadHandler(
     filename = function() paste0("radiatR_kinematics_", Sys.Date(), ".R"),
-    content  = function(file) writeLines(kinematics_code_text(), file)
+    content  = function(file) {
+      req(results_ok())
+      writeLines(kinematics_code_text(), file)
+    }
   )
 
   # Image export for the kinematics profile, mirroring dl_plot for the figure.
@@ -2031,6 +2034,7 @@ server <- function(input, output, session) {
       paste0("radiatR_kinematics_", Sys.Date(), ".", fmt)
     },
     content = function(file) {
+      req(results_ok())
       req(rv$ts, isTRUE(kin_fps_ok()))
       fmt <- if (is.null(input$kin_plot_fmt)) "pdf" else input$kin_plot_fmt
       transparent <- isTRUE(input$kin_plot_transparent) && fmt != "jpg"
