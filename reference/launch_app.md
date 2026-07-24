@@ -29,8 +29,9 @@ Called for its side-effect; returns the result of
 
 ## Details
 
-The same app directory can be deployed to <https://www.shinyapps.io> or
-any Shiny-compatible server without modification:
+The same app directory is hosted on Posit Connect Cloud (git-backed) and
+can be deployed to any Shiny-compatible server. For a one-off manual
+deploy:
 
 
       rsconnect::deployApp(system.file("app", package = "radiatR"))

@@ -11,7 +11,7 @@ statistics.  No R coding is required to use the app."><meta property="og:image" 
 
     <a class="navbar-brand me-2" href="../index.html">radiatR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,7 +31,7 @@ statistics.  No R coding is required to use the app."><meta property="og:image" 
     <li><a class="dropdown-item" href="../articles/design.html">Design contract</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://johnkirwan.shinyapps.io/radiatR/" aria-label="Launch the radiatR Shiny app">App</a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://CONNECT_CLOUD_URL" aria-label="Launch the radiatR Shiny app">App</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/JohnKirwan/radiatR/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -79,9 +79,8 @@ Shiny pick a free port automatically.</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The same app directory can be deployed to
-<a href="https://www.shinyapps.io" class="external-link">https://www.shinyapps.io</a> or any Shiny-compatible server without
-modification:</p>
+    <p>The same app directory is hosted on Posit Connect Cloud (git-backed) and can
+be deployed to any Shiny-compatible server. For a one-off manual deploy:</p>
 <div class="sourceCode"><pre><code><span></span>
 <span>  <span class="fu">rsconnect</span><span class="fu">::</span><span class="fu">deployApp</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"app"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 

@@ -374,7 +374,7 @@ A browser-based interface covers the common workflow — upload a tracking
 file, choose a heading method, and view circular plots and summary
 statistics — with no R coding required.
 
-> **Try it live:** <https://johnkirwan.shinyapps.io/radiatR/>
+> **Try it live:** <https://CONNECT_CLOUD_URL>
 
 There are two ways to reach it:
 
@@ -385,15 +385,17 @@ There are two ways to reach it:
 radiatR::launch_app()
 ```
 
-**2. Hosted on shinyapps.io** (recommended for collaborators) —
-<https://johnkirwan.shinyapps.io/radiatR/>. A real Shiny server runs R
-server-side, so the page loads like any normal web app. The GitHub
-Actions workflow in `.github/workflows/shinyapps.yaml` deploys
-`inst/app` on each **published GitHub Release** (and on demand via
-*workflow_dispatch*). It needs three repository secrets from your
-shinyapps.io account — `SHINYAPPS_NAME` (the account name in the URL),
-`SHINYAPPS_TOKEN`, and `SHINYAPPS_SECRET` (Account → Tokens). To deploy
-by hand instead:
+**2. Hosted on Posit Connect Cloud** (recommended for collaborators) —
+<https://CONNECT_CLOUD_URL>. A real Shiny server runs R server-side, so
+the page loads like any normal web app. Connect Cloud is git-backed: it
+is linked to this GitHub repo and rebuilds `inst/app` on every push,
+resolving R package dependencies from the committed
+`inst/app/manifest.json` — there are no deploy secrets. Regenerate that
+manifest with the *connect-manifest* workflow (Actions → Run workflow)
+whenever the app’s dependencies or pinned R version change, then merge
+the PR it opens. To host your own copy, connect your fork in the Connect
+Cloud dashboard (content directory `inst/app`, primary file `app.R`).
+For a one-off manual deploy to any Shiny server instead:
 
 ``` r
 

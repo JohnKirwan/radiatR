@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="index.html">radiatR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,7 +49,7 @@
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://johnkirwan.shinyapps.io/radiatR/" aria-label="Launch the radiatR Shiny app">App</a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://CONNECT_CLOUD_URL" aria-label="Launch the radiatR Shiny app">App</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -432,13 +432,13 @@
 </h2>
 <p>A browser-based interface covers the common workflow — upload a tracking file, choose a heading method, and view circular plots and summary statistics — with no R coding required.</p>
 <blockquote>
-<p><strong>Try it live:</strong> <a href="https://johnkirwan.shinyapps.io/radiatR/" class="external-link uri">https://johnkirwan.shinyapps.io/radiatR/</a></p>
+<p><strong>Try it live:</strong> <a href="https://CONNECT_CLOUD_URL" class="external-link uri">https://CONNECT_CLOUD_URL</a></p>
 </blockquote>
 <p>There are two ways to reach it:</p>
 <p><strong>1. Run locally</strong> (works after installing the package):</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">radiatR</span><span class="fu">::</span><span class="fu"><a href="reference/launch_app.html">launch_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p><strong>2. Hosted on shinyapps.io</strong> (recommended for collaborators) — <a href="https://johnkirwan.shinyapps.io/radiatR/" class="external-link uri">https://johnkirwan.shinyapps.io/radiatR/</a>. A real Shiny server runs R server-side, so the page loads like any normal web app. The GitHub Actions workflow in <code>.github/workflows/shinyapps.yaml</code> deploys <code>inst/app</code> on each <strong>published GitHub Release</strong> (and on demand via <em>workflow_dispatch</em>). It needs three repository secrets from your shinyapps.io account — <code>SHINYAPPS_NAME</code> (the account name in the URL), <code>SHINYAPPS_TOKEN</code>, and <code>SHINYAPPS_SECRET</code> (Account → Tokens). To deploy by hand instead:</p>
+<p><strong>2. Hosted on Posit Connect Cloud</strong> (recommended for collaborators) — <a href="https://CONNECT_CLOUD_URL" class="external-link uri">https://CONNECT_CLOUD_URL</a>. A real Shiny server runs R server-side, so the page loads like any normal web app. Connect Cloud is git-backed: it is linked to this GitHub repo and rebuilds <code>inst/app</code> on every push, resolving R package dependencies from the committed <code>inst/app/manifest.json</code> — there are no deploy secrets. Regenerate that manifest with the <em>connect-manifest</em> workflow (Actions → Run workflow) whenever the app’s dependencies or pinned R version change, then merge the PR it opens. To host your own copy, connect your fork in the Connect Cloud dashboard (content directory <code>inst/app</code>, primary file <code>app.R</code>). For a one-off manual deploy to any Shiny server instead:</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">rsconnect</span><span class="fu">::</span><span class="fu">deployApp</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"app"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
