@@ -34,7 +34,7 @@ navbar:
       # inst/app/manifest.json + .github/workflows/connect-manifest.yaml). The old
       # in-browser shinylive build at /radiatR/app/ is retired -- that path now
       # redirects here (pkgdown/assets/app/index.html).
-      href: https://CONNECT_CLOUD_URL
+      href: https://019f950c-e3cd-3ba0-a8cb-2a8a76a14dd5.share.connect.posit.cloud/
       aria-label: Launch the radiatR Shiny app
     articles:
       text: Vignettes

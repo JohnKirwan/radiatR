@@ -318,7 +318,7 @@ A browser-based interface covers the common workflow — upload a tracking
 file, choose a heading method, and view circular plots and summary
 statistics — with no R coding required.
 
-> **Try it live:** <https://CONNECT_CLOUD_URL>
+> **Try it live:** <https://019f950c-e3cd-3ba0-a8cb-2a8a76a14dd5.share.connect.posit.cloud/>
 
 There are two ways to reach it:
 
@@ -329,7 +329,7 @@ radiatR::launch_app()
 ```
 
 **2. Hosted on Posit Connect Cloud** (recommended for collaborators) —
-<https://CONNECT_CLOUD_URL>. A real Shiny server runs R server-side, so the page
+<https://019f950c-e3cd-3ba0-a8cb-2a8a76a14dd5.share.connect.posit.cloud/>. A real Shiny server runs R server-side, so the page
 loads like any normal web app. Connect Cloud is git-backed: it is linked to this
 GitHub repo and rebuilds `inst/app` on every push, resolving R package
 dependencies from the committed `inst/app/manifest.json` — there are no deploy
