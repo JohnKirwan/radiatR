@@ -1,0 +1,76 @@
+# Regenerate inst/app/manifest.json for Posit Connect Cloud.
+#
+# Connect Cloud is git-backed: it pulls this repo and rebuilds the app in
+# inst/app on every push, resolving R package dependencies from the committed
+# manifest.json (there is no deploy step and no secrets). radiatR is not on CRAN,
+# so the manifest must record it with its GitHub remote -- which requires radiatR
+# to be *installed from GitHub* when the manifest is written. This workflow does
+# that in a clean environment and opens a PR with the regenerated manifest.
+#
+# Run it (Actions -> "connect-manifest" -> Run workflow) whenever the app's
+# dependencies or the pinned R version change. Merge the PR; Connect Cloud
+# redeploys from the updated manifest on the next push to the tracked branch.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "radiatR git ref to install & record in the manifest"
+        default: master
+        required: false
+
+name: connect-manifest
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  manifest:
+    runs-on: ubuntu-latest
+    env:
+      # The project .Rprofile activates renv, which repoints .libPaths() and
+      # breaks setup-r-dependencies' pak install. Disable the autoloader so CI
+      # installs into the normal library (same as the package's other workflows).
+      RENV_CONFIG_AUTOLOADER_ENABLED: false
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+          # The manifest records this R version for the Connect Cloud build.
+          # Pin one minor behind the newest release (the version the package is
+          # already CI-tested on) for a Connect-Cloud-supported runtime.
+          r-version: 'oldrel-1'
+
+      # App runtime deps. radiatR is installed FROM GitHub so writeManifest
+      # captures its RemoteType/RemoteRef metadata; the rest are app-only.
+      - name: Install app dependencies (radiatR from GitHub)
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::rsconnect
+            any::shiny
+            any::bslib
+            any::svglite
+            github::JohnKirwan/radiatR@${{ github.event.inputs.ref || 'master' }}
+
+      - name: Write manifest
+        shell: Rscript {0}
+        run: |
+          rsconnect::writeManifest(appDir = "inst/app")
+
+      - name: Open PR with regenerated manifest
+        uses: peter-evans/create-pull-request@v6
+        with:
+          add-paths: inst/app/manifest.json
+          branch: chore/connect-manifest
+          title: "chore: regenerate Connect Cloud manifest"
+          commit-message: "chore: regenerate inst/app/manifest.json"
+          body: |
+            Regenerated `inst/app/manifest.json` via the `connect-manifest`
+            workflow (radiatR ref: `${{ github.event.inputs.ref || 'master' }}`).
+            Merge to update the dependencies Posit Connect Cloud installs.

@@ -30,10 +30,11 @@ navbar:
     app:
       text: App
       # Full URL (not a relative href) so it resolves from every page depth.
-      # Points at the server-side shinyapps.io deploy (shinyapps.yaml). The old
+      # Points at the Posit Connect Cloud deploy (git-backed; see
+      # inst/app/manifest.json + .github/workflows/connect-manifest.yaml). The old
       # in-browser shinylive build at /radiatR/app/ is retired -- that path now
       # redirects here (pkgdown/assets/app/index.html).
-      href: https://johnkirwan.shinyapps.io/radiatR/
+      href: https://CONNECT_CLOUD_URL
       aria-label: Launch the radiatR Shiny app
     articles:
       text: Vignettes

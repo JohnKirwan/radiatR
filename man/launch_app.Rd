@@ -23,9 +23,8 @@ selecting a heading method, and viewing circular track plots and summary
 statistics.  No R coding is required to use the app.
 }
 \details{
-The same app directory can be deployed to
-\url{https://www.shinyapps.io} or any Shiny-compatible server without
-modification:
+The same app directory is hosted on Posit Connect Cloud (git-backed) and can
+be deployed to any Shiny-compatible server. For a one-off manual deploy:
 
 \preformatted{
   rsconnect::deployApp(system.file("app", package = "radiatR"))
