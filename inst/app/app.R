@@ -1,6 +1,7 @@
 # radiatR — Shiny companion app
 # Launch with: radiatR::launch_app()
-# To deploy: rsconnect::deployApp(system.file("app", package = "radiatR"))
+# Hosted on Posit Connect Cloud (git-backed): Connect Cloud rebuilds this app
+# from the repo and installs dependencies from inst/app/manifest.json.
 
 library(shiny)
 library(bslib)
@@ -8,9 +9,9 @@ library(bslib)
 # The analysis/plot packages are attached lazily (see ensure_pkgs()), not here,
 # so the upload screen paints on shiny + bslib alone. ggplot2 and radiatR (the
 # latter pulling in circular -> boot, mvtnorm) attach the first time the user
-# loads data -- which, under shinylive, is the bulk of the in-browser R boot. The
-# library() calls below stay in the source so shinylive still bundles them into
-# the WASM image; they only run when ensure_pkgs() is first called.
+# loads data. The library() calls below stay in the source so the dependencies
+# are discoverable (e.g. by rsconnect::writeManifest); they only run when
+# ensure_pkgs() is first called.
 ensure_pkgs <- function() {
   if (!"radiatR" %in% .packages()) library(radiatR)
   if (!"ggplot2" %in% .packages()) library(ggplot2)
