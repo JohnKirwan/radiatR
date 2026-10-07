@@ -415,7 +415,7 @@ guess_columns <- function(data, mapping = list()) {
 #   - No real id + id_from_filename = TRUE -> synthesize id_col from each
 #     file's basename stem.
 #   - Every row is tagged with ..source_file = basename(path).
-#   - Bound with dplyr::bind_rows() (NA-tolerant across differing columns).
+#   - Bound with vctrs::vec_rbind() (NA-tolerant across differing columns).
 .combine_track_files <- function(paths, mapping, id_from_filename, read_opts) {
   read_opts <- read_opts %||% list()
   dfl <- lapply(paths, function(p) {
@@ -447,7 +447,7 @@ guess_columns <- function(data, mapping = list()) {
     d
   }, dfl, paths)
 
-  df <- dplyr::bind_rows(dfl)
+  df <- vctrs::vec_rbind(!!!dfl)
   list(df = df, id_col = id_col, synth = synth)
 }
 

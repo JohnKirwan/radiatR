@@ -32,7 +32,7 @@ Imports:
     rlang,
     ggplot2,
     tibble,
-    purrr,
+    vctrs,
     circular,
     methods,
     utils,

@@ -216,7 +216,6 @@ get_trial_limits <- function(landmarks, track, file_tbl, vid_num) {
 #'   trial limits (including `valid_track` flags) are stored in
 #'   `meta$trial_limits`.
 #'
-#' @importFrom purrr compact
 #' @importFrom tibble tibble add_column as_tibble
 #' @export
 get_tracked_object_pos <- function(
@@ -244,7 +243,7 @@ get_tracked_object_pos <- function(
   for (i in seq_len(num_trials)) {
     res <- .map_one_trial(trial_limits[i, , drop = FALSE], track_df, i,
                           circ0, circ1, radius_criterion)
-    # Assigning NULL via [[<-] drops the slot; `purrr::compact()` later removes
+    # Assigning NULL via [[<-] drops the slot; the NULL filter below removes
     # the rest, and each track tibble carries its own vid_ord, so list position
     # is immaterial downstream.
     trial_tracks[[i]]           <- res$track
@@ -266,8 +265,8 @@ get_tracked_object_pos <- function(
     message(.oob_message(oob_points, oob_trials))
   }
 
-  trial_tracks <- purrr::compact(trial_tracks)
-  transform_entries <- purrr::compact(transform_entries)
+  trial_tracks <- Filter(Negate(is.null), trial_tracks)
+  transform_entries <- Filter(Negate(is.null), transform_entries)
   transform_history <- .empty_transform_history()
   if (length(transform_entries)) {
     for (entry in transform_entries) {
