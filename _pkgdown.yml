@@ -18,10 +18,10 @@ home:
   description: >
     Analyse and visualise headings and trajectories on the unit disk --
     directional (angular) data of any kind. Supply a table of angles directly,
-    or reconstruct headings from movement trajectories with import from 20+
-    tracking tools. Covers the full pipeline: data input, coordinate
-    transformation, heading derivation, circular statistics, and ggplot2
-    visualisation.
+    or reconstruct headings from movement trajectories with import from
+    DeepLabCut, SLEAP, EthoVision and other tracking tools. Covers the full
+    pipeline: data input, coordinate transformation, heading derivation,
+    circular statistics, and ggplot2 visualisation.
 
 navbar:
   structure:
@@ -61,7 +61,8 @@ reference:
 
   - title: "Loading tracking data"
     desc: >
-      Read and normalise trajectory files from 20+ tracking tools.
+      Read and normalise trajectory files from tracking tools and common
+      trajectory formats.
       Use dialect_args to pass tool-specific options (bodypart selection,
       likelihood thresholds, zone selection, etc.).
     contents:
@@ -299,7 +300,6 @@ reference:
       orientation experiment (Kirwan & Nilsson 2019).
     contents:
       - cpunctatus
-      - cpunctatus_tracks
 
   - title: "Miscellaneous"
     desc: Any remaining exported topics.

@@ -9,13 +9,18 @@
   `get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir, manifest = manifest)`.
   `manifest_cols` replaces `load_tracks2()`'s `colnames`.
 
-## Bug fixes
-
-* `get_trial_limits()` (and so `get_all_object_pos()`) no longer returns `NA`
-  manifest metadata for the second and later trials of a video when the file
-  table has fewer rows than the video has trials.
+* The `cpunctatus_tracks` dataset has been removed. It duplicated the table
+  already stored in `cpunctatus`; use `as.data.frame(cpunctatus)` (or
+  `cpunctatus@data`) for the same per-frame rows.
 
 ## Changes
+
+* The main workflow and simulation walkthroughs are now website-only articles
+  (`vignettes/articles/`) rather than installed vignettes, so
+  `vignette("radiatR")` and `vignette("simulate")` are no longer available
+  offline; read them at <https://johnkirwan.github.io/radiatR/articles/>.
+  Together with the dataset removal this brings the source tarball under
+  CRAN's 5 MB limit, and R CMD check now fails if it grows past 4.5 MB.
 
 * The hosted Shiny app has moved from shinyapps.io to Posit Connect Cloud
   (git-backed deploy). The `shinyapps.yaml` GitHub Actions workflow is removed;
@@ -27,6 +32,20 @@
   optional dplyr package (it is bound with `vctrs::vec_rbind()`). purrr is no
   longer a dependency; vctrs, already required by tibble and ggplot2, is now
   imported directly.
+
+## Bug fixes
+
+* The `euroc_mav` loader dialect now reads the real EuRoC header
+  (`#timestamp [ns]`, `p_RS_R_x [m]`, ...), which it previously rejected with
+  "required columns not found". Its timestamp scaling is also fixed: epoch
+  seconds were divided by 1e6 and microsecond stamps by 1e9.
+
+* The `csv_bbox` loader dialect now matches headers containing capitals
+  (`XMin`, `Width`, ...); these were previously mangled before matching.
+
+* `get_trial_limits()` (and so `get_all_object_pos()`) no longer returns `NA`
+  manifest metadata for the second and later trials of a video when the file
+  table has fewer rows than the video has trials.
 
 # radiatR 0.1.2
 

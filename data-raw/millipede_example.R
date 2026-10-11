@@ -23,8 +23,7 @@
 # NOTE: the bundled tracks are a SUBSET of the full experiment. The published
 #   study analysed many more trials (see Kirwan & Nilsson 2019); only the
 #   tracks available in milli_trials/ are packaged here. Object naming uses the
-#   species epithet throughout: cpunctatus (TrajSet) and cpunctatus_tracks
-#   (tibble), for Cylindroiulus punctatus.
+#   species epithet: cpunctatus (Tracks), for Cylindroiulus punctatus.
 #
 # This script regenerates inst/extdata/millipede_trials.csv, the bundled
 # track files in inst/extdata/tracks/, and the data/*.rda datasets from the
@@ -156,16 +155,12 @@ d <- d[order(d$trial_id, d$frame), , drop = FALSE]
 cpunctatus@data <- tibble::as_tibble(d)
 methods::validObject(cpunctatus)
 
-cpunctatus_tracks <- tibble::as_tibble(cpunctatus@data)
-
 # Real capture rate: 1 frame / 5 s = 0.2 fps (Kirwan & Nilsson 2019).
 cpunctatus@meta$frame_rate <- 0.2
 
 usethis::use_data(cpunctatus, overwrite = TRUE, compress = "xz")
-usethis::use_data(cpunctatus_tracks, overwrite = TRUE, compress = "xz")
-message("Built cpunctatus (TrajSet, ",
-        length(unique(cpunctatus@data$trial_id)), " trials) and ",
-        "cpunctatus_tracks (tibble)")
+message("Built cpunctatus (Tracks, ",
+        length(unique(cpunctatus@data$trial_id)), " trials)")
 
 # ---- 5. prune bundled tracks to the curated trial set -----------------------
 # Keep only the track files for trials that survived curation (manifest match

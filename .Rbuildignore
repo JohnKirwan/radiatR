@@ -17,3 +17,6 @@
 ^Rplots\.pdf$
 ^TODO\.md$
 ^\.
+^vignettes/articles$
+^vignettes/.*\.R$
+^tests/testthat/_snaps/vdiffr$
