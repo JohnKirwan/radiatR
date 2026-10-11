@@ -4,13 +4,16 @@ An R package for analysing and visualising **headings and trajectories
 on the unit disk** — directional (angular) data of any kind. It covers
 the full pipeline: angle/trajectory input → coordinate transformation →
 circular statistics → ggplot2 visualisation. Bring a table of headings
-directly, or reconstruct them from movement trajectories, with import
-from 20+ tracking tools.
+directly, or reconstruct them from movement trajectories, with built-in
+import for DeepLabCut, SLEAP, EthoVision, TrackMate and other tracking
+tools.
 
 ## Key Features
 
-- **Flexible loader framework** — read data from 20+ tracking tools via
-  registered dialects; extend with custom formats
+- **Flexible loader framework** — read exports from DeepLabCut, SLEAP,
+  EthoVision, TrackMate, idtracker.ai and other tracking tools, plus
+  GPX, GeoJSON and NMEA trajectory formats, via registered dialects;
+  extend with custom formats
 - **Pose-estimation support** — multi-bodypart centroid and body-axis
   heading from DeepLabCut, EthoVision multi-zone, ANY-maze nose/tail
 - **Heading rule registry** — derive per-trial headings by any of 15+
@@ -29,6 +32,7 @@ from 20+ tracking tools.
 |----|----|
 | `dtrack` | dtrack |
 | `deeplabcut` / `deeplabcut_multiheader` | DeepLabCut (single point or multi-bodypart centroid) |
+| `sleap` | SLEAP (analysis CSV; single node or score-weighted centroid) |
 | `idtrackerai_wide` | idtracker.ai |
 | `ethovision` | EthoVision XT (including multi-zone) |
 | `trackmate` | TrackMate (Fiji) |
@@ -41,6 +45,9 @@ from 20+ tracking tools.
 | `geojson_linestring` | GeoJSON LineString |
 | `gpx` | GPX tracks |
 | `nmea_gprmc` | NMEA GPRMC |
+| `tum_traj` | TUM RGB-D trajectory files |
+| `euroc_mav` | EuRoC MAV ground-truth CSV |
+| `csv_bbox` | Generic bounding-box CSV (`x`/`y`/`w`/`h` or `xmin`/`ymin`/`xmax`/`ymax`; box centre) |
 | `wide_prefix_xy` | Generic `x_<id>` / `y_<id>` wide format |
 
 Register additional formats with
@@ -425,9 +432,9 @@ Browser-based interface – no R coding required.
 
 ## Loading tracking data
 
-Read and normalise trajectory files from 20+ tracking tools. Use
-dialect_args to pass tool-specific options (bodypart selection,
-likelihood thresholds, zone selection, etc.).
+Read and normalise trajectory files from tracking tools and common
+trajectory formats. Use dialect_args to pass tool-specific options
+(bodypart selection, likelihood thresholds, zone selection, etc.).
 
 - [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
   : Construct a Tracks from a data.frame or file(s)

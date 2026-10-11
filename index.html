@@ -11,9 +11,9 @@
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="radiatR -- Headings &amp; Trajectories on the unit disk">
-<meta name="description" content="Analyse and visualise headings and trajectories on the unit disk -- directional (angular) data of any kind. Supply a table of angles directly, or reconstruct headings from movement trajectories with import from 20+ tracking tools. Covers the full pipeline: data input, coordinate transformation, heading derivation, circular statistics, and ggplot2 visualisation.
+<meta name="description" content="Analyse and visualise headings and trajectories on the unit disk -- directional (angular) data of any kind. Supply a table of angles directly, or reconstruct headings from movement trajectories with import from DeepLabCut, SLEAP, EthoVision and other tracking tools. Covers the full pipeline: data input, coordinate transformation, heading derivation, circular statistics, and ggplot2 visualisation.
 ">
-<meta property="og:description" content="Analyse and visualise headings and trajectories on the unit disk -- directional (angular) data of any kind. Supply a table of angles directly, or reconstruct headings from movement trajectories with import from 20+ tracking tools. Covers the full pipeline: data input, coordinate transformation, heading derivation, circular statistics, and ggplot2 visualisation.
+<meta property="og:description" content="Analyse and visualise headings and trajectories on the unit disk -- directional (angular) data of any kind. Supply a table of angles directly, or reconstruct headings from movement trajectories with import from DeepLabCut, SLEAP, EthoVision and other tracking tools. Covers the full pipeline: data input, coordinate transformation, heading derivation, circular statistics, and ggplot2 visualisation.
 ">
 <meta property="og:image" content="https://johnkirwan.github.io/radiatR/logo.png">
 <script data-goatcounter="https://radiatr.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
@@ -71,13 +71,13 @@
 </div>
 <!-- badges: start -->
 
-<p>An R package for analysing and visualising <strong>headings and trajectories on the unit disk</strong> — directional (angular) data of any kind. It covers the full pipeline: angle/trajectory input → coordinate transformation → circular statistics → ggplot2 visualisation. Bring a table of headings directly, or reconstruct them from movement trajectories, with import from 20+ tracking tools.</p>
+<p>An R package for analysing and visualising <strong>headings and trajectories on the unit disk</strong> — directional (angular) data of any kind. It covers the full pipeline: angle/trajectory input → coordinate transformation → circular statistics → ggplot2 visualisation. Bring a table of headings directly, or reconstruct them from movement trajectories, with built-in import for DeepLabCut, SLEAP, EthoVision, TrackMate and other tracking tools.</p>
 <div class="section level2">
 <h2 id="key-features">Key Features<a class="anchor" aria-label="anchor" href="#key-features"></a>
 </h2>
 <ul>
 <li>
-<strong>Flexible loader framework</strong> — read data from 20+ tracking tools via registered dialects; extend with custom formats</li>
+<strong>Flexible loader framework</strong> — read exports from DeepLabCut, SLEAP, EthoVision, TrackMate, idtracker.ai and other tracking tools, plus GPX, GeoJSON and NMEA trajectory formats, via registered dialects; extend with custom formats</li>
 <li>
 <strong>Pose-estimation support</strong> — multi-bodypart centroid and body-axis heading from DeepLabCut, EthoVision multi-zone, ANY-maze nose/tail</li>
 <li>
@@ -110,6 +110,10 @@
 <code>deeplabcut</code> / <code>deeplabcut_multiheader</code>
 </td>
 <td>DeepLabCut (single point or multi-bodypart centroid)</td>
+</tr>
+<tr>
+<td><code>sleap</code></td>
+<td>SLEAP (analysis CSV; single node or score-weighted centroid)</td>
 </tr>
 <tr>
 <td><code>idtrackerai_wide</code></td>
@@ -158,6 +162,18 @@
 <tr>
 <td><code>nmea_gprmc</code></td>
 <td>NMEA GPRMC</td>
+</tr>
+<tr>
+<td><code>tum_traj</code></td>
+<td>TUM RGB-D trajectory files</td>
+</tr>
+<tr>
+<td><code>euroc_mav</code></td>
+<td>EuRoC MAV ground-truth CSV</td>
+</tr>
+<tr>
+<td><code>csv_bbox</code></td>
+<td>Generic bounding-box CSV (<code>x</code>/<code>y</code>/<code>w</code>/<code>h</code> or <code>xmin</code>/<code>ymin</code>/<code>xmax</code>/<code>ymax</code>; box centre)</td>
 </tr>
 <tr>
 <td><code>wide_prefix_xy</code></td>

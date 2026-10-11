@@ -9,9 +9,9 @@ Browser-based interface – no R coding required.
 
 ## Loading tracking data
 
-Read and normalise trajectory files from 20+ tracking tools. Use
-dialect_args to pass tool-specific options (bodypart selection,
-likelihood thresholds, zone selection, etc.).
+Read and normalise trajectory files from tracking tools and common
+trajectory formats. Use dialect_args to pass tool-specific options
+(bodypart selection, likelihood thresholds, zone selection, etc.).
 
 - [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
   : Construct a Tracks from a data.frame or file(s)

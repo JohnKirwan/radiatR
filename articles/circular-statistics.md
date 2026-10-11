@@ -642,8 +642,8 @@ length.
 
 - The **main vignette** covers building these heading data frames and
   the trajectory/heading-overlay plotting layers.
-- The **Loaders vignette** covers reading tracking exports from 20+
-  tools into the `Tracks` objects these analyses start from.
+- The **Loaders vignette** covers reading tracking-tool exports into the
+  `Tracks` objects these analyses start from.
 - Every function above is documented individually under *Reference*,
   grouped by role (summaries, parametric fitting, correlation,
   hypothesis tests, and distribution overlays). \`\`\`
