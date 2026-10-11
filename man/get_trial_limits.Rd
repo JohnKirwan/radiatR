@@ -13,8 +13,8 @@ numbers and landmark coordinates.}
 \item{track}{Data frame or `Tracks` of Cartesian coordinates for all
 frames in the video.}
 
-\item{file_tbl}{Tibble returned by [import_tracks()] (optionally enriched by
-[load_tracks()] or [load_tracks2()]).}
+\item{file_tbl}{Tibble returned by [import_tracks()]. Any columns beyond
+`basename`, `landmark` and `track` are carried onto the trial table.}
 
 \item{vid_num}{Index of the current video within `file_tbl`.}
 }

@@ -1,5 +1,20 @@
 # radiatR 0.1.3
 
+## Breaking changes
+
+* `load_tracks()` and `load_tracks2()` have been removed. Despite the names
+  they loaded no tracks; they joined manifest columns onto the file table used
+  by the landmark pipeline. Pass the manifest to `get_all_object_pos()`
+  instead, via its new `manifest` and `manifest_cols` arguments:
+  `get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir, manifest = manifest)`.
+  `manifest_cols` replaces `load_tracks2()`'s `colnames`.
+
+## Bug fixes
+
+* `get_trial_limits()` (and so `get_all_object_pos()`) no longer returns `NA`
+  manifest metadata for the second and later trials of a video when the file
+  table has fewer rows than the video has trials.
+
 ## Changes
 
 * The hosted Shiny app has moved from shinyapps.io to Posit Connect Cloud

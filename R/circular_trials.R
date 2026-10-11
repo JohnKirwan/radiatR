@@ -38,8 +38,8 @@
 #'   numbers and landmark coordinates.
 #' @param track Data frame or `Tracks` of Cartesian coordinates for all
 #'   frames in the video.
-#' @param file_tbl Tibble returned by [import_tracks()] (optionally enriched by
-#'   [load_tracks()] or [load_tracks2()]).
+#' @param file_tbl Tibble returned by [import_tracks()]. Any columns beyond
+#'   `basename`, `landmark` and `track` are carried onto the trial table.
 #' @param vid_num Index of the current video within `file_tbl`.
 #'
 #' @return A tibble with one row per trial containing trial limits and reference
@@ -98,7 +98,7 @@ get_trial_limits <- function(landmarks, track, file_tbl, vid_num) {
   structural <- c("basename", "landmark", "track")
   carry_cols <- setdiff(names(file_tbl), c(structural, names(tl)))
   for (col in carry_cols) {
-    tl[[col]] <- file_tbl[[col]][file_tbl$basename == tl$video]
+    tl[[col]] <- file_tbl[[col]][vid_num]
   }
 
   theta <- tl$ref_theta
@@ -328,14 +328,20 @@ get_tracked_object_pos <- function(
 #' Iterates over the rows of `file_tbl`, reading the paired landmark and track
 #' files for each video before computing trial limits and normalised
 #' coordinates. The per-trial outputs are combined into a single tibble, and
-#' the augmented trial limits are returned alongside it.
+#' the augmented trial limits are returned alongside it. Supply `manifest` to
+#' join per-file metadata (matched on `file`) onto every trial.
 #'
 #' @param landmarks Optional data frame or `Tracks` for the first entry. Retained
 #'   for backwards compatibility; values are overwritten internally.
 #' @param track Optional data frame or `Tracks` for the first entry.
-#' @param file_tbl Tibble produced by [import_tracks()], optionally enriched via
-#'   [load_tracks()] or [load_tracks2()].
+#' @param file_tbl Tibble produced by [import_tracks()].
 #' @param track_dir Directory containing the landmark and track text files.
+#' @param manifest Optional data frame (e.g. from [import_info()]) with a `file`
+#'   column matching `file_tbl$basename`; its other columns are joined onto
+#'   `file_tbl` and carried onto every trial.
+#' @param manifest_cols Optional named character vector (or list) mapping new
+#'   column names to columns of `manifest`. When `NULL`, all columns aside from
+#'   `file` are carried over with the same names.
 #'
 #' @return A `Tracks` combining the normalised observations for all valid
 #'   trials in the manifest. The aggregated trial limits are available via
@@ -344,7 +350,10 @@ get_tracked_object_pos <- function(
 #' @importFrom utils read.delim
 #' @export
 get_all_object_pos <- function(landmarks = NULL, track = NULL,
-                               file_tbl, track_dir) {
+                               file_tbl, track_dir,
+                               manifest = NULL, manifest_cols = NULL) {
+  file_tbl <- .augment_with_manifest(file_tbl, manifest, manifest_cols)
+  .validate_track_paths(.resolve_track_paths(track_dir, file_tbl$track))
   trajsets <- list()
   trial_limits_list <- list()
   oob_points <- 0L

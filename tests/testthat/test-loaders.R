@@ -29,7 +29,7 @@ test_that("Tracks loader assembles tracks with metadata", {
   expect_equal(unique(ts@data$condition), "baseline")
 })
 
-test_that("legacy loader wrappers still augment file tables", {
+test_that("manifest columns are joined onto file tables", {
   tmp <- withr::local_tempdir()
   track_path <- file.path(tmp, "sample_point02.txt")
   landmark_path <- file.path(tmp, "sample_point01.txt")
@@ -51,11 +51,10 @@ test_that("legacy loader wrappers still augment file tables", {
     id = "animal"
   )
 
-  augmented <- load_tracks(file_tbl, manifest, tmp)
+  augmented <- .augment_with_manifest(file_tbl, manifest, NULL)
   expect_true(all(c("arc", "type", "obstacle", "id") %in% names(augmented)))
 
-  custom <- load_tracks2(file_tbl, manifest, tmp,
-                         colnames = list(group = "type"))
+  custom <- .augment_with_manifest(file_tbl, manifest, list(group = "type"))
   expect_true("group" %in% names(custom))
   expect_equal(custom$group, "demo")
 })
