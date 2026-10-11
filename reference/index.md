@@ -29,10 +29,6 @@ trajectory formats. Use dialect_args to pass tool-specific options
 - [`import_tracks()`](https://johnkirwan.github.io/radiatR/reference/import_tracks.md)
   : Discover dtrack (or compatible) landmark/track file pairs in a
   directory
-- [`load_tracks()`](https://johnkirwan.github.io/radiatR/reference/load_tracks.md)
-  : Legacy helper to merge manifest metadata with a track table
-- [`load_tracks2()`](https://johnkirwan.github.io/radiatR/reference/load_tracks2.md)
-  : Flexible metadata join for track tables
 - [`get_all_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.md)
   : Aggregate track positions across all videos in a manifest.
 - [`get_trial_limits()`](https://johnkirwan.github.io/radiatR/reference/get_trial_limits.md)
@@ -604,10 +600,6 @@ Any remaining exported topics.
   : List registered declarative formats
 - [`load_manifest()`](https://johnkirwan.github.io/radiatR/reference/load_manifest.md)
   : Load trajectories listed in a file table into a Tracks
-- [`load_tracks()`](https://johnkirwan.github.io/radiatR/reference/load_tracks.md)
-  : Legacy helper to merge manifest metadata with a track table
-- [`load_tracks2()`](https://johnkirwan.github.io/radiatR/reference/load_tracks2.md)
-  : Flexible metadata join for track tables
 - [`new_headings_frame()`](https://johnkirwan.github.io/radiatR/reference/new_headings_frame.md)
   : Low-level headings_frame constructor
 - [`path_sinuosity()`](https://johnkirwan.github.io/radiatR/reference/path_sinuosity.md)

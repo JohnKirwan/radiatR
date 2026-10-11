@@ -3,12 +3,21 @@
 Iterates over the rows of \`file_tbl\`, reading the paired landmark and
 track files for each video before computing trial limits and normalised
 coordinates. The per-trial outputs are combined into a single tibble,
-and the augmented trial limits are returned alongside it.
+and the augmented trial limits are returned alongside it. Supply
+\`manifest\` to join per-file metadata (matched on \`file\`) onto every
+trial.
 
 ## Usage
 
 ``` r
-get_all_object_pos(landmarks = NULL, track = NULL, file_tbl, track_dir)
+get_all_object_pos(
+  landmarks = NULL,
+  track = NULL,
+  file_tbl,
+  track_dir,
+  manifest = NULL,
+  manifest_cols = NULL
+)
 ```
 
 ## Arguments
@@ -24,12 +33,23 @@ get_all_object_pos(landmarks = NULL, track = NULL, file_tbl, track_dir)
 
 - file_tbl:
 
-  Tibble produced by \[import_tracks()\], optionally enriched via
-  \[load_tracks()\] or \[load_tracks2()\].
+  Tibble produced by \[import_tracks()\].
 
 - track_dir:
 
   Directory containing the landmark and track text files.
+
+- manifest:
+
+  Optional data frame (e.g. from \[import_info()\]) with a \`file\`
+  column matching \`file_tbl\$basename\`; its other columns are joined
+  onto \`file_tbl\` and carried onto every trial.
+
+- manifest_cols:
+
+  Optional named character vector (or list) mapping new column names to
+  columns of \`manifest\`. When \`NULL\`, all columns aside from
+  \`file\` are carried over with the same names.
 
 ## Value
 

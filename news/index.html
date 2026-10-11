@@ -46,7 +46,8 @@
 <h2 class="pkg-version" data-toc-text="0.1.3" id="radiatr-013">radiatR 0.1.3<a class="anchor" aria-label="anchor" href="#radiatr-013"></a></h2>
 <div class="section level3">
 <h3 id="breaking-changes-0-1-3">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-1-3"></a></h3>
-<ul><li>The <code>cpunctatus_tracks</code> dataset has been removed. It duplicated the table already stored in <code>cpunctatus</code>; use <code>as.data.frame(cpunctatus)</code> (or <code>cpunctatus@data</code>) for the same per-frame rows.</li>
+<ul><li><p><code>load_tracks()</code> and <code>load_tracks2()</code> have been removed. Despite the names they loaded no tracks; they joined manifest columns onto the file table used by the landmark pipeline. Pass the manifest to <code><a href="../reference/get_all_object_pos.html">get_all_object_pos()</a></code> instead, via its new <code>manifest</code> and <code>manifest_cols</code> arguments: <code>get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir, manifest = manifest)</code>. <code>manifest_cols</code> replaces <code>load_tracks2()</code>’s <code>colnames</code>.</p></li>
+<li><p>The <code>cpunctatus_tracks</code> dataset has been removed. It duplicated the table already stored in <code>cpunctatus</code>; use <code>as.data.frame(cpunctatus)</code> (or <code>cpunctatus@data</code>) for the same per-frame rows.</p></li>
 </ul></div>
 <div class="section level3">
 <h3 id="changes-0-1-3">Changes<a class="anchor" aria-label="anchor" href="#changes-0-1-3"></a></h3>
@@ -58,6 +59,7 @@
 <h3 id="bug-fixes-0-1-3">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-1-3"></a></h3>
 <ul><li><p>The <code>euroc_mav</code> loader dialect now reads the real EuRoC header (<code>#timestamp [ns]</code>, <code>p_RS_R_x [m]</code>, …), which it previously rejected with “required columns not found”. Its timestamp scaling is also fixed: epoch seconds were divided by 1e6 and microsecond stamps by 1e9.</p></li>
 <li><p>The <code>csv_bbox</code> loader dialect now matches headers containing capitals (<code>XMin</code>, <code>Width</code>, …); these were previously mangled before matching.</p></li>
+<li><p><code><a href="../reference/get_trial_limits.html">get_trial_limits()</a></code> (and so <code><a href="../reference/get_all_object_pos.html">get_all_object_pos()</a></code>) no longer returns <code>NA</code> manifest metadata for the second and later trials of a video when the file table has fewer rows than the video has trials.</p></li>
 </ul></div>
 </div>
     <div class="section level2">

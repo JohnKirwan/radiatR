@@ -79,52 +79,19 @@ head(manifest)
 #> 6 control_0
 ```
 
-### Step 3 — join metadata
-
-[`load_tracks()`](https://johnkirwan.github.io/radiatR/reference/load_tracks.md)
-merges the manifest into `file_tbl`, matching on the `file` column. The
-resulting tibble carries arc, type, obstacle, and id alongside each file
-path.
-
-``` r
-
-file_tbl <- load_tracks(file_tbl, manifest, track_dir)
-#> Warning in .augment_with_manifest(file_tbl, df, NULL): Entries in `file_tbl`
-#> with no matching metadata: con_19
-#> Warning in .augment_with_manifest(file_tbl, df, NULL): Rows in `manifest` with
-#> no corresponding track: con_101, con_102, con_104, con_105, con_108, con_109,
-#> con_110, con_112, con_116, con_117, con_119, con_120, con_121, 5_101, 5_102,
-#> 5_103, 5_104, 5_108, 5_110, 5_117, 5_118, 5_119, 5_121, 10_101, 10_102, 10_105,
-#> 10_107, 10_108, 10_109, 10_110, 10_111, 10_112, 10_113, 10_114, 10_116, 10_117,
-#> 10_119, 10_121, 15_101, 15_102, 15_104, 15_105, 15_107, 15_109, 15_110, 15_112,
-#> 15_116, 15_119, 15_120, 15_121, 20_101, 20_102, 20_103, 20_104, 20_105, 20_106,
-#> 20_107, 20_108, 20_109, 20_110, 20_112, 20_116, 20_117, 20_119, 20_121, 30_101,
-#> 30_102, 30_104, 30_105, 30_106, 30_107, 30_108, 30_109, 30_113, 30_114, 30_115,
-#> 30_116, 30_117, 30_119, 30_121, 40_101, 40_102, 40_103, 40_104, 40_105, 40_107,
-#> 40_108, 40_109, 40_110, 40_112, 40_118, 40_119, 40_121, 50_12, 50_34, 50_101,
-#> 50_104, 50_105, 50_107, 50_108, 50_109, 50_110, 50_112, 50_113, 50_119, 50_121
-head(file_tbl[, c("basename", "arc", "type", "obstacle", "id")])
-#> # A tibble: 6 × 5
-#>   basename   arc type     obstacle    id
-#>   <chr>    <int> <chr>    <chr>    <int>
-#> 1 10_1        10 stimulus none         1
-#> 2 10_10       10 stimulus none        10
-#> 3 10_11       10 stimulus none        11
-#> 4 10_12       10 stimulus none        12
-#> 5 10_13       10 stimulus none        13
-#> 6 10_14       10 stimulus none        14
-```
-
-### Step 4 — extract and normalise trajectories
+### Step 3 — extract and normalise trajectories
 
 [`get_all_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.md)
 reads each file pair, uses the landmark rows to establish the
 unit-circle geometry, and returns a `Tracks` with normalised unit-circle
-coordinates.
+coordinates. Passing `manifest` joins its columns (arc, type, obstacle,
+id, …) onto every trial, matching on the `file` column; use
+`manifest_cols` to rename or restrict them.
 
 ``` r
 
-ts <- suppressWarnings(get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir))
+ts <- suppressWarnings(get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir,
+                                          manifest = manifest))
 #> 478 points across 106 trials exceeded the unit circle boundary (radius > 1); coordinates left unscaled.
 ts
 #> Tracks: 235 trajectories, 44331 observations
@@ -139,6 +106,16 @@ ts
 #> 4 10_1_1       4  454.  370. 0        0.00770     1.49  10_1  1     10_1_1 
 #> 5 10_1_1       5  456.  377. 0.00511 -0.0153      4.96  10_1  1     10_1_1 
 #> 6 10_1_1       6  459.  382. 0.0154  -0.0307      5.10  10_1  1     10_1_1
+head(ts@meta$trial_limits[, c("video", "arc", "type", "obstacle")])
+#> # A tibble: 6 × 4
+#>   video   arc type     obstacle
+#>   <chr> <int> <chr>    <chr>   
+#> 1 10_1     10 stimulus none    
+#> 2 10_10    10 stimulus none    
+#> 3 10_11    10 stimulus none    
+#> 4 10_12    10 stimulus none    
+#> 5 10_13    10 stimulus none    
+#> 6 10_14    10 stimulus none
 ```
 
 ## dtrack format

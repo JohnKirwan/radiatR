@@ -25,8 +25,9 @@ get_trial_limits(landmarks, track, file_tbl, vid_num)
 
 - file_tbl:
 
-  Tibble returned by \[import_tracks()\] (optionally enriched by
-  \[load_tracks()\] or \[load_tracks2()\]).
+  Tibble returned by \[import_tracks()\]. Any columns beyond
+  \`basename\`, \`landmark\` and \`track\` are carried onto the trial
+  table.
 
 - vid_num:
 
