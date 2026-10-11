@@ -973,46 +973,6 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
   combined
 }
 
-#' Legacy helper to merge manifest metadata with a track table
-#'
-#' @param file_tbl Tibble returned by [import_tracks()].
-#' @param df Data frame containing at least a `file` column and, optionally,
-#'   `arc`, `type`, `obstacle`, and `id`.
-#' @param track_dir Directory containing the track files (used for validation).
-#' @return `file_tbl` with additional metadata columns bound in.
-#' @export
-load_tracks <- function(file_tbl, df, track_dir) {
-  if (missing(df)) stop("`df` must be supplied.")
-  # Carry every manifest column (all non-`file` columns); `.augment_with_manifest`
-  # does this when `manifest_cols = NULL`. Use load_tracks2() to rename/restrict.
-  out <- .augment_with_manifest(file_tbl, df, NULL)
-  .validate_track_paths(.resolve_track_paths(track_dir, out$track))
-  out
-}
-
-#' Flexible metadata join for track tables
-#'
-#' @param file_tbl Tibble returned by [import_tracks()].
-#' @param df Manifest data frame containing a `file` column.
-#' @param track_dir Directory containing the track files (used for validation).
-#' @param colnames Named character vector (or list) mapping the desired column
-#'   names in the output to columns in `df`.
-#' @return `file_tbl` with additional columns appended.
-#' @export
-load_tracks2 <- function(file_tbl, df, track_dir, colnames) {
-  if (missing(colnames) || is.null(colnames) || !length(colnames)) {
-    stop("`colnames` must be a non-empty named character vector or list.")
-  }
-  if (is.list(colnames)) colnames <- unlist(colnames)
-  if (is.null(names(colnames))) {
-    stop("`colnames` must be named so that new column names can be assigned.")
-  }
-
-  out <- .augment_with_manifest(file_tbl, df, colnames)
-  .validate_track_paths(.resolve_track_paths(track_dir, out$track))
-  out
-}
-
 # ---- example dialects (opt-in) -----------------------------------------------
 # Declarative *format* examples (YAML/JSON). Users can register a spec and then call read_tracks_format(...).
 # YAML example:

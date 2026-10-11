@@ -52,9 +52,9 @@ manifest_path <- system.file("extdata", "millipede_trials.csv", package = "radia
 
 file_tbl  <- import_tracks(track_dir)
 manifest  <- import_info(manifest_path)
-file_tbl  <- load_tracks(file_tbl, manifest, track_dir)
 
-ts_demo <- suppressWarnings(get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir))
+ts_demo <- suppressWarnings(get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir,
+                                               manifest = manifest))
 ts_demo
 ```
 

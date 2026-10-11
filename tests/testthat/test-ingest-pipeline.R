@@ -39,17 +39,6 @@ test_that("file-based ingest pipeline produces normalised tracks", {
     stringsAsFactors = FALSE
   )
 
-  file_tbl_aug <- load_tracks(file_tbl, manifest, tmp_dir)
-  expect_equal(file_tbl_aug$arc, manifest$arc)
-
-  file_tbl_aug2 <- load_tracks2(
-    file_tbl,
-    manifest,
-    tmp_dir,
-    colnames = list(arc = "arc", type = "type", obstacle = "obstacle", id = "id")
-  )
-  expect_equal(file_tbl_aug2$type, manifest$type)
-
   landmarks_df <- read.delim(
     file.path(tmp_dir, file_tbl$landmark[1]),
     header = FALSE
@@ -61,7 +50,7 @@ test_that("file-based ingest pipeline produces normalised tracks", {
   )[, 1:3]
   names(tracks_df) <- c("frame", "x", "y")
 
-  trial_limits <- get_trial_limits(landmarks_df, tracks_df, file_tbl_aug, vid_num = 1)
+  trial_limits <- get_trial_limits(landmarks_df, tracks_df, file_tbl, vid_num = 1)
   expect_equal(nrow(trial_limits), 2)
   expect_true(all(trial_limits$r_px > 0))
 
@@ -69,15 +58,17 @@ test_that("file-based ingest pipeline produces normalised tracks", {
   expect_s4_class(track_ts, "Tracks")
   expect_true(all(track_ts@meta$trial_limits$valid_track %in% c(TRUE, FALSE)))
 
-  combined <- get_all_object_pos(landmarks_df, tracks_df, file_tbl_aug, tmp_dir)
+  combined <- get_all_object_pos(landmarks_df, tracks_df, file_tbl, tmp_dir,
+                                 manifest = manifest)
   expect_s4_class(combined, "Tracks")
+  expect_equal(unique(combined@meta$trial_limits$type), manifest$type)
   combined_df <- as.data.frame(combined)
   expect_gt(nrow(combined_df), 0)
   expect_true(all(abs(combined_df$rel_x) <= 1.5 + 1e-8))
   expect_s3_class(combined@meta$trial_limits, "data.frame")
 })
 
-test_that("arbitrary manifest metadata columns are carried onto trials", {
+test_that("manifest metadata columns are joined and carried onto trials", {
   tmp_dir <- tempfile("radiatr_meta")
   dir.create(tmp_dir)
   on.exit(unlink(tmp_dir, recursive = TRUE))
@@ -102,19 +93,27 @@ test_that("arbitrary manifest metadata columns are carried onto trials", {
     cohort    = 3L,
     stringsAsFactors = FALSE
   )
-  file_tbl_aug <- load_tracks(file_tbl, manifest, tmp_dir)
-  expect_true(all(c("arc", "treatment", "cohort") %in% names(file_tbl_aug)))
+  read_limits <- function(...) {
+    ts <- suppressWarnings(get_all_object_pos(file_tbl = file_tbl,
+                                              track_dir = tmp_dir, ...))
+    ts@meta$trial_limits
+  }
 
-  landmarks_df <- read.delim(file.path(tmp_dir, file_tbl$landmark[1]),
-                             header = FALSE)[, 1:3]
-  names(landmarks_df) <- c("frame", "x", "y")
-  tracks_df <- read.delim(file.path(tmp_dir, file_tbl$track[1]),
-                          header = FALSE)[, 1:3]
-  names(tracks_df) <- c("frame", "x", "y")
-
-  tl <- suppressWarnings(get_trial_limits(landmarks_df, tracks_df, file_tbl_aug, vid_num = 1))
+  tl <- read_limits(manifest = manifest)
   expect_true(all(c("arc", "treatment", "cohort") %in% names(tl)))
   expect_equal(tl$treatment[1], "drug_A")
   expect_equal(tl$cohort[1], 3L)
   expect_false(any(c("landmark", "track") %in% names(tl)))
+
+  # manifest_cols restricts and renames the joined columns
+  tl <- read_limits(manifest = manifest, manifest_cols = list(group = "treatment"))
+  expect_equal(tl$group[1], "drug_A")
+  expect_false(any(c("treatment", "cohort") %in% names(tl)))
+
+  # without a manifest nothing is joined
+  expect_false("treatment" %in% names(read_limits()))
+
+  file_tbl$track <- "absent_point02.txt"
+  expect_error(get_all_object_pos(file_tbl = file_tbl, track_dir = tmp_dir),
+               "Missing track files")
 })

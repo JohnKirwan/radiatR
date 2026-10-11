@@ -73,8 +73,6 @@ reference:
       - dtrack_read
       - import_info
       - import_tracks
-      - load_tracks
-      - load_tracks2
       - get_all_object_pos
       - get_trial_limits
       - get_tracked_object_pos

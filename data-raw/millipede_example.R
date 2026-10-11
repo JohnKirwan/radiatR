@@ -117,10 +117,10 @@ message("Wrote manifest: ", manifest_path, " (", nrow(manifest), " rows)")
 
 track_dir <- ext_dir
 file_tbl  <- import_tracks(track_dir)
-file_tbl  <- load_tracks(file_tbl, manifest, track_dir)
 
 cpunctatus <- suppressWarnings(
-  get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir)
+  get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir,
+                     manifest = manifest)
 )
 
 # Carry the per-trial condition metadata (target half-width, type, individual)

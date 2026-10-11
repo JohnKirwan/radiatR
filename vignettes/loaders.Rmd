@@ -59,26 +59,19 @@ manifest <- import_info(manifest_path, cond_cols = c("type", "arc"))
 head(manifest)
 ```
 
-### Step 3 — join metadata
-
-`load_tracks()` merges the manifest into `file_tbl`, matching on the `file`
-column. The resulting tibble carries arc, type, obstacle, and id alongside
-each file path.
-
-```{r load-tracks}
-file_tbl <- load_tracks(file_tbl, manifest, track_dir)
-head(file_tbl[, c("basename", "arc", "type", "obstacle", "id")])
-```
-
-### Step 4 — extract and normalise trajectories
+### Step 3 — extract and normalise trajectories
 
 `get_all_object_pos()` reads each file pair, uses the landmark rows to
 establish the unit-circle geometry, and returns a `Tracks` with normalised
-unit-circle coordinates.
+unit-circle coordinates. Passing `manifest` joins its columns (arc, type,
+obstacle, id, ...) onto every trial, matching on the `file` column; use
+`manifest_cols` to rename or restrict them.
 
 ```{r get-all}
-ts <- suppressWarnings(get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir))
+ts <- suppressWarnings(get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir,
+                                          manifest = manifest))
 ts
+head(ts@meta$trial_limits[, c("video", "arc", "type", "obstacle")])
 ```
 
 ## dtrack format

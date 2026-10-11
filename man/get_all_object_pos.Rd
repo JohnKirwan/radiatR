@@ -4,7 +4,14 @@
 \alias{get_all_object_pos}
 \title{Aggregate track positions across all videos in a manifest.}
 \usage{
-get_all_object_pos(landmarks = NULL, track = NULL, file_tbl, track_dir)
+get_all_object_pos(
+  landmarks = NULL,
+  track = NULL,
+  file_tbl,
+  track_dir,
+  manifest = NULL,
+  manifest_cols = NULL
+)
 }
 \arguments{
 \item{landmarks}{Optional data frame or `Tracks` for the first entry. Retained
@@ -12,10 +19,17 @@ for backwards compatibility; values are overwritten internally.}
 
 \item{track}{Optional data frame or `Tracks` for the first entry.}
 
-\item{file_tbl}{Tibble produced by [import_tracks()], optionally enriched via
-[load_tracks()] or [load_tracks2()].}
+\item{file_tbl}{Tibble produced by [import_tracks()].}
 
 \item{track_dir}{Directory containing the landmark and track text files.}
+
+\item{manifest}{Optional data frame (e.g. from [import_info()]) with a `file`
+column matching `file_tbl$basename`; its other columns are joined onto
+`file_tbl` and carried onto every trial.}
+
+\item{manifest_cols}{Optional named character vector (or list) mapping new
+column names to columns of `manifest`. When `NULL`, all columns aside from
+`file` are carried over with the same names.}
 }
 \value{
 A `Tracks` combining the normalised observations for all valid
@@ -26,5 +40,6 @@ A `Tracks` combining the normalised observations for all valid
 Iterates over the rows of `file_tbl`, reading the paired landmark and track
 files for each video before computing trial limits and normalised
 coordinates. The per-trial outputs are combined into a single tibble, and
-the augmented trial limits are returned alongside it.
+the augmented trial limits are returned alongside it. Supply `manifest` to
+join per-file metadata (matched on `file`) onto every trial.
 }
