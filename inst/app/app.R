@@ -271,7 +271,7 @@ derive_hd <- function(ts, method, circ0, circ1, coords = "relative") {
   } else {
     args$rule <- method
   }
-  do.call(derive_headings, args)
+  with_local_seed(APP_SEED, do.call(derive_headings, args))   # RANSAC rule draws
 }
 
 # Fixed Monte-Carlo policy for the Summary & stats uniformity tests. Each grouped

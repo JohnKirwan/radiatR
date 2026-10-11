@@ -6,8 +6,8 @@
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
 # Fixed seed for the app's stochastic outputs (Monte-Carlo uniformity p-values,
-# bootstrap CI arc). Carried on the spec so the downloaded script, which calls
-# set.seed() with it, reproduces them exactly.
+# bootstrap CI arc, RANSAC heading fit). Carried on the spec so the downloaded
+# script, which calls set.seed() with it, reproduces them exactly.
 APP_SEED <- 20260617L
 
 # Evaluate `expr` under `seed`, then restore the caller's RNG state: a seeded
@@ -508,6 +508,9 @@ spec_to_plot <- function(spec, ts, hd) {
         ", return_coords = TRUE" else ""
       coa <- if (identical(spec$coords %||% "relative", "absolute"))
         ", coords = \"absolute\"" else ""
+      if (identical(spec$headings$rule, "ransac_straight"))   # the one randomised rule
+        add("set.seed(", as.integer(spec$seed %||% APP_SEED),
+            "L)  # mirror the app's fixed heading-fit seed")
       add("hd <- derive_headings(ts, rule = ", q(spec$headings$rule), hp, rc, coa, ")")
       facet_cols_to_emit <- unique(c(spec$facet_by, spec$facet_cols,
         if (isTRUE(spec$colour$follows_group)) spec$group_by))

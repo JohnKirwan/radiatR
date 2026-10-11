@@ -603,6 +603,7 @@ test_that("round-trip: headings-example Follow-group attaches the group col (emi
 })
 
 test_that("bootstrap CI arc is seeded from the spec, not the caller's RNG stream", {
+  skip_on_cran()   # three bootstrap figure builds
   rt <- roundtrip_spec("points", "trajectory", NULL, FALSE, FALSE, ci = TRUE)
   set.seed(1); expected <- runif(1)
   set.seed(1); live <- spec_to_plot(rt$spec, rt$ts, rt$hd); got <- runif(1)
@@ -625,4 +626,13 @@ test_that("stats code takes its Monte-Carlo seed from the spec", {
   expect_match(spec_to_stats_code(rt$spec), "set.seed(20260617L)", fixed = TRUE)
   rt$spec$seed <- 7L
   expect_match(spec_to_stats_code(rt$spec), "set.seed(7L)", fixed = TRUE)
+})
+
+test_that("a randomised heading rule is seeded in the emitted script", {
+  rt <- roundtrip_spec("points", "trajectory", NULL, FALSE, FALSE)
+  seeded <- "set.seed(20260617L)  # mirror the app's fixed heading-fit seed\nhd <- derive_headings("
+  expect_no_match(spec_to_code(rt$spec), seeded, fixed = TRUE)
+  rt$spec$headings$rule <- "ransac_straight"
+  expect_match(spec_to_code(rt$spec), seeded, fixed = TRUE)
+  expect_match(spec_to_stats_code(rt$spec), seeded, fixed = TRUE)
 })

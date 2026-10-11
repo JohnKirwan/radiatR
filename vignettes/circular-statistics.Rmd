@@ -307,6 +307,7 @@ coloured by it -- handy for comparing conditions on one plot. The mean-direction
 are split by target half-width (`arc`):
 
 ```{r grouped-overlays, fig.width=6.5, fig.height=6.5}
+set.seed(1)  # the interval is bootstrapped
 canvas +
   add_heading_arrow(hd,    colour_col = "arc") +
   add_heading_interval(hd, group_col  = "arc", stat = "bootstrap_ci")

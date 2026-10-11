@@ -43,9 +43,10 @@
 
 * The Shiny app no longer calls `set.seed()` on the shared R process when it
   computes Monte-Carlo uniformity p-values, so one session can no longer shift
-  another's random draws. The mean-direction bootstrap CI arc is now drawn under
-  the same fixed seed, so it stays put across redraws, and the downloaded script
-  sets that seed to reproduce it.
+  another's random draws. The mean-direction bootstrap CI arc and the RANSAC
+  heading rule (in both the method preview and the results) are now drawn under
+  the same fixed seed, so they stay put across redraws, and the downloaded
+  script sets that seed to reproduce them.
 
 * The `euroc_mav` loader dialect now reads the real EuRoC header
   (`#timestamp [ns]`, `p_RS_R_x [m]`, ...), which it previously rejected with

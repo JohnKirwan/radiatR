@@ -774,3 +774,24 @@ test_that("circ_summary_table Rao value is a reproducible numeric p-value", {
   # fixed seed => byte-identical across calls
   expect_identical(r1[["Rao spacing"]], r2[["Rao spacing"]])
 })
+
+test_that("derive_hd draws RANSAC headings under the app seed, reproducible via set.seed()", {
+  skip_if_not_installed("shiny")
+  app_file <- system.file("app", "app.R", package = "radiatR")
+  if (!nzchar(app_file))
+    app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
+  skip_if(!file.exists(app_file), "app.R not found")
+  e <- new.env()
+  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
+  data(cpunctatus, package = "radiatR", envir = environment())
+
+  set.seed(1); expected <- runif(1)
+  set.seed(1); live <- e$derive_hd(cpunctatus, "ransac_straight", 0.3, 0.6); got <- runif(1)
+  expect_identical(got, expected)
+
+  # The downloaded script seeds the same way: set.seed(<spec seed>), then derive.
+  set.seed(20260617L)
+  scripted <- derive_headings(cpunctatus, rule = "ransac_straight",
+                              coords = "relative", on_missing = "quiet")
+  expect_equal(live$heading, scripted$heading)
+})
