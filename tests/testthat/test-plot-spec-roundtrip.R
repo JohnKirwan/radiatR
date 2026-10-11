@@ -67,10 +67,9 @@ roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
   list(spec = spec, ts = ts, hd = hd)
 }
 
-# Build the live figure and the eval'd emitted figure under the same RNG state,
-# then compare fingerprints. The seed matters only for the bootstrap CI overlay
-# (otherwise the two builds resample independently); deterministic layers are
-# unaffected.
+# Build the live figure and the eval'd emitted figure, then compare
+# fingerprints. The bootstrap CI overlay is drawn under the spec's own seed on
+# both sides, so the outer seed only pins any other RNG use to a common state.
 expect_roundtrip <- function(rt, seed = 1L) {
   set.seed(seed); live  <- spec_to_plot(rt$spec, rt$ts, rt$hd)
   env <- new.env(parent = globalenv())
@@ -601,4 +600,29 @@ test_that("round-trip: headings-example Follow-group attaches the group col (emi
   env <- new.env(parent = globalenv())
   set.seed(1); evald <- eval(parse(text = code), envir = env)   # must run, not error
   expect_equal(.fingerprint(evald), .fingerprint(live))
+})
+
+test_that("bootstrap CI arc is seeded from the spec, not the caller's RNG stream", {
+  rt <- roundtrip_spec("points", "trajectory", NULL, FALSE, FALSE, ci = TRUE)
+  set.seed(1); expected <- runif(1)
+  set.seed(1); live <- spec_to_plot(rt$spec, rt$ts, rt$hd); got <- runif(1)
+  expect_identical(got, expected)
+
+  # No shared outer seed: the live figure and the downloaded script agree
+  # because both draw the arc under the spec's seed.
+  set.seed(99)
+  evald <- eval(parse(text = spec_to_code(rt$spec)), envir = new.env(parent = globalenv()))
+  expect_equal(.fingerprint(evald), .fingerprint(live))
+
+  rt$spec$seed <- 7L
+  expect_match(spec_to_code(rt$spec), "set.seed(7L)", fixed = TRUE)
+  expect_false(isTRUE(all.equal(.fingerprint(spec_to_plot(rt$spec, rt$ts, rt$hd)),
+                                .fingerprint(live))))
+})
+
+test_that("stats code takes its Monte-Carlo seed from the spec", {
+  rt <- roundtrip_spec("points", "trajectory", NULL, FALSE, FALSE)
+  expect_match(spec_to_stats_code(rt$spec), "set.seed(20260617L)", fixed = TRUE)
+  rt$spec$seed <- 7L
+  expect_match(spec_to_stats_code(rt$spec), "set.seed(7L)", fixed = TRUE)
 })

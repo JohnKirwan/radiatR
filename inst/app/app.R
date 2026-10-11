@@ -274,10 +274,10 @@ derive_hd <- function(ts, method, circ0, circ1, coords = "relative") {
   do.call(derive_headings, args)
 }
 
-# Fixed Monte-Carlo policy for the Summary & stats uniformity tests. The seed is
-# set immediately before each grouped MC call so the UI and the downloaded script
-# (spec_to_stats_code) share the exact RNG stream and produce identical p-values.
-STATS_MC_SEED <- 20260617L
+# Fixed Monte-Carlo policy for the Summary & stats uniformity tests. Each grouped
+# MC call runs under the spec seed (APP_SEED, plot_spec.R) so the UI and the
+# downloaded script (spec_to_stats_code) share the exact RNG stream and produce
+# identical p-values.
 STATS_MC_NSIM <- 999L
 
 # numeric uniformity p-value -> display string. NA / absent -> em dash.
@@ -292,7 +292,8 @@ STATS_MC_NSIM <- 999L
 # column renamed to "Group"; callers may append trajectory-only columns
 # (e.g. Straightness) keyed on the returned "Group" values.
 circ_summary_table <- function(hd, by_col, axial = FALSE,
-                               omnibus = "rao", model_sel = NULL) {
+                               omnibus = "rao", model_sel = NULL,
+                               seed = APP_SEED) {
   cm <- circ_summarise(
     hd, "heading", units = "radians", .by = by_col,
     stats = c("n", "n_missing", "mean_dir_deg", "resultant_R"),
@@ -303,10 +304,10 @@ circ_summary_table <- function(hd, by_col, axial = FALSE,
   # raw angles (axial = FALSE); Rayleigh honours the axial toggle.
   groups <- unique(hd[[by_col]])
   ray <- test_uniformity(hd, group_col = by_col, test = "rayleigh", axial = axial)
-  set.seed(STATS_MC_SEED)
-  omn <- test_uniformity(hd, group_col = by_col, test = omnibus,
-                         n_sim = STATS_MC_NSIM, axial = FALSE,
-                         p_method = "monte_carlo")
+  omn <- with_local_seed(seed,
+    test_uniformity(hd, group_col = by_col, test = omnibus,
+                    n_sim = STATS_MC_NSIM, axial = FALSE,
+                    p_method = "monte_carlo"))
   p_vals   <- vapply(ray$p_value[match(groups, ray[[by_col]])], .fmt_p, character(1L))
   omni_vals <- vapply(omn$p_value[match(groups, omn[[by_col]])], .fmt_p, character(1L))
   omni_label <- if (identical(omnibus, "hermans_rasson")) "Hermans-Rasson p" else "Rao spacing"

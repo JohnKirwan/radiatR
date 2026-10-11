@@ -14,8 +14,10 @@
 #'   object, and "both" returns a list containing both representations.
 #' @param write_path Optional file path (CSV) to which the simulated data should
 #'   be written.
-#' @param seed Optional integer seed supplied to [set.seed()] for
-#'   reproducibility.
+#' @param seed Optional integer seed for reproducibility. The simulation is
+#'   drawn under this seed and the caller's random-number state is restored on
+#'   exit, so the call neither depends on nor alters the session's RNG stream.
+#'   With `NULL` (default) the draws come from the session's stream as usual.
 #' @param radial_noise Standard deviation of radial noise applied to the unit
 #'   radius profile.
 #' @param phi Autocorrelation parameter (0-1) used when generating angular noise
@@ -162,6 +164,8 @@ simulate_tracks <- function(n_points = 200,
   stopifnot(n_points > 1)
   if (!is.null(seed)) {
     stopifnot(is.numeric(seed), length(seed) == 1)
+    old_seed <- globalenv()$.Random.seed
+    on.exit(.restore_rng(old_seed), add = TRUE)
     set.seed(as.integer(seed))
   }
 
@@ -454,4 +458,15 @@ wrap_to_pi <- function(angle) {
   angle <- angle %% (2 * pi)
   angle[angle > pi] <- angle[angle > pi] - 2 * pi
   angle
+}
+
+# Put back the RNG state captured before a locally seeded draw; `NULL` means
+# the session had none, so the one the draw created is removed.
+.restore_rng <- function(old_seed) {
+  genv <- globalenv()
+  if (is.null(old_seed)) {
+    suppressWarnings(rm(".Random.seed", envir = genv))
+  } else {
+    assign(".Random.seed", old_seed, envir = genv)
+  }
 }

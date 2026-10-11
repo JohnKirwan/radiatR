@@ -5,6 +5,23 @@
 
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
+# Fixed seed for the app's stochastic outputs (Monte-Carlo uniformity p-values,
+# bootstrap CI arc). Carried on the spec so the downloaded script, which calls
+# set.seed() with it, reproduces them exactly.
+APP_SEED <- 20260617L
+
+# Evaluate `expr` under `seed`, then restore the caller's RNG state: a seeded
+# output neither depends on nor disturbs the process-global stream, which every
+# session in the Shiny process shares.
+with_local_seed <- function(seed, expr) {
+  genv <- globalenv()
+  old <- genv$.Random.seed
+  on.exit(if (is.null(old)) suppressWarnings(rm(".Random.seed", envir = genv))
+          else assign(".Random.seed", old, envir = genv))
+  set.seed(seed)
+  expr
+}
+
 # One predicate for "is this a usable capture rate?", shared by the server's
 # fps gating and the kinematics spec/emit. A positive finite scalar; NA/NULL/<=0
 # are all "unset".
@@ -178,6 +195,7 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
     frame_rate = inputs$frame_rate,
     angle_labels = inputs$angle_labels %||% "degrees",
     display      = list(zero = 0),
+    seed         = APP_SEED,
     heading_display = inputs$heading_display %||% "points",
     # Resolved annotation text (computed app-side); stored so the code export
     # reproduces it verbatim. NULL/"" means no label.
@@ -372,9 +390,10 @@ spec_to_plot <- function(spec, ts, hd) {
   # Mean-direction bootstrap CI arc (per facet group when faceted). hd already
   # carries the display attribute (set above) so the arc orients correctly.
   if (isTRUE(spec$show$ci))
-    p <- p + add_heading_interval(hd, facets = c(spec$facet_by, spec$facet_cols),
-               group_col = overlay_group,
-               stat = "bootstrap_ci", axial = isTRUE(spec$axial))
+    p <- p + with_local_seed(spec$seed %||% APP_SEED,
+               add_heading_interval(hd, facets = c(spec$facet_by, spec$facet_cols),
+                 group_col = overlay_group,
+                 stat = "bootstrap_ci", axial = isTRUE(spec$axial)))
 
   # Rayleigh critical circle (alpha = 0.05). Per-panel when faceted, drawn in a
   # fixed colour so it never collides with the trajectory colour scale.
@@ -538,7 +557,8 @@ spec_to_stats_code <- function(spec) {
   gc_arg <- if (!is.null(by_col)) paste0(", group_col = ", q(by_col)) else ""
   add("test_uniformity(hd", gc_arg, ", test = \"rayleigh\"", axial, ")")
   omni <- if (identical(st$omnibus, "hermans_rasson")) "hermans_rasson" else "rao"
-  add("set.seed(20260617L)  # mirror the app's fixed Monte-Carlo seed")
+  add("set.seed(", as.integer(spec$seed %||% APP_SEED),
+      "L)  # mirror the app's fixed Monte-Carlo seed")
   add("test_uniformity(hd", gc_arg, ", test = ", q(omni), ", n_sim = 999L, p_method = \"monte_carlo\")")
   if (!is.null(by_col)) {
     add("")
@@ -653,6 +673,9 @@ spec_to_code <- function(spec) {
   }
 
   add("")
+  if (has_hd && isTRUE(spec$show$ci))
+    add("set.seed(", as.integer(spec$seed %||% APP_SEED),
+        "L)  # mirror the app's fixed bootstrap seed")
   pby <- if (!is.null(spec$facet_cols))
            paste0(", rows = ", q(spec$facet_by), ", cols = ", q(spec$facet_cols))
          else if (is.null(spec$facet_by)) ""
