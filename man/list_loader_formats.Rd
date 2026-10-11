@@ -6,6 +6,9 @@
 \usage{
 list_loader_formats()
 }
+\value{
+A sorted character vector of registered format names.
+}
 \description{
 List registered declarative formats
 }

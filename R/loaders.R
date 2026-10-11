@@ -13,9 +13,10 @@
 #' @return A data frame containing the parsed metadata (and optional `cond`
 #'   column).
 #' @examples
-#' \dontrun{
-#' manifest <- import_info("trials_list.csv", cond_cols = c("type", "arc"))
-#' }
+#' manifest_path <- system.file("extdata", "millipede_trials.csv",
+#'                              package = "radiatR")
+#' manifest <- import_info(manifest_path, cond_cols = c("type", "arc"))
+#' head(manifest)
 #' @importFrom utils read.csv
 #' @export
 #
@@ -161,10 +162,13 @@ escape_specials <- function(x) {
 .loader_format_registry <- new.env(parent = emptyenv())
 
 #' Register a declarative loader *format* (list or YAML/JSON file)
+#'
 #' The spec maps cleanly onto read_tracks() args and supports regex-based column finding.
 #' @param name A unique name
 #' @param spec A named list, or a path to a YAML/JSON file defining the spec
 #' @param overwrite Overwrite an existing format of the same name
+#' @return `name`, invisibly. Called for its side effect of registering the
+#'   format for [read_tracks_format()].
 #' @export
 register_loader_format <- function(name, spec, overwrite = FALSE) {
   stopifnot(is.character(name), length(name) == 1L)
@@ -187,16 +191,20 @@ register_loader_format <- function(name, spec, overwrite = FALSE) {
 }
 
 #' List registered declarative formats
+#' @return A sorted character vector of registered format names.
 #' @export
 list_loader_formats <- function() sort(ls(envir = .loader_format_registry))
 
 .loader_registry <- new.env(parent = emptyenv())
 
 #' Register a custom loader dialect
+#'
 #' The function must accept (x, ...) and return a data.frame in long form with columns at least id,time and one of (angle) or (x,y)
 #' @param name Unique dialect name
 #' @param fun Function that accepts (x, ...) and returns a data.frame with id/time/angle or id/time/x/y
 #' @param overwrite Replace an existing dialect registered with the same name
+#' @return `name`, invisibly. Called for its side effect of registering the
+#'   dialect for `read_tracks(dialect = )`.
 #' @export
 register_loader_dialect <- function(name, fun, overwrite = FALSE) {
   stopifnot(is.character(name), length(name) == 1L, is.function(fun))
@@ -207,6 +215,7 @@ register_loader_dialect <- function(name, fun, overwrite = FALSE) {
 }
 
 #' List registered loader dialects
+#' @return A sorted character vector of registered dialect names.
 #' @export
 list_loader_dialects <- function() sort(ls(envir = .loader_registry))
 
@@ -463,6 +472,7 @@ guess_columns <- function(data, mapping = list()) {
 #' @param x data.frame or path(s)
 #' @param format registered format name or list spec
 #' @param ... extra args override spec fields
+#' @return A `Tracks` object, as returned by [read_tracks()].
 #' @export
 read_tracks_format <- function(x, format, ...) {
   spec <- if (is.character(format) && exists(format, envir = .loader_format_registry, inherits = FALSE)) {
@@ -811,6 +821,7 @@ read_tracks <- function(x,
 #' @param pattern Regex passed to `list.files()` to select files
 #' @param recursive Recurse into subdirectories when TRUE
 #' @param ... Additional arguments passed to `read_tracks()`
+#' @return A single `Tracks` object combining every matching file.
 #' @export
 read_tracks_dir <- function(dir, pattern = "\\.(csv|tsv|txt|parquet|feather)$", recursive = FALSE, ...) {
   stopifnot(dir.exists(dir))

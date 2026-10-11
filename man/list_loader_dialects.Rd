@@ -6,6 +6,9 @@
 \usage{
 list_loader_dialects()
 }
+\value{
+A sorted character vector of registered dialect names.
+}
 \description{
 List registered loader dialects
 }

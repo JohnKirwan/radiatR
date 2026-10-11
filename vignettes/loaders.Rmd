@@ -254,7 +254,7 @@ jsonlite::write_json(
 
 json_tracks_fn <- function(x) {
   dat <- if (is.character(x) && file.exists(x)) jsonlite::fromJSON(x) else x
-  entries <- purrr::imap(dat$tracks, function(track, id) {
+  entries <- Map(function(track, id) {
     data.frame(
       id   = id,
       time = track$timestamp,
@@ -262,7 +262,7 @@ json_tracks_fn <- function(x) {
       y    = track$py,
       stringsAsFactors = FALSE
     )
-  })
+  }, dat$tracks, names(dat$tracks))
   do.call(rbind, entries)
 }
 register_loader_dialect("json_tracks", json_tracks_fn)

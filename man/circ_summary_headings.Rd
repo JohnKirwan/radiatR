@@ -20,11 +20,11 @@ or `"velocity_mean"`.}
 
 \item{group_by}{Character vector of column names used to group headings
 before summarising. Default `"id"` returns one row per trial. Use `NULL`
-for a single global summary row. Any column carried through by
-[derive_headings()] (e.g. `"arc"`) is valid.}
+for a single global summary row. Other columns must first be carried
+onto the heading table with `carry` (e.g. `carry = "arc"`).}
 
 \item{...}{Additional arguments forwarded to [derive_headings()], such as
-`circ0`, `circ1`, `return_coords`, or `coords`.}
+`circ0`, `circ1`, `carry`, `return_coords`, or `coords`.}
 }
 \value{
 A `data.frame` with grouping columns followed by `mean_dir`
@@ -37,15 +37,14 @@ circular summary statistics (mean direction, resultant length, concentration)
 optionally grouped by one or more metadata columns.
 }
 \examples{
-\dontrun{
 data(cpunctatus)
 # per-trial headings (default)
-circ_summary_headings(cpunctatus, rule = "crossing", circ0 = 0.2, circ1 = 0.4)
+head(circ_summary_headings(cpunctatus, rule = "crossing",
+                           circ0 = 0.2, circ1 = 0.4))
 
-# per-condition summary (requires an "arc" column carried through)
+# per-condition summary: carry the "arc" column through to group by it
 circ_summary_headings(cpunctatus, rule = "crossing",
                       circ0 = 0.2, circ1 = 0.4,
-                      group_by = "arc")
-}
+                      carry = "arc", group_by = "arc")
 
 }

@@ -13,6 +13,9 @@ read_tracks_format(x, format, ...)
 
 \item{...}{extra args override spec fields}
 }
+\value{
+A `Tracks` object, as returned by [read_tracks()].
+}
 \description{
 Construct a Tracks from a *format* spec (registered name or inline list)
 }
