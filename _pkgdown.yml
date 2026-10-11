@@ -301,7 +301,6 @@ reference:
       orientation experiment (Kirwan & Nilsson 2019).
     contents:
       - cpunctatus
-      - cpunctatus_tracks
 
   - title: "Miscellaneous"
     desc: Any remaining exported topics.

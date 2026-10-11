@@ -55,3 +55,15 @@ jobs:
         with:
           upload-snapshots: true
           build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
+
+      # CRAN's limit is 5 MB; fail early with headroom. check-r-package leaves
+      # the tarball it built in check/.
+      - name: Check source tarball size
+        if: runner.os == 'Linux' && matrix.config.r == 'release'
+        shell: bash
+        run: |
+          tarball=$(ls check/*.tar.gz)
+          size=$(stat -c %s "$tarball")
+          echo "$tarball: $size bytes (limit 4500000)"
+          tar tzvf "$tarball" | sort -k3 -rn | sed -n '1,15p'
+          test "$size" -le 4500000

@@ -1,5 +1,6 @@
 **/*.quarto_ipynb
 vignettes/*_files/
+vignettes/articles/*_files/
 vignettes/*.html
 /Meta/
 docs/

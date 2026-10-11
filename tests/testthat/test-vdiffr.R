@@ -10,6 +10,8 @@
 # so R CMD check stays green across the ubuntu x {release, oldrel-1} matrix.
 # The drift guard fires locally: run devtools::test(); vdiffr compares against
 # the committed _snaps/vdiffr/*.svg (and version-gates its own comparison).
+# The SVGs are .Rbuildignore'd (0.7 MB of the tarball); vdiffr never compares
+# on CRAN (cran = FALSE), so only source-tree runs need them.
 #
 # UPDATING SNAPSHOTS: when a change INTENTIONALLY alters a figure, run
 #   devtools::test(filter = "vdiffr")
