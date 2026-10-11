@@ -223,6 +223,13 @@ list_loader_dialects <- function() sort(ls(envir = .loader_registry))
   NULL
 }
 
+# Lower-case snake names for header matching: drops bracketed units such as
+# "[ns]" and collapses every other non-alphanumeric run to "_".
+.snake_names <- function(nms) {
+  nms <- gsub("\\[[^]]*\\]", "", tolower(nms))
+  gsub("^_+|_+$", "", gsub("[^a-z0-9]+", "_", nms))
+}
+
 # Match a coordinate column whose name ends in the axis letter after a start or
 # separator (e.g. "Track1_X" -> x). Used when no exact x/y candidate matches.
 .guess_xy_suffix <- function(nms, axis) {
@@ -1665,15 +1672,15 @@ register_loader_dialect("tum_traj", function(x) {
 register_loader_dialect("euroc_mav", function(x) {
   df <- if (is.character(x) && file.exists(x)) .read_any(x) else x
   stopifnot(is.data.frame(df))
-  nms <- tolower(gsub("[^a-z0-9]+","_", names(df)))
+  nms <- .snake_names(names(df))
   names(df) <- nms
   tcol <- .guess_col(nms, c("time","timestamp","t","time_us","time_ns"))
   xc   <- .guess_col(nms, c("p_rs_r_x","position_x","x"))
   yc   <- .guess_col(nms, c("p_rs_r_y","position_y","y"))
   if (is.null(tcol) || is.null(xc) || is.null(yc)) stop("euroc_mav: required columns not found")
-  # Convert microseconds/nanoseconds to seconds if necessary
+  # Convert epoch nanoseconds/microseconds to seconds (epoch seconds are ~1e9)
   tt <- as.numeric(df[[tcol]])
-  if (all(tt > 1e12)) tt <- tt/1e9 else if (all(tt > 1e9)) tt <- tt/1e6
+  if (all(tt > 1e17)) tt <- tt/1e9 else if (all(tt > 1e14)) tt <- tt/1e6
   data.frame(id = "1", time = tt, x = df[[xc]], y = df[[yc]], stringsAsFactors = FALSE)
 })
 
@@ -1682,7 +1689,7 @@ register_loader_dialect("csv_bbox", function(x, schema = c("xywh","xyxy"), time_
   schema <- match.arg(schema)
   df <- if (is.character(x) && file.exists(x)) .read_any(x) else x
   stopifnot(is.data.frame(df))
-  nms <- tolower(gsub("[^a-z0-9]+","_", names(df)))
+  nms <- .snake_names(names(df))
   names(df) <- nms
   if (schema == "xywh") {
     xc <- .guess_col(nms, c("x","left")); yc <- .guess_col(nms, c("y","top"))

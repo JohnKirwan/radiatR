@@ -7,9 +7,9 @@ Authors@R:
            role = c("aut", "cre"))
 Description: A complete pipeline for analysing directional data -- headings and
     trajectories on the unit disk. Supply a table of angles directly, or
-    reconstruct headings from movement trajectories imported from 20+ tracking
+    reconstruct headings from movement trajectories imported from tracking
     tools (EthoVision, DeepLabCut, SLEAP, TRex, ANY-maze, TrackMate,
-    idtracker.ai, Ctrax, and others) via a unified dialect-based loader system,
+    idtracker.ai, and others) via a unified dialect-based loader system,
     including multi-bodypart pose estimation with likelihood-weighted centroid.
     Derives per-trial heading directions using multiple rules (ring-crossing,
     distal point, pose body-axis, velocity-based, and more). Computes circular
