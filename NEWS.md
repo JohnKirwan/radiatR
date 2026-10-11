@@ -13,6 +13,16 @@
   longer a dependency; vctrs, already required by tibble and ggplot2, is now
   imported directly.
 
+## Bug fixes
+
+* The `euroc_mav` loader dialect now reads the real EuRoC header
+  (`#timestamp [ns]`, `p_RS_R_x [m]`, ...), which it previously rejected with
+  "required columns not found". Its timestamp scaling is also fixed: epoch
+  seconds were divided by 1e6 and microsecond stamps by 1e9.
+
+* The `csv_bbox` loader dialect now matches headers containing capitals
+  (`XMin`, `Width`, ...); these were previously mangled before matching.
+
 # radiatR 0.1.2
 
 ## Breaking changes

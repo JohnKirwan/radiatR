@@ -5,11 +5,11 @@
 [![r-universe](https://johnkirwan.r-universe.dev/badges/radiatR)](https://johnkirwan.r-universe.dev/radiatR)
 <!-- badges: end -->
 
-An R package for analysing and visualising **headings and trajectories on the unit disk** — directional (angular) data of any kind. It covers the full pipeline: angle/trajectory input → coordinate transformation → circular statistics → ggplot2 visualisation. Bring a table of headings directly, or reconstruct them from movement trajectories, with import from 20+ tracking tools.
+An R package for analysing and visualising **headings and trajectories on the unit disk** — directional (angular) data of any kind. It covers the full pipeline: angle/trajectory input → coordinate transformation → circular statistics → ggplot2 visualisation. Bring a table of headings directly, or reconstruct them from movement trajectories, with built-in import for DeepLabCut, SLEAP, EthoVision, TrackMate and other tracking tools.
 
 ## Key Features
 
-- **Flexible loader framework** — read data from 20+ tracking tools via registered dialects; extend with custom formats
+- **Flexible loader framework** — read exports from DeepLabCut, SLEAP, EthoVision, TrackMate, idtracker.ai and other tracking tools, plus GPX, GeoJSON and NMEA trajectory formats, via registered dialects; extend with custom formats
 - **Pose-estimation support** — multi-bodypart centroid and body-axis heading from DeepLabCut, EthoVision multi-zone, ANY-maze nose/tail
 - **Heading rule registry** — derive per-trial headings by any of 15+ built-in rules or register your own
 - **Circular statistics** — mean direction, resultant length, concentration, and grouped summaries via the `circular` package
@@ -21,6 +21,7 @@ An R package for analysing and visualising **headings and trajectories on the un
 |---|---|
 | `dtrack` | dtrack |
 | `deeplabcut` / `deeplabcut_multiheader` | DeepLabCut (single point or multi-bodypart centroid) |
+| `sleap` | SLEAP (analysis CSV; single node or score-weighted centroid) |
 | `idtrackerai_wide` | idtracker.ai |
 | `ethovision` | EthoVision XT (including multi-zone) |
 | `trackmate` | TrackMate (Fiji) |
@@ -33,6 +34,9 @@ An R package for analysing and visualising **headings and trajectories on the un
 | `geojson_linestring` | GeoJSON LineString |
 | `gpx` | GPX tracks |
 | `nmea_gprmc` | NMEA GPRMC |
+| `tum_traj` | TUM RGB-D trajectory files |
+| `euroc_mav` | EuRoC MAV ground-truth CSV |
+| `csv_bbox` | Generic bounding-box CSV (`x`/`y`/`w`/`h` or `xmin`/`ymin`/`xmax`/`ymax`; box centre) |
 | `wide_prefix_xy` | Generic `x_<id>` / `y_<id>` wide format |
 
 Register additional formats with `register_loader_dialect()` or the declarative `register_loader_format()`.

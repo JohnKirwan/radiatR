@@ -516,6 +516,62 @@ test_that("read_tracks forwards read_opts$delim to the reader", {
     regexp = NULL)   # forcing ';' yields one column -> no x/y -> a load error
 })
 
+# ---- trajectory-format dialects (tum_traj, euroc_mav, csv_bbox) ---------------
+
+test_that("tum_traj dialect reads a headerless TUM trajectory file", {
+  p <- tempfile(fileext = ".txt")
+  writeLines(c("# timestamp tx ty tz qx qy qz qw",
+               "1305031102.175 1.0 2.0 0.5 0 0 0 1",
+               "1305031102.211 1.5 2.5 0.5 0 0 0 1",
+               "1305031102.243 2.0 3.0 0.5 0 0 0 1"), p)
+  df <- as.data.frame(read_tracks(p, dialect = "tum_traj"))
+  expect_equal(df$x, c(1, 1.5, 2))
+  expect_equal(df$y, c(2, 2.5, 3))
+  expect_equal(df$time, c(1305031102.175, 1305031102.211, 1305031102.243))
+  expect_equal(unique(as.character(df$id)), "1")
+})
+
+test_that("euroc_mav dialect reads the real EuRoC header and nanosecond stamps", {
+  p <- tempfile(fileext = ".csv")
+  writeLines(c("#timestamp [ns],p_RS_R_x [m],p_RS_R_y [m],p_RS_R_z [m],q_RS_w []",
+               "1403636580838555648,4.688,-1.786,0.783,0.53",
+               "1403636580843555584,4.690,-1.780,0.783,0.53"), p)
+  df <- as.data.frame(read_tracks(p, dialect = "euroc_mav"))
+  expect_equal(df$x, c(4.688, 4.690))
+  expect_equal(df$y, c(-1.786, -1.780))
+  expect_equal(df$time, c(1403636580.838556, 1403636580.843556))
+})
+
+test_that("euroc_mav dialect scales timestamps by magnitude", {
+  secs <- c(1403636580.8, 1403636581.8)
+  read_time <- function(tt) {
+    df <- data.frame(timestamp = tt, x = 1:2, y = 3:4)
+    as.data.frame(read_tracks(df, dialect = "euroc_mav"))$time
+  }
+  expect_equal(read_time(secs), secs)
+  expect_equal(read_time(secs * 1e6), secs)
+  expect_equal(read_time(secs * 1e9), secs)
+})
+
+test_that("csv_bbox dialect returns box centres for the xywh schema", {
+  df <- data.frame(frame = c(1, 2, 1, 2), id = c("a", "a", "b", "b"),
+                   x = c(10, 12, 50, 52), y = c(20, 22, 60, 62), w = 4, h = 6)
+  out <- as.data.frame(read_tracks(df, dialect = "csv_bbox"))
+  expect_equal(out$x, c(12, 14, 52, 54))
+  expect_equal(out$y, c(23, 25, 63, 65))
+  expect_equal(as.character(out$id), c("a", "a", "b", "b"))
+})
+
+test_that("csv_bbox dialect matches mixed-case headers for the xyxy schema", {
+  df <- data.frame(Frame = c(1, 2), XMin = c(10, 12), YMin = c(20, 22),
+                   XMax = c(14, 16), YMax = c(26, 28))
+  out <- as.data.frame(read_tracks(df, dialect = "csv_bbox",
+                                   dialect_args = list(schema = "xyxy")))
+  expect_equal(out$x, c(12, 14))
+  expect_equal(out$y, c(23, 25))
+  expect_equal(out$time, c(1, 2))
+})
+
 # ---- Excel (.xlsx) input -----------------------------------------------------
 
 test_that(".read_any reads an Excel workbook: first sheet by default, sheet by name", {
