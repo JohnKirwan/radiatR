@@ -402,8 +402,6 @@ orientation experiment (Kirwan & Nilsson 2019).
 
 - [`cpunctatus`](https://johnkirwan.github.io/radiatR/reference/cpunctatus.md)
   : \*Cylindroiulus punctatus\* visual orientation trajectory dataset
-- [`cpunctatus_tracks`](https://johnkirwan.github.io/radiatR/reference/cpunctatus_tracks.md)
-  : \*Cylindroiulus punctatus\* trajectory tibble
 
 ## Miscellaneous
 
@@ -532,8 +530,6 @@ Any remaining exported topics.
   : Count entries into a goal zone for trajectories in a circular field
 - [`cpunctatus`](https://johnkirwan.github.io/radiatR/reference/cpunctatus.md)
   : \*Cylindroiulus punctatus\* visual orientation trajectory dataset
-- [`cpunctatus_tracks`](https://johnkirwan.github.io/radiatR/reference/cpunctatus_tracks.md)
-  : \*Cylindroiulus punctatus\* trajectory tibble
 - [`cycle_colours()`](https://johnkirwan.github.io/radiatR/reference/cycle_colours.md)
   [`cycle_colors()`](https://johnkirwan.github.io/radiatR/reference/cycle_colours.md)
   : Cycle a bounded set of colour indices over the values of a key

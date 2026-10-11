@@ -3,7 +3,7 @@
 ``` r
 
 if (requireNamespace("pkgload", quietly = TRUE)) {
-  pkgload::load_all("..", export_all = FALSE, helpers = FALSE, quiet = TRUE)
+  pkgload::load_all("../..", export_all = FALSE, helpers = FALSE, quiet = TRUE)
 } else if (requireNamespace("radiatR", quietly = TRUE)) {
   library(radiatR)
 } else {

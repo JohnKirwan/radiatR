@@ -4,7 +4,7 @@
 
 if (requireNamespace("pkgload", quietly = TRUE)) {
   # Always load from source so the vignette reflects the current development state.
-  pkgload::load_all("..", export_all = FALSE, helpers = FALSE, quiet = TRUE)
+  pkgload::load_all("../..", export_all = FALSE, helpers = FALSE, quiet = TRUE)
 } else if (requireNamespace("radiatR", quietly = TRUE)) {
   library(radiatR)
 } else {

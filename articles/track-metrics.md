@@ -38,8 +38,8 @@ There are two complementary notions of tortuosity:
 The per-observation **kinematics** (instantaneous speed, velocity,
 turning rate,
 [`plot_profile()`](https://johnkirwan.github.io/radiatR/reference/plot_profile.md))
-live in the main vignette — see the kinematics section of
-[`vignette("radiatR")`](https://johnkirwan.github.io/radiatR/articles/radiatR.md).
+live in the main workflow article — see the kinematics section of [Get
+started](https://johnkirwan.github.io/radiatR/articles/radiatR.html).
 
 We use the bundled millipede dataset throughout.
 
@@ -264,5 +264,6 @@ The per-observation kinematics
 [`velocity_vector()`](https://johnkirwan.github.io/radiatR/reference/velocity_vector.md),
 [`angular_velocity()`](https://johnkirwan.github.io/radiatR/reference/angular_velocity.md),
 [`plot_profile()`](https://johnkirwan.github.io/radiatR/reference/plot_profile.md))
-are covered in
-[`vignette("radiatR")`](https://johnkirwan.github.io/radiatR/articles/radiatR.md).
+are covered in the [Get
+started](https://johnkirwan.github.io/radiatR/articles/radiatR.html)
+article.
