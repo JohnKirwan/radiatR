@@ -46,8 +46,8 @@ There are two complementary notions of tortuosity:
   is small.
 
 The per-observation **kinematics** (instantaneous speed, velocity, turning rate,
-`plot_profile()`) live in the main vignette --- see the kinematics section of
-`vignette("radiatR")`.
+`plot_profile()`) live in the main workflow article --- see the kinematics section of
+[Get started](https://johnkirwan.github.io/radiatR/articles/radiatR.html).
 
 We use the bundled millipede dataset throughout.
 
@@ -169,4 +169,4 @@ The Shiny companion app surfaces these per-track metrics interactively (a
 caption of mean straightness / sinuosity and a downloadable metrics table) ---
 launch it with `launch_app()`. The per-observation kinematics
 (`instantaneous_speed()`, `velocity_vector()`, `angular_velocity()`,
-`plot_profile()`) are covered in `vignette("radiatR")`.
+`plot_profile()`) are covered in the [Get started](https://johnkirwan.github.io/radiatR/articles/radiatR.html) article.

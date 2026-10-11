@@ -1,6 +1,19 @@
 # radiatR 0.1.3
 
+## Breaking changes
+
+* The `cpunctatus_tracks` dataset has been removed. It duplicated the table
+  already stored in `cpunctatus`; use `as.data.frame(cpunctatus)` (or
+  `cpunctatus@data`) for the same per-frame rows.
+
 ## Changes
+
+* The main workflow and simulation walkthroughs are now website-only articles
+  (`vignettes/articles/`) rather than installed vignettes, so
+  `vignette("radiatR")` and `vignette("simulate")` are no longer available
+  offline; read them at <https://johnkirwan.github.io/radiatR/articles/>.
+  Together with the dataset removal this brings the source tarball under
+  CRAN's 5 MB limit, and R CMD check now fails if it grows past 4.5 MB.
 
 * The hosted Shiny app has moved from shinyapps.io to Posit Connect Cloud
   (git-backed deploy). The `shinyapps.yaml` GitHub Actions workflow is removed;

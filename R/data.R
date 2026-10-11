@@ -43,22 +43,3 @@
 #'   produced with dtrack and normalised with \pkg{radiatR}. A subset of the
 #'   published dataset.
 "cpunctatus"
-
-#' *Cylindroiulus punctatus* trajectory tibble
-#'
-#' A tidy long-form tibble (44,331 rows) holding the per-frame observations
-#' from the same millipede experiment as \code{\link{cpunctatus}}, with the
-#' trial condition metadata (`arc`, `type`, `individual`) joined onto every
-#' frame. Convenient for analyses that prefer a plain data frame to the
-#' `Tracks` container. A subset of the published dataset.
-#'
-#' @format A tibble with 18 columns including \code{trial_id}, \code{frame},
-#'   \code{trans_x}, \code{trans_y}, \code{rel_x}, \code{rel_y},
-#'   \code{abs_theta}, \code{rel_theta}, \code{arc}, \code{type}, and
-#'   \code{individual}.
-#'
-#' @references Kirwan, J. D., & Nilsson, D.-E. (2019). A millipede compound eye
-#'   mediating low-resolution vision. *Vision Research*, 165, 36--44.
-#'   \doi{10.1016/j.visres.2019.09.003}
-#' @source Same experiment as \code{\link{cpunctatus}}.
-"cpunctatus_tracks"

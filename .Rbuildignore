@@ -17,3 +17,5 @@
 ^Rplots\.pdf$
 ^TODO\.md$
 ^\.
+^vignettes/articles$
+^vignettes/.*\.R$
