@@ -154,9 +154,9 @@
   have, so every caller silently got its fallback instead. `kappa` is now
   computed directly as the maximum-likelihood estimate from the mean resultant
   length (the value `circular::mle.vonmises()` gives), weighted where weights
-  are in use. Both report `Inf` when all angles coincide (the estimate is
-  unbounded); `circ_summarise()` still reports `NA` for fewer than three
-  angles.
+  are in use. Both report `NA` for fewer than three valid angles (as
+  `circ_summarise()` already did) and `Inf` when all angles coincide, where
+  the estimate is unbounded.
   `circ_summary_headings()`, `boot_kappa_ci()` and the starting value in
   `concentration_regression()` already used this estimate and are unchanged.
 

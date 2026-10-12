@@ -22,8 +22,8 @@
 #'   `mean_dir` (radians, unit-circle convention, 0 to 2pi), `resultant_R`
 #'   (0--1), and `kappa`
 #'   (von Mises concentration: the maximum-likelihood estimate from the mean
-#'   resultant length, weighted when weights are used; `Inf` when all angles
-#'   coincide, `NA` when there are no valid angles).
+#'   resultant length, weighted when weights are used; `NA` for fewer than
+#'   three valid angles, `Inf` when all angles coincide).
 #'
 #' @examples
 #' data(cpunctatus)
@@ -127,7 +127,8 @@ setMethod("circ_summary", "Tracks", function(x, w = NULL, by = c("id","global"),
       R <- NA_real_
     }
 
-    kap    <- if (is.na(R)) NA_real_ else .kappa_from_Rbar(R)
+    # Same minimum as circ_summarise(): kappa is not reported below 3 angles.
+    kap    <- if (length(folded) >= 3L && !is.na(R)) .kappa_from_Rbar(R) else NA_real_
     out_mu <- .unfold_mean(.wrap_to_2pi(as.numeric(mu)), axial)
     data.frame(
       id          = if (by == "id") k else "global",

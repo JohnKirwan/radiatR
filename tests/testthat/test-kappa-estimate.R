@@ -70,3 +70,20 @@ test_that("circ_summary on Tracks uses the weighted resultant length for kappa",
   expect_false(isTRUE(all.equal(res$resultant_R, plain$resultant_R)))
   expect_equal(res$kappa, circular::A1inv(res$resultant_R))
 })
+
+test_that("circ_summary on Tracks reports NA kappa for fewer than three angles", {
+  d <- data.frame(id  = c("one", "two", "two", "three", "three", "three"),
+                  t   = c(1, 1, 2, 1, 2, 3),
+                  ang = c(1, 1, 1.2, 1, 1.2, 1.4))
+  ts <- tracks(d, id = "id", time = "t", angle = "ang", angle_unit = "radians")
+  res <- circ_summary(ts, by = "id")
+  kappa <- stats::setNames(res$kappa, res$id)
+
+  expect_true(is.na(kappa[["one"]]))
+  expect_true(is.na(kappa[["two"]]))
+  expect_equal(kappa[["three"]],
+               circular::A1inv(res$resultant_R[res$id == "three"]))
+  # The other statistics are still reported for short tracks.
+  expect_false(anyNA(res$mean_dir))
+  expect_false(anyNA(res$resultant_R))
+})
