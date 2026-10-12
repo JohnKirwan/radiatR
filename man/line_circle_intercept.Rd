@@ -15,5 +15,6 @@ line_circle_intercept(x0, y0, x1, y1)
 A tibble with the intersection point closest to `(x1, y1)`.
 }
 \description{
-Find the intercept of a line with the unit circle
+Vectorised over its arguments: each `(x0, y0)` -> `(x1, y1)` pair gives one
+row of the result.
 }
