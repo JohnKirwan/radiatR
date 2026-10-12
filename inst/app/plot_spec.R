@@ -29,6 +29,15 @@ with_local_seed <- function(seed, expr) {
   is.numeric(x) && length(x) == 1L && is.finite(x) && x > 0
 }
 
+# Frame derive_headings() can use for `ts`: a Tracks without a relative
+# coordinate system can only produce absolute headings, so a relative request
+# floors to absolute. Shared by the app's derivation and the spec, so the
+# downloaded script derives in the frame the app did.
+.resolve_heading_coords <- function(ts, coords = "relative") {
+  has_rel <- !is.null(ts@cols$rel_x) && !is.null(ts@cols$rel_y)
+  if (identical(coords, "relative") && !has_rel) "absolute" else coords
+}
+
 # Resolve the effective track-colour mode for the Results figure. "time" colours
 # by elapsed time but needs a valid frame rate (the package hard-errors otherwise),
 # so an unset/invalid fps falls back to "sequence" -- the app never asks radiate()
@@ -169,13 +178,18 @@ build_plot_spec <- function(ts, hd, method, data, inputs) {
 
   rule_params <- if (identical(method, "crossing"))
     list(circ0 = inputs$circ0 %||% 0.3, circ1 = inputs$circ1 %||% 0.6) else list()
+  # The frame the headings were derived in (resolved, not requested), so the
+  # emitted derive_headings() call reproduces it. `coords` below stays the
+  # requested display frame.
+  hd_coords <- if (headings_mode) list() else
+    list(coords = .resolve_heading_coords(ts, inputs$frame %||% "relative"))
 
   list(
     data      = data,
     mode      = mode,
     axial     = isTRUE(inputs$axial),
     # in headings mode method is NULL, so headings$rule is absent by design (every reader gates on mode first)
-    headings = c(list(rule = method), rule_params),
+    headings = c(list(rule = method), rule_params, hd_coords),
     group_col = id_col,
     group_by  = group_by,
     # Distinct group count in the Follow-group regime, used only to push the
@@ -506,8 +520,10 @@ spec_to_plot <- function(spec, ts, hd) {
       # emitted script can draw them (only the crossing rule produces x_inner/y_inner).
       rc <- if (spec$show$vectors && identical(spec$headings$rule, "crossing"))
         ", return_coords = TRUE" else ""
-      coa <- if (identical(spec$coords %||% "relative", "absolute"))
-        ", coords = \"absolute\"" else ""
+      # Always explicit: derive_headings() defaults to "absolute" but the app to
+      # "relative". A spec that never recorded the resolved frame uses its display frame.
+      coa <- paste0(", coords = ",
+                    q(spec$headings$coords %||% spec$coords %||% "relative"))
       if (identical(spec$headings$rule, "ransac_straight"))   # the one randomised rule
         add("set.seed(", as.integer(spec$seed %||% APP_SEED),
             "L)  # mirror the app's fixed heading-fit seed")

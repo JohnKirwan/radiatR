@@ -51,7 +51,7 @@ test_that("spec_to_stats_code value round-trip: emitted circ_summarise == app's 
   emitted <- e$summ                                    # the emitted circ_summarise result
 
   # app-internal equivalent for the same spec (mirrors the app's cond-col merge)
-  hd_app <- derive_headings(cpunctatus, rule = "distal")
+  hd_app <- derive_headings(cpunctatus, rule = "distal", coords = "relative")
   cond_map <- unique(as.data.frame(cpunctatus)[, c("trial_id", by_col)])
   hd_app <- merge(hd_app, cond_map, by.x = "id", by.y = "trial_id", all.x = TRUE)
   ref <- circ_summarise(hd_app, "heading", units = "radians", .by = by_col,
