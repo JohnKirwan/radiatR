@@ -866,7 +866,7 @@ setAs("data.frame", "Tracks", function(from) {
 ## ---- combine -----------------------------------------------------------------
 #' @param ... Additional Tracks objects to append. All inputs must share
 #'   identical column mapping and angle unit, have no colliding trajectory
-#'   ids, and agree on frame_rate/distance_scale/distance_unit/normalize_xy
+#'   ids, and agree on frame_rate/time_unit/distance_scale/distance_unit/normalize_xy
 #'   metadata (including all-unset); mismatches error rather than silently
 #'   picking one input's values. Per-id metadata (e.g. `reference`) is merged
 #'   across all inputs.
@@ -887,8 +887,10 @@ setMethod("c", signature(x="Tracks"), function(x, ..., recursive = FALSE) {
          call. = FALSE)
   }
 
-  for (field in c("frame_rate", "distance_scale", "distance_unit", "normalize_xy")) {
-    vals <- lapply(xs, function(z) z@meta[[field]])
+  for (field in c("frame_rate", "time_unit", "distance_scale", "distance_unit", "normalize_xy")) {
+    # an unstated time unit is a frame index
+    vals <- lapply(xs, function(z)
+      if (field == "time_unit") .time_unit(z) %||% "frames" else z@meta[[field]])
     if (length(unique(vals)) > 1L) {
       stop("c(): Tracks objects have conflicting '", field, "' metadata: ",
            paste(vapply(vals, function(v) if (is.null(v)) "NULL" else format(v), character(1)),

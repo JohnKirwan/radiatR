@@ -27,7 +27,9 @@ set_frame_rate(x, fps)
 \description{
 Attach a capture frame rate (frames per second) to a [Tracks] so the time
 aspect of frame-indexed tracks can be represented in real seconds. Stored in
-the object's metadata; the time/frame column is not altered.
+the object's metadata; the time/frame column is not altered. It converts
+frame indices only: time that is already real (POSIXct, or numeric seconds
+loaded with `read_tracks(time_type = "seconds")`) is never divided by it.
 }
 \seealso{
 [elapsed_seconds()], [track_duration()]

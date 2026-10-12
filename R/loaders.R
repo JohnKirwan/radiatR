@@ -645,7 +645,11 @@ read_tracks_format <- function(x, format, ...) {
 #' @param x data.frame, file path, or character vector of file paths
 #' @param mapping named list for column mapping: id, time, x, y, angle, weight. Any missing will be guessed when possible.
 #' @param angle_unit "radians","degrees", or "auto" to guess from values
-#' @param time_type one of "auto","posix","seconds","frames"
+#' @param time_type one of "auto","posix","seconds","frames". Numeric time is
+#'   taken to be a frame index unless `time_type = "seconds"` (or the column is
+#'   a duration): seconds are recorded as such in the Tracks metadata
+#'   (`time_unit`), so [elapsed_seconds()] and the kinematics use them directly,
+#'   with no frame rate.
 #' @param tz timezone for POSIX times (default "UTC")
 #' @param fps Frames-per-second. Required when time_type = "frames" (the time
 #'   column is kept as a raw frame index). When a single finite positive value
@@ -982,6 +986,10 @@ read_tracks <- function(x,
   meta <- list(source = src)
   if (time_is_frames && is.numeric(fps) && length(fps) == 1L && is.finite(fps) && fps > 0)
     meta$frame_rate <- as.numeric(fps)
+  # Numeric time that is already seconds says so, or elapsed_seconds() would
+  # take it for a frame index and ask for (then divide by) a frame rate.
+  if (is.numeric(df[[time]]) && (time_type == "seconds" || time_is_duration))
+    meta$time_unit <- "seconds"
   ts <- tracks(df,
                 id = id, time = time, angle = angle,
                 x = xcol, y = ycol,
