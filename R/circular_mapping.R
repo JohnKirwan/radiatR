@@ -59,6 +59,8 @@ wrap_to_2pi <- function(theta) {
   # error on assignment once two or more NAs are present).
   neg <- which(theta < 0)
   theta[neg] <- theta[neg] + twopi
+  # A tiny negative angle wraps to exactly 2*pi in floating point; that is 0.
+  theta[which(theta >= twopi)] <- 0
   theta
 }
 

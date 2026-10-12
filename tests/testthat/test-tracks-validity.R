@@ -93,3 +93,15 @@ test_that(".format_tracks_problems gives one line per rule, truncated at 10", {
   expect_match(out[2], "missing id (column(s) id): 1 row(s): 20; id(s): NA",
                fixed = TRUE)
 })
+
+# ---- float noise at the 0 / 2*pi seam -----------------------------------------
+
+test_that("angles that wrap to exactly 2*pi are stored as 0", {
+  expect_identical(wrap_to_2pi(-1e-17), 0)
+  expect_identical(wrap_to_2pi(c(NA, -1)), c(NA, 2 * pi - 1))
+  d <- data.frame(id = "a", time = 1:2, ang = c(-1e-17, 1))
+  ts <- tracks(d, id = "id", time = "time", angle = "ang", angle_unit = "radians")
+  expect_identical(ts@data$ang, c(0, 1))
+  d <- data.frame(id = "a", time = 1:2, x = 1, y = c(0.3 - 0.1 - 0.2, 0.5))
+  expect_s4_class(tracks(d, id = "id", time = "time", x = "x", y = "y"), "Tracks")
+})

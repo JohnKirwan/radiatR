@@ -1444,6 +1444,8 @@ register_loader_dialect("sleap", function(x, bodypart = NULL, score_min = NULL,
          "; available: ", paste(bps_all, collapse = ", "))
 
   id   <- id_col %||% .guess_col(nms, c("track","id","individual","animal","subject")) %||% "1"
+  # SLEAP writes an empty track column for untracked (single-animal) exports.
+  if (id != "1" && id %in% names(df) && all(is.na(df[[id]]))) id <- "1"
   time <- time_col %||% .guess_col(nms, c("frame_idx","frame","frames","time","t")) %||% "..row"
   if (time == "..row") { df[["..row"]] <- seq_len(nrow(df)); time <- "..row" }
 
