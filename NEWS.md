@@ -89,6 +89,15 @@
   anything, because `Tracks` invariants are checked whenever an object is
   built; any value but `TRUE` now warns, and the argument will be removed.
 
+* The `trackmate` dialect stops with a `radiatR_unlinked_rows` error (a
+  `radiatR_invalid_rows`) when a file holds spots that belong to no track
+  (`TRACK_ID` `None` or blank, as in an "all spots" export). They used to be
+  pooled into one trajectory called `None`. Pass
+  `dialect_args = list(unlinked = "drop")` to leave them out, with a
+  `radiatR_dropped_rows` warning. Without a units row saying `POSITION_T` is
+  in seconds, the dialect now takes `FRAME` as the time column rather than
+  `POSITION_T`.
+
 * Built-in loader dialects are now kept only for tracking software that is
   widely used and still developed. Eleven dialects are removed: `tracktor`,
   `boris_xy`, `dtrack`, `motchallenge`, `csv_bbox`, `wide_prefix_xy`,
@@ -138,6 +147,35 @@
   arguments.
 
 ## Bug fixes
+
+* The `trackmate`, `toxtrac`, `idtrackerai_wide` and `trex` dialects now read
+  the files those programs write. Checked against real exports:
+  - TrackMate 7 spot tables load; their three extra header rows used to be
+    reported as malformed values. They are dropped only when recognised as
+    names and units rows.
+  - ToxTrac `Tracking_RealSpace.txt` (`Time (sec)`, `Track`, `Pos. X (mm)`)
+    and the headerless `Tracking.txt` (6 or 11 columns) load; both used to stop
+    with "required columns not found". The id is `<arena>_<track>`.
+  - idtracker.ai `trajectories.csv` (`seconds,x1,y1,...`) loads; it used to
+    stop with "no x_<id>/y_<id> pairs found". An x column with no y column is
+    now an error, as is an `ids` entry the file does not have.
+  - TRex files that write `frame` twice use it as the time; they used to fall
+    back to the `time` column.
+  These dialects check their source columns strictly, so a malformed value is
+  reported by the header as written, the row of the file and the file name.
+
+* Dialects now state the unit of their time column, so seconds are no longer
+  taken for frames when an `fps` is supplied (elapsed time and speeds were
+  divided by it). See "Time units from a dialect" in `?read_tracks`. An `fps`
+  given for a time column in seconds is not used, with a message; an explicit
+  `time_type` that contradicts the dialect is a `radiatR_time_type_mismatch`
+  error.
+
+* App: tracking software is now recognised from the file's header for
+  TrackMate, ToxTrac and idtracker.ai exports. The header was reduced before
+  it was lower-cased, so no header containing a capital letter ever matched.
+  A file whose time is in seconds no longer needs a frame rate for the
+  kinematics.
 
 * Numeric time loaded as seconds is now treated as seconds. A `Tracks` read
   with `read_tracks(time_type = "seconds")`, or from a duration (`difftime`)

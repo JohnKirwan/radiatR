@@ -83,3 +83,33 @@ test_that("a malformed value gets a headline naming the column and an example", 
   expect_match(detail, "19, 20, ...\n  values: 'oops'", fixed = TRUE)
   expect_no_match(detail, "Affected", fixed = TRUE)
 })
+
+test_that("real exports are auto-detected and load through the app's loader", {
+  skip_if_not_installed("shiny")
+  app_file <- file.path(app_dir(), "app.R")
+  skip_if(!file.exists(app_file), "app.R not found")
+  e <- new.env()
+  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
+  fx <- function(f) normalizePath(testthat::test_path("fixtures", "real", f))
+  expect_identical(e$guess_dialect(fx("trackmate_v7_spots.csv")), "trackmate")
+  expect_identical(e$guess_dialect(fx("trackmate_v6_spots.csv")), "trackmate")
+  expect_identical(e$guess_dialect(fx("idtrackerai_trajectories.csv")), "idtrackerai_wide")
+  expect_identical(e$guess_dialect(fx("toxtrac_tracking_realspace.txt")), "toxtrac")
+  expect_identical(e$guess_dialect(system.file("extdata", "sleap_example.csv", package = "radiatR")),
+                   "sleap")
+  # a plain table stays generic
+  p <- withr::local_tempfile(fileext = ".csv")
+  writeLines(c("ID,Frame,X,Y", "a,1,0,0"), p)
+  expect_identical(e$guess_dialect(p), "generic")
+
+  ts <- e$load_ts(fx("toxtrac_tracking_realspace.txt"), "toxtrac", normalize_xy = FALSE)
+  expect_identical(ts@meta$time_unit, "seconds")
+  ts <- e$load_ts(fx("trackmate_v7_spots.csv"), "trackmate", normalize_xy = FALSE)
+  expect_equal(nrow(as.data.frame(ts)), 6L)
+
+  # TrackMate spots in no track: a headline the user can act on in TrackMate
+  err <- tryCatch(e$load_ts(fx("trackmate_v6_spots.csv"), "trackmate", normalize_xy = FALSE),
+                  error = function(err) err)
+  expect_match(e$plain_error(err), "Spots in tracks", fixed = TRUE)
+  expect_false(grepl("Affected ids", e$ingest_detail(err), fixed = TRUE))
+})

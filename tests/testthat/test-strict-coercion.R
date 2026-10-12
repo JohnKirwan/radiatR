@@ -302,15 +302,6 @@ test_that("idtracker.ai's 'nan' cells are missing values, by path and as text", 
   for (cc in c("seconds", "x6", "y6")) expect_equal(as_text[[cc]], by_path[[cc]])
 })
 
-test_that("TrackMate 7's extra header rows are reported as malformed, with their rows", {
-  # The trackmate dialect does not strip these rows yet; until it does, they
-  # must fail by name rather than as an unparseable-timestamp error.
-  e <- malformed(read_tracks(real_fixture("trackmate_v7_spots.csv"), dialect = "trackmate"))
-  expect_s3_class(e, "radiatR_malformed_values")
-  expect_identical(e$rows, 1:3)
-  expect_identical(e$values, c("T", "T", "(sec)"))
-})
-
 # ---- empty guessed id column -------------------------------------------------
 
 test_that("an empty guessed id column is ignored; SLEAP's example loads without a dialect", {
