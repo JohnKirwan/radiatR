@@ -47,6 +47,14 @@
 
 ## Bug fixes
 
+* The script downloaded from the Shiny app now derives headings in the frame
+  the app used. In the app's default relative frame the script omitted
+  `coords`, so `derive_headings()` fell back to its `"absolute"` default and
+  the script's headings (and every statistic computed from them) differed from
+  those shown in the app. The frame is now always written explicitly, as the
+  one the app resolved: a dataset with no relative coordinates gets
+  `coords = "absolute"`.
+
 * The Shiny app no longer calls `set.seed()` on the shared R process when it
   computes Monte-Carlo uniformity p-values, so one session can no longer shift
   another's random draws. The mean-direction bootstrap CI arc and the RANSAC

@@ -34,7 +34,7 @@ roundtrip_spec <- function(heading_display, by, facet, arrow, vectors,
                            group_by = NULL, follows_group = FALSE) {
   data(cpunctatus, package = "radiatR", envir = environment())
   ts <- cpunctatus
-  hd <- derive_headings(ts, rule = "distal")
+  hd <- derive_headings(ts, rule = "distal", coords = "relative")   # the app's default frame
   if (!is.null(facet)) {
     df <- as.data.frame(ts)
     hd[[facet]] <- df[[facet]][match(hd$id, df[[ts@cols$id]])]
@@ -181,7 +181,8 @@ test_that("emitted code reproduces spec_to_plot (crossing rule + heading vectors
   data(cpunctatus, package = "radiatR", envir = environment())
   ts <- cpunctatus
   hd <- derive_headings(ts, rule = "crossing", circ0 = 0.3, circ1 = 0.6,
-                        return_coords = TRUE, on_missing = "quiet")
+                        return_coords = TRUE, on_missing = "quiet",
+                        coords = "relative")
   spec <- list(
     data = list(source = "example", path = NULL, dialect = NULL),
     headings = list(rule = "crossing", circ0 = 0.3, circ1 = 0.6),
@@ -637,4 +638,50 @@ test_that("a randomised heading rule is seeded in the emitted script", {
   rt$spec$headings$rule <- "ransac_straight"
   expect_match(spec_to_code(rt$spec), seeded, fixed = TRUE)
   expect_match(spec_to_stats_code(rt$spec), seeded, fixed = TRUE)
+})
+
+# --- heading frame: the script derives its own headings ----------------------
+# The fixtures above hand spec_to_plot() a pre-derived `hd`, so they cannot see
+# the frame the emitted derive_headings() call uses. These build the spec the way
+# the app does and compare the headings the script derives against the app's.
+.script_headings <- function(ts, frame, data) {
+  hd <- derive_headings(ts, rule = "distal", on_missing = "quiet",
+                        coords = .resolve_heading_coords(ts, frame))
+  spec <- build_plot_spec(
+    ts = ts, hd = hd, method = "distal", data = data,
+    inputs = list(frame = frame, plot_theme = "void", angle_labels = "degrees",
+                  heading_display = "points"))
+  env <- new.env(parent = globalenv())
+  suppressWarnings(eval(parse(text = spec_to_code(spec)), envir = env))
+  list(spec = spec, app = hd$heading[order(hd$id)],
+       script = env$hd$heading[order(env$hd$id)])
+}
+
+test_that("emitted script derives headings in the app's frame (relative, absolute)", {
+  data(cpunctatus, package = "radiatR", envir = environment())
+  ex <- list(source = "example", mode = "trajectories", path = NULL)
+  for (frame in c("relative", "absolute")) {
+    r <- .script_headings(cpunctatus, frame, ex)
+    expect_identical(r$spec$headings$coords, frame)
+    expect_equal(r$script, r$app, info = frame)
+  }
+})
+
+test_that("emitted script floors a relative frame to absolute without rel_x/rel_y", {
+  set.seed(1)
+  d <- do.call(rbind, lapply(c("a", "b", "c"), function(i) {
+    th <- stats::runif(1, 0, 2 * pi); r <- seq(0, 1, length.out = 12)
+    data.frame(id = i, time = seq_along(r),
+               x = r * cos(th) + stats::rnorm(12, 0, 0.02),
+               y = r * sin(th) + stats::rnorm(12, 0, 0.02))
+  }))
+  p <- withr::local_tempfile(fileext = ".csv")
+  utils::write.csv(d, p, row.names = FALSE)
+  ts <- read_tracks(p)
+  expect_null(ts@cols$rel_x)
+  r <- .script_headings(ts, "relative",
+                        list(source = "file", mode = "trajectories", path = p))
+  expect_identical(r$spec$coords, "relative")            # display frame as requested
+  expect_identical(r$spec$headings$coords, "absolute")   # heading frame as derived
+  expect_equal(r$script, r$app)
 })

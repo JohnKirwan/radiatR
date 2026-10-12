@@ -21,7 +21,7 @@ test_that("spec_to_code emits a runnable, exported-only script", {
   code <- spec_to_code(example_spec())
   expect_true(grepl("library(radiatR)", code, fixed = TRUE))
   expect_true(grepl('read_tracks("tracks.csv", dialect = "ethovision")', code, fixed = TRUE))
-  expect_true(grepl('derive_headings(ts, rule = "crossing", circ0 = 0.3, circ1 = 0.6)', code, fixed = TRUE))
+  expect_true(grepl('derive_headings(ts, rule = "crossing", circ0 = 0.3, circ1 = 0.6, coords = "relative")', code, fixed = TRUE))
   expect_true(grepl('by.x = "id"', code, fixed = TRUE))                       # facet merge onto hd
   expect_true(grepl('assign_colour_key(ts, by = "trajectory")', code, fixed = TRUE))
   expect_true(grepl("bin_angles(hd$heading", code, fixed = TRUE))            # stacked
@@ -111,23 +111,26 @@ test_that("spec_to_code: headings with no group emits a single-colour key", {
   expect_match(code, "hd$.colour <- factor(\"all\")", fixed = TRUE)
 })
 
-test_that("spec_to_code emits coords only for the absolute frame", {
-  # Build a trajectory-mode spec the same way the neighbouring tests do.
-  ts  <- cpunctatus
-  hd  <- derive_headings(ts, rule = "distal")
-  spec <- build_plot_spec(
-    ts = ts, hd = hd, method = "distal",
+test_that("spec_to_code always emits the heading frame; radiate coords only when absolute", {
+  # derive_headings() defaults to "absolute" and radiate() to "relative", so the
+  # heading frame is always explicit while radiate()'s is emitted only off-default.
+  ts <- cpunctatus
+  code_for <- function(frame) spec_to_code(build_plot_spec(
+    ts = ts, hd = derive_headings(ts, rule = "distal", coords = frame),
+    method = "distal",
     data = list(source = "example", mode = "trajectories",
                 path = "x.csv", dialect = NULL),
     inputs = list(cond_col = NULL, colour_by = NULL, plot_theme = "void",
                   angle_labels = "degrees", show_tracks = TRUE,
-                  show_arrow = FALSE))
-  expect_false(grepl('coords = "absolute"', spec_to_code(spec), fixed = TRUE))
+                  show_arrow = FALSE, frame = frame)))
 
-  spec$coords <- "absolute"
-  code <- spec_to_code(spec)
-  expect_match(code, 'derive_headings\\(ts, rule = "[^"]+".*coords = "absolute"')
-  expect_match(code, 'radiate\\(ts, group_col.*coords = "absolute"')
+  rel <- code_for("relative")
+  expect_true(grepl('derive_headings(ts, rule = "distal", coords = "relative")', rel, fixed = TRUE))
+  expect_false(grepl('coords = "absolute"', rel, fixed = TRUE))
+
+  abs <- code_for("absolute")
+  expect_true(grepl('derive_headings(ts, rule = "distal", coords = "absolute")', abs, fixed = TRUE))
+  expect_match(abs, 'radiate\\(ts, group_col[^\n]*coords = "absolute"')
 })
 
 test_that("spec_to_code emits axial = TRUE for axial headings specs", {

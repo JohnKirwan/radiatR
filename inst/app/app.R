@@ -255,11 +255,8 @@ path_metrics_table <- function(ts) {
 
 derive_hd <- function(ts, method, circ0, circ1, coords = "relative") {
   # Use the requested frame; relative aligns headings with the rel_x/rel_y display
-  # (stimulus fixed at East). Datasets without a relative coordinate system can
-  # only produce absolute headings, so a relative request floors to absolute.
-  has_rel <- !is.null(ts@cols$rel_x) && !is.null(ts@cols$rel_y)
-  use <- if (identical(coords, "relative") && !has_rel) "absolute" else coords
-  args <- list(x = ts, coords = use)
+  # (stimulus fixed at East).
+  args <- list(x = ts, coords = .resolve_heading_coords(ts, coords))
   # The app surfaces attrition via the Results banner, not the R console; quiet
   # still attaches the n_total/n_missing/missing_ids attributes the banner reads.
   args$on_missing <- "quiet"

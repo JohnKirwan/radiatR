@@ -9,7 +9,7 @@
       data(cpunctatus)
       ts <- cpunctatus
       
-      hd <- derive_headings(ts, rule = "distal")
+      hd <- derive_headings(ts, rule = "distal", coords = "relative")
       
       ts <- assign_colour_key(ts, by = "trajectory")
       hd <- assign_colour_key(hd, by = "trajectory", reference = ts)
@@ -37,7 +37,7 @@
       data(cpunctatus)
       ts <- cpunctatus
       
-      hd <- derive_headings(ts, rule = "distal")
+      hd <- derive_headings(ts, rule = "distal", coords = "relative")
       
       # Summary & stats analysis (display formatting is applied in the app)
       if (!"trial_id" %in% names(hd)) hd <- merge(hd, unique(as.data.frame(ts)[, c("trial_id", "trial_id")]), by.x = "id", by.y = "trial_id", all.x = TRUE)
@@ -67,7 +67,7 @@
       data(cpunctatus)
       ts <- cpunctatus
       
-      hd <- derive_headings(ts, rule = "distal")
+      hd <- derive_headings(ts, rule = "distal", coords = "relative")
       hd <- merge(hd, unique(as.data.frame(ts)[, c("trial_id", "type")]), by.x = "id", by.y = "trial_id", all.x = TRUE)
       
       ts <- assign_colour_key(ts, by = "trajectory")
@@ -96,7 +96,7 @@
       data(cpunctatus)
       ts <- cpunctatus
       
-      hd <- derive_headings(ts, rule = "distal")
+      hd <- derive_headings(ts, rule = "distal", coords = "relative")
       hd <- merge(hd, unique(as.data.frame(ts)[, c("trial_id", "type")]), by.x = "id", by.y = "trial_id", all.x = TRUE)
       
       # Summary & stats analysis (display formatting is applied in the app)
