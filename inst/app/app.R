@@ -161,10 +161,21 @@ load_ts <- function(path, dialect, mapping = list(), read_opts = list(delim = NU
 
 # The bundled Cylindroiulus punctatus millipede example, as a Tracks, so
 # users can try the app without supplying their own tracking file.
+# The test suite sets options(radiatR.app_example_per_arc = k) to load only the
+# first k tracks of each `arc` level, which keeps every `arc` and `type` level
+# so grouping and faceting still work. Unset (the default) loads all tracks.
 example_ts <- function() {
+  k <- getOption("radiatR.app_example_per_arc")
+  if (!is.null(k) &&
+      (!is.numeric(k) || length(k) != 1L || is.na(k) || k < 1 || k != round(k)))
+    stop("option radiatR.app_example_per_arc must be a single positive whole ",
+         "number, not ", paste(deparse(k), collapse = " "), call. = FALSE)
   e <- new.env()
   utils::data("cpunctatus", package = "radiatR", envir = e)
-  e$cpunctatus
+  ts <- e$cpunctatus
+  if (is.null(k)) return(ts)
+  d <- unique(as.data.frame(ts)[, c(ts@cols$id, "arc")])
+  ts[as.character(d[[1L]])[stats::ave(seq_len(nrow(d)), d$arc, FUN = seq_along) <= k]]
 }
 
 # Heading methods that are inherently axial (per-track movement axis, not a

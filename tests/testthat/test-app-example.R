@@ -794,3 +794,30 @@ test_that("derive_hd draws RANSAC headings under the app seed, reproducible via 
                               coords = "relative", on_missing = "quiet")
   expect_equal(live$heading, scripted$heading)
 })
+
+test_that("example_ts loads all tracks by default and k per arc under the test option", {
+  skip_if_not_installed("shiny")
+  app_file <- system.file("app", "app.R", package = "radiatR")
+  if (!nzchar(app_file))
+    app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
+  skip_if(!file.exists(app_file), "app.R not found")
+  e <- new.env()
+  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
+  per_arc <- function(k) withr::with_options(
+    list(radiatR.app_example_per_arc = k), e$example_ts())
+  cond <- function(ts) unique(as.data.frame(ts)[, c("trial_id", "arc", "type")])
+
+  data(cpunctatus, package = "radiatR", envir = environment())
+  full <- per_arc(NULL)
+  expect_identical(full, cpunctatus)
+
+  small <- per_arc(2L)
+  expect_true(methods::validObject(small))
+  expect_true(all(table(as.character(cond(small)$arc)) == 2L))
+  expect_setequal(as.character(cond(small)$arc), as.character(cond(full)$arc))
+  expect_setequal(as.character(cond(small)$type), as.character(cond(full)$type))
+
+  expect_error(per_arc(0), "radiatR.app_example_per_arc")
+  expect_error(per_arc("two"), "radiatR.app_example_per_arc")
+  expect_error(per_arc(c(2, 3)), "radiatR.app_example_per_arc")
+})
