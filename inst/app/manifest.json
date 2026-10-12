@@ -1409,7 +1409,7 @@
         "LazyDataCompression": "gzip",
         "Depends": "R (>= 4.1.0)",
         "Imports": "rlang, ggplot2, tibble, vctrs, circular, methods, utils, stats",
-        "Suggests": "bpDir, dplyr (>= 1.0.0), testthat (>= 3.0.0), knitr,\nrmarkdown, ggrepel, arrow, data.table, jsonlite, readr, readxl,\nyaml, withr, writexl, xml2, shiny (>= 1.7.0), bslib (>= 0.5.0),\npkgload, png, jpeg, svglite, shinytest2, chromote, CircMLE,\nvdiffr, sphunif",
+        "Suggests": "bpDir, dplyr (>= 1.0.0), testthat (>= 3.0.0), knitr,\nrmarkdown, ggrepel, arrow, data.table, jsonlite, readr, readxl,\nyaml, withr, writexl, shiny (>= 1.7.0), bslib (>= 0.5.0),\npkgload, png, jpeg, svglite, shinytest2, chromote, CircMLE,\nvdiffr, sphunif",
         "Config/testthat/edition": "3",
         "VignetteBuilder": "knitr",
         "Collate": "'conditions.R' 'Tracks.R' 'circular_boxplot.R'\n'circular_mapping.R' 'circular_regression.R'\n'concentration_regression.R' 'coords.R' 'circular_plotting.R'\n'circular_statistics.R' 'circular_trials.R' 'data.R'\n'globals.R' 'headings.R' 'headings_frame.R' 'launch_app.R'\n'loaders.R' 'circ_mixtures.R' 'model_selection.R'\n'circumference_labs.R' 'periodic_angle.R' 'profile_plot.R'\n'radiatR-package.R' 'simulate_tracks.R' 'spelling.R'\n'stimulus_landmarks.R' 'time.R' 'track_metrics.R'\n'transforms.R'",
@@ -1420,16 +1420,16 @@
         "RemoteUsername": "JohnKirwan",
         "RemotePkgRef": "github::JohnKirwan/radiatR@master",
         "RemoteRef": "master",
-        "RemoteSha": "205fc71d4203bc1a0513aed4a772f8b044f8119e",
+        "RemoteSha": "981c5b329dc7450da094992d66a5de808955031a",
         "GithubRepo": "radiatR",
         "GithubUsername": "JohnKirwan",
         "GithubRef": "master",
-        "GithubSHA1": "205fc71d4203bc1a0513aed4a772f8b044f8119e",
+        "GithubSHA1": "981c5b329dc7450da094992d66a5de808955031a",
         "NeedsCompilation": "no",
-        "Packaged": "2026-10-12 20:10:18 UTC; runner",
+        "Packaged": "2026-10-12 21:34:36 UTC; runner",
         "Author": "John D. Kirwan [aut, cre]",
         "Maintainer": "John D. Kirwan <john@jkirwan.org>",
-        "Built": "R 4.5.3; ; 2026-10-12 20:10:20 UTC; unix"
+        "Built": "R 4.5.3; ; 2026-10-12 21:34:38 UTC; unix"
       }
     },
     "rappdirs": {
@@ -2080,7 +2080,7 @@
   },
   "files": {
     "app.R": {
-      "checksum": "08a0bf10f040d4f978cb6f99db181a54"
+      "checksum": "163e321feba9ed9bf153416a8e11a65a"
     },
     "download_helpers.R": {
       "checksum": "baed9472b0de62136d821fe7dd0bdfac"
