@@ -745,13 +745,22 @@ server <- function(input, output, session) {
     NULL
   })
 
+  # Frame the preview illustrates: the one the Results will derive in for the
+  # loaded data (the demo tracks always have a relative frame, so resolve against
+  # rv$ts rather than them).
+  preview_coords <- reactive({
+    frame <- input$frame %||% "relative"
+    if (is.null(rv$ts)) frame else .resolve_heading_coords(rv$ts, frame)
+  })
+
   # Live illustrative preview of the selected method on fixed demo tracks.
   output$method_preview <- renderPlot({
     method <- if (is.null(input$method)) "distal" else input$method
     tryCatch(
       build_method_preview(
         demo_tracks(), method,
-        num_or(input$circ0, 0.3), num_or(input$circ1, 0.6)
+        num_or(input$circ0, 0.3), num_or(input$circ1, 0.6),
+        coords = preview_coords()
       ),
       error = function(e) {
         message("method_preview render failed: ", conditionMessage(e))

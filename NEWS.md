@@ -55,6 +55,11 @@
   one the app resolved: a dataset with no relative coordinates gets
   `coords = "absolute"`.
 
+* The Shiny app's method preview now follows the "Heading frame" control. It
+  always illustrated the relative frame, so with the frame set to absolute (or
+  with data that has no landmark frame) the preview showed a different frame
+  from the one the Results derive headings in.
+
 * The Shiny app no longer calls `set.seed()` on the shared R process when it
   computes Monte-Carlo uniformity p-values, so one session can no longer shift
   another's random draws. The mean-direction bootstrap CI arc and the RANSAC
