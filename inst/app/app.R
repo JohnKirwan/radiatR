@@ -410,6 +410,11 @@ plain_error <- function(e) {
       "Some rows share the same ID and time.",
       "Check that the ID column identifies single tracks; see Technical details."
     ))
+  if (inherits(e, "radiatR_malformed_values"))
+    return(sprintf(
+      "Column '%s' has values that are not %s, such as '%s'. See Technical details for the rows.",
+      e$columns, e$expected, e$values[1]
+    ))
   if (inherits(e, c("radiatR_invalid_rows", "radiatR_invalid_tracks")))
     return(paste(
       "Some rows of this file are not valid track data.",
@@ -437,10 +442,12 @@ plain_error <- function(e) {
 # The full technical detail behind a friendly ingest error: the original
 # exception message, plus row numbers / ids when the loader raised a
 # structured radiatR_invalid_rows or radiatR_invalid_tracks condition (both
-# carry `rows` and `ids`).
+# carry `rows` and `ids`). A radiatR_malformed_values message already lists its
+# rows and values, and has no ids.
 ingest_detail <- function(e) {
   detail <- conditionMessage(e)
-  if (inherits(e, c("radiatR_invalid_rows", "radiatR_invalid_tracks"))) {
+  if (inherits(e, c("radiatR_invalid_rows", "radiatR_invalid_tracks")) &&
+      !inherits(e, "radiatR_malformed_values")) {
     detail <- paste0(
       detail,
       "\n\nAffected rows (", length(e$rows), "): ",
