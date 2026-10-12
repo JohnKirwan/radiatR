@@ -96,8 +96,10 @@ be written.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
-<dd><p>Optional integer seed supplied to [set.seed()] for
-reproducibility.</p></dd>
+<dd><p>Optional integer seed for reproducibility. The simulation is
+drawn under this seed and the caller's random-number state is restored on
+exit, so the call neither depends on nor alters the session's RNG stream.
+With `NULL` (default) the draws come from the session's stream as usual.</p></dd>
 
 
 <dt id="arg-radial-noise">radial_noise<a class="anchor" aria-label="anchor" href="#arg-radial-noise"></a></dt>

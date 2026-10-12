@@ -534,7 +534,8 @@ bootstrap <strong>confidence interval</strong>
 (<code><a href="../reference/add_heading_interval.html">add_heading_interval()</a></code>) takes a <code>group_col</code>.
 Here both are split by target half-width (<code>arc</code>):</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">canvas</span> <span class="op">+</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>  <span class="co"># the interval is bootstrapped</span></span>
+<span><span class="va">canvas</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="../reference/add_heading_arrow.html">add_heading_arrow</a></span><span class="op">(</span><span class="va">hd</span>,    colour_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="../reference/add_heading_interval.html">add_heading_interval</a></span><span class="op">(</span><span class="va">hd</span>, group_col  <span class="op">=</span> <span class="st">"arc"</span>, stat <span class="op">=</span> <span class="st">"bootstrap_ci"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="circular-statistics_files/figure-html/grouped-overlays-1.png" class="r-plt" alt="" width="624" style="display: block; margin: auto;"></p>

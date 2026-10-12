@@ -517,6 +517,7 @@ takes a `group_col`. Here both are split by target half-width (`arc`):
 
 ``` r
 
+set.seed(1)  # the interval is bootstrapped
 canvas +
   add_heading_arrow(hd,    colour_col = "arc") +
   add_heading_interval(hd, group_col  = "arc", stat = "bootstrap_ci")

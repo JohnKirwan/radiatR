@@ -46,7 +46,11 @@ simulate_tracks(
 
 - seed:
 
-  Optional integer seed supplied to \[set.seed()\] for reproducibility.
+  Optional integer seed for reproducibility. The simulation is drawn
+  under this seed and the caller's random-number state is restored on
+  exit, so the call neither depends on nor alters the session's RNG
+  stream. With \`NULL\` (default) the draws come from the session's
+  stream as usual.
 
 - radial_noise:
 
