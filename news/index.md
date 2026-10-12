@@ -46,6 +46,14 @@
   purrr is no longer a dependency; vctrs, already required by tibble and
   ggplot2, is now imported directly.
 
+- [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+  draws clipped tracks much faster: clipping paths to the unit circle
+  (`clip_tracks = TRUE`, the default) is now vectorised, taking a plot
+  of the `cpunctatus` example data from about 6 s to about 0.1 s. The
+  drawn geometry is unchanged.
+  [`line_circle_intercept()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept.md)
+  is now vectorised over its arguments.
+
 ### Bug fixes
 
 - The Shiny app no longer calls

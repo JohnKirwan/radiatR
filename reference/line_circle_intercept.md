@@ -1,6 +1,7 @@
 # Find the intercept of a line with the unit circle
 
-Find the intercept of a line with the unit circle
+Vectorised over its arguments: each \`(x0, y0)\` -\> \`(x1, y1)\` pair
+gives one row of the result.
 
 ## Usage
 
