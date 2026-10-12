@@ -274,3 +274,11 @@ test_that("radiate() rejects a data frame whose group_col is not a trajectory id
   expect_s3_class(radiate(sim, group_col = "trial_id",
                           x_col = "rel_x", y_col = "rel_y"), "ggplot")
 })
+
+test_that("non-finite relative coordinates are rejected at construction", {
+  d <- valid_df(); d$rx <- d$x; d$ry <- d$y
+  d$rx[2] <- NA
+  e <- invalid(mk(d, rel_x = "rx", rel_y = "ry"))
+  expect_s3_class(e, "radiatR_invalid_tracks")
+  expect_identical(keys(e$problems), "coord_nonfinite/rx/2")
+})

@@ -3,13 +3,18 @@
 ## Breaking changes
 
 * `Tracks` objects now enforce the invariants the rest of the package assumes
-  (see "Invariants" in `?Tracks`): no missing ids; finite, strictly increasing
+  (see "Invariants" in `?tracks`): no missing ids; finite, strictly increasing
   time within each id; finite angles and coordinates; finite, non-negative
   weights. Previously a missing id, a non-finite or repeated time, an invalid
-  weight, or a non-finite coordinate written after construction was accepted,
-  and a missing time crashed the validator. `tracks()`, and so `read_tracks()`,
-  now reports every violation at once as a `radiatR_invalid_tracks` error whose
-  `problems` field lists the rule, column, input row and id. Consequences:
+  weight, a non-finite relative coordinate (`rel_x`/`rel_y`), or any
+  non-finite coordinate written after construction was accepted, and a missing
+  time crashed the validator. `tracks()` now reports every such violation at
+  once as a `radiatR_invalid_tracks` error whose `problems` field lists the
+  rule, column, input row and id. `read_tracks()` passes that error on, after
+  its own checks for non-finite x/y (`radiatR_invalid_rows`) and for duplicate
+  keys across files. Consequences: relative-coordinate columns must be finite
+  when the object is built, so give them finite placeholders (or name the
+  roles without storing the columns) if `set_reference()` is to fill them;
   `radiate()` on a data frame fails when `group_col` does not identify single
   trajectories (it used to draw one path per group that hopped between
   trials), so pass the trajectory id as `group_col`; and a `Tracks` saved by an
