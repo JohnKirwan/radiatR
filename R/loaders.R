@@ -185,6 +185,11 @@ list_loader_formats <- function() sort(ls(envir = .loader_format_registry))
 #' import. Numeric columns returned as text are coerced strictly (see
 #' "Malformed values" in [read_tracks()]) using the decimal mark sniffed from
 #' the file; a dialect that knows better can set `attr(out, "decimal")`.
+#'
+#' Numeric time is read as a frame index unless the dialect says its time
+#' column is in seconds, with `attr(out, "time_unit") <- "seconds"` (or
+#' `"frames"`, to rule out `time_type = "seconds"`). See "Time units from a
+#' dialect" in [read_tracks()].
 #' @param name Unique dialect name
 #' @param fun Function that accepts (x, ...) and returns a data.frame with id/time/angle or id/time/x/y
 #' @param overwrite Replace an existing dialect registered with the same name
@@ -561,8 +566,16 @@ guess_columns <- function(data, mapping = list()) {
     d
   }, dfl, paths)
 
+  # A dialect says what unit its time column is in; the files must agree.
+  units <- unique(lapply(dfl, attr, "time_unit"))
+  if (length(units) > 1L)
+    rlang::abort(sprintf(
+      "read_tracks: the files do not share a time unit under dialect '%s' (%s).", dialect,
+      paste(vapply(units, function(u) u %||% "unknown", character(1)), collapse = ", ")),
+      class = "radiatR_time_type_mismatch")
+
   df <- vctrs::vec_rbind(!!!dfl)
-  list(df = df, id_col = id_col, synth = synth)
+  list(df = df, id_col = id_col, synth = synth, time_unit = units[[1L]])
 }
 
 # ---- core: read_tracks ------------------------------------------------------
@@ -651,6 +664,14 @@ read_tracks_format <- function(x, format, ...) {
 #'   (`time_unit`), so [elapsed_seconds()] and the kinematics use them directly,
 #'   with no frame rate.
 #' @param tz timezone for POSIX times (default "UTC")
+#' @section Time units from a dialect:
+#' A dialect that knows the unit of its time column says so, and under the
+#' default `time_type = "auto"` that decides how the column is read: TrackMate
+#' `POSITION_T` (when the version 7 units row gives seconds), ToxTrac
+#' `Time (sec)`, idtracker.ai `seconds` and TRex `time` are seconds, and need
+#' no `fps`; `FRAME`/`frame` columns are frames. A contrary explicit
+#' `time_type` stops with a `radiatR_time_type_mismatch` error, as do files of
+#' one import that disagree.
 #' @param fps Frames-per-second. Required when time_type = "frames" (the time
 #'   column is kept as a raw frame index). When a single finite positive value
 #'   is supplied and the time column is frame-indexed, it is stored as the
@@ -704,10 +725,14 @@ read_tracks_format <- function(x, format, ...) {
 #' with no digit-grouping mark, so `1,5` is malformed unless
 #' `read_opts = list(decimal = ",")` says the comma is the decimal mark.
 #'
-#' An error raised inside a dialect does not yet name the file or the source
-#' column, and counts rows after the dialect's own filtering and reshaping.
-#' Coordinates that a dialect converts itself (ANY-maze, EthoVision,
-#' DeepLabCut, SLEAP, TRex) are not yet checked this way.
+#' The `trackmate`, `toxtrac`, `idtrackerai_wide` and `trex` dialects check
+#' their source columns the same way, before any reshaping, so the error names
+#' the header as the program wrote it and the row of the file's table. A
+#' missing or non-finite position found afterwards (see `on_invalid`) is still
+#' counted in the rows of the table the dialect returns, which for a wide
+#' format is the reshaped one. Coordinates that the pose and zone dialects
+#' convert themselves (ANY-maze, EthoVision, DeepLabCut, SLEAP) are not yet
+#' checked this way.
 #'
 #' A time column given as text must hold either numbers throughout or
 #' timestamps in one layout throughout: `YYYY-MM-DD HH:MM:SS`,
@@ -820,6 +845,29 @@ read_tracks <- function(x,
     src <- "(multiple)"
   } else {
     stop("read_tracks: 'x' must be a data.frame or path(s) to files")
+  }
+  # A dialect that knows the unit of its time column says so. Under the default
+  # time_type that settles how the column is read; a contrary explicit
+  # time_type is refused rather than obeyed (seconds divided by fps, or frames
+  # passed off as seconds, are both silently wrong).
+  declared <- if (is.null(dialect)) NULL
+              else if (length(x) > 1L && is.character(x)) combined$time_unit
+              else attr(df, "time_unit")
+  if (!is.null(declared)) {
+    if (!(identical(declared, "seconds") || identical(declared, "frames")))
+      rlang::abort(sprintf(
+        "read_tracks: dialect '%s' declared the time unit %s; it must be \"seconds\" or \"frames\".",
+        dialect, paste(deparse(declared), collapse = " ")), class = "radiatR_time_type_mismatch")
+    if (!time_type %in% c("auto", declared))
+      rlang::abort(sprintf(
+        "read_tracks: dialect '%s' reads this time column as %s; time_type = \"%s\" does not apply.",
+        dialect, declared, time_type), class = "radiatR_time_type_mismatch")
+    if (time_type == "auto" && declared == "seconds") {
+      time_type <- "seconds"
+      if (!is.null(fps))
+        message("Time is in seconds (dialect '", dialect, "'): `fps` is not needed and is not used.")
+    }
+    if (time_type == "auto" && declared == "frames" && !is.null(fps)) time_type <- "frames"
   }
   # Extra columns emitted by a dialect are kept unless explicitly dropped.
   dialect_extra <- if (!is.null(dialect)) setdiff(names(df), "..source_path") else character(0)
@@ -1193,6 +1241,53 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
 #   register_loader_format("my_frames_spec", "/path/to/spec.yaml")
 #   ts <- read_tracks_format("/data/dir/run1.csv", format = "my_frames_spec")
 
+# ---- dialect helpers -----------------------------------------------------------
+# What a built-in dialect works on: its table (read from one path with `read`,
+# or handed over as a data frame), the file it came from, the decimal mark it
+# was read with, and its headers normalised for matching (`names`). The table
+# keeps the headers as written, so that errors can name them.
+.dialect_input <- function(x, dialect, norm = identity, read = .read_any) {
+  if (is.character(x) && length(x) == 1L && file.exists(x)) {
+    df <- read(x)
+    src <- basename(x)
+  } else if (is.data.frame(x)) {
+    df <- x
+    src <- NULL
+  } else {
+    rlang::abort(sprintf("%s: expected a data frame or the path of one file.", dialect),
+                 class = "radiatR_dialect_error")
+  }
+  list(df = df, source = src, dialect = dialect,
+       decimal = attr(df, "decimal") %||% ".", names = norm(names(df)))
+}
+
+# A column of a dialect table by its normalised name, and its header as written.
+.dialect_col <- function(inp, col) inp$df[[match(col, inp$names)]]
+.dialect_header <- function(inp, col) names(inp$df)[match(col, inp$names)]
+
+# The column as numbers. A malformed cell aborts, naming the header as written,
+# the row of the table as read, the file and the dialect.
+.dialect_num <- function(inp, col)
+  .as_numeric_strict(.dialect_col(inp, col), .dialect_header(inp, col),
+                     inp$source, inp$dialect, inp$decimal)
+
+# The time column, coerced under the unit the dialect knows it to have
+# ("seconds", "frames" or NULL for unknown). No column means row order (frames).
+.dialect_time <- function(inp, col, unit = NULL, fps = NULL) {
+  if (is.null(col)) return(seq_len(nrow(inp$df)))
+  type <- if (identical(unit, "seconds")) "seconds"
+          else if (identical(unit, "frames") && !is.null(fps)) "frames" else "auto"
+  .coerce_time(.dialect_col(inp, col), time_type = type, fps = fps,
+               column = .dialect_header(inp, col), source = inp$source,
+               dialect = inp$dialect, decimal = inp$decimal)
+}
+
+# A dialect's result, carrying the unit of its time column for read_tracks().
+.dialect_output <- function(out, time_unit = NULL) {
+  attr(out, "time_unit") <- time_unit
+  out
+}
+
 # ---- built-in dialects -------------------------------------------------------
 # DeepLabCut: per-bodypart *_x / *_y columns (post-multiheader collapse or plain CSV).
 #
@@ -1287,27 +1382,36 @@ register_loader_dialect("deeplabcut_multiheader", function(path, bodypart = NULL
   get("deeplabcut", envir = .loader_registry)(raw, bodypart = bodypart, ...)
 })
 
-# idtracker.ai wide format: x_1,y_1,x_2,y_2,... (+ optional frame/time)
+# idtracker.ai wide format: one x/y column pair per animal, written `x1,y1,...`
+# (trajectories.csv) or `x_1,y_1,...`, with an optional time column. `seconds`
+# is seconds, `frame`/`frames` and row order are frames. Missing positions are
+# `nan`. Each column is checked on the table as read, before the reshape.
 register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = NULL, ids = NULL) {
-  df <- if (is.character(x) && file.exists(x)) .read_any(x) else x
-  stopifnot(is.data.frame(df))
-  nms <- names(df)
-  xs <- grep("^x_[0-9]+$", nms, value = TRUE)
-  ys <- sub("^x_", "y_", xs)
-  keep <- ys %in% nms
-  xs <- xs[keep]; ys <- ys[keep]
-  if (!length(xs)) stop("idtrackerai_wide: no x_<id>/y_<id> pairs found")
-  if (is.null(time_col)) time_col <- .guess_col(nms, c("time","t","frame","frames")) %||% "..row"
-  if (time_col == "..row") df[[time_col]] <- seq_len(nrow(df))
-  ids_found <- sub("^x_", "", xs)
-  if (!is.null(ids)) ids_found <- intersect(ids_found, as.character(ids))
-  rows <- lapply(ids_found, function(idv) {
-    xc <- paste0("x_", idv); yc <- paste0("y_", idv)
-    data.frame(id = idv, time = df[[time_col]], x = df[[xc]], y = df[[yc]], stringsAsFactors = FALSE)
-  })
-  out <- do.call(rbind, rows)
-  out$time <- .coerce_time(out$time, time_type = if (!is.null(fps) && grepl("frame", time_col, ignore.case = TRUE)) "frames" else "auto", fps = fps)
-  out
+  inp <- .dialect_input(x, "idtrackerai_wide")
+  nms <- inp$names
+  xs <- grep("^x_?[0-9]+$", nms, value = TRUE)
+  if (!length(xs)) stop("idtrackerai_wide: no x<id>/y<id> column pairs found")
+  ys <- sub("^x", "y", xs)
+  if (!all(ys %in% nms))
+    stop("idtrackerai_wide: no y column for ", paste(xs[!ys %in% nms], collapse = ", "))
+  animal <- sub("^x_?", "", xs)
+  if (!is.null(ids)) {
+    if (!all(as.character(ids) %in% animal))
+      stop("idtrackerai_wide: no such id(s): ",
+           paste(setdiff(as.character(ids), animal), collapse = ", "),
+           "; the file has ", paste(animal, collapse = ", "))
+    keep <- animal %in% as.character(ids)
+    xs <- xs[keep]; ys <- ys[keep]; animal <- animal[keep]
+  }
+  time_col <- time_col %||% .guess_col(nms, c("time", "t", "frame", "frames", "seconds"))
+  unit <- if (is.null(time_col) || grepl("^frames?$", time_col, ignore.case = TRUE)) "frames"
+          else if (tolower(time_col) == "seconds") "seconds"
+  tv <- .dialect_time(inp, time_col, unit, fps)
+  rows <- Map(function(xc, yc, idv)
+    data.frame(id = idv, time = tv, x = .dialect_num(inp, xc), y = .dialect_num(inp, yc),
+               stringsAsFactors = FALSE),
+    xs, ys, animal)
+  .dialect_output(do.call(rbind, unname(rows)), unit)
 })
 
 # EthoVision XT: single- or multi-body-point exports.
@@ -1375,37 +1479,122 @@ register_loader_dialect("ethovision", function(x, id_col = NULL, time_col = NULL
   out
 })
 
-# TrackMate (Fiji): columns like TRACK_ID/TRAJECTORY_ID, FRAME/POSITION_T, POSITION_X, POSITION_Y
-register_loader_dialect("trackmate", function(x, id_col = NULL, time_col = NULL, fps = NULL) {
-  df <- if (is.character(x) && file.exists(x)) .read_any(x) else x
-  stopifnot(is.data.frame(df))
+# TrackMate (Fiji) spot tables: TRACK_ID, FRAME, POSITION_T, POSITION_X,
+# POSITION_Y. Up to version 6 there is one header row; version 7 writes three
+# more (feature names, short names, units), which are dropped when they are
+# recognised as such -- never merely because they fail to parse. Time is
+# POSITION_T when the units row says it is in seconds, otherwise FRAME
+# (frames). Spots that belong to no track carry TRACK_ID "None" (or nothing):
+# `unlinked` says whether that stops the load or leaves them out.
+register_loader_dialect("trackmate", function(x, id_col = NULL, time_col = NULL, fps = NULL,
+                                              unlinked = c("error", "drop")) {
+  unlinked <- match.arg(unlinked)
   norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(v))
-  nms <- norm(names(df)); names(df) <- nms
-  id  <- id_col %||% .guess_col(nms, c("track_id","trajectory_id","id"))
-  time<- time_col %||% .guess_col(nms, c("position_t","time","frame"))
-  xc  <- .guess_col(nms, c("position_x","x"))
-  yc  <- .guess_col(nms, c("position_y","y"))
-  if (is.null(id) || is.null(time) || is.null(xc) || is.null(yc)) stop("trackmate: required columns not found")
-  out <- data.frame(id = df[[id]], time = df[[time]], x = df[[xc]], y = df[[yc]], stringsAsFactors = FALSE)
-  # convert frame timestamps to seconds if needed
-  out$time <- .coerce_time(out$time, time_type = if (!is.null(fps) && grepl("frame", time, ignore.case = TRUE)) "frames" else "auto", fps = fps)
-  out
+  inp <- .dialect_input(x, "trackmate", norm)
+  nms <- inp$names
+  id  <- id_col %||% .guess_col(nms, c("track_id", "trajectory_id", "id"))
+  xc  <- .guess_col(nms, c("position_x", "x"))
+  yc  <- .guess_col(nms, c("position_y", "y"))
+  frame_c <- .guess_col(nms, "frame")
+  t_c     <- .guess_col(nms, c("position_t", "time"))
+  if (is.null(id) || is.null(xc) || is.null(yc) || is.null(time_col %||% frame_c %||% t_c))
+    stop("trackmate: required columns not found")
+
+  # Version 7 descriptor rows: two rows of names (no number under X or Y),
+  # then a units row whose every cell is blank or "(unit)".
+  t_unit <- NULL
+  if (nrow(inp$df) >= 3L) {
+    head3 <- vapply(inp$df, function(v) trimws(as.character(v[1:3])), character(3))
+    head3[is.na(head3)] <- ""
+    xy <- match(c(xc, yc), nms)
+    if (all(nzchar(head3[1:2, xy])) && all(is.na(.parse_number(head3[1:2, xy], inp$decimal))) &&
+        all(head3[3, ] == "" | grepl("^\\(.*\\)$", head3[3, ]))) {
+      if (!is.null(t_c)) t_unit <- tolower(head3[3, match(t_c, nms)])
+      inp$df <- inp$df[-(1:3), , drop = FALSE]
+    }
+  }
+  t_secs <- !is.null(t_unit) && t_unit %in% c("(s)", "(sec)", "(secs)", "(second)", "(seconds)")
+  time <- time_col %||% (if (t_secs) t_c) %||% frame_c %||% t_c
+  unit <- if (identical(time, frame_c)) "frames" else if (identical(time, t_c) && t_secs) "seconds"
+
+  # Coerced on the spot table as read, so rows in an error count spots.
+  out <- data.frame(id = .dialect_col(inp, id), time = .dialect_time(inp, time, unit, fps),
+                    x = .dialect_num(inp, xc), y = .dialect_num(inp, yc),
+                    stringsAsFactors = FALSE)
+  idv <- trimws(as.character(out$id))
+  loose <- is.na(idv) | idv %in% c("", "None", "NA")
+  if (any(loose)) {
+    if (unlinked == "error")
+      rlang::abort(sprintf(paste0(
+        "trackmate: %d of %d spot(s) belong to no track (%s is '%s')%s.\n  rows: %s\n",
+        "  Export \"Spots in tracks\" from TrackMate, or pass ",
+        "dialect_args = list(unlinked = \"drop\") to leave them out."),
+        sum(loose), length(loose), .dialect_header(inp, id),
+        paste(unique(idv[loose]), collapse = "', '"),
+        if (!is.null(inp$source)) sprintf(" in file '%s'", inp$source) else "",
+        paste0(paste(utils::head(which(loose), 20L), collapse = ", "),
+               if (sum(loose) > 20L) ", ..." else "")),
+        class = c("radiatR_unlinked_rows", "radiatR_invalid_rows"),
+        rows = which(loose), ids = character(0), columns = .dialect_header(inp, id),
+        values = idv[loose], source = inp$source, dialect = "trackmate", call = NULL)
+    rlang::warn(sprintf("Dropped %d of %d spot(s) that belong to no track.",
+                        sum(loose), length(loose)),
+                class = "radiatR_dropped_rows", rows = which(loose), ids = character(0),
+                columns = .dialect_header(inp, id), values = idv[loose])
+    out <- out[!loose, , drop = FALSE]
+    rownames(out) <- NULL
+  }
+  .dialect_output(out, unit)
 })
 
-# ToxTrac: typical columns TrackID, Frame, X, Y or Time(s)
+# ToxTrac Tracking.txt, read when it has no header row (the first line is all
+# numbers): frame, arena, track, x, y, label, with five bounding-box columns
+# before the label in the 2026 layout. Read as text for the strict coercion.
+.read_toxtrac <- function(path) {
+  first <- strsplit(readLines(path, n = 1L, warn = FALSE), "\t", fixed = TRUE)
+  if (!length(first) || !length(first[[1L]]) || anyNA(.parse_number(trimws(first[[1L]]))))
+    return(.read_any(path))
+  d <- utils::read.table(path, header = FALSE, sep = "\t", colClasses = "character",
+                         blank.lines.skip = FALSE, quote = "", comment.char = "")
+  cols <- list(c("frame", "arena", "track", "x", "y", "label"),
+               c("frame", "arena", "track", "x", "y", "box_angle", "box_x", "box_y",
+                 "box_width", "box_height", "label"))
+  cols <- cols[lengths(cols) == ncol(d)]
+  if (!length(cols))
+    rlang::abort(sprintf(
+      "toxtrac: headerless file '%s' has %d columns; a ToxTrac Tracking.txt has 6 or 11.",
+      basename(path), ncol(d)), class = "radiatR_dialect_error", source = basename(path))
+  stats::setNames(d, cols[[1L]])
+}
+
+# ToxTrac (layouts per the ToxTrac 2026 manual, doi:10.5281/zenodo.20397164).
+# Tracking_RealSpace.txt: "Time (sec)", Arena, Track, "Pos. X (mm)",
+# "Pos. Y (mm)", Label -- seconds. Tracking.txt: headerless, frames (see
+# .read_toxtrac). The id is <arena>_<track>, because each arena numbers its
+# tracks from 1. Label is ToxTrac's detection flag (0 predicted, 1 detected,
+# 2 texture-matched, 3 interpolated) and is kept as a column, not filtered on.
 register_loader_dialect("toxtrac", function(x, fps = NULL) {
-  df <- if (is.character(x) && file.exists(x)) .read_any(x) else x
-  stopifnot(is.data.frame(df))
-  norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(v))
-  nms <- norm(names(df)); names(df) <- nms
-  id   <- .guess_col(nms, c("trackid","id","animal","subject"))
-  time <- .guess_col(nms, c("time_s","time","frame"))
-  xc   <- .guess_col(nms, c("x","x_mm","x_px"))
-  yc   <- .guess_col(nms, c("y","y_mm","y_px"))
-  if (is.null(id) || is.null(time) || is.null(xc) || is.null(yc)) stop("toxtrac: required columns not found")
-  out <- data.frame(id = df[[id]], time = df[[time]], x = df[[xc]], y = df[[yc]], stringsAsFactors = FALSE)
-  out$time <- .coerce_time(out$time, time_type = if (!is.null(fps) && grepl("frame", time, ignore.case = TRUE)) "frames" else "auto", fps = fps)
-  out
+  norm <- function(v)
+    gsub("^_+|_+$", "", gsub("[^a-z0-9]+", "_", tolower(sub("\\s*\\([^)]*\\)\\s*$", "", v))))
+  inp <- .dialect_input(x, "toxtrac", norm, read = .read_toxtrac)
+  nms <- inp$names
+  track <- .guess_col(nms, c("trackid", "track", "id", "animal", "subject"))
+  time  <- .guess_col(nms, c("time_s", "time", "frame"))
+  xc    <- .guess_col(nms, c("x", "pos_x", "x_mm", "x_px"))
+  yc    <- .guess_col(nms, c("y", "pos_y", "y_mm", "y_px"))
+  if (is.null(track) || is.null(time) || is.null(xc) || is.null(yc))
+    stop("toxtrac: required columns not found")
+  unit <- if (grepl("^frame", time)) "frames"
+          else if (grepl("\\((s|sec|secs|seconds)\\)\\s*$", .dialect_header(inp, time),
+                         ignore.case = TRUE)) "seconds"
+  arena <- .guess_col(nms, "arena")
+  idv <- .dialect_col(inp, track)
+  if (!is.null(arena)) idv <- paste(.dialect_col(inp, arena), idv, sep = "_")
+  out <- data.frame(id = idv, time = .dialect_time(inp, time, unit, fps),
+                    x = .dialect_num(inp, xc), y = .dialect_num(inp, yc),
+                    stringsAsFactors = FALSE)
+  for (extra in intersect(c("arena", "label"), nms)) out[[extra]] <- .dialect_col(inp, extra)
+  .dialect_output(out, unit)
 })
 
 # TRex (https://trex.run): per-individual CSV export
@@ -1420,25 +1609,35 @@ register_loader_dialect("toxtrac", function(x, fps = NULL) {
 # one source ("wcentroid", "centroid", or "pcentroid").
 register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL,
                                           fps = NULL, centroid = NULL) {
-  stem <- if (is.character(x) && length(x) == 1L && file.exists(x))
-            tools::file_path_sans_ext(basename(x)) else NULL
-  df <- if (!is.null(stem)) .read_any(x) else x
-  stopifnot(is.data.frame(df))
   # TRex annotates headers with a trailing unit in parentheses, e.g.
   # "X#wcentroid (cm)" or "SPEED#wcentroid (cm/s)"; strip it before normalising.
   strip_unit <- function(v) sub("\\s*\\([^)]*\\)\\s*$", "", v)
   norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(strip_unit(v)))
-  nms  <- norm(names(df)); names(df) <- nms
+  inp <- .dialect_input(x, "trex", norm)
+  nms <- inp$names
+  stem <- if (!is.null(inp$source)) tools::file_path_sans_ext(inp$source)
 
   id <- id_col %||% .guess_col(nms, c("id","individual","individual_id","fish","animal","subject"))
-  if (is.null(id)) {
+  idv <- if (!is.null(id)) .dialect_col(inp, id) else {
     m <- if (!is.null(stem)) regmatches(stem, regexpr("[0-9]+$", stem)) else character(0)
-    file_id <- if (length(m)) m else (stem %||% "1")
-    df[["..file_id"]] <- rep(file_id, nrow(df))
-    id <- "..file_id"
+    rep(if (length(m)) m else (stem %||% "1"), nrow(inp$df))
   }
-  time <- time_col %||% .guess_col(nms, c("frame","frames","time","t","timestamp")) %||% "..row"
-  if (time == "..row") { df[["..row"]] <- seq_len(nrow(df)); time <- "..row" }
+  # TRex can write `frame` twice; a reader that repairs duplicate names turns
+  # them into frame_<position>. Identical copies stand for the one column.
+  frame_c <- .guess_col(nms, "frame")
+  copies <- grep("^frame_[0-9]+$", nms, value = TRUE)
+  if (is.null(frame_c) && length(copies) > 1L) {
+    same <- vapply(copies[-1L], function(cc)
+      identical(.dialect_col(inp, cc), .dialect_col(inp, copies[1L])), logical(1))
+    if (!all(same))
+      stop("trex: the repeated frame columns (", paste(.dialect_header(inp, copies), collapse = ", "),
+           ") differ; name one with time_col")
+    frame_c <- copies[1L]
+  }
+  time <- time_col %||% frame_c %||% .guess_col(nms, c("frames","time","t","timestamp"))
+  # frame/frames and row order are frames; TRex's `time` is seconds
+  unit <- if (is.null(time) || identical(time, frame_c) || time == "frames") "frames"
+          else if (time == "time") "seconds"
 
   if (!is.null(centroid)) {
     centroid <- match.arg(centroid, c("wcentroid", "centroid", "pcentroid"))
@@ -1455,15 +1654,13 @@ register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL,
                             "pos_y","position_y","y_px","cy","center_y"))
   }
   if (is.null(xc) || is.null(yc)) stop("trex: could not find x/y position columns")
-  data.frame(
-    id   = df[[id]],
-    time = .coerce_time(df[[time]],
-                        time_type = if (!is.null(fps) && grepl("frame", time, ignore.case = TRUE)) "frames" else "auto",
-                        fps = fps),
-    x    = as.numeric(df[[xc]]),
-    y    = as.numeric(df[[yc]]),
+  .dialect_output(data.frame(
+    id   = idv,
+    time = .dialect_time(inp, time, unit, fps),
+    x    = .dialect_num(inp, xc),
+    y    = .dialect_num(inp, yc),
     stringsAsFactors = FALSE
-  )
+  ), unit)
 })
 
 # ANY-maze (Stoelting): CSV export.  Standard columns: "Trial time", "X Centre",

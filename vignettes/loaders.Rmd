@@ -121,8 +121,9 @@ limitations are general:
 | `sleap` | Analysis CSV: `<node>.x` / `.y` / `.score`; multi-node centroid; `track` and `frame_idx`. | Native `.slp` / HDF5 export. |
 | `ethovision` | Centre position, and multi-zone exports (nose, tail, etc.); zone centroid or single-zone selection. | Native `.xlsx` (export to CSV first). |
 | `anymaze` | Centre position, optional nose/tail zones, units row. | — |
-| `trackmate` | `TRACK_ID` / `FRAME` / `POSITION_X` / `POSITION_Y` CSV. | Native TrackMate `.xml`. |
-| `idtrackerai_wide`, `toxtrac` | Their standard CSV/TSV column layouts. | Tool-specific binary or session formats. |
+| `trackmate` | Spot tables with `TRACK_ID` / `FRAME` / `POSITION_T` / `POSITION_X` / `POSITION_Y`, including the three extra header rows of version 7. Spots in no track (`TRACK_ID` `None`) stop the load unless `dialect_args = list(unlinked = "drop")`. | Native TrackMate `.xml`. |
+| `idtrackerai_wide` | `trajectories.csv`: one `x<id>` / `y<id>` pair per animal, `seconds` as time, `nan` for missing positions. | `.npy` trajectory files. |
+| `toxtrac` | `Tracking_RealSpace.txt` (mm, seconds) and the headerless `Tracking.txt` (pixels, frames; 6 or 11 columns). The id is `<arena>_<track>`. | The statistics and project files. |
 
 Built-in dialects are kept only for tracking software that is widely used and
 still developed. When a tool's export is not directly supported, two escape

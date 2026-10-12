@@ -54,15 +54,16 @@ guess_dialect <- function(path) {
       grepl("bodyparts", tolower(hdr[2L]), fixed = TRUE)) {
     return("deeplabcut_multiheader")
   }
-  df <- tryCatch(
-    utils::read.csv(
-      path, nrows = 3L,
-      check.names = FALSE, stringsAsFactors = FALSE
-    ),
-    error = function(e) NULL
-  )
-  if (is.null(df)) return("generic")
-  nm <- tolower(gsub("[^a-z0-9]+", "_", names(df)))
+  if (!length(hdr)) return("generic")
+  # Header cells, lower-cased and then reduced to [a-z0-9_]. Lower-casing must
+  # come first: reducing first turned every capital into "_", so TRACK_ID and
+  # "Pos. X (mm)" never matched. Only dialects checked against real exports are
+  # detected; EthoVision and ANY-maze are chosen from the dropdown until theirs
+  # are (they never matched before either, for the reason above).
+  sep <- if (grepl("\t", hdr[1L], fixed = TRUE)) "\t"
+         else if (grepl(";", hdr[1L], fixed = TRUE)) ";" else ","
+  nm <- gsub("^_+|_+$", "",
+             gsub("[^a-z0-9]+", "_", tolower(strsplit(hdr[1L], sep, fixed = TRUE)[[1L]])))
 
   if (any(grepl("_likelihood$", nm)) && any(grepl("_x$", nm)))
     return("deeplabcut")
@@ -70,13 +71,12 @@ guess_dialect <- function(path) {
     return("sleap")
   if ("track_id" %in% nm && "position_x" %in% nm)
     return("trackmate")
-  if ("x_center" %in% nm || "x_centre" %in% nm)
-    return("ethovision")
-  if ("x_1" %in% nm && "y_1" %in% nm)
+  # idtracker.ai's wide table is nothing but x<id>/y<id> pairs and a time
+  # column; a file with other columns that happens to have x1/y1 is not one.
+  pair <- grepl("^[xy]_?[0-9]+$", nm)
+  if (sum(pair) >= 2L && all(pair | nm %in% c("seconds", "frame", "frames", "time", "t")))
     return("idtrackerai_wide")
-  if ("trial_time" %in% nm || any(grepl("^x_centr", nm)))
-    return("anymaze")
-  if ("trackid" %in% nm)
+  if ("trackid" %in% nm || all(c("track", "pos_x_mm", "pos_y_mm") %in% nm))
     return("toxtrac")
   "generic"
 }
@@ -424,6 +424,11 @@ plain_error <- function(e) {
       "Column '%s' has values that are not %s, such as '%s'. See Technical details for the rows.",
       e$columns, e$expected, e$values[1]
     ))
+  if (inherits(e, "radiatR_unlinked_rows"))
+    return(paste(
+      "This TrackMate file contains spots that belong to no track.",
+      "Export \"Spots in tracks\" from TrackMate and upload that file instead."
+    ))
   if (inherits(e, c("radiatR_invalid_rows", "radiatR_invalid_tracks")))
     return(paste(
       "Some rows of this file are not valid track data.",
@@ -451,12 +456,12 @@ plain_error <- function(e) {
 # The full technical detail behind a friendly ingest error: the original
 # exception message, plus row numbers / ids when the loader raised a
 # structured radiatR_invalid_rows or radiatR_invalid_tracks condition (both
-# carry `rows` and `ids`). A radiatR_malformed_values message already lists its
-# rows and values, and has no ids.
+# carry `rows` and `ids`). A radiatR_malformed_values or radiatR_unlinked_rows
+# message already lists its rows and values, and has no ids.
 ingest_detail <- function(e) {
   detail <- conditionMessage(e)
   if (inherits(e, c("radiatR_invalid_rows", "radiatR_invalid_tracks")) &&
-      !inherits(e, "radiatR_malformed_values")) {
+      !inherits(e, c("radiatR_malformed_values", "radiatR_unlinked_rows"))) {
     detail <- paste0(
       detail,
       "\n\nAffected rows (", length(e$rows), "): ",
@@ -2037,10 +2042,12 @@ server <- function(input, output, session) {
         delim = input$delim_sel, sheet = input$sheet_sel)))
   })
 
-  # fps is required only for numeric-frame Tracks; POSIXct time needs none.
+  # fps is required only for numeric-frame Tracks; POSIXct time and numeric
+  # seconds (a dialect that reads its time column as seconds) need none.
   kin_fps_ok <- reactive({
     if (is.null(rv$ts)) return(FALSE)
     if (inherits(as.data.frame(rv$ts)[[rv$ts@cols$time]], "POSIXct")) return(TRUE)
+    if (identical(rv$ts@meta$time_unit, "seconds")) return(TRUE)
     .fps_is_set(fps_rv())
   })
 
