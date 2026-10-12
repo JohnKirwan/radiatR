@@ -31,7 +31,9 @@ data.frame(id, n, t_start, t_end, mean_dir, resultant_R, kappa)
 A `data.frame` with columns `id`, `n`, `t_start`, `t_end`,
   `mean_dir` (radians, unit-circle convention, 0 to 2pi), `resultant_R`
   (0--1), and `kappa`
-  (von Mises concentration; `NA` when estimation fails).
+  (von Mises concentration: the maximum-likelihood estimate from the mean
+  resultant length, weighted when weights are used; `Inf` when all angles
+  coincide, `NA` when there are no valid angles).
 }
 \description{
 Computes per-trial or global circular statistics (mean direction, resultant

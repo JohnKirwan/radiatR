@@ -148,6 +148,18 @@
 
 ## Bug fixes
 
+* `circ_summarise()` and `circ_summary()` on a `Tracks` object now return the
+  von Mises concentration `kappa`; it was always `NA`. The estimator was
+  looked up as `circular::est.kappa`, a function the circular package does not
+  have, so every caller silently got its fallback instead. `kappa` is now
+  computed directly as the maximum-likelihood estimate from the mean resultant
+  length (the value `circular::mle.vonmises()` gives), weighted where weights
+  are in use. Both report `Inf` when all angles coincide (the estimate is
+  unbounded); `circ_summarise()` still reports `NA` for fewer than three
+  angles.
+  `circ_summary_headings()`, `boot_kappa_ci()` and the starting value in
+  `concentration_regression()` already used this estimate and are unchanged.
+
 * The `trackmate`, `toxtrac`, `idtrackerai_wide` and `trex` dialects now read
   the files those programs write. Checked against real exports:
   - TrackMate 7 spot tables load; their three extra header rows used to be

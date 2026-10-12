@@ -9,7 +9,10 @@
 .wrap_to_2pi <- function(x) wrap_to_2pi(x)
 .as_radians <- function(x, unit) as_radians(x, unit)
 
-# Fallback approximation for kappa from resultant length Rbar (Mardia & Jupp)
+# von Mises concentration from the mean resultant length Rbar: the piecewise
+# approximation to the maximum-likelihood estimate A1inv(Rbar) (Fisher 1993;
+# Mardia & Jupp), identical to circular::A1inv(), which is what
+# circular::mle.vonmises() uses. Rbar = 1 (all angles coincide) gives Inf.
 .kappa_from_Rbar <- function(R) {
   out <- R
   low  <- R < 0.53
@@ -23,18 +26,6 @@
 
 .as_circ <- function(theta) {
   circular::circular(theta, units = "radians", type = "angles", modulo = "2pi", zero = 0)
-}
-
-.est_kappa_safe <- function(tc, fallback = NA_real_, ...) {
-  if (exists("est.kappa", envir = asNamespace("circular"), inherits = FALSE)) {
-    fun <- get("est.kappa", envir = asNamespace("circular"), inherits = FALSE)
-    res <- tryCatch(fun(tc, ...), error = function(e) NA_real_)
-    if (is.numeric(res) && length(res)) {
-      res <- as.numeric(res)[1]
-      if (is.finite(res)) return(res)
-    }
-  }
-  fallback
 }
 
 .empty_transform_history <- function() {
@@ -779,7 +770,7 @@ setMethod("circ_summary", "Tracks", function(x, w = NULL) {
     tc <- .as_circ(theta)
     mu <- circular::mean.circular(tc, na.rm = TRUE, weights = wts)
     R  <- circular::rho.circular(tc,  na.rm = TRUE, weights = wts)
-    kap <- .est_kappa_safe(tc, fallback = .kappa_from_Rbar(as.numeric(R)), w = wts)
+    kap <- .kappa_from_Rbar(as.numeric(R))
 
     data.frame(
       id          = k,

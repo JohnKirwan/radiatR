@@ -747,7 +747,7 @@ circ_summary_headings <- function(x, rule = c("crossing","distal","straight","or
     tc  <- .as_circ(th)
     mu  <- circular::mean.circular(tc, na.rm = TRUE)
     R   <- circular::rho.circular(tc,  na.rm = TRUE)
-    kap <- .est_kappa_safe(tc, fallback = .kappa_from_Rbar(as.numeric(R)))
+    kap <- .kappa_from_Rbar(as.numeric(R))
     out_mu <- .wrap_to_2pi(as.numeric(mu))
     data.frame(.grp = g, mean_dir = out_mu, resultant_R = as.numeric(R),
                kappa = as.numeric(kap), n = length(th))
