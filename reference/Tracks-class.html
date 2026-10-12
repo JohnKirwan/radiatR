@@ -111,7 +111,8 @@ together or not at all.</p></dd>
 
 
 <dt id="arg-weight">weight<a class="anchor" aria-label="anchor" href="#arg-weight"></a></dt>
-<dd><p>Optional weight column name</p></dd>
+<dd><p>Optional weight column name; weights must be finite and
+<code>&gt;= 0</code></p></dd>
 
 
 <dt id="arg-normalize-xy">normalize_xy<a class="anchor" aria-label="anchor" href="#arg-normalize-xy"></a></dt>
@@ -195,6 +196,30 @@ across all inputs.</p></dd>
 
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="invariants">Invariants<a class="anchor" aria-label="anchor" href="#invariants"></a></h2>
+
+
+<p>Every <code>Tracks</code> satisfies the following. They are checked when the object
+is built and whenever <code><a href="https://rdrr.io/r/methods/validObject.html" class="external-link">methods::validObject()</a></code> runs, which the package's
+own transforms do (a direct slot write is not checked until then):</p><ul><li><p>ids are never missing, and the rows of each id are contiguous;</p></li>
+<li><p>time is finite and strictly increasing within each id, so no time is
+    repeated within a trajectory;</p></li>
+<li><p>angles are finite and lie in <code>[0, 2*pi)</code>;</p></li>
+<li><p>coordinates are finite: <code>x</code>/<code>y</code>, and the relative and raw
+    pairs where those columns are stored;</p></li>
+<li><p>weights, when a weight column is named, are finite and <code>&gt;= 0</code>
+    (a zero weight excludes an observation).</p></li>
+</ul><p>A <code>Tracks</code> therefore never holds a missing detection: remove those
+before construction (see <code>on_invalid</code> in <code><a href="read_tracks.html">read_tracks</a></code>).</p>
+<p><code>tracks()</code> reports violations as an error of class
+<code>radiatR_invalid_tracks</code>. Its <code>problems</code> field is a data frame with
+one row per rule, column and row: <code>rule</code>, <code>column</code>, <code>row</code> (the
+row of the data frame supplied) and <code>id</code>; <code>rows</code> and <code>ids</code>
+give the union. When called through <code><a href="read_tracks.html">read_tracks</a></code>, rows are those
+of the combined table passed to <code>tracks()</code> (after any rows removed by
+<code>on_invalid = "drop"</code>), not line numbers in a file.</p>
+    </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

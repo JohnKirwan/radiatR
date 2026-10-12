@@ -67,7 +67,7 @@ c(x, ..., recursive = FALSE)
 
 - weight:
 
-  Optional weight column name
+  Optional weight column name; weights must be finite and `>= 0`
 
 - normalize_xy:
 
@@ -149,3 +149,37 @@ A Tracks S4 object
 - `meta`:
 
   list of additional metadata attached to the set
+
+## Invariants
+
+Every `Tracks` satisfies the following. They are checked when the object
+is built and whenever
+[`methods::validObject()`](https://rdrr.io/r/methods/validObject.html)
+runs, which the package's own transforms do (a direct slot write is not
+checked until then):
+
+- ids are never missing, and the rows of each id are contiguous;
+
+- time is finite and strictly increasing within each id, so no time is
+  repeated within a trajectory;
+
+- angles are finite and lie in `[0, 2*pi)`;
+
+- coordinates are finite: `x`/`y`, and the relative and raw pairs where
+  those columns are stored;
+
+- weights, when a weight column is named, are finite and `>= 0` (a zero
+  weight excludes an observation).
+
+A `Tracks` therefore never holds a missing detection: remove those
+before construction (see `on_invalid` in
+[`read_tracks`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)).
+
+`tracks()` reports violations as an error of class
+`radiatR_invalid_tracks`. Its `problems` field is a data frame with one
+row per rule, column and row: `rule`, `column`, `row` (the row of the
+data frame supplied) and `id`; `rows` and `ids` give the union. When
+called through
+[`read_tracks`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md),
+rows are those of the combined table passed to `tracks()` (after any
+rows removed by `on_invalid = "drop"`), not line numbers in a file.

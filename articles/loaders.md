@@ -247,8 +247,8 @@ ts_sleap <- read_tracks(sleap_path, dialect = "sleap")
 ts_sleap
 #> Tracks: 1 trajectories, 1 observations
 #> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y'
-#>     id time        x        y      a_x      a_y      b_x      b_y     angle
-#> 1 <NA>    0 242.2826 195.6278 205.9301 187.8896 278.6352 203.3659 0.6792588
+#>   id time        x        y      a_x      a_y      b_x      b_y     angle
+#> 1  1    0 242.2826 195.6278 205.9301 187.8896 278.6352 203.3659 0.6792588
 ```
 
 **Tracktor** — a tidy `frame` / `pos_x` / `pos_y` CSV (one individual
