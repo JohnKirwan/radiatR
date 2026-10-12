@@ -262,3 +262,15 @@ test_that("a partly empty SLEAP track column is an id_missing error", {
   expect_s3_class(e, "radiatR_invalid_tracks")
   expect_identical(keys(e$problems), "id_missing/id/2")
 })
+
+# ---- radiate() on a data frame -------------------------------------------------
+
+test_that("radiate() rejects a data frame whose group_col is not a trajectory id", {
+  sim <- simulate_tracks(seed = 1)
+  e <- invalid(radiate(sim, group_col = "condition",
+                       x_col = "rel_x", y_col = "rel_y"))
+  expect_s3_class(e, "radiatR_invalid_tracks")
+  expect_identical(unique(e$problems$rule), "time_duplicate")
+  expect_s3_class(radiate(sim, group_col = "trial_id",
+                          x_col = "rel_x", y_col = "rel_y"), "ggplot")
+})

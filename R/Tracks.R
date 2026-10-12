@@ -146,6 +146,30 @@
 #' @slot cols list mapping required column names (id/time/angle/optional x,y,weight)
 #' @slot angle_unit character describing the original angle unit supplied
 #' @slot meta list of additional metadata attached to the set
+#' @section Invariants:
+#' Every \code{Tracks} satisfies the following. They are checked when the object
+#' is built and whenever \code{methods::validObject()} runs, which the package's
+#' own transforms do (a direct slot write is not checked until then):
+#' \itemize{
+#'   \item ids are never missing, and the rows of each id are contiguous;
+#'   \item time is finite and strictly increasing within each id, so no time is
+#'     repeated within a trajectory;
+#'   \item angles are finite and lie in \code{[0, 2*pi)};
+#'   \item coordinates are finite: \code{x}/\code{y}, and the relative and raw
+#'     pairs where those columns are stored;
+#'   \item weights, when a weight column is named, are finite and \code{>= 0}
+#'     (a zero weight excludes an observation).
+#' }
+#' A \code{Tracks} therefore never holds a missing detection: remove those
+#' before construction (see \code{on_invalid} in \code{\link{read_tracks}}).
+#'
+#' \code{tracks()} reports violations as an error of class
+#' \code{radiatR_invalid_tracks}. Its \code{problems} field is a data frame with
+#' one row per rule, column and row: \code{rule}, \code{column}, \code{row} (the
+#' row of the data frame supplied) and \code{id}; \code{rows} and \code{ids}
+#' give the union. When called through \code{\link{read_tracks}}, rows are those
+#' of the combined table passed to \code{tracks()} (after any rows removed by
+#' \code{on_invalid = "drop"}), not line numbers in a file.
 #' @rdname Tracks-class
 #' @exportClass Tracks
 setClass(
@@ -343,7 +367,8 @@ setValidity("Tracks", function(object) {
 #'   coordinates (centred on the origin, unit-circle scaled).  Both must be supplied
 #'   together or not at all.
 #' @param angle_unit Units of provided angle ("radians" or "degrees"); stored internally as radians
-#' @param weight Optional weight column name
+#' @param weight Optional weight column name; weights must be finite and
+#'   \code{>= 0}
 #' @param normalize_xy If FALSE (default), (x,y) are kept as supplied. If TRUE,
 #'   each trajectory is independently centred on its own bounding-box midpoint
 #'   and scaled so its furthest point sits at radius 1. This is a
