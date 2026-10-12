@@ -689,26 +689,25 @@ setMethod("derive_headings", "Tracks", function(
 #'   or `"velocity_mean"`.
 #' @param group_by Character vector of column names used to group headings
 #'   before summarising. Default `"id"` returns one row per trial. Use `NULL`
-#'   for a single global summary row. Any column carried through by
-#'   [derive_headings()] (e.g. `"arc"`) is valid.
+#'   for a single global summary row. Other columns must first be carried
+#'   onto the heading table with `carry` (e.g. `carry = "arc"`).
 #' @param ... Additional arguments forwarded to [derive_headings()], such as
-#'   `circ0`, `circ1`, `return_coords`, or `coords`.
+#'   `circ0`, `circ1`, `carry`, `return_coords`, or `coords`.
 #'
 #' @return A `data.frame` with grouping columns followed by `mean_dir`
 #'   (radians, unit-circle convention, 0 to 2π), `resultant_R` (0–1), `kappa`
 #'   (von Mises concentration), and `n` (number of valid headings in the group).
 #'
 #' @examples
-#' \dontrun{
 #' data(cpunctatus)
 #' # per-trial headings (default)
-#' circ_summary_headings(cpunctatus, rule = "crossing", circ0 = 0.2, circ1 = 0.4)
+#' head(circ_summary_headings(cpunctatus, rule = "crossing",
+#'                            circ0 = 0.2, circ1 = 0.4))
 #'
-#' # per-condition summary (requires an "arc" column carried through)
+#' # per-condition summary: carry the "arc" column through to group by it
 #' circ_summary_headings(cpunctatus, rule = "crossing",
 #'                       circ0 = 0.2, circ1 = 0.4,
-#'                       group_by = "arc")
-#' }
+#'                       carry = "arc", group_by = "arc")
 #'
 #' @export
 circ_summary_headings <- function(x, rule = c("crossing","distal","straight","origin_mean","net","velocity_mean"),
@@ -744,7 +743,7 @@ circ_summary_headings <- function(x, rule = c("crossing","distal","straight","or
   res <- lapply(names(sp), function(g) {
     th <- sp[[g]]
     th <- th[is.finite(th)]
-    if (!length(th)) return(data.frame(mean_dir = NA_real_, resultant_R = NA_real_, kappa = NA_real_, n = 0L))
+    if (!length(th)) return(data.frame(.grp = g, mean_dir = NA_real_, resultant_R = NA_real_, kappa = NA_real_, n = 0L))
     tc  <- .as_circ(th)
     mu  <- circular::mean.circular(tc, na.rm = TRUE)
     R   <- circular::rho.circular(tc,  na.rm = TRUE)

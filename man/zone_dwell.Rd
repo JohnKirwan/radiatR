@@ -47,12 +47,12 @@ counter-clockwise. Observations outside `max(ring_breaks)` are excluded from
 both counts and the proportion denominator.
 }
 \examples{
-\dontrun{
-# Water maze probe trial: platform was at 45 degrees (NE)
-dwell <- zone_dwell(ts, target_angle = pi / 4,
+# Treat 45 degrees (NE) as the target, as for a water maze probe trial
+data(cpunctatus)
+dwell <- zone_dwell(cpunctatus, target_angle = pi / 4,
                     ring_breaks = c(0, 0.5, 0.8, 1))
 # Q1 proportion > 0.25 indicates above-chance target preference
-}
+head(dwell)
 
 }
 \seealso{

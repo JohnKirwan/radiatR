@@ -2,8 +2,7 @@
 % Please edit documentation in R/loaders.R
 \name{register_loader_dialect}
 \alias{register_loader_dialect}
-\title{Register a custom loader dialect
-The function must accept (x, ...) and return a data.frame in long form with columns at least id,time and one of (angle) or (x,y)}
+\title{Register a custom loader dialect}
 \usage{
 register_loader_dialect(name, fun, overwrite = FALSE)
 }
@@ -14,7 +13,10 @@ register_loader_dialect(name, fun, overwrite = FALSE)
 
 \item{overwrite}{Replace an existing dialect registered with the same name}
 }
+\value{
+`name`, invisibly. Called for its side effect of registering the
+  dialect for `read_tracks(dialect = )`.
+}
 \description{
-Register a custom loader dialect
 The function must accept (x, ...) and return a data.frame in long form with columns at least id,time and one of (angle) or (x,y)
 }

@@ -24,11 +24,9 @@
 #'   (von Mises concentration; `NA` when estimation fails).
 #'
 #' @examples
-#' \dontrun{
 #' data(cpunctatus)
-#' circ_summary(cpunctatus, by = "id")
+#' head(circ_summary(cpunctatus, by = "id"))
 #' circ_summary(cpunctatus, by = "global")
-#' }
 #'
 #' @export
 #' @importFrom circular mean.circular rho.circular circular
@@ -172,12 +170,12 @@ setMethod("circ_summary", "Tracks", function(x, w = NULL, by = c("id","global"),
 #'   are omitted.
 #'
 #' @examples
-#' \dontrun{
-#' # Water maze probe trial: platform was at 45 degrees (NE)
-#' dwell <- zone_dwell(ts, target_angle = pi / 4,
+#' # Treat 45 degrees (NE) as the target, as for a water maze probe trial
+#' data(cpunctatus)
+#' dwell <- zone_dwell(cpunctatus, target_angle = pi / 4,
 #'                     ring_breaks = c(0, 0.5, 0.8, 1))
 #' # Q1 proportion > 0.25 indicates above-chance target preference
-#' }
+#' head(dwell)
 #'
 #' @seealso [count_goal_entries()]
 #' @export
@@ -270,12 +268,12 @@ zone_dwell <- function(x, target_angle, target_radius = 1,
 #'   `n_entries` (integer).
 #'
 #' @examples
-#' \dontrun{
-#' # Water maze probe trial: former platform at 45 degrees (NE), at wall
-#' entries <- count_goal_entries(ts, target_angle = pi / 4,
+#' # Treat 45 degrees (NE) at the wall as the goal, as for a water maze probe
+#' data(cpunctatus)
+#' entries <- count_goal_entries(cpunctatus, target_angle = pi / 4,
 #'                               crossing_radius = 0.15)
 #' # n_entries > 1 indicates memory of the platform location
-#' }
+#' head(entries)
 #'
 #' @seealso [zone_dwell()]
 #' @export
