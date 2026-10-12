@@ -44,12 +44,12 @@ sequence (ordered by time). A trajectory that starts inside the zone on the
 first frame counts as one entry.
 }
 \examples{
-\dontrun{
-# Water maze probe trial: former platform at 45 degrees (NE), at wall
-entries <- count_goal_entries(ts, target_angle = pi / 4,
+# Treat 45 degrees (NE) at the wall as the goal, as for a water maze probe
+data(cpunctatus)
+entries <- count_goal_entries(cpunctatus, target_angle = pi / 4,
                               crossing_radius = 0.15)
 # n_entries > 1 indicates memory of the platform location
-}
+head(entries)
 
 }
 \seealso{

@@ -20,6 +20,9 @@ read_tracks_dir(
 
 \item{...}{Additional arguments passed to `read_tracks()`}
 }
+\value{
+A single `Tracks` object combining every matching file.
+}
 \description{
 Read all matching files from a directory and bind into a Tracks
 }

@@ -822,11 +822,9 @@ assign_cycle_colors <- assign_cycle_colours
 #' head(dens_df)
 #'
 #' # Bootstrap CI band (vonmises only):
-#' \dontrun{
 #' dens_df <- compute_circular_density(hd, boot_reps = 999L)
 #' # density_lower / density_upper can be replaced with Bayesian interval values
 #' # before passing to add_circular_density()
-#' }
 #'
 #' # Replace the density column with values from an external model before plotting:
 #' # dens_df$density <- my_bayesian_density(dens_df$theta)

@@ -38,10 +38,8 @@ Computes per-trial or global circular statistics (mean direction, resultant
 length, concentration) from the step-angle column of a `Tracks`.
 }
 \examples{
-\dontrun{
 data(cpunctatus)
-circ_summary(cpunctatus, by = "id")
+head(circ_summary(cpunctatus, by = "id"))
 circ_summary(cpunctatus, by = "global")
-}
 
 }

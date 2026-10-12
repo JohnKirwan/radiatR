@@ -2,8 +2,7 @@
 % Please edit documentation in R/loaders.R
 \name{register_loader_format}
 \alias{register_loader_format}
-\title{Register a declarative loader *format* (list or YAML/JSON file)
-The spec maps cleanly onto read_tracks() args and supports regex-based column finding.}
+\title{Register a declarative loader *format* (list or YAML/JSON file)}
 \usage{
 register_loader_format(name, spec, overwrite = FALSE)
 }
@@ -14,7 +13,10 @@ register_loader_format(name, spec, overwrite = FALSE)
 
 \item{overwrite}{Overwrite an existing format of the same name}
 }
+\value{
+`name`, invisibly. Called for its side effect of registering the
+  format for [read_tracks_format()].
+}
 \description{
-Register a declarative loader *format* (list or YAML/JSON file)
 The spec maps cleanly onto read_tracks() args and supports regex-based column finding.
 }

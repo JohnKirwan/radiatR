@@ -23,7 +23,8 @@ A data frame containing the parsed metadata (and optional `cond`
 Import landmark coordinates from text files
 }
 \examples{
-\dontrun{
-manifest <- import_info("trials_list.csv", cond_cols = c("type", "arc"))
-}
+manifest_path <- system.file("extdata", "millipede_trials.csv",
+                             package = "radiatR")
+manifest <- import_info(manifest_path, cond_cols = c("type", "arc"))
+head(manifest)
 }

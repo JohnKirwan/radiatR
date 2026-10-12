@@ -162,6 +162,18 @@ test_that("circ_summary_headings gives resultant_R near 0 for uniformly spread h
   expect_equal(summ$resultant_R, 0, tolerance = 1e-6)
 })
 
+test_that("circ_summary_headings by id keeps trials that produced no heading", {
+  # Trial "b" never reaches the crossing ring, so it has no heading.
+  ts <- tracks(data.frame(id = rep(c("a", "b"), each = 3), time = rep(1:3, 2),
+                          x = c(0, 0.3, 0.6, 0, 0.05, 0.1), y = 0),
+               id = "id", time = "time", x = "x", y = "y")
+  summ <- suppressWarnings(circ_summary_headings(ts, rule = "crossing",
+                                                 circ0 = 0.2, circ1 = 0.4))
+  expect_equal(summ$id, c("a", "b"))
+  expect_equal(summ$n, c(1L, 0L))
+  expect_true(is.na(summ$mean_dir[2]))
+})
+
 test_that("derive_headings computes simple net direction", {
   df <- data.frame(
     id = c("A", "A", "A"),
