@@ -70,7 +70,6 @@ reference:
       - read_tracks_dir
       - read_tracks_format
       - load_manifest
-      - dtrack_read
       - import_info
       - import_tracks
       - get_all_object_pos

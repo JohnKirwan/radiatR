@@ -57,7 +57,9 @@ coordinate units. Supplied together, they map every trajectory uniformly via
 `(xy - origin) / radius`, preserving bearings from the origin. Mutually
 exclusive with `normalize_xy = TRUE`.}
 
-\item{dialect}{optional registered dialect name to pre-process raw input}
+\item{dialect}{optional registered dialect name. The dialect reads `x`
+itself (`read_tracks()` does not parse the file first) and is called once
+per file when `x` holds several paths. See [register_loader_dialect()].}
 
 \item{dialect_args}{named list of extra arguments forwarded to the dialect
 function (e.g. \code{list(bodypart = c("head","thorax"))})}
@@ -114,7 +116,7 @@ with no digit-grouping mark, so `1,5` is malformed unless
 An error raised inside a dialect does not yet name the file or the source
 column, and counts rows after the dialect's own filtering and reshaping.
 Coordinates that a dialect converts itself (ANY-maze, EthoVision,
-DeepLabCut, SLEAP, Tracktor, TRex) are not yet checked this way.
+DeepLabCut, SLEAP, TRex) are not yet checked this way.
 
 A time column given as text must hold either numbers throughout or
 timestamps in one layout throughout: `YYYY-MM-DD HH:MM:SS`,

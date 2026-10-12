@@ -59,34 +59,6 @@ test_that("manifest columns are joined onto file tables", {
   expect_equal(custom$group, "demo")
 })
 
-test_that("dtrack_read() reads a headerless tab-sep file into a Tracks", {
-  tmp <- withr::local_tempfile(fileext = ".txt")
-  writeLines(
-    c("1\t100.5\t200.3\t1", "2\t101.0\t201.1\t1", "3\t102.2\t199.8\t1"),
-    tmp
-  )
-  ts <- dtrack_read(tmp)
-  expect_s4_class(ts, "Tracks")
-  expect_equal(nrow(ts@data), 3L)
-  expect_true(all(c("x", "y") %in% names(ts@data)))
-  expect_false("V4" %in% names(ts@data))
-})
-
-test_that("dtrack_read() errors on a file with fewer than 3 columns", {
-  tmp <- withr::local_tempfile(fileext = ".txt")
-  writeLines(c("1\t100.5", "2\t101.0"), tmp)
-  expect_error(dtrack_read(tmp), "at least 3 columns")
-})
-
-test_that("dtrack dialect processes a pre-parsed data frame", {
-  df <- data.frame(V1 = 1:3, V2 = c(10.1, 10.2, 10.3), V3 = c(20.1, 20.2, 20.3),
-                   stringsAsFactors = FALSE)
-  result <- get("dtrack", envir = radiatR:::.loader_registry)(df)
-  expect_equal(names(result), c("frame", "x", "y", "id"))
-  expect_equal(nrow(result), 3L)
-  expect_equal(result$id[1], "1")
-})
-
 # ---- dialect_args forwarding -------------------------------------------------
 
 test_that("dialect_args are forwarded to the dialect function", {
@@ -265,62 +237,6 @@ test_that("trex dialect strips TRex unit annotations in column headers", {
   ts <- read_tracks(df, dialect = "trex", normalize_xy = TRUE)
   expect_s4_class(ts, "Tracks")
   expect_equal(as.data.frame(ts)$x_raw[3], 1, tolerance = 1e-9)
-})
-
-# ---- tracktor dialect --------------------------------------------------------
-
-test_that("tracktor dialect reads identity and frame columns", {
-  df <- data.frame(frame    = rep(1:4, 2),
-                   identity = rep(c("A","B"), each = 4),
-                   x = c(0,.1,.2,.3, 1,1.1,1.2,1.3),
-                   y = rep(0, 8))
-  ts <- read_tracks(df, dialect = "tracktor", normalize_xy = TRUE)
-  expect_s4_class(ts, "Tracks")
-  expect_equal(length(unique(as.data.frame(ts)$id)), 2L)
-})
-
-test_that("tracktor dialect reads the bundled real Tracktor export", {
-  path <- system.file("extdata", "tracktor_example.csv", package = "radiatR")
-  skip_if(nchar(path) == 0L, "tracktor_example.csv not found in extdata")
-  ts <- suppressMessages(suppressWarnings(
-    read_tracks(path, dialect = "tracktor", normalize_xy = TRUE)
-  ))
-  d <- as.data.frame(ts)
-  expect_s4_class(ts, "Tracks")
-  expect_gt(nrow(d), 100L)               # ~547 frames
-  expect_true(all(c("x", "y") %in% names(d)))
-  # pos_x / pos_y mapped to x/y; first frame near (1528, 330) in pixels
-  expect_equal(d$x_raw[1], 1528.27, tolerance = 1e-1)
-})
-
-test_that("tracktor dialect ignores a leading pandas index column", {
-  # pandas df.to_csv() writes the row index as an unnamed first column (read as
-  # "X"), which must not be mistaken for the x position column.
-  df <- data.frame(
-    X     = 0:3,                       # pandas-style 0-based index
-    frame = 0:3,
-    pos_x = c(100, 110, 120, 130),
-    pos_y = c(50, 51, 52, 53)
-  )
-  ts <- suppressMessages(suppressWarnings(
-    read_tracks(df, dialect = "tracktor", normalize_xy = TRUE)
-  ))
-  d <- as.data.frame(ts)
-  expect_equal(d$x_raw, c(100, 110, 120, 130))
-  expect_equal(d$y_raw, c(50, 51, 52, 53))
-})
-
-test_that("tracktor dialect keeps a genuine x column when there is no index", {
-  df <- data.frame(
-    frame = 0:3,
-    x     = c(100, 110, 120, 130),
-    y     = c(50, 51, 52, 53)
-  )
-  ts <- suppressMessages(suppressWarnings(
-    read_tracks(df, dialect = "tracktor", normalize_xy = TRUE)
-  ))
-  d <- as.data.frame(ts)
-  expect_equal(d$x_raw, c(100, 110, 120, 130))
 })
 
 # ---- sleap dialect -----------------------------------------------------------
@@ -526,62 +442,6 @@ test_that("read_tracks forwards read_opts$delim to the reader", {
     suppressMessages(read_tracks(p, normalize_xy = FALSE,
                                   read_opts = list(delim = ";"))),
     regexp = NULL)   # forcing ';' yields one column -> no x/y -> a load error
-})
-
-# ---- trajectory-format dialects (tum_traj, euroc_mav, csv_bbox) ---------------
-
-test_that("tum_traj dialect reads a headerless TUM trajectory file", {
-  p <- tempfile(fileext = ".txt")
-  writeLines(c("# timestamp tx ty tz qx qy qz qw",
-               "1305031102.175 1.0 2.0 0.5 0 0 0 1",
-               "1305031102.211 1.5 2.5 0.5 0 0 0 1",
-               "1305031102.243 2.0 3.0 0.5 0 0 0 1"), p)
-  df <- as.data.frame(read_tracks(p, dialect = "tum_traj"))
-  expect_equal(df$x, c(1, 1.5, 2))
-  expect_equal(df$y, c(2, 2.5, 3))
-  expect_equal(df$time, c(1305031102.175, 1305031102.211, 1305031102.243))
-  expect_equal(unique(as.character(df$id)), "1")
-})
-
-test_that("euroc_mav dialect reads the real EuRoC header and nanosecond stamps", {
-  p <- tempfile(fileext = ".csv")
-  writeLines(c("#timestamp [ns],p_RS_R_x [m],p_RS_R_y [m],p_RS_R_z [m],q_RS_w []",
-               "1403636580838555648,4.688,-1.786,0.783,0.53",
-               "1403636580843555584,4.690,-1.780,0.783,0.53"), p)
-  df <- as.data.frame(read_tracks(p, dialect = "euroc_mav"))
-  expect_equal(df$x, c(4.688, 4.690))
-  expect_equal(df$y, c(-1.786, -1.780))
-  expect_equal(df$time, c(1403636580.838556, 1403636580.843556))
-})
-
-test_that("euroc_mav dialect scales timestamps by magnitude", {
-  secs <- c(1403636580.8, 1403636581.8)
-  read_time <- function(tt) {
-    df <- data.frame(timestamp = tt, x = 1:2, y = 3:4)
-    as.data.frame(read_tracks(df, dialect = "euroc_mav"))$time
-  }
-  expect_equal(read_time(secs), secs)
-  expect_equal(read_time(secs * 1e6), secs)
-  expect_equal(read_time(secs * 1e9), secs)
-})
-
-test_that("csv_bbox dialect returns box centres for the xywh schema", {
-  df <- data.frame(frame = c(1, 2, 1, 2), id = c("a", "a", "b", "b"),
-                   x = c(10, 12, 50, 52), y = c(20, 22, 60, 62), w = 4, h = 6)
-  out <- as.data.frame(read_tracks(df, dialect = "csv_bbox"))
-  expect_equal(out$x, c(12, 14, 52, 54))
-  expect_equal(out$y, c(23, 25, 63, 65))
-  expect_equal(as.character(out$id), c("a", "a", "b", "b"))
-})
-
-test_that("csv_bbox dialect matches mixed-case headers for the xyxy schema", {
-  df <- data.frame(Frame = c(1, 2), XMin = c(10, 12), YMin = c(20, 22),
-                   XMax = c(14, 16), YMax = c(26, 28))
-  out <- as.data.frame(read_tracks(df, dialect = "csv_bbox",
-                                   dialect_args = list(schema = "xyxy")))
-  expect_equal(out$x, c(12, 14))
-  expect_equal(out$y, c(23, 25))
-  expect_equal(out$time, c(1, 2))
 })
 
 # ---- Excel (.xlsx) input -----------------------------------------------------

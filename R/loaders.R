@@ -77,8 +77,8 @@ import_info <- function(filename, cond_cols = NULL, file_tbl = NULL){
 #'   landmark rows per trial (the origin and stimulus edge on the circumference)
 #'   and \code{_point02} files contain the per-frame animal trajectory. This
 #'   two-file role split is specific to that experiment and is not a general
-#'   dtrack convention. Use [dtrack_read()] to read an individual trajectory
-#'   file.
+#'   dtrack convention. `vignette("loaders")` registers a custom loader that
+#'   reads an individual trajectory file.
 #' @export
 #' @importFrom tibble tibble
 #
@@ -107,36 +107,6 @@ import_tracks <- function(dir, landmark_suffix = NULL, track_suffix = NULL){
   return(file_tbl)
 }
 
-#' Read a dtrack trajectory file into a Tracks
-#'
-#' Reads a tab-separated, headerless file produced by dtrack
-#' (\url{https://bitbucket.org/jochensmolka/dtrack}). The file is expected to
-#' have at least three columns: frame number, x coordinate, y coordinate. A
-#' fourth confidence/flag column (always \code{1} in practice) is silently
-#' dropped.
-#'
-#' @param path Path to a dtrack \code{_point02.txt} trajectory file.
-#' @param normalize_xy Logical; passed to [read_tracks()]. Default \code{FALSE}
-#'   because dtrack files are in pixel space.
-#' @param ... Additional arguments passed to [read_tracks()].
-#' @return A \code{Tracks}.
-#' @seealso [import_tracks()] for discovering dtrack file pairs in a directory.
-#' @export
-dtrack_read <- function(path, normalize_xy = FALSE, ...) {
-  stopifnot(is.character(path), length(path) == 1L, file.exists(path))
-  df <- utils::read.delim(path, sep = "\t", header = FALSE, stringsAsFactors = FALSE)
-  if (ncol(df) < 3L) stop("dtrack: expected at least 3 columns (frame, x, y)")
-  df <- df[, 1:3, drop = FALSE]
-  names(df) <- c("frame", "x", "y")
-  df$id <- tools::file_path_sans_ext(basename(path))
-  read_tracks(
-    df,
-    mapping = list(id = "id", time = "frame", x = "x", y = "y"),
-    normalize_xy = normalize_xy,
-    ...
-  )
-}
-
 escape_specials <- function(x) {
   gsub("([.|()\\^{}+$*?]|\\[|\\]|\\\\)", "\\\\\\1", x)
 }
@@ -157,6 +127,13 @@ escape_specials <- function(x) {
 
 # ---- dialect registry ---------------------------------------------------------
 .loader_registry <- new.env(parent = emptyenv())
+
+# Built-in dialects dropped in 0.1.3: their software is little used or no
+# longer developed, or they read a general file format. read_tracks() names
+# the removal unless the caller has registered a loader under the same name.
+.removed_dialects <- c("boris_xy", "csv_bbox", "dtrack", "euroc_mav",
+                       "geojson_linestring", "gpx", "motchallenge",
+                       "nmea_gprmc", "tracktor", "tum_traj", "wide_prefix_xy")
 
 # ---- declarative format registry ---------------------------------------------
 .loader_format_registry <- new.env(parent = emptyenv())
@@ -200,6 +177,14 @@ list_loader_formats <- function() sort(ls(envir = .loader_format_registry))
 #' Register a custom loader dialect
 #'
 #' The function must accept (x, ...) and return a data.frame in long form with columns at least id,time and one of (angle) or (x,y)
+#'
+#' `x` is whatever was passed to [read_tracks()]: a data frame, or one file
+#' path. The dialect is the only reader of that file, and is called once per
+#' file when `read_tracks()` is given several paths. A table returned without
+#' an id column is one trajectory, named after its file in a multi-file
+#' import. Numeric columns returned as text are coerced strictly (see
+#' "Malformed values" in [read_tracks()]) using the decimal mark sniffed from
+#' the file; a dialect that knows better can set `attr(out, "decimal")`.
 #' @param name Unique dialect name
 #' @param fun Function that accepts (x, ...) and returns a data.frame with id/time/angle or id/time/x/y
 #' @param overwrite Replace an existing dialect registered with the same name
@@ -230,13 +215,6 @@ list_loader_dialects <- function() sort(ls(envir = .loader_registry))
     if (length(i)) return(nms[i[1L]])
   }
   NULL
-}
-
-# Lower-case snake names for header matching: drops bracketed units such as
-# "[ns]" and collapses every other non-alphanumeric run to "_".
-.snake_names <- function(nms) {
-  nms <- gsub("\\[[^]]*\\]", "", tolower(nms))
-  gsub("^_+|_+$", "", gsub("[^a-z0-9]+", "_", nms))
 }
 
 # Match a coordinate column whose name ends in the axis letter after a start or
@@ -276,28 +254,6 @@ guess_columns <- function(data, mapping = list()) {
     y      = mapping$y %||% .guess_col(nms, c("y", "y_pos", "ycoord", "pos_y")) %||% .guess_xy_suffix(nms, "y"),
     weight = pick("weight", c("w", "weight", "weights"))
   )
-}
-
-# Drop a leading pandas-style row-index column.
-# pandas `df.to_csv()` writes the DataFrame index as an unnamed first column,
-# which R's CSV readers name "X" (or "" / "Unnamed: 0"). Left in place it is
-# mistaken for an "x" position column by .guess_col. We only remove it when it
-# is genuinely an index: the first column, an unnamed/auto-named header, and a
-# consecutive integer run starting at 0 or 1.
-.drop_index_col <- function(df) {
-  if (!is.data.frame(df) || ncol(df) == 0L) return(df)
-  nm1 <- names(df)[1L]
-  looks_unnamed <- is.null(nm1) || is.na(nm1) ||
-    grepl("^(x|v1|unnamed[._ ]*0?)$", tolower(trimws(nm1 %||% "")))
-  if (!looks_unnamed) return(df)
-  col <- df[[1L]]
-  v <- suppressWarnings(as.numeric(col))
-  if (anyNA(v) || length(v) < 2L) return(df)
-  if (any(v != floor(v))) return(df)
-  start <- v[1L]
-  if (!(start %in% c(0, 1)) || !all(v == seq.int(start, length.out = length(v))))
-    return(df)
-  df[, -1L, drop = FALSE]
 }
 
 # Heuristic angle unit detection
@@ -344,8 +300,10 @@ guess_columns <- function(data, mapping = list()) {
   if (any(bad))
     radiatR_abort_malformed_values(
       column, which(bad), s[bad], source = source, dialect = dialect,
-      # read_opts only helps a file that was read with a decimal point
-      decimal_hint = !is.null(source) && !identical(decimal, ","))
+      # read_opts only helps a file read_tracks() itself read, with a decimal
+      # point; a dialect reads its own file and is not passed read_opts
+      decimal_hint = !is.null(source) && is.null(dialect) &&
+        !identical(decimal, ","))
   num
 }
 
@@ -461,6 +419,18 @@ guess_columns <- function(data, mapping = list()) {
   list(delim = best, decimal = if (best == ";") "," else ".")
 }
 
+# Decimal mark .read_any() sniffs for `path`: what a dialect that reads its own
+# file saw. "." for a format .read_any() does not sniff and for a file that is
+# not UTF-8 text (a custom loader's binary format), which cannot be sniffed.
+.file_decimal <- function(path) {
+  if (tolower(tools::file_ext(path)) %in% c("xlsx", "xls", "parquet", "feather"))
+    return(".")
+  lines <- tryCatch(readLines(path, n = 20L, warn = FALSE),
+                    error = function(e) character(0))
+  if (!all(validUTF8(lines))) return(".")
+  .guess_delim(path)$decimal
+}
+
 # read file with soft dependencies. Delimited formats are content-sniffed
 # (separator + decimal mark) unless delim/decimal are supplied; Excel and
 # Arrow formats dispatch by extension. `sheet` selects an Excel worksheet.
@@ -505,6 +475,16 @@ guess_columns <- function(data, mapping = list()) {
   df
 }
 
+# A dialect must hand back a data frame; anything else is a broken loader.
+.assert_dialect_table <- function(out, dialect, source = NULL) {
+  if (!is.data.frame(out))
+    rlang::abort(sprintf(
+      "read_tracks: dialect '%s' returned %s%s, not a data frame.", dialect,
+      class(out)[1L], if (!is.null(source)) sprintf(" for file '%s'", source) else ""),
+      class = "radiatR_dialect_error", source = source)
+  out
+}
+
 # Read and combine multiple track files into one long data frame, preserving
 # per-file trajectory identity. Schema is detected from the FIRST file: a batch
 # is assumed to share one schema (standard for batch imports; mixed-schema
@@ -519,12 +499,26 @@ guess_columns <- function(data, mapping = list()) {
 #     file's basename stem.
 #   - Every row is tagged with ..source_file = basename(path).
 #   - Bound with vctrs::vec_rbind() (NA-tolerant across differing columns).
+#
+# With a dialect, `reader` (the dialect, called on one path) replaces the
+# generic read, and everything above applies to the tables it returns. A
+# radiatR condition from the dialect is passed on as it is; any other failure
+# is re-raised naming the file.
 .combine_track_files <- function(paths, mapping, id_from_filename, read_opts,
-                                 time_args = list()) {
+                                 time_args = list(), reader = NULL,
+                                 dialect = NULL) {
   read_opts <- read_opts %||% list()
   dfl <- lapply(paths, function(p) {
-    .read_any(p, ext = read_opts$ext, delim = read_opts$delim,
-              decimal = read_opts$decimal, sheet = read_opts$sheet)
+    if (is.null(reader))
+      return(.read_any(p, ext = read_opts$ext, delim = read_opts$delim,
+                       decimal = read_opts$decimal, sheet = read_opts$sheet))
+    out <- tryCatch(reader(p), error = function(e) {
+      if (any(startsWith(class(e), "radiatR_"))) rlang::cnd_signal(e)
+      rlang::abort(sprintf("read_tracks: dialect '%s' failed on file '%s'.",
+                           dialect, basename(p)),
+                   class = "radiatR_dialect_error", parent = e, source = basename(p))
+    })
+    .assert_dialect_table(out, dialect, basename(p))
   })
 
   first_names <- names(dfl[[1L]])
@@ -551,11 +545,13 @@ guess_columns <- function(data, mapping = list()) {
   dfl <- Map(function(d, p) {
     dec <- attr(d, "decimal") %||% "."
     for (cc in intersect(num_cols, names(d)))
-      d[[cc]] <- .as_numeric_strict(d[[cc]], cc, source = basename(p), decimal = dec)
+      d[[cc]] <- .as_numeric_strict(d[[cc]], cc, source = basename(p),
+                                    dialect = dialect, decimal = dec)
     tc <- roles$time
     if (!is.null(tc) && (is.character(d[[tc]]) || is.factor(d[[tc]])))
       d[[tc]] <- do.call(.coerce_time, c(
-        list(d[[tc]], column = tc, source = basename(p), decimal = dec), time_args))
+        list(d[[tc]], column = tc, source = basename(p), dialect = dialect,
+             decimal = dec), time_args))
     if (synth) d[[id_col]] <- tools::file_path_sans_ext(basename(p))
     d[["..source_file"]] <- basename(p)
     # Internal only: full/relative path, used to distinguish same-named files
@@ -670,7 +666,9 @@ read_tracks_format <- function(x, format, ...) {
 #' @param read_opts list of file-reading overrides: `delim` (field separator),
 #'   `decimal` (decimal mark), and `sheet` (Excel worksheet name or number).
 #'   Any `NULL` element is auto-detected. Defaults to all-auto.
-#' @param dialect optional registered dialect name to pre-process raw input
+#' @param dialect optional registered dialect name. The dialect reads `x`
+#'   itself (`read_tracks()` does not parse the file first) and is called once
+#'   per file when `x` holds several paths. See [register_loader_dialect()].
 #' @param dialect_args named list of extra arguments forwarded to the dialect
 #'   function (e.g. \code{list(bodypart = c("head","thorax"))})
 #' @param mutate list of transformations applied after reading (named functions or formulas)
@@ -705,7 +703,7 @@ read_tracks_format <- function(x, format, ...) {
 #' An error raised inside a dialect does not yet name the file or the source
 #' column, and counts rows after the dialect's own filtering and reshaping.
 #' Coordinates that a dialect converts itself (ANY-maze, EthoVision,
-#' DeepLabCut, SLEAP, Tracktor, TRex) are not yet checked this way.
+#' DeepLabCut, SLEAP, TRex) are not yet checked this way.
 #'
 #' A time column given as text must hold either numbers throughout or
 #' timestamps in one layout throughout: `YYYY-MM-DD HH:MM:SS`,
@@ -764,45 +762,63 @@ read_tracks <- function(x,
     .Deprecated(msg = paste("`validate` is deprecated and has no effect:",
                             "Tracks invariants are always checked."))
 
-  # read
-  dec <- "."
-  if (is.data.frame(x)) {
-    df <- x
-    src <- NULL
-  } else if (is.character(x) && length(x) == 1L && file.exists(x)) {
-    df <- .read_any(x, ext = read_opts$ext, delim = read_opts$delim,
-                    decimal = read_opts$decimal, sheet = read_opts$sheet)
-    dec <- attr(df, "decimal") %||% "."
-    src <- basename(x)
-  } else if (is.character(x) && length(x) > 1L) {
-    combined <- .combine_track_files(x, mapping, id_from_filename, read_opts,
-                                     list(time_type = time_type, tz = tz, fps = fps))
-    df <- combined$df
-    # Force the synthesized id column to be picked up by guess_columns() below,
-    # so multi-file input never falls into the single-track "(multiple)" path.
-    if (isTRUE(combined$synth)) mapping$id <- combined$id_col
-    src <- "(multiple)"
-  } else if (is.character(x) && length(x) == 1L && !file.exists(x) && exists(x, envir = .loader_registry, inherits = FALSE)) {
-    dialect <- x
-    df <- NULL
-  } else {
-    stop("read_tracks: 'x' must be a data.frame or path(s) to files")
-  }
-
-  # dialect preprocessing if requested
+  # A dialect is the only reader of its input: read_tracks() does not parse
+  # the file itself first, so a loader for a layout the generic reader cannot
+  # make sense of (headerless, several header rows, not a table) still works.
+  prep <- NULL
   if (!is.null(dialect)) {
-    if (!exists(dialect, envir = .loader_registry, inherits = FALSE)) stop("Unknown dialect '", dialect, "'")
-    prep <- get(dialect, envir = .loader_registry, inherits = FALSE)
-    df <- do.call(prep, c(list(x), dialect_args))
+    if (!exists(dialect, envir = .loader_registry, inherits = FALSE)) {
+      if (dialect %in% .removed_dialects)
+        rlang::abort(sprintf(paste0(
+          "The '%s' dialect was removed in radiatR 0.1.3. Register your own ",
+          "loader with register_loader_dialect(\"%s\", <function>); see ",
+          "vignette(\"loaders\")."), dialect, dialect),
+          class = "radiatR_removed_dialect", dialect = dialect)
+      stop("Unknown dialect '", dialect, "'")
+    }
+    fun <- get(dialect, envir = .loader_registry, inherits = FALSE)
+    # Called on a data frame or on one path. The table keeps the decimal mark
+    # of its file, for the strict coercion of any column left as text.
+    prep <- function(input) {
+      out <- do.call(fun, c(list(input), dialect_args))
+      if (is.data.frame(out) && is.character(input) && is.null(attr(out, "decimal")))
+        attr(out, "decimal") <- .file_decimal(input)
+      out
+    }
     # Dialects no longer convert frame indices to seconds themselves (that
     # single conversion now happens once, on demand, via elapsed_seconds());
     # adopt a dialect-only fps so it still becomes the Tracks frame_rate.
     if (is.null(fps) && !is.null(dialect_args$fps)) fps <- dialect_args$fps
   }
-  # Extra columns emitted by a dialect are kept unless explicitly dropped.
-  dialect_extra <- if (!is.null(dialect)) names(df) else character(0)
 
-  stopifnot(is.data.frame(df))
+  # read
+  dec <- "."
+  if (is.character(x) && any(!file.exists(x)))
+    stop("read_tracks: file(s) not found: ",
+         paste(x[!file.exists(x)], collapse = ", "), call. = FALSE)
+  if (is.data.frame(x)) {
+    df <- if (is.null(prep)) x else .assert_dialect_table(prep(x), dialect)
+    src <- NULL
+  } else if (is.character(x) && length(x) == 1L) {
+    df <- if (!is.null(prep)) .assert_dialect_table(prep(x), dialect, basename(x))
+          else .read_any(x, ext = read_opts$ext, delim = read_opts$delim,
+                         decimal = read_opts$decimal, sheet = read_opts$sheet)
+    dec <- attr(df, "decimal") %||% "."
+    src <- basename(x)
+  } else if (is.character(x) && length(x) > 1L) {
+    combined <- .combine_track_files(x, mapping, id_from_filename, read_opts,
+                                     list(time_type = time_type, tz = tz, fps = fps),
+                                     reader = prep, dialect = dialect)
+    df <- combined$df
+    # Force the synthesized id column to be picked up by guess_columns() below,
+    # so multi-file input never falls into the single-track "(multiple)" path.
+    if (isTRUE(combined$synth)) mapping$id <- combined$id_col
+    src <- "(multiple)"
+  } else {
+    stop("read_tracks: 'x' must be a data.frame or path(s) to files")
+  }
+  # Extra columns emitted by a dialect are kept unless explicitly dropped.
+  dialect_extra <- if (!is.null(dialect)) setdiff(names(df), "..source_path") else character(0)
 
   guessed <- guess_columns(df, mapping)
   id <- guessed$id; time <- guessed$time; angle <- guessed$angle
@@ -1169,27 +1185,6 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
 #   register_loader_format("my_frames_spec", "/path/to/spec.yaml")
 #   ts <- read_tracks_format("/data/dir/run1.csv", format = "my_frames_spec")
 
-# Users can register lightweight mappers here without adding heavy deps.
-# Example: a common "wide" layout with prefixed columns per animal: x_<id>, y_<id>
-register_loader_dialect("wide_prefix_xy", function(x, id_prefixes = NULL, time_col = NULL) {
-  stopifnot(is.data.frame(x))
-  if (is.null(id_prefixes)) {
-    # infer prefixes based on x_*/y_* pattern
-    xp <- grep("^x_", names(x), value = TRUE)
-    if (!length(xp)) stop("No columns starting with 'x_' found")
-    id_prefixes <- sub("^x_", "", xp)
-  }
-  if (is.null(time_col)) time_col <- .guess_col(names(x), c("time","frame","t","timestamp"))
-  if (is.null(time_col)) stop("time column not found; specify time_col")
-  rows <- lapply(id_prefixes, function(idv) {
-    xc <- paste0("x_", idv); yc <- paste0("y_", idv)
-    if (!all(c(xc,yc) %in% names(x))) return(NULL)
-    data.frame(id = idv, time = x[[time_col]], x = x[[xc]], y = x[[yc]], stringsAsFactors = FALSE)
-  })
-  df <- do.call(rbind, rows)
-  df
-})
-
 # ---- built-in dialects -------------------------------------------------------
 # DeepLabCut: per-bodypart *_x / *_y columns (post-multiheader collapse or plain CSV).
 #
@@ -1405,38 +1400,6 @@ register_loader_dialect("toxtrac", function(x, fps = NULL) {
   out
 })
 
-# BORIS (if XY logged): expect Subject, Time, X, Y
-register_loader_dialect("boris_xy", function(x) {
-  df <- if (is.character(x) && file.exists(x)) .read_any(x) else x
-  stopifnot(is.data.frame(df))
-  norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(v))
-  nms <- norm(names(df)); names(df) <- nms
-  id   <- .guess_col(nms, c("subject","id","animal")) %||% "1"
-  time <- .guess_col(nms, c("time","timestamp","t")) %||% "..row"
-  if (time == "..row") df[[time]] <- seq_len(nrow(df))
-  xc   <- .guess_col(nms, c("x","x_pos","position_x"))
-  yc   <- .guess_col(nms, c("y","y_pos","position_y"))
-  if (is.null(xc) || is.null(yc)) stop("boris_xy: no x/y columns found")
-  data.frame(id = if (id == "1") rep("1", nrow(df)) else df[[id]],
-             time = df[[time]], x = df[[xc]], y = df[[yc]], stringsAsFactors = FALSE)
-})
-
-
-
-# dtrack (https://bitbucket.org/jochensmolka/dtrack)
-# Accepts a pre-parsed data frame with >=3 columns: frame, x, y[, confidence].
-# The confidence column is dropped silently. id is set to "1" because no
-# filename is available; use dtrack_read() when reading from a file path --
-# it derives id from the filename stem instead.
-register_loader_dialect("dtrack", function(x) {
-  stopifnot(is.data.frame(x))
-  if (ncol(x) < 3L) stop("dtrack: expected at least 3 columns (frame, x, y)")
-  df <- x[, 1:3, drop = FALSE]
-  names(df) <- c("frame", "x", "y")
-  df$id <- "1"
-  df
-})
-
 # TRex (https://trex.run): per-individual CSV export
 # Each file typically covers one individual; the individual index is inferred
 # from the numeric suffix of the filename stem (e.g. "run_0.csv" -> id "0").
@@ -1646,199 +1609,4 @@ register_loader_dialect("sleap", function(x, bodypart = NULL, score_min = NULL,
     out[[paste0(bp, "_y")]] <- as.numeric(df[[paste0(bp, "_y")]])
   }
   out
-})
-
-# Tracktor (https://github.com/jgraving/tracktor): tidy CSV with frame, x, y [, id]
-# Tracktor outputs one row per frame per individual; the id column (called
-# "id" or "identity") distinguishes individuals in multi-animal exports.
-register_loader_dialect("tracktor", function(x, id_col = NULL, time_col = NULL, fps = NULL) {
-  df <- if (is.character(x) && length(x) == 1L && file.exists(x)) .read_any(x) else x
-  stopifnot(is.data.frame(df))
-  df   <- .drop_index_col(df)
-  norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(v))
-  nms  <- norm(names(df)); names(df) <- nms
-  id   <- id_col %||% .guess_col(nms, c("id","identity","individual","animal","subject","track_id")) %||% "1"
-  time <- time_col %||% .guess_col(nms, c("frame","frames","time","t","timestamp")) %||% "..row"
-  if (time == "..row") { df[["..row"]] <- seq_len(nrow(df)); time <- "..row" }
-  xc <- .guess_col(nms, c("x","pos_x","position_x","cx","x_pos","x_coord"))
-  yc <- .guess_col(nms, c("y","pos_y","position_y","cy","y_pos","y_coord"))
-  if (is.null(xc) || is.null(yc)) stop("tracktor: could not find x/y position columns")
-  data.frame(
-    id   = if (id == "1") rep("1", nrow(df)) else df[[id]],
-    time = .coerce_time(df[[time]],
-                        time_type = if (!is.null(fps) && grepl("frame", time, ignore.case = TRUE)) "frames" else "auto",
-                        fps = fps),
-    x    = as.numeric(df[[xc]]),
-    y    = as.numeric(df[[yc]]),
-    stringsAsFactors = FALSE
-  )
-})
-
-
-# ---- built-in dialects: general (non-animal) ---------------------------------
-# 1) MOTChallenge / SORT / DeepSORT-like track files
-#    Default spec: frame,id,x,y,w,h,conf,x3,y3,z3 (headerless by convention)
-#    We'll read headerless CSV by default and compute bbox center (x+w/2, y+h/2)
-register_loader_dialect("motchallenge", function(x, fps = NULL, headerless = TRUE, center = TRUE) {
-  df <- if (is.character(x) && file.exists(x)) {
-    if (headerless) utils::read.csv(x, header = FALSE, stringsAsFactors = FALSE)
-    else .read_any(x)
-  } else x
-  stopifnot(is.data.frame(df))
-  if (is.null(colnames(df)) || headerless) {
-    nm <- c("frame","id","x","y","w","h","conf","x3","y3","z3")
-    names(df)[seq_along(nm)[seq_len(min(length(nm), ncol(df)))]] <- nm[seq_len(min(length(nm), ncol(df)))]
-  }
-  if (!all(c("frame","id","x","y") %in% names(df))) stop("motchallenge: need columns frame,id,x,y (and optional w,h)")
-  x0 <- df$x; y0 <- df$y
-  if (center) {
-    if ("w" %in% names(df)) x0 <- x0 + df$w/2
-    if ("h" %in% names(df)) y0 <- y0 + df$h/2
-  }
-  out <- data.frame(id = df$id, time = df$frame, x = x0, y = y0, stringsAsFactors = FALSE)
-  # NOTE: call read_tracks(..., time_type="frames", fps=...) afterwards to convert to seconds
-  out
-})
-
-# 2) GeoJSON LineString / MultiLineString
-register_loader_dialect("geojson_linestring", function(x, id_prop = "id", time_prop = NULL, feature_index = NULL) {
-  if (!.is_installed("jsonlite")) stop("Please install 'jsonlite' to read GeoJSON")
-  gj <- if (is.character(x) && file.exists(x)) jsonlite::fromJSON(x, simplifyVector = FALSE) else x
-  get_feats <- function(g) {
-    if (is.list(g) && !is.null(g$type) && g$type == "FeatureCollection") return(g$features)
-    if (is.list(g) && !is.null(g$type) && g$type == "Feature") return(list(g))
-    stop("geojson_linestring: expected a Feature or FeatureCollection")
-  }
-  feats <- get_feats(gj)
-  if (!is.null(feature_index)) feats <- feats[feature_index]
-  rows <- list()
-  k <- 1L
-  for (f in feats) {
-    props <- f$properties %||% list()
-    gid <- as.character(props[[id_prop]] %||% k)
-    g <- f$geometry
-    if (is.null(g) || is.null(g$type)) next
-    add_coords <- function(coords) {
-      for (i in seq_along(coords)) {
-        crd <- coords[[i]]
-        if (length(crd) < 2) next
-        lon <- as.numeric(crd[[1]]); lat <- as.numeric(crd[[2]])
-        tm  <- if (!is.null(time_prop) && !is.null(props[[time_prop]]) && length(props[[time_prop]]) >= i) props[[time_prop]][[i]] else i
-        rows[[length(rows)+1L]] <<- data.frame(id = gid, time = tm, x = lon, y = lat, stringsAsFactors = FALSE)
-      }
-    }
-    if (g$type == "LineString") add_coords(g$coordinates)
-    else if (g$type == "MultiLineString") for (seg in g$coordinates) add_coords(seg)
-    k <- k + 1L
-  }
-  if (!length(rows)) stop("geojson_linestring: no coordinates found")
-  do.call(rbind, rows)
-})
-
-# 3) GPX tracks (trk/trkseg/trkpt)
-register_loader_dialect("gpx", function(x, track_index = NULL) {
-  if (!.is_installed("xml2")) stop("Please install 'xml2' to read GPX")
-  doc <- if (is.character(x) && file.exists(x)) xml2::read_xml(x) else stop("gpx: provide a .gpx file path")
-  trks <- xml2::xml_find_all(doc, "//trk")
-  if (!length(trks)) stop("gpx: no <trk> found")
-  if (!is.null(track_index)) trks <- trks[track_index]
-  rows <- list(); k <- 1L
-  for (trk in trks) {
-    name <- xml2::xml_text(xml2::xml_find_first(trk, "name"))
-    segs <- xml2::xml_find_all(trk, "./trkseg")
-    for (sg in segs) {
-      pts <- xml2::xml_find_all(sg, "./trkpt")
-      for (pt in pts) {
-        lat <- as.numeric(xml2::xml_attr(pt, "lat"))
-        lon <- as.numeric(xml2::xml_attr(pt, "lon"))
-        t   <- xml2::xml_text(xml2::xml_find_first(pt, "time"))
-        rows[[length(rows)+1L]] <- data.frame(id = name %||% as.character(k), time = t %||% NA, x = lon, y = lat, stringsAsFactors = FALSE)
-      }
-      k <- k + 1L
-    }
-  }
-  do.call(rbind, rows)
-})
-
-# 4) NMEA GPRMC (basic): $GPRMC,hhmmss,A,lat,N,lon,E,speed,trackangle,date,...
-register_loader_dialect("nmea_gprmc", function(x, tz = "UTC") {
-  lines <- if (is.character(x) && file.exists(x)) readLines(x) else as.character(x)
-  stopifnot(length(lines) > 0)
-  .nmea_deg <- function(v, hemi) {
-    v <- as.numeric(v); if (!is.finite(v)) return(NA_real_)
-    deg <- floor(v/100); min <- v - deg*100
-    d <- deg + min/60
-    if (hemi %in% c("S","W")) d <- -d
-    d
-  }
-  .parse_time <- function(hms, dmy) {
-    if (is.null(hms) || is.null(dmy) || hms == "" || dmy == "") return(NA)
-    hh <- substr(hms,1,2); mm <- substr(hms,3,4); ss <- substr(hms,5,6)
-    dd <- substr(dmy,1,2); mo <- substr(dmy,3,4); yy <- substr(dmy,5,6)
-    iso <- sprintf("20%s-%s-%sT%s:%s:%sZ", yy, mo, dd, hh, mm, ss)
-    as.POSIXct(iso, tz = tz)
-  }
-  out <- list()
-  for (ln in lines) {
-    if (!startsWith(ln, "$GPRMC")) next
-    f <- strsplit(ln, ",", fixed = TRUE)[[1]]
-    if (length(f) < 10) next
-    tm  <- f[2]; stat <- f[3]; lat <- f[4]; nss <- f[5]; lon <- f[6]; ews <- f[7]; dmy <- f[10]
-    if (stat != "A") next
-    out[[length(out)+1L]] <- data.frame(
-      id = "1", time = .parse_time(tm, dmy),
-      x = .nmea_deg(lon, ews), y = .nmea_deg(lat, nss), stringsAsFactors = FALSE)
-  }
-  if (!length(out)) stop("nmea_gprmc: no valid $GPRMC sentences found")
-  do.call(rbind, out)
-})
-
-# 5) TUM RGB-D trajectory format: timestamp tx ty tz qx qy qz qw
-register_loader_dialect("tum_traj", function(x) {
-  df <- if (is.character(x) && file.exists(x)) utils::read.table(x, header = FALSE, stringsAsFactors = FALSE) else x
-  stopifnot(is.data.frame(df))
-  if (ncol(df) < 8) stop("tum_traj: expected 8 columns: t tx ty tz qx qy qz qw")
-  names(df)[1:8] <- c("t","tx","ty","tz","qx","qy","qz","qw")
-  data.frame(id = "1", time = df$t, x = df$tx, y = df$ty, stringsAsFactors = FALSE)
-})
-
-# 6) EuRoC MAV CSV: usually has time(us), p_RS_R_x [m], p_RS_R_y [m], p_RS_R_z [m]
-register_loader_dialect("euroc_mav", function(x) {
-  df <- if (is.character(x) && file.exists(x)) .read_any(x) else x
-  stopifnot(is.data.frame(df))
-  nms <- .snake_names(names(df))
-  names(df) <- nms
-  tcol <- .guess_col(nms, c("time","timestamp","t","time_us","time_ns"))
-  xc   <- .guess_col(nms, c("p_rs_r_x","position_x","x"))
-  yc   <- .guess_col(nms, c("p_rs_r_y","position_y","y"))
-  if (is.null(tcol) || is.null(xc) || is.null(yc)) stop("euroc_mav: required columns not found")
-  # Convert epoch nanoseconds/microseconds to seconds (epoch seconds are ~1e9)
-  tt <- as.numeric(df[[tcol]])
-  if (all(tt > 1e17)) tt <- tt/1e9 else if (all(tt > 1e14)) tt <- tt/1e6
-  data.frame(id = "1", time = tt, x = df[[xc]], y = df[[yc]], stringsAsFactors = FALSE)
-})
-
-# 7) Generic bbox CSV: columns (xmin,ymin,xmax,ymax) or (x,y,w,h) -> center (x,y)
-register_loader_dialect("csv_bbox", function(x, schema = c("xywh","xyxy"), time_col = NULL, id_col = NULL) {
-  schema <- match.arg(schema)
-  df <- if (is.character(x) && file.exists(x)) .read_any(x) else x
-  stopifnot(is.data.frame(df))
-  nms <- .snake_names(names(df))
-  names(df) <- nms
-  if (schema == "xywh") {
-    xc <- .guess_col(nms, c("x","left")); yc <- .guess_col(nms, c("y","top"))
-    wc <- .guess_col(nms, c("w","width")); hc <- .guess_col(nms, c("h","height"))
-    if (is.null(xc) || is.null(yc) || is.null(wc) || is.null(hc)) stop("csv_bbox xywh: need x/y/w/h columns")
-    x0 <- df[[xc]] + df[[wc]]/2; y0 <- df[[yc]] + df[[hc]]/2
-  } else {
-    xmin <- .guess_col(nms, c("xmin","left")); ymin <- .guess_col(nms, c("ymin","top"))
-    xmax <- .guess_col(nms, c("xmax","right")); ymax <- .guess_col(nms, c("ymax","bottom"))
-    if (is.null(xmin) || is.null(ymin) || is.null(xmax) || is.null(ymax)) stop("csv_bbox xyxy: need xmin/ymin/xmax/ymax columns")
-    x0 <- (df[[xmin]] + df[[xmax]])/2; y0 <- (df[[ymin]] + df[[ymax]])/2
-  }
-  idc <- id_col %||% .guess_col(nms, c("id","track_id","trajectory_id","object_id")) %||% "1"
-  tc  <- time_col %||% .guess_col(nms, c("frame","time","t","timestamp")) %||% "..row"
-  if (tc == "..row") df[[tc]] <- seq_len(nrow(df))
-  data.frame(id = if (idc == "1") rep("1", nrow(df)) else df[[idc]],
-             time = df[[tc]], x = x0, y = y0, stringsAsFactors = FALSE)
 })

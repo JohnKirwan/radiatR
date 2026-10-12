@@ -39,8 +39,6 @@ DIALECT_CHOICES <- c(
   "ANY-maze"                      = "anymaze",
   "idtracker.ai"                  = "idtrackerai_wide",
   "ToxTrac"                       = "toxtrac",
-  "BORIS (with XY)"               = "boris_xy",
-  "Tracktor"                      = "tracktor",
   "Generic CSV"                   = "generic"
 )
 

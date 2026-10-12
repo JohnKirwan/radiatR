@@ -59,7 +59,6 @@ Suggests:
     yaml,
     withr,
     writexl,
-    xml2,
     shiny (>= 1.7.0),
     bslib (>= 0.5.0),
     pkgload,
