@@ -183,11 +183,9 @@ interval values from a Bayesian model before plotting.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6 -3.078761 3.505975e-20</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Bootstrap CI band (vonmises only):</span></span></span>
-<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="va">dens_df</span> <span class="op">&lt;-</span> <span class="fu">compute_circular_density</span><span class="op">(</span><span class="va">hd</span>, boot_reps <span class="op">=</span> <span class="fl">999L</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># density_lower / density_upper can be replaced with Bayesian interval values</span></span></span>
 <span class="r-in"><span><span class="co"># before passing to add_circular_density()</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Replace the density column with values from an external model before plotting:</span></span></span>
 <span class="r-in"><span><span class="co"># dens_df$density &lt;- my_bayesian_density(dens_df$theta)</span></span></span>

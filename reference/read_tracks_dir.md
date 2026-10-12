@@ -30,3 +30,7 @@ read_tracks_dir(
 - ...:
 
   Additional arguments passed to \`read_tracks()\`
+
+## Value
+
+A single \`Tracks\` object combining every matching file.

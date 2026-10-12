@@ -32,7 +32,22 @@ column).
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-manifest <- import_info("trials_list.csv", cond_cols = c("type", "arc"))
-} # }
+manifest_path <- system.file("extdata", "millipede_trials.csv",
+                             package = "radiatR")
+manifest <- import_info(manifest_path, cond_cols = c("type", "arc"))
+head(manifest)
+#>    file arc id stimulus_period recorded_radian recorded_degree    type obstacle
+#> 1 con_1   0  1               0       -1.473503       -84.42550 control     none
+#> 2 con_2   0  2               0        1.295963        74.25323 control     none
+#> 3 con_3   0  3               0       -0.314510       -18.02010 control     none
+#> 4 con_5   0  5               0       -2.070025      -118.60370 control     none
+#> 5 con_6   0  6               0       -2.907256      -166.57352 control     none
+#> 6 con_7   0  7               0       -1.601138       -91.73845 control     none
+#>        cond
+#> 1 control_0
+#> 2 control_0
+#> 3 control_0
+#> 4 control_0
+#> 5 control_0
+#> 6 control_0
 ```

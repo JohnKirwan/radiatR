@@ -7,3 +7,7 @@ List registered declarative formats
 ``` r
 list_loader_formats()
 ```
+
+## Value
+
+A sorted character vector of registered format names.

@@ -41,6 +41,11 @@
 
 ### Bug fixes
 
+- [`circ_summary_headings()`](https://johnkirwan.github.io/radiatR/reference/circ_summary_headings.md)
+  with the default `group_by = "id"` no longer errors (“numbers of
+  columns of arguments do not match”) when any trial produced no
+  heading; such trials are returned with `n = 0` and `NA` statistics.
+
 - The `euroc_mav` loader dialect now reads the real EuRoC header
   (`#timestamp [ns]`, `p_RS_R_x [m]`, …), which it previously rejected
   with “required columns not found”. Its timestamp scaling is also

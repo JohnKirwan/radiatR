@@ -43,15 +43,11 @@ trajectory formats. Use dialect_args to pass tool-specific options
 Register custom file formats or query which dialects are available.
 
 - [`register_loader_dialect()`](https://johnkirwan.github.io/radiatR/reference/register_loader_dialect.md)
-  : Register a custom loader dialect The function must accept (x, ...)
-  and return a data.frame in long form with columns at least id,time and
-  one of (angle) or (x,y)
+  : Register a custom loader dialect
 - [`list_loader_dialects()`](https://johnkirwan.github.io/radiatR/reference/list_loader_dialects.md)
   : List registered loader dialects
 - [`register_loader_format()`](https://johnkirwan.github.io/radiatR/reference/register_loader_format.md)
   : Register a declarative loader \*format\* (list or YAML/JSON file)
-  The spec maps cleanly onto read_tracks() args and supports regex-based
-  column finding.
 - [`list_loader_formats()`](https://johnkirwan.github.io/radiatR/reference/list_loader_formats.md)
   : List registered declarative formats
 
@@ -634,13 +630,9 @@ Any remaining exported topics.
 - [`register_heading_rule()`](https://johnkirwan.github.io/radiatR/reference/register_heading_rule.md)
   : Register a custom heading derivation rule
 - [`register_loader_dialect()`](https://johnkirwan.github.io/radiatR/reference/register_loader_dialect.md)
-  : Register a custom loader dialect The function must accept (x, ...)
-  and return a data.frame in long form with columns at least id,time and
-  one of (angle) or (x,y)
+  : Register a custom loader dialect
 - [`register_loader_format()`](https://johnkirwan.github.io/radiatR/reference/register_loader_format.md)
   : Register a declarative loader \*format\* (list or YAML/JSON file)
-  The spec maps cleanly onto read_tracks() args and supports regex-based
-  column finding.
 - [`restrict_to_circumference()`](https://johnkirwan.github.io/radiatR/reference/restrict_to_circumference.md)
   : Restrict a Tracks to within the unit circle
 - [`scale_cardinal()`](https://johnkirwan.github.io/radiatR/reference/scale_cardinal.md)

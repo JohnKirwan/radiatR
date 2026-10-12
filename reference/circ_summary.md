@@ -50,9 +50,16 @@ when estimation fails).
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
 data(cpunctatus)
-circ_summary(cpunctatus, by = "id")
+head(circ_summary(cpunctatus, by = "id"))
+#>        id   n t_start t_end  mean_dir resultant_R kappa
+#> 1 10_10_1 299       1   299 2.2781642   0.1548308    NA
+#> 2 10_11_1  65      14    78 0.2543320   0.6671992    NA
+#> 3 10_12_1  48       2    49 2.3069985   0.9037793    NA
+#> 4 10_13_1  80      22   101 0.9651068   0.5374843    NA
+#> 5 10_14_1  30       1    30 4.7633599   0.9718670    NA
+#> 6 10_15_1  54       2    55 3.5207738   0.9370359    NA
 circ_summary(cpunctatus, by = "global")
-} # }
+#>       id     n t_start t_end   mean_dir resultant_R kappa
+#> 1 global 44331       1   299 0.01906991   0.1247348    NA
 ```

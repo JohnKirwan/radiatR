@@ -1,8 +1,7 @@
-# Register a custom loader dialect The function must accept (x, ...) and return a data.frame in long form with columns at least id,time and one of (angle) or (x,y)
+# Register a custom loader dialect
 
-Register a custom loader dialect The function must accept (x, ...) and
-return a data.frame in long form with columns at least id,time and one
-of (angle) or (x,y)
+The function must accept (x, ...) and return a data.frame in long form
+with columns at least id,time and one of (angle) or (x,y)
 
 ## Usage
 
@@ -24,3 +23,8 @@ register_loader_dialect(name, fun, overwrite = FALSE)
 - overwrite:
 
   Replace an existing dialect registered with the same name
+
+## Value
+
+\`name\`, invisibly. Called for its side effect of registering the
+dialect for \`read_tracks(dialect = )\`.

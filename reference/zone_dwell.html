@@ -117,12 +117,19 @@ both counts and the proportion denominator.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="co"># Water maze probe trial: platform was at 45 degrees (NE)</span></span></span>
-<span class="r-in"><span><span class="va">dwell</span> <span class="op">&lt;-</span> <span class="fu">zone_dwell</span><span class="op">(</span><span class="va">ts</span>, target_angle <span class="op">=</span> <span class="va">pi</span> <span class="op">/</span> <span class="fl">4</span>,</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Treat 45 degrees (NE) as the target, as for a water maze probe trial</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">cpunctatus</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dwell</span> <span class="op">&lt;-</span> <span class="fu">zone_dwell</span><span class="op">(</span><span class="va">cpunctatus</span>, target_angle <span class="op">=</span> <span class="va">pi</span> <span class="op">/</span> <span class="fl">4</span>,</span></span>
 <span class="r-in"><span>                    ring_breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.5</span>, <span class="fl">0.8</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># Q1 proportion &gt; 0.25 indicates above-chance target preference</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">dwell</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                id quadrant ring  zone n_frames proportion</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_10_1.1 10_10_1        1    1 Q1.R1       50 0.16722408</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_10_1.2 10_10_1        2    1 Q2.R1       52 0.17391304</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_10_1.3 10_10_1        3    1 Q3.R1       32 0.10702341</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_10_1.4 10_10_1        4    1 Q4.R1       57 0.19063545</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_10_1.5 10_10_1        1    2 Q1.R2       22 0.07357860</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_10_1.6 10_10_1        2    2 Q2.R2        3 0.01003344</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

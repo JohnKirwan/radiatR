@@ -78,9 +78,24 @@ the function verifies that the listed files are present in both sources.</p></dd
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="va">manifest</span> <span class="op">&lt;-</span> <span class="fu">import_info</span><span class="op">(</span><span class="st">"trials_list.csv"</span>, cond_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"type"</span>, <span class="st">"arc"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">manifest_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"millipede_trials.csv"</span>,</span></span>
+<span class="r-in"><span>                             package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">manifest</span> <span class="op">&lt;-</span> <span class="fu">import_info</span><span class="op">(</span><span class="va">manifest_path</span>, cond_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"type"</span>, <span class="st">"arc"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">manifest</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    file arc id stimulus_period recorded_radian recorded_degree    type obstacle</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 con_1   0  1               0       -1.473503       -84.42550 control     none</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 con_2   0  2               0        1.295963        74.25323 control     none</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 con_3   0  3               0       -0.314510       -18.02010 control     none</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 con_5   0  5               0       -2.070025      -118.60370 control     none</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 con_6   0  6               0       -2.907256      -166.57352 control     none</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6 con_7   0  7               0       -1.601138       -91.73845 control     none</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        cond</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 control_0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 control_0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 control_0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 control_0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 control_0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6 control_0</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

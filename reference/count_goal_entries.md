@@ -64,10 +64,17 @@ inside the zone on the first frame counts as one entry.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Water maze probe trial: former platform at 45 degrees (NE), at wall
-entries <- count_goal_entries(ts, target_angle = pi / 4,
+# Treat 45 degrees (NE) at the wall as the goal, as for a water maze probe
+data(cpunctatus)
+entries <- count_goal_entries(cpunctatus, target_angle = pi / 4,
                               crossing_radius = 0.15)
 # n_entries > 1 indicates memory of the platform location
-} # }
+head(entries)
+#>              id n_entries
+#> 10_10_1 10_10_1         0
+#> 10_11_1 10_11_1         0
+#> 10_12_1 10_12_1         0
+#> 10_13_1 10_13_1         0
+#> 10_14_1 10_14_1         0
+#> 10_15_1 10_15_1         0
 ```

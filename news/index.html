@@ -57,7 +57,8 @@
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-0-1-3">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-1-3"></a></h3>
-<ul><li><p>The <code>euroc_mav</code> loader dialect now reads the real EuRoC header (<code>#timestamp [ns]</code>, <code>p_RS_R_x [m]</code>, …), which it previously rejected with “required columns not found”. Its timestamp scaling is also fixed: epoch seconds were divided by 1e6 and microsecond stamps by 1e9.</p></li>
+<ul><li><p><code><a href="../reference/circ_summary_headings.html">circ_summary_headings()</a></code> with the default <code>group_by = "id"</code> no longer errors (“numbers of columns of arguments do not match”) when any trial produced no heading; such trials are returned with <code>n = 0</code> and <code>NA</code> statistics.</p></li>
+<li><p>The <code>euroc_mav</code> loader dialect now reads the real EuRoC header (<code>#timestamp [ns]</code>, <code>p_RS_R_x [m]</code>, …), which it previously rejected with “required columns not found”. Its timestamp scaling is also fixed: epoch seconds were divided by 1e6 and microsecond stamps by 1e9.</p></li>
 <li><p>The <code>csv_bbox</code> loader dialect now matches headers containing capitals (<code>XMin</code>, <code>Width</code>, …); these were previously mangled before matching.</p></li>
 <li><p><code><a href="../reference/get_trial_limits.html">get_trial_limits()</a></code> (and so <code><a href="../reference/get_all_object_pos.html">get_all_object_pos()</a></code>) no longer returns <code>NA</code> manifest metadata for the second and later trials of a video when the file table has fewer rows than the video has trials.</p></li>
 </ul></div>

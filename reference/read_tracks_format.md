@@ -22,3 +22,7 @@ read_tracks_format(x, format, ...)
 - ...:
 
   extra args override spec fields
+
+## Value
+
+A \`Tracks\` object, as returned by \[read_tracks()\].

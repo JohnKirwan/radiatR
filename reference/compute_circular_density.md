@@ -130,11 +130,9 @@ head(dens_df)
 #> 6 -3.078761 3.505975e-20
 
 # Bootstrap CI band (vonmises only):
-if (FALSE) { # \dontrun{
 dens_df <- compute_circular_density(hd, boot_reps = 999L)
 # density_lower / density_upper can be replaced with Bayesian interval values
 # before passing to add_circular_density()
-} # }
 
 # Replace the density column with values from an external model before plotting:
 # dens_df$density <- my_bayesian_density(dens_df$theta)

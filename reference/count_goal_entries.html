@@ -114,12 +114,19 @@ first frame counts as one entry.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="co"># Water maze probe trial: former platform at 45 degrees (NE), at wall</span></span></span>
-<span class="r-in"><span><span class="va">entries</span> <span class="op">&lt;-</span> <span class="fu">count_goal_entries</span><span class="op">(</span><span class="va">ts</span>, target_angle <span class="op">=</span> <span class="va">pi</span> <span class="op">/</span> <span class="fl">4</span>,</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Treat 45 degrees (NE) at the wall as the goal, as for a water maze probe</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">cpunctatus</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">entries</span> <span class="op">&lt;-</span> <span class="fu">count_goal_entries</span><span class="op">(</span><span class="va">cpunctatus</span>, target_angle <span class="op">=</span> <span class="va">pi</span> <span class="op">/</span> <span class="fl">4</span>,</span></span>
 <span class="r-in"><span>                              crossing_radius <span class="op">=</span> <span class="fl">0.15</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># n_entries &gt; 1 indicates memory of the platform location</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">entries</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              id n_entries</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_10_1 10_10_1         0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_11_1 10_11_1         0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_12_1 10_12_1         0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_13_1 10_13_1         0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_14_1 10_14_1         0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_15_1 10_15_1         0</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

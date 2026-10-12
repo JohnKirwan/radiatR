@@ -1,7 +1,6 @@
-# Register a declarative loader \*format\* (list or YAML/JSON file) The spec maps cleanly onto read_tracks() args and supports regex-based column finding.
+# Register a declarative loader \*format\* (list or YAML/JSON file)
 
-Register a declarative loader \*format\* (list or YAML/JSON file) The
-spec maps cleanly onto read_tracks() args and supports regex-based
+The spec maps cleanly onto read_tracks() args and supports regex-based
 column finding.
 
 ## Usage
@@ -23,3 +22,8 @@ register_loader_format(name, spec, overwrite = FALSE)
 - overwrite:
 
   Overwrite an existing format of the same name
+
+## Value
+
+\`name\`, invisibly. Called for its side effect of registering the
+format for \[read_tracks_format()\].

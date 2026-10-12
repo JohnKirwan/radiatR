@@ -66,10 +66,17 @@ excluded from both counts and the proportion denominator.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Water maze probe trial: platform was at 45 degrees (NE)
-dwell <- zone_dwell(ts, target_angle = pi / 4,
+# Treat 45 degrees (NE) as the target, as for a water maze probe trial
+data(cpunctatus)
+dwell <- zone_dwell(cpunctatus, target_angle = pi / 4,
                     ring_breaks = c(0, 0.5, 0.8, 1))
 # Q1 proportion > 0.25 indicates above-chance target preference
-} # }
+head(dwell)
+#>                id quadrant ring  zone n_frames proportion
+#> 10_10_1.1 10_10_1        1    1 Q1.R1       50 0.16722408
+#> 10_10_1.2 10_10_1        2    1 Q2.R1       52 0.17391304
+#> 10_10_1.3 10_10_1        3    1 Q3.R1       32 0.10702341
+#> 10_10_1.4 10_10_1        4    1 Q4.R1       57 0.19063545
+#> 10_10_1.5 10_10_1        1    2 Q1.R2       22 0.07357860
+#> 10_10_1.6 10_10_1        2    2 Q2.R2        3 0.01003344
 ```
