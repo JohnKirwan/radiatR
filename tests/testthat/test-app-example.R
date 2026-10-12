@@ -13,21 +13,24 @@ skip_on_cran()
 # present. The chromote launch flags are configured in setup-shinytest2.R. The
 # test skips cleanly when any prerequisite is missing.
 #
-# Also skipped on macOS: some CI macOS runners ship a usable Chrome, so these
-# tests don't skip via the chromote guard there the way they do on Windows --
-# but shinytest2's download flow has shown macOS-specific timing flakiness
-# (a client-side Shiny input/output binding race after expanding a collapsed
-# accordion via raw JS; wait_for_idle() only waits on server busy/idle, not on
-# the browser finishing binding newly-visible inputs/outputs) that Ubuntu's
-# reference Chrome does not exhibit. Skip explicitly rather than chase
-# platform-specific browser-automation timing on a platform these tests were
-# never validated against.
+# Also skipped on macOS and Windows: the CI runners for both ship a usable
+# Chrome, so these tests don't skip via the chromote guard there, but they
+# have shown intermittent browser-timing failures that Ubuntu's reference
+# Chrome does not exhibit. On macOS, a client-side Shiny input/output binding
+# race after expanding a collapsed accordion via raw JS (wait_for_idle() only
+# waits on server busy/idle, not on the browser finishing binding
+# newly-visible inputs/outputs). On Windows, set_inputs() / updateSelectInput()
+# values not reaching the client before the next read, and Page.navigate
+# exceeding chromote's fixed 10 s per-command timeout (load_timeout does not
+# cover it). Skip explicitly rather than chase platform-specific
+# browser-automation timing on platforms these tests were never validated
+# against; Ubuntu is the reference platform for the browser tests.
 
 test_that("the app walks example -> Results and honours the layer toggles", {
   skip_if_not_installed("shinytest2")
   skip_if_not_installed("chromote")
   skip_if(is.null(chromote::find_chrome()), "no Chrome/Chromium binary found")
-  skip_on_os("mac")  # macOS-specific shinytest2 download-timing flake; see file header
+  skip_on_os(c("mac", "windows"))  # browser-timing flakes off Ubuntu; see file header
 
   app_dir <- system.file("app", package = "radiatR")
   skip_if(!nzchar(app_dir),
@@ -96,7 +99,7 @@ test_that("selecting the Headings input type sticks across wizard re-renders", {
   skip_if_not_installed("shinytest2")
   skip_if_not_installed("chromote")
   skip_if(is.null(chromote::find_chrome()), "no Chrome/Chromium binary found")
-  skip_on_os("mac")  # macOS-specific shinytest2 download-timing flake; see file header
+  skip_on_os(c("mac", "windows"))  # browser-timing flakes off Ubuntu; see file header
 
   app_dir <- system.file("app", package = "radiatR")
   skip_if(!nzchar(app_dir),
@@ -127,7 +130,7 @@ test_that("example headings land on Configure with a facet selector (arc/type)",
   skip_if_not_installed("shinytest2")
   skip_if_not_installed("chromote")
   skip_if(is.null(chromote::find_chrome()), "no Chrome/Chromium binary found")
-  skip_on_os("mac")  # macOS-specific shinytest2 download-timing flake; see file header
+  skip_on_os(c("mac", "windows"))  # browser-timing flakes off Ubuntu; see file header
 
   app_dir <- system.file("app", package = "radiatR")
   skip_if(!nzchar(app_dir),
@@ -170,7 +173,7 @@ test_that("the app exports a vector plot download", {
   skip_if_not_installed("shinytest2")
   skip_if_not_installed("chromote")
   skip_if(is.null(chromote::find_chrome()), "no Chrome/Chromium binary found")
-  skip_on_os("mac")  # macOS-specific shinytest2 download-timing flake; see file header
+  skip_on_os(c("mac", "windows"))  # browser-timing flakes off Ubuntu; see file header
 
   app_dir <- system.file("app", package = "radiatR")
   skip_if(!nzchar(app_dir),
@@ -216,7 +219,7 @@ test_that("the Data model = Axial selection renders example headings without err
   skip_if_not_installed("shinytest2")
   skip_if_not_installed("chromote")
   skip_if(is.null(chromote::find_chrome()), "no Chrome/Chromium binary found")
-  skip_on_os("mac")  # macOS-specific shinytest2 download-timing flake; see file header
+  skip_on_os(c("mac", "windows"))  # browser-timing flakes off Ubuntu; see file header
   app_dir <- system.file("app", package = "radiatR")
   skip_if(!nzchar(app_dir), "radiatR app directory not found (package installed?)")
 
@@ -240,7 +243,7 @@ test_that("an axial heading method soft-syncs Data model, and the override stick
   skip_if_not_installed("shinytest2")
   skip_if_not_installed("chromote")
   skip_if(is.null(chromote::find_chrome()), "no Chrome/Chromium binary found")
-  skip_on_os("mac")  # macOS-specific shinytest2 download-timing flake; see file header
+  skip_on_os(c("mac", "windows"))  # browser-timing flakes off Ubuntu; see file header
   app_dir <- system.file("app", package = "radiatR")
   skip_if(!nzchar(app_dir), "radiatR app directory not found (package installed?)")
 
@@ -302,7 +305,7 @@ test_that("the velocity_axis method renders the example trajectory without error
   skip_if_not_installed("shinytest2")
   skip_if_not_installed("chromote")
   skip_if(is.null(chromote::find_chrome()), "no Chrome/Chromium binary found")
-  skip_on_os("mac")  # macOS-specific shinytest2 download-timing flake; see file header
+  skip_on_os(c("mac", "windows"))  # browser-timing flakes off Ubuntu; see file header
   app_dir <- system.file("app", package = "radiatR")
   skip_if(!nzchar(app_dir), "radiatR app directory not found (package installed?)")
 
