@@ -140,3 +140,33 @@ test_that("single-animal SLEAP files in one directory need id_collision = 'names
   expect_setequal(sub("::.*$", "", unique(as.character(as.data.frame(ts)[[ts@cols$id]]))),
                   c("a", "b"))
 })
+
+test_that("a text column from a dialect is parsed with its file's decimal mark", {
+  # One bad cell leaves the column as text; only that cell is malformed, in a
+  # single file and in a multi-file import alike.
+  dir <- withr::local_tempdir()
+  write_tm <- function(stem, x) {
+    p <- file.path(dir, paste0(stem, ".csv"))
+    writeLines(c("TRACK_ID;FRAME;POSITION_X;POSITION_Y",
+                 paste0(stem, ";", 0:2, ";", x, ";2,5")), p)
+    p
+  }
+  bad <- write_tm("b", c("1,5", "oops", "1,7"))
+  for (x in list(bad, c(write_tm("a", c("1,5", "1,6", "1,7")), bad))) {
+    e <- tryCatch(read_tracks(x, dialect = "trackmate"), error = function(e) e)
+    expect_s3_class(e, "radiatR_malformed_values")
+    expect_identical(e$rows, 2L)
+    expect_identical(e$values, "oops")
+    expect_identical(e$source, "b.csv")
+  }
+})
+
+test_that("a custom loader for a non-text file is not sniffed as text", {
+  path <- withr::local_tempfile(fileext = ".bin")
+  writeBin(as.raw(c(0x89, 0xff, 0xfe, 0x0a, 0xc3, 0x28, 0x0a)), path)
+  local_dialect("binary", function(x) {
+    readBin(x, "raw", 8L)
+    data.frame(id = "a", frame = 1:2, x = c(0, 1), y = c(0, 1))
+  })
+  expect_equal(nrow(as.data.frame(read_tracks(path, dialect = "binary"))), 2L)
+})

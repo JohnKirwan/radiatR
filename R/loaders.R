@@ -177,6 +177,14 @@ list_loader_formats <- function() sort(ls(envir = .loader_format_registry))
 #' Register a custom loader dialect
 #'
 #' The function must accept (x, ...) and return a data.frame in long form with columns at least id,time and one of (angle) or (x,y)
+#'
+#' `x` is whatever was passed to [read_tracks()]: a data frame, or one file
+#' path. The dialect is the only reader of that file, and is called once per
+#' file when `read_tracks()` is given several paths. A table returned without
+#' an id column is one trajectory, named after its file in a multi-file
+#' import. Numeric columns returned as text are coerced strictly (see
+#' "Malformed values" in [read_tracks()]) using the decimal mark sniffed from
+#' the file; a dialect that knows better can set `attr(out, "decimal")`.
 #' @param name Unique dialect name
 #' @param fun Function that accepts (x, ...) and returns a data.frame with id/time/angle or id/time/x/y
 #' @param overwrite Replace an existing dialect registered with the same name
@@ -409,6 +417,18 @@ guess_columns <- function(data, mapping = list()) {
   if (!any(viable)) return(default)
   best <- cands[which(viable)][which.max(counts[1L, viable])]
   list(delim = best, decimal = if (best == ";") "," else ".")
+}
+
+# Decimal mark .read_any() sniffs for `path`: what a dialect that reads its own
+# file saw. "." for a format .read_any() does not sniff and for a file that is
+# not UTF-8 text (a custom loader's binary format), which cannot be sniffed.
+.file_decimal <- function(path) {
+  if (tolower(tools::file_ext(path)) %in% c("xlsx", "xls", "parquet", "feather"))
+    return(".")
+  lines <- tryCatch(readLines(path, n = 20L, warn = FALSE),
+                    error = function(e) character(0))
+  if (!all(validUTF8(lines))) return(".")
+  .guess_delim(path)$decimal
 }
 
 # read file with soft dependencies. Delimited formats are content-sniffed
@@ -757,7 +777,14 @@ read_tracks <- function(x,
       stop("Unknown dialect '", dialect, "'")
     }
     fun <- get(dialect, envir = .loader_registry, inherits = FALSE)
-    prep <- function(input) do.call(fun, c(list(input), dialect_args))
+    # Called on a data frame or on one path. The table keeps the decimal mark
+    # of its file, for the strict coercion of any column left as text.
+    prep <- function(input) {
+      out <- do.call(fun, c(list(input), dialect_args))
+      if (is.data.frame(out) && is.character(input) && is.null(attr(out, "decimal")))
+        attr(out, "decimal") <- .file_decimal(input)
+      out
+    }
     # Dialects no longer convert frame indices to seconds themselves (that
     # single conversion now happens once, on demand, via elapsed_seconds());
     # adopt a dialect-only fps so it still becomes the Tracks frame_rate.
