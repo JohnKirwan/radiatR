@@ -62,11 +62,23 @@ test_that("long lists of rows and values are truncated with a marker", {
   expect_match(conditionMessage(e), "'v10', ...", fixed = TRUE)
 })
 
-test_that("a decimal comma earns a hint, other malformed values do not", {
-  e <- malformed(radiatR:::.as_numeric_strict(c("1,5", "2,25"), "x"))
+test_that("a decimal comma from a file earns a hint; nothing else does", {
+  e <- malformed(radiatR:::.as_numeric_strict(c("1,5", "2,25"), "x", source = "a.tsv"))
   expect_match(conditionMessage(e), "read_opts = list(decimal = \",\")", fixed = TRUE)
-  e <- malformed(radiatR:::.as_numeric_strict(c("oops"), "x"))
+  e <- malformed(radiatR:::.as_numeric_strict(c("oops"), "x", source = "a.tsv"))
   expect_no_match(conditionMessage(e), "decimal")
+  # read_opts does nothing for a data frame
+  e <- malformed(radiatR:::.as_numeric_strict(c("1,5", "2,25"), "x"))
+  expect_no_match(conditionMessage(e), "decimal")
+})
+
+test_that("text read with a decimal comma parses, and only the bad cell is named", {
+  got <- radiatR:::.as_numeric_strict(c("1,5", "-0,25", "3", ",5"), "x", decimal = ",")
+  expect_identical(got, c(1.5, -0.25, 3, 0.5))
+  e <- malformed(radiatR:::.as_numeric_strict(c("1,5", "oops", "1,2,3"), "x",
+                                              source = "a.csv", decimal = ","))
+  expect_identical(e$rows, 2:3)
+  expect_no_match(conditionMessage(e), "read_opts")
 })
 
 # ---- .coerce_time ------------------------------------------------------------
@@ -238,6 +250,20 @@ test_that("decimal commas in a file are malformed, not read as digit grouping", 
   expect_match(conditionMessage(e), "read_opts = list(decimal = \",\")", fixed = TRUE)
   ok <- read_tracks(path, read_opts = list(decimal = ","))
   expect_equal(as.data.frame(ok)$x, c(1.5, 853.333))
+})
+
+test_that("one bad cell in a comma-decimal file names that cell only", {
+  path <- withr::local_tempfile(fileext = ".csv")
+  writeLines(c("id;frame;x;y", "a;1;1,5;0,25", "a;2;2,25;0,5", "a;3;oops;0,75"), path)
+  e <- malformed(read_tracks(path))
+  expect_identical(e$rows, 3L)
+  expect_identical(e$values, "oops")
+  expect_no_match(conditionMessage(e), "read_opts")
+
+  writeLines(c("id;frame;x;y", "a;0,5;1,5;0,25", "a;x;2,25;0,5", "a;1,5;3,5;0,75"), path)
+  e <- malformed(read_tracks(path))
+  expect_identical(e$columns, "frame")
+  expect_identical(e$rows, 2L)
 })
 
 test_that("a malformed cell in a multi-file import is reported against its own file", {

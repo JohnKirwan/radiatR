@@ -55,7 +55,9 @@
   Files are now read with column types guessed from every row and with no
   digit-grouping mark, so `1,5` or `1,234.5` in a tab-separated file is
   malformed rather than read as 15 or 1234.5. Pass
-  `read_opts = list(decimal = ",")` for decimal commas.
+  `read_opts = list(decimal = ",")` for decimal commas. Where the decimal mark
+  is a comma (the default for semicolon-separated files), one bad cell names
+  that cell only, not every `1,5` in its column.
 
   The check covers the columns `read_tracks()` converts itself and the time
   column of every dialect but ANY-maze. An error raised inside a dialect does

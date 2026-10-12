@@ -320,21 +320,32 @@ guess_columns <- function(data, mapping = list()) {
 # Cells that count as missing in a text column: blank, or NA in any case.
 .is_missing_chr <- function(s) is.na(s) | toupper(s) %in% c("", "NA")
 
+# as.numeric() on text read with decimal mark `decimal`: a column left as text
+# by one bad cell still holds "1,5" where the file's decimal mark is a comma.
+.parse_number <- function(s, decimal = ".") {
+  if (identical(decimal, ","))
+    s <- sub("^([-+]?[0-9]*),([0-9]+)$", "\\1.\\2", s)
+  suppressWarnings(as.numeric(s))
+}
+
 # Numeric coercion that tells missing from malformed. Numeric input is returned
 # unchanged. Otherwise missing cells become NA, anything as.numeric() parses is
 # kept (including "nan" and "inf"), and any other value aborts with
 # radiatR_malformed_values naming the column, its data rows and the offending
-# strings.
-.as_numeric_strict <- function(v, column, source = NULL, dialect = NULL) {
+# strings. `decimal` is the mark the source file was read with.
+.as_numeric_strict <- function(v, column, source = NULL, dialect = NULL,
+                               decimal = ".") {
   if (is.numeric(v)) return(v)
   s <- trimws(as.character(v))
   missing <- .is_missing_chr(s)
-  num <- suppressWarnings(as.numeric(s))
+  num <- .parse_number(s, decimal)
   num[missing] <- NA_real_
   bad <- !missing & is.na(num) & !is.nan(num)
   if (any(bad))
-    radiatR_abort_malformed_values(column, which(bad), s[bad],
-                                   source = source, dialect = dialect)
+    radiatR_abort_malformed_values(
+      column, which(bad), s[bad], source = source, dialect = dialect,
+      # read_opts only helps a file that was read with a decimal point
+      decimal_hint = !is.null(source) && !identical(decimal, ","))
   num
 }
 
@@ -357,9 +368,10 @@ guess_columns <- function(data, mapping = list()) {
 # throughout give POSIXct. Otherwise the values that break the majority
 # reading abort with radiatR_malformed_values. Beside a date-time layout a
 # bare date is midnight (as.character() writes midnight that way).
-.parse_time_chr <- function(v, tz, column, source, dialect, allow_numeric = TRUE) {
+.parse_time_chr <- function(v, tz, column, source, dialect, decimal = ".",
+                            allow_numeric = TRUE) {
   s <- trimws(as.character(v))
-  num <- suppressWarnings(as.numeric(s))
+  num <- .parse_number(s, decimal)
   missing <- .is_missing_chr(s) | is.nan(num)
   num_ok <- allow_numeric & !missing & !is.na(num)
   if (allow_numeric && all(num_ok | missing)) {
@@ -382,7 +394,8 @@ guess_columns <- function(data, mapping = list()) {
   expected <- if (!any(num_ok | ok)) "a number or date-time"
               else if (as_num) "numeric" else "a date-time"
   radiatR_abort_malformed_values(column, which(bad), s[bad], expected = expected,
-                                 source = source, dialect = dialect)
+                                 source = source, dialect = dialect,
+                                 decimal_hint = FALSE)
 }
 
 # Coerce time column to POSIXct or numeric seconds. Numeric time under
@@ -394,7 +407,8 @@ guess_columns <- function(data, mapping = list()) {
 # into NA.
 .coerce_time <- function(v, time_type = c("auto","posix","seconds","frames"),
                          tz = "UTC", fps = NULL, origin = "1970-01-01",
-                         column = "time", source = NULL, dialect = NULL) {
+                         column = "time", source = NULL, dialect = NULL,
+                         decimal = ".") {
   time_type <- match.arg(time_type)
   if (time_type == "frames") .assert_valid_fps(fps)
   if (time_type == "frames" && inherits(v, c("POSIXt", "Date", "difftime")))
@@ -406,13 +420,14 @@ guess_columns <- function(data, mapping = list()) {
   if (inherits(v, "Date")) v <- as.POSIXct(format(v), tz = tz)
   if (time_type %in% c("seconds", "frames")) {
     if (inherits(v, "POSIXt")) return(as.numeric(v))
-    return(as.numeric(.as_numeric_strict(v, column, source, dialect)))
+    return(as.numeric(.as_numeric_strict(v, column, source, dialect, decimal)))
   }
   if (inherits(v, "POSIXt")) return(as.POSIXct(v, tz = tz))
   if (time_type == "posix" && is.numeric(v))
     return(as.POSIXct(v, tz = tz, origin = origin))
   out <- if (is.numeric(v)) as.numeric(v) else
-    .parse_time_chr(v, tz, column, source, dialect, allow_numeric = time_type == "auto")
+    .parse_time_chr(v, tz, column, source, dialect, decimal,
+                    allow_numeric = time_type == "auto")
   # Numeric time with an fps is a frame index (see above), so fps must be valid.
   if (is.numeric(out) && !duration && !is.null(fps)) .assert_valid_fps(fps)
   out
@@ -474,17 +489,20 @@ guess_columns <- function(data, mapping = list()) {
   # Column types are guessed from every row, and no grouping mark is assumed:
   # readr's defaults turn a malformed cell past row 1000 into NA and read
   # "1,5" as 15, which hides both from the strict coercion downstream.
-  if (.is_installed("readr"))
-    return(readr::read_delim(
+  df <- if (.is_installed("readr"))
+    readr::read_delim(
       path, delim = delim,
       locale = readr::locale(decimal_mark = decimal, grouping_mark = ""),
-      guess_max = Inf, show_col_types = FALSE, progress = FALSE, ...))
-  if (.is_installed("data.table"))
-    return(data.table::fread(
-      path, sep = delim, dec = decimal, showProgress = FALSE, ...))
-  utils::read.table(
+      guess_max = Inf, show_col_types = FALSE, progress = FALSE, ...)
+  else if (.is_installed("data.table"))
+    data.table::fread(
+      path, sep = delim, dec = decimal, showProgress = FALSE, ...)
+  else utils::read.table(
     path, header = TRUE, sep = delim, dec = decimal,
     stringsAsFactors = FALSE, ...)
+  # Kept for the strict coercion of any column the reader left as text.
+  attr(df, "decimal") <- decimal
+  df
 }
 
 # Read and combine multiple track files into one long data frame, preserving
@@ -531,12 +549,13 @@ guess_columns <- function(data, mapping = list()) {
   num_cols <- unlist(roles[c("x", "y", "angle", "weight")], use.names = FALSE)
 
   dfl <- Map(function(d, p) {
+    dec <- attr(d, "decimal") %||% "."
     for (cc in intersect(num_cols, names(d)))
-      d[[cc]] <- .as_numeric_strict(d[[cc]], cc, source = basename(p))
+      d[[cc]] <- .as_numeric_strict(d[[cc]], cc, source = basename(p), decimal = dec)
     tc <- roles$time
     if (!is.null(tc) && (is.character(d[[tc]]) || is.factor(d[[tc]])))
       d[[tc]] <- do.call(.coerce_time, c(
-        list(d[[tc]], column = tc, source = basename(p)), time_args))
+        list(d[[tc]], column = tc, source = basename(p), decimal = dec), time_args))
     if (synth) d[[id_col]] <- tools::file_path_sans_ext(basename(p))
     d[["..source_file"]] <- basename(p)
     # Internal only: full/relative path, used to distinguish same-named files
@@ -746,12 +765,14 @@ read_tracks <- function(x,
                             "Tracks invariants are always checked."))
 
   # read
+  dec <- "."
   if (is.data.frame(x)) {
     df <- x
     src <- NULL
   } else if (is.character(x) && length(x) == 1L && file.exists(x)) {
     df <- .read_any(x, ext = read_opts$ext, delim = read_opts$delim,
                     decimal = read_opts$decimal, sheet = read_opts$sheet)
+    dec <- attr(df, "decimal") %||% "."
     src <- basename(x)
   } else if (is.character(x) && length(x) > 1L) {
     combined <- .combine_track_files(x, mapping, id_from_filename, read_opts,
@@ -883,10 +904,12 @@ read_tracks <- function(x,
   # dropped, so the rows they name are rows of the table as read. Only missing
   # and non-finite coordinates reach the report / drop step below.
   for (cc in c(if (!is.null(xcol) && !is.null(ycol)) c(xcol, ycol), angle, wcol))
-    df[[cc]] <- .as_numeric_strict(df[[cc]], cc, source = src, dialect = dialect)
+    df[[cc]] <- .as_numeric_strict(df[[cc]], cc, source = src, dialect = dialect,
+                                   decimal = dec)
   time_is_duration <- inherits(df[[time]], "difftime")
   df[[time]] <- .coerce_time(df[[time]], time_type = time_type, tz = tz, fps = fps,
-                             column = time, source = src, dialect = dialect)
+                             column = time, source = src, dialect = dialect,
+                             decimal = dec)
   # Report / drop rows with non-finite coordinates (position-based load).
   if (!is.null(xcol) && !is.null(ycol)) {
     finite <- is.finite(df[[xcol]]) & is.finite(df[[ycol]])
