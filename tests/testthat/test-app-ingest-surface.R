@@ -97,9 +97,11 @@ test_that("real exports are auto-detected and load through the app's loader", {
   expect_identical(e$guess_dialect(fx("toxtrac_tracking_realspace.txt")), "toxtrac")
   expect_identical(e$guess_dialect(system.file("extdata", "sleap_example.csv", package = "radiatR")),
                    "sleap")
-  # a plain table stays generic
+  # a plain table stays generic, and so does one that merely has x1/y1 columns
   p <- withr::local_tempfile(fileext = ".csv")
   writeLines(c("ID,Frame,X,Y", "a,1,0,0"), p)
+  expect_identical(e$guess_dialect(p), "generic")
+  writeLines(c("id,frame,x1,y1,x2,y2", "a,1,0,0,1,1"), p)
   expect_identical(e$guess_dialect(p), "generic")
 
   ts <- e$load_ts(fx("toxtrac_tracking_realspace.txt"), "toxtrac", normalize_xy = FALSE)
@@ -112,4 +114,37 @@ test_that("real exports are auto-detected and load through the app's loader", {
                   error = function(err) err)
   expect_match(e$plain_error(err), "Spots in tracks", fixed = TRUE)
   expect_false(grepl("Affected ids", e$ingest_detail(err), fixed = TRUE))
+})
+
+test_that("an uploaded TrackMate 7 file is detected, loaded in seconds, and needs no frame rate", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  path <- normalizePath(testthat::test_path("fixtures", "real", "trackmate_v7_spots.csv"))
+  shiny::testServer(app_dir(), {
+    session$setInputs(input_type = "trajectories")
+    session$setInputs(file = list(datapath = path, name = "spots.csv"))
+    session$setInputs(dialect_sel = "auto")
+    session$setInputs(go2 = 1)
+    expect_null(rv$error)
+    expect_identical(rv$dialect, "trackmate")
+    expect_identical(rv$ts@meta$time_unit, "seconds")
+    expect_true(kin_fps_ok())
+  })
+})
+
+test_that("an uploaded idtracker.ai file is detected; its 'nan' positions stop the load", {
+  # The app loads with on_invalid = "error" and has no control to drop rows, so
+  # a file with missing positions is refused by name rather than half-loaded.
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  path <- normalizePath(testthat::test_path("fixtures", "real", "idtrackerai_trajectories.csv"))
+  shiny::testServer(app_dir(), {
+    session$setInputs(input_type = "trajectories")
+    session$setInputs(file = list(datapath = path, name = "trajectories.csv"))
+    session$setInputs(dialect_sel = "auto")
+    session$setInputs(go2 = 1)
+    expect_null(rv$ts)
+    expect_match(rv$error, "not valid track data", fixed = TRUE)
+    expect_match(rv$error_detail, "non-finite coordinates", fixed = TRUE)
+  })
 })

@@ -170,3 +170,25 @@ test_that("a custom loader for a non-text file is not sniffed as text", {
   })
   expect_equal(nrow(as.data.frame(read_tracks(path, dialect = "binary"))), 2L)
 })
+
+test_that("a dialect's declared time unit is checked and cannot be contradicted", {
+  tbl <- function(unit) function(x)
+    structure(data.frame(id = "a", time = c(0, 0.5, 1), x = c(0, 1, 2), y = 0), time_unit = unit)
+  df <- data.frame(dummy = 1)
+  local_dialect("secs", tbl("seconds"))
+  expect_equal(elapsed_seconds(read_tracks(df, dialect = "secs")), c(0, 0.5, 1))
+  for (tt in c("frames", "posix"))
+    expect_s3_class(tryCatch(read_tracks(df, dialect = "secs", time_type = tt, fps = 2),
+                             error = function(e) e), "radiatR_time_type_mismatch")
+  local_dialect("frames", tbl("frames"))
+  expect_equal(elapsed_seconds(read_tracks(df, dialect = "frames", fps = 2)), c(0, 0.25, 0.5))
+  expect_s3_class(tryCatch(read_tracks(df, dialect = "frames", time_type = "seconds"),
+                           error = function(e) e), "radiatR_time_type_mismatch")
+  local_dialect("minutes", tbl("minutes"))
+  e <- tryCatch(read_tracks(df, dialect = "minutes"), error = function(e) e)
+  expect_s3_class(e, "radiatR_time_type_mismatch")
+  expect_match(conditionMessage(e), "must be \"seconds\" or \"frames\"", fixed = TRUE)
+  # without a dialect the attribute means nothing
+  plain <- tbl("minutes")(NULL)
+  expect_error(elapsed_seconds(read_tracks(plain)), "frame rate")
+})

@@ -185,6 +185,11 @@ list_loader_formats <- function() sort(ls(envir = .loader_format_registry))
 #' import. Numeric columns returned as text are coerced strictly (see
 #' "Malformed values" in [read_tracks()]) using the decimal mark sniffed from
 #' the file; a dialect that knows better can set `attr(out, "decimal")`.
+#'
+#' Numeric time is read as a frame index unless the dialect says its time
+#' column is in seconds, with `attr(out, "time_unit") <- "seconds"` (or
+#' `"frames"`, to rule out `time_type = "seconds"`). See "Time units from a
+#' dialect" in [read_tracks()].
 #' @param name Unique dialect name
 #' @param fun Function that accepts (x, ...) and returns a data.frame with id/time/angle or id/time/x/y
 #' @param overwrite Replace an existing dialect registered with the same name
@@ -845,9 +850,15 @@ read_tracks <- function(x,
   # time_type that settles how the column is read; a contrary explicit
   # time_type is refused rather than obeyed (seconds divided by fps, or frames
   # passed off as seconds, are both silently wrong).
-  declared <- if (length(x) > 1L && is.character(x)) combined$time_unit else attr(df, "time_unit")
+  declared <- if (is.null(dialect)) NULL
+              else if (length(x) > 1L && is.character(x)) combined$time_unit
+              else attr(df, "time_unit")
   if (!is.null(declared)) {
-    if (time_type == setdiff(c("seconds", "frames"), declared))
+    if (!(identical(declared, "seconds") || identical(declared, "frames")))
+      rlang::abort(sprintf(
+        "read_tracks: dialect '%s' declared the time unit %s; it must be \"seconds\" or \"frames\".",
+        dialect, paste(deparse(declared), collapse = " ")), class = "radiatR_time_type_mismatch")
+    if (!time_type %in% c("auto", declared))
       rlang::abort(sprintf(
         "read_tracks: dialect '%s' reads this time column as %s; time_type = \"%s\" does not apply.",
         dialect, declared, time_type), class = "radiatR_time_type_mismatch")

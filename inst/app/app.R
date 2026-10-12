@@ -71,7 +71,10 @@ guess_dialect <- function(path) {
     return("sleap")
   if ("track_id" %in% nm && "position_x" %in% nm)
     return("trackmate")
-  if (all(c("x_1", "y_1") %in% nm) || all(c("x1", "y1") %in% nm))
+  # idtracker.ai's wide table is nothing but x<id>/y<id> pairs and a time
+  # column; a file with other columns that happens to have x1/y1 is not one.
+  pair <- grepl("^[xy]_?[0-9]+$", nm)
+  if (sum(pair) >= 2L && all(pair | nm %in% c("seconds", "frame", "frames", "time", "t")))
     return("idtrackerai_wide")
   if ("trackid" %in% nm || all(c("track", "pos_x_mm", "pos_y_mm") %in% nm))
     return("toxtrac")
