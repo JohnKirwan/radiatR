@@ -22,8 +22,6 @@ trajectory formats. Use dialect_args to pass tool-specific options
   list)
 - [`load_manifest()`](https://johnkirwan.github.io/radiatR/reference/load_manifest.md)
   : Load trajectories listed in a file table into a Tracks
-- [`dtrack_read()`](https://johnkirwan.github.io/radiatR/reference/dtrack_read.md)
-  : Read a dtrack trajectory file into a Tracks
 - [`import_info()`](https://johnkirwan.github.io/radiatR/reference/import_info.md)
   : Import landmark coordinates from text files
 - [`import_tracks()`](https://johnkirwan.github.io/radiatR/reference/import_tracks.md)
@@ -544,8 +542,6 @@ Any remaining exported topics.
   vectors Length equals resultant_R; angle equals mean_dir
 - [`draw_tracks()`](https://johnkirwan.github.io/radiatR/reference/draw_tracks.md)
   : Create geom layers for Cartesian track coordinates
-- [`dtrack_read()`](https://johnkirwan.github.io/radiatR/reference/dtrack_read.md)
-  : Read a dtrack trajectory file into a Tracks
 - [`elapsed_seconds()`](https://johnkirwan.github.io/radiatR/reference/elapsed_seconds.md)
   : Elapsed time per observation of a Tracks object
 - [`fitted_directions()`](https://johnkirwan.github.io/radiatR/reference/fitted_directions.md)

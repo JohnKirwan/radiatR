@@ -77,7 +77,7 @@
 </h2>
 <ul>
 <li>
-<strong>Flexible loader framework</strong> — read exports from DeepLabCut, SLEAP, EthoVision, TrackMate, idtracker.ai and other tracking tools, plus GPX, GeoJSON and NMEA trajectory formats, via registered dialects; extend with custom formats</li>
+<strong>Flexible loader framework</strong> — read exports from DeepLabCut, SLEAP, EthoVision, TrackMate, idtracker.ai and other tracking tools, via registered dialects; register a loader for any other format</li>
 <li>
 <strong>Pose-estimation support</strong> — multi-bodypart centroid and body-axis heading from DeepLabCut, EthoVision multi-zone, ANY-maze nose/tail</li>
 <li>
@@ -101,10 +101,6 @@
 <th>Tool</th>
 </tr></thead>
 <tbody>
-<tr>
-<td><code>dtrack</code></td>
-<td>dtrack</td>
-</tr>
 <tr>
 <td>
 <code>deeplabcut</code> / <code>deeplabcut_multiheader</code>
@@ -132,52 +128,12 @@
 <td>ToxTrac</td>
 </tr>
 <tr>
-<td><code>boris_xy</code></td>
-<td>BORIS</td>
-</tr>
-<tr>
 <td><code>trex</code></td>
 <td>TRex (positional CSV; plain <code>X</code>/<code>Y</code> or <code>#wcentroid</code>/<code>#centroid</code>/<code>#pcentroid</code> variants)</td>
 </tr>
 <tr>
 <td><code>anymaze</code></td>
 <td>ANY-maze (including nose/tail zones)</td>
-</tr>
-<tr>
-<td><code>tracktor</code></td>
-<td>Tracktor</td>
-</tr>
-<tr>
-<td><code>motchallenge</code></td>
-<td>MOTChallenge / SORT / DeepSORT</td>
-</tr>
-<tr>
-<td><code>geojson_linestring</code></td>
-<td>GeoJSON LineString</td>
-</tr>
-<tr>
-<td><code>gpx</code></td>
-<td>GPX tracks</td>
-</tr>
-<tr>
-<td><code>nmea_gprmc</code></td>
-<td>NMEA GPRMC</td>
-</tr>
-<tr>
-<td><code>tum_traj</code></td>
-<td>TUM RGB-D trajectory files</td>
-</tr>
-<tr>
-<td><code>euroc_mav</code></td>
-<td>EuRoC MAV ground-truth CSV</td>
-</tr>
-<tr>
-<td><code>csv_bbox</code></td>
-<td>Generic bounding-box CSV (<code>x</code>/<code>y</code>/<code>w</code>/<code>h</code> or <code>xmin</code>/<code>ymin</code>/<code>xmax</code>/<code>ymax</code>; box centre)</td>
-</tr>
-<tr>
-<td><code>wide_prefix_xy</code></td>
-<td>Generic <code>x_&lt;id&gt;</code> / <code>y_&lt;id&gt;</code> wide format</td>
 </tr>
 </tbody>
 </table>
@@ -478,12 +434,10 @@
 <td>Faster CSV reading</td>
 </tr>
 <tr>
-<td><code>jsonlite</code></td>
-<td>GeoJSON and JSON dialect loaders</td>
-</tr>
-<tr>
-<td><code>xml2</code></td>
-<td>GPX dialect loader</td>
+<td>
+<code>jsonlite</code> / <code>yaml</code>
+</td>
+<td>JSON and YAML loader format specs</td>
 </tr>
 <tr>
 <td><code>arrow</code></td>

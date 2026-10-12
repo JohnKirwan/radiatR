@@ -123,7 +123,9 @@ exclusive with `normalize_xy = TRUE`.</p></dd>
 
 
 <dt id="arg-dialect">dialect<a class="anchor" aria-label="anchor" href="#arg-dialect"></a></dt>
-<dd><p>optional registered dialect name to pre-process raw input</p></dd>
+<dd><p>optional registered dialect name. The dialect reads `x`
+itself (`read_tracks()` does not parse the file first) and is called once
+per file when `x` holds several paths. See [register_loader_dialect()].</p></dd>
 
 
 <dt id="arg-dialect-args">dialect_args<a class="anchor" aria-label="anchor" href="#arg-dialect-args"></a></dt>
@@ -200,7 +202,7 @@ with no digit-grouping mark, so `1,5` is malformed unless
 <p>An error raised inside a dialect does not yet name the file or the source
 column, and counts rows after the dialect's own filtering and reshaping.
 Coordinates that a dialect converts itself (ANY-maze, EthoVision,
-DeepLabCut, SLEAP, Tracktor, TRex) are not yet checked this way.</p>
+DeepLabCut, SLEAP, TRex) are not yet checked this way.</p>
 <p>A time column given as text must hold either numbers throughout or
 timestamps in one layout throughout: `YYYY-MM-DD HH:MM:SS`,
 `YYYY-MM-DD HH:MM` or `YYYY-MM-DD` (with `-` or `/`), or ISO 8601

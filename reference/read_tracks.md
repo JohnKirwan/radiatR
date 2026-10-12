@@ -80,7 +80,10 @@ read_tracks(
 
 - dialect:
 
-  optional registered dialect name to pre-process raw input
+  optional registered dialect name. The dialect reads \`x\` itself
+  (\`read_tracks()\` does not parse the file first) and is called once
+  per file when \`x\` holds several paths. See
+  \[register_loader_dialect()\].
 
 - dialect_args:
 
@@ -159,8 +162,7 @@ are read with no digit-grouping mark, so \`1,5\` is malformed unless
 An error raised inside a dialect does not yet name the file or the
 source column, and counts rows after the dialect's own filtering and
 reshaping. Coordinates that a dialect converts itself (ANY-maze,
-EthoVision, DeepLabCut, SLEAP, Tracktor, TRex) are not yet checked this
-way.
+EthoVision, DeepLabCut, SLEAP, TRex) are not yet checked this way.
 
 A time column given as text must hold either numbers throughout or
 timestamps in one layout throughout: \`YYYY-MM-DD HH:MM:SS\`,

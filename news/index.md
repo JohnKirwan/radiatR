@@ -80,8 +80,7 @@
   error raised inside a dialect does not yet name the file or the source
   column, and counts rows after the dialect’s own filtering and
   reshaping. Coordinates that a dialect converts itself (ANY-maze,
-  EthoVision, DeepLabCut, SLEAP, Tracktor, TRex) are not yet checked
-  this way.
+  EthoVision, DeepLabCut, SLEAP, TRex) are not yet checked this way.
 
 - Text time columns are parsed strictly. Every value must match one
   timestamp layout in full: `YYYY-MM-DD HH:MM:SS`, `YYYY-MM-DD HH:MM` or
@@ -109,6 +108,33 @@
   is deprecated. It never skipped anything, because `Tracks` invariants
   are checked whenever an object is built; any value but `TRUE` now
   warns, and the argument will be removed.
+
+- Built-in loader dialects are now kept only for tracking software that
+  is widely used and still developed. Eleven dialects are removed:
+  `tracktor`, `boris_xy`, `dtrack`, `motchallenge`, `csv_bbox`,
+  `wide_prefix_xy`, `tum_traj`, `euroc_mav`, `gpx`, `geojson_linestring`
+  and `nmea_gprmc`. `read_tracks(dialect = )` with one of these names
+  stops with a `radiatR_removed_dialect` error. To keep reading such
+  files, register your own loader with
+  [`register_loader_dialect()`](https://johnkirwan.github.io/radiatR/reference/register_loader_dialect.md);
+  a loader registered under a removed name works as before. The bundled
+  `tracktor_example.csv` is removed with its dialect, and `xml2` is no
+  longer a suggested package.
+
+- `dtrack_read()` is removed.
+  [`vignette("loaders")`](https://johnkirwan.github.io/radiatR/articles/loaders.md)
+  shows a dtrack loader of a dozen lines, registered with
+  [`register_loader_dialect()`](https://johnkirwan.github.io/radiatR/reference/register_loader_dialect.md),
+  that reads the bundled millipede track files.
+
+- A dialect is now the only reader of its input.
+  `read_tracks(path, dialect = )` used to parse the file with the
+  generic reader first and discard the result, which printed
+  repaired-name messages for headerless files and could fail before the
+  dialect ran. With several paths the dialect is called once per file; a
+  custom dialect that expected the whole vector of paths must be changed
+  to take one path. `read_tracks("<dialect name>")`, which passed the
+  name itself to the dialect as input, is no longer accepted.
 
 ### Changes
 
@@ -142,6 +168,21 @@
   is now vectorised over its arguments.
 
 ### Bug fixes
+
+- [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  and
+  [`read_tracks_dir()`](https://johnkirwan.github.io/radiatR/reference/read_tracks_dir.md)
+  now work with `dialect` and several files. They used to fail with
+  `is.data.frame(df) is not TRUE`. Each file is read by the dialect and
+  coerced on its own, so a malformed value is reported against its own
+  file and row; ids repeated across files follow `id_collision`, and a
+  dialect that returns no id column gets one id per file. A failure
+  inside the dialect is re-raised as a `radiatR_dialect_error` naming
+  the file, unless it is already a radiatR condition.
+
+- [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  names the file(s) that do not exist instead of reporting that `x` must
+  be a data frame or path.
 
 - [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
   ignores a guessed id column that holds no values. It uses the next
@@ -198,15 +239,6 @@
   with the default `group_by = "id"` no longer errors (“numbers of
   columns of arguments do not match”) when any trial produced no
   heading; such trials are returned with `n = 0` and `NA` statistics.
-
-- The `euroc_mav` loader dialect now reads the real EuRoC header
-  (`#timestamp [ns]`, `p_RS_R_x [m]`, …), which it previously rejected
-  with “required columns not found”. Its timestamp scaling is also
-  fixed: epoch seconds were divided by 1e6 and microsecond stamps by
-  1e9.
-
-- The `csv_bbox` loader dialect now matches headers containing capitals
-  (`XMin`, `Width`, …); these were previously mangled before matching.
 
 - [`get_trial_limits()`](https://johnkirwan.github.io/radiatR/reference/get_trial_limits.md)
   (and so

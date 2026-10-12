@@ -128,27 +128,10 @@ for video recordings of freely-moving animals. The data are from:
 > mediating low-resolution vision.* Vision Research 165, 36–44.
 > <https://doi.org/10.1016/j.visres.2019.09.003>
 
-dtrack exports tab-separated text files with columns `frame`, `x`, `y`,
-and a fourth confidence/flag column. Use
-[`dtrack_read()`](https://johnkirwan.github.io/radiatR/reference/dtrack_read.md)
-to load a single trajectory file directly:
-
-``` r
-
-track_file <- system.file(
-  "extdata", "tracks", "10_10_point02.txt",
-  package = "radiatR"
-)
-ts_raw <- dtrack_read(track_file)
-head(ts_raw@data[, c("id", "frame", "x", "y")])
-#>              id frame      x      y
-#> 1 10_10_point02     1 469.83 379.47
-#> 2 10_10_point02     2 477.73 386.58
-#> 3 10_10_point02     3 479.31 388.95
-#> 4 10_10_point02     4 482.48 400.81
-#> 5 10_10_point02     5 484.85 406.34
-#> 6 10_10_point02     6 484.06 417.40
-```
+dtrack exports headerless, tab-separated text files with columns
+`frame`, `x`, `y`, and a fourth confidence/flag column. `radiatR` has no
+built-in dtrack dialect: the *Registering a Custom Dialect* section
+below writes one in a few lines and uses it to read these files.
 
 The `_point01` / `_point02` role split used in the bundled data —
 landmarks in one file, trajectory in the other — is specific to this
@@ -165,9 +148,9 @@ options go through `dialect_args`.
 The table below summarises what is and is not currently handled. Two
 limitations are general:
 
-- **Tabular text only.** Dialects read CSV/TSV (and, where the optional
-  packages are installed, JSON/XML/Parquet). Native binary formats —
-  such as NumPy `.npz` or MATLAB `.mat` — are not read.
+- **Tabular text only.** The built-in dialects read CSV/TSV (and, where
+  the optional packages are installed, Excel and Parquet). Native binary
+  formats — such as NumPy `.npz` or MATLAB `.mat` — are not read.
 - **Position, not posture.** `radiatR` models a single position per
   individual per frame. Per-frame *posture* data (variable-length
   midline or outline polylines) is outside this model. Where a tool
@@ -184,18 +167,19 @@ limitations are general:
 | `ethovision` | Centre position, and multi-zone exports (nose, tail, etc.); zone centroid or single-zone selection. | Native `.xlsx` (export to CSV first). |
 | `anymaze` | Centre position, optional nose/tail zones, units row. | — |
 | `trackmate` | `TRACK_ID` / `FRAME` / `POSITION_X` / `POSITION_Y` CSV. | Native TrackMate `.xml`. |
-| `idtrackerai_wide`, `toxtrac`, `boris_xy`, `tracktor`, `dtrack` | Their standard CSV/TSV column layouts. | Tool-specific binary or session formats. |
+| `idtrackerai_wide`, `toxtrac` | Their standard CSV/TSV column layouts. | Tool-specific binary or session formats. |
 
-When a tool’s export is not directly supported, two escape hatches
-remain: convert to a tidy CSV and use
+Built-in dialects are kept only for tracking software that is widely
+used and still developed. When a tool’s export is not directly
+supported, two escape hatches remain: convert to a tidy CSV and use
 [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
 with an explicit `mapping`, or register a custom dialect (see
 *Registering a Custom Dialect* below).
 
 ## Bundled single-file examples
 
-The package ships small real exports from three tools so the dialects
-can be tried without any external data. Each loads with one
+The package ships small real exports from two tools so the dialects can
+be tried without any external data. Each loads with one
 [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
 call, pointing the `dialect` argument at the matching tool.
 
@@ -209,15 +193,6 @@ each bodypart’s coordinates are retained for use with the
 dlc_path <- system.file("extdata", "dlc_CollectedData_Pranav.csv",
                         package = "radiatR")
 ts_dlc <- read_tracks(dlc_path, dialect = "deeplabcut_multiheader")
-#> New names:
-#> • `Pranav` -> `Pranav...2`
-#> • `Pranav` -> `Pranav...3`
-#> • `Pranav` -> `Pranav...4`
-#> • `Pranav` -> `Pranav...5`
-#> • `Pranav` -> `Pranav...6`
-#> • `Pranav` -> `Pranav...7`
-#> • `Pranav` -> `Pranav...8`
-#> • `Pranav` -> `Pranav...9`
 ts_dlc
 #> Tracks: 1 trajectories, 116 observations
 #> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y'
@@ -249,29 +224,6 @@ ts_sleap
 #> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y'
 #>   id time        x        y      a_x      a_y      b_x      b_y     angle
 #> 1  1    0 242.2826 195.6278 205.9301 187.8896 278.6352 203.3659 0.6792588
-```
-
-**Tracktor** — a tidy `frame` / `pos_x` / `pos_y` CSV (one individual
-here).
-
-``` r
-
-tracktor_path <- system.file("extdata", "tracktor_example.csv",
-                            package = "radiatR")
-ts_tracktor <- read_tracks(tracktor_path, dialect = "tracktor")
-#> New names:
-#> New names:
-#> • `` -> `...1`
-ts_tracktor
-#> Tracks: 1 trajectories, 547 observations
-#> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y'
-#>   id time        x        y     angle
-#> 1  1    3 1528.267 330.3940 0.2129121
-#> 2  1    4 1528.014 330.7465 0.2131666
-#> 3  1    5 1527.535 331.3825 0.2136291
-#> 4  1    6 1527.485 331.5372 0.2137326
-#> 5  1    7 1527.366 331.5003 0.2137258
-#> 6  1    8 1527.536 331.5405 0.2137277
 ```
 
 The bundled dtrack example is larger and is shown in full in the
@@ -351,64 +303,74 @@ import_info(manifest_path, cond_cols = c("type", "arc"))
 
 ## Registering a Custom Dialect
 
-When your exporter uses a non-standard format, register a custom
-function. A dialect receives either a data frame or a file path and must
-return a data frame with at least `id`, `time`, and either `angle` or
-`(x, y)`.
+When no built-in dialect fits your exporter, register your own loader: a
+function that receives what was passed to
+[`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+(a file path or a data frame) and returns a data frame with `x` and `y`
+(or `angle`), and normally `id` and `time`. The dialect is the only
+reader of the file, so it can handle layouts the generic reader cannot:
+no header row, several header rows, or a format that is not a table at
+all.
 
-Below we define a loader for a hypothetical JSON file where each track
-is stored under an ID key with arrays of `timestamp`, `px`, and `py`.
+The bundled millipede tracks were made with dtrack, which writes a
+headerless, tab-separated file of `frame`, `x`, `y` and a flag column. A
+loader for it:
 
 ``` r
 
-fake_json <- tempfile(fileext = ".json")
-jsonlite::write_json(
-  list(
-    tracks = list(
-      A = list(timestamp = c(0, 1, 2), px = c(0, 1, 2), py = c(0, 0.2, 0.5)),
-      B = list(timestamp = c(0, 1, 2), px = c(1, 1.3, 1.5), py = c(0, -0.1, -0.2))
-    )
-  ),
-  fake_json,
-  auto_unbox = TRUE
-)
-
-json_tracks_fn <- function(x) {
-  dat <- if (is.character(x) && file.exists(x)) jsonlite::fromJSON(x) else x
-  entries <- Map(function(track, id) {
-    data.frame(
-      id   = id,
-      time = track$timestamp,
-      x    = track$px,
-      y    = track$py,
-      stringsAsFactors = FALSE
-    )
-  }, dat$tracks, names(dat$tracks))
-  do.call(rbind, entries)
+dtrack_loader <- function(x) {
+  # colClasses = "numeric" makes a malformed cell an error, not a silent NA
+  d <- utils::read.delim(x, header = FALSE, colClasses = "numeric")
+  if (ncol(d) < 3L)
+    stop("dtrack: expected at least 3 columns (frame, x, y) in ", basename(x))
+  data.frame(
+    id    = tools::file_path_sans_ext(basename(x)),  # one file, one track
+    frame = d[[1]],
+    x     = d[[2]],
+    y     = d[[3]]
+  )
 }
-register_loader_dialect("json_tracks", json_tracks_fn)
+register_loader_dialect("dtrack", dtrack_loader)
 ```
 
-After registration, call the dialect function directly on the file to
-get a tidy data frame, then pass it to
-[`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md).
-(For standard tabular formats that R’s CSV/TSV readers handle natively,
-`read_tracks(path, dialect = "name")` works directly—but non-tabular
-formats such as JSON require this two-step approach.)
+After registration the dialect is used by name, like a built-in one:
 
 ``` r
 
-ts_json <- read_tracks(json_tracks_fn(fake_json))
-ts_json
-#> Tracks: 2 trajectories, 6 observations
-#> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y'
-#>     id time   x    y     angle
-#> A.1  A    0 0.0  0.0 0.0000000
-#> A.2  A    1 1.0  0.2 0.1973956
-#> A.3  A    2 2.0  0.5 0.2449787
-#> B.1  B    0 1.0  0.0 0.0000000
-#> B.2  B    1 1.3 -0.1 6.2064134
-#> B.3  B    2 1.5 -0.2 6.1506338
+track_file <- system.file(
+  "extdata", "tracks", "10_10_point02.txt",
+  package = "radiatR"
+)
+ts_raw <- read_tracks(track_file, dialect = "dtrack")
+head(ts_raw@data[, c("id", "frame", "x", "y")])
+#>              id frame      x      y
+#> 1 10_10_point02     1 469.83 379.47
+#> 2 10_10_point02     2 477.73 386.58
+#> 3 10_10_point02     3 479.31 388.95
+#> 4 10_10_point02     4 482.48 400.81
+#> 5 10_10_point02     5 484.85 406.34
+#> 6 10_10_point02     6 484.06 417.40
+```
+
+Given several files, the loader is called once per file and the results
+are combined. Here `pattern` picks one session’s trajectory files and
+leaves out the `_point01` landmark files, which share the same layout:
+
+``` r
+
+track_dir <- system.file("extdata", "tracks", package = "radiatR")
+ts_session <- read_tracks_dir(track_dir, pattern = "^10_.*_point02\\.txt$",
+                              dialect = "dtrack")
+ts_session
+#> Tracks: 29 trajectories, 4802 observations
+#> Columns: id='id', time='frame', angle='angle' (radians), x='x', y='y'
+#>             id frame      x      y    ..source_file     angle
+#> 1 10_1_point02     1 455.60 372.36 10_1_point02.txt 0.6851986
+#> 2 10_1_point02     2 457.98 369.98 10_1_point02.txt 0.6795104
+#> 3 10_1_point02     3 455.60 369.98 10_1_point02.txt 0.6820587
+#> 4 10_1_point02     4 454.02 369.98 10_1_point02.txt 0.6837593
+#> 5 10_1_point02     5 455.60 377.10 10_1_point02.txt 0.6914043
+#> 6 10_1_point02     6 458.77 381.84 10_1_point02.txt 0.6941355
 ```
 
 Dialects live in-memory for the current session. To persist them across

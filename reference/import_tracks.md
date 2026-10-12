@@ -34,5 +34,6 @@ The default suffixes match the export naming convention used by dtrack
 example data, `_point01` files contain two landmark rows per trial (the
 origin and stimulus edge on the circumference) and `_point02` files
 contain the per-frame animal trajectory. This two-file role split is
-specific to that experiment and is not a general dtrack convention. Use
-\[dtrack_read()\] to read an individual trajectory file.
+specific to that experiment and is not a general dtrack convention.
+\`vignette("loaders")\` registers a custom loader that reads an
+individual trajectory file.
