@@ -174,3 +174,19 @@ test_that("spec_to_code: example source never emits normalize_xy", {
   expect_true(grepl("data(cpunctatus)", code, fixed = TRUE))
   expect_false(grepl("normalize_xy", code, fixed = TRUE))
 })
+
+test_that("build_plot_spec records the seed for the app's stochastic outputs", {
+  df <- data.frame(dir = c(0, 90, 180), cond = c("a","a","b"))
+  hf <- build_headings_input(df, col = "dir", units = "degrees",
+                             convention = "clock", group = "cond")
+  spec <- build_plot_spec(
+    ts = NULL, hd = hf, method = NULL,
+    data = list(source = "file", mode = "headings", path = "angles.csv",
+                col = "dir", units = "degrees", convention = "clock",
+                group = "cond"),
+    inputs = list(colour_by = "cond", cond_col = "cond",
+                  heading_display = "points", plot_theme = "void",
+                  angle_labels = "degrees")
+  )
+  expect_identical(spec$seed, APP_SEED)
+})

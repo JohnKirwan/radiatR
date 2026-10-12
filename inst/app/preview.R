@@ -59,14 +59,16 @@ build_method_preview <- function(ts, method, circ0 = 0.3, circ1 = 0.6,
   has_rel <- !is.null(ts@cols$rel_x) && !is.null(ts@cols$rel_y)
   coords  <- if (has_rel) "relative" else "absolute"
 
-  hd <- tryCatch({
+  # Same seed as the Results derivation (derive_hd) so a randomised rule
+  # (RANSAC) previews the headings the analysis will use.
+  hd <- tryCatch(with_local_seed(APP_SEED, {
     if (identical(method, "crossing")) {
       derive_headings(ts, rule = "crossing", coords = coords,
                       circ0 = circ0, circ1 = circ1, return_coords = TRUE)
     } else {
       derive_headings(ts, rule = method, coords = coords, return_coords = TRUE)
     }
-  }, error = function(e) NULL)
+  }), error = function(e) NULL)
 
   if (is.null(hd) || all(!is.finite(hd$heading))) {
     return(base + ggplot2::labs(subtitle = lab))

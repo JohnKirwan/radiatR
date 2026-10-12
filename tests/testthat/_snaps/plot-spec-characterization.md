@@ -19,6 +19,7 @@
       
       arrow_df <- compute_circ_mean(hd)
       
+      set.seed(20260617L)  # mirror the app's fixed bootstrap seed
       radiate(ts, group_col = "trial_id", colour_col = ".colour", legend = FALSE, theme = "void", angle_labels = "degrees", show_labels = FALSE, show_arrow = FALSE, display = disp) +
         add_heading_points(hd, colour_col = ".colour", size = 2.5, alpha = 0.8) +
         add_circ_mean(arrow_df, colour = "black") +
@@ -77,6 +78,7 @@
       
       arrow_df <- compute_circ_mean(hd, facets = "type")
       
+      set.seed(20260617L)  # mirror the app's fixed bootstrap seed
       radiate(ts, group_col = "trial_id", colour_col = ".colour", facets = "type", legend = FALSE, theme = "void", angle_labels = "degrees", show_labels = FALSE, show_arrow = FALSE, display = disp) +
         add_heading_points(hd, colour_col = ".colour", size = 2.5, alpha = 0.8) +
         add_circ_mean(arrow_df, colour = "black") +

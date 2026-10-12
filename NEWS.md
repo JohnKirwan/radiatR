@@ -13,6 +13,12 @@
   already stored in `cpunctatus`; use `as.data.frame(cpunctatus)` (or
   `cpunctatus@data`) for the same per-frame rows.
 
+* `simulate_tracks(seed = )` no longer changes the session's random-number
+  state: the simulation is drawn under `seed` and the previous state is restored
+  on exit. Seeded output is unchanged. Code that relied on the call to seed
+  later draws (a bootstrap or Monte-Carlo test run afterwards) must now call
+  `set.seed()` itself.
+
 ## Changes
 
 * The main workflow and simulation walkthroughs are now website-only articles
@@ -34,6 +40,13 @@
   imported directly.
 
 ## Bug fixes
+
+* The Shiny app no longer calls `set.seed()` on the shared R process when it
+  computes Monte-Carlo uniformity p-values, so one session can no longer shift
+  another's random draws. The mean-direction bootstrap CI arc and the RANSAC
+  heading rule (in both the method preview and the results) are now drawn under
+  the same fixed seed, so they stay put across redraws, and the downloaded
+  script sets that seed to reproduce them.
 
 * `circ_summary_headings()` with the default `group_by = "id"` no longer errors
   ("numbers of columns of arguments do not match") when any trial produced no

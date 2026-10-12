@@ -2,7 +2,7 @@
 # source them directly. Under R CMD check the package is installed, so the files
 # land at system.file("app", ...); under devtools::test() the source tree is used
 # and the relative path resolves. Try the installed location first, then source.
-for (.f in c("preview.R", "preview_constructions.R")) {
+for (.f in c("plot_spec.R", "preview.R", "preview_constructions.R")) {
   .p <- system.file("app", .f, package = "radiatR")
   if (!nzchar(.p) || !file.exists(.p)) {
     .p <- testthat::test_path("..", "..", "inst", "app", .f)
@@ -188,4 +188,13 @@ test_that("none mode draws no heading points", {
                logical(1)))
   expect_false(has_points(build_method_preview(d, "none", 0.3, 0.6)))
   expect_true(has_points(build_method_preview(d, "distal", 0.3, 0.6)))
+})
+
+test_that("the RANSAC preview is drawn under the app seed, leaving the caller's RNG alone", {
+  d <- demo_tracks()
+  set.seed(1); expected <- runif(1)
+  set.seed(1); p1 <- build_method_preview(d, "ransac_straight"); got <- runif(1)
+  expect_identical(got, expected)
+  set.seed(2); p2 <- build_method_preview(d, "ransac_straight")
+  expect_equal(ggplot2::ggplot_build(p2)$data, ggplot2::ggplot_build(p1)$data)
 })

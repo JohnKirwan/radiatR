@@ -197,3 +197,26 @@ test_that("simulate_tracks rejects an unknown modality", {
   cond <- data.frame(condition = "c", n_trials = 5, modality = "nope")
   expect_error(simulate_tracks(conditions = cond, seed = 1), "unknown modality")
 })
+
+test_that("simulate_tracks(seed=) leaves the caller's RNG stream untouched", {
+  set.seed(1); expected <- runif(1)
+  set.seed(1); simulate_tracks(seed = 42); got <- runif(1)
+  expect_identical(got, expected)
+})
+
+test_that("simulate_tracks(seed=) does not create an RNG state where none existed", {
+  genv <- globalenv()
+  old <- genv$.Random.seed
+  on.exit(if (!is.null(old)) assign(".Random.seed", old, envir = genv))
+  suppressWarnings(rm(".Random.seed", envir = genv))
+  simulate_tracks(seed = 42)
+  expect_false(exists(".Random.seed", envir = genv, inherits = FALSE))
+})
+
+test_that("simulate_tracks(seed=) is deterministic; seed = NULL still draws from the caller's stream", {
+  expect_identical(simulate_tracks(seed = 42), simulate_tracks(seed = 42))
+  set.seed(1); a <- simulate_tracks()
+  set.seed(1); b <- simulate_tracks()
+  expect_identical(a, b)
+  expect_false(identical(runif(1), {set.seed(1); runif(1)}))
+})
