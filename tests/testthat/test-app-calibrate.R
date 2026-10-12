@@ -1,3 +1,6 @@
+# Too slow for CRAN's check time budget; runs locally and on CI.
+skip_on_cran()
+
 # Fixed-reference unit-circle calibration is a load-time choice on the same
 # Coordinates radio as normalize_xy (mutually exclusive by construction): the
 # "calibrate" mode reads origin_x/origin_y/radius once at Next and records them

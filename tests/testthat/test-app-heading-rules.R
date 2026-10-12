@@ -1,3 +1,6 @@
+# Too slow for CRAN's check time budget; runs locally and on CI.
+skip_on_cran()
+
 test_that("every heading rule exposed in the app runs on the example data", {
   data(cpunctatus, package = "radiatR", envir = environment())
 

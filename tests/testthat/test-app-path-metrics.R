@@ -1,3 +1,6 @@
+# Too slow for CRAN's check time budget; runs locally and on CI.
+skip_on_cran()
+
 # The no-headings ("none") mode surfaces sinuosity alongside straightness in the
 # caption, and the per-track metrics CSV carries the combined metric columns.
 test_that("none-mode caption and metrics table include sinuosity", {

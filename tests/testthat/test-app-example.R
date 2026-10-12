@@ -1,3 +1,6 @@
+# Too slow for CRAN's check time budget; runs locally and on CI.
+skip_on_cran()
+
 # Browser-level smoke test for the Shiny companion app, driven through a real
 # headless Chrome via shinytest2. Guards the example-data path and the Results
 # step features (layer toggles, vector download) against regressions that the
@@ -21,7 +24,6 @@
 # never validated against.
 
 test_that("the app walks example -> Results and honours the layer toggles", {
-  skip_on_cran()
   skip_if_not_installed("shinytest2")
   skip_if_not_installed("chromote")
   skip_if(is.null(chromote::find_chrome()), "no Chrome/Chromium binary found")
@@ -91,7 +93,6 @@ test_that("the app walks example -> Results and honours the layer toggles", {
 })
 
 test_that("selecting the Headings input type sticks across wizard re-renders", {
-  skip_on_cran()
   skip_if_not_installed("shinytest2")
   skip_if_not_installed("chromote")
   skip_if(is.null(chromote::find_chrome()), "no Chrome/Chromium binary found")
@@ -123,7 +124,6 @@ test_that("selecting the Headings input type sticks across wizard re-renders", {
 })
 
 test_that("example headings land on Configure with a facet selector (arc/type)", {
-  skip_on_cran()
   skip_if_not_installed("shinytest2")
   skip_if_not_installed("chromote")
   skip_if(is.null(chromote::find_chrome()), "no Chrome/Chromium binary found")
@@ -167,7 +167,6 @@ test_that("example headings land on Configure with a facet selector (arc/type)",
 })
 
 test_that("the app exports a vector plot download", {
-  skip_on_cran()
   skip_if_not_installed("shinytest2")
   skip_if_not_installed("chromote")
   skip_if(is.null(chromote::find_chrome()), "no Chrome/Chromium binary found")
@@ -214,7 +213,6 @@ test_that("the app exports a vector plot download", {
 })
 
 test_that("the Data model = Axial selection renders example headings without error", {
-  skip_on_cran()
   skip_if_not_installed("shinytest2")
   skip_if_not_installed("chromote")
   skip_if(is.null(chromote::find_chrome()), "no Chrome/Chromium binary found")
@@ -239,7 +237,6 @@ test_that("the Data model = Axial selection renders example headings without err
 })
 
 test_that("an axial heading method soft-syncs Data model, and the override sticks", {
-  skip_on_cran()
   skip_if_not_installed("shinytest2")
   skip_if_not_installed("chromote")
   skip_if(is.null(chromote::find_chrome()), "no Chrome/Chromium binary found")
@@ -302,7 +299,6 @@ test_that("a generic CSV maps columns and loads through the server", {
 })
 
 test_that("the velocity_axis method renders the example trajectory without error", {
-  skip_on_cran()
   skip_if_not_installed("shinytest2")
   skip_if_not_installed("chromote")
   skip_if(is.null(chromote::find_chrome()), "no Chrome/Chromium binary found")
