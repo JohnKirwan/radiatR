@@ -178,6 +178,27 @@
 
 ### Bug fixes
 
+- [`circ_summarise()`](https://johnkirwan.github.io/radiatR/reference/circ_summarise.md)
+  and
+  [`circ_summary()`](https://johnkirwan.github.io/radiatR/reference/circ_summary.md)
+  on a `Tracks` object now return the von Mises concentration `kappa`;
+  it was always `NA`. The estimator was looked up as
+  `circular::est.kappa`, a function the circular package does not have,
+  so every caller silently got its fallback instead. `kappa` is now
+  computed directly as the maximum-likelihood estimate from the mean
+  resultant length (the value
+  [`circular::mle.vonmises()`](https://rdrr.io/pkg/circular/man/mle.vonmises.html)
+  gives), weighted where weights are in use. Both report `NA` for fewer
+  than three valid angles (as
+  [`circ_summarise()`](https://johnkirwan.github.io/radiatR/reference/circ_summarise.md)
+  already did) and `Inf` when all angles coincide, where the estimate is
+  unbounded.
+  [`circ_summary_headings()`](https://johnkirwan.github.io/radiatR/reference/circ_summary_headings.md),
+  [`boot_kappa_ci()`](https://johnkirwan.github.io/radiatR/reference/boot_kappa_ci.md)
+  and the starting value in
+  [`concentration_regression()`](https://johnkirwan.github.io/radiatR/reference/concentration_regression.md)
+  already used this estimate and are unchanged.
+
 - The `trackmate`, `toxtrac`, `idtrackerai_wide` and `trex` dialects now
   read the files those programs write. Checked against real exports:
 

@@ -81,7 +81,7 @@ circ_summarise(hd, heading, units = "radians")
 #> # A tibble: 1 × 5
 #>       n mean_dir mean_dir_deg resultant_R kappa
 #>   <int>    <dbl>        <dbl>       <dbl> <dbl>
-#> 1     3    0.785           45       0.805    NA
+#> 1     3    0.785           45       0.805  2.92
 circ_summarise(hd, heading, units = "radians", .by = "arc")
 #> # A tibble: 2 × 6
 #>   arc       n mean_dir mean_dir_deg resultant_R kappa

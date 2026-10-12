@@ -54,7 +54,7 @@ circ_summarise(data.frame(heading = ang), "heading", units = "radians")
 #> # A tibble: 1 × 5
 #>       n mean_dir mean_dir_deg resultant_R kappa
 #>   <int>    <dbl>        <dbl>       <dbl> <dbl>
-#> 1   200     5.48         136.       0.889    NA
+#> 1   200     5.48         136.       0.889  4.78
 
 # a generic numeric cycle of length 10
 as_angle(c(0, 2.5, 5, 7.5), period = 10)
