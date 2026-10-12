@@ -45,3 +45,32 @@ radiatR_abort_invalid_tracks <- function(problems, call = NULL) {
     ids = unique(as.character(problems$id)),
     call = call)
 }
+
+# A cell that is present but will not parse as `expected`. Distinct from a
+# missing value, which stays NA and is governed by `on_invalid`: a malformed
+# value is never dropped. Subclasses radiatR_invalid_rows so existing handlers
+# catch it. `rows` index the data rows of the table the column was read from
+# (header excluded); `ids` is empty because columns are checked before ids are
+# resolved.
+radiatR_abort_malformed_values <- function(column, rows, values,
+                                           expected = "numeric", source = NULL,
+                                           dialect = NULL) {
+  where <- c(if (!is.null(source)) sprintf("file '%s'", source),
+             if (!is.null(dialect)) sprintf("dialect '%s'", dialect))
+  first <- function(x, n) paste0(paste(utils::head(x, n), collapse = ", "),
+                                 if (length(x) > n) ", ...")
+  msg <- sprintf(
+    "Column '%s'%s has %d value(s) that are not %s.\n  rows: %s\n  values: %s",
+    column,
+    if (length(where)) sprintf(" (%s)", paste(where, collapse = ", ")) else "",
+    length(rows), expected, first(rows, 20L),
+    first(paste0("'", unique(values), "'"), 10L)
+  )
+  if (any(grepl("^-?[0-9]+,[0-9]+$", values)))
+    msg <- paste0(msg, "\n  Decimal commas? Pass read_opts = list(decimal = \",\").")
+  rlang::abort(msg, class = c("radiatR_malformed_values", "radiatR_invalid_rows"),
+               rows = as.integer(rows), ids = character(0),
+               columns = as.character(column), values = as.character(values),
+               expected = expected, source = source, dialect = dialect,
+               call = NULL)
+}

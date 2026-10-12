@@ -74,7 +74,8 @@ Any `NULL` element is auto-detected. Defaults to all-auto.}
 
 \item{id_from_filename}{if TRUE and id missing, derive id from file stem when reading multiple files}
 
-\item{validate}{if TRUE run S4 validity checks}
+\item{validate}{Deprecated and ignored: `Tracks` invariants are always
+checked. Any value but `TRUE` warns.}
 
 \item{format}{Optional loader format name or list spec registered via [register_loader_format()]}
 
@@ -84,10 +85,12 @@ with a message naming the colliding id(s) and files; `"namespace"` rewrites
 every id to `paste0(file_stem, "::", id)` so ids are unique per file. Has no
 effect on single-file or data.frame input.}
 
-\item{on_invalid}{How to handle rows with non-finite x/y coordinates:
-"error" (default) aborts with a radiatR_invalid_rows condition listing the
-affected rows and ids; "drop" removes them and signals a
-radiatR_dropped_rows warning with the same payload.}
+\item{on_invalid}{How to handle rows whose x/y coordinates are missing or
+non-finite: "error" (default) aborts with a radiatR_invalid_rows condition
+listing the affected rows and ids; "drop" removes them and signals a
+radiatR_dropped_rows warning with the same payload. It covers nothing
+else: a missing time, id or weight is an error either way, and so is a
+malformed value (see "Malformed values").}
 }
 \value{
 Tracks
@@ -95,3 +98,28 @@ Tracks
 \description{
 Construct a Tracks from a data.frame or file(s)
 }
+\section{Malformed values}{
+
+A cell in an x, y, angle, weight or time column that is present but does not
+parse (`"oops"`, `"1,5"`, a stray header or units row) stops the load with a
+`radiatR_malformed_values` error, a subclass of `radiatR_invalid_rows`. Its
+`columns`, `rows`, `values`, `source` and `dialect` fields name the column,
+the data rows (counted from the first row after the header, within its own
+file in a multi-file import), the offending strings, the file and the
+dialect. Such a value is never dropped or turned into `NA`. Blank cells and
+`NA` are missing values; `nan` and `inf` are read as such. Files are read
+with no digit-grouping mark, so `1,5` is malformed unless
+`read_opts = list(decimal = ",")` says the comma is the decimal mark.
+
+An error raised inside a dialect does not yet name the file or the source
+column, and counts rows after the dialect's own filtering and reshaping.
+Coordinates that a dialect converts itself (ANY-maze, EthoVision,
+DeepLabCut, SLEAP, Tracktor, TRex) are not yet checked this way.
+
+A time column given as text must hold either numbers throughout or
+timestamps in one layout throughout: `YYYY-MM-DD HH:MM:SS`,
+`YYYY-MM-DD HH:MM` or `YYYY-MM-DD` (with `-` or `/`), or ISO 8601
+`YYYY-MM-DDTHH:MM:SS` with an optional `Z` for UTC. A bare date beside
+date-times is midnight.
+}
+
