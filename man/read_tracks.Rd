@@ -34,7 +34,11 @@ read_tracks(
 
 \item{angle_unit}{"radians","degrees", or "auto" to guess from values}
 
-\item{time_type}{one of "auto","posix","seconds","frames"}
+\item{time_type}{one of "auto","posix","seconds","frames". Numeric time is
+taken to be a frame index unless `time_type = "seconds"` (or the column is
+a duration): seconds are recorded as such in the Tracks metadata
+(`time_unit`), so [elapsed_seconds()] and the kinematics use them directly,
+with no frame rate.}
 
 \item{tz}{timezone for POSIX times (default "UTC")}
 

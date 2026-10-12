@@ -2807,7 +2807,8 @@ function(
       data <- .seq_position(data, id_col = group_col, time_col = ts@cols$time)
     else if (time_track)
       data[[".elapsed"]] <- .elapsed_time(data[[ts@cols$time]], data[[group_col]],
-                                          frame_rate(ts), time_units)
+                                          frame_rate(ts), time_units,
+                                          .time_unit(ts))
     else
       data[[".speed"]] <- .speed_for_colour(instantaneous_speed(ts), data[[group_col]])
   }

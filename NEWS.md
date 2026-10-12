@@ -139,6 +139,17 @@
 
 ## Bug fixes
 
+* Numeric time loaded as seconds is now treated as seconds. A `Tracks` read
+  with `read_tracks(time_type = "seconds")`, or from a duration (`difftime`)
+  column, was handled as a frame index: `elapsed_seconds()`, `track_speed()`
+  and the other kinematics stopped and asked for a frame rate, and once one
+  was set they divided the seconds by it. Such a `Tracks` now records
+  `time_unit = "seconds"` in its metadata and needs no frame rate; a frame
+  rate set on it is kept but not applied. `c()` refuses to combine `Tracks`
+  whose time units differ. Numeric time of unstated unit is still a frame
+  index, and the error that asks for a frame rate now mentions
+  `time_type = "seconds"`.
+
 * `read_tracks()` and `read_tracks_dir()` now work with `dialect` and several
   files. They used to fail with `is.data.frame(df) is not TRUE`. Each file is
   read by the dialect and coerced on its own, so a malformed value is reported
