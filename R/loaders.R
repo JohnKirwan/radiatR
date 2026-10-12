@@ -317,39 +317,120 @@ guess_columns <- function(data, mapping = list()) {
          call. = FALSE)
 }
 
+# Cells that count as missing in a text column: blank, or NA in any case.
+.is_missing_chr <- function(s) is.na(s) | toupper(s) %in% c("", "NA")
+
+# as.numeric() on text read with decimal mark `decimal`: a column left as text
+# by one bad cell still holds "1,5" where the file's decimal mark is a comma.
+.parse_number <- function(s, decimal = ".") {
+  if (identical(decimal, ","))
+    s <- sub("^([-+]?[0-9]*),([0-9]+)$", "\\1.\\2", s)
+  suppressWarnings(as.numeric(s))
+}
+
+# Numeric coercion that tells missing from malformed. Numeric input is returned
+# unchanged. Otherwise missing cells become NA, anything as.numeric() parses is
+# kept (including "nan" and "inf"), and any other value aborts with
+# radiatR_malformed_values naming the column, its data rows and the offending
+# strings. `decimal` is the mark the source file was read with.
+.as_numeric_strict <- function(v, column, source = NULL, dialect = NULL,
+                               decimal = ".") {
+  if (is.numeric(v)) return(v)
+  s <- trimws(as.character(v))
+  missing <- .is_missing_chr(s)
+  num <- .parse_number(s, decimal)
+  num[missing] <- NA_real_
+  bad <- !missing & is.na(num) & !is.nan(num)
+  if (any(bad))
+    radiatR_abort_malformed_values(
+      column, which(bad), s[bad], source = source, dialect = dialect,
+      # read_opts only helps a file that was read with a decimal point
+      decimal_hint = !is.null(source) && !identical(decimal, ","))
+  num
+}
+
+# Timestamp layouts accepted for text time, in order of preference. A value
+# must match its layout in full: base as.POSIXct() accepts a prefix match,
+# which silently cuts "2024-01-01T10:00:00Z" and "2024-01-01 garbage" to
+# midnight. A trailing "Z" is read as UTC.
+.time_formats <- c("%Y-%m-%d %H:%M:%OS", "%Y/%m/%d %H:%M:%OS",
+                   "%Y-%m-%dT%H:%M:%OS", "%Y-%m-%dT%H:%M:%OSZ",
+                   "%Y-%m-%d %H:%M", "%Y/%m/%d %H:%M", "%Y-%m-%d", "%Y/%m/%d")
+
+.time_format_regex <- function(fmt) {
+  subs <- list(c("%OS", "[0-9]{1,2}([.][0-9]+)?"), c("%Y", "[0-9]{4}"),
+               c("%[mdHM]", "[0-9]{1,2}"))
+  for (p in subs) fmt <- gsub(p[1], p[2], fmt)
+  paste0("^", fmt, "$")
+}
+
+# Text time: numbers throughout give numeric time, timestamps in one layout
+# throughout give POSIXct. Otherwise the values that break the majority
+# reading abort with radiatR_malformed_values. Beside a date-time layout a
+# bare date is midnight (as.character() writes midnight that way).
+.parse_time_chr <- function(v, tz, column, source, dialect, decimal = ".",
+                            allow_numeric = TRUE) {
+  s <- trimws(as.character(v))
+  num <- .parse_number(s, decimal)
+  missing <- .is_missing_chr(s) | is.nan(num)
+  num_ok <- allow_numeric & !missing & !is.na(num)
+  if (allow_numeric && all(num_ok | missing)) {
+    num[missing] <- NA_real_
+    return(num)
+  }
+  hit <- lapply(.time_formats, function(f) grepl(.time_format_regex(f), s))
+  best <- which.max(vapply(hit, sum, integer(1)))
+  fmt <- .time_formats[best]
+  fmt_tz <- if (endsWith(fmt, "Z")) "UTC" else tz
+  out <- as.POSIXct(strptime(s, fmt, tz = fmt_tz))
+  date_fmt <- sub("[ T]%H.*$", "", fmt)
+  bare <- fmt != date_fmt & grepl(.time_format_regex(date_fmt), s)
+  out[bare] <- as.POSIXct(strptime(s[bare], date_fmt, tz = fmt_tz))
+  attr(out, "tzone") <- tz
+  ok <- (hit[[best]] | bare) & !is.na(out)
+  if (all(ok | missing)) return(out)
+  as_num <- sum(num_ok) >= sum(ok)
+  bad <- !missing & !(if (as_num) num_ok else ok)
+  expected <- if (!any(num_ok | ok)) "a number or date-time"
+              else if (as_num) "numeric" else "a date-time"
+  radiatR_abort_malformed_values(column, which(bad), s[bad], expected = expected,
+                                 source = source, dialect = dialect,
+                                 decimal_hint = FALSE)
+}
+
 # Coerce time column to POSIXct or numeric seconds. Numeric time under
 # time_type = "frames" (or "auto" with fps supplied) is kept as a raw frame
 # index: read_tracks() stores `fps` as the Tracks frame_rate, and
 # elapsed_seconds()/.elapsed_time() perform the single frame -> seconds
 # division on demand. Converting here as well as there double-divides by fps.
+# Malformed values abort (radiatR_malformed_values); they are never turned
+# into NA.
 .coerce_time <- function(v, time_type = c("auto","posix","seconds","frames"),
-                         tz = "UTC", fps = NULL, origin = "1970-01-01") {
+                         tz = "UTC", fps = NULL, origin = "1970-01-01",
+                         column = "time", source = NULL, dialect = NULL,
+                         decimal = ".") {
   time_type <- match.arg(time_type)
-  if (time_type == "auto") {
-    # try POSIX
-    if (inherits(v, "POSIXt")) return(as.POSIXct(v, tz = tz))
-    if (is.numeric(v) && !is.null(fps)) {
-      .assert_valid_fps(fps)
-      return(as.numeric(v))
-    }
-    # try character timestamp
-    if (is.character(v)) {
-      suppressWarnings({
-        t <- as.POSIXct(v, tz = tz)
-      })
-      if (any(!is.na(t))) return(t)
-    }
-    # numeric seconds since origin
-    if (is.numeric(v)) return(as.numeric(v))
-    # fallback: integer-ish
-    return(as.numeric(v))
+  if (time_type == "frames") .assert_valid_fps(fps)
+  if (time_type == "frames" && inherits(v, c("POSIXt", "Date", "difftime")))
+    rlang::abort(sprintf(
+      "Column '%s' holds %s values, which are not frame indices; use time_type = \"auto\".",
+      column, class(v)[1L]), class = "radiatR_time_type_mismatch")
+  duration <- inherits(v, "difftime")
+  if (duration) v <- as.numeric(v, units = "secs")
+  if (inherits(v, "Date")) v <- as.POSIXct(format(v), tz = tz)
+  if (time_type %in% c("seconds", "frames")) {
+    if (inherits(v, "POSIXt")) return(as.numeric(v))
+    return(as.numeric(.as_numeric_strict(v, column, source, dialect, decimal)))
   }
-  if (time_type == "posix") return(as.POSIXct(v, tz = tz, origin = origin))
-  if (time_type == "seconds") return(as.numeric(v))
-  if (time_type == "frames") {
-    .assert_valid_fps(fps)
-    return(as.numeric(v))
-  }
+  if (inherits(v, "POSIXt")) return(as.POSIXct(v, tz = tz))
+  if (time_type == "posix" && is.numeric(v))
+    return(as.POSIXct(v, tz = tz, origin = origin))
+  out <- if (is.numeric(v)) as.numeric(v) else
+    .parse_time_chr(v, tz, column, source, dialect, decimal,
+                    allow_numeric = time_type == "auto")
+  # Numeric time with an fps is a frame index (see above), so fps must be valid.
+  if (is.numeric(out) && !duration && !is.null(fps)) .assert_valid_fps(fps)
+  out
 }
 
 # Sniff the field separator (and, for ';', the decimal mark) from a delimited
@@ -405,17 +486,23 @@ guess_columns <- function(data, mapping = list()) {
     if (is.null(decimal)) decimal <- g$decimal
   }
 
-  if (.is_installed("readr"))
-    return(readr::read_delim(
+  # Column types are guessed from every row, and no grouping mark is assumed:
+  # readr's defaults turn a malformed cell past row 1000 into NA and read
+  # "1,5" as 15, which hides both from the strict coercion downstream.
+  df <- if (.is_installed("readr"))
+    readr::read_delim(
       path, delim = delim,
-      locale = readr::locale(decimal_mark = decimal),
-      show_col_types = FALSE, progress = FALSE, ...))
-  if (.is_installed("data.table"))
-    return(data.table::fread(
-      path, sep = delim, dec = decimal, showProgress = FALSE, ...))
-  utils::read.table(
+      locale = readr::locale(decimal_mark = decimal, grouping_mark = ""),
+      guess_max = Inf, show_col_types = FALSE, progress = FALSE, ...)
+  else if (.is_installed("data.table"))
+    data.table::fread(
+      path, sep = delim, dec = decimal, showProgress = FALSE, ...)
+  else utils::read.table(
     path, header = TRUE, sep = delim, dec = decimal,
     stringsAsFactors = FALSE, ...)
+  # Kept for the strict coercion of any column the reader left as text.
+  attr(df, "decimal") <- decimal
+  df
 }
 
 # Read and combine multiple track files into one long data frame, preserving
@@ -432,7 +519,8 @@ guess_columns <- function(data, mapping = list()) {
 #     file's basename stem.
 #   - Every row is tagged with ..source_file = basename(path).
 #   - Bound with vctrs::vec_rbind() (NA-tolerant across differing columns).
-.combine_track_files <- function(paths, mapping, id_from_filename, read_opts) {
+.combine_track_files <- function(paths, mapping, id_from_filename, read_opts,
+                                 time_args = list()) {
   read_opts <- read_opts %||% list()
   dfl <- lapply(paths, function(p) {
     .read_any(p, ext = read_opts$ext, delim = read_opts$delim,
@@ -453,7 +541,21 @@ guess_columns <- function(data, mapping = list()) {
 
   id_col <- if (synth) (mapping$id %||% "..id") else real_id
 
+  # The numeric role columns and text time are coerced file by file, so a
+  # malformed cell is reported against its own file and row rather than as a
+  # type clash on bind. Typed time is left for read_tracks(), which needs to
+  # see whether it was a duration.
+  roles <- guess_columns(dfl[[1L]], mapping)
+  num_cols <- unlist(roles[c("x", "y", "angle", "weight")], use.names = FALSE)
+
   dfl <- Map(function(d, p) {
+    dec <- attr(d, "decimal") %||% "."
+    for (cc in intersect(num_cols, names(d)))
+      d[[cc]] <- .as_numeric_strict(d[[cc]], cc, source = basename(p), decimal = dec)
+    tc <- roles$time
+    if (!is.null(tc) && (is.character(d[[tc]]) || is.factor(d[[tc]])))
+      d[[tc]] <- do.call(.coerce_time, c(
+        list(d[[tc]], column = tc, source = basename(p), decimal = dec), time_args))
     if (synth) d[[id_col]] <- tools::file_path_sans_ext(basename(p))
     d[["..source_file"]] <- basename(p)
     # Internal only: full/relative path, used to distinguish same-named files
@@ -575,16 +677,41 @@ read_tracks_format <- function(x, format, ...) {
 #' @param keep only keep these columns (NULL = keep all)
 #' @param drop drop these columns after mapping
 #' @param id_from_filename if TRUE and id missing, derive id from file stem when reading multiple files
-#' @param validate if TRUE run S4 validity checks
+#' @param validate Deprecated and ignored: `Tracks` invariants are always
+#'   checked. Any value but `TRUE` warns.
 #' @param id_collision how to handle a trajectory id that appears under more
 #'   than one source file during a multi-file import: `"error"` (default) stops
 #'   with a message naming the colliding id(s) and files; `"namespace"` rewrites
 #'   every id to `paste0(file_stem, "::", id)` so ids are unique per file. Has no
 #'   effect on single-file or data.frame input.
-#' @param on_invalid How to handle rows with non-finite x/y coordinates:
-#'   "error" (default) aborts with a radiatR_invalid_rows condition listing the
-#'   affected rows and ids; "drop" removes them and signals a
-#'   radiatR_dropped_rows warning with the same payload.
+#' @param on_invalid How to handle rows whose x/y coordinates are missing or
+#'   non-finite: "error" (default) aborts with a radiatR_invalid_rows condition
+#'   listing the affected rows and ids; "drop" removes them and signals a
+#'   radiatR_dropped_rows warning with the same payload. It covers nothing
+#'   else: a missing time, id or weight is an error either way, and so is a
+#'   malformed value (see "Malformed values").
+#' @section Malformed values:
+#' A cell in an x, y, angle, weight or time column that is present but does not
+#' parse (`"oops"`, `"1,5"`, a stray header or units row) stops the load with a
+#' `radiatR_malformed_values` error, a subclass of `radiatR_invalid_rows`. Its
+#' `columns`, `rows`, `values`, `source` and `dialect` fields name the column,
+#' the data rows (counted from the first row after the header, within its own
+#' file in a multi-file import), the offending strings, the file and the
+#' dialect. Such a value is never dropped or turned into `NA`. Blank cells and
+#' `NA` are missing values; `nan` and `inf` are read as such. Files are read
+#' with no digit-grouping mark, so `1,5` is malformed unless
+#' `read_opts = list(decimal = ",")` says the comma is the decimal mark.
+#'
+#' An error raised inside a dialect does not yet name the file or the source
+#' column, and counts rows after the dialect's own filtering and reshaping.
+#' Coordinates that a dialect converts itself (ANY-maze, EthoVision,
+#' DeepLabCut, SLEAP, Tracktor, TRex) are not yet checked this way.
+#'
+#' A time column given as text must hold either numbers throughout or
+#' timestamps in one layout throughout: `YYYY-MM-DD HH:MM:SS`,
+#' `YYYY-MM-DD HH:MM` or `YYYY-MM-DD` (with `-` or `/`), or ISO 8601
+#' `YYYY-MM-DDTHH:MM:SS` with an optional `Z` for UTC. A bare date beside
+#' date-times is midnight.
 #' @param format Optional loader format name or list spec registered via [register_loader_format()]
 #' @return Tracks
 #' @export
@@ -633,16 +760,23 @@ read_tracks <- function(x,
     ))
   }
 
+  if (!isTRUE(validate))
+    .Deprecated(msg = paste("`validate` is deprecated and has no effect:",
+                            "Tracks invariants are always checked."))
+
   # read
+  dec <- "."
   if (is.data.frame(x)) {
     df <- x
     src <- NULL
   } else if (is.character(x) && length(x) == 1L && file.exists(x)) {
     df <- .read_any(x, ext = read_opts$ext, delim = read_opts$delim,
                     decimal = read_opts$decimal, sheet = read_opts$sheet)
+    dec <- attr(df, "decimal") %||% "."
     src <- basename(x)
   } else if (is.character(x) && length(x) > 1L) {
-    combined <- .combine_track_files(x, mapping, id_from_filename, read_opts)
+    combined <- .combine_track_files(x, mapping, id_from_filename, read_opts,
+                                     list(time_type = time_type, tz = tz, fps = fps))
     df <- combined$df
     # Force the synthesized id column to be picked up by guess_columns() below,
     # so multi-file input never falls into the single-track "(multiple)" path.
@@ -673,6 +807,26 @@ read_tracks <- function(x,
   guessed <- guess_columns(df, mapping)
   id <- guessed$id; time <- guessed$time; angle <- guessed$angle
   xcol <- guessed$x; ycol <- guessed$y; wcol <- guessed$weight
+  roles <- c(id = id, time = time, angle = angle, x = xcol, y = ycol, weight = wcol)
+  absent <- roles[!roles %in% names(df)]
+  if (length(absent))
+    rlang::abort(sprintf(
+      "read_tracks: mapped column(s) not found: %s. Available: %s.",
+      paste0(names(absent), " = '", absent, "'", collapse = ", "),
+      paste(names(df), collapse = ", ")),
+      class = "radiatR_missing_columns", columns = unname(absent))
+  # A guessed id column with no values is no id column (SLEAP writes an empty
+  # `track` for single-animal exports). A column named in `mapping` is taken at
+  # the caller's word, and multi-file imports keep their own id handling.
+  # The next id-like column, if any, is tried in its place.
+  empty_ids <- character(0)
+  while (nrow(df) > 0L && !is.null(id) && is.null(mapping$id) &&
+         !("..source_file" %in% names(df)) &&
+         all(.is_missing_chr(trimws(as.character(df[[id]]))))) {
+    message("Id column '", id, "' is empty; ignoring it.")
+    empty_ids <- c(empty_ids, id)
+    id <- guess_columns(df[setdiff(names(df), empty_ids)], mapping)$id
+  }
 
   # Multi-file id-collision policy. Only runs for multi-file imports (the combine
   # path tags rows with ..source_file); single-file / data.frame input is
@@ -746,6 +900,16 @@ read_tracks <- function(x,
            call. = FALSE)
     }
   }
+  # Malformed cells abort here whatever `on_invalid` says, before any row is
+  # dropped, so the rows they name are rows of the table as read. Only missing
+  # and non-finite coordinates reach the report / drop step below.
+  for (cc in c(if (!is.null(xcol) && !is.null(ycol)) c(xcol, ycol), angle, wcol))
+    df[[cc]] <- .as_numeric_strict(df[[cc]], cc, source = src, dialect = dialect,
+                                   decimal = dec)
+  time_is_duration <- inherits(df[[time]], "difftime")
+  df[[time]] <- .coerce_time(df[[time]], time_type = time_type, tz = tz, fps = fps,
+                             column = time, source = src, dialect = dialect,
+                             decimal = dec)
   # Report / drop rows with non-finite coordinates (position-based load).
   if (!is.null(xcol) && !is.null(ycol)) {
     finite <- is.finite(df[[xcol]]) & is.finite(df[[ycol]])
@@ -762,13 +926,14 @@ read_tracks <- function(x,
 
   # coarse type fixes
   if (!is.numeric(df[[id]])) df[[id]] <- as.character(df[[id]])
-  # time coercion. `time_is_frames` records whether the *stored* time column
+  # `time_is_frames` records whether the *stored* time column
   # is still a raw frame index needing a frame_rate-driven division (done
   # once, on demand, by elapsed_seconds()) rather than already being real
   # seconds/POSIXct -- storing frame_rate for the latter would double-convert.
+  # Read off the coerced column, so numeric strings count as frames too; a
+  # duration (difftime) is seconds already.
   time_is_frames <- time_type == "frames" ||
-    (time_type == "auto" && is.numeric(df[[time]]) && !inherits(df[[time]], "POSIXt") && !is.null(fps))
-  df[[time]] <- .coerce_time(df[[time]], time_type = time_type, tz = tz, fps = fps)
+    (time_type == "auto" && is.numeric(df[[time]]) && !time_is_duration && !is.null(fps))
 
   # angle unit
   ang_unit <- if (angle_unit == "auto" && !is.null(angle)) .guess_angle_unit(df[[angle]]) else angle_unit
@@ -810,9 +975,6 @@ read_tracks <- function(x,
                 origin = origin,
                 radius = radius,
                 meta = meta)
-
-  if (isTRUE(validate)) validObject(ts)
-  ts
 }
 
 #' Read all matching files from a directory and bind into a Tracks

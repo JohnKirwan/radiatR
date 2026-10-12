@@ -62,3 +62,24 @@ test_that("invalid track data gets its own headline and lists rows and ids", {
   expect_match(e$ingest_detail(err), "Affected rows (30): 1, 2, 3", fixed = TRUE)
   expect_match(e$ingest_detail(err), "19, 20, ...\nAffected ids: a", fixed = TRUE)
 })
+
+test_that("a malformed value gets a headline naming the column and an example", {
+  skip_if_not_installed("shiny")
+  app_file <- system.file("app", "app.R", package = "radiatR")
+  if (!nzchar(app_file))
+    app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
+  skip_if(!file.exists(app_file), "app.R not found")
+  e <- new.env()
+  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
+  d <- data.frame(id = "a", time = 1:25, x = "oops", y = 0.2)
+  err <- tryCatch(read_tracks(d), error = function(cnd) cnd)
+  expect_s3_class(err, "radiatR_malformed_values")
+  expect_identical(
+    e$plain_error(err),
+    "Column 'x' has values that are not numeric, such as 'oops'. See Technical details for the rows."
+  )
+  detail <- e$ingest_detail(err)
+  expect_match(detail, "rows: 1, 2, 3", fixed = TRUE)
+  expect_match(detail, "19, 20, ...\n  values: 'oops'", fixed = TRUE)
+  expect_no_match(detail, "Affected", fixed = TRUE)
+})
