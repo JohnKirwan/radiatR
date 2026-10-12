@@ -158,6 +158,77 @@ setClass(
   )
 )
 
+# Row-level validity. Returns a data frame (rule, column, row): one row per rule
+# broken per row of `d`; zero rows means valid. Assumes .tracks_structure_error()
+# returned NULL. Problems in the columns named by `skip` are not reported.
+.tracks_problems <- function(d, cl, skip = character()) {
+  found <- list()
+  flag <- function(rule, column, bad) {
+    rows <- which(bad)
+    if (length(rows) && !column %in% skip)
+      found[[length(found) + 1L]] <<- data.frame(
+        rule = rule, column = column, row = rows, stringsAsFactors = FALSE)
+  }
+  n   <- nrow(d)
+  id  <- d[[cl$id]]
+  if (is.factor(id)) id <- as.character(id)   # an NA *level* is a missing id too
+  tm  <- as.numeric(d[[cl$time]])
+  ang <- d[[cl$angle]]
+
+  flag("id_missing", cl$id, is.na(id))
+  flag("time_nonfinite", cl$time, !is.finite(tm))
+  if (n > 1L) {
+    # A missing id is never "the same trajectory", and a non-finite step is
+    # time_nonfinite's to report; both are masked so each cause is named once.
+    # The later row of an offending pair is the one reported.
+    same <- !is.na(id[-1L]) & !is.na(id[-n]) & id[-1L] == id[-n]
+    dt   <- diff(tm)
+    ok   <- same & is.finite(dt)
+    flag("time_duplicate", cl$time, c(FALSE, ok & dt == 0))
+    flag("time_unsorted",  cl$time, c(FALSE, ok & dt < 0))
+  }
+  flag("angle_nonfinite", cl$angle, !is.finite(ang))
+  flag("angle_range", cl$angle, is.finite(ang) & (ang < 0 | ang >= 2 * pi))
+  for (col in unique(c(cl$x, cl$y, cl$rel_x, cl$rel_y, cl$raw_x, cl$raw_y))) {
+    if (col %in% names(d)) flag("coord_nonfinite", col, !is.finite(d[[col]]))
+  }
+  if (!is.null(cl$weight)) {
+    w <- d[[cl$weight]]
+    flag("weight_invalid", cl$weight, !is.finite(w) | w < 0)
+  }
+  if (!length(found))
+    return(data.frame(rule = character(), column = character(),
+                      row = integer(), stringsAsFactors = FALSE))
+  do.call(rbind, found)
+}
+
+.tracks_rule_text <- c(
+  id_missing      = "missing id",
+  time_nonfinite  = "missing or non-finite time",
+  time_duplicate  = "time repeated within an id",
+  time_unsorted   = "time decreasing within an id",
+  angle_nonfinite = "missing or non-finite angle",
+  angle_range     = "angle outside [0, 2*pi)",
+  coord_nonfinite = "missing or non-finite coordinate",
+  weight_invalid  = "weight missing, non-finite or negative"
+)
+
+# One line per rule broken: the rule in words, its column(s), a count, and the
+# first 10 rows and first 10 distinct ids. `ids` is parallel to `problems`.
+.format_tracks_problems <- function(problems, ids) {
+  first10 <- function(v) paste0(paste(utils::head(v, 10L), collapse = ", "),
+                                if (length(v) > 10L) ", ..." else "")
+  vapply(unique(problems$rule), function(r) {
+    hit  <- problems$rule == r
+    rows <- sort(unique(problems$row[hit]))
+    sprintf("%s (column(s) %s): %d row(s): %s; id(s): %s",
+            .tracks_rule_text[[r]],
+            paste(unique(problems$column[hit]), collapse = ", "),
+            length(rows), first10(rows),
+            first10(unique(as.character(ids[hit]))))
+  }, character(1), USE.NAMES = FALSE)
+}
+
 setValidity("Tracks", function(object) {
   d  <- object@data
   cl <- object@cols
