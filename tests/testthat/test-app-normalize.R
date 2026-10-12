@@ -1,3 +1,6 @@
+# Too slow for CRAN's check time budget; runs locally and on CI.
+skip_on_cran()
+
 # The Coordinates control (normalize_xy) is a load-time choice: it is read once
 # when the user clicks Next and recorded on rv, never re-read live.
 

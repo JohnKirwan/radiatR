@@ -1,3 +1,6 @@
+# Too slow for CRAN's check time budget; runs locally and on CI.
+skip_on_cran()
+
 app_dir <- function() {
   d <- system.file("app", package = "radiatR")
   if (!nzchar(d)) d <- testthat::test_path("..", "..", "inst", "app")

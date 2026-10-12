@@ -1,3 +1,6 @@
+# Too slow for CRAN's check time budget; runs locally and on CI.
+skip_on_cran()
+
 # Shiny-free upload helpers: source directly (installed location first).
 .up <- system.file("app", "upload.R", package = "radiatR")
 if (!nzchar(.up) || !file.exists(.up))

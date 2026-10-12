@@ -1,3 +1,6 @@
+# Too slow for CRAN's check time budget; runs locally and on CI.
+skip_on_cran()
+
 # The Kinematics subtab's image-export wiring: kin_plot_fmt drives the
 # dl_kin_plot filename and the kinematics figure/code reactives still resolve
 # after the sidebar was reorganised into accordion sections (no shinytest2).

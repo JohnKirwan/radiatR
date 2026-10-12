@@ -1,3 +1,6 @@
+# Too slow for CRAN's check time budget; runs locally and on CI.
+skip_on_cran()
+
 .p <- system.file("app", "plot_spec.R", package = "radiatR")
 if (!nzchar(.p) || !file.exists(.p))
   .p <- testthat::test_path("..", "..", "inst", "app", "plot_spec.R")
@@ -603,7 +606,6 @@ test_that("round-trip: headings-example Follow-group attaches the group col (emi
 })
 
 test_that("bootstrap CI arc is seeded from the spec, not the caller's RNG stream", {
-  skip_on_cran()   # three bootstrap figure builds
   rt <- roundtrip_spec("points", "trajectory", NULL, FALSE, FALSE, ci = TRUE)
   set.seed(1); expected <- runif(1)
   set.seed(1); live <- spec_to_plot(rt$spec, rt$ts, rt$hd); got <- runif(1)

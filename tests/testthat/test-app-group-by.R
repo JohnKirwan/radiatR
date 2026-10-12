@@ -1,3 +1,6 @@
+# Too slow for CRAN's check time budget; runs locally and on CI.
+skip_on_cran()
+
 # The dedicated Group-by control drives the Summary & stats grouping and the
 # resolved plot spec independently of the facet selection. The bundled example
 # (cpunctatus) has two categorical grouping columns: `arc` and `type`.

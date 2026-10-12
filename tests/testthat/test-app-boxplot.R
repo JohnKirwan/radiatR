@@ -1,3 +1,6 @@
+# Too slow for CRAN's check time budget; runs locally and on CI.
+skip_on_cran()
+
 test_that("toggling show_boxplot flows into the built spec", {
   skip_if_not_installed("shiny")
   app_dir <- system.file("app", package = "radiatR")
