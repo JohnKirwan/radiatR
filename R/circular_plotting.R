@@ -2211,6 +2211,9 @@ resolve_geom <- function(geom) {
 
 #' Find the intercept of a line with the unit circle
 #'
+#' Vectorised over its arguments: each `(x0, y0)` -> `(x1, y1)` pair gives one
+#' row of the result.
+#'
 #' @param x0,y0 Starting coordinates of the vector.
 #' @param x1,y1 Ending coordinates of the vector.
 #' @return A tibble with the intersection point closest to `(x1, y1)`.
@@ -2221,30 +2224,22 @@ line_circle_intercept <- function(x0, y0, x1, y1) {
   b <- (2 * (x1 - x0) * (x0 - h)) + (2 * (y1 - y0) * (y0 - k))
   c <- (x0 - h)^2 + (y0 - k)^2 - radius^2
   D <- (b^2) - (4 * a * c)
-  if (a <= 0) warning("Vector length is not positive!")
-  if (D <= 0) warning("Discriminant is not positive with x0=", x0, " y0=", y0, " x1=", x1, " y1=", y1)
-  if (c >= 0) warning("Starting point is outside radius!")
+  if (any(a <= 0)) warning("Vector length is not positive!")
+  if (any(D <= 0)) warning("Discriminant is not positive with x0=", x0, " y0=", y0, " x1=", x1, " y1=", y1)
+  if (any(c >= 0)) warning("Starting point is outside radius!")
 
-  t <- c(
-    (-b + sqrt(D)) / (2 * a),
-    (-b - sqrt(D)) / (2 * a)
-  )
+  t1 <- (-b + sqrt(D)) / (2 * a)
+  t2 <- (-b - sqrt(D)) / (2 * a)
+  xa <- t1 * (x1 - x0) + x0; ya <- t1 * (y1 - y0) + y0
+  xb <- t2 * (x1 - x0) + x0; yb <- t2 * (y1 - y0) + y0
 
-  ints <- rbind(
-    c(t[1] * (x1 - x0) + x0, t[1] * (y1 - y0) + y0),
-    c(t[2] * (x1 - x0) + x0, t[2] * (y1 - y0) + y0)
-  )
+  if (!isTRUE(all.equal(sqrt(xa^2 + ya^2), sqrt(xb^2 + yb^2))))
+    warning("Intersect is off unit circle!")
 
-  d <- c(sqrt(ints[1, 1]^2 + ints[1, 2]^2), sqrt(ints[2, 1]^2 + ints[2, 2]^2))
-  if (!isTRUE(all.equal(d[1], d[2]))) warning("Intersect is off unit circle!")
-
-  dist2track <- c(
-    sqrt((ints[1, 1] - x1)^2 + (ints[1, 2] - y1)^2),
-    sqrt((ints[2, 1] - x1)^2 + (ints[2, 2] - y1)^2)
-  )
-  xy <- ints[which.min(dist2track), ]
-
-  tibble::tibble(x_int = xy[1], y_int = xy[2])
+  # keep the root nearer (x1, y1); the first wins a tie, no real root gives NA
+  second <- sqrt((xb - x1)^2 + (yb - y1)^2) < sqrt((xa - x1)^2 + (ya - y1)^2)
+  tibble::tibble(x_int = as.numeric(ifelse(second, xb, xa)),
+                 y_int = as.numeric(ifelse(second, yb, ya)))
 }
 
 #' Intersection helper using track rows
@@ -2321,67 +2316,55 @@ line_circle_intercept_traj <- function(traj, id, range) {
   else
     split(seq_len(nrow(data)), data[[group_col]])
 
-  # Template for path-break rows: only x/y are NA; other columns are filled
-  # per group so that facet variables (e.g. type, arc) stay non-NA and
-  # facet_grid does not generate a spurious NA panel for the break rows.
-  na_row_template <- data[1, , drop = FALSE]
-  na_row_template[] <- NA   # start fully NA; x/y NA is what geom_path needs
+  # Rows in group order with non-finite rows dropped; `run` numbers the maximal
+  # finite runs, and `first` is each group's first finite row. Break rows copy
+  # that row (x/y set to NA) so facet variables (e.g. type, arc) stay non-NA
+  # and facet_grid does not generate a spurious NA panel for them.
+  idx <- unlist(groups, use.names = FALSE)
+  gid <- rep.int(seq_along(groups), lengths(groups))
+  x <- data[[x_col]][idx]; y <- data[[y_col]][idx]
+  finite <- is.finite(x) & is.finite(y)
+  if (!any(finite)) return(data[0, , drop = FALSE])
+  gap <- cumsum(!finite)[finite]         # increments at each non-finite row
+  idx <- idx[finite]; gid <- gid[finite]; x <- x[finite]; y <- y[finite]
+  n <- length(idx)
+  new_run <- c(TRUE, gid[-1L] != gid[-n] | gap[-1L] != gap[-n])
+  run   <- cumsum(new_run)
+  first <- idx[match(gid, gid)]
+  inside <- (x^2 + y^2) <= rim2
 
-  clip_run <- function(g, na_row) {
-    gx <- g[[x_col]]; gy <- g[[y_col]]
-    inside <- (gx^2 + gy^2) <= rim2
-    if (all(inside)) return(g)
-    if (!any(inside)) return(NULL)
-    n <- nrow(g)
-    out <- vector("list", 0L)
-    push <- function(df) out[[length(out) + 1L]] <<- df
-    icept <- function(in_i, out_i) {
-      r <- g[in_i, , drop = FALSE]
-      if (sqrt(gx[in_i]^2 + gy[in_i]^2) >= 1 - 1e-9) {
-        # inside endpoint already on the rim -> reuse it (no intercept needed)
-        r[[x_col]] <- gx[in_i]; r[[y_col]] <- gy[in_i]
-      } else {
-        ic <- line_circle_intercept(gx[in_i], gy[in_i], gx[out_i], gy[out_i])
-        r[[x_col]] <- ic$x_int; r[[y_col]] <- ic$y_int
-      }
-      r
-    }
-    if (inside[1]) push(g[1, , drop = FALSE])
-    if (n >= 2L) for (i in 2:n) {
-      if (inside[i - 1L] && inside[i]) {
-        push(g[i, , drop = FALSE])
-      } else if (inside[i - 1L] && !inside[i]) {
-        push(icept(i - 1L, i)); push(na_row)
-      } else if (!inside[i - 1L] && inside[i]) {
-        push(icept(i, i - 1L)); push(g[i, , drop = FALSE])
-      }
-    }
-    if (length(out)) do.call(rbind, out) else NULL
+  # A row that differs from its predecessor (same run) in `inside` is a
+  # crossing: the segment is cut at the boundary intercept, computed from the
+  # inside endpoint (reused as-is when it is already on the rim).
+  prev  <- c(1L, seq_len(n - 1L))
+  cross <- !new_run & inside != inside[prev]
+  w  <- which(cross)
+  wi <- ifelse(inside[w], w, w - 1L)     # inside endpoint
+  wo <- ifelse(inside[w], w - 1L, w)     # outside endpoint
+  cx <- x[wi]; cy <- y[wi]
+  cut <- sqrt(cx^2 + cy^2) < 1 - 1e-9
+  if (any(cut)) {
+    ic <- line_circle_intercept(cx[cut], cy[cut], x[wo][cut], y[wo][cut])
+    cx[cut] <- ic$x_int; cy[cut] <- ic$y_int
   }
+  int_x <- int_y <- rep(NA_real_, n)
+  int_x[w] <- cx; int_y[w] <- cy
+  int_src <- idx; int_src[w] <- idx[wi]
 
-  pieces <- vector("list", 0L)
-  for (rows in groups) {
-    g <- data[rows, , drop = FALSE]
-    finite <- is.finite(g[[x_col]]) & is.finite(g[[y_col]])
-    if (!any(finite)) next
-    runlab <- cumsum(!finite)            # increments at each non-finite row
-    g_fin  <- g[finite, , drop = FALSE]
-    lab    <- runlab[finite]
-    # Build a group-specific break row: keep non-coordinate columns from the
-    # group's first row so facet variables stay non-NA for geom_path breaks.
-    na_row <- na_row_template
-    na_row[, setdiff(names(na_row), c(x_col, y_col))] <-
-      g_fin[1, setdiff(names(g_fin), c(x_col, y_col)), drop = FALSE]
-    runs   <- lapply(split(seq_len(nrow(g_fin)), lab),
-                     function(ix) clip_run(g_fin[ix, , drop = FALSE], na_row))
-    runs   <- Filter(Negate(is.null), runs)
-    if (!length(runs)) next
-    joined <- runs[[1L]]
-    for (k in seq_along(runs)[-1L]) joined <- rbind(joined, na_row, runs[[k]])
-    pieces[[length(pieces) + 1L]] <- joined
-  }
-  if (!length(pieces)) return(data[0, , drop = FALSE])
-  do.call(rbind, pieces)
+  # Each row emits up to three output rows, in this order: a break ahead of a
+  # run that follows an earlier drawn run of its group; the intercept at a
+  # crossing; then the row itself if inside, or a break after an exit.
+  drawn <- which(inside | cross)
+  pre <- logical(n)
+  pre[drawn[!duplicated(run[drawn]) & duplicated(gid[drawn])]] <- TRUE
+  keep <- rbind(pre, cross, inside | cross)
+  if (!any(keep)) return(data[0, , drop = FALSE])
+  src <- rbind(first, int_src, ifelse(inside, idx, first))
+  out <- data[src[keep], , drop = FALSE]
+  out[[x_col]] <- rbind(NA_real_, int_x, ifelse(inside, x, NA_real_))[keep]
+  out[[y_col]] <- rbind(NA_real_, int_y, ifelse(inside, y, NA_real_))[keep]
+  if (!inherits(out, "tbl_df")) rownames(out) <- NULL
+  out
 }
 
 # Theme-derived radial styling resolved once, shared by the chrome helpers below

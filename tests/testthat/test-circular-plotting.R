@@ -444,6 +444,10 @@ test_that("line-circle intercept utilities behave as expected", {
   ints <- line_circle_intercept(0, 0, 2, 0)
   expect_equal(unname(unlist(ints)), c(1, 0), tolerance = 1e-8)
 
+  # vectorised: one row per (start, end) pair, matching the scalar calls
+  many <- line_circle_intercept(c(0, 0.2), c(0, 0.1), c(2, -3), c(0, 4))
+  expect_equal(many, rbind(ints, line_circle_intercept(0.2, 0.1, -3, 4)))
+
   df <- data.frame(x = c(0, 2), y = c(0, 0))
   ints_df <- line_circle_intercept_df(df, 1, 2)
   expect_equal(ints_df$x_int, 1, tolerance = 1e-8)
@@ -2258,6 +2262,25 @@ test_that(".clip_path_to_circle splits a group on a pre-existing NA row", {
   fin <- out[!is.na(out$x), ]
   expect_equal(nrow(fin), 4L)
   expect_true(all(sqrt(fin$x^2 + fin$y^2) <= 1 + 1e-8))
+})
+
+test_that(".clip_path_to_circle cuts exits and re-entries at the rim, in row order", {
+  d <- data.frame(g = "A", f = "p", x = c(0, 2, 0.5, 3, NA, 0.2), y = 0)
+  out <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "path")
+  # exit -> intercept + break; re-entry -> intercept + row; a run that ends
+  # outside is followed by its own break and the break between runs
+  expect_equal(out$x, c(0, 1, NA, 1, 0.5, 1, NA, NA, 0.2))
+  expect_equal(out$y, c(0, 0, NA, 0, 0, 0, NA, NA, 0))
+  expect_false(anyNA(out$g))
+  expect_false(anyNA(out$f))
+})
+
+test_that(".clip_path_to_circle orders output by group and keeps tibbles", {
+  d <- tibble::tibble(g = c("B", "A", "B", "A"), x = c(0.1, 0.2, 2, 0.3), y = 0)
+  out <- radiatR:::.clip_path_to_circle(d, "x", "y", "g", geom = "path")
+  expect_s3_class(out, "tbl_df")
+  expect_equal(out$g, c("A", "A", "B", "B", "B"))
+  expect_equal(out$x, c(0.2, 0.3, 0.1, 1, NA))
 })
 
 test_that(".clip_path_to_circle does not warn when an inside point is exactly on the rim", {
