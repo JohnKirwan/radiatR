@@ -2,6 +2,25 @@
 
 ## Breaking changes
 
+* `Tracks` objects now enforce the invariants the rest of the package assumes
+  (see "Invariants" in `?tracks`): no missing ids; finite, strictly increasing
+  time within each id; finite angles and coordinates; finite, non-negative
+  weights. Previously a missing id, a non-finite or repeated time, an invalid
+  weight, a non-finite relative coordinate (`rel_x`/`rel_y`), or any
+  non-finite coordinate written after construction was accepted, and a missing
+  time crashed the validator. `tracks()` now reports every such violation at
+  once as a `radiatR_invalid_tracks` error whose `problems` field lists the
+  rule, column, input row and id. `read_tracks()` passes that error on, after
+  its own checks for non-finite x/y (`radiatR_invalid_rows`) and for duplicate
+  keys across files. Consequences: relative-coordinate columns must be finite
+  when the object is built, so give them finite placeholders (or name the
+  roles without storing the columns) if `set_reference()` is to fill them;
+  `radiate()` on a data frame fails when `group_col` does not identify single
+  trajectories (it used to draw one path per group that hopped between
+  trials), so pass the trajectory id as `group_col`; and a `Tracks` saved by an
+  earlier version that breaks a rule fails at its next `validObject()` (any
+  transform), not when it is loaded.
+
 * `load_tracks()` and `load_tracks2()` have been removed. Despite the names
   they loaded no tracks; they joined manifest columns onto the file table used
   by the landmark pipeline. Pass the manifest to `get_all_object_pos()`
@@ -46,6 +65,15 @@
   arguments.
 
 ## Bug fixes
+
+* `read_tracks(dialect = "sleap")` now reads an export whose `track` column is
+  empty (SLEAP's output for untracked, single-animal data) as one trajectory
+  with id `"1"`. Previously such a file failed to load, or with a single row
+  loaded with a missing id.
+
+* An angle within floating-point error below zero (for example `-1e-17`, or a
+  position whose `y` is float noise below 0) no longer makes `tracks()` fail.
+  It wrapped to exactly `2*pi`, outside `[0, 2*pi)`; it now wraps to 0.
 
 * The script downloaded from the Shiny app now derives headings in the frame
   the app used. In the app's default relative frame the script omitted

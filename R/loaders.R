@@ -723,10 +723,9 @@ read_tracks <- function(x,
     df[["..time"]] <- seq_len(nrow(df))
     time <- "..time"
   }
-  # Duplicate (id, time) safety net, multi-file imports only. Uses raw
-  # pre-coercion time. Broader Tracks validity hardening (single-file dup keys,
-  # NA angles, ...) is out of scope here (see the "Strengthen Tracks validity"
-  # TODO).
+  # Duplicate (id, time) check for multi-file imports, kept for its file-level
+  # message (it names the files that collide). Uses raw pre-coercion time.
+  # tracks() rejects any remaining duplicate key as radiatR_invalid_tracks.
   if ("..source_file" %in% names(df)) {
     key <- paste(as.character(df[[id]]), as.character(df[[time]]), sep = "\r")
     dup <- duplicated(key) | duplicated(key, fromLast = TRUE)
@@ -1444,6 +1443,8 @@ register_loader_dialect("sleap", function(x, bodypart = NULL, score_min = NULL,
          "; available: ", paste(bps_all, collapse = ", "))
 
   id   <- id_col %||% .guess_col(nms, c("track","id","individual","animal","subject")) %||% "1"
+  # SLEAP writes an empty track column for untracked (single-animal) exports.
+  if (id != "1" && id %in% names(df) && all(is.na(df[[id]]))) id <- "1"
   time <- time_col %||% .guess_col(nms, c("frame_idx","frame","frames","time","t")) %||% "..row"
   if (time == "..row") { df[["..row"]] <- seq_len(nrow(df)); time <- "..row" }
 

@@ -37,3 +37,28 @@ test_that("a successful ingest's captured warnings are surfaced, not dropped", {
     expect_no_match(html, "alert-danger")
   })
 })
+
+test_that("invalid track data gets its own headline and lists rows and ids", {
+  app_file <- system.file("app", "app.R", package = "radiatR")
+  if (!nzchar(app_file))
+    app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
+  skip_if(!file.exists(app_file), "app.R not found")
+  e <- new.env()
+  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
+  d <- data.frame(id = c("a", "a", "b"), time = c(1, 1, 1), x = 0.1, y = 0.2)
+  err <- tryCatch(tracks(d, id = "id", time = "time", x = "x", y = "y"),
+                  error = function(cnd) cnd)
+  expect_s3_class(err, "radiatR_invalid_tracks")
+  detail <- e$ingest_detail(err)
+  expect_match(detail, "time repeated within an id", fixed = TRUE)
+  expect_match(detail, "Affected rows (1): 2", fixed = TRUE)
+  expect_match(detail, "Affected ids: a", fixed = TRUE)
+  expect_match(e$plain_error(err), "share the same ID and time", fixed = TRUE)
+
+  d <- data.frame(id = "a", time = 1:30, x = NA_real_, y = 0.2)
+  err <- tryCatch(tracks(d, id = "id", time = "time", x = "x", y = "y"),
+                  error = function(cnd) cnd)
+  expect_match(e$plain_error(err), "not valid track data", fixed = TRUE)
+  expect_match(e$ingest_detail(err), "Affected rows (30): 1, 2, 3", fixed = TRUE)
+  expect_match(e$ingest_detail(err), "19, 20, ...\nAffected ids: a", fixed = TRUE)
+})

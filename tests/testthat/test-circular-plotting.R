@@ -2109,7 +2109,7 @@ test_that("radiate track_colour='speed' colourbar shows the distance unit when c
     t     = rep(1:4, 2L),
     x     = c(0.1, 0.3, 0.5, 0.7,  -0.1, -0.2, -0.4, -0.6),
     y     = c(0.0, 0.1, 0.2, 0.1,   0.2,  0.3,  0.4,  0.5),
-    rel_x = NA_real_, rel_y = NA_real_, angle = 0
+    rel_x = 0, rel_y = 0, angle = 0   # placeholders; set_reference() fills them
   )
   ts <- tracks(d, id = "id", time = "t", angle = "angle",
                x = "x", y = "y", rel_x = "rel_x", rel_y = "rel_y",

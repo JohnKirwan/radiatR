@@ -376,6 +376,19 @@ test_that("sleap dialect reads official SLEAP CSV fixture and handles NA scores"
                tolerance = 1e-6)
 })
 
+test_that("sleap dialect reads an empty track column as one trajectory", {
+  sleap <- data.frame(track = NA, frame_idx = 0:2,
+                      A.x = c(1, 2, 3), A.y = c(1, 1, 2), check.names = FALSE)
+  path <- withr::local_tempfile(fileext = ".csv")
+  utils::write.csv(sleap, path, row.names = FALSE, na = "")
+  ts <- read_tracks(path, dialect = "sleap")
+  expect_identical(as.character(ids(ts)), "1")
+  expect_identical(nrow(as.data.frame(ts)), 3L)
+  # a misspelt id column is still an error, not a silent single trajectory
+  expect_error(read_tracks(path, dialect = "sleap",
+                           dialect_args = list(id_col = "trak")))
+})
+
 test_that(".guess_col is case-insensitive and respects candidate priority", {
   expect_equal(radiatR:::.guess_col(c("ID", "time"), c("id", "subject")), "ID")
   expect_equal(radiatR:::.guess_col(c("Frame"), c("time", "frame")), "Frame")

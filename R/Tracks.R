@@ -6,7 +6,7 @@
 #' @keywords internal
 
 ## ---- helpers -----------------------------------------------------------------
-.wrap_to_2pi <- function(x) x %% (2 * pi)
+.wrap_to_2pi <- function(x) wrap_to_2pi(x)
 .as_radians <- function(x, unit) as_radians(x, unit)
 
 # Fallback approximation for kappa from resultant length Rbar (Mardia & Jupp)
@@ -146,6 +146,30 @@
 #' @slot cols list mapping required column names (id/time/angle/optional x,y,weight)
 #' @slot angle_unit character describing the original angle unit supplied
 #' @slot meta list of additional metadata attached to the set
+#' @section Invariants:
+#' Every \code{Tracks} satisfies the following. They are checked when the object
+#' is built and whenever \code{methods::validObject()} runs, which the package's
+#' own transforms do (a direct slot write is not checked until then):
+#' \itemize{
+#'   \item ids are never missing, and the rows of each id are contiguous;
+#'   \item time is finite and strictly increasing within each id, so no time is
+#'     repeated within a trajectory;
+#'   \item angles are finite and lie in \code{[0, 2*pi)};
+#'   \item coordinates are finite: \code{x}/\code{y}, and the relative and raw
+#'     pairs where those columns are stored;
+#'   \item weights, when a weight column is named, are finite and \code{>= 0}
+#'     (a zero weight excludes an observation).
+#' }
+#' A \code{Tracks} therefore never holds a missing detection: remove those
+#' before construction (see \code{on_invalid} in \code{\link{read_tracks}}).
+#'
+#' \code{tracks()} reports violations as an error of class
+#' \code{radiatR_invalid_tracks}. Its \code{problems} field is a data frame with
+#' one row per rule, column and row: \code{rule}, \code{column}, \code{row} (the
+#' row of the data frame supplied) and \code{id}; \code{rows} and \code{ids}
+#' give the union. When called through \code{\link{read_tracks}}, rows are those
+#' of the combined table passed to \code{tracks()} (after any rows removed by
+#' \code{on_invalid = "drop"}), not line numbers in a file.
 #' @rdname Tracks-class
 #' @exportClass Tracks
 setClass(
@@ -158,9 +182,80 @@ setClass(
   )
 )
 
-setValidity("Tracks", function(object) {
-  d  <- object@data
-  cl <- object@cols
+# Row-level validity. Returns a data frame (rule, column, row): one row per rule
+# broken per row of `d`; zero rows means valid. Assumes .tracks_structure_error()
+# returned NULL. Problems in the columns named by `skip` are not reported.
+.tracks_problems <- function(d, cl, skip = character()) {
+  found <- list()
+  flag <- function(rule, column, bad) {
+    rows <- which(bad)
+    if (length(rows) && !column %in% skip)
+      found[[length(found) + 1L]] <<- data.frame(
+        rule = rule, column = column, row = rows, stringsAsFactors = FALSE)
+  }
+  n   <- nrow(d)
+  id  <- d[[cl$id]]
+  if (is.factor(id)) id <- as.character(id)   # an NA *level* is a missing id too
+  tm  <- as.numeric(d[[cl$time]])
+  ang <- d[[cl$angle]]
+
+  flag("id_missing", cl$id, is.na(id))
+  flag("time_nonfinite", cl$time, !is.finite(tm))
+  if (n > 1L) {
+    # A missing id is never "the same trajectory", and a non-finite step is
+    # time_nonfinite's to report; both are masked so each cause is named once.
+    # The later row of an offending pair is the one reported.
+    same <- !is.na(id[-1L]) & !is.na(id[-n]) & id[-1L] == id[-n]
+    dt   <- diff(tm)
+    ok   <- same & is.finite(dt)
+    flag("time_duplicate", cl$time, c(FALSE, ok & dt == 0))
+    flag("time_unsorted",  cl$time, c(FALSE, ok & dt < 0))
+  }
+  flag("angle_nonfinite", cl$angle, !is.finite(ang))
+  flag("angle_range", cl$angle, is.finite(ang) & (ang < 0 | ang >= 2 * pi))
+  for (col in unique(c(cl$x, cl$y, cl$rel_x, cl$rel_y, cl$raw_x, cl$raw_y))) {
+    if (col %in% names(d)) flag("coord_nonfinite", col, !is.finite(d[[col]]))
+  }
+  if (!is.null(cl$weight)) {
+    w <- d[[cl$weight]]
+    flag("weight_invalid", cl$weight, !is.finite(w) | w < 0)
+  }
+  if (!length(found))
+    return(data.frame(rule = character(), column = character(),
+                      row = integer(), stringsAsFactors = FALSE))
+  do.call(rbind, found)
+}
+
+.tracks_rule_text <- c(
+  id_missing      = "missing id",
+  time_nonfinite  = "missing or non-finite time",
+  time_duplicate  = "time repeated within an id",
+  time_unsorted   = "time decreasing within an id",
+  angle_nonfinite = "missing or non-finite angle",
+  angle_range     = "angle outside [0, 2*pi)",
+  coord_nonfinite = "missing or non-finite coordinate",
+  weight_invalid  = "weight missing, non-finite or negative"
+)
+
+# One line per rule broken: the rule in words, its column(s), a count, and the
+# first 10 rows and first 10 distinct ids. `ids` is parallel to `problems`.
+.format_tracks_problems <- function(problems, ids) {
+  first10 <- function(v) paste0(paste(utils::head(v, 10L), collapse = ", "),
+                                if (length(v) > 10L) ", ..." else "")
+  vapply(unique(problems$rule), function(r) {
+    hit  <- problems$rule == r
+    rows <- sort(unique(problems$row[hit]))
+    sprintf("%s (column(s) %s): %d row(s): %s; id(s): %s",
+            .tracks_rule_text[[r]],
+            paste(unique(problems$column[hit]), collapse = ", "),
+            length(rows), first10(rows),
+            first10(unique(as.character(ids[hit]))))
+  }, character(1), USE.NAMES = FALSE)
+}
+
+# Structural validity: roles named, columns present, types right. Returns NULL
+# when sound, otherwise one message. Row-level rules are .tracks_problems()'s.
+.tracks_structure_error <- function(d, cl) {
   req <- c("id","time","angle")
   if (!all(req %in% names(cl))) return("cols must name 'id','time','angle'")
 
@@ -168,8 +263,6 @@ setValidity("Tracks", function(object) {
   if (length(miss)) return(paste("missing required column(s):", paste(miss, collapse=", ")))
 
   if (!is.numeric(d[[cl$angle]])) return("angle column must be numeric (radians)")
-  bad <- which(is.na(d[[cl$angle]]) | d[[cl$angle]] < 0 | d[[cl$angle]] >= 2*pi)
-  if (length(bad)) return("angle values must be in [0, 2*pi) or NA only")
 
   if (!inherits(d[[cl$time]], "POSIXct") && !is.numeric(d[[cl$time]]))
     return("time must be POSIXct or numeric")
@@ -194,24 +287,33 @@ setValidity("Tracks", function(object) {
   if (!is.null(cl$rho) && cl$rho %in% names(d) && !is.numeric(d[[cl$rho]])) {
     return("rho column must be numeric")
   }
-
-  # enforce that rows are grouped by id (each id forms one contiguous block)
-  # and sorted by time within each block. A global ordering across distinct id
-  # labels is not required -- and is not locale-independent -- only that each
-  # trajectory's rows are contiguous and internally time-ordered.
-  id_vals <- d[[cl$id]]
-  if (nrow(d) > 1L) {
-    run_id   <- cumsum(c(TRUE, id_vals[-1] != id_vals[-length(id_vals)]))
-    n_blocks <- length(unique(run_id))
-    n_ids    <- length(unique(id_vals))
-    if (n_blocks != n_ids) return("rows must be grouped by id (each id contiguous)")
-
-    time_vals <- d[[cl$time]]
-    not_sorted <- tapply(time_vals, run_id, function(t) any(diff(as.numeric(t)) < 0))
-    if (any(unlist(not_sorted))) return("rows must be sorted by time within each id")
+  if (!is.null(cl$weight)) {
+    if (!cl$weight %in% names(d)) return("weight column not present in data")
+    if (!is.numeric(d[[cl$weight]])) return("weight must be numeric")
   }
+  NULL
+}
 
-  TRUE
+setValidity("Tracks", function(object) {
+  d  <- object@data
+  cl <- object@cols
+  structure_error <- .tracks_structure_error(d, cl)
+  if (!is.null(structure_error)) return(structure_error)
+
+  msgs <- character()
+  # Rows must be grouped by id (each id one contiguous block). A global ordering
+  # across distinct id labels is not required -- and is not locale-independent.
+  # match() gives NA its own code, so missing ids are compared as a value here.
+  code <- match(d[[cl$id]], unique(d[[cl$id]]))
+  n    <- nrow(d)
+  if (n > 1L && sum(code[-1L] != code[-n]) + 1L != max(code))
+    msgs <- "rows must be grouped by id (each id contiguous)"
+
+  problems <- .tracks_problems(d, cl)
+  if (nrow(problems))
+    msgs <- c(msgs, .format_tracks_problems(problems, d[[cl$id]][problems$row]))
+
+  if (length(msgs)) msgs else TRUE
 })
 
 # Per-trajectory affine map into the unit circle: centre each trajectory on its
@@ -265,7 +367,8 @@ setValidity("Tracks", function(object) {
 #'   coordinates (centred on the origin, unit-circle scaled).  Both must be supplied
 #'   together or not at all.
 #' @param angle_unit Units of provided angle ("radians" or "degrees"); stored internally as radians
-#' @param weight Optional weight column name
+#' @param weight Optional weight column name; weights must be finite and
+#'   \code{>= 0}
 #' @param normalize_xy If FALSE (default), (x,y) are kept as supplied. If TRUE,
 #'   each trajectory is independently centred on its own bounding-box midpoint
 #'   and scaled so its furthest point sits at radius 1. This is a
@@ -425,7 +528,8 @@ tracks <- function(df,
   }
 
   # Sort by (id,time)
-  d <- d[order(d[[id]], d[[time]]), , drop = FALSE]
+  ord <- order(d[[id]], d[[time]])
+  d <- d[ord, , drop = FALSE]
 
   # Finalize angle column
   angle_col <- if (have_angle) angle else "angle"
@@ -468,19 +572,33 @@ tracks <- function(df,
   }
   meta$transform_history <- transform_history
 
-  new("Tracks",
-      data = d,
-      cols = list(id = id, time = time, angle = angle_col,
-                  x = if (!is.null(x)) x else NULL,
-                  y = if (!is.null(y)) y else NULL,
-                  rel_x = if (have_rel) rel_x else NULL,
-                  rel_y = if (have_rel) rel_y else NULL,
-                  raw_x = raw_cols$x,
-                  raw_y = raw_cols$y,
-                  rho = rho_col,
-                  weight = weight),
-      angle_unit = angle_unit,
-      meta = meta)
+  cl <- list(id = id, time = time, angle = angle_col,
+             x = if (!is.null(x)) x else NULL,
+             y = if (!is.null(y)) y else NULL,
+             rel_x = if (have_rel) rel_x else NULL,
+             rel_y = if (have_rel) rel_y else NULL,
+             raw_x = raw_cols$x,
+             raw_y = raw_cols$y,
+             rho = rho_col,
+             weight = weight)
+
+  # Report broken invariants as one classed condition, against the rows of the
+  # data frame supplied (`ord` undoes the sort). Columns derived or copied above
+  # are skipped so a cause is not reported again under a derived column name;
+  # new() below still validates every column. Structural faults are left to
+  # new(), which names them.
+  if (is.null(.tracks_structure_error(d, cl))) {
+    derived <- c(if (!have_angle) angle_col, if (!have_xy) c(x, y),
+                 raw_cols$x, raw_cols$y)
+    problems <- .tracks_problems(d, cl, skip = derived)
+    if (nrow(problems)) {
+      problems$id  <- as.character(d[[id]][problems$row])
+      problems$row <- ord[problems$row]
+      radiatR_abort_invalid_tracks(problems)
+    }
+  }
+
+  new("Tracks", data = d, cols = cl, angle_unit = angle_unit, meta = meta)
 }
 
 ## ---- accessors & show --------------------------------------------------------

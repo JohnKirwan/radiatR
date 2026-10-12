@@ -405,6 +405,16 @@ group_compare_table <- function(hd, by_col, axial = FALSE) {
 }
 
 plain_error <- function(e) {
+  if (inherits(e, "radiatR_invalid_tracks") && "time_duplicate" %in% e$problems$rule)
+    return(paste(
+      "Some rows share the same ID and time.",
+      "Check that the ID column identifies single tracks; see Technical details."
+    ))
+  if (inherits(e, c("radiatR_invalid_rows", "radiatR_invalid_tracks")))
+    return(paste(
+      "Some rows of this file are not valid track data.",
+      "See Technical details for the rows and ids affected."
+    ))
   m <- conditionMessage(e)
   if (grepl("id|time|mapping", m, ignore.case = TRUE))
     return(paste(
@@ -426,13 +436,16 @@ plain_error <- function(e) {
 
 # The full technical detail behind a friendly ingest error: the original
 # exception message, plus row numbers / ids when the loader raised a
-# structured radiatR_invalid_rows condition.
+# structured radiatR_invalid_rows or radiatR_invalid_tracks condition (both
+# carry `rows` and `ids`).
 ingest_detail <- function(e) {
   detail <- conditionMessage(e)
-  if (inherits(e, "radiatR_invalid_rows")) {
+  if (inherits(e, c("radiatR_invalid_rows", "radiatR_invalid_tracks"))) {
     detail <- paste0(
       detail,
-      "\n\nAffected rows: ", paste(e$rows, collapse = ", "),
+      "\n\nAffected rows (", length(e$rows), "): ",
+      paste(utils::head(e$rows, 20L), collapse = ", "),
+      if (length(e$rows) > 20L) ", ...",
       "\nAffected ids: ", paste(utils::head(unique(e$ids), 20L), collapse = ", ")
     )
   }
