@@ -185,3 +185,80 @@ test_that("valid, zero-row and shipped objects pass", {
   expect_true(methods::validObject(mk(valid_df()[0, ])))
   expect_true(methods::validObject(cpunctatus))
 })
+
+# ---- tracks() constructor ------------------------------------------------------
+
+invalid <- function(expr) tryCatch(expr, radiatR_invalid_tracks = function(e) e)
+
+test_that("tracks() reports problems against the rows it was given", {
+  d <- valid_df()[c(6, 1, 5, 2, 4, 3), ]   # unsorted input
+  d$x[1] <- NA                             # input row 1 (id b)
+  d$time[2] <- NA                          # input row 2 (id a)
+  e <- invalid(mk(d))
+  expect_s3_class(e, "radiatR_invalid_tracks")
+  expect_identical(names(e$problems), c("rule", "column", "row", "id"))
+  expect_identical(keys(e$problems),
+                   c("coord_nonfinite/x/1", "time_nonfinite/time/2"))
+  expect_identical(e$problems$id[e$problems$rule == "coord_nonfinite"], "b")
+  expect_identical(e$rows, 1:2)
+  expect_identical(sort(e$ids), c("a", "b"))
+  expect_match(conditionMessage(e), "Invalid track data:")
+})
+
+test_that("tracks() raises each rule as the classed condition", {
+  rule_of <- function(col, rows, value, ...) {
+    d <- valid_df()
+    d[[col]][rows] <- value
+    e <- invalid(mk(d, ...))
+    expect_s3_class(e, "radiatR_invalid_tracks")
+    keys(e$problems)
+  }
+  expect_identical(rule_of("id", 2, NA), "id_missing/id/2")
+  expect_identical(rule_of("time", 2, Inf), "time_nonfinite/time/2")
+  expect_identical(rule_of("time", 3, 2), "time_duplicate/time/3")
+  expect_identical(rule_of("w", 5, -2, weight = "w"), "weight_invalid/w/5")
+})
+
+test_that("a missing coordinate is reported once, under the supplied column", {
+  d <- valid_df(); d$x[5] <- NA
+  expect_identical(keys(invalid(mk(d))$problems), "coord_nonfinite/x/5")
+  expect_identical(keys(invalid(mk(d, normalize_xy = TRUE))$problems),
+                   "coord_nonfinite/x/5")
+  expect_identical(keys(invalid(mk(d, origin = c(0, 0), radius = 2))$problems),
+                   "coord_nonfinite/x/5")
+})
+
+test_that("a missing angle is reported once when x/y are derived from it", {
+  d <- valid_df()[c("id", "time")]
+  d$ang <- c(0.1, NA, 0.3, 0.4, 0.5, 0.6)
+  e <- invalid(tracks(d, id = "id", time = "time", angle = "ang",
+                      angle_unit = "radians"))
+  expect_identical(keys(e$problems), "angle_nonfinite/ang/2")
+})
+
+test_that("a non-numeric time column keeps its structural message", {
+  d <- valid_df(); d$time <- as.character(d$time)
+  err <- tryCatch(mk(d), error = function(e) e)
+  expect_false(inherits(err, "radiatR_invalid_tracks"))
+  expect_match(conditionMessage(err), "time must be POSIXct or numeric")
+})
+
+test_that("read_tracks() surfaces a bad time value as the classed condition", {
+  d <- valid_df(); d$time[2] <- NA
+  path <- withr::local_tempfile(fileext = ".csv")
+  utils::write.csv(d, path, row.names = FALSE)
+  e <- invalid(suppressMessages(
+    read_tracks(path, mapping = list(id = "id", time = "time", x = "x", y = "y"))))
+  expect_s3_class(e, "radiatR_invalid_tracks")
+  expect_identical(unique(e$problems$rule), "time_nonfinite")
+})
+
+test_that("a partly empty SLEAP track column is an id_missing error", {
+  sleap <- data.frame(track = c("track_0", NA, "track_0"), frame_idx = 0:2,
+                      A.x = c(1, 2, 3), A.y = c(1, 1, 2), check.names = FALSE)
+  path <- withr::local_tempfile(fileext = ".csv")
+  utils::write.csv(sleap, path, row.names = FALSE, na = "")
+  e <- invalid(read_tracks(path, dialect = "sleap"))
+  expect_s3_class(e, "radiatR_invalid_tracks")
+  expect_identical(keys(e$problems), "id_missing/id/2")
+})

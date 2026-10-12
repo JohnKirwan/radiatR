@@ -503,7 +503,8 @@ tracks <- function(df,
   }
 
   # Sort by (id,time)
-  d <- d[order(d[[id]], d[[time]]), , drop = FALSE]
+  ord <- order(d[[id]], d[[time]])
+  d <- d[ord, , drop = FALSE]
 
   # Finalize angle column
   angle_col <- if (have_angle) angle else "angle"
@@ -546,19 +547,33 @@ tracks <- function(df,
   }
   meta$transform_history <- transform_history
 
-  new("Tracks",
-      data = d,
-      cols = list(id = id, time = time, angle = angle_col,
-                  x = if (!is.null(x)) x else NULL,
-                  y = if (!is.null(y)) y else NULL,
-                  rel_x = if (have_rel) rel_x else NULL,
-                  rel_y = if (have_rel) rel_y else NULL,
-                  raw_x = raw_cols$x,
-                  raw_y = raw_cols$y,
-                  rho = rho_col,
-                  weight = weight),
-      angle_unit = angle_unit,
-      meta = meta)
+  cl <- list(id = id, time = time, angle = angle_col,
+             x = if (!is.null(x)) x else NULL,
+             y = if (!is.null(y)) y else NULL,
+             rel_x = if (have_rel) rel_x else NULL,
+             rel_y = if (have_rel) rel_y else NULL,
+             raw_x = raw_cols$x,
+             raw_y = raw_cols$y,
+             rho = rho_col,
+             weight = weight)
+
+  # Report broken invariants as one classed condition, against the rows of the
+  # data frame supplied (`ord` undoes the sort). Columns derived or copied above
+  # are skipped so a cause is not reported again under a derived column name;
+  # new() below still validates every column. Structural faults are left to
+  # new(), which names them.
+  if (is.null(.tracks_structure_error(d, cl))) {
+    derived <- c(if (!have_angle) angle_col, if (!have_xy) c(x, y),
+                 raw_cols$x, raw_cols$y)
+    problems <- .tracks_problems(d, cl, skip = derived)
+    if (nrow(problems)) {
+      problems$id  <- as.character(d[[id]][problems$row])
+      problems$row <- ord[problems$row]
+      radiatR_abort_invalid_tracks(problems)
+    }
+  }
+
+  new("Tracks", data = d, cols = cl, angle_unit = angle_unit, meta = meta)
 }
 
 ## ---- accessors & show --------------------------------------------------------

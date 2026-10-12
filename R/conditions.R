@@ -31,3 +31,17 @@ radiatR_abort_nonestimable <- function(method, group, n, reason, call = NULL) {
                n = if (is.null(n)) NA_integer_ else as.integer(n),
                reason = reason, call = call)
 }
+
+# `problems`: data frame with columns rule, column, row, id (one row per rule
+# broken per row). `rows`/`ids` are the union across rules, named and typed as
+# in radiatR_invalid_rows so consumers can treat the two conditions alike.
+radiatR_abort_invalid_tracks <- function(problems, call = NULL) {
+  lines <- .format_tracks_problems(problems, problems$id)
+  rlang::abort(
+    paste0("Invalid track data:\n", paste0("  ", lines, collapse = "\n")),
+    class = "radiatR_invalid_tracks",
+    problems = problems,
+    rows = sort(unique(as.integer(problems$row))),
+    ids = unique(as.character(problems$id)),
+    call = call)
+}
