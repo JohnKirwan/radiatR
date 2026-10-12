@@ -229,9 +229,9 @@ setClass(
   }, character(1), USE.NAMES = FALSE)
 }
 
-setValidity("Tracks", function(object) {
-  d  <- object@data
-  cl <- object@cols
+# Structural validity: roles named, columns present, types right. Returns NULL
+# when sound, otherwise one message. Row-level rules are .tracks_problems()'s.
+.tracks_structure_error <- function(d, cl) {
   req <- c("id","time","angle")
   if (!all(req %in% names(cl))) return("cols must name 'id','time','angle'")
 
@@ -239,8 +239,6 @@ setValidity("Tracks", function(object) {
   if (length(miss)) return(paste("missing required column(s):", paste(miss, collapse=", ")))
 
   if (!is.numeric(d[[cl$angle]])) return("angle column must be numeric (radians)")
-  bad <- which(is.na(d[[cl$angle]]) | d[[cl$angle]] < 0 | d[[cl$angle]] >= 2*pi)
-  if (length(bad)) return("angle values must be in [0, 2*pi) or NA only")
 
   if (!inherits(d[[cl$time]], "POSIXct") && !is.numeric(d[[cl$time]]))
     return("time must be POSIXct or numeric")
@@ -265,24 +263,33 @@ setValidity("Tracks", function(object) {
   if (!is.null(cl$rho) && cl$rho %in% names(d) && !is.numeric(d[[cl$rho]])) {
     return("rho column must be numeric")
   }
-
-  # enforce that rows are grouped by id (each id forms one contiguous block)
-  # and sorted by time within each block. A global ordering across distinct id
-  # labels is not required -- and is not locale-independent -- only that each
-  # trajectory's rows are contiguous and internally time-ordered.
-  id_vals <- d[[cl$id]]
-  if (nrow(d) > 1L) {
-    run_id   <- cumsum(c(TRUE, id_vals[-1] != id_vals[-length(id_vals)]))
-    n_blocks <- length(unique(run_id))
-    n_ids    <- length(unique(id_vals))
-    if (n_blocks != n_ids) return("rows must be grouped by id (each id contiguous)")
-
-    time_vals <- d[[cl$time]]
-    not_sorted <- tapply(time_vals, run_id, function(t) any(diff(as.numeric(t)) < 0))
-    if (any(unlist(not_sorted))) return("rows must be sorted by time within each id")
+  if (!is.null(cl$weight)) {
+    if (!cl$weight %in% names(d)) return("weight column not present in data")
+    if (!is.numeric(d[[cl$weight]])) return("weight must be numeric")
   }
+  NULL
+}
 
-  TRUE
+setValidity("Tracks", function(object) {
+  d  <- object@data
+  cl <- object@cols
+  structure_error <- .tracks_structure_error(d, cl)
+  if (!is.null(structure_error)) return(structure_error)
+
+  msgs <- character()
+  # Rows must be grouped by id (each id one contiguous block). A global ordering
+  # across distinct id labels is not required -- and is not locale-independent.
+  # match() gives NA its own code, so missing ids are compared as a value here.
+  code <- match(d[[cl$id]], unique(d[[cl$id]]))
+  n    <- nrow(d)
+  if (n > 1L && sum(code[-1L] != code[-n]) + 1L != max(code))
+    msgs <- "rows must be grouped by id (each id contiguous)"
+
+  problems <- .tracks_problems(d, cl)
+  if (nrow(problems))
+    msgs <- c(msgs, .format_tracks_problems(problems, d[[cl$id]][problems$row]))
+
+  if (length(msgs)) msgs else TRUE
 })
 
 # Per-trajectory affine map into the unit circle: centre each trajectory on its

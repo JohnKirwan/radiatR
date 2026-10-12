@@ -105,3 +105,83 @@ test_that("angles that wrap to exactly 2*pi are stored as 0", {
   d <- data.frame(id = "a", time = 1:2, x = 1, y = c(0.3 - 0.1 - 0.2, 0.5))
   expect_s4_class(tracks(d, id = "id", time = "time", x = "x", y = "y"), "Tracks")
 })
+
+# ---- validator (direct slot writes) -------------------------------------------
+
+test_that("the validator rejects each broken rule after a slot write", {
+  rejects <- function(col, rows, value, msg, ...) {
+    ts <- mk(...)
+    ts@data[[col]][rows] <- value
+    expect_error(methods::validObject(ts), msg, fixed = TRUE)
+  }
+  rejects("id", 3, NA, "missing id (column(s) id): 1 row(s): 3")
+  rejects("time", 2, NA, "missing or non-finite time (column(s) time): 1 row(s): 2")
+  rejects("time", 3, 2, "time repeated within an id (column(s) time): 1 row(s): 3")
+  rejects("time", 2, 5, "time decreasing within an id (column(s) time): 1 row(s): 3")
+  rejects("angle", 2, NA, "missing or non-finite angle (column(s) angle): 1 row(s): 2")
+  rejects("angle", 2, 7, "angle outside [0, 2*pi) (column(s) angle): 1 row(s): 2")
+  rejects("x", 2, NA, "missing or non-finite coordinate (column(s) x): 1 row(s): 2")
+  rejects("w", 2, -1, "weight missing, non-finite or negative (column(s) w): 1 row(s): 2",
+          weight = "w")
+})
+
+test_that("raw and rel coordinate columns are covered by the validator", {
+  ts <- mk(normalize_xy = TRUE)
+  ts@data$x_raw[2] <- NA
+  expect_error(methods::validObject(ts), "coordinate (column(s) x_raw)", fixed = TRUE)
+  d <- valid_df(); d$rx <- d$x; d$ry <- d$y
+  ts <- mk(d, rel_x = "rx", rel_y = "ry")
+  ts@data$ry[5] <- Inf
+  expect_error(methods::validObject(ts), "coordinate (column(s) ry)", fixed = TRUE)
+})
+
+test_that("NA time fails validation with a message, not a crash", {
+  ts <- mk()
+  ts@data$time[2] <- NA
+  err <- tryCatch(methods::validObject(ts), error = function(e) conditionMessage(e))
+  expect_no_match(err, "TRUE/FALSE needed")
+  expect_match(err, "missing or non-finite time")
+})
+
+test_that("non-contiguous NA ids report both the grouping and the id rule", {
+  ts <- mk()
+  ts@data$id[c(1, 4)] <- NA
+  err <- tryCatch(methods::validObject(ts), error = function(e) conditionMessage(e))
+  expect_match(err, "rows must be grouped by id")
+  expect_match(err, "missing id (column(s) id): 2 row(s): 1, 4", fixed = TRUE)
+})
+
+test_that("interleaved ids fail on grouping alone", {
+  ts <- mk()
+  ts@data <- ts@data[c(1, 4, 2, 5, 3, 6), ]
+  err <- tryCatch(methods::validObject(ts), error = function(e) conditionMessage(e))
+  expect_match(err, "rows must be grouped by id")
+  expect_no_match(err, "time")
+})
+
+test_that("several broken rules are all reported", {
+  ts <- mk(weight = "w")
+  ts@data$x[1] <- NA
+  ts@data$time[6] <- 2
+  ts@data$w[4] <- Inf
+  err <- tryCatch(methods::validObject(ts), error = function(e) conditionMessage(e))
+  expect_match(err, "non-finite coordinate")
+  expect_match(err, "time repeated within an id")
+  expect_match(err, "weight missing, non-finite or negative")
+})
+
+test_that("the weight role is checked structurally", {
+  ts <- mk()
+  ts@cols$weight <- "nope"
+  expect_error(methods::validObject(ts), "weight column not present in data")
+  ts <- mk()
+  ts@data$w <- "heavy"
+  ts@cols$weight <- "w"
+  expect_error(methods::validObject(ts), "weight must be numeric")
+})
+
+test_that("valid, zero-row and shipped objects pass", {
+  expect_true(methods::validObject(mk(weight = "w")))
+  expect_true(methods::validObject(mk(valid_df()[0, ])))
+  expect_true(methods::validObject(cpunctatus))
+})
