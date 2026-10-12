@@ -39,3 +39,8 @@ a multi-file import. Numeric columns returned as text are coerced
 strictly (see "Malformed values" in \[read_tracks()\]) using the decimal
 mark sniffed from the file; a dialect that knows better can set
 \`attr(out, "decimal")\`.
+
+Numeric time is read as a frame index unless the dialect says its time
+column is in seconds, with \`attr(out, "time_unit") \<- "seconds"\` (or
+\`"frames"\`, to rule out \`time_type = "seconds"\`). See "Time units
+from a dialect" in \[read_tracks()\].

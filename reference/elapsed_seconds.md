@@ -2,8 +2,10 @@
 
 Real elapsed time of each point from its own track's start, computed on
 demand from the time column and (for frame-indexed time) the
-\[frame_rate()\]. POSIXct time is used directly; numeric (frame) time
-requires a frame rate.
+\[frame_rate()\]. POSIXct time is used directly, and so is numeric time
+loaded as seconds (\`read_tracks(time_type = "seconds")\`, or a duration
+column): a frame rate is neither needed nor applied to it. Any other
+numeric time is a frame index and requires a frame rate.
 
 ## Usage
 

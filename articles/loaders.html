@@ -278,17 +278,30 @@ centroid or single-zone selection.</td>
 </tr>
 <tr class="even">
 <td><code>trackmate</code></td>
-<td>
-<code>TRACK_ID</code> / <code>FRAME</code> / <code>POSITION_X</code>
-/ <code>POSITION_Y</code> CSV.</td>
+<td>Spot tables with <code>TRACK_ID</code> / <code>FRAME</code> /
+<code>POSITION_T</code> / <code>POSITION_X</code> /
+<code>POSITION_Y</code>, including the three extra header rows of
+version 7. Spots in no track (<code>TRACK_ID</code> <code>None</code>)
+stop the load unless
+<code>dialect_args = list(unlinked = "drop")</code>.</td>
 <td>Native TrackMate <code>.xml</code>.</td>
 </tr>
 <tr class="odd">
+<td><code>idtrackerai_wide</code></td>
 <td>
-<code>idtrackerai_wide</code>, <code>toxtrac</code>
-</td>
-<td>Their standard CSV/TSV column layouts.</td>
-<td>Tool-specific binary or session formats.</td>
+<code>trajectories.csv</code>: one <code>x&lt;id&gt;</code> /
+<code>y&lt;id&gt;</code> pair per animal, <code>seconds</code> as time,
+<code>nan</code> for missing positions.</td>
+<td>
+<code>.npy</code> trajectory files.</td>
+</tr>
+<tr class="even">
+<td><code>toxtrac</code></td>
+<td>
+<code>Tracking_RealSpace.txt</code> (mm, seconds) and the headerless
+<code>Tracking.txt</code> (pixels, frames; 6 or 11 columns). The id is
+<code>&lt;arena&gt;_&lt;track&gt;</code>.</td>
+<td>The statistics and project files.</td>
 </tr>
 </tbody>
 </table>

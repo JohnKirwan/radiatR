@@ -90,7 +90,11 @@
 
 
 <dt id="arg-time-type">time_type<a class="anchor" aria-label="anchor" href="#arg-time-type"></a></dt>
-<dd><p>one of "auto","posix","seconds","frames"</p></dd>
+<dd><p>one of "auto","posix","seconds","frames". Numeric time is
+taken to be a frame index unless `time_type = "seconds"` (or the column is
+a duration): seconds are recorded as such in the Tracks metadata
+(`time_unit`), so [elapsed_seconds()] and the kinematics use them directly,
+with no frame rate.</p></dd>
 
 
 <dt id="arg-tz">tz<a class="anchor" aria-label="anchor" href="#arg-tz"></a></dt>
@@ -186,6 +190,18 @@ malformed value (see "Malformed values").</p></dd>
     <p>Tracks</p>
     </div>
     <div class="section level2">
+    <h2 id="time-units-from-a-dialect">Time units from a dialect<a class="anchor" aria-label="anchor" href="#time-units-from-a-dialect"></a></h2>
+
+
+<p>A dialect that knows the unit of its time column says so, and under the
+default `time_type = "auto"` that decides how the column is read: TrackMate
+`POSITION_T` (when the version 7 units row gives seconds), ToxTrac
+`Time (sec)`, idtracker.ai `seconds` and TRex `time` are seconds, and need
+no `fps`; `FRAME`/`frame` columns are frames. A contrary explicit
+`time_type` stops with a `radiatR_time_type_mismatch` error, as do files of
+one import that disagree.</p>
+    </div>
+    <div class="section level2">
     <h2 id="malformed-values">Malformed values<a class="anchor" aria-label="anchor" href="#malformed-values"></a></h2>
 
 
@@ -199,10 +215,14 @@ dialect. Such a value is never dropped or turned into `NA`. Blank cells and
 `NA` are missing values; `nan` and `inf` are read as such. Files are read
 with no digit-grouping mark, so `1,5` is malformed unless
 `read_opts = list(decimal = ",")` says the comma is the decimal mark.</p>
-<p>An error raised inside a dialect does not yet name the file or the source
-column, and counts rows after the dialect's own filtering and reshaping.
-Coordinates that a dialect converts itself (ANY-maze, EthoVision,
-DeepLabCut, SLEAP, TRex) are not yet checked this way.</p>
+<p>The `trackmate`, `toxtrac`, `idtrackerai_wide` and `trex` dialects check
+their source columns the same way, before any reshaping, so the error names
+the header as the program wrote it and the row of the file's table. A
+missing or non-finite position found afterwards (see `on_invalid`) is still
+counted in the rows of the table the dialect returns, which for a wide
+format is the reshaped one. Coordinates that the pose and zone dialects
+convert themselves (ANY-maze, EthoVision, DeepLabCut, SLEAP) are not yet
+checked this way.</p>
 <p>A time column given as text must hold either numbers throughout or
 timestamps in one layout throughout: `YYYY-MM-DD HH:MM:SS`,
 `YYYY-MM-DD HH:MM` or `YYYY-MM-DD` (with `-` or `/`), or ISO 8601
