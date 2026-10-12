@@ -1,6 +1,6 @@
 # radiatR Shiny app — Configure-step method preview (shiny-free helpers).
 # Sourced by app.R; also unit-tested directly. Depends only on the radiatR
-# package (assumed attached) and ggplot2.
+# package (assumed attached), ggplot2 and plot_spec.R (sourced first).
 
 # Session cache for the demo Tracks so it is built at most once.
 .preview_env <- new.env(parent = emptyenv())
@@ -36,13 +36,16 @@ demo_tracks <- function() {
 # ring-crossing dots, and the dashed vector to the rim. Tracks-only for "none".
 # Construction overlays and heading markers take each trajectory's colour. The
 # preview always uses the identity circ_display(), so unit-circle coordinates map
-# straight to the panel.
+# straight to the panel. Tracks and headings share `coords`, the heading frame
+# (floored to absolute when `ts` has no relative coordinate system).
 build_method_preview <- function(ts, method, circ0 = 0.3, circ1 = 0.6,
-                                 display = circ_display()) {
+                                 display = circ_display(), coords = "relative") {
   idc <- ts@cols$id
   n   <- length(unique(ts@data[[idc]]))
+  coords <- .resolve_heading_coords(ts, coords)
 
-  base <- radiate(ts, group_col = idc, show_arrow = FALSE, show_labels = FALSE,
+  base <- radiate(ts, coords = coords, group_col = idc, show_arrow = FALSE,
+                  show_labels = FALSE,
                   show_tracks = TRUE, theme = "minimal", colour_cycle = n,
                   display = display, grid = "none")
 
@@ -55,9 +58,6 @@ build_method_preview <- function(ts, method, circ0 = 0.3, circ1 = 0.6,
     return(base + ggplot2::labs(subtitle = lab,
                                 caption = "No headings - tracks only"))
   }
-
-  has_rel <- !is.null(ts@cols$rel_x) && !is.null(ts@cols$rel_y)
-  coords  <- if (has_rel) "relative" else "absolute"
 
   # Same seed as the Results derivation (derive_hd) so a randomised rule
   # (RANSAC) previews the headings the analysis will use.

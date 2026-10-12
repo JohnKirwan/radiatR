@@ -198,3 +198,82 @@ test_that("the RANSAC preview is drawn under the app seed, leaving the caller's 
   set.seed(2); p2 <- build_method_preview(d, "ransac_straight")
   expect_equal(ggplot2::ggplot_build(p2)$data, ggplot2::ggplot_build(p1)$data)
 })
+
+# --- Heading frame ----------------------------------------------------------
+
+# Interior points of the drawn tracks (clipping only adds points on the rim, and
+# NA rows where it breaks a path).
+drawn_track_xy <- function(p) {
+  trk <- ggplot2::layer_data(p, 1L)
+  trk[which(sqrt(trk$x^2 + trk$y^2) < 0.99), c("x", "y")]
+}
+xy_key <- function(x, y) paste(signif(x, 10), signif(y, 10))
+
+test_that("the preview draws tracks and headings in the requested frame", {
+  d <- demo_tracks()
+  for (frame in c("relative", "absolute")) {
+    p  <- build_method_preview(d, "distal", coords = frame)
+    xc <- if (frame == "relative") d@cols$rel_x else d@cols$x
+    yc <- if (frame == "relative") d@cols$rel_y else d@cols$y
+    trk <- drawn_track_xy(p)
+    expect_true(all(xy_key(trk$x, trk$y) %in% xy_key(d@data[[xc]], d@data[[yc]])),
+                info = frame)
+
+    hd <- derive_headings(d, rule = "distal", coords = frame, return_coords = TRUE)
+    hd <- hd[is.finite(hd$heading), , drop = FALSE]
+    pt <- constr_point(p)$data
+    expect_equal(pt$px, hd$x_distal, info = frame)
+    expect_equal(pt$py, hd$y_distal, info = frame)
+  }
+})
+
+test_that("the frames give different previews on the demo tracks", {
+  d <- demo_tracks()
+  rel <- constr_point(build_method_preview(d, "distal", coords = "relative"))$data
+  abs <- constr_point(build_method_preview(d, "distal", coords = "absolute"))$data
+  expect_false(isTRUE(all.equal(rel[c("px", "py")], abs[c("px", "py")])))
+})
+
+test_that("crossing previews in the absolute frame", {
+  d  <- demo_tracks()
+  p  <- build_method_preview(d, "crossing", 0.3, 0.6, coords = "absolute")
+  hd <- derive_headings(d, rule = "crossing", coords = "absolute",
+                        circ0 = 0.3, circ1 = 0.6, return_coords = TRUE)
+  hd <- hd[is.finite(hd$heading), , drop = FALSE]
+  seg <- Find(function(l) inherits(l$geom, "GeomSegment") && is.data.frame(l$data) &&
+                "x_in" %in% names(l$data), p$layers)$data
+  expect_equal(seg$x_in, hd$x_inner)
+  expect_equal(seg$y_in, hd$y_inner)
+})
+
+test_that("a relative request floors to absolute without a landmark frame", {
+  d <- demo_tracks()
+  d@cols$rel_x <- NULL
+  d@cols$rel_y <- NULL
+  expect_equal(
+    ggplot2::ggplot_build(build_method_preview(d, "distal", coords = "relative"))$data,
+    ggplot2::ggplot_build(build_method_preview(d, "distal", coords = "absolute"))$data)
+})
+
+test_that("the app previews in the frame the Results will derive in", {
+  skip_on_cran()
+  skip_if_not_installed("shiny")
+  app_dir <- system.file("app", package = "radiatR")
+  if (!nzchar(app_dir)) app_dir <- testthat::test_path("..", "..", "inst", "app")
+  skip_if(!dir.exists(app_dir), "app dir not found")
+
+  shiny::testServer(app_dir, {
+    session$setInputs(load_example = 1)
+    expect_equal(preview_coords(), "relative")
+    session$setInputs(frame = "absolute")
+    expect_equal(preview_coords(), "absolute")
+
+    # No landmark frame: the control stays on "relative" but Results are absolute.
+    ts <- rv$ts
+    ts@cols$rel_x <- NULL
+    ts@cols$rel_y <- NULL
+    rv$ts <- ts
+    session$setInputs(frame = "relative")
+    expect_equal(preview_coords(), "absolute")
+  })
+})
