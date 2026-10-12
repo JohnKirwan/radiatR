@@ -50,6 +50,66 @@
   Monte-Carlo test run afterwards) must now call
   [`set.seed()`](https://rdrr.io/r/base/Random.html) itself.
 
+- [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  stops on a malformed value instead of treating it as missing. A cell
+  in an x, y, angle, weight or time column that is present but does not
+  parse (`"oops"`, `"1,5"`, a stray header or units row) raises a
+  `radiatR_malformed_values` error, a subclass of
+  `radiatR_invalid_rows`, that names the column, the data rows, the
+  offending values and the file (each file’s own rows in a multi-file
+  import). `on_invalid = "drop"` does not apply to it: `"drop"` removes
+  only rows whose coordinates are missing or non-finite. Blank cells and
+  `NA` are still missing values, and `nan` and `inf` are read as such.
+  Previously one bad cell made
+  [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  report every row of the column as non-finite, and `"drop"` then
+  dropped them all; a bad cell after the first 1000 rows of a file was
+  read as missing when readr is installed; and a multi-file import
+  failed with a type-clash error from vctrs.
+
+  Files are now read with column types guessed from every row and with
+  no digit-grouping mark, so `1,5` or `1,234.5` in a tab-separated file
+  is malformed rather than read as 15 or 1234.5. Pass
+  `read_opts = list(decimal = ",")` for decimal commas. Where the
+  decimal mark is a comma (the default for semicolon-separated files),
+  one bad cell names that cell only, not every `1,5` in its column.
+
+  The check covers the columns
+  [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  converts itself and the time column of every dialect but ANY-maze. An
+  error raised inside a dialect does not yet name the file or the source
+  column, and counts rows after the dialect’s own filtering and
+  reshaping. Coordinates that a dialect converts itself (ANY-maze,
+  EthoVision, DeepLabCut, SLEAP, Tracktor, TRex) are not yet checked
+  this way.
+
+- Text time columns are parsed strictly. Every value must match one
+  timestamp layout in full: `YYYY-MM-DD HH:MM:SS`, `YYYY-MM-DD HH:MM` or
+  `YYYY-MM-DD` (with `-` or `/`), or ISO 8601 `YYYY-MM-DDTHH:MM:SS` with
+  an optional `Z` for UTC; a bare date beside date-times is midnight. An
+  ISO 8601 timestamp, or one followed by stray text, used to be cut to
+  midnight of its date without warning; the first now keeps its time of
+  day and the second is an error. A text column of numbers is read as
+  numbers (it was an error) and, with `fps`, stored as frames. A factor
+  time column is read by its labels, not its level codes. A `Date`
+  column becomes midnight timestamps instead of day counts, and a
+  `difftime` column is converted to seconds whatever its units.
+  `time_type = "frames"` with a date-time, date or duration column is
+  now a `radiatR_time_type_mismatch` error; it used to store epoch
+  seconds as frame numbers.
+
+- [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  stops with a `radiatR_missing_columns` error when `mapping` names a
+  column that is not in the data. A missing `angle` column used to be
+  ignored without notice, and a missing x, y or weight column gave an
+  error that did not name it.
+
+- The `validate` argument of
+  [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  is deprecated. It never skipped anything, because `Tracks` invariants
+  are checked whenever an object is built; any value but `TRUE` now
+  warns, and the argument will be removed.
+
 ### Changes
 
 - The main workflow and simulation walkthroughs are now website-only
@@ -82,6 +142,22 @@
   is now vectorised over its arguments.
 
 ### Bug fixes
+
+- [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  ignores a guessed id column that holds no values. It uses the next
+  id-like column if there is one, and otherwise reads the file as one
+  trajectory, as it does when there is no id column. SLEAP writes an
+  empty `track` column for single-animal exports, so `sleap_example.csv`
+  now loads without `dialect = "sleap"`. An id column named in
+  `mapping`, or one that is only partly empty, is still an error.
+
+- x, y, angle and weight columns stored as text or as a factor load when
+  every value is a number. Previously every row was reported as
+  non-finite.
+
+- The app’s error banner names the column and an example value when an
+  upload has a malformed cell, instead of the generic “not valid track
+  data”.
 
 - `read_tracks(dialect = "sleap")` now reads an export whose `track`
   column is empty (SLEAP’s output for untracked, single-animal data) as
