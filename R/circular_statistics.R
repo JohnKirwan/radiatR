@@ -21,7 +21,9 @@
 #' @return A `data.frame` with columns `id`, `n`, `t_start`, `t_end`,
 #'   `mean_dir` (radians, unit-circle convention, 0 to 2pi), `resultant_R`
 #'   (0--1), and `kappa`
-#'   (von Mises concentration; `NA` when estimation fails).
+#'   (von Mises concentration: the maximum-likelihood estimate from the mean
+#'   resultant length, weighted when weights are used; `NA` for fewer than
+#'   three valid angles, `Inf` when all angles coincide).
 #'
 #' @examples
 #' data(cpunctatus)
@@ -125,7 +127,8 @@ setMethod("circ_summary", "Tracks", function(x, w = NULL, by = c("id","global"),
       R <- NA_real_
     }
 
-    kap    <- .est_kappa_safe(tc, fallback = NA_real_, w = wts_valid)
+    # Same minimum as circ_summarise(): kappa is not reported below 3 angles.
+    kap    <- if (length(folded) >= 3L && !is.na(R)) .kappa_from_Rbar(R) else NA_real_
     out_mu <- .unfold_mean(.wrap_to_2pi(as.numeric(mu)), axial)
     data.frame(
       id          = if (by == "id") k else "global",
@@ -334,7 +337,7 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
     uc_mu  <- .unfold_mean(.wrap_to_2pi(as.numeric(circular::mean.circular(tc))),
                            axial)
     R      <- as.numeric(circular::rho.circular(tc))
-    kap    <- if (n >= 3L) .est_kappa_safe(tc) else NA_real_
+    kap    <- if (n >= 3L) .kappa_from_Rbar(R) else NA_real_
   }
 
   row <- vector("list", length(stats))
@@ -1828,13 +1831,11 @@ test_unimodality <- function(hd, group_col = NULL, angle_col = "heading",
 # ---- boot_kappa_ci -----------------------------------------------------------
 
 # Point estimates of concentration for a numeric radian vector (already folded
-# for axial when relevant): von Mises kappa (est.kappa MLE, small-Rbar fallback)
+# for axial when relevant): von Mises kappa (MLE from Rbar, .kappa_from_Rbar)
 # and the mean resultant length R. Returns c(kappa, R).
 .boot_conc_estimates <- function(theta) {
   Rbar <- sqrt(mean(cos(theta))^2 + mean(sin(theta))^2)
-  k <- .est_kappa_safe(
-    circular::circular(theta, units = "radians", type = "angles"),
-    fallback = .kappa_from_Rbar(Rbar))
+  k <- .kappa_from_Rbar(Rbar)
   c(k, Rbar)
 }
 

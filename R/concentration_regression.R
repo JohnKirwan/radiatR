@@ -87,9 +87,7 @@ concentration_regression <- function(data, formula, link = c("log", "identity"),
 
   mu0 <- atan2(mean(sin(theta)), mean(cos(theta)))
   Rbar <- sqrt(mean(cos(theta))^2 + mean(sin(theta))^2)
-  k0  <- .est_kappa_safe(
-    circular::circular(theta, units = "radians", type = "angles"),
-    fallback = .kappa_from_Rbar(Rbar))
+  k0  <- .kappa_from_Rbar(Rbar)
   g0 <- rep(0, p)
   g0[1L] <- lk$start(if (is.finite(k0)) k0 else 1)
   if (!is.null(init)) g0 <- as.numeric(init)
