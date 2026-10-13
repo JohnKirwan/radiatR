@@ -117,8 +117,8 @@ limitations are general:
 | Dialect | Handled | Not handled |
 |---|---|---|
 | `trex` | Positional CSV: plain `X`/`Y`, the `#wcentroid` / `#centroid` / `#pcentroid` centroid variants, and TRex's `(cm)` / `(px)` unit annotations in headers. Per-individual `_fishN` files (id from filename) and aggregated files with an id column. | Native `.npz` export; posture export (`midline_points`, `outline_points`). |
-| `deeplabcut` / `deeplabcut_multiheader` | Multi-bodypart CSV; single bodypart, or a likelihood-weighted centroid of several; three-row scorer/bodypart/coord header. Bodypart columns are preserved for `bodypart_axis`. | Native HDF5 (`.h5`) export. |
-| `sleap` | Analysis CSV: `<node>.x` / `.y` / `.score`; multi-node centroid; `track` and `frame_idx`. | Native `.slp` / HDF5 export. |
+| `deeplabcut` | The predictions CSV: header rows `scorer` / `bodyparts` / `coords`, with `individuals` for multi-animal projects (one track per individual). A single bodypart, or a likelihood-weighted centroid of several; `likelihood_min` masks points and the count is kept in the metadata. Bodypart columns are preserved for `bodypart_axis`. | Native HDF5 (`.h5`) export; labelled training data (`CollectedData_*.csv`); 3-D output. |
+| `sleap` | Analysis CSV: `<node>.x` / `.y` / `.score`; a single node or a score-weighted centroid; `track` and `frame_idx`; `score_min` masks points and the count is kept in the metadata. | Native `.slp` / HDF5 export. |
 | `ethovision` | Centre position, and multi-zone exports (nose, tail, etc.); zone centroid or single-zone selection. | Native `.xlsx` (export to CSV first). |
 | `anymaze` | Centre position, optional nose/tail zones, units row. | — |
 | `trackmate` | Spot tables with `TRACK_ID` / `FRAME` / `POSITION_T` / `POSITION_X` / `POSITION_Y`, including the three extra header rows of version 7. Spots in no track (`TRACK_ID` `None`) stop the load unless `dialect_args = list(unlinked = "drop")`. | Native TrackMate `.xml`. |

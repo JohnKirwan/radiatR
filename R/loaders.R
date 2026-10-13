@@ -788,7 +788,8 @@ read_tracks_format <- function(x, format, ...)
 #' default `time_type = "auto"` that decides how the column is read: TrackMate
 #' `POSITION_T` (when the version 7 units row gives seconds), ToxTrac
 #' `Time (sec)`, idtracker.ai `seconds` and TRex `time` are seconds, and need
-#' no `fps`; `FRAME`/`frame` columns are frames. A contrary explicit
+#' no `fps`; `FRAME`/`frame` columns, the DeepLabCut frame index and SLEAP
+#' `frame_idx` are frames. A contrary explicit
 #' `time_type` stops with a `radiatR_time_type_mismatch` error, as do files of
 #' one import that disagree.
 #' @param fps Frames-per-second. Required when time_type = "frames" (the time
@@ -869,14 +870,14 @@ read_tracks_format <- function(x, format, ...)
 #' `0.125`, which cannot be digit grouping);
 #' `read_opts = list(decimal = ".")` says so outright.
 #'
-#' The `trackmate`, `toxtrac`, `idtrackerai_wide` and `trex` dialects check
+#' The `trackmate`, `toxtrac`, `idtrackerai_wide`, `trex`, `deeplabcut` and
+#' `sleap` dialects check
 #' their source columns the same way, before any reshaping, so the error names
 #' the header as the program wrote it and the row of the file's table. A
 #' missing or non-finite position found afterwards (see `on_invalid`) is still
 #' counted in the rows of the table the dialect returns, which for a wide
-#' format is the reshaped one. Coordinates that the pose and zone dialects
-#' convert themselves (ANY-maze, EthoVision, DeepLabCut, SLEAP) are not yet
-#' checked this way.
+#' format is the reshaped one. Coordinates that the zone dialects convert
+#' themselves (ANY-maze, EthoVision) are not yet checked this way.
 #'
 #' A time column given as text must hold either numbers throughout or
 #' timestamps in one layout throughout: `YYYY-MM-DD HH:MM:SS`,
