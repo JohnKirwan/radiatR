@@ -24,6 +24,14 @@
   if (is.null(cols) || !length(cols)) return(res)
   cols <- intersect(cols, names(data))
   if (!length(cols)) return(res)
+  # A carried column must never replace one the rule produced.
+  clash <- intersect(cols, names(res))
+  if (length(clash))
+    rlang::abort(
+      sprintf("`carry` cannot name %s: the headings already have %s, which the carried values would overwrite. Rename the column in the tracks first.",
+              paste0("'", clash, "'", collapse = ", "),
+              if (length(clash) > 1L) "columns of those names" else "a column of that name"),
+      class = "radiatR_invalid_argument", arg = "carry", columns = clash)
   idx_by_id <- split(seq_len(nrow(data)), data[[idc]])
   # nearest source row for each result row (NA when the id is absent)
   j <- vapply(seq_len(nrow(res)), function(i) {
