@@ -24,6 +24,10 @@
 #'   (von Mises concentration: the maximum-likelihood estimate from the mean
 #'   resultant length, weighted when weights are used; `NA` for fewer than
 #'   three valid angles, `Inf` when all angles coincide).
+#'   No small-sample bias correction is applied, so \code{kappa} is biased
+#'   upward for small \code{n}: \code{circular::mle.vonmises(bias = TRUE)}
+#'   gives a corrected estimate and \code{\link{boot_kappa_ci}()} reports the
+#'   bias.
 #'
 #' @examples
 #' data(cpunctatus)
@@ -382,7 +386,9 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 #'   \code{"mean_dir"}, \code{"mean_dir_deg"}, \code{"resultant_R"},
 #'   \code{"kappa"}. Default: \code{"n"}, \code{"mean_dir"},
 #'   \code{"mean_dir_deg"}, \code{"resultant_R"}, \code{"kappa"}
-#'   (\code{"n_total"}/\code{"n_missing"} are opt-in).
+#'   (\code{"n_total"}/\code{"n_missing"} are opt-in). \code{"kappa"} is the
+#'   von Mises maximum-likelihood estimate from the mean resultant length,
+#'   with no small-sample bias correction (see \code{\link{circ_summary}()}).
 #' @param display A [`circ_display`] object. When supplied, `mean_dir_deg` is
 #'   converted using the display convention (clockwise, `zero` offset). When
 #'   `NULL` (default), `mean_dir_deg` is the raw degree equivalent of the

@@ -696,7 +696,8 @@ setMethod("derive_headings", "Tracks", function(
 #'
 #' @return A `data.frame` with grouping columns followed by `mean_dir`
 #'   (radians, unit-circle convention, 0 to 2π), `resultant_R` (0–1), `kappa`
-#'   (von Mises concentration), and `n` (number of valid headings in the group).
+#'   (von Mises concentration, with no small-sample bias correction; see
+#'   \code{\link{circ_summary}()}), and `n` (number of valid headings in the group).
 #'
 #' @examples
 #' data(cpunctatus)

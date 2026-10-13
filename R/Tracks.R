@@ -746,47 +746,6 @@ setMethod("trajectory", "Tracks", function(x, id) {
   d
 })
 
-## ---- summaries ---------------------------------------------------------------
-#' Circular summaries per trajectory
-#' @param x Tracks
-#' @param w Optional weight column name (defaults to x@cols$weight if present)
-#' @return data.frame(id, n, t_start, t_end, mean_dir, resultant_R, kappa)
-#' @export
-setGeneric("circ_summary", function(x, w = NULL) standardGeneric("circ_summary"))
-
-setMethod("circ_summary", "Tracks", function(x, w = NULL) {
-  id <- x@cols$id; tm <- x@cols$time; th <- x@cols$angle
-  wcol <- if (is.null(w)) x@cols$weight else w
-  if (!is.null(wcol) && !wcol %in% names(x@data)) stop("weight column '", wcol, "' not found")
-
-  d <- x@data
-  idx <- split(seq_len(nrow(d)), d[[id]])
-
-  rows <- lapply(names(idx), function(k) {
-    ii <- idx[[k]]
-    theta <- d[[th]][ii]
-    wts <- if (!is.null(wcol)) d[[wcol]][ii] else NULL
-
-    tc <- .as_circ(theta)
-    mu <- circular::mean.circular(tc, na.rm = TRUE, weights = wts)
-    R  <- circular::rho.circular(tc,  na.rm = TRUE, weights = wts)
-    kap <- .kappa_from_Rbar(as.numeric(R))
-
-    data.frame(
-      id          = k,
-      n           = sum(!is.na(theta)),
-      t_start     = d[[tm]][ii[1]],
-      t_end       = d[[tm]][ii[length(ii)]],
-      mean_dir    = .wrap_to_2pi(as.numeric(mu)),  # radians
-      resultant_R = as.numeric(R),
-      kappa       = as.numeric(kap),
-      stringsAsFactors = FALSE
-    )
-  })
-
-  do.call(rbind, rows)
-})
-
 ## ---- coercions ---------------------------------------------------------------
 
 #' Coerce a Tracks to a data frame
