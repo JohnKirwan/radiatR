@@ -122,3 +122,9 @@ test_that("circ_summary(w = ) uses the named column in place of the Tracks weigh
   tr@data$w2 <- c(1, 1, 0, 0, 2, 0)
   expect_equal(circ_summary(tr, w = "w2")$mean_dir, c(0.15, 1.1))
 })
+
+test_that("circ_summary() does not count zero-weight observations towards kappa", {
+  res <- circ_summary(weighted_tracks(c(1, 0, 0, 1, 1, 1)))
+  expect_identical(res$kappa[1], NA_real_)
+  expect_true(is.finite(res$kappa[2]))
+})
