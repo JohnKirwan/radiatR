@@ -243,3 +243,238 @@ test_that("an attrition record of the wrong shape is a dialect error", {
   # extra columns are left out, so that records row-bind
   expect_identical(names(load(cbind(good, note = "x"))@meta$attrition), names(good))
 })
+
+# ---- DeepLabCut ----------------------------------------------------------------
+
+wasp <- "dlc_single_wasp_predictions.csv"
+mice <- "dlc_two_mice_predictions.csv"
+
+test_that("DeepLabCut: a predictions file loads as one track in frames", {
+  msg <- testthat::capture_messages(
+    ts <- suppressWarnings(read_tracks(fx(wasp), dialect = "deeplabcut", fps = 40,
+                                       on_invalid = "drop")))
+  d <- rows_of(ts)
+  expect_equal(nrow(d), 43L)                    # 52 frames, 9 with likelihood 0
+  expect_identical(as.character(ids(ts)), "1")
+  expect_equal(d$time[1:3], c(0, 1, 2))
+  expect_equal(frame_rate(ts), 40)
+  # likelihood-weighted centroid of head and stinger in frame 0
+  expect_equal(d$x[1], 1084.858797688071)
+  expect_equal(d$y[1], 421.386680542047)
+  expect_true(all(c("head_x", "head_y", "stinger_x", "stinger_y") %in% names(d)))
+  a <- ts@meta$attrition
+  expect_identical(a$point, c("head", "stinger"))
+  expect_identical(a$source, rep(wasp, 2))
+  expect_equal(a$masked, c(9L, 9L))
+  expect_equal(a$frames, c(52L, 52L))
+  expect_equal(a$frames_no_position, c(9L, 9L))
+  expect_match(msg, "deeplabcut: 9 of 52 row(s) have no position (no threshold",
+               fixed = TRUE, all = FALSE)
+})
+
+test_that("DeepLabCut: frames with no detection stop the default load", {
+  e <- cond(suppressMessages(read_tracks(fx(wasp), dialect = "deeplabcut")))
+  expect_s3_class(e, "radiatR_invalid_rows")
+  expect_equal(e$rows, 44:52)
+})
+
+test_that("DeepLabCut: likelihood_min masks points, counts them and removes no row itself", {
+  dl <- function(...) quiet(read_tracks(fx(wasp), dialect = "deeplabcut",
+                                        dialect_args = list(...), on_invalid = "drop"))
+  a <- dl(likelihood_min = 0.5)@meta$attrition
+  expect_equal(a$masked, c(14L, 16L))
+  expect_equal(a$frames_no_position, c(16L, 16L))
+  expect_equal(a$score_min, c(0.5, 0.5))
+
+  m <- dl(likelihood_min = 0.5, partial = "mean")
+  expect_equal(m@meta$attrition$frames_no_position, c(14L, 14L))
+  expect_equal(nrow(rows_of(m)), 38L)
+  # in two kept frames only the stinger was masked: its columns are blank there
+  expect_equal(sum(is.na(rows_of(m)$stinger_x)), 2L)
+  expect_equal(sum(is.na(rows_of(m)$head_x)), 0L)
+
+  one <- dl(bodypart = "head", likelihood_min = 0.9)
+  expect_equal(one@meta$attrition$masked, 18L)
+  expect_equal(nrow(rows_of(one)), 34L)
+  expect_false("stinger_x" %in% names(rows_of(one)))
+})
+
+test_that("DeepLabCut: a multi-animal file gives one track per individual", {
+  ts <- read_tracks(fx(mice), dialect = "deeplabcut", fps = 100,
+                    dialect_args = list(bodypart = "snout"))
+  d <- rows_of(ts)
+  expect_setequal(as.character(ids(ts)), c("individual1", "individual2"))
+  expect_equal(nrow(d), 40L)
+  expect_equal(d$x[d$id == "individual1" & d$time == 0], 1076.505)
+  expect_equal(d$x[d$id == "individual2" & d$time == 0], 1123.813)
+  expect_equal(max(elapsed_seconds(ts)), 0.19)
+  expect_equal(ts@meta$attrition$frames, 40L)
+
+  all_parts <- read_tracks(fx(mice), dialect = "deeplabcut")
+  expect_equal(nrow(rows_of(all_parts)), 40L)
+  expect_true(all(c("snout_x", "tailend_y") %in% names(rows_of(all_parts))))
+
+  only <- read_tracks(fx(mice), dialect = "deeplabcut",
+                      dialect_args = list(individuals = "individual2"))
+  expect_identical(as.character(ids(only)), "individual2")
+  expect_equal(nrow(rows_of(only)), 20L)
+
+  a <- quiet(read_tracks(fx(mice), dialect = "deeplabcut", on_invalid = "drop",
+                         dialect_args = list(likelihood_min = 0.9)))@meta$attrition
+  expect_equal(sum(a$masked), 2L)
+  expect_equal(a$masked[a$point == "tailend"], 2L)
+  expect_equal(a$frames_no_position[1], 2L)
+})
+
+test_that("DeepLabCut: selection errors name what the file has", {
+  dl <- function(...) cond(read_tracks(fx(mice), dialect = "deeplabcut",
+                                       dialect_args = list(...)))
+  e <- dl(individuals = "bob")
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "the file has individual1, individual2", fixed = TRUE)
+  e <- dl(bodypart = "nose")
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "available: snout, leftear", fixed = TRUE)
+  e <- dl(bodypart = c("snout", "snout"))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "distinct bodyparts", fixed = TRUE)
+  e <- dl(id_col = "x")
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "do not apply to a DeepLabCut file", fixed = TRUE)
+  e <- cond(read_tracks(fx(wasp), dialect = "deeplabcut",
+                        dialect_args = list(individuals = "individual1")))
+  expect_match(conditionMessage(e), "no individuals row", fixed = TRUE)
+})
+
+test_that("DeepLabCut: individuals with different bodyparts need `individuals`", {
+  # the last two columns become DLC's holder of unique bodyparts
+  p <- edited(mice, function(l) {
+    h <- strsplit(l[2:4], ",")
+    h[[1]][72:73] <- "single"; h[[2]][72:73] <- "corner"; h[[3]][72:73] <- c("x", "y")
+    l[2:4] <- vapply(h, paste, "", collapse = ",")
+    l
+  })
+  e <- cond(read_tracks(p, dialect = "deeplabcut"))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "individual 'individual1' has no x/y columns for bodypart(s): corner",
+               fixed = TRUE)
+  expect_match(conditionMessage(e), "individuals = c(...)", fixed = TRUE)
+  ts <- read_tracks(p, dialect = "deeplabcut", dialect_args = list(individuals = "individual1"))
+  expect_identical(as.character(ids(ts)), "individual1")
+})
+
+test_that("DeepLabCut: files that are not tracking output are refused by name", {
+  e <- cond(read_tracks(fx("dlc_CollectedData_Pranav.csv"), dialect = "deeplabcut"))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "labelled training data", fixed = TRUE)
+
+  img <- edited(wasp, function(l) { l[-(1:3)] <- sub("^[0-9]+", "img.png", l[-(1:3)]); l })
+  e <- cond(read_tracks(img, dialect = "deeplabcut"))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "folder of images", fixed = TRUE)
+
+  # a flat <bodypart>_x table is accepted in memory, not as a file
+  flat <- withr::local_tempfile(fileext = ".csv")
+  writeLines(c("frame,head_x,head_y,head_likelihood", "0,1,2,0.9"), flat)
+  e <- cond(read_tracks(flat, dialect = "deeplabcut"))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "is not a DeepLabCut output file", fixed = TRUE)
+  expect_match(conditionMessage(e), "'frame', '0'", fixed = TRUE)
+
+  expect_match(conditionMessage(e), "read as a data frame", fixed = TRUE)
+
+  empty <- edited(wasp, function(l) l[1:3])
+  e <- cond(read_tracks(empty, dialect = "deeplabcut"))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "has no data rows", fixed = TRUE)
+
+  # newer labelled data carries extra index columns under blank header fields
+  blank <- edited(wasp, function(l) { l[3] <- sub("coords,x", "coords,", l[3], fixed = TRUE); l })
+  e <- cond(read_tracks(blank, dialect = "deeplabcut"))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "no coords label", fixed = TRUE)
+})
+
+test_that("DeepLabCut: a row with too few or too many fields is refused, not padded", {
+  short <- edited(wasp, function(l) { l[12] <- "8,100,1"; l })
+  e <- cond(read_tracks(short, dialect = "deeplabcut", dialect_args = list(bodypart = "head")))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "data row 9 of", fixed = TRUE)
+  expect_match(conditionMessage(e), "has 3 field(s); its header names 7", fixed = TRUE)
+  long <- edited(wasp, function(l) { l[12] <- paste0(l[12], ",77,88,0.9"); l })
+  e <- cond(read_tracks(long, dialect = "deeplabcut", dialect_args = list(bodypart = "head")))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "has 10 field(s)", fixed = TRUE)
+  # quoted header fields and blank trailing lines are neither
+  quoted <- edited(wasp, function(l) {
+    l[1:3] <- vapply(strsplit(l[1:3], ","), function(f) paste0('"', f, '"', collapse = ","), "")
+    c(l, "", "")
+  })
+  expect_equal(nrow(rows_of(quiet(read_tracks(quoted, dialect = "deeplabcut",
+                                              on_invalid = "drop")))), 43L)
+})
+
+test_that("DeepLabCut: a malformed cell is reported by header, row and file", {
+  p <- edited(wasp, function(l) { l[5] <- sub("^1,[^,]+,", "1,oops,", l[5]); l })
+  e <- cond(read_tracks(p, dialect = "deeplabcut"))
+  expect_s3_class(e, "radiatR_malformed_values")
+  expect_identical(e$columns, "head_x")
+  expect_equal(e$rows, 2L)
+  expect_identical(e$dialect, "deeplabcut")
+  expect_identical(e$source, basename(p))
+
+  neg <- edited(wasp, function(l) {
+    l[5] <- sub(",0.03531652316451073,", ",-0.5,", l[5], fixed = TRUE); l })
+  e <- cond(read_tracks(neg, dialect = "deeplabcut"))
+  expect_s3_class(e, "radiatR_malformed_values")
+  expect_identical(e$columns, "head_likelihood")
+  expect_identical(e$values, "-0.5")
+})
+
+test_that("deeplabcut_multiheader is removed and names its replacement", {
+  e <- cond(read_tracks(fx(wasp), dialect = "deeplabcut_multiheader"))
+  expect_s3_class(e, "radiatR_removed_dialect")
+  expect_match(conditionMessage(e), "dialect = \"deeplabcut\"", fixed = TRUE)
+  expect_false("deeplabcut_multiheader" %in% list_loader_dialects())
+})
+
+test_that("DeepLabCut: a flat table in memory loads, with ids and a threshold on text", {
+  df <- data.frame(id = rep(c("a", "b"), each = 2), frame = c(1, 2, 1, 2),
+                   head_x = c(1, 2, 3, 4), head_y = 0,
+                   head_likelihood = c("0.95", "1e-3", "0.95", "0.95"),
+                   stringsAsFactors = FALSE)
+  ts <- quiet(read_tracks(df, dialect = "deeplabcut", on_invalid = "drop",
+                          dialect_args = list(likelihood_min = 0.9)))
+  expect_equal(nrow(rows_of(ts)), 3L)
+  expect_setequal(as.character(ids(ts)), c("a", "b"))
+  expect_equal(ts@meta$attrition$masked, 1L)
+  expect_true(is.na(ts@meta$attrition$source))
+  e <- cond(read_tracks(df, dialect = "deeplabcut", dialect_args = list(id_col = "trak")))
+  expect_s3_class(e, "radiatR_dialect_error")
+  e <- cond(read_tracks(df[c("id", "frame", "head_x", "head_y")], dialect = "deeplabcut",
+                        dialect_args = list(likelihood_min = 0.9)))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "`likelihood_min` was given", fixed = TRUE)
+})
+
+test_that("DeepLabCut: a directory of single-animal files needs id_collision = 'namespace'", {
+  dir <- withr::local_tempdir()
+  file.copy(fx(wasp), file.path(dir, c("a.csv", "b.csv")))
+  expect_error(quiet(read_tracks_dir(dir, dialect = "deeplabcut", on_invalid = "drop")),
+               "id_collision")
+  ts <- quiet(read_tracks_dir(dir, dialect = "deeplabcut", on_invalid = "drop",
+                              id_collision = "namespace"))
+  expect_setequal(as.character(ids(ts)), c("a::1", "b::1"))
+  expect_identical(ts@meta$attrition$source, rep(c("a.csv", "b.csv"), each = 2))
+  expect_equal(ts@meta$attrition$masked, rep(9L, 4))
+})
+
+test_that("the bundled DeepLabCut example loads with no arguments", {
+  path <- system.file("extdata", "dlc_single_wasp_predictions.csv", package = "radiatR")
+  expect_no_message(ts <- read_tracks(path, dialect = "deeplabcut"), class = "radiatR_attrition")
+  expect_equal(nrow(rows_of(ts)), 300L)
+  a <- quiet(read_tracks(path, dialect = "deeplabcut", on_invalid = "drop",
+                         dialect_args = list(likelihood_min = 0.9)))@meta$attrition
+  expect_equal(a$masked, c(104L, 57L))
+  expect_equal(a$frames_no_position, c(104L, 104L))
+})

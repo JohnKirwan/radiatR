@@ -137,15 +137,28 @@ The package ships small real exports from two tools so the dialects can be
 tried without any external data. Each loads with one `read_tracks()` call,
 pointing the `dialect` argument at the matching tool.
 
-**DeepLabCut** — a three-row scorer/bodypart/coord header; by default the
-position is the likelihood-weighted centroid of all bodyparts, and each
-bodypart's coordinates are retained for use with the `bodypart_axis` rule.
+**DeepLabCut** — the predictions CSV written when a video is analysed (header
+rows `scorer`, `bodyparts`, `coords`, plus `individuals` for multi-animal
+projects). By default the position is the likelihood-weighted centroid of all
+bodyparts, the time is the frame index, and each bodypart's coordinates are
+kept for the `bodypart_axis` rule.
 
 ```{r dlc-example}
-dlc_path <- system.file("extdata", "dlc_CollectedData_Pranav.csv",
+dlc_path <- system.file("extdata", "dlc_single_wasp_predictions.csv",
                         package = "radiatR")
-ts_dlc <- read_tracks(dlc_path, dialect = "deeplabcut_multiheader")
+ts_dlc <- read_tracks(dlc_path, dialect = "deeplabcut", fps = 40)
 ts_dlc
+```
+
+A likelihood threshold masks the points below it. A frame with a masked point
+has no position, so it is dropped only when `on_invalid = "drop"` says so, and
+what was masked is reported and kept:
+
+```{r dlc-threshold}
+ts_dlc_sure <- read_tracks(dlc_path, dialect = "deeplabcut", fps = 40,
+                           dialect_args = list(likelihood_min = 0.9),
+                           on_invalid = "drop")
+ts_dlc_sure@meta$attrition
 ```
 
 **SLEAP** — an analysis CSV with `<node>.x` / `.y` / `.score` columns,
