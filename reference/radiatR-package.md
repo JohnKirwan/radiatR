@@ -48,8 +48,20 @@ Useful links:
 
 ## Author
 
-**Maintainer**: John D. Kirwan <john@jkirwan.org>
+**Maintainer**: John D. Kirwan <john@jkirwan.org> \[copyright holder\]
 
 Authors:
 
-- John D. Kirwan <john@jkirwan.org>
+- John D. Kirwan <john@jkirwan.org> \[copyright holder\]
+
+Other contributors:
+
+- A. & M.W. Mathis Labs (test fixture
+  tests/testthat/fixtures/real/dlc_CollectedData_Pranav.csv, from
+  'DeepLabCut') \[copyright holder\]
+
+- Talmo Pereira (example file inst/extdata/sleap_example.csv, from
+  'SLEAP') \[copyright holder\]
+
+- The Trustees of Princeton University (example file
+  inst/extdata/sleap_example.csv, from 'SLEAP') \[copyright holder\]
