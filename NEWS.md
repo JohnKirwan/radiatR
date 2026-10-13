@@ -32,8 +32,9 @@
   a threshold used to be compared as text when the score column was text
   (`"1e-3" >= 0.9`). `bodypart` must name distinct points, and two SLEAP
   headers that differ only in case or punctuation are refused.
-* DeepLabCut and SLEAP time is declared as frames, so `fps` alone gives
-  elapsed seconds and `time_type = "seconds"` is refused for them.
+* DeepLabCut and SLEAP time is declared as frames (files, and data frames
+  whose time column is a frame column), so `fps` alone gives elapsed seconds
+  and `time_type = "seconds"` is refused for them.
 * `derive_headings(carry = )` now stops when a carried column has the name of
   a column of the result (`id`, `time`, `heading`, ...). It used to replace
   the derived values with the carried ones without a message, so a call that
@@ -168,8 +169,9 @@
 * The `sleap` dialect accepts a node name as it is written in the file
   (`bodypart = "Tail Base"`).
 * The app detects DeepLabCut files by their header rows, multi-animal files
-  included; a flat `<bodypart>_likelihood` table is no longer taken for one.
-  A dialect's refusal of a file is shown as the app's error headline.
+  included. A flat `<bodypart>_likelihood` table is still offered to the
+  `deeplabcut` dialect, which now refuses it by name; choose "Generic CSV" to
+  load it as plain columns. A dialect's refusal of a file is shown as the app's error headline.
 * New vignette `vignette("agent-guide")`: the angle conventions, calibration
   rules, failure behaviour and common pitfalls an AI agent (or anyone
   scripting radiatR) needs. `AGENTS.md` at the repository root points to it.

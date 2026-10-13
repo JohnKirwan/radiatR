@@ -197,7 +197,9 @@ list_loader_formats <- function() sort(ls(envir = .loader_format_registry))
 #' A dialect that derives each position from several points can report what
 #' it left out with `attr(out, "attrition")`: a data frame with columns
 #' `source`, `point`, `masked`, `frames`, `frames_no_position`, `score_min`
-#' and `partial`, one row per point. See "Masked points" in [read_tracks()].
+#' and `partial`, one row per point, with whole non-negative counts and one
+#' `frames` and one `frames_no_position` value (the per-file totals, repeated
+#' on each row). See "Masked points" in [read_tracks()].
 #' @param name Unique dialect name
 #' @param fun Function that accepts (x, ...) and returns a data.frame with id/time/angle or id/time/x/y
 #' @param overwrite Replace an existing dialect registered with the same name
@@ -555,13 +557,16 @@ guess_columns <- function(data, mapping = list()) {
   ok <- function(a)
     is.data.frame(a) && nrow(a) > 0L && all(.attrition_cols %in% names(a)) &&
       all(vapply(a[c("masked", "frames", "frames_no_position")],
-                 function(v) is.numeric(v) && !anyNA(v), logical(1))) &&
-      length(unique(a$frames)) == 1L && length(unique(a$frames_no_position)) == 1L
+                 function(v) is.numeric(v) && !anyNA(v) && all(v >= 0 & v == round(v)),
+                 logical(1))) &&
+      length(unique(a$frames)) == 1L && length(unique(a$frames_no_position)) == 1L &&
+      is.character(a$point) && !anyNA(a$point) && all(a$partial %in% c("na", "mean"))
   if (!all(vapply(recs, ok, logical(1))))
     rlang::abort(sprintf(paste0(
       "read_tracks: dialect '%s' returned an attrition record that is not a data frame with ",
-      "columns %s: one row per point, counts as numbers, and one `frames` and one ",
-      "`frames_no_position` value."), dialect, paste(.attrition_cols, collapse = ", ")),
+      "columns %s: one row per point (a name, no NA), counts as whole numbers >= 0, `partial` ",
+      "\"na\" or \"mean\", and one `frames` and one `frames_no_position` value."),
+      dialect, paste(.attrition_cols, collapse = ", ")),
       class = "radiatR_dialect_error")
   lapply(recs, function(a) as.data.frame(a)[.attrition_cols])
 }
@@ -569,7 +574,7 @@ guess_columns <- function(data, mapping = list()) {
 # One message for the load when any point was masked. The frame counts are
 # per file (repeated on each of its rows), so they are summed over files, not
 # over rows; files are not told apart by name, which need not be unique.
-.inform_attrition <- function(recs, dialect) {
+.inform_attrition <- function(recs, dialect, on_invalid = "error") {
   masked <- do.call(rbind, lapply(recs, function(a) a[c("point", "masked")]))
   if (is.null(masked) || !sum(masked$masked)) return(invisible())
   by_point <- tapply(masked$masked, factor(masked$point, unique(masked$point)), sum)
@@ -583,7 +588,7 @@ guess_columns <- function(data, mapping = list()) {
     dialect, lost, frames,
     if (is.na(score_min)) "no threshold" else paste("threshold", format(score_min)),
     partial, paste(sprintf("%s %d", names(by_point), by_point), collapse = ", "))
-  if (lost > 0)
+  if (lost > 0 && on_invalid == "error")
     msg <- paste0(
       msg, "\n  Pass on_invalid = \"drop\" to leave those rows out",
       if (partial == "na")
@@ -814,7 +819,7 @@ read_tracks_format <- function(x, format, ...)
 #' @section Masked points:
 #' The `deeplabcut` and `sleap` dialects take each position from one or more
 #' points (bodyparts, nodes). A point is masked in a frame when its
-#' coordinates are missing, when its score (likelihood) is 0, or when a
+#' coordinates are missing or not finite, when its score (likelihood) is 0, or when a
 #' threshold is given (`dialect_args = list(likelihood_min = )` for
 #' DeepLabCut, `score_min` for SLEAP) and its score is missing or below it.
 #' A frame with a masked point has no position, unless
@@ -827,7 +832,8 @@ read_tracks_format <- function(x, format, ...)
 #' one row per source file and point, giving the rows in which the point was
 #' masked (`masked`), the rows read from that file (`frames`), the rows left
 #' without a position (`frames_no_position`), and the threshold and `partial`
-#' setting used. `c()` row-binds these records.
+#' setting used. `c()` row-binds these records; a subset keeps the whole
+#' record of its load, so recombining subsets of one load repeats it.
 #'
 #' @param dialect optional registered dialect name. The dialect reads `x`
 #'   itself (`read_tracks()` does not parse the file first) and is called once
@@ -992,7 +998,7 @@ read_tracks <- function(x,
     if (is.null(dialect)) list()
     else if (length(x) > 1L && is.character(x)) combined$attrition
     else Filter(Negate(is.null), list(attr(df, "attrition"))), dialect)
-  .inform_attrition(attrition, dialect)
+  .inform_attrition(attrition, dialect, on_invalid)
   # The reader's notes have been read; they are not part of the Tracks data.
   attr(df, "decimal") <- attr(df, "time_unit") <- attr(df, "attrition") <- NULL
   if (!is.null(declared)) {
@@ -1565,7 +1571,7 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
                             "labelled %s; a DeepLabCut file starts with rows labelled scorer, ",
                             "(individuals,) bodyparts, coords. A flat <bodypart>_x table is ",
                             "read as a data frame, not as a file."),
-                     src, paste(sprintf("'%s'", lab), collapse = ", "))
+                     src, paste(sprintf("'%s'", substr(lab, 1L, 30L)), collapse = ", "))
   ind <- if (n_hdr == 4L) hdr[[2L]][-1L]
   bp <- hdr[[n_hdr - 1L]][-1L]
   co <- tolower(hdr[[n_hdr]][-1L])
@@ -1664,6 +1670,8 @@ register_loader_dialect("deeplabcut", function(x, bodypart = NULL, likelihood_mi
 
   inds <- unique(lay$individual)
   if (!is.null(individuals)) {
+    if (!is.character(individuals) || !length(individuals) || anyNA(individuals))
+      fail("deeplabcut: `individuals` must name one or more individuals.")
     if (all(is.na(inds)))
       fail("deeplabcut: `individuals` was given, but the input has no individuals row.")
     unknown <- setdiff(as.character(individuals), inds)

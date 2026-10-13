@@ -37,5 +37,7 @@ dialect" in [read_tracks()].
 A dialect that derives each position from several points can report what
 it left out with `attr(out, "attrition")`: a data frame with columns
 `source`, `point`, `masked`, `frames`, `frames_no_position`, `score_min`
-and `partial`, one row per point. See "Masked points" in [read_tracks()].
+and `partial`, one row per point, with whole non-negative counts and one
+`frames` and one `frames_no_position` value (the per-file totals, repeated
+on each row). See "Masked points" in [read_tracks()].
 }

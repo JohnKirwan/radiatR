@@ -161,10 +161,11 @@ two_point <- function(id = "a", gap = 2L) {
 
 test_that("read_tracks() stores the attrition record and reports it once", {
   local_attrition_dialect()
-  expect_message(e <- cond(read_tracks(two_point(), dialect = "attrition_test")),
-                 class = "radiatR_attrition")
+  err_msg <- testthat::capture_messages(e <- cond(read_tracks(two_point(), dialect = "attrition_test")))
   expect_s3_class(e, "radiatR_invalid_rows")
   expect_equal(e$rows, 2L)
+  expect_match(err_msg, "on_invalid = \"drop\"", fixed = TRUE, all = FALSE)
+  expect_match(err_msg, "partial = \"mean\"", fixed = TRUE, all = FALSE)
 
   msg <- testthat::capture_messages(
     ts <- suppressWarnings(read_tracks(two_point(), dialect = "attrition_test",
@@ -173,8 +174,7 @@ test_that("read_tracks() stores the attrition record and reports it once", {
   expect_match(msg, "attrition_test: 1 of 4 row(s) have no position (no threshold, partial = \"na\")",
                fixed = TRUE, all = FALSE)
   expect_match(msg, "Masked points: head 1.", fixed = TRUE, all = FALSE)
-  expect_match(msg, "on_invalid = \"drop\"", fixed = TRUE, all = FALSE)
-  expect_match(msg, "partial = \"mean\"", fixed = TRUE, all = FALSE)
+  expect_false(any(grepl("Pass on_invalid", msg, fixed = TRUE)))
   a <- ts@meta$attrition
   expect_identical(names(a), c("source", "point", "masked", "frames", "frames_no_position",
                                "score_min", "partial"))
@@ -240,6 +240,13 @@ test_that("an attrition record of the wrong shape is a dialect error", {
   # counts are numbers, and the per-file counts are one value
   expect_s3_class(cond(load(transform(good, masked = "0"))), "radiatR_dialect_error")
   expect_s3_class(cond(load(transform(good, frames = c(2L, 3L)))), "radiatR_dialect_error")
+  # counts are whole and non-negative, partial is a known mode, points are named
+  expect_s3_class(cond(load(transform(good, masked = 1.5))), "radiatR_dialect_error")
+  expect_s3_class(cond(load(transform(good, masked = -1L))), "radiatR_dialect_error")
+  expect_s3_class(cond(load(transform(good, partial = NA_character_))), "radiatR_dialect_error")
+  expect_s3_class(cond(load(transform(good, point = NA_character_))), "radiatR_dialect_error")
+  expect_s3_class(cond(load(good[0, ])), "radiatR_dialect_error")
+  expect_s3_class(cond(load(good[setdiff(names(good), "frames")])), "radiatR_dialect_error")
   # extra columns are left out, so that records row-bind
   expect_identical(names(load(cbind(good, note = "x"))@meta$attrition), names(good))
 })
@@ -258,6 +265,8 @@ test_that("DeepLabCut: a predictions file loads as one track in frames", {
   expect_identical(as.character(ids(ts)), "1")
   expect_equal(d$time[1:3], c(0, 1, 2))
   expect_equal(frame_rate(ts), 40)
+  expect_error(read_tracks(fx(mice), dialect = "deeplabcut", time_type = "seconds"),
+               class = "radiatR_time_type_mismatch")
   # likelihood-weighted centroid of head and stinger in frame 0
   expect_equal(d$x[1], 1084.858797688071)
   expect_equal(d$y[1], 421.386680542047)
@@ -344,6 +353,8 @@ test_that("DeepLabCut: selection errors name what the file has", {
   e <- cond(read_tracks(fx(wasp), dialect = "deeplabcut",
                         dialect_args = list(individuals = "individual1")))
   expect_match(conditionMessage(e), "no individuals row", fixed = TRUE)
+  e <- dl(individuals = character(0))
+  expect_s3_class(e, "radiatR_dialect_error")
 })
 
 test_that("DeepLabCut: individuals with different bodyparts need `individuals`", {
@@ -495,6 +506,8 @@ test_that("SLEAP: blank nodes leave a frame without a position, counted per node
   # score-weighted centroid of the three nodes in frame 0
   expect_equal(d$x[d$id == "track_0" & d$time == 0], 490.701857232182)
   expect_equal(frame_rate(ts), 30)
+  expect_error(read_tracks(fx(mice3), dialect = "sleap", time_type = "seconds"),
+               class = "radiatR_time_type_mismatch")
   a <- ts@meta$attrition
   expect_identical(a$point, c("head", "torso", "tail_base"))
   expect_equal(a$masked, c(8L, 0L, 8L))
