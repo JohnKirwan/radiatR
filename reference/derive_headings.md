@@ -91,3 +91,23 @@ unit axis vector). Other rules ignore it. The \`distal\` rule accepts
 \`max_radius\` (default \`Inf\`): the furthest-point search is
 restricted to positions with radius \`\<= max_radius\`, so \`max_radius
 = 1\` ignores beyond-circumference (\`rho \> 1\`) tracking outliers.
+
+The rules that average directions take a weighting through `...`:
+
+- `velocity_mean` and `vm_fit` average the directions of the steps of a
+  track. `weight_by = "uniform"` (default) counts every step once;
+  `"step_length"` weights a step by its length, which gives the
+  direction from the first position to the last, as `net` does. The two
+  rules return the same heading: the maximum-likelihood mean direction
+  of a von Mises distribution is the mean direction.
+
+- `velocity_axis` takes the same `weight_by`, with `"step_length"` as
+  its default.
+
+- `origin_mean` averages the bearings of the positions from the origin,
+  weighted by radius to the power `r_power` (default `0`, every position
+  counted once; `1` gives the bearing of the centroid).
+
+A step of zero length and a position at the origin have no direction and
+are left out of these averages, whatever the weighting. A track with no
+direction left, or whose directions cancel, has heading `NA`.

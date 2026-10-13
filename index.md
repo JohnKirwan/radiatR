@@ -54,10 +54,10 @@ dispatches to any of the built-in rules or a registered custom rule:
 | `distal` | Angle at frame of maximum radial distance |
 | `exit` | Velocity direction at ring crossing |
 | `net` | Start-to-end vector |
-| `velocity_mean` | Circular mean of per-frame velocity angles |
-| `vm_fit` | von Mises MLE over per-frame angles |
+| `velocity_mean` | Circular mean of step directions (pauses left out; `weight_by = "step_length"` weights by step length) |
+| `vm_fit` | von Mises MLE of the mean step direction (same heading as `velocity_mean`) |
 | `ransac_straight` | RANSAC-fitted straight-segment direction |
-| `origin_mean` | Distance-weighted mean angle from origin |
+| `origin_mean` | Mean bearing of the positions from the origin (`r_power` weights by distance) |
 | `bodypart_axis` | Axis between two tracked keypoints (pose data) |
 | `ellipse_axis` | Pre-computed orientation angle column (e.g. a `theta` column) |
 | … | `straight`, `window_net`, `goal_bias`, `pca_axis`, `maxspeed_window`, `entry`, `ring_tangent` |

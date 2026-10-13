@@ -170,11 +170,11 @@
 </tr>
 <tr>
 <td><code>velocity_mean</code></td>
-<td>Circular mean of per-frame velocity angles</td>
+<td>Circular mean of step directions (pauses left out; <code>weight_by = "step_length"</code> weights by step length)</td>
 </tr>
 <tr>
 <td><code>vm_fit</code></td>
-<td>von Mises MLE over per-frame angles</td>
+<td>von Mises MLE of the mean step direction (same heading as <code>velocity_mean</code>)</td>
 </tr>
 <tr>
 <td><code>ransac_straight</code></td>
@@ -182,7 +182,7 @@
 </tr>
 <tr>
 <td><code>origin_mean</code></td>
-<td>Distance-weighted mean angle from origin</td>
+<td>Mean bearing of the positions from the origin (<code>r_power</code> weights by distance)</td>
 </tr>
 <tr>
 <td><code>bodypart_axis</code></td>
