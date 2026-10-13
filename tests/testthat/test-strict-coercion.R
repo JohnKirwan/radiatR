@@ -402,14 +402,34 @@ test_that("a dot in a comma-decimal file is malformed and earns a hint", {
   expect_match(conditionMessage(e), "read_opts = list(decimal = \".\")", fixed = TRUE)
 })
 
-test_that("a semicolon file with decimal points loads once read_opts says so", {
+test_that("a semicolon file that shows decimal points is read with them", {
   path <- withr::local_tempfile(fileext = ".csv")
   writeLines(c("id;frame;x;y", "a;1;1.5;0.25", "a;2;2.25;0.5", "a;3;3.125;0.75"), path)
+  expect_equal(as.data.frame(read_tracks(path))$x, c(1.5, 2.25, 3.125))
+  # through a dialect too, which is not passed read_opts
+  writeLines(c("TRACK_ID;FRAME;POSITION_X;POSITION_Y", "0;0;1.5;0.25", "0;1;2.25;0.5"), path)
+  tm <- suppressMessages(read_tracks(path, dialect = "trackmate"))
+  expect_equal(as.data.frame(tm)$x, c(1.5, 2.25))
+})
+
+test_that("dots that could be digit grouping are no evidence of decimal points", {
+  path <- withr::local_tempfile(fileext = ".csv")
+  writeLines(c("id;frame;x;y", "a;1;1.234;5.125", "a;2;2.345;6.250", "a;3;3.456;7.375"), path)
   e <- malformed(read_tracks(path))
   expect_identical(e$rows, 1:3)
   expect_match(conditionMessage(e), "read_opts = list(decimal = \".\")", fixed = TRUE)
   ok <- read_tracks(path, read_opts = list(decimal = "."))
-  expect_equal(as.data.frame(ok)$x, c(1.5, 2.25, 3.125))
+  expect_equal(as.data.frame(ok)$x, c(1.234, 2.345, 3.456))
+  # one comma-decimal value among the first rows settles it the other way
+  writeLines(c("id;frame;x;y", "a;1;1.5;0,25", "a;2;2.25;0,5"), path)
+  expect_identical(malformed(read_tracks(path))$columns, "x")
+})
+
+test_that("scientific notation with a dot earns the hint too", {
+  e <- malformed(radiatR:::.as_numeric_strict(c("1,5", "1.5e3"), "x", source = "a.csv",
+                                              decimal = ","))
+  expect_identical(e$values, "1.5e3")
+  expect_match(conditionMessage(e), "read_opts = list(decimal = \".\")", fixed = TRUE)
 })
 
 test_that("dotted numeric time in a comma-decimal file is malformed too", {
@@ -450,6 +470,14 @@ test_that("bare dates count toward the date-time layout they sit beside", {
   expect_identical(e$rows, 3L)
 })
 
+test_that("a bare date is midnight in tz, also beside timestamps marked Z", {
+  got <- radiatR:::.coerce_time(c("2024-01-01", "2024-01-02T12:00:00Z"),
+                                tz = "America/New_York")
+  expect_identical(as.numeric(got), as.numeric(c(
+    as.POSIXct("2024-01-01", tz = "America/New_York"),
+    as.POSIXct("2024-01-02 12:00:00", tz = "UTC"))))
+})
+
 xy_cols <- function(tr) unlist(tr@cols[c("x", "y")], use.names = FALSE)
 
 test_that("a regex_mapping resolves columns by pattern", {
@@ -466,6 +494,31 @@ test_that("read_tracks(format = ) keeps the format's mapping over guessed column
   # an explicit mapping still overrides the format's
   got <- read_tracks(d, format = spec, mapping = list(x = "x", y = "y"))
   expect_identical(xy_cols(got), c("x", "y"))
+  expect_identical(xy_cols(read_tracks(d, format = spec, mapping = NULL)), c("pos_h", "pos_v"))
+})
+
+test_that("the caller's mapping spares a role its regex_mapping pattern", {
+  d <- cbind(xy_df(), pos_v = c(0.5, 0.6, 0.7))
+  spec <- list(regex_mapping = list(x = "_nope$", y = "_v$", angle = character(0)))
+  expect_identical(xy_cols(read_tracks_format(d, spec, mapping = list(x = "x"))),
+                   c("x", "pos_v"))
+  expect_identical(xy_cols(read_tracks(d, format = spec, mapping = list(x = "x"))),
+                   c("x", "pos_v"))
+})
+
+test_that("read_tracks(format = ) keeps the format's other fields", {
+  d <- data.frame(id = "a", frame = 1:3, theta = c(90, 180, 270))
+  spec <- list(angle = list(unit = "degrees"), time = list(fps = 25))
+  tr <- read_tracks(d, format = spec)
+  expect_equal(tr@data$theta, c(90, 180, 270) * pi / 180)
+  expect_equal(frame_rate(tr), 25)
+  # what the caller supplies still overrides the format
+  expect_equal(frame_rate(read_tracks(d, format = spec, fps = 50)), 50)
+
+  path <- withr::local_tempfile(fileext = ".csv")
+  writeLines(c("id;frame;x;y", "a;1;1.234;5.125", "a;2;2.345;6.250"), path)
+  ok <- read_tracks(path, format = list(), read_opts = list(decimal = "."))
+  expect_equal(as.data.frame(ok)$x, c(1.234, 2.345))
 })
 
 test_that("a regex_mapping pattern that matches no column is named", {
@@ -479,9 +532,25 @@ test_that("Excel date-times, which carry no zone, are read in tz", {
   skip_if_not_installed("readxl")
   skip_if_not_installed("writexl")
   path <- withr::local_tempfile(fileext = ".xlsx")
-  d <- xy_df(frame = as.POSIXct("2024-01-01 10:00:01", tz = "UTC") + c(0, 1, 2.5))
+  d <- xy_df(frame = as.POSIXct("2024-01-01 10:00:01", tz = "UTC") + c(0, 0.1, 3.001))
   writexl::write_xlsx(d, path)
-  ny <- as.numeric(as.POSIXct("2024-01-01 10:00:01", tz = "America/New_York")) + c(0, 1, 2.5)
-  expect_equal(as.numeric(read_tracks(path, tz = "America/New_York")@data$frame), ny)
-  expect_equal(as.numeric(read_tracks(path)@data$frame), as.numeric(d$frame))
+  # the same wall-clock times, five hours later; epoch seconds resolve ~2e-7 s
+  got <- as.numeric(read_tracks(path, tz = "America/New_York")@data$frame)
+  expect_lt(max(abs(got - as.numeric(d$frame) - 5 * 3600)), 1e-5)
+  expect_identical(as.numeric(read_tracks(path)@data$frame), as.numeric(d$frame))
+})
+
+test_that("a wall-clock time that does not exist in tz is not moved an hour on", {
+  # 02:30 on 2024-03-10 was skipped in New York
+  s <- sprintf("2024-03-10 0%d:30:00", 1:3)
+  e <- malformed(radiatR:::.coerce_time(s, tz = "America/New_York"))
+  expect_identical(e$rows, 2L)
+  expect_s3_class(radiatR:::.coerce_time(s, tz = "UTC"), "POSIXct")
+
+  skip_if_not_installed("readxl")
+  skip_if_not_installed("writexl")
+  path <- withr::local_tempfile(fileext = ".xlsx")
+  writexl::write_xlsx(data.frame(t = as.POSIXct(s, tz = "UTC")), path)
+  expect_identical(is.na(radiatR:::.read_any(path, tz = "America/New_York")$t),
+                   c(FALSE, TRUE, FALSE))
 })

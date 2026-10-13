@@ -69,9 +69,9 @@ radiatR_abort_malformed_values <- function(column, rows, values,
   )
   # The values look like numbers written with the other decimal mark.
   if (decimal_hint && identical(decimal, ",") &&
-      any(grepl("^[-+]?[0-9]*[.][0-9]+$", values)))
-    msg <- paste0(msg, "\n  The file was read with a decimal comma. Decimal points? ",
-                  "Pass read_opts = list(decimal = \".\").")
+      any(grepl("^[-+]?([0-9]+[.][0-9]*|[.][0-9]+)([eE][-+]?[0-9]+)?$", values)))
+    msg <- paste0(msg, "\n  The file was read with a decimal comma. If its decimal mark ",
+                  "is a point, pass read_opts = list(decimal = \".\").")
   else if (decimal_hint && !identical(decimal, ",") &&
            any(grepl("^-?[0-9]+,[0-9]+$", values)))
     msg <- paste0(msg, "\n  Decimal commas? Pass read_opts = list(decimal = \",\").")

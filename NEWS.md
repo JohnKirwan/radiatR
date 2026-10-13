@@ -56,11 +56,13 @@
   digit-grouping mark, so `1,5` or `1,234.5` in a tab-separated file is
   malformed rather than read as 15 or 1234.5. Pass
   `read_opts = list(decimal = ",")` for decimal commas. Where the decimal mark
-  is a comma (the default for semicolon-separated files), one bad cell names
-  that cell only, not every `1,5` in its column, and a value holding a `.` is
-  malformed in turn, since `1.234` could as well be 1234. A
-  semicolon-separated file that uses decimal points therefore stops with that
-  error until `read_opts = list(decimal = ".")` says so.
+  is a comma, one bad cell names that cell only, not every `1,5` in its
+  column, and a value holding a `.` is malformed in turn, since `1.234` could
+  as well be 1234. A semicolon-separated file is taken to use decimal commas
+  unless its first lines show decimal points and no decimal comma: a value
+  such as `1.5` or `0.125`, which cannot be digit grouping. For a file
+  `read_tracks()` reads itself, `read_opts = list(decimal = )` settles it
+  either way.
 
   The check covers the columns `read_tracks()` converts itself and the time
   column of every dialect but ANY-maze. An error raised inside a dialect does
@@ -152,18 +154,28 @@
 
 ## Bug fixes
 
-* `read_tracks(tz = )` now applies to every timestamp that carries no time
-  zone. A timestamp the file reader typed itself (`YYYY-MM-DD HH:MM:SS` with
-  readr or data.table installed, or an Excel date-time cell) was read as UTC
-  whatever `tz` was, while one left as text (`YYYY/MM/DD HH:MM:SS`) was read
-  in `tz`: the same wall-clock time came out hours apart, between two files of
-  one import or between two machines with different readers installed. A
-  timestamp marked `Z` is still UTC.
+* `read_tracks(tz = )` now applies to every timestamp without a time zone in
+  a delimited or Excel file that `read_tracks()` reads itself. A timestamp the
+  file reader typed (`YYYY-MM-DD HH:MM:SS` with readr or data.table installed,
+  or an Excel date-time cell) was read as UTC whatever `tz` was, while one
+  left as text (`YYYY/MM/DD HH:MM:SS`) was read in `tz`: the same wall-clock
+  time came out hours apart, between two files of one import or between two
+  machines with different readers installed. A timestamp marked `Z` is still
+  UTC, and a bare date beside such timestamps is midnight in `tz`. A
+  wall-clock time that does not exist in `tz` (the hour skipped when clocks go
+  forward) stops the load instead of being moved an hour on. `tz` does not
+  yet reach a file read by a dialect, or a Parquet or Feather file.
 
-* `read_tracks(format = )` uses the `mapping` and `regex_mapping` of the
-  format. Both were discarded, so the columns were guessed from their names
-  instead: a format mapping x to `pos_x` read a column named `x` if the file
-  had one. A `mapping` passed alongside `format` still takes precedence.
+* `read_tracks(format = )` honours the format. It passed all of its own
+  defaults on to `read_tracks_format()`, where they overrode the format: the
+  format's `mapping` and `regex_mapping` were discarded and the columns
+  guessed from their names (a format mapping x to `pos_x` read a column named
+  `x` if the file had one), and its angle unit, time type, time zone and
+  frame rate gave way to the defaults, so degrees were read as radians. Now
+  only the arguments the caller supplies override the format, `mapping` role
+  by role, and `read_opts` is passed on. A format that sets no angle unit is
+  read with `angle_unit = "auto"`, as `read_tracks_format()` reads it; it was
+  read as radians.
 
 * `circ_summarise()` and `circ_summary()` on a `Tracks` object now return the
   von Mises concentration `kappa`; it was always `NA`. The estimator was

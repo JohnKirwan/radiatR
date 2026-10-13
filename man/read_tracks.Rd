@@ -40,10 +40,13 @@ a duration): seconds are recorded as such in the Tracks metadata
 (`time_unit`), so [elapsed_seconds()] and the kinematics use them directly,
 with no frame rate.}
 
-\item{tz}{Time zone of timestamps that carry none (default "UTC"), whether
-the file reader types them or they are parsed from text. A timestamp
-marked `Z` is UTC whatever `tz` is, and a date-time column of a data frame
-keeps its instants.}
+\item{tz}{Time zone of timestamps that carry none (default "UTC") in a
+delimited or Excel file `read_tracks()` reads itself, and in a text column
+of a data frame; a bare date is midnight in `tz`. A wall-clock time that
+does not exist in `tz` (the hour skipped when clocks go forward) is an
+error. A timestamp marked `Z` is UTC whatever `tz` is, a date-time column
+of a data frame keeps its instants, and `tz` does not reach a file read by
+a dialect.}
 
 \item{fps}{Frames-per-second. Required when time_type = "frames" (the time
 column is kept as a raw frame index). When a single finite positive value
@@ -130,9 +133,11 @@ dialect. Such a value is never dropped or turned into `NA`. Blank cells and
 `NA` are missing values; `nan` and `inf` are read as such. Files are read
 with no digit-grouping mark, so `1,5` is malformed unless
 `read_opts = list(decimal = ",")` says the comma is the decimal mark. Where
-it is (the default for a semicolon-separated file), a value holding a `.`
-is malformed in turn, since `1.234` could as well be 1234;
-`read_opts = list(decimal = ".")` says the file uses decimal points.
+it is, a value holding a `.` is malformed in turn, since `1.234` could as
+well be 1234. A semicolon-separated file is taken to use decimal commas
+unless its first lines show decimal points and no decimal comma (`1.5` or
+`0.125`, which cannot be digit grouping);
+`read_opts = list(decimal = ".")` says so outright.
 
 The `trackmate`, `toxtrac`, `idtrackerai_wide` and `trex` dialects check
 their source columns the same way, before any reshaping, so the error names
