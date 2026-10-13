@@ -29,7 +29,8 @@ onto the heading table with `carry` (e.g. `carry = "arc"`).}
 \value{
 A `data.frame` with grouping columns followed by `mean_dir`
   (radians, unit-circle convention, 0 to 2π), `resultant_R` (0–1), `kappa`
-  (von Mises concentration), and `n` (number of valid headings in the group).
+  (von Mises concentration, with no small-sample bias correction; see
+  \code{\link{circ_summary}()}), and `n` (number of valid headings in the group).
 }
 \description{
 Derives one heading per trial via `derive_headings()`, then computes

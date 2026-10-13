@@ -43,7 +43,9 @@ missing), \code{"n_missing"} (excluded, non-finite headings),
 \code{"mean_dir"}, \code{"mean_dir_deg"}, \code{"resultant_R"},
 \code{"kappa"}. Default: \code{"n"}, \code{"mean_dir"},
 \code{"mean_dir_deg"}, \code{"resultant_R"}, \code{"kappa"}
-(\code{"n_total"}/\code{"n_missing"} are opt-in).}
+(\code{"n_total"}/\code{"n_missing"} are opt-in). \code{"kappa"} is the
+von Mises maximum-likelihood estimate from the mean resultant length,
+with no small-sample bias correction (see \code{\link{circ_summary}()}).}
 
 \item{display}{A [`circ_display`] object. When supplied, `mean_dir_deg` is
 converted using the display convention (clockwise, `zero` offset). When
