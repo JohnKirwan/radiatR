@@ -226,6 +226,17 @@
   “Generic CSV” to load it as plain columns. A dialect’s refusal of a
   file is shown as the app’s error headline.
 
+- The app can load a file that has rows with no position. When a load
+  stops on rows with a missing x/y, or on TrackMate spots that belong to
+  no track, the error offers to drop those rows and continue. Nothing is
+  dropped unless the user agrees, and the app asks again on every later
+  load. The number of rows dropped is shown above the results, and the
+  downloaded scripts load the file the same way (`on_invalid = "drop"`,
+  `dialect_args = list(unlinked = "drop")`). This lets idtracker.ai
+  files, TrackMate “all spots” exports and DeepLabCut or SLEAP files
+  with masked frames load in the app, which refused them before.
+  Malformed values and duplicate id/time rows are still errors.
+
 - New vignette
   [`vignette("agent-guide")`](https://johnkirwan.github.io/radiatR/articles/agent-guide.md):
   the angle conventions, calibration rules, failure behaviour and common
