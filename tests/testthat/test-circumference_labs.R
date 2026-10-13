@@ -99,6 +99,8 @@ test_that("circumference_labs validates its scale and resolves color alias", {
 })
 
 test_that("radiate(angle_labels=) accepts and renders domain scales", {
+  # without ggrepel the track-label fallback adds a GeomText layer
+  skip_if_not_installed("ggrepel")
   ts <- simulate_tracks(conditions = data.frame(n_trials = 3L),
                         n_points = 20, seed = 1, output = "trajset")
   p  <- radiate(ts, angle_labels = "months")
@@ -113,6 +115,8 @@ test_that("radiate(angle_labels=) accepts and renders domain scales", {
 })
 
 test_that("radiate(angle_labels='cardinal') aligns ticks to 4", {
+  # without ggrepel the track-label fallback adds a GeomText layer
+  skip_if_not_installed("ggrepel")
   ts  <- simulate_tracks(conditions = data.frame(n_trials = 2L),
                          n_points = 15, seed = 2, output = "trajset")
   p   <- radiate(ts, angle_labels = "cardinal")
@@ -121,6 +125,8 @@ test_that("radiate(angle_labels='cardinal') aligns ticks to 4", {
 })
 
 test_that("radiate back-compat: degrees/radians/none unchanged", {
+  # without ggrepel the track-label fallback adds a GeomText layer
+  skip_if_not_installed("ggrepel")
   ts <- simulate_tracks(conditions = data.frame(n_trials = 2L),
                         n_points = 15, seed = 3, output = "trajset")
 
