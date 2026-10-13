@@ -697,7 +697,9 @@ read_tracks_format <- function(x, format, ...) {
 #' @param dialect_args named list of extra arguments forwarded to the dialect
 #'   function (e.g. \code{list(bodypart = c("head","thorax"))})
 #' @param mutate list of transformations applied after reading (named functions or formulas)
-#' @param keep only keep these columns (NULL = keep all)
+#' @param keep extra columns to retain besides the mapped ones and those a
+#'   dialect produces (NULL = none). All other columns are dropped; a name
+#'   that is not in the data is ignored without a message.
 #' @param drop drop these columns after mapping
 #' @param id_from_filename if TRUE and id missing, derive id from file stem when reading multiple files
 #' @param validate Deprecated and ignored: `Tracks` invariants are always

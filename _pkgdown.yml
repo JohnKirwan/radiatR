@@ -51,6 +51,8 @@ navbar:
           href: articles/simulate.html
         - text: "Design contract"
           href: articles/design.html
+        - text: "Guide for AI agents"
+          href: articles/agent-guide.html
 
 reference:
   - title: "Launch the app"

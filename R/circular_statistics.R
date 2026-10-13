@@ -364,8 +364,10 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 #'
 #' Computes circular summary statistics from a data frame column of angles.
 #' Supports grouped tibbles and an explicit \code{.by} argument, returning
-#' one row per group. Output \code{mean_dir} is always in radians;
-#' \code{mean_dir_deg} is the same value converted to degrees.
+#' one row per group. Output \code{mean_dir} is always in radians
+#' (unit-circle convention); \code{mean_dir_deg} is that direction in degrees
+#' in the \code{display} convention (by default 0 = North, clockwise), so it
+#' is not \code{mean_dir * 180 / pi}.
 #'
 #' @param data A data frame or grouped tibble.
 #' @param col Unquoted or quoted name of the column containing angles.
@@ -389,10 +391,10 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 #'   (\code{"n_total"}/\code{"n_missing"} are opt-in). \code{"kappa"} is the
 #'   von Mises maximum-likelihood estimate from the mean resultant length,
 #'   with no small-sample bias correction (see \code{\link{circ_summary}()}).
-#' @param display A [`circ_display`] object. When supplied, `mean_dir_deg` is
-#'   converted using the display convention (clockwise, `zero` offset). When
-#'   `NULL` (default), `mean_dir_deg` is the raw degree equivalent of the
-#'   unit-circle radian angle.
+#' @param display A \code{\link{circ_display}} object giving the convention
+#'   in which \code{mean_dir_deg} is reported (the direction of zero and
+#'   whether angles increase clockwise). Defaults to \code{circ_display()}:
+#'   0 = North, clockwise.
 #'
 #' @return An ungrouped \code{tibble} with group columns first followed by
 #'   requested stat columns in the order given in \code{stats}.
