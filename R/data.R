@@ -17,8 +17,10 @@
 #' and `rel_y` give the target-relative heading and position. The subject
 #' identifier is retained in the `individual` column.
 #'
-#' The raw dtrack landmark/track text files for every trial are shipped in
-#' `inst/extdata/tracks/`, and the trial manifest in
+#' The raw dtrack landmark/track text files for every trial are shipped as
+#' one archive, `inst/extdata/tracks.tar.gz` (unpack it with
+#' `untar(system.file("extdata", "tracks.tar.gz", package = "radiatR"),
+#' exdir = tempdir())`), and the trial manifest in
 #' `inst/extdata/millipede_trials.csv`, so the full import pipeline can be
 #' reproduced with [get_all_object_pos()]. See `data-raw/millipede_example.R`.
 #'
