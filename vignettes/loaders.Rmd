@@ -162,10 +162,13 @@ ts_dlc_sure@meta$attrition
 ```
 
 **SLEAP** — an analysis CSV with `<node>.x` / `.y` / `.score` columns,
-`track` as the individual and `frame_idx` as time.
+`track` as the individual and `frame_idx` as time (frames). The `score_min`
+and `partial` arguments work as `likelihood_min` and `partial` do for
+DeepLabCut.
 
 ```{r sleap-example}
-sleap_path <- system.file("extdata", "sleap_example.csv", package = "radiatR")
+sleap_path <- system.file("extdata", "sleap_three_mice.analysis.csv",
+                          package = "radiatR")
 ts_sleap <- read_tracks(sleap_path, dialect = "sleap")
 ts_sleap
 ```
