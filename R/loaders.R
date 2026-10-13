@@ -135,6 +135,9 @@ escape_specials <- function(x) {
                        "geojson_linestring", "gpx", "motchallenge",
                        "nmea_gprmc", "tracktor", "tum_traj", "wide_prefix_xy")
 
+# Removed dialects whose files another dialect now reads.
+.replaced_dialects <- c(deeplabcut_multiheader = "deeplabcut")
+
 # ---- declarative format registry ---------------------------------------------
 .loader_format_registry <- new.env(parent = emptyenv())
 
@@ -190,6 +193,13 @@ list_loader_formats <- function() sort(ls(envir = .loader_format_registry))
 #' column is in seconds, with `attr(out, "time_unit") <- "seconds"` (or
 #' `"frames"`, to rule out `time_type = "seconds"`). See "Time units from a
 #' dialect" in [read_tracks()].
+#'
+#' A dialect that derives each position from several points can report what
+#' it left out with `attr(out, "attrition")`: a data frame with columns
+#' `source`, `point`, `masked`, `frames`, `frames_no_position`, `score_min`
+#' and `partial`, one row per point, with whole non-negative counts and one
+#' `frames` and one `frames_no_position` value (the per-file totals, repeated
+#' on each row). See "Masked points" in [read_tracks()].
 #' @param name Unique dialect name
 #' @param fun Function that accepts (x, ...) and returns a data.frame with id/time/angle or id/time/x/y
 #' @param overwrite Replace an existing dialect registered with the same name
@@ -536,6 +546,57 @@ guess_columns <- function(data, mapping = list()) {
   out
 }
 
+# What a dialect reports about the points it masked (see .dialect_position()):
+# a data frame with these columns, one row per source file and point.
+.attrition_cols <- c("source", "point", "masked", "frames", "frames_no_position",
+                     "score_min", "partial")
+
+# `recs` is a list of attrition records, one per file read. Returns them with
+# those columns only, so that the records of several files and loads row-bind.
+.check_attrition <- function(recs, dialect) {
+  ok <- function(a)
+    is.data.frame(a) && nrow(a) > 0L && all(.attrition_cols %in% names(a)) &&
+      all(vapply(a[c("masked", "frames", "frames_no_position")],
+                 function(v) is.numeric(v) && !anyNA(v) && all(v >= 0 & v == round(v)),
+                 logical(1))) &&
+      length(unique(a$frames)) == 1L && length(unique(a$frames_no_position)) == 1L &&
+      is.character(a$point) && !anyNA(a$point) && all(a$partial %in% c("na", "mean"))
+  if (!all(vapply(recs, ok, logical(1))))
+    rlang::abort(sprintf(paste0(
+      "read_tracks: dialect '%s' returned an attrition record that is not a data frame with ",
+      "columns %s: one row per point (a name, no NA), counts as whole numbers >= 0, `partial` ",
+      "\"na\" or \"mean\", and one `frames` and one `frames_no_position` value."),
+      dialect, paste(.attrition_cols, collapse = ", ")),
+      class = "radiatR_dialect_error")
+  lapply(recs, function(a) as.data.frame(a)[.attrition_cols])
+}
+
+# One message for the load when any point was masked. The frame counts are
+# per file (repeated on each of its rows), so they are summed over files, not
+# over rows; files are not told apart by name, which need not be unique.
+.inform_attrition <- function(recs, dialect, on_invalid = "error") {
+  masked <- do.call(rbind, lapply(recs, function(a) a[c("point", "masked")]))
+  if (is.null(masked) || !sum(masked$masked)) return(invisible())
+  by_point <- tapply(masked$masked, factor(masked$point, unique(masked$point)), sum)
+  by_point <- by_point[by_point > 0]
+  frames <- sum(vapply(recs, function(a) a$frames[1L], numeric(1)))
+  lost <- sum(vapply(recs, function(a) a$frames_no_position[1L], numeric(1)))
+  score_min <- recs[[1L]]$score_min[1L]
+  partial <- recs[[1L]]$partial[1L]
+  msg <- sprintf(
+    "%s: %d of %d row(s) have no position (%s, partial = \"%s\"). Masked points: %s.",
+    dialect, lost, frames,
+    if (is.na(score_min)) "no threshold" else paste("threshold", format(score_min)),
+    partial, paste(sprintf("%s %d", names(by_point), by_point), collapse = ", "))
+  if (lost > 0 && on_invalid == "error")
+    msg <- paste0(
+      msg, "\n  Pass on_invalid = \"drop\" to leave those rows out",
+      if (partial == "na")
+        ", or dialect_args = list(partial = \"mean\") to average the points that remain",
+      ".")
+  rlang::inform(msg, class = "radiatR_attrition")
+}
+
 # Read and combine multiple track files into one long data frame, preserving
 # per-file trajectory identity. Schema is detected from the FIRST file: a batch
 # is assumed to share one schema (standard for batch imports; mixed-schema
@@ -621,8 +682,10 @@ guess_columns <- function(data, mapping = list()) {
       paste(vapply(units, function(u) u %||% "unknown", character(1)), collapse = ", ")),
       class = "radiatR_time_type_mismatch")
 
+  attrition <- Filter(Negate(is.null), lapply(dfl, attr, "attrition"))
   df <- vctrs::vec_rbind(!!!dfl)
-  list(df = df, id_col = id_col, synth = synth, time_unit = units[[1L]])
+  list(df = df, id_col = id_col, synth = synth, time_unit = units[[1L]],
+       attrition = attrition)
 }
 
 # ---- core: read_tracks ------------------------------------------------------
@@ -730,7 +793,8 @@ read_tracks_format <- function(x, format, ...)
 #' default `time_type = "auto"` that decides how the column is read: TrackMate
 #' `POSITION_T` (when the version 7 units row gives seconds), ToxTrac
 #' `Time (sec)`, idtracker.ai `seconds` and TRex `time` are seconds, and need
-#' no `fps`; `FRAME`/`frame` columns are frames. A contrary explicit
+#' no `fps`; `FRAME`/`frame` columns, the DeepLabCut frame index and SLEAP
+#' `frame_idx` are frames. A contrary explicit
 #' `time_type` stops with a `radiatR_time_type_mismatch` error, as do files of
 #' one import that disagree.
 #' @param fps Frames-per-second. Required when time_type = "frames" (the time
@@ -752,6 +816,25 @@ read_tracks_format <- function(x, format, ...)
 #' @param read_opts list of file-reading overrides: `delim` (field separator),
 #'   `decimal` (decimal mark), and `sheet` (Excel worksheet name or number).
 #'   Any `NULL` element is auto-detected. Defaults to all-auto.
+#' @section Masked points:
+#' The `deeplabcut` and `sleap` dialects take each position from one or more
+#' points (bodyparts, nodes). A point is masked in a frame when its
+#' coordinates are missing or not finite, when its score (likelihood) is 0, or when a
+#' threshold is given (`dialect_args = list(likelihood_min = )` for
+#' DeepLabCut, `score_min` for SLEAP) and its score is missing or below it.
+#' A frame with a masked point has no position, unless
+#' `dialect_args = list(partial = "mean")` asks for the score-weighted mean of
+#' the points that remain. The dialect never removes a row: frames without a
+#' position meet `on_invalid` like any other missing coordinate.
+#'
+#' What was masked is reported in one message (class `radiatR_attrition`) and
+#' kept in the `attrition` element of the Tracks metadata: a data frame with
+#' one row per source file and point, giving the rows in which the point was
+#' masked (`masked`), the rows read from that file (`frames`), the rows left
+#' without a position (`frames_no_position`), and the threshold and `partial`
+#' setting used. `c()` row-binds these records; a subset keeps the whole
+#' record of its load, so recombining subsets of one load repeats it.
+#'
 #' @param dialect optional registered dialect name. The dialect reads `x`
 #'   itself (`read_tracks()` does not parse the file first) and is called once
 #'   per file when `x` holds several paths. See [register_loader_dialect()].
@@ -793,14 +876,14 @@ read_tracks_format <- function(x, format, ...)
 #' `0.125`, which cannot be digit grouping);
 #' `read_opts = list(decimal = ".")` says so outright.
 #'
-#' The `trackmate`, `toxtrac`, `idtrackerai_wide` and `trex` dialects check
+#' The `trackmate`, `toxtrac`, `idtrackerai_wide`, `trex`, `deeplabcut` and
+#' `sleap` dialects check
 #' their source columns the same way, before any reshaping, so the error names
 #' the header as the program wrote it and the row of the file's table. A
 #' missing or non-finite position found afterwards (see `on_invalid`) is still
 #' counted in the rows of the table the dialect returns, which for a wide
-#' format is the reshaped one. Coordinates that the pose and zone dialects
-#' convert themselves (ANY-maze, EthoVision, DeepLabCut, SLEAP) are not yet
-#' checked this way.
+#' format is the reshaped one. Coordinates that the zone dialects convert
+#' themselves (ANY-maze, EthoVision) are not yet checked this way.
 #'
 #' A time column given as text must hold either numbers throughout or
 #' timestamps in one layout throughout: `YYYY-MM-DD HH:MM:SS`,
@@ -849,6 +932,11 @@ read_tracks <- function(x,
   prep <- NULL
   if (!is.null(dialect)) {
     if (!exists(dialect, envir = .loader_registry, inherits = FALSE)) {
+      if (dialect %in% names(.replaced_dialects))
+        rlang::abort(sprintf(
+          "The '%s' dialect was removed in radiatR 0.1.3: dialect = \"%s\" reads those files.",
+          dialect, .replaced_dialects[[dialect]]),
+          class = "radiatR_removed_dialect", dialect = dialect)
       if (dialect %in% .removed_dialects)
         rlang::abort(sprintf(paste0(
           "The '%s' dialect was removed in radiatR 0.1.3. Register your own ",
@@ -905,8 +993,14 @@ read_tracks <- function(x,
   declared <- if (is.null(dialect)) NULL
               else if (length(x) > 1L && is.character(x)) combined$time_unit
               else attr(df, "time_unit")
+  # What the dialect reports about the points it masked: one record per file.
+  attrition <- .check_attrition(
+    if (is.null(dialect)) list()
+    else if (length(x) > 1L && is.character(x)) combined$attrition
+    else Filter(Negate(is.null), list(attr(df, "attrition"))), dialect)
+  .inform_attrition(attrition, dialect, on_invalid)
   # The reader's notes have been read; they are not part of the Tracks data.
-  attr(df, "decimal") <- attr(df, "time_unit") <- NULL
+  attr(df, "decimal") <- attr(df, "time_unit") <- attr(df, "attrition") <- NULL
   if (!is.null(declared)) {
     if (!(identical(declared, "seconds") || identical(declared, "frames")))
       rlang::abort(sprintf(
@@ -1092,6 +1186,7 @@ read_tracks <- function(x,
   # take it for a frame index and ask for (then divide by) a frame rate.
   if (is.numeric(df[[time]]) && (time_type == "seconds" || time_is_duration))
     meta$time_unit <- "seconds"
+  if (length(attrition)) meta$attrition <- do.call(rbind, attrition)
   tracks(df,
          id = id, time = time, angle = angle,
          x = xcol, y = ycol,
@@ -1336,104 +1431,280 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
                dialect = inp$dialect, decimal = inp$decimal)
 }
 
-# A dialect's result, carrying the unit of its time column for read_tracks().
-.dialect_output <- function(out, time_unit = NULL) {
+# A dialect's result, carrying for read_tracks() the unit of its time column
+# and, from a dialect that masks points, its attrition record.
+.dialect_output <- function(out, time_unit = NULL, attrition = NULL) {
   attr(out, "time_unit") <- time_unit
+  attr(out, "attrition") <- attrition
   out
 }
 
+# A column the caller named in `arg` must be one of the table's.
+.dialect_require <- function(inp, col, arg) {
+  if (!is.null(col) && !col %in% inp$names)
+    rlang::abort(sprintf("%s: `%s = \"%s\"` names no column; the table has %s.",
+                         inp$dialect, arg, col, paste(inp$names, collapse = ", ")),
+                 class = "radiatR_dialect_error", source = inp$source)
+  col
+}
+
+# The points of a flat table: the <point> of each <point>_x / <point>_y pair.
+.dialect_point_names <- function(nms) {
+  of <- function(suffix) sub(suffix, "", grep(suffix, nms, value = TRUE))
+  intersect(of("_x$"), of("_y$"))
+}
+
+# The points to use: every one found (`sel` NULL), or the ones named, which
+# must be distinct and among those found. `what` names a point in the errors.
+.dialect_select <- function(sel, found, what, dialect, source = NULL) {
+  if (is.null(sel)) return(found)
+  fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error",
+                                     source = source)
+  if (!is.character(sel) || !length(sel) || anyNA(sel) || anyDuplicated(sel))
+    fail("%s: `bodypart` must name one or more distinct %ss.", dialect, what)
+  bad <- setdiff(sel, found)
+  if (length(bad))
+    fail("%s: %s(s) not found: %s; available: %s.", dialect, what,
+         paste(bad, collapse = ", "), paste(found, collapse = ", "))
+  sel
+}
+
+# A score (likelihood) column as numbers. A score weighs its point, so a
+# negative or infinite one is malformed. Scores are not capped at 1: SLEAP's
+# exceed it.
+.dialect_score <- function(inp, col) {
+  s <- .dialect_num(inp, col)
+  bad <- which(!is.na(s) & (s < 0 | is.infinite(s)))
+  if (length(bad))
+    radiatR_abort_malformed_values(.dialect_header(inp, col), bad, s[bad],
+                                   expected = "a finite score of 0 or more",
+                                   source = inp$source, dialect = inp$dialect)
+  s
+}
+
+# The x, y and score columns of the selected points as matrices: one row per
+# row of the table, one column per point. `x_cols`, `y_cols` and `score_cols`
+# are normalised column names, named by point. `score` has a column only for
+# the points given one, and is NULL when none is.
+.dialect_points <- function(inp, x_cols, y_cols, score_cols = NULL) {
+  n <- nrow(inp$df)
+  mat <- function(cols, read)
+    matrix(unlist(lapply(cols, function(cc) as.numeric(read(inp, cc))), use.names = FALSE),
+           nrow = n, ncol = length(cols), dimnames = list(NULL, names(cols)))
+  list(x = mat(x_cols, .dialect_num), y = mat(y_cols, .dialect_num),
+       score = if (length(score_cols)) mat(score_cols, .dialect_score))
+}
+
+# One position per row from its points (`pts`, from .dialect_points()).
+# A point is masked in a row when its x or y is missing, when its score is 0
+# (DeepLabCut writes x = y = 0, likelihood 0 for a frame with no detection),
+# or when `score_min` is given and its score is missing or below it. The
+# position is the score-weighted mean of the points; a point without a score
+# weighs 1. A row with a masked point has no position (`partial = "na"`) or
+# the mean of the points that remain (`partial = "mean"`). Rows are never
+# removed. Also returned: `points`, the <point>_x / <point>_y columns with
+# masked cells NA (for the bodypart_axis heading rule), and the attrition
+# record, one row per point. `score_arg` is the dialect's name for `score_min`,
+# for the error messages.
+.dialect_position <- function(pts, score_min = NULL, partial = c("na", "mean"),
+                              dialect, source = NULL, score_arg = "score_min") {
+  partial <- match.arg(partial)
+  x <- pts$x; y <- pts$y; score <- pts$score
+  points <- colnames(x)
+  stopifnot(length(points) > 0L, !anyDuplicated(points))
+  if (!is.null(score_min)) {
+    if (!(is.numeric(score_min) && length(score_min) == 1L && is.finite(score_min)))
+      rlang::abort(sprintf("%s: `%s` must be one finite number.", dialect, score_arg),
+                   class = "radiatR_dialect_error", source = source)
+    unscored <- setdiff(points, colnames(score))
+    if (length(unscored))
+      rlang::abort(sprintf("%s: `%s` was given, but there is no score column for: %s.",
+                           dialect, score_arg, paste(unscored, collapse = ", ")),
+                   class = "radiatR_dialect_error", source = source)
+  }
+  masked <- !is.finite(x) | !is.finite(y)
+  w <- matrix(1, nrow(x), ncol(x), dimnames = dimnames(x))
+  for (p in intersect(points, colnames(score))) {
+    s <- score[, p]
+    masked[, p] <- masked[, p] | (!is.na(s) & s == 0)
+    if (!is.null(score_min)) masked[, p] <- masked[, p] | is.na(s) | s < score_min
+    w[, p] <- ifelse(is.na(s), 1, s)
+  }
+  w[masked] <- 0
+  x0 <- x; y0 <- y
+  x0[masked] <- 0; y0[masked] <- 0
+  wsum <- rowSums(w)
+  ok <- if (partial == "na") rowSums(masked) == 0L else wsum > 0
+  px <- py <- rep(NA_real_, nrow(x))
+  px[ok] <- rowSums(x0 * w)[ok] / wsum[ok]
+  py[ok] <- rowSums(y0 * w)[ok] / wsum[ok]
+  x[masked] <- NA_real_; y[masked] <- NA_real_
+  pc <- as.data.frame(cbind(x, y)[, order(rep(seq_along(points), 2L)), drop = FALSE])
+  names(pc) <- paste0(rep(points, each = 2L), c("_x", "_y"))
+  list(x = px, y = py, points = pc,
+       attrition = data.frame(
+         source = rep(source %||% NA_character_, length(points)), point = points,
+         masked = as.integer(colSums(masked)), frames = nrow(x),
+         frames_no_position = sum(!ok), score_min = score_min %||% NA_real_,
+         partial = partial, stringsAsFactors = FALSE))
+}
+
 # ---- built-in dialects -------------------------------------------------------
-# DeepLabCut: per-bodypart *_x / *_y columns (post-multiheader collapse or plain CSV).
+# A DeepLabCut predictions CSV as a table of text columns. Its header is three
+# rows labelled scorer, bodyparts, coords, or four with an individuals row
+# (multi-animal projects); the first column is the frame index. The columns
+# are named `frame`, then <bodypart>_<coord>, or <individual>/<bodypart>_<coord>
+# under an individuals row. attr(, "dlc") lists the points: individual (NA
+# without an individuals row), bodypart, and the names of the x, y and
+# likelihood columns (NA where the point has none). Header fields are trimmed
+# and unquoted: DeepLabCut can end its header rows in CRLF and its data rows
+# in LF, and a re-saved file may quote them.
+.read_deeplabcut <- function(path) {
+  src <- basename(path)
+  fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error", source = src)
+  hdr <- lapply(strsplit(readLines(path, n = 4L, warn = FALSE), ",", fixed = TRUE),
+                function(f) gsub("^\"|\"$", "", trimws(f)))
+  lab <- tolower(vapply(hdr, function(f) if (length(f)) f[1L] else "", character(1)))
+  n_hdr <- if (identical(lab[1:3], c("scorer", "bodyparts", "coords"))) 3L
+           else if (identical(lab, c("scorer", "individuals", "bodyparts", "coords"))) 4L
+           else fail(paste0("deeplabcut: '%s' is not a DeepLabCut output file. Its first rows are ",
+                            "labelled %s; a DeepLabCut file starts with rows labelled scorer, ",
+                            "(individuals,) bodyparts, coords. A flat <bodypart>_x table is ",
+                            "read as a data frame, not as a file."),
+                     src, paste(sprintf("'%s'", substr(lab, 1L, 30L)), collapse = ", "))
+  ind <- if (n_hdr == 4L) hdr[[2L]][-1L]
+  bp <- hdr[[n_hdr - 1L]][-1L]
+  co <- tolower(hdr[[n_hdr]][-1L])
+  if (length(bp) != length(co) || (!is.null(ind) && length(ind) != length(bp)))
+    fail("deeplabcut: the header rows of '%s' differ in length.", src)
+  if (any(co == ""))
+    fail(paste0("deeplabcut: '%s' has columns with no coords label, which a predictions file ",
+                "never has. Labelled training data (CollectedData_*.csv) is not tracking ",
+                "output: read the predictions file DeepLabCut writes when it analyses a video."),
+         src)
+  other <- setdiff(co, c("x", "y", "likelihood"))
+  if (length(other))
+    fail("deeplabcut: '%s' has coords other than x, y and likelihood (%s); 3-D output is not read.",
+         src, paste(other, collapse = ", "))
+  key <- paste0(if (!is.null(ind)) paste0(ind, "/"), bp, "_", co)
+  if (anyDuplicated(key))
+    fail("deeplabcut: '%s' repeats header columns (%s).", src,
+         paste(unique(key[duplicated(key)]), collapse = ", "))
+  # Every data row must have the header's fields: read.csv() pads a short row
+  # and wraps a long one into a row of its own.
+  nf <- utils::count.fields(path, sep = ",", quote = "\"", skip = n_hdr, comment.char = "")
+  if (!length(nf)) fail("deeplabcut: '%s' has no data rows.", src)
+  ragged <- which(is.na(nf) | nf != length(key) + 1L)
+  if (length(ragged))
+    fail("deeplabcut: data row %d of '%s' has %s field(s); its header names %d.",
+         ragged[1L], src, nf[ragged[1L]], length(key) + 1L)
+  d <- utils::read.csv(path, header = FALSE, skip = n_hdr, colClasses = "character",
+                       check.names = FALSE, strip.white = TRUE)
+  names(d) <- c("frame", key)
+  pt <- unique(data.frame(individual = if (is.null(ind)) NA_character_ else ind,
+                          bodypart = bp, stringsAsFactors = FALSE))
+  col <- function(coord) {
+    k <- paste0(if (!is.null(ind)) paste0(pt$individual, "/"), pt$bodypart, "_", coord)
+    ifelse(k %in% names(d), k, NA_character_)
+  }
+  attr(d, "dlc") <- data.frame(pt, x = col("x"), y = col("y"), score = col("likelihood"),
+                               stringsAsFactors = FALSE, row.names = NULL)
+  d
+}
+
+# DeepLabCut (https://deeplabcut.org). A file is the predictions CSV (see
+# .read_deeplabcut()): the time is the frame index, in frames, and each
+# individual is a track (id "1" without an individuals row). A data frame is
+# a flat table of <bodypart>_x / _y / _likelihood columns, with optional id
+# and time columns.
 #
-# bodypart = NULL       -> centroid of ALL detected bodyparts (likelihood-weighted)
-# bodypart = "head"     -> single bodypart, original row-filter behaviour
-# bodypart = c("h","t") -> centroid of the named subset
+# bodypart = NULL       -> every bodypart
+# bodypart = c("h","t") -> the named ones
+# The position is their likelihood-weighted centroid under the masking rule of
+# .dialect_position() (`likelihood_min`, `partial`). `individuals` keeps some
+# individuals of a multi-animal file.
 #
 # Per-bodypart <name>_x / <name>_y columns are always appended to the output so
-# downstream heading rules (e.g. bodypart_axis) can access individual points.
+# downstream heading rules (e.g. bodypart_axis) can access individual points;
+# they are NA where the point is masked.
 register_loader_dialect("deeplabcut", function(x, bodypart = NULL, likelihood_min = NULL,
+                                                partial = c("na", "mean"), individuals = NULL,
                                                 id_col = NULL, time_col = NULL, fps = NULL) {
-  df <- if (is.character(x) && file.exists(x)) .read_any(x) else x
-  stopifnot(is.data.frame(df))
-  nms <- names(df)
-
-  # Discover bodypart names from <name>_x / <name>_y pairs
-  bpx     <- sub("_x$", "", grep("_x$", nms, value = TRUE))
-  bpy     <- sub("_y$", "", grep("_y$", nms, value = TRUE))
-  bps_all <- intersect(bpx, bpy)
-  if (!length(bps_all)) stop("deeplabcut: no *_x/*_y column pairs found")
-
-  sel <- if (is.null(bodypart)) bps_all else bodypart
-  bad <- setdiff(sel, bps_all)
-  if (length(bad))
-    stop("deeplabcut: bodypart(s) not found: ", paste(bad, collapse = ", "),
-         "; available: ", paste(bps_all, collapse = ", "))
-
-  id   <- id_col %||% .guess_col(nms, c("id","individual","animal","subject")) %||% "1"
-  time <- time_col %||% .guess_col(nms, c("time","timestamp","t","frame","frames")) %||% "..row"
-  if (time == "..row") df[[time]] <- seq_len(nrow(df))
-
-  if (length(sel) == 1L) {
-    # single bodypart: row-level likelihood filter, x/y from that bodypart
-    xc <- paste0(sel, "_x"); yc <- paste0(sel, "_y"); lc <- paste0(sel, "_likelihood")
-    if (!is.null(likelihood_min) && lc %in% nms)
-      df <- df[!is.na(df[[lc]]) & df[[lc]] >= as.numeric(likelihood_min), , drop = FALSE]
-    cx <- as.numeric(df[[xc]]); cy <- as.numeric(df[[yc]])
+  partial <- match.arg(partial)
+  inp <- .dialect_input(x, "deeplabcut", read = .read_deeplabcut)
+  fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error",
+                                     source = inp$source)
+  nms <- inp$names; n <- nrow(inp$df)
+  lay <- attr(inp$df, "dlc")
+  idv <- NULL
+  if (!is.null(lay)) {
+    if (!is.null(id_col) || !is.null(time_col))
+      fail(paste0("deeplabcut: `id_col` and `time_col` do not apply to a DeepLabCut file: ",
+                  "the id is the individual and the time is the frame index."))
+    if (all(is.na(.parse_number(inp$df$frame))))
+      fail(if (all(is.na(lay$score)))
+             paste0("deeplabcut: '%s' is labelled training data (its rows are indexed by image, ",
+                    "with no likelihoods), not tracking output. Read the predictions file ",
+                    "DeepLabCut writes when it analyses a video.")
+           else
+             paste0("deeplabcut: '%s' holds predictions for a folder of images: its rows are ",
+                    "indexed by image name, not by frame number, so they have no time."),
+           inp$source)
+    unit <- "frames"
+    time <- .dialect_time(inp, "frame", unit, fps)
   } else {
-    # multi-bodypart: per-row likelihood-weighted centroid
-    # bodyparts below likelihood_min contribute zero weight for that row
-    xs <- vapply(sel, function(bp) as.numeric(df[[paste0(bp, "_x")]]), numeric(nrow(df)))
-    ys <- vapply(sel, function(bp) as.numeric(df[[paste0(bp, "_y")]]), numeric(nrow(df)))
-    dim(xs) <- c(nrow(df), length(sel)); dim(ys) <- c(nrow(df), length(sel))
-    ws <- vapply(sel, function(bp) {
-      lc <- paste0(bp, "_likelihood")
-      w  <- if (lc %in% nms) as.numeric(df[[lc]]) else rep(1, nrow(df))
-      # NA likelihood with no threshold -> include at equal weight;
-      # NA likelihood with a threshold -> exclude (can't verify it passes)
-      if (is.null(likelihood_min)) w[is.na(w)] <- 1 else {
-        w[is.na(w)] <- 0; w[!is.na(w) & w < as.numeric(likelihood_min)] <- 0
-      }
-      w
-    }, numeric(nrow(df)))
-    dim(ws) <- c(nrow(df), length(sel))
-    wsum <- rowSums(ws)
-    cx <- ifelse(wsum > 0, rowSums(xs * ws) / wsum, NA_real_)
-    cy <- ifelse(wsum > 0, rowSums(ys * ws) / wsum, NA_real_)
+    bps <- .dialect_point_names(nms)
+    if (!length(bps)) fail("deeplabcut: no <bodypart>_x / <bodypart>_y column pairs found.")
+    lik <- paste0(bps, "_likelihood")
+    lay <- data.frame(individual = NA_character_, bodypart = bps, x = paste0(bps, "_x"),
+                      y = paste0(bps, "_y"), score = ifelse(lik %in% nms, lik, NA_character_),
+                      stringsAsFactors = FALSE)
+    id <- .dialect_require(inp, id_col, "id_col") %||%
+      .guess_col(nms, c("id", "individual", "animal", "subject"))
+    time_col <- .dialect_require(inp, time_col, "time_col") %||%
+      .guess_col(nms, c("time", "timestamp", "t", "frame", "frames"))
+    unit <- if (is.null(time_col) || grepl("^frames?$", time_col, ignore.case = TRUE)) "frames"
+    time <- .dialect_time(inp, time_col, unit, fps)
+    if (!is.null(id)) idv <- .dialect_col(inp, id)
   }
 
+  inds <- unique(lay$individual)
+  if (!is.null(individuals)) {
+    if (!is.character(individuals) || !length(individuals) || anyNA(individuals))
+      fail("deeplabcut: `individuals` must name one or more individuals.")
+    if (all(is.na(inds)))
+      fail("deeplabcut: `individuals` was given, but the input has no individuals row.")
+    unknown <- setdiff(as.character(individuals), inds)
+    if (length(unknown))
+      fail("deeplabcut: no such individual(s): %s; the file has %s.",
+           paste(unknown, collapse = ", "), paste(inds, collapse = ", "))
+    inds <- inds[inds %in% as.character(individuals)]
+    lay <- lay[lay$individual %in% inds, , drop = FALSE]
+  }
+  sel <- .dialect_select(bodypart, unique(lay$bodypart), "bodypart", "deeplabcut", inp$source)
+
+  pts <- lapply(inds, function(k) {
+    li <- if (is.na(k)) lay else lay[lay$individual == k, , drop = FALSE]
+    li <- li[match(sel, li$bodypart), , drop = FALSE]
+    gap <- is.na(li$x) | is.na(li$y)
+    if (any(gap))
+      fail(paste0("deeplabcut: %s has no x/y columns for bodypart(s): %s. Name the individuals ",
+                  "to read with dialect_args = list(individuals = c(...)), or the bodyparts ",
+                  "they share with `bodypart`."),
+           if (is.na(k)) "the input" else sprintf("individual '%s'", k),
+           paste(sel[gap], collapse = ", "))
+    sc <- stats::setNames(li$score, sel)
+    .dialect_points(inp, stats::setNames(li$x, sel), stats::setNames(li$y, sel), sc[!is.na(sc)])
+  })
+  if (length(unique(lapply(pts, function(p) colnames(p$score)))) > 1L)
+    fail("deeplabcut: the individuals do not have likelihood columns for the same bodyparts.")
+  bind <- function(what) do.call(rbind, lapply(pts, `[[`, what))
+  pos <- .dialect_position(list(x = bind("x"), y = bind("y"), score = bind("score")),
+                           likelihood_min, partial, "deeplabcut", inp$source, "likelihood_min")
   out <- data.frame(
-    id   = if (length(id) == 1L && id == "1") rep("1", nrow(df)) else df[[id]],
-    time = .coerce_time(df[[time]],
-                        time_type = if (!is.null(fps) && grepl("frame", time, ignore.case = TRUE)) "frames" else "auto",
-                        fps = fps),
-    x = cx, y = cy,
-    stringsAsFactors = FALSE
-  )
-  # Always append per-bodypart columns for use with bodypart_axis heading rule
-  for (bp in sel) {
-    out[[paste0(bp, "_x")]] <- as.numeric(df[[paste0(bp, "_x")]])
-    out[[paste0(bp, "_y")]] <- as.numeric(df[[paste0(bp, "_y")]])
-  }
-  out
-})
-
-# DeepLabCut three-row multiheader CSV: collapses scorer/bodypart/coord rows into
-# <bodypart>_<coord> columns, then delegates to the deeplabcut dialect.
-# Supports the same bodypart selection and multi-bodypart centroid logic.
-register_loader_dialect("deeplabcut_multiheader", function(path, bodypart = NULL, ...) {
-  stopifnot(is.character(path) && file.exists(path))
-  lines <- readLines(path, n = 3)
-  # if it's not a three-row header, fall back to standard reader
-  if (length(lines) < 3) return(get("deeplabcut", envir = .loader_registry)(path, bodypart = bodypart, ...))
-  # rebuild colnames by pasting row2_row3
-  raw <- utils::read.csv(path, header = FALSE, skip = 3, check.names = FALSE, stringsAsFactors = FALSE)
-  hdr1 <- strsplit(lines[1], ",", fixed = TRUE)[[1]]
-  hdr2 <- strsplit(lines[2], ",", fixed = TRUE)[[1]]
-  hdr3 <- strsplit(lines[3], ",", fixed = TRUE)[[1]]
-  len <- min(length(hdr2), length(hdr3))
-  cn  <- paste0(hdr2[seq_len(len)], "_", hdr3[seq_len(len)])
-  names(raw)[seq_along(cn)] <- cn
-  get("deeplabcut", envir = .loader_registry)(raw, bodypart = bodypart, ...)
+    id = if (!is.null(idv)) idv else rep(if (all(is.na(inds))) "1" else inds, each = n),
+    time = rep(time, times = length(inds)), x = pos$x, y = pos$y, stringsAsFactors = FALSE)
+  .dialect_output(cbind(out, pos$points), unit, pos$attrition)
 })
 
 # idtracker.ai wide format: one x/y column pair per animal, written `x1,y1,...`
@@ -1795,77 +2066,50 @@ register_loader_dialect("anymaze", function(x, id_col = NULL, time_col = NULL,
   out
 })
 
-# SLEAP (https://sleap.ai): CSV analysis export.
-# Column naming: <node>.x, <node>.y, <node>.score (dot -> underscore after norm).
-# bodypart = NULL  -> centroid of all nodes, score-weighted.
-# bodypart = c("head","thorax") -> centroid of named subset.
-# Per-node <name>_x / <name>_y columns always appended for bodypart_axis use.
-# score_min: minimum per-node score to include in centroid (analogous to likelihood_min).
+# SLEAP (https://sleap.ai) analysis CSV: `track`, `frame_idx`, then <node>.x /
+# .y / .score for each node. Headers are matched lower-cased, with runs of
+# other characters as "_" (`Tail Base.x` is tail_base_x); `bodypart` is
+# normalised the same way. The id is `track`, and an empty track column (an
+# untracked, single-animal export) is one track. The time is `frame_idx`, in
+# frames (a time column of another name has no declared unit).
+# `instance.score` is not a node and is not used. Two headers that normalise
+# to the same column are refused.
+#
+# The position is the score-weighted centroid of the selected nodes (all of
+# them when bodypart = NULL) under the masking rule of .dialect_position()
+# (`score_min`, `partial`). Per-node <name>_x / <name>_y columns are always
+# appended, NA where the node is masked.
 register_loader_dialect("sleap", function(x, bodypart = NULL, score_min = NULL,
+                                          partial = c("na", "mean"),
                                           id_col = NULL, time_col = NULL, fps = NULL) {
-  df <- if (is.character(x) && length(x) == 1L && file.exists(x)) .read_any(x) else x
-  stopifnot(is.data.frame(df))
+  partial <- match.arg(partial)
   norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(v))
-  nms  <- norm(names(df)); names(df) <- nms
+  inp <- .dialect_input(x, "sleap", norm)
+  fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error",
+                                     source = inp$source)
+  nms <- inp$names; n <- nrow(inp$df)
+  same <- nms %in% nms[duplicated(nms)] & grepl("_(x|y|score)$", nms)
+  if (any(same))
+    fail("sleap: these headers name the same column once case and punctuation are set aside: %s.",
+         paste(names(inp$df)[same], collapse = ", "))
+  nodes <- .dialect_point_names(nms)
+  if (!length(nodes)) fail("sleap: no <node>.x / <node>.y column pairs found.")
+  sel <- .dialect_select(if (is.character(bodypart)) norm(bodypart) else bodypart,
+                         nodes, "node", "sleap", inp$source)
 
-  # Detect nodes from <node>_x / <node>_y pairs; alias <node>_score -> <node>_likelihood
-  bpx     <- sub("_x$", "", grep("_x$", nms, value = TRUE))
-  bpy     <- sub("_y$", "", grep("_y$", nms, value = TRUE))
-  bps_all <- intersect(bpx, bpy)
-  if (!length(bps_all)) stop("sleap: no *_x/*_y column pairs found")
-  for (bp in bps_all) {
-    sc <- paste0(bp, "_score")
-    lc <- paste0(bp, "_likelihood")
-    if (sc %in% nms && !lc %in% nms) df[[lc]] <- df[[sc]]
-  }
-  nms <- names(df)
+  id <- .dialect_require(inp, id_col, "id_col") %||%
+    .guess_col(nms, c("track", "id", "individual", "animal", "subject"))
+  idv <- if (!is.null(id)) .dialect_col(inp, id)
+  if (is.null(idv) || all(.is_missing_chr(trimws(as.character(idv))))) idv <- rep("1", n)
+  time_col <- .dialect_require(inp, time_col, "time_col") %||%
+    .guess_col(nms, c("frame_idx", "frame", "frames", "time", "t"))
+  unit <- if (is.null(time_col) || grepl("^(frame_idx|frames?)$", time_col)) "frames"
 
-  sel <- if (is.null(bodypart)) bps_all else bodypart
-  bad <- setdiff(sel, bps_all)
-  if (length(bad))
-    stop("sleap: node(s) not found: ", paste(bad, collapse = ", "),
-         "; available: ", paste(bps_all, collapse = ", "))
-
-  id   <- id_col %||% .guess_col(nms, c("track","id","individual","animal","subject")) %||% "1"
-  # SLEAP writes an empty track column for untracked (single-animal) exports.
-  if (id != "1" && id %in% names(df) && all(is.na(df[[id]]))) id <- "1"
-  time <- time_col %||% .guess_col(nms, c("frame_idx","frame","frames","time","t")) %||% "..row"
-  if (time == "..row") { df[["..row"]] <- seq_len(nrow(df)); time <- "..row" }
-
-  if (length(sel) == 1L) {
-    xc <- paste0(sel, "_x"); yc <- paste0(sel, "_y"); lc <- paste0(sel, "_likelihood")
-    if (!is.null(score_min) && lc %in% nms)
-      df <- df[!is.na(df[[lc]]) & df[[lc]] >= as.numeric(score_min), , drop = FALSE]
-    cx <- as.numeric(df[[xc]]); cy <- as.numeric(df[[yc]])
-  } else {
-    xs <- vapply(sel, function(bp) as.numeric(df[[paste0(bp, "_x")]]), numeric(nrow(df)))
-    ys <- vapply(sel, function(bp) as.numeric(df[[paste0(bp, "_y")]]), numeric(nrow(df)))
-    dim(xs) <- c(nrow(df), length(sel)); dim(ys) <- c(nrow(df), length(sel))
-    ws <- vapply(sel, function(bp) {
-      lc <- paste0(bp, "_likelihood")
-      w  <- if (lc %in% nms) as.numeric(df[[lc]]) else rep(1, nrow(df))
-      if (is.null(score_min)) w[is.na(w)] <- 1 else {
-        w[is.na(w)] <- 0; w[!is.na(w) & w < as.numeric(score_min)] <- 0
-      }
-      w
-    }, numeric(nrow(df)))
-    dim(ws) <- c(nrow(df), length(sel))
-    wsum <- rowSums(ws)
-    cx <- ifelse(wsum > 0, rowSums(xs * ws) / wsum, NA_real_)
-    cy <- ifelse(wsum > 0, rowSums(ys * ws) / wsum, NA_real_)
-  }
-
-  out <- data.frame(
-    id   = if (length(id) == 1L && id == "1") rep("1", nrow(df)) else df[[id]],
-    time = .coerce_time(df[[time]],
-                        time_type = if (!is.null(fps) && grepl("frame", time, ignore.case = TRUE)) "frames" else "auto",
-                        fps = fps),
-    x = cx, y = cy,
-    stringsAsFactors = FALSE
-  )
-  for (bp in sel) {
-    out[[paste0(bp, "_x")]] <- as.numeric(df[[paste0(bp, "_x")]])
-    out[[paste0(bp, "_y")]] <- as.numeric(df[[paste0(bp, "_y")]])
-  }
-  out
+  sc <- stats::setNames(paste0(sel, "_score"), sel)
+  pts <- .dialect_points(inp, stats::setNames(paste0(sel, "_x"), sel),
+                         stats::setNames(paste0(sel, "_y"), sel), sc[sc %in% nms])
+  pos <- .dialect_position(pts, score_min, partial, "sleap", inp$source)
+  out <- data.frame(id = idv, time = .dialect_time(inp, time_col, unit, fps),
+                    x = pos$x, y = pos$y, stringsAsFactors = FALSE)
+  .dialect_output(cbind(out, pos$points), unit, pos$attrition)
 })

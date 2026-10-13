@@ -120,8 +120,8 @@ limitations are general:
 | Dialect | Handled | Not handled |
 |---|---|---|
 | `trex` | Positional CSV: plain `X`/`Y`, the `#wcentroid` / `#centroid` / `#pcentroid` centroid variants, and TRex's `(cm)` / `(px)` unit annotations in headers. Per-individual `_fishN` files (id from filename) and aggregated files with an id column. | Native `.npz` export; posture export (`midline_points`, `outline_points`). |
-| `deeplabcut` / `deeplabcut_multiheader` | Multi-bodypart CSV; single bodypart, or a likelihood-weighted centroid of several; three-row scorer/bodypart/coord header. Bodypart columns are preserved for `bodypart_axis`. | Native HDF5 (`.h5`) export. |
-| `sleap` | Analysis CSV: `<node>.x` / `.y` / `.score`; multi-node centroid; `track` and `frame_idx`. | Native `.slp` / HDF5 export. |
+| `deeplabcut` | The predictions CSV: header rows `scorer` / `bodyparts` / `coords`, with `individuals` for multi-animal projects (one track per individual). A single bodypart, or a likelihood-weighted centroid of several; `likelihood_min` masks points and the count is kept in the metadata. Bodypart columns are preserved for `bodypart_axis`. | Native HDF5 (`.h5`) export; labelled training data (`CollectedData_*.csv`); 3-D output. |
+| `sleap` | Analysis CSV: `<node>.x` / `.y` / `.score`; a single node or a score-weighted centroid; `track` and `frame_idx`; `score_min` masks points and the count is kept in the metadata. | Native `.slp` / HDF5 export. |
 | `ethovision` | Centre position, and multi-zone exports (nose, tail, etc.); zone centroid or single-zone selection. | Native `.xlsx` (export to CSV first). |
 | `anymaze` | Centre position, optional nose/tail zones, units row. | — |
 | `trackmate` | Spot tables with `TRACK_ID` / `FRAME` / `POSITION_T` / `POSITION_X` / `POSITION_Y`, including the three extra header rows of version 7. Spots in no track (`TRACK_ID` `None`) stop the load unless `dialect_args = list(unlinked = "drop")`. | Native TrackMate `.xml`. |
@@ -140,22 +140,38 @@ The package ships small real exports from two tools so the dialects can be
 tried without any external data. Each loads with one `read_tracks()` call,
 pointing the `dialect` argument at the matching tool.
 
-**DeepLabCut** — a three-row scorer/bodypart/coord header; by default the
-position is the likelihood-weighted centroid of all bodyparts, and each
-bodypart's coordinates are retained for use with the `bodypart_axis` rule.
+**DeepLabCut** — the predictions CSV written when a video is analysed (header
+rows `scorer`, `bodyparts`, `coords`, plus `individuals` for multi-animal
+projects). By default the position is the likelihood-weighted centroid of all
+bodyparts, the time is the frame index, and each bodypart's coordinates are
+kept for the `bodypart_axis` rule.
 
 ```{r dlc-example}
-dlc_path <- system.file("extdata", "dlc_CollectedData_Pranav.csv",
+dlc_path <- system.file("extdata", "dlc_single_wasp_predictions.csv",
                         package = "radiatR")
-ts_dlc <- read_tracks(dlc_path, dialect = "deeplabcut_multiheader")
+ts_dlc <- read_tracks(dlc_path, dialect = "deeplabcut", fps = 40)
 ts_dlc
 ```
 
+A likelihood threshold masks the points below it. A frame with a masked point
+has no position, so it is dropped only when `on_invalid = "drop"` says so, and
+what was masked is reported and kept:
+
+```{r dlc-threshold}
+ts_dlc_sure <- read_tracks(dlc_path, dialect = "deeplabcut", fps = 40,
+                           dialect_args = list(likelihood_min = 0.9),
+                           on_invalid = "drop")
+ts_dlc_sure@meta$attrition
+```
+
 **SLEAP** — an analysis CSV with `<node>.x` / `.y` / `.score` columns,
-`track` as the individual and `frame_idx` as time.
+`track` as the individual and `frame_idx` as time (frames). The `score_min`
+and `partial` arguments work as `likelihood_min` and `partial` do for
+DeepLabCut.
 
 ```{r sleap-example}
-sleap_path <- system.file("extdata", "sleap_example.csv", package = "radiatR")
+sleap_path <- system.file("extdata", "sleap_three_mice.analysis.csv",
+                          package = "radiatR")
 ts_sleap <- read_tracks(sleap_path, dialect = "sleap")
 ts_sleap
 ```
