@@ -1336,10 +1336,122 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
                dialect = inp$dialect, decimal = inp$decimal)
 }
 
-# A dialect's result, carrying the unit of its time column for read_tracks().
-.dialect_output <- function(out, time_unit = NULL) {
+# A dialect's result, carrying for read_tracks() the unit of its time column
+# and, from a dialect that masks points, its attrition record.
+.dialect_output <- function(out, time_unit = NULL, attrition = NULL) {
   attr(out, "time_unit") <- time_unit
+  attr(out, "attrition") <- attrition
   out
+}
+
+# A column the caller named in `arg` must be one of the table's.
+.dialect_require <- function(inp, col, arg) {
+  if (!is.null(col) && !col %in% inp$names)
+    rlang::abort(sprintf("%s: `%s = \"%s\"` names no column; the table has %s.",
+                         inp$dialect, arg, col, paste(inp$names, collapse = ", ")),
+                 class = "radiatR_dialect_error", source = inp$source)
+  col
+}
+
+# The points of a flat table: the <point> of each <point>_x / <point>_y pair.
+.dialect_point_names <- function(nms) {
+  of <- function(suffix) sub(suffix, "", grep(suffix, nms, value = TRUE))
+  intersect(of("_x$"), of("_y$"))
+}
+
+# The points to use: every one found (`sel` NULL), or the ones named, which
+# must be distinct and among those found. `what` names a point in the errors.
+.dialect_select <- function(sel, found, what, dialect, source = NULL) {
+  if (is.null(sel)) return(found)
+  fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error",
+                                     source = source)
+  if (!is.character(sel) || !length(sel) || anyNA(sel) || anyDuplicated(sel))
+    fail("%s: `bodypart` must name one or more distinct %ss.", dialect, what)
+  bad <- setdiff(sel, found)
+  if (length(bad))
+    fail("%s: %s(s) not found: %s; available: %s.", dialect, what,
+         paste(bad, collapse = ", "), paste(found, collapse = ", "))
+  sel
+}
+
+# A score (likelihood) column as numbers. A score weighs its point, so a
+# negative or infinite one is malformed. Scores are not capped at 1: SLEAP's
+# exceed it.
+.dialect_score <- function(inp, col) {
+  s <- .dialect_num(inp, col)
+  bad <- which(!is.na(s) & (s < 0 | is.infinite(s)))
+  if (length(bad))
+    radiatR_abort_malformed_values(.dialect_header(inp, col), bad, s[bad],
+                                   expected = "a finite score of 0 or more",
+                                   source = inp$source, dialect = inp$dialect)
+  s
+}
+
+# The x, y and score columns of the selected points as matrices: one row per
+# row of the table, one column per point. `x_cols`, `y_cols` and `score_cols`
+# are normalised column names, named by point. `score` has a column only for
+# the points given one, and is NULL when none is.
+.dialect_points <- function(inp, x_cols, y_cols, score_cols = NULL) {
+  n <- nrow(inp$df)
+  mat <- function(cols, read)
+    matrix(unlist(lapply(cols, function(cc) as.numeric(read(inp, cc))), use.names = FALSE),
+           nrow = n, ncol = length(cols), dimnames = list(NULL, names(cols)))
+  list(x = mat(x_cols, .dialect_num), y = mat(y_cols, .dialect_num),
+       score = if (length(score_cols)) mat(score_cols, .dialect_score))
+}
+
+# One position per row from its points (`pts`, from .dialect_points()).
+# A point is masked in a row when its x or y is missing, when its score is 0
+# (DeepLabCut writes x = y = 0, likelihood 0 for a frame with no detection),
+# or when `score_min` is given and its score is missing or below it. The
+# position is the score-weighted mean of the points; a point without a score
+# weighs 1. A row with a masked point has no position (`partial = "na"`) or
+# the mean of the points that remain (`partial = "mean"`). Rows are never
+# removed. Also returned: `points`, the <point>_x / <point>_y columns with
+# masked cells NA (for the bodypart_axis heading rule), and the attrition
+# record, one row per point. `score_arg` is the dialect's name for `score_min`,
+# for the error messages.
+.dialect_position <- function(pts, score_min = NULL, partial = c("na", "mean"),
+                              dialect, source = NULL, score_arg = "score_min") {
+  partial <- match.arg(partial)
+  x <- pts$x; y <- pts$y; score <- pts$score
+  points <- colnames(x)
+  stopifnot(length(points) > 0L, !anyDuplicated(points))
+  if (!is.null(score_min)) {
+    if (!(is.numeric(score_min) && length(score_min) == 1L && is.finite(score_min)))
+      rlang::abort(sprintf("%s: `%s` must be one finite number.", dialect, score_arg),
+                   class = "radiatR_dialect_error", source = source)
+    unscored <- setdiff(points, colnames(score))
+    if (length(unscored))
+      rlang::abort(sprintf("%s: `%s` was given, but there is no score column for: %s.",
+                           dialect, score_arg, paste(unscored, collapse = ", ")),
+                   class = "radiatR_dialect_error", source = source)
+  }
+  masked <- !is.finite(x) | !is.finite(y)
+  w <- matrix(1, nrow(x), ncol(x), dimnames = dimnames(x))
+  for (p in intersect(points, colnames(score))) {
+    s <- score[, p]
+    masked[, p] <- masked[, p] | (!is.na(s) & s == 0)
+    if (!is.null(score_min)) masked[, p] <- masked[, p] | is.na(s) | s < score_min
+    w[, p] <- ifelse(is.na(s), 1, s)
+  }
+  w[masked] <- 0
+  x0 <- x; y0 <- y
+  x0[masked] <- 0; y0[masked] <- 0
+  wsum <- rowSums(w)
+  ok <- if (partial == "na") rowSums(masked) == 0L else wsum > 0
+  px <- py <- rep(NA_real_, nrow(x))
+  px[ok] <- rowSums(x0 * w)[ok] / wsum[ok]
+  py[ok] <- rowSums(y0 * w)[ok] / wsum[ok]
+  x[masked] <- NA_real_; y[masked] <- NA_real_
+  pc <- as.data.frame(cbind(x, y)[, order(rep(seq_along(points), 2L)), drop = FALSE])
+  names(pc) <- paste0(rep(points, each = 2L), c("_x", "_y"))
+  list(x = px, y = py, points = pc,
+       attrition = data.frame(
+         source = rep(source %||% NA_character_, length(points)), point = points,
+         masked = as.integer(colSums(masked)), frames = nrow(x),
+         frames_no_position = sum(!ok), score_min = score_min %||% NA_real_,
+         partial = partial, stringsAsFactors = FALSE))
 }
 
 # ---- built-in dialects -------------------------------------------------------
