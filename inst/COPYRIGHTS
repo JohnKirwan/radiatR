@@ -8,7 +8,7 @@ tests/testthat/fixtures/real/dlc_CollectedData_Pranav.csv
 
 A test fixture only (labelled training data, which the loader refuses).
 
-Source:   examples/openfield-Pranav-2018-10-30/labeled-data/m4s1/CollectedData_Pranav.csv
+Source:    examples/openfield-Pranav-2018-10-30/labeled-data/m4s1/CollectedData_Pranav.csv
            in https://github.com/DeepLabCut/DeepLabCut
            (commit 9a129d4946323799cf4328ec567f237ecde8c24d)
 Copyright: (c) A. & M.W. Mathis Labs. See AUTHORS in that repository for
