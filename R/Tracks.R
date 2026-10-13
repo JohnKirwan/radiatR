@@ -818,8 +818,8 @@ setAs("data.frame", "Tracks", function(from) {
 #'   identical column mapping and angle unit, have no colliding trajectory
 #'   ids, and agree on frame_rate/time_unit/distance_scale/distance_unit/normalize_xy
 #'   metadata (including all-unset); mismatches error rather than silently
-#'   picking one input's values. Per-id metadata (e.g. `reference`) is merged
-#'   across all inputs.
+#'   picking one input's values. Per-id metadata (e.g. `reference`) and the
+#'   attrition records of the loads are merged across all inputs.
 #' @param recursive Ignored; maintained for signature compatibility
 #' @rdname Tracks-class
 #' @export
@@ -870,6 +870,9 @@ setMethod("c", signature(x="Tracks"), function(x, ..., recursive = FALSE) {
   if (length(oob_points)) meta$oob_points <- Reduce(`+`, oob_points)
   oob_trials <- Filter(Negate(is.null), lapply(xs, function(z) z@meta$oob_trials))
   if (length(oob_trials)) meta$oob_trials <- Reduce(`+`, oob_trials)
+  # load records: every input's, not just the first's
+  attrition <- Filter(Negate(is.null), lapply(xs, function(z) z@meta$attrition))
+  if (length(attrition)) meta$attrition <- do.call(rbind, attrition)
   new("Tracks",
       data = df,
       cols = x@cols,

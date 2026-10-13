@@ -123,6 +123,26 @@ no `fps`; `FRAME`/`frame` columns are frames. A contrary explicit
 one import that disagree.
 }
 
+\section{Masked points}{
+
+The `deeplabcut` and `sleap` dialects take each position from one or more
+points (bodyparts, nodes). A point is masked in a frame when its
+coordinates are missing, when its score (likelihood) is 0, or when a
+threshold is given (`dialect_args = list(likelihood_min = )` for
+DeepLabCut, `score_min` for SLEAP) and its score is missing or below it.
+A frame with a masked point has no position, unless
+`dialect_args = list(partial = "mean")` asks for the score-weighted mean of
+the points that remain. The dialect never removes a row: frames without a
+position meet `on_invalid` like any other missing coordinate.
+
+What was masked is reported in one message (class `radiatR_attrition`) and
+kept in the `attrition` element of the Tracks metadata: a data frame with
+one row per source file and point, giving the rows in which the point was
+masked (`masked`), the rows read from that file (`frames`), the rows left
+without a position (`frames_no_position`), and the threshold and `partial`
+setting used. `c()` row-binds these records.
+}
+
 \section{Malformed values}{
 
 A cell in an x, y, angle, weight or time column that is present but does not

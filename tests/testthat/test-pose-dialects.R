@@ -135,3 +135,111 @@ test_that("a column named in an argument must exist", {
   expect_s3_class(e, "radiatR_dialect_error")
   expect_match(conditionMessage(e), "id_col = \"b\"", fixed = TRUE)
 })
+
+# ---- the attrition record ------------------------------------------------------
+
+# A dialect that reports attrition the way the built-in pose dialects do.
+local_attrition_dialect <- function(env = parent.frame()) {
+  register_loader_dialect("attrition_test", function(x) {
+    inp <- radiatR:::.dialect_input(x, "attrition_test")
+    p <- radiatR:::.dialect_points(inp, c(head = "head_x", tail = "tail_x"),
+                                   c(head = "head_y", tail = "tail_y"))
+    pos <- radiatR:::.dialect_position(p, dialect = "attrition_test", source = inp$source)
+    radiatR:::.dialect_output(
+      data.frame(id = inp$df$id, time = inp$df$frame, x = pos$x, y = pos$y),
+      "frames", pos$attrition)
+  }, overwrite = TRUE)
+  withr::defer(rm("attrition_test", envir = radiatR:::.loader_registry), envir = env)
+}
+# Four frames of two points; the head is missing in the frames named by `gap`.
+two_point <- function(id = "a", gap = 2L) {
+  d <- data.frame(id = id, frame = 1:4, head_x = c(1, 2, 3, 4), head_y = 0,
+                  tail_x = c(0, 1, 2, 3), tail_y = 0)
+  d$head_x[gap] <- NA
+  d
+}
+
+test_that("read_tracks() stores the attrition record and reports it once", {
+  local_attrition_dialect()
+  expect_message(e <- cond(read_tracks(two_point(), dialect = "attrition_test")),
+                 class = "radiatR_attrition")
+  expect_s3_class(e, "radiatR_invalid_rows")
+  expect_equal(e$rows, 2L)
+
+  msg <- testthat::capture_messages(
+    ts <- suppressWarnings(read_tracks(two_point(), dialect = "attrition_test",
+                                       on_invalid = "drop")))
+  expect_equal(sum(grepl("have no position", msg, fixed = TRUE)), 1L)
+  expect_match(msg, "attrition_test: 1 of 4 row(s) have no position (no threshold, partial = \"na\")",
+               fixed = TRUE, all = FALSE)
+  expect_match(msg, "Masked points: head 1.", fixed = TRUE, all = FALSE)
+  expect_match(msg, "on_invalid = \"drop\"", fixed = TRUE, all = FALSE)
+  expect_match(msg, "partial = \"mean\"", fixed = TRUE, all = FALSE)
+  a <- ts@meta$attrition
+  expect_identical(names(a), c("source", "point", "masked", "frames", "frames_no_position",
+                               "score_min", "partial"))
+  expect_equal(a$masked, c(1L, 0L))
+  expect_equal(a$frames_no_position, c(1L, 1L))
+  expect_true(all(is.na(a$source)))
+  expect_equal(nrow(rows_of(ts)), 3L)
+})
+
+test_that("nothing masked is recorded without a message", {
+  local_attrition_dialect()
+  d <- two_point(gap = integer(0))
+  expect_no_message(ts <- read_tracks(d, dialect = "attrition_test"), class = "radiatR_attrition")
+  expect_equal(ts@meta$attrition$masked, c(0L, 0L))
+  # a load with no dialect has no record
+  expect_null(read_tracks(data.frame(id = "c", time = 1:3, x = c(0, 1, 2), y = 0))@meta$attrition)
+})
+
+test_that("several files give one record per file, and the message sums them", {
+  local_attrition_dialect()
+  dir <- withr::local_tempdir()
+  utils::write.csv(two_point("a", 2L), file.path(dir, "a.csv"), row.names = FALSE)
+  utils::write.csv(two_point("b", 2:3), file.path(dir, "b.csv"), row.names = FALSE)
+  msg <- testthat::capture_messages(
+    ts <- suppressWarnings(read_tracks_dir(dir, dialect = "attrition_test", on_invalid = "drop")))
+  expect_match(msg, "3 of 8 row(s) have no position", fixed = TRUE, all = FALSE)
+  expect_match(msg, "Masked points: head 3.", fixed = TRUE, all = FALSE)
+  a <- ts@meta$attrition
+  expect_identical(a$source, c("a.csv", "a.csv", "b.csv", "b.csv"))
+  expect_equal(a$masked, c(1L, 0L, 2L, 0L))
+  expect_equal(a$frames_no_position, c(1L, 1L, 2L, 2L))
+  expect_equal(nrow(rows_of(ts)), 5L)
+})
+
+test_that("the record survives subsetting and is row-bound by c()", {
+  local_attrition_dialect()
+  load <- function(id) quiet(read_tracks(two_point(id), dialect = "attrition_test",
+                                         on_invalid = "drop"))
+  a <- load("a"); b <- load("b")
+  expect_identical(a["a"]@meta$attrition, a@meta$attrition)
+  both <- c(a, b)
+  expect_equal(nrow(both@meta$attrition), 4L)
+  expect_equal(both@meta$attrition$masked, c(1L, 0L, 1L, 0L))
+  # an input without a record adds nothing, whichever side it is on
+  plain <- read_tracks(data.frame(id = "c", time = 1:3, x = c(0, 1, 2), y = 0))
+  expect_identical(c(plain, a)@meta$attrition, a@meta$attrition)
+  expect_identical(c(a, plain)@meta$attrition, a@meta$attrition)
+})
+
+test_that("an attrition record of the wrong shape is a dialect error", {
+  register_loader_dialect("attrition_bad", function(x, record)
+    structure(data.frame(id = "a", time = 1:2, x = c(0, 1), y = 0), attrition = record),
+    overwrite = TRUE)
+  withr::defer(rm("attrition_bad", envir = radiatR:::.loader_registry))
+  load <- function(record) read_tracks(data.frame(z = 1), dialect = "attrition_bad",
+                                       dialect_args = list(record = record))
+  good <- data.frame(source = NA_character_, point = c("head", "tail"), masked = 0L,
+                     frames = 2L, frames_no_position = 0L, score_min = NA_real_,
+                     partial = "na", stringsAsFactors = FALSE)
+  e <- cond(load(list(masked = 1)))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "attrition", fixed = TRUE)
+  # counts are numbers, and the per-file counts are one value
+  expect_s3_class(cond(load(transform(good, masked = "0"))), "radiatR_dialect_error")
+  expect_s3_class(cond(load(transform(good, frames = c(2L, 3L)))), "radiatR_dialect_error")
+  # extra columns are left out, so that records row-bind
+  expect_identical(names(load(cbind(good, note = "x"))@meta$attrition), names(good))
+})

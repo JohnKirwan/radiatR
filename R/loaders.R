@@ -190,6 +190,11 @@ list_loader_formats <- function() sort(ls(envir = .loader_format_registry))
 #' column is in seconds, with `attr(out, "time_unit") <- "seconds"` (or
 #' `"frames"`, to rule out `time_type = "seconds"`). See "Time units from a
 #' dialect" in [read_tracks()].
+#'
+#' A dialect that derives each position from several points can report what
+#' it left out with `attr(out, "attrition")`: a data frame with columns
+#' `source`, `point`, `masked`, `frames`, `frames_no_position`, `score_min`
+#' and `partial`, one row per point. See "Masked points" in [read_tracks()].
 #' @param name Unique dialect name
 #' @param fun Function that accepts (x, ...) and returns a data.frame with id/time/angle or id/time/x/y
 #' @param overwrite Replace an existing dialect registered with the same name
@@ -536,6 +541,54 @@ guess_columns <- function(data, mapping = list()) {
   out
 }
 
+# What a dialect reports about the points it masked (see .dialect_position()):
+# a data frame with these columns, one row per source file and point.
+.attrition_cols <- c("source", "point", "masked", "frames", "frames_no_position",
+                     "score_min", "partial")
+
+# `recs` is a list of attrition records, one per file read. Returns them with
+# those columns only, so that the records of several files and loads row-bind.
+.check_attrition <- function(recs, dialect) {
+  ok <- function(a)
+    is.data.frame(a) && nrow(a) > 0L && all(.attrition_cols %in% names(a)) &&
+      all(vapply(a[c("masked", "frames", "frames_no_position")],
+                 function(v) is.numeric(v) && !anyNA(v), logical(1))) &&
+      length(unique(a$frames)) == 1L && length(unique(a$frames_no_position)) == 1L
+  if (!all(vapply(recs, ok, logical(1))))
+    rlang::abort(sprintf(paste0(
+      "read_tracks: dialect '%s' returned an attrition record that is not a data frame with ",
+      "columns %s: one row per point, counts as numbers, and one `frames` and one ",
+      "`frames_no_position` value."), dialect, paste(.attrition_cols, collapse = ", ")),
+      class = "radiatR_dialect_error")
+  lapply(recs, function(a) as.data.frame(a)[.attrition_cols])
+}
+
+# One message for the load when any point was masked. The frame counts are
+# per file (repeated on each of its rows), so they are summed over files, not
+# over rows; files are not told apart by name, which need not be unique.
+.inform_attrition <- function(recs, dialect) {
+  masked <- do.call(rbind, lapply(recs, function(a) a[c("point", "masked")]))
+  if (is.null(masked) || !sum(masked$masked)) return(invisible())
+  by_point <- tapply(masked$masked, factor(masked$point, unique(masked$point)), sum)
+  by_point <- by_point[by_point > 0]
+  frames <- sum(vapply(recs, function(a) a$frames[1L], numeric(1)))
+  lost <- sum(vapply(recs, function(a) a$frames_no_position[1L], numeric(1)))
+  score_min <- recs[[1L]]$score_min[1L]
+  partial <- recs[[1L]]$partial[1L]
+  msg <- sprintf(
+    "%s: %d of %d row(s) have no position (%s, partial = \"%s\"). Masked points: %s.",
+    dialect, lost, frames,
+    if (is.na(score_min)) "no threshold" else paste("threshold", format(score_min)),
+    partial, paste(sprintf("%s %d", names(by_point), by_point), collapse = ", "))
+  if (lost > 0)
+    msg <- paste0(
+      msg, "\n  Pass on_invalid = \"drop\" to leave those rows out",
+      if (partial == "na")
+        ", or dialect_args = list(partial = \"mean\") to average the points that remain",
+      ".")
+  rlang::inform(msg, class = "radiatR_attrition")
+}
+
 # Read and combine multiple track files into one long data frame, preserving
 # per-file trajectory identity. Schema is detected from the FIRST file: a batch
 # is assumed to share one schema (standard for batch imports; mixed-schema
@@ -621,8 +674,10 @@ guess_columns <- function(data, mapping = list()) {
       paste(vapply(units, function(u) u %||% "unknown", character(1)), collapse = ", ")),
       class = "radiatR_time_type_mismatch")
 
+  attrition <- Filter(Negate(is.null), lapply(dfl, attr, "attrition"))
   df <- vctrs::vec_rbind(!!!dfl)
-  list(df = df, id_col = id_col, synth = synth, time_unit = units[[1L]])
+  list(df = df, id_col = id_col, synth = synth, time_unit = units[[1L]],
+       attrition = attrition)
 }
 
 # ---- core: read_tracks ------------------------------------------------------
@@ -752,6 +807,24 @@ read_tracks_format <- function(x, format, ...)
 #' @param read_opts list of file-reading overrides: `delim` (field separator),
 #'   `decimal` (decimal mark), and `sheet` (Excel worksheet name or number).
 #'   Any `NULL` element is auto-detected. Defaults to all-auto.
+#' @section Masked points:
+#' The `deeplabcut` and `sleap` dialects take each position from one or more
+#' points (bodyparts, nodes). A point is masked in a frame when its
+#' coordinates are missing, when its score (likelihood) is 0, or when a
+#' threshold is given (`dialect_args = list(likelihood_min = )` for
+#' DeepLabCut, `score_min` for SLEAP) and its score is missing or below it.
+#' A frame with a masked point has no position, unless
+#' `dialect_args = list(partial = "mean")` asks for the score-weighted mean of
+#' the points that remain. The dialect never removes a row: frames without a
+#' position meet `on_invalid` like any other missing coordinate.
+#'
+#' What was masked is reported in one message (class `radiatR_attrition`) and
+#' kept in the `attrition` element of the Tracks metadata: a data frame with
+#' one row per source file and point, giving the rows in which the point was
+#' masked (`masked`), the rows read from that file (`frames`), the rows left
+#' without a position (`frames_no_position`), and the threshold and `partial`
+#' setting used. `c()` row-binds these records.
+#'
 #' @param dialect optional registered dialect name. The dialect reads `x`
 #'   itself (`read_tracks()` does not parse the file first) and is called once
 #'   per file when `x` holds several paths. See [register_loader_dialect()].
@@ -905,8 +978,14 @@ read_tracks <- function(x,
   declared <- if (is.null(dialect)) NULL
               else if (length(x) > 1L && is.character(x)) combined$time_unit
               else attr(df, "time_unit")
+  # What the dialect reports about the points it masked: one record per file.
+  attrition <- .check_attrition(
+    if (is.null(dialect)) list()
+    else if (length(x) > 1L && is.character(x)) combined$attrition
+    else Filter(Negate(is.null), list(attr(df, "attrition"))), dialect)
+  .inform_attrition(attrition, dialect)
   # The reader's notes have been read; they are not part of the Tracks data.
-  attr(df, "decimal") <- attr(df, "time_unit") <- NULL
+  attr(df, "decimal") <- attr(df, "time_unit") <- attr(df, "attrition") <- NULL
   if (!is.null(declared)) {
     if (!(identical(declared, "seconds") || identical(declared, "frames")))
       rlang::abort(sprintf(
@@ -1092,6 +1171,7 @@ read_tracks <- function(x,
   # take it for a frame index and ask for (then divide by) a frame rate.
   if (is.numeric(df[[time]]) && (time_type == "seconds" || time_is_duration))
     meta$time_unit <- "seconds"
+  if (length(attrition)) meta$attrition <- do.call(rbind, attrition)
   tracks(df,
          id = id, time = time, angle = angle,
          x = xcol, y = ycol,
