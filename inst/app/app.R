@@ -32,7 +32,6 @@ DIALECT_CHOICES <- c(
   "Auto-detect"                   = "auto",
   "EthoVision XT (Noldus)"        = "ethovision",
   "DeepLabCut"                    = "deeplabcut",
-  "DeepLabCut (multi-header CSV)" = "deeplabcut_multiheader",
   "SLEAP"                         = "sleap",
   "TrackMate (Fiji)"              = "trackmate",
   "TRex"                          = "trex",
@@ -46,13 +45,14 @@ DIALECT_CHOICES <- c(
 
 guess_dialect <- function(path) {
   hdr <- tryCatch(
-    readLines(path, n = 3L),
+    readLines(path, n = 4L),
     error = function(e) character(0L)
   )
-  if (length(hdr) >= 2L &&
-      grepl("scorer",    tolower(hdr[1L]), fixed = TRUE) &&
-      grepl("bodyparts", tolower(hdr[2L]), fixed = TRUE)) {
-    return("deeplabcut_multiheader")
+  # DeepLabCut labels its header rows: scorer, (individuals,) bodyparts, coords
+  lab <- tolower(trimws(sub(",.*$", "", hdr)))
+  if (identical(lab[1:3], c("scorer", "bodyparts", "coords")) ||
+      identical(lab, c("scorer", "individuals", "bodyparts", "coords"))) {
+    return("deeplabcut")
   }
   if (!length(hdr)) return("generic")
   # Header cells, lower-cased and then reduced to [a-z0-9_]. Lower-casing must
@@ -65,8 +65,6 @@ guess_dialect <- function(path) {
   nm <- gsub("^_+|_+$", "",
              gsub("[^a-z0-9]+", "_", tolower(strsplit(hdr[1L], sep, fixed = TRUE)[[1L]])))
 
-  if (any(grepl("_likelihood$", nm)) && any(grepl("_x$", nm)))
-    return("deeplabcut")
   if ("frame_idx" %in% nm && any(grepl("_score$", nm)))
     return("sleap")
   if ("track_id" %in% nm && "position_x" %in% nm)
@@ -434,6 +432,8 @@ plain_error <- function(e) {
       "Some rows of this file are not valid track data.",
       "See Technical details for the rows and ids affected."
     ))
+  # A dialect says what is wrong with the file in its own words.
+  if (inherits(e, "radiatR_dialect_error")) return(conditionMessage(e))
   m <- conditionMessage(e)
   if (grepl("id|time|mapping", m, ignore.case = TRUE))
     return(paste(

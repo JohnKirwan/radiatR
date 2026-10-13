@@ -95,6 +95,18 @@ test_that("real exports are auto-detected and load through the app's loader", {
   expect_identical(e$guess_dialect(fx("trackmate_v6_spots.csv")), "trackmate")
   expect_identical(e$guess_dialect(fx("idtrackerai_trajectories.csv")), "idtrackerai_wide")
   expect_identical(e$guess_dialect(fx("toxtrac_tracking_realspace.txt")), "toxtrac")
+  expect_identical(e$guess_dialect(fx("dlc_single_wasp_predictions.csv")), "deeplabcut")
+  expect_identical(e$guess_dialect(fx("dlc_two_mice_predictions.csv")), "deeplabcut")
+  expect_identical(e$guess_dialect(fx("sleap_three_nodes.analysis.csv")), "sleap")
+  expect_false("deeplabcut_multiheader" %in% e$DIALECT_CHOICES)
+  # the deeplabcut dialect reads DeepLabCut's header rows, not a flat table
+  flat <- withr::local_tempfile(fileext = ".csv")
+  writeLines(c("frame,head_x,head_y,head_likelihood", "0,1,2,0.9"), flat)
+  expect_identical(e$guess_dialect(flat), "generic")
+  # a dialect's refusal is the headline, not a guess at it from its wording
+  err <- tryCatch(radiatR::read_tracks(fx("dlc_CollectedData_Pranav.csv"), dialect = "deeplabcut"),
+                  error = function(e) e)
+  expect_match(e$plain_error(err), "labelled training data", fixed = TRUE)
   expect_identical(e$guess_dialect(system.file("extdata", "sleap_example.csv", package = "radiatR")),
                    "sleap")
   # a plain table stays generic, and so does one that merely has x1/y1 columns
