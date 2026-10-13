@@ -505,11 +505,19 @@ guess_columns <- function(data, mapping = list()) {
       path, delim = delim,
       locale = readr::locale(decimal_mark = decimal, grouping_mark = "", tz = tz),
       guess_max = Inf, show_col_types = FALSE, progress = FALSE, ...)
-  else if (.is_installed("data.table"))
-    # fread() types unmarked timestamps as UTC or, with tz = "", not at all
-    data.table::fread(
+  else if (.is_installed("data.table")) {
+    # fread() accepts only tz = "UTC" or "" (local zone) and types unmarked
+    # timestamps in that zone, so a non-UTC tz never reaches it. Hand its
+    # POSIXct columns back as text for .coerce_time() to read in tz, as it
+    # does for text a reader leaves alone.
+    df <- data.table::fread(
       path, sep = delim, dec = decimal, showProgress = FALSE,
       tz = if (identical(tz, "UTC")) "UTC" else "", ...)
+    if (!identical(tz, "UTC"))
+      for (cc in names(df)[vapply(df, inherits, logical(1), "POSIXct")])
+        df[[cc]] <- format(df[[cc]], "%Y-%m-%d %H:%M:%OS", tz = "UTC")
+    df
+  }
   else utils::read.table(
     path, header = TRUE, sep = delim, dec = decimal,
     stringsAsFactors = FALSE, ...)
