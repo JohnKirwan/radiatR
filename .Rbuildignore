@@ -1,6 +1,7 @@
 ^renv$
 ^renv\.lock$
 ^\.Rprofile$
+^\.Renviron$
 ^dev$
 ^LICENSE\.md$
 ^doc$
