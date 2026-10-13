@@ -1,0 +1,66 @@
+radiatR is copyright John D. Kirwan and licensed under GPL (>= 3), except for
+the third-party example files listed below, which are redistributed unmodified
+under their own licences.
+
+--------------------------------------------------------------------------------
+inst/extdata/dlc_CollectedData_Pranav.csv
+--------------------------------------------------------------------------------
+
+Source:    examples/openfield-Pranav-2018-10-30/labeled-data/m4s1/CollectedData_Pranav.csv
+           in https://github.com/DeepLabCut/DeepLabCut
+           (commit 9a129d4946323799cf4328ec567f237ecde8c24d)
+Copyright: (c) A. & M.W. Mathis Labs. See AUTHORS in that repository for
+           contributors.
+Licence:   GNU Lesser General Public License v3.0 (LGPL-3). The licence text
+           ships with R: see file.path(R.home("share"), "licenses", "LGPL-3")
+           or https://www.gnu.org/licenses/lgpl-3.0.html
+
+--------------------------------------------------------------------------------
+inst/extdata/sleap_example.csv
+--------------------------------------------------------------------------------
+
+Source:    tests/data/csv_format/minimal_instance.000_centered_pair_low_quality.analysis.csv
+           in https://github.com/talmolab/sleap
+           (commit 47f8096d23528b87601519a76f1909906eb8a4dd)
+Licence:   The Clear BSD License, reproduced in full:
+
+The Clear BSD License
+
+Copyright (c) [2019-2025] [Talmo Pereira and The Trustees of Princeton University]
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted (subject to the limitations in the disclaimer
+below) provided that the following conditions are met:
+
+     * Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+
+     * Redistributions in binary form must reproduce the above copyright
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
+
+     * Neither the name of the copyright holder nor the names of its
+     contributors may be used to endorse or promote products derived from this
+     software without specific prior written permission.
+
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY
+THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+--------------------------------------------------------------------------------
+tests/testthat/fixtures/real/
+--------------------------------------------------------------------------------
+
+Short excerpts of files written by other tracking programs, used only by the
+tests. tests/testthat/fixtures/real/README.md gives the source and licence of
+each file.

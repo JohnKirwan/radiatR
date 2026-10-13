@@ -163,6 +163,14 @@
   file; a custom dialect that expected the whole vector of paths must be
   changed to take one path. `read_tracks("<dialect name>")`, which passed the
   name itself to the dialect as input, is no longer accepted.
+* The raw example track files for `cpunctatus` now ship as one archive,
+  `inst/extdata/tracks.tar.gz`, instead of the 470-file directory
+  `inst/extdata/tracks/`, which cuts about 2 MB from the installed size.
+  `system.file("extdata", "tracks", package = "radiatR")` no longer finds
+  anything; unpack the archive first with
+  `untar(system.file("extdata", "tracks.tar.gz", package = "radiatR"),
+  exdir = tempdir())` and use `file.path(tempdir(), "tracks")`. The files
+  themselves are unchanged.
 
 ## Changes
 

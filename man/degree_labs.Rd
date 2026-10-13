@@ -24,7 +24,7 @@ the label units when `units` is `NULL`.}
 \item{colour, color}{Label colour. Default `"black"`. `color` is the
 American-spelling alias.}
 
-\item{units}{`"degrees"` (e.g. `45°`) or `"radians"` (e.g. `π/4`). When
+\item{units}{`"degrees"` (e.g. `45°`) or `"radians"` (e.g. \eqn{\pi/4}{pi/4}). When
 `NULL` (default) the units are taken from `display`.}
 
 \item{size}{Label text size, in mm. Default `3.88` (ggplot2's default

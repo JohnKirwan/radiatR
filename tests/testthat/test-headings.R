@@ -546,6 +546,7 @@ test_that("velocity_axis on cpunctatus yields one axis per trial in [0, pi)", {
 })
 
 test_that("derive_headings returns a headings_frame that survives a dplyr pipe", {
+  skip_if_not_installed("dplyr")
   data(cpunctatus, package = "radiatR", envir = environment())
   hd <- derive_headings(cpunctatus, rule = "distal")
   expect_s3_class(hd, "headings_frame")

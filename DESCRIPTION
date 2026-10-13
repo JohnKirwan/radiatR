@@ -2,9 +2,15 @@ Package: radiatR
 Type: Package
 Title: Analyse and Visualise Headings and Trajectories on the Unit Disk
 Version: 0.1.3
-Authors@R:
+Authors@R: c(
     person("John D.", "Kirwan", email = "john@jkirwan.org",
-           role = c("aut", "cre"))
+           role = c("aut", "cre", "cph")),
+    person("A. & M.W. Mathis Labs", role = "cph",
+           comment = "example file inst/extdata/dlc_CollectedData_Pranav.csv, from 'DeepLabCut'"),
+    person("Talmo", "Pereira", role = "cph",
+           comment = "example file inst/extdata/sleap_example.csv, from 'SLEAP'"),
+    person("The Trustees of Princeton University", role = "cph",
+           comment = "example file inst/extdata/sleap_example.csv, from 'SLEAP'"))
 Description: A complete pipeline for analysing directional data -- headings and
     trajectories on the unit disk. Supply a table of angles directly, or
     reconstruct headings from movement trajectories imported from tracking
@@ -31,9 +37,10 @@ Description: A complete pipeline for analysing directional data -- headings and
 URL: https://johnkirwan.github.io/radiatR/, https://github.com/JohnKirwan/radiatR
 BugReports: https://github.com/JohnKirwan/radiatR/issues
 License: GPL (>= 3)
+Copyright: file inst/COPYRIGHTS
 Encoding: UTF-8
 LazyData: true
-LazyDataCompression: gzip
+LazyDataCompression: xz
 Depends: R (>= 4.1.0)
 Imports: 
     rlang,

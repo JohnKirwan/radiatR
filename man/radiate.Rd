@@ -188,7 +188,7 @@ equivalent to `angle_labels = "none"`. Tick styling (colour, width, length)
 follows the chosen `theme`'s `axis.ticks`.}
 
 \item{angle_labels}{Circumference labels. `"degrees"` (default; e.g. `45°`),
-`"radians"` (e.g. `π/4`), or `"none"` use diagonal angle labels via
+`"radians"` (e.g. \eqn{\pi/4}{pi/4}), or `"none"` use diagonal angle labels via
 [degree_labs()]. The domain scales `"cardinal"` (N/E/S/W), `"hours"`
 (24-hour clock), `"months"` (Jan...Dec), and `"seconds"` instead label the
 circumference via [circumference_labs()], aligning the tick count to the scale. For
