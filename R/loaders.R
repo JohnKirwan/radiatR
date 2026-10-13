@@ -135,6 +135,9 @@ escape_specials <- function(x) {
                        "geojson_linestring", "gpx", "motchallenge",
                        "nmea_gprmc", "tracktor", "tum_traj", "wide_prefix_xy")
 
+# Removed dialects whose files another dialect now reads.
+.replaced_dialects <- c(deeplabcut_multiheader = "deeplabcut")
+
 # ---- declarative format registry ---------------------------------------------
 .loader_format_registry <- new.env(parent = emptyenv())
 
@@ -922,6 +925,11 @@ read_tracks <- function(x,
   prep <- NULL
   if (!is.null(dialect)) {
     if (!exists(dialect, envir = .loader_registry, inherits = FALSE)) {
+      if (dialect %in% names(.replaced_dialects))
+        rlang::abort(sprintf(
+          "The '%s' dialect was removed in radiatR 0.1.3: dialect = \"%s\" reads those files.",
+          dialect, .replaced_dialects[[dialect]]),
+          class = "radiatR_removed_dialect", dialect = dialect)
       if (dialect %in% .removed_dialects)
         rlang::abort(sprintf(paste0(
           "The '%s' dialect was removed in radiatR 0.1.3. Register your own ",
@@ -1535,97 +1543,159 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
 }
 
 # ---- built-in dialects -------------------------------------------------------
-# DeepLabCut: per-bodypart *_x / *_y columns (post-multiheader collapse or plain CSV).
+# A DeepLabCut predictions CSV as a table of text columns. Its header is three
+# rows labelled scorer, bodyparts, coords, or four with an individuals row
+# (multi-animal projects); the first column is the frame index. The columns
+# are named `frame`, then <bodypart>_<coord>, or <individual>/<bodypart>_<coord>
+# under an individuals row. attr(, "dlc") lists the points: individual (NA
+# without an individuals row), bodypart, and the names of the x, y and
+# likelihood columns (NA where the point has none). Header fields are trimmed
+# and unquoted: DeepLabCut can end its header rows in CRLF and its data rows
+# in LF, and a re-saved file may quote them.
+.read_deeplabcut <- function(path) {
+  src <- basename(path)
+  fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error", source = src)
+  hdr <- lapply(strsplit(readLines(path, n = 4L, warn = FALSE), ",", fixed = TRUE),
+                function(f) gsub("^\"|\"$", "", trimws(f)))
+  lab <- tolower(vapply(hdr, function(f) if (length(f)) f[1L] else "", character(1)))
+  n_hdr <- if (identical(lab[1:3], c("scorer", "bodyparts", "coords"))) 3L
+           else if (identical(lab, c("scorer", "individuals", "bodyparts", "coords"))) 4L
+           else fail(paste0("deeplabcut: '%s' is not a DeepLabCut output file. Its first rows are ",
+                            "labelled %s; a DeepLabCut file starts with rows labelled scorer, ",
+                            "(individuals,) bodyparts, coords. A flat <bodypart>_x table is ",
+                            "read as a data frame, not as a file."),
+                     src, paste(sprintf("'%s'", lab), collapse = ", "))
+  ind <- if (n_hdr == 4L) hdr[[2L]][-1L]
+  bp <- hdr[[n_hdr - 1L]][-1L]
+  co <- tolower(hdr[[n_hdr]][-1L])
+  if (length(bp) != length(co) || (!is.null(ind) && length(ind) != length(bp)))
+    fail("deeplabcut: the header rows of '%s' differ in length.", src)
+  if (any(co == ""))
+    fail(paste0("deeplabcut: '%s' has columns with no coords label, which a predictions file ",
+                "never has. Labelled training data (CollectedData_*.csv) is not tracking ",
+                "output: read the predictions file DeepLabCut writes when it analyses a video."),
+         src)
+  other <- setdiff(co, c("x", "y", "likelihood"))
+  if (length(other))
+    fail("deeplabcut: '%s' has coords other than x, y and likelihood (%s); 3-D output is not read.",
+         src, paste(other, collapse = ", "))
+  key <- paste0(if (!is.null(ind)) paste0(ind, "/"), bp, "_", co)
+  if (anyDuplicated(key))
+    fail("deeplabcut: '%s' repeats header columns (%s).", src,
+         paste(unique(key[duplicated(key)]), collapse = ", "))
+  # Every data row must have the header's fields: read.csv() pads a short row
+  # and wraps a long one into a row of its own.
+  nf <- utils::count.fields(path, sep = ",", quote = "\"", skip = n_hdr, comment.char = "")
+  if (!length(nf)) fail("deeplabcut: '%s' has no data rows.", src)
+  ragged <- which(is.na(nf) | nf != length(key) + 1L)
+  if (length(ragged))
+    fail("deeplabcut: data row %d of '%s' has %s field(s); its header names %d.",
+         ragged[1L], src, nf[ragged[1L]], length(key) + 1L)
+  d <- utils::read.csv(path, header = FALSE, skip = n_hdr, colClasses = "character",
+                       check.names = FALSE, strip.white = TRUE)
+  names(d) <- c("frame", key)
+  pt <- unique(data.frame(individual = if (is.null(ind)) NA_character_ else ind,
+                          bodypart = bp, stringsAsFactors = FALSE))
+  col <- function(coord) {
+    k <- paste0(if (!is.null(ind)) paste0(pt$individual, "/"), pt$bodypart, "_", coord)
+    ifelse(k %in% names(d), k, NA_character_)
+  }
+  attr(d, "dlc") <- data.frame(pt, x = col("x"), y = col("y"), score = col("likelihood"),
+                               stringsAsFactors = FALSE, row.names = NULL)
+  d
+}
+
+# DeepLabCut (https://deeplabcut.org). A file is the predictions CSV (see
+# .read_deeplabcut()): the time is the frame index, in frames, and each
+# individual is a track (id "1" without an individuals row). A data frame is
+# a flat table of <bodypart>_x / _y / _likelihood columns, with optional id
+# and time columns.
 #
-# bodypart = NULL       -> centroid of ALL detected bodyparts (likelihood-weighted)
-# bodypart = "head"     -> single bodypart, original row-filter behaviour
-# bodypart = c("h","t") -> centroid of the named subset
+# bodypart = NULL       -> every bodypart
+# bodypart = c("h","t") -> the named ones
+# The position is their likelihood-weighted centroid under the masking rule of
+# .dialect_position() (`likelihood_min`, `partial`). `individuals` keeps some
+# individuals of a multi-animal file.
 #
 # Per-bodypart <name>_x / <name>_y columns are always appended to the output so
-# downstream heading rules (e.g. bodypart_axis) can access individual points.
+# downstream heading rules (e.g. bodypart_axis) can access individual points;
+# they are NA where the point is masked.
 register_loader_dialect("deeplabcut", function(x, bodypart = NULL, likelihood_min = NULL,
+                                                partial = c("na", "mean"), individuals = NULL,
                                                 id_col = NULL, time_col = NULL, fps = NULL) {
-  df <- if (is.character(x) && file.exists(x)) .read_any(x) else x
-  stopifnot(is.data.frame(df))
-  nms <- names(df)
-
-  # Discover bodypart names from <name>_x / <name>_y pairs
-  bpx     <- sub("_x$", "", grep("_x$", nms, value = TRUE))
-  bpy     <- sub("_y$", "", grep("_y$", nms, value = TRUE))
-  bps_all <- intersect(bpx, bpy)
-  if (!length(bps_all)) stop("deeplabcut: no *_x/*_y column pairs found")
-
-  sel <- if (is.null(bodypart)) bps_all else bodypart
-  bad <- setdiff(sel, bps_all)
-  if (length(bad))
-    stop("deeplabcut: bodypart(s) not found: ", paste(bad, collapse = ", "),
-         "; available: ", paste(bps_all, collapse = ", "))
-
-  id   <- id_col %||% .guess_col(nms, c("id","individual","animal","subject")) %||% "1"
-  time <- time_col %||% .guess_col(nms, c("time","timestamp","t","frame","frames")) %||% "..row"
-  if (time == "..row") df[[time]] <- seq_len(nrow(df))
-
-  if (length(sel) == 1L) {
-    # single bodypart: row-level likelihood filter, x/y from that bodypart
-    xc <- paste0(sel, "_x"); yc <- paste0(sel, "_y"); lc <- paste0(sel, "_likelihood")
-    if (!is.null(likelihood_min) && lc %in% nms)
-      df <- df[!is.na(df[[lc]]) & df[[lc]] >= as.numeric(likelihood_min), , drop = FALSE]
-    cx <- as.numeric(df[[xc]]); cy <- as.numeric(df[[yc]])
+  partial <- match.arg(partial)
+  inp <- .dialect_input(x, "deeplabcut", read = .read_deeplabcut)
+  fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error",
+                                     source = inp$source)
+  nms <- inp$names; n <- nrow(inp$df)
+  lay <- attr(inp$df, "dlc")
+  idv <- NULL
+  if (!is.null(lay)) {
+    if (!is.null(id_col) || !is.null(time_col))
+      fail(paste0("deeplabcut: `id_col` and `time_col` do not apply to a DeepLabCut file: ",
+                  "the id is the individual and the time is the frame index."))
+    if (all(is.na(.parse_number(inp$df$frame))))
+      fail(if (all(is.na(lay$score)))
+             paste0("deeplabcut: '%s' is labelled training data (its rows are indexed by image, ",
+                    "with no likelihoods), not tracking output. Read the predictions file ",
+                    "DeepLabCut writes when it analyses a video.")
+           else
+             paste0("deeplabcut: '%s' holds predictions for a folder of images: its rows are ",
+                    "indexed by image name, not by frame number, so they have no time."),
+           inp$source)
+    unit <- "frames"
+    time <- .dialect_time(inp, "frame", unit, fps)
   } else {
-    # multi-bodypart: per-row likelihood-weighted centroid
-    # bodyparts below likelihood_min contribute zero weight for that row
-    xs <- vapply(sel, function(bp) as.numeric(df[[paste0(bp, "_x")]]), numeric(nrow(df)))
-    ys <- vapply(sel, function(bp) as.numeric(df[[paste0(bp, "_y")]]), numeric(nrow(df)))
-    dim(xs) <- c(nrow(df), length(sel)); dim(ys) <- c(nrow(df), length(sel))
-    ws <- vapply(sel, function(bp) {
-      lc <- paste0(bp, "_likelihood")
-      w  <- if (lc %in% nms) as.numeric(df[[lc]]) else rep(1, nrow(df))
-      # NA likelihood with no threshold -> include at equal weight;
-      # NA likelihood with a threshold -> exclude (can't verify it passes)
-      if (is.null(likelihood_min)) w[is.na(w)] <- 1 else {
-        w[is.na(w)] <- 0; w[!is.na(w) & w < as.numeric(likelihood_min)] <- 0
-      }
-      w
-    }, numeric(nrow(df)))
-    dim(ws) <- c(nrow(df), length(sel))
-    wsum <- rowSums(ws)
-    cx <- ifelse(wsum > 0, rowSums(xs * ws) / wsum, NA_real_)
-    cy <- ifelse(wsum > 0, rowSums(ys * ws) / wsum, NA_real_)
+    bps <- .dialect_point_names(nms)
+    if (!length(bps)) fail("deeplabcut: no <bodypart>_x / <bodypart>_y column pairs found.")
+    lik <- paste0(bps, "_likelihood")
+    lay <- data.frame(individual = NA_character_, bodypart = bps, x = paste0(bps, "_x"),
+                      y = paste0(bps, "_y"), score = ifelse(lik %in% nms, lik, NA_character_),
+                      stringsAsFactors = FALSE)
+    id <- .dialect_require(inp, id_col, "id_col") %||%
+      .guess_col(nms, c("id", "individual", "animal", "subject"))
+    time_col <- .dialect_require(inp, time_col, "time_col") %||%
+      .guess_col(nms, c("time", "timestamp", "t", "frame", "frames"))
+    unit <- if (is.null(time_col) || grepl("^frames?$", time_col, ignore.case = TRUE)) "frames"
+    time <- .dialect_time(inp, time_col, unit, fps)
+    if (!is.null(id)) idv <- .dialect_col(inp, id)
   }
 
+  inds <- unique(lay$individual)
+  if (!is.null(individuals)) {
+    if (all(is.na(inds)))
+      fail("deeplabcut: `individuals` was given, but the input has no individuals row.")
+    unknown <- setdiff(as.character(individuals), inds)
+    if (length(unknown))
+      fail("deeplabcut: no such individual(s): %s; the file has %s.",
+           paste(unknown, collapse = ", "), paste(inds, collapse = ", "))
+    inds <- inds[inds %in% as.character(individuals)]
+    lay <- lay[lay$individual %in% inds, , drop = FALSE]
+  }
+  sel <- .dialect_select(bodypart, unique(lay$bodypart), "bodypart", "deeplabcut", inp$source)
+
+  pts <- lapply(inds, function(k) {
+    li <- if (is.na(k)) lay else lay[lay$individual == k, , drop = FALSE]
+    li <- li[match(sel, li$bodypart), , drop = FALSE]
+    gap <- is.na(li$x) | is.na(li$y)
+    if (any(gap))
+      fail(paste0("deeplabcut: %s has no x/y columns for bodypart(s): %s. Name the individuals ",
+                  "to read with dialect_args = list(individuals = c(...)), or the bodyparts ",
+                  "they share with `bodypart`."),
+           if (is.na(k)) "the input" else sprintf("individual '%s'", k),
+           paste(sel[gap], collapse = ", "))
+    sc <- stats::setNames(li$score, sel)
+    .dialect_points(inp, stats::setNames(li$x, sel), stats::setNames(li$y, sel), sc[!is.na(sc)])
+  })
+  if (length(unique(lapply(pts, function(p) colnames(p$score)))) > 1L)
+    fail("deeplabcut: the individuals do not have likelihood columns for the same bodyparts.")
+  bind <- function(what) do.call(rbind, lapply(pts, `[[`, what))
+  pos <- .dialect_position(list(x = bind("x"), y = bind("y"), score = bind("score")),
+                           likelihood_min, partial, "deeplabcut", inp$source, "likelihood_min")
   out <- data.frame(
-    id   = if (length(id) == 1L && id == "1") rep("1", nrow(df)) else df[[id]],
-    time = .coerce_time(df[[time]],
-                        time_type = if (!is.null(fps) && grepl("frame", time, ignore.case = TRUE)) "frames" else "auto",
-                        fps = fps),
-    x = cx, y = cy,
-    stringsAsFactors = FALSE
-  )
-  # Always append per-bodypart columns for use with bodypart_axis heading rule
-  for (bp in sel) {
-    out[[paste0(bp, "_x")]] <- as.numeric(df[[paste0(bp, "_x")]])
-    out[[paste0(bp, "_y")]] <- as.numeric(df[[paste0(bp, "_y")]])
-  }
-  out
-})
-
-# DeepLabCut three-row multiheader CSV: collapses scorer/bodypart/coord rows into
-# <bodypart>_<coord> columns, then delegates to the deeplabcut dialect.
-# Supports the same bodypart selection and multi-bodypart centroid logic.
-register_loader_dialect("deeplabcut_multiheader", function(path, bodypart = NULL, ...) {
-  stopifnot(is.character(path) && file.exists(path))
-  lines <- readLines(path, n = 3)
-  # if it's not a three-row header, fall back to standard reader
-  if (length(lines) < 3) return(get("deeplabcut", envir = .loader_registry)(path, bodypart = bodypart, ...))
-  # rebuild colnames by pasting row2_row3
-  raw <- utils::read.csv(path, header = FALSE, skip = 3, check.names = FALSE, stringsAsFactors = FALSE)
-  hdr1 <- strsplit(lines[1], ",", fixed = TRUE)[[1]]
-  hdr2 <- strsplit(lines[2], ",", fixed = TRUE)[[1]]
-  hdr3 <- strsplit(lines[3], ",", fixed = TRUE)[[1]]
-  len <- min(length(hdr2), length(hdr3))
-  cn  <- paste0(hdr2[seq_len(len)], "_", hdr3[seq_len(len)])
-  names(raw)[seq_along(cn)] <- cn
-  get("deeplabcut", envir = .loader_registry)(raw, bodypart = bodypart, ...)
+    id = if (!is.null(idv)) idv else rep(if (all(is.na(inds))) "1" else inds, each = n),
+    time = rep(time, times = length(inds)), x = pos$x, y = pos$y, stringsAsFactors = FALSE)
+  .dialect_output(cbind(out, pos$points), unit, pos$attrition)
 })
 
 # idtracker.ai wide format: one x/y column pair per animal, written `x1,y1,...`
