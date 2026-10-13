@@ -85,6 +85,26 @@
 #' The `distal` rule accepts `max_radius` (default `Inf`): the furthest-point
 #' search is restricted to positions with radius `<= max_radius`, so
 #' `max_radius = 1` ignores beyond-circumference (`rho > 1`) tracking outliers.
+#'
+#' The rules that average directions take a weighting through \code{...}:
+#' \itemize{
+#'   \item \code{velocity_mean} and \code{vm_fit} average the directions of
+#'     the steps of a track. \code{weight_by = "uniform"} (default) counts
+#'     every step once; \code{"step_length"} weights a step by its length,
+#'     which gives the direction from the first position to the last, as
+#'     \code{net} does. The two rules return the same heading: the
+#'     maximum-likelihood mean direction of a von Mises distribution is the
+#'     mean direction.
+#'   \item \code{velocity_axis} takes the same \code{weight_by}, with
+#'     \code{"step_length"} as its default.
+#'   \item \code{origin_mean} averages the bearings of the positions from
+#'     the origin, weighted by radius to the power \code{r_power} (default
+#'     \code{0}, every position counted once; \code{1} gives the bearing of
+#'     the centroid).
+#' }
+#' A step of zero length and a position at the origin have no direction and
+#' are left out of these averages, whatever the weighting. A track with no
+#' direction left, or whose directions cancel, has heading \code{NA}.
 #' @return data.frame with columns id, time (approx), heading (radians, unit-circle
 #'   convention), plus the rule-specific construction columns above when
 #'   `return_coords = TRUE`. For some rules there may be multiple headings per id.
@@ -467,7 +487,7 @@ setGeneric(
 
 # ---- velocity_mean rule ------------------------------------------------------
 # Heading = circular mean of instantaneous step headings; weights default to step length
-.set_headings_velocity_mean_one <- function(d, id, tc, xc, yc, weight_by = c("step_length","uniform")) {
+.set_headings_velocity_mean_one <- function(d, id, tc, xc, yc, weight_by = c("uniform","step_length")) {
   weight_by <- match.arg(weight_by)
   if (nrow(d) < 2L) return(data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_))
   vx <- diff(d[[xc]]); vy <- diff(d[[yc]])
@@ -600,7 +620,7 @@ setMethod("derive_headings", "Tracks", function(
                                                                      return_coords = return_coords)))
       },
       velocity_mean = {
-        weight_by <- dots$weight_by %||% "step_length"
+        weight_by <- dots$weight_by %||% "uniform"
         do.call(rbind, lapply(sp, function(ii) .set_headings_velocity_mean_one(d[ii, , drop = FALSE], id, tc, xc, yc, weight_by = weight_by)))
       },
       velocity_axis = {
@@ -629,7 +649,7 @@ setMethod("derive_headings", "Tracks", function(
         do.call(rbind, lapply(sp, function(ii) .set_headings_maxspeed_window_one(d[ii, , drop = FALSE], id, tc, xc, yc, window_n = window_n)))
       },
       vm_fit = {
-        weight_by <- dots$weight_by %||% "step_length"
+        weight_by <- dots$weight_by %||% "uniform"
         do.call(rbind, lapply(sp, function(ii) .set_headings_vm_fit_one(d[ii, , drop = FALSE], id, tc, xc, yc, weight_by = weight_by)))
       },
       exit = {
