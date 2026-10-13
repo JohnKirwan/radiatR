@@ -12,5 +12,12 @@ TODO.md
 /.*/
 !/.github/
 
+# renv is a local development convenience and is not tracked: CI resolves
+# dependencies from DESCRIPTION and the app from inst/app/manifest.json.
+/.Rprofile
+/.Renviron
+/renv/
+/renv.lock
+
 # R graphics device default output
 Rplots.pdf
