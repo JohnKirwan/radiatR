@@ -264,7 +264,7 @@ guess_columns <- function(data, mapping = list()) {
   nms <- names(data)
   pick <- function(role, cands) mapping[[role]] %||% .guess_col(nms, cands)
   list(
-    id     = pick("id",     c("id", "track", "trajectory", "animal", "subject")),
+    id     = pick("id",     .id_candidates),
     time   = pick("time",   c("time", "t", "timestamp", "datetime", "frame", "sec", "seconds")),
     angle  = pick("angle",  c("theta", "angle", "phi", "bearing", "deg", "degrees")),
     x      = mapping$x %||% .guess_col(nms, c("x", "x_pos", "xcoord", "pos_x")) %||% .guess_xy_suffix(nms, "x"),
@@ -479,8 +479,10 @@ guess_columns <- function(data, mapping = list()) {
 # Arrow formats dispatch by extension. `sheet` selects an Excel worksheet.
 # `tz` is the time zone of timestamps that carry none: a reader that types
 # them itself must do so in `tz`, as .coerce_time() does for those left as text.
+# `id` names the mapped id column, a label column like those an id is guessed
+# from (see .keep_labels()).
 .read_any <- function(path, ext = NULL, delim = NULL, decimal = NULL, sheet = NULL,
-                      tz = "UTC", ...) {
+                      tz = "UTC", id = NULL, id_text = FALSE, ...) {
   ext <- if (!is.null(ext)) tolower(sub("^\\.", "", ext)) else tolower(sub(".*\\.", "", path))
 
   if (ext %in% c("xlsx", "xls")) {
@@ -489,9 +491,22 @@ guess_columns <- function(data, mapping = list()) {
            "install it with install.packages(\"readxl\").")
     df <- readxl::read_excel(path, sheet = sheet %||% 1L, ...)
     # A date-time cell has no zone: readxl hands back its wall-clock time as UTC.
-    if (!identical(tz, "UTC"))
-      for (cc in names(df)[vapply(df, inherits, logical(1), "POSIXct")])
-        df[[cc]] <- .wall_clock(as.POSIXlt(df[[cc]], tz = "UTC"), tz)
+    # A time that does not exist in `tz` is NA and is noted in `tz_gaps` (rows
+    # and values by column), as below for readr: read_tracks() stops on one in
+    # a column it uses (see .abort_tz_gaps()), so that it never blanks a kept
+    # column unseen.
+    if (!identical(tz, "UTC")) {
+      gaps <- list()
+      for (cc in names(df)[vapply(df, inherits, logical(1), "POSIXct")]) {
+        out <- .wall_clock(as.POSIXlt(df[[cc]], tz = "UTC"), tz)
+        gap <- which(is.na(out) & !is.na(df[[cc]]))
+        if (length(gap))
+          gaps[[cc]] <- list(rows = gap,
+                             values = format(df[[cc]][gap], "%Y-%m-%d %H:%M:%S", tz = "UTC"))
+        df[[cc]] <- out
+      }
+      if (length(gaps)) attr(df, "tz_gaps") <- gaps
+    }
     return(df)
   }
 
@@ -533,7 +548,87 @@ guess_columns <- function(data, mapping = list()) {
     stringsAsFactors = FALSE, ...)
   # Kept for the strict coercion of any column the reader left as text.
   attr(df, "decimal") <- decimal
+  # readr reads a time that does not exist in `tz` as NA, with a warning that
+  # names nothing: note it as the Excel branch does. A problem's `row` counts
+  # the header.
+  if (.is_installed("readr")) {
+    pr <- readr::problems(df)
+    gaps <- list()
+    for (j in which(vapply(df, inherits, logical(1), "POSIXct"))) {
+      hit <- pr[pr$col == j & pr$row - 1L <= nrow(df), ]
+      hit <- hit[is.na(df[[j]][hit$row - 1L]), ]
+      if (nrow(hit)) gaps[[names(df)[j]]] <- list(rows = hit$row - 1L, values = hit$actual)
+    }
+    if (length(gaps)) attr(df, "tz_gaps") <- gaps
+  }
+  .keep_labels(df, id, id_text = id_text, read_text = function(pos) {
+    if (.is_installed("readr"))
+      readr::read_delim(
+        path, delim = delim, show_col_types = FALSE, progress = FALSE,
+        col_types = paste(ifelse(seq_along(df) %in% pos, "c", "_"), collapse = ""), ...)
+    else if (.is_installed("data.table"))
+      data.table::fread(path, sep = delim, select = pos, colClasses = "character",
+                        showProgress = FALSE, ...)
+    # every column, so that a row-names field stays where the first read put it
+    else utils::read.table(path, header = TRUE, sep = delim, stringsAsFactors = FALSE,
+                           colClasses = "character", ...)[pos]
+  })
+}
+
+# Names an id column is guessed from, in order of preference.
+.id_candidates <- c("id", "track", "trajectory", "animal", "subject")
+
+# The mapped id column `id` and any column an id is guessed from hold labels,
+# not measurements. A reader types such a column as numbers or logicals when
+# it can, which merges labels that differ as text: "1.1" and "1.10", "1" and
+# "1.0", "01" and "1", "T" and "TRUE". Where that happened the column is kept
+# as the text in the file; otherwise it is left as the reader typed it. With
+# `id_text` the column `id` is text whatever it holds (see
+# .combine_track_files()). `read_text(pos)` reads the columns at positions
+# `pos` as text; text that does not read as the values the reader typed is
+# from other cells, and stops the load rather than be attached to the rows.
+.keep_labels <- function(df, id, read_text, id_text = FALSE) {
+  is_id <- names(df) %in% id
+  typed <- vapply(df, function(v) is.numeric(v) || is.logical(v), logical(1))
+  pos <- unname(which(
+    ((is_id | tolower(names(df)) %in% .id_candidates) & typed) |
+      (id_text & is_id & !vapply(df, is.character, logical(1)))))
+  if (!length(pos) || !nrow(df)) return(df)
+  text <- read_text(pos)
+  misread <- function(col)
+    rlang::abort(sprintf(paste0(
+      "read_tracks: the text of column '%s' is not the values read from it; ",
+      "the file was not read the same way twice."), col),
+      class = "radiatR_label_misread", columns = col, call = NULL)
+  if (ncol(text) != length(pos) || nrow(text) != nrow(df)) misread(names(df)[pos[1L]])
+  for (i in seq_along(pos)) {
+    was <- df[[pos[i]]]
+    label <- trimws(as.character(text[[i]]))
+    seen <- !is.na(was)
+    if (typed[pos[i]]) {
+      now <- if (is.logical(was)) as.logical(label[seen])
+             else .parse_number(label[seen], attr(df, "decimal") %||% ".", dot_ok = TRUE)
+      # near enough is the same cells; an integer64 loses digits as a double
+      num <- suppressWarnings(as.numeric(was[seen]))
+      if (!isTRUE(all(now == num | abs(now - num) <= 1e-8 * abs(num))))
+        misread(names(df)[pos[i]])
+    }
+    label[!seen] <- NA_character_
+    if ((id_text && is_id[pos[i]]) || length(unique(label)) > length(unique(was)))
+      df[[pos[i]]] <- label
+  }
   df
+}
+
+# `gaps` holds, for each file read, list(source, cols): its name and what
+# .read_any() noted about times that do not exist in `tz`. One in a column
+# that is `used` stops the load. Files are told apart by position: two of one
+# import may share a name.
+.abort_tz_gaps <- function(gaps, used, tz) {
+  for (g in gaps) for (cc in intersect(names(g$cols), used))
+    radiatR_abort_malformed_values(
+      cc, g$cols[[cc]]$rows, g$cols[[cc]]$values, source = g$source,
+      expected = sprintf("times that exist in time zone '%s'", tz))
 }
 
 # A dialect must hand back a data frame; anything else is a broken loader.
@@ -620,11 +715,12 @@ guess_columns <- function(data, mapping = list()) {
                                  time_args = list(), reader = NULL,
                                  dialect = NULL) {
   read_opts <- read_opts %||% list()
+  read <- function(p, id, id_text = FALSE)
+    .read_any(p, ext = read_opts$ext, delim = read_opts$delim,
+              decimal = read_opts$decimal, sheet = read_opts$sheet,
+              tz = time_args$tz %||% "UTC", id = id, id_text = id_text)
   dfl <- lapply(paths, function(p) {
-    if (is.null(reader))
-      return(.read_any(p, ext = read_opts$ext, delim = read_opts$delim,
-                       decimal = read_opts$decimal, sheet = read_opts$sheet,
-                       tz = time_args$tz %||% "UTC"))
+    if (is.null(reader)) return(read(p, mapping$id))
     out <- tryCatch(reader(p), error = function(e) {
       if (any(startsWith(class(e), "radiatR_"))) rlang::cnd_signal(e)
       rlang::abort(sprintf("read_tracks: dialect '%s' failed on file '%s'.",
@@ -635,8 +731,7 @@ guess_columns <- function(data, mapping = list()) {
   })
 
   first_names <- names(dfl[[1L]])
-  real_id <- mapping$id %||%
-    .guess_col(first_names, c("id", "track", "trajectory", "animal", "subject"))
+  real_id <- mapping$id %||% .guess_col(first_names, .id_candidates)
   synth <- is.null(real_id)
 
   if (synth && !isTRUE(id_from_filename)) {
@@ -647,6 +742,23 @@ guess_columns <- function(data, mapping = list()) {
   }
 
   id_col <- if (synth) (mapping$id %||% "..id") else real_id
+
+  # Ids are labels: where the files this function read do not agree on the
+  # type of the id column (numbers in one, text in another), a file that was
+  # not read as text is read again for the ids as they are written in it.
+  id_type <- vapply(dfl, function(d) {
+    v <- d[[id_col]]
+    if (!id_col %in% names(d)) NA_character_
+    else if (is.character(v) || is.factor(v)) "text"
+    else if (is.numeric(v) || inherits(v, "integer64")) "number"
+    else class(v)[1L]
+  }, character(1))
+  if (is.null(reader) && length(unique(stats::na.omit(id_type))) > 1L) {
+    again <- which(!is.na(id_type) & id_type != "text")
+    dfl[again] <- lapply(paths[again], read, id = id_col, id_text = TRUE)
+  }
+  tz_gaps <- Map(function(d, p) list(source = basename(p), cols = attr(d, "tz_gaps")),
+                 dfl, paths)
 
   # The numeric role columns and text time are coerced file by file, so a
   # malformed cell is reported against its own file and row rather than as a
@@ -685,7 +797,7 @@ guess_columns <- function(data, mapping = list()) {
   attrition <- Filter(Negate(is.null), lapply(dfl, attr, "attrition"))
   df <- vctrs::vec_rbind(!!!dfl)
   list(df = df, id_col = id_col, synth = synth, time_unit = units[[1L]],
-       attrition = attrition)
+       attrition = attrition, tz_gaps = tz_gaps)
 }
 
 # ---- core: read_tracks ------------------------------------------------------
@@ -707,6 +819,10 @@ read_tracks_format <- function(x, format, ...)
   } else if (is.list(format)) {
     format
   } else stop("format must be a registered name or a list spec")
+
+  # A NULL argument is one the caller did not set: it does not delete the
+  # format's setting.
+  dots <- .drop_null(dots)
 
   # Extract/merge fields with defaults; allow `dots` to override
   # The caller's mapping goes in first, so that a role it names is not looked
@@ -741,14 +857,13 @@ read_tracks_format <- function(x, format, ...)
     }
   }
 
-  # Optional pre-processing via a dialect from spec
-  dialect <- spec$dialect %||% NULL
-  if (!is.null(dialect) && !is.null(spec$dialect_args)) {
-    dots$dialect <- dialect
-    # dial args handled by read_tracks via dialect=... and will pass along ...
-    for (nm in names(spec$dialect_args)) if (is.null(dots[[nm]])) dots[[nm]] <- spec$dialect_args[[nm]]
-  } else if (!is.null(dialect)) {
-    dots$dialect <- dialect
+  # Optional pre-processing via the format's dialect, unless the caller names
+  # another (the format's dialect_args are then not its to take). `[[`: `$`
+  # would take the caller's `dialect_args` for a `dialect`.
+  if (is.null(dots[["dialect"]]) && !is.null(spec[["dialect"]])) {
+    dots[["dialect"]] <- spec[["dialect"]]
+    dots$dialect_args <- modifyList(spec$dialect_args %||% list(),
+                                    dots$dialect_args %||% list())
   }
 
   args <- list(
@@ -859,6 +974,20 @@ read_tracks_format <- function(x, format, ...)
 #'   radiatR_dropped_rows warning with the same payload. It covers nothing
 #'   else: a missing time, id or weight is an error either way, and so is a
 #'   malformed value (see "Malformed values").
+#' @section Ids:
+#' An id is a label, not a measurement. In a delimited file the id column
+#' (the one named in `mapping`, or any column named `id`, `track`,
+#' `trajectory`, `animal` or `subject`) is kept as the text in the file
+#' wherever reading it as numbers would merge ids that are written
+#' differently: `1.1` and `1.10`, `1` and `1.0`, `01` and `1`. Ids that read
+#' as distinct numbers stay numbers. Where the delimited files of one import
+#' do not agree on the type of the id column, the ids of each file are the
+#' text in that file. Ids that are numbers in every file are compared as
+#' numbers across files (see `id_collision`). A data frame and an Excel or
+#' Arrow file keep the types they come with. Not covered: an id column that a
+#' dialect is pointed to by an argument of its own (its ids may still be
+#' merged).
+#'
 #' @section Malformed values:
 #' A cell in an x, y, angle, weight or time column that is present but does not
 #' parse (`"oops"`, `"1,5"`, a stray header or units row) stops the load with a
@@ -962,6 +1091,7 @@ read_tracks <- function(x,
 
   # read
   dec <- "."
+  tz_gaps <- list()
   if (is.character(x) && any(!file.exists(x)))
     stop("read_tracks: file(s) not found: ",
          paste(x[!file.exists(x)], collapse = ", "), call. = FALSE)
@@ -971,9 +1101,11 @@ read_tracks <- function(x,
   } else if (is.character(x) && length(x) == 1L) {
     df <- if (!is.null(prep)) .assert_dialect_table(prep(x), dialect, basename(x))
           else .read_any(x, ext = read_opts$ext, delim = read_opts$delim,
-                         decimal = read_opts$decimal, sheet = read_opts$sheet, tz = tz)
+                         decimal = read_opts$decimal, sheet = read_opts$sheet, tz = tz,
+                         id = mapping$id)
     dec <- attr(df, "decimal") %||% "."
     src <- basename(x)
+    tz_gaps <- list(list(source = src, cols = attr(df, "tz_gaps")))
   } else if (is.character(x) && length(x) > 1L) {
     combined <- .combine_track_files(x, mapping, id_from_filename, read_opts,
                                      list(time_type = time_type, tz = tz, fps = fps),
@@ -983,6 +1115,7 @@ read_tracks <- function(x,
     # so multi-file input never falls into the single-track "(multiple)" path.
     if (isTRUE(combined$synth)) mapping$id <- combined$id_col
     src <- "(multiple)"
+    tz_gaps <- combined$tz_gaps
   } else {
     stop("read_tracks: 'x' must be a data.frame or path(s) to files")
   }
@@ -1000,7 +1133,8 @@ read_tracks <- function(x,
     else Filter(Negate(is.null), list(attr(df, "attrition"))), dialect)
   .inform_attrition(attrition, dialect, on_invalid)
   # The reader's notes have been read; they are not part of the Tracks data.
-  attr(df, "decimal") <- attr(df, "time_unit") <- attr(df, "attrition") <- NULL
+  attr(df, "decimal") <- attr(df, "time_unit") <- attr(df, "attrition") <-
+    attr(df, "tz_gaps") <- NULL
   if (!is.null(declared)) {
     if (!(identical(declared, "seconds") || identical(declared, "frames")))
       rlang::abort(sprintf(
@@ -1031,6 +1165,7 @@ read_tracks <- function(x,
       paste0(names(absent), " = '", absent, "'", collapse = ", "),
       paste(names(df), collapse = ", ")),
       class = "radiatR_missing_columns", columns = unname(absent))
+  .abort_tz_gaps(tz_gaps, setdiff(c(roles, keep), drop), tz)
   # A guessed id column with no values is no id column (SLEAP writes an empty
   # `track` for single-animal exports). A column named in `mapping` is taken at
   # the caller's word, and multi-file imports keep their own id handling.
@@ -1334,10 +1469,12 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
   metadata_cols <- setdiff(names(augmented_tbl), character(0))
   traj_list <- vector("list", nrow(augmented_tbl))
 
-  reader_args <- list(mapping = mapping, angle_unit = angle_unit,
-                      time_type = time_type, tz = tz, fps = fps,
-                      normalize_xy = normalize_xy, dialect = dialect,
-                      keep = keep, drop = drop)
+  # Only what the caller supplied (the defaults are read_tracks()'s own): a
+  # default passed on would override a `format` given in `...`.
+  reader_args <- mget(intersect(
+    names(match.call())[-1L],
+    c("mapping", "angle_unit", "time_type", "tz", "fps", "normalize_xy", "dialect",
+      "keep", "drop")))
 
   for (i in seq_len(nrow(augmented_tbl))) {
     path <- resolved_paths[i]
