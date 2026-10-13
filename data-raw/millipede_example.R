@@ -26,13 +26,15 @@
 #   species epithet: cpunctatus (Tracks), for Cylindroiulus punctatus.
 #
 # This script regenerates inst/extdata/millipede_trials.csv, the bundled
-# track files in inst/extdata/tracks/, and the data/*.rda datasets from the
+# track files in inst/extdata/tracks.tar.gz, and the data/*.rda datasets from the
 # raw extract in milli_trials/. Run from the package root.
 
 library(radiatR)
 
 raw_dir <- "milli_trials"
-ext_dir <- file.path("inst", "extdata", "tracks")
+# Staging directory: the track files ship as one archive (step 6), because
+# 470 small files cost about 2 MB of installed size in disk blocks alone.
+ext_dir <- file.path(tempdir(), "tracks")
 dir.create(ext_dir, recursive = TRUE, showWarnings = FALSE)
 
 # ---- 1. parse the supplementary manifest (minimal xlsx reader) --------------
@@ -66,7 +68,7 @@ manifest_raw <- read_xlsx_simple(
   file.path(raw_dir, "1-s2.0-S0042698919301725-mmc2.xlsx")
 )
 
-# ---- 2. copy all track pairs into inst/extdata/tracks/ ----------------------
+# ---- 2. copy all track pairs into the staging directory ---------------------
 
 pairs <- sub("_point02.txt$", "",
              list.files(raw_dir, pattern = "_point02.txt$"))
@@ -164,7 +166,7 @@ message("Built cpunctatus (Tracks, ",
 
 # ---- 5. prune bundled tracks to the curated trial set -----------------------
 # Keep only the track files for trials that survived curation (manifest match
-# or rescued control), so inst/extdata/tracks/ matches the dataset.
+# or rescued control), so the archive matches the dataset.
 kept <- unique(cpunctatus@data$video)
 keep_files <- as.vector(outer(kept, c("_point01.txt", "_point02.txt"), paste0))
 all_files  <- list.files(ext_dir, pattern = "_point0[12]\\.txt$")
@@ -173,3 +175,11 @@ if (length(drop_files)) {
   file.remove(file.path(ext_dir, drop_files))
   message("Pruned ", length(drop_files), " track files from excluded trials")
 }
+
+# ---- 6. pack the track files into one archive -------------------------------
+archive <- file.path(getwd(), "inst", "extdata", "tracks.tar.gz")
+owd <- setwd(dirname(ext_dir))
+utils::tar(archive, "tracks", compression = "gzip", compression_level = 9,
+           tar = "internal")
+setwd(owd)
+message("Wrote ", archive)
