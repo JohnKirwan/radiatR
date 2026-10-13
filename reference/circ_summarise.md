@@ -2,8 +2,10 @@
 
 Computes circular summary statistics from a data frame column of angles.
 Supports grouped tibbles and an explicit `.by` argument, returning one
-row per group. Output `mean_dir` is always in radians; `mean_dir_deg` is
-the same value converted to degrees.
+row per group. Output `mean_dir` is always in radians (unit-circle
+convention); `mean_dir_deg` is that direction in degrees in the
+`display` convention (by default 0 = North, clockwise), so it is not
+`mean_dir * 180 / pi`.
 
 ## Usage
 
@@ -66,10 +68,12 @@ circ_summarise(
 
 - display:
 
-  A \[\`circ_display\`\] object. When supplied, \`mean_dir_deg\` is
-  converted using the display convention (clockwise, \`zero\` offset).
-  When \`NULL\` (default), \`mean_dir_deg\` is the raw degree equivalent
-  of the unit-circle radian angle.
+  A
+  [`circ_display`](https://johnkirwan.github.io/radiatR/reference/circ_display.md)
+  object giving the convention in which `mean_dir_deg` is reported (the
+  direction of zero and whether angles increase clockwise). Defaults to
+  [`circ_display()`](https://johnkirwan.github.io/radiatR/reference/circ_display.md):
+  0 = North, clockwise.
 
 ## Value
 

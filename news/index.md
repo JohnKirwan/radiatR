@@ -153,6 +153,18 @@
 
 ### Changes
 
+- New vignette
+  [`vignette("agent-guide")`](https://johnkirwan.github.io/radiatR/articles/agent-guide.md):
+  the angle conventions, calibration rules, failure behaviour and common
+  pitfalls an AI agent (or anyone scripting radiatR) needs. `AGENTS.md`
+  at the repository root points to it. The
+  [`circ_summarise()`](https://johnkirwan.github.io/radiatR/reference/circ_summarise.md)
+  help now states that `mean_dir_deg` is in the display convention
+  rather than a plain conversion of `mean_dir`, and the
+  [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  help that `keep` adds to the mapped columns (it said `NULL` keeps
+  every column; unmapped columns are dropped).
+
 - The main workflow and simulation walkthroughs are now website-only
   articles (`vignettes/articles/`) rather than installed vignettes, so
   `vignette("radiatR")` and `vignette("simulate")` are no longer

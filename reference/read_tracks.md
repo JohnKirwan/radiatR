@@ -107,7 +107,9 @@ read_tracks(
 
 - keep:
 
-  only keep these columns (NULL = keep all)
+  extra columns to retain besides the mapped ones and those a dialect
+  produces (NULL = none). All other columns are dropped; a name that is
+  not in the data is ignored without a message.
 
 - drop:
 
