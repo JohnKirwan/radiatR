@@ -33,4 +33,9 @@ Numeric time is read as a frame index unless the dialect says its time
 column is in seconds, with `attr(out, "time_unit") <- "seconds"` (or
 `"frames"`, to rule out `time_type = "seconds"`). See "Time units from a
 dialect" in [read_tracks()].
+
+A dialect that derives each position from several points can report what
+it left out with `attr(out, "attrition")`: a data frame with columns
+`source`, `point`, `masked`, `frames`, `frames_no_position`, `score_min`
+and `partial`, one row per point. See "Masked points" in [read_tracks()].
 }
