@@ -514,6 +514,8 @@ test_that("read_tracks(format = ) keeps the format's other fields", {
   expect_equal(frame_rate(tr), 25)
   # what the caller supplies still overrides the format
   expect_equal(frame_rate(read_tracks(d, format = spec, fps = 50)), 50)
+  # a format with no angle unit leaves read_tracks()'s default, not a guess
+  expect_identical(suppressWarnings(read_tracks(d, format = list()))@angle_unit, "radians")
 
   path <- withr::local_tempfile(fileext = ".csv")
   writeLines(c("id;frame;x;y", "a;1;1.234;5.125", "a;2;2.345;6.250"), path)

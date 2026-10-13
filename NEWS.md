@@ -173,9 +173,7 @@
   `x` if the file had one), and its angle unit, time type, time zone and
   frame rate gave way to the defaults, so degrees were read as radians. Now
   only the arguments the caller supplies override the format, `mapping` role
-  by role, and `read_opts` is passed on. A format that sets no angle unit is
-  read with `angle_unit = "auto"`, as `read_tracks_format()` reads it; it was
-  read as radians.
+  by role, and `read_opts` is passed on.
 
 * `circ_summarise()` and `circ_summary()` on a `Tracks` object now return the
   von Mises concentration `kappa`; it was always `NA`. The estimator was

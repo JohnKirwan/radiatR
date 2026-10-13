@@ -624,15 +624,20 @@ guess_columns <- function(data, mapping = list()) {
 #' @param ... extra args override spec fields
 #' @return A `Tracks` object, as returned by [read_tracks()].
 #' @export
-read_tracks_format <- function(x, format, ...) {
+read_tracks_format <- function(x, format, ...)
+  .read_tracks_format(x, format, list(...))
+
+# `dots` are the caller's overrides of the format. `angle_default` is the angle
+# unit of a format that sets none: guessed here, but read_tracks(format = )
+# keeps its own default.
+.read_tracks_format <- function(x, format, dots, angle_default = "auto") {
   spec <- if (is.character(format) && exists(format, envir = .loader_format_registry, inherits = FALSE)) {
     get(format, envir = .loader_format_registry, inherits = FALSE)
   } else if (is.list(format)) {
     format
   } else stop("format must be a registered name or a list spec")
 
-  # Extract/merge fields with defaults; allow ... to override
-  dots <- list(...)
+  # Extract/merge fields with defaults; allow `dots` to override
   # The caller's mapping goes in first, so that a role it names is not looked
   # up by pattern. A NULL role is no mapping: it does not delete the format's.
   mapping <- modifyList(spec$mapping %||% list(), .drop_null(dots$mapping %||% list()))
@@ -677,7 +682,7 @@ read_tracks_format <- function(x, format, ...) {
 
   args <- list(
     mapping        = mapping,
-    angle_unit     = spec$angle$unit %||% spec$angle_unit %||% "auto",
+    angle_unit     = spec$angle$unit %||% spec$angle_unit %||% angle_default,
     time_type      = spec$time$type  %||% spec$time_type %||% "auto",
     tz             = spec$time$tz    %||% spec$tz %||% "UTC",
     fps            = spec$time$fps   %||% spec$fps %||% NULL,
@@ -821,7 +826,7 @@ read_tracks <- function(x,
     # Only what the caller supplied: a default passed on would override the
     # format's own setting (its angle unit, frame rate, time zone, ...).
     supplied <- setdiff(names(match.call())[-1L], c("x", "format"))
-    return(do.call(read_tracks_format, c(list(x, format), mget(supplied))))
+    return(.read_tracks_format(x, format, mget(supplied), angle_default = "radians"))
   }
 
   if (!isTRUE(validate))
