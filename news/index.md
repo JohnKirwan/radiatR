@@ -245,6 +245,22 @@
 - `origin_mean` stops with `radiatR_invalid_argument` when `r_power` is
   not one finite number; such a value was read as 0.
 
+- The other
+  [`derive_headings()`](https://johnkirwan.github.io/radiatR/reference/derive_headings.md)
+  rules no longer read a displacement of zero length as pointing along
+  the x axis. `net`, `straight`, `goal_bias`, `maxspeed_window` and
+  `window_net` give `NA` for a track that never moves (they gave 0),
+  `pca_axis` gives `NA` when the positions, or the steps under
+  `source = "velocity"`, have no spread (it gave pi/2), and `distal`
+  gives `NA` for a track that stays at the origin. `net` also gives `NA`
+  for a track that ends where it started, and `straight` for a straight
+  run made of pauses only (3 of 235 tracks in `cpunctatus`). All are
+  reported by `on_missing`.
+
+- `window_net` gives `NA` for a window whose first and last positions
+  are the same (350 of 39631 windows in `cpunctatus`, which had heading
+  0), so `on_missing` now warns about them.
+
 ### Changes
 
 - The `sleap` dialect accepts a node name as it is written in the file

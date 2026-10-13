@@ -111,3 +111,11 @@ The rules that average directions take a weighting through `...`:
 A step of zero length and a position at the origin have no direction and
 are left out of these averages, whatever the weighting. A track with no
 direction left, or whose directions cancel, has heading `NA`.
+
+The other rules likewise give `NA` where a displacement has zero length:
+a track that never moves (`net`, `straight`, `goal_bias`,
+`maxspeed_window`, `window_net`), one that ends where it started
+(`net`), a window whose ends coincide (`window_net`), positions or steps
+with no spread (`pca_axis`), and a track that stays at the origin
+(`distal`). `window_net` and `maxspeed_window` shrink their window to
+fit a track shorter than `window_n`.

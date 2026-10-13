@@ -149,6 +149,14 @@ search is restricted to positions with radius `&lt;= max_radius`, so
 </ul><p>A step of zero length and a position at the origin have no direction and
 are left out of these averages, whatever the weighting. A track with no
 direction left, or whose directions cancel, has heading <code>NA</code>.</p>
+<p>The other rules likewise give <code>NA</code> where a displacement has zero
+length: a track that never moves (<code>net</code>, <code>straight</code>,
+<code>goal_bias</code>, <code>maxspeed_window</code>, <code>window_net</code>), one that ends
+where it started (<code>net</code>), a window whose ends coincide
+(<code>window_net</code>), positions or steps with no spread (<code>pca_axis</code>),
+and a track that stays at the origin (<code>distal</code>). <code>window_net</code>
+and <code>maxspeed_window</code> shrink their window to fit a track shorter than
+<code>window_n</code>.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
