@@ -2057,77 +2057,50 @@ register_loader_dialect("anymaze", function(x, id_col = NULL, time_col = NULL,
   out
 })
 
-# SLEAP (https://sleap.ai): CSV analysis export.
-# Column naming: <node>.x, <node>.y, <node>.score (dot -> underscore after norm).
-# bodypart = NULL  -> centroid of all nodes, score-weighted.
-# bodypart = c("head","thorax") -> centroid of named subset.
-# Per-node <name>_x / <name>_y columns always appended for bodypart_axis use.
-# score_min: minimum per-node score to include in centroid (analogous to likelihood_min).
+# SLEAP (https://sleap.ai) analysis CSV: `track`, `frame_idx`, then <node>.x /
+# .y / .score for each node. Headers are matched lower-cased, with runs of
+# other characters as "_" (`Tail Base.x` is tail_base_x); `bodypart` is
+# normalised the same way. The id is `track`, and an empty track column (an
+# untracked, single-animal export) is one track. The time is `frame_idx`, in
+# frames (a time column of another name has no declared unit).
+# `instance.score` is not a node and is not used. Two headers that normalise
+# to the same column are refused.
+#
+# The position is the score-weighted centroid of the selected nodes (all of
+# them when bodypart = NULL) under the masking rule of .dialect_position()
+# (`score_min`, `partial`). Per-node <name>_x / <name>_y columns are always
+# appended, NA where the node is masked.
 register_loader_dialect("sleap", function(x, bodypart = NULL, score_min = NULL,
+                                          partial = c("na", "mean"),
                                           id_col = NULL, time_col = NULL, fps = NULL) {
-  df <- if (is.character(x) && length(x) == 1L && file.exists(x)) .read_any(x) else x
-  stopifnot(is.data.frame(df))
+  partial <- match.arg(partial)
   norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(v))
-  nms  <- norm(names(df)); names(df) <- nms
+  inp <- .dialect_input(x, "sleap", norm)
+  fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error",
+                                     source = inp$source)
+  nms <- inp$names; n <- nrow(inp$df)
+  same <- nms %in% nms[duplicated(nms)] & grepl("_(x|y|score)$", nms)
+  if (any(same))
+    fail("sleap: these headers name the same column once case and punctuation are set aside: %s.",
+         paste(names(inp$df)[same], collapse = ", "))
+  nodes <- .dialect_point_names(nms)
+  if (!length(nodes)) fail("sleap: no <node>.x / <node>.y column pairs found.")
+  sel <- .dialect_select(if (is.character(bodypart)) norm(bodypart) else bodypart,
+                         nodes, "node", "sleap", inp$source)
 
-  # Detect nodes from <node>_x / <node>_y pairs; alias <node>_score -> <node>_likelihood
-  bpx     <- sub("_x$", "", grep("_x$", nms, value = TRUE))
-  bpy     <- sub("_y$", "", grep("_y$", nms, value = TRUE))
-  bps_all <- intersect(bpx, bpy)
-  if (!length(bps_all)) stop("sleap: no *_x/*_y column pairs found")
-  for (bp in bps_all) {
-    sc <- paste0(bp, "_score")
-    lc <- paste0(bp, "_likelihood")
-    if (sc %in% nms && !lc %in% nms) df[[lc]] <- df[[sc]]
-  }
-  nms <- names(df)
+  id <- .dialect_require(inp, id_col, "id_col") %||%
+    .guess_col(nms, c("track", "id", "individual", "animal", "subject"))
+  idv <- if (!is.null(id)) .dialect_col(inp, id)
+  if (is.null(idv) || all(.is_missing_chr(trimws(as.character(idv))))) idv <- rep("1", n)
+  time_col <- .dialect_require(inp, time_col, "time_col") %||%
+    .guess_col(nms, c("frame_idx", "frame", "frames", "time", "t"))
+  unit <- if (is.null(time_col) || grepl("^(frame_idx|frames?)$", time_col)) "frames"
 
-  sel <- if (is.null(bodypart)) bps_all else bodypart
-  bad <- setdiff(sel, bps_all)
-  if (length(bad))
-    stop("sleap: node(s) not found: ", paste(bad, collapse = ", "),
-         "; available: ", paste(bps_all, collapse = ", "))
-
-  id   <- id_col %||% .guess_col(nms, c("track","id","individual","animal","subject")) %||% "1"
-  # SLEAP writes an empty track column for untracked (single-animal) exports.
-  if (id != "1" && id %in% names(df) && all(is.na(df[[id]]))) id <- "1"
-  time <- time_col %||% .guess_col(nms, c("frame_idx","frame","frames","time","t")) %||% "..row"
-  if (time == "..row") { df[["..row"]] <- seq_len(nrow(df)); time <- "..row" }
-
-  if (length(sel) == 1L) {
-    xc <- paste0(sel, "_x"); yc <- paste0(sel, "_y"); lc <- paste0(sel, "_likelihood")
-    if (!is.null(score_min) && lc %in% nms)
-      df <- df[!is.na(df[[lc]]) & df[[lc]] >= as.numeric(score_min), , drop = FALSE]
-    cx <- as.numeric(df[[xc]]); cy <- as.numeric(df[[yc]])
-  } else {
-    xs <- vapply(sel, function(bp) as.numeric(df[[paste0(bp, "_x")]]), numeric(nrow(df)))
-    ys <- vapply(sel, function(bp) as.numeric(df[[paste0(bp, "_y")]]), numeric(nrow(df)))
-    dim(xs) <- c(nrow(df), length(sel)); dim(ys) <- c(nrow(df), length(sel))
-    ws <- vapply(sel, function(bp) {
-      lc <- paste0(bp, "_likelihood")
-      w  <- if (lc %in% nms) as.numeric(df[[lc]]) else rep(1, nrow(df))
-      if (is.null(score_min)) w[is.na(w)] <- 1 else {
-        w[is.na(w)] <- 0; w[!is.na(w) & w < as.numeric(score_min)] <- 0
-      }
-      w
-    }, numeric(nrow(df)))
-    dim(ws) <- c(nrow(df), length(sel))
-    wsum <- rowSums(ws)
-    cx <- ifelse(wsum > 0, rowSums(xs * ws) / wsum, NA_real_)
-    cy <- ifelse(wsum > 0, rowSums(ys * ws) / wsum, NA_real_)
-  }
-
-  out <- data.frame(
-    id   = if (length(id) == 1L && id == "1") rep("1", nrow(df)) else df[[id]],
-    time = .coerce_time(df[[time]],
-                        time_type = if (!is.null(fps) && grepl("frame", time, ignore.case = TRUE)) "frames" else "auto",
-                        fps = fps),
-    x = cx, y = cy,
-    stringsAsFactors = FALSE
-  )
-  for (bp in sel) {
-    out[[paste0(bp, "_x")]] <- as.numeric(df[[paste0(bp, "_x")]])
-    out[[paste0(bp, "_y")]] <- as.numeric(df[[paste0(bp, "_y")]])
-  }
-  out
+  sc <- stats::setNames(paste0(sel, "_score"), sel)
+  pts <- .dialect_points(inp, stats::setNames(paste0(sel, "_x"), sel),
+                         stats::setNames(paste0(sel, "_y"), sel), sc[sc %in% nms])
+  pos <- .dialect_position(pts, score_min, partial, "sleap", inp$source)
+  out <- data.frame(id = idv, time = .dialect_time(inp, time_col, unit, fps),
+                    x = pos$x, y = pos$y, stringsAsFactors = FALSE)
+  .dialect_output(cbind(out, pos$points), unit, pos$attrition)
 })

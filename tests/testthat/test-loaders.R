@@ -248,10 +248,10 @@ test_that("sleap dialect detects nodes and computes score-weighted centroid", {
     head_x    = c(1, 1, 1), head_y    = c(0, 0, 0), head_score    = c(0.99, 0.99, 0.99),
     thorax_x  = c(0, 0, 0), thorax_y  = c(0, 0, 0), thorax_score  = c(0.01, 0.01, 0.01)
   )
-  ts <- read_tracks(df, dialect = "sleap",
-                     dialect_args = list(score_min = 0.5), normalize_xy = TRUE)
+  ts <- suppressMessages(read_tracks(df, dialect = "sleap", normalize_xy = TRUE,
+                                     dialect_args = list(score_min = 0.5, partial = "mean")))
   d  <- as.data.frame(ts)
-  # thorax below score_min -> centroid = head position
+  # thorax below score_min is masked; partial = "mean" leaves the head position
   expect_equal(d$x_raw[1], 1, tolerance = 1e-9)
   expect_true(all(c("head_x", "head_y", "thorax_x", "thorax_y") %in% names(d)))
 })

@@ -478,3 +478,103 @@ test_that("the bundled DeepLabCut example loads with no arguments", {
   expect_equal(a$masked, c(104L, 57L))
   expect_equal(a$frames_no_position, c(104L, 104L))
 })
+
+# ---- SLEAP ---------------------------------------------------------------------
+
+nodes3 <- "sleap_three_nodes.analysis.csv"
+mice3 <- "sleap_three_mice.analysis.csv"
+sleap <- function(...) get("sleap", envir = radiatR:::.loader_registry)(...)
+
+test_that("SLEAP: blank nodes leave a frame without a position, counted per node", {
+  msg <- testthat::capture_messages(
+    ts <- suppressWarnings(read_tracks(fx(nodes3), dialect = "sleap", fps = 30,
+                                       on_invalid = "drop")))
+  d <- rows_of(ts)
+  expect_equal(nrow(d), 50L)                    # 59 rows, 9 with a blank node
+  expect_setequal(as.character(ids(ts)), c("track_0", "track_1"))
+  # score-weighted centroid of the three nodes in frame 0
+  expect_equal(d$x[d$id == "track_0" & d$time == 0], 490.701857232182)
+  expect_equal(frame_rate(ts), 30)
+  a <- ts@meta$attrition
+  expect_identical(a$point, c("head", "torso", "tail_base"))
+  expect_equal(a$masked, c(8L, 0L, 8L))
+  expect_equal(a$frames, rep(59L, 3))
+  expect_equal(a$frames_no_position, rep(9L, 3))
+  expect_match(msg, "sleap: 9 of 59 row(s) have no position", fixed = TRUE, all = FALSE)
+  e <- cond(suppressMessages(read_tracks(fx(nodes3), dialect = "sleap")))
+  expect_s3_class(e, "radiatR_invalid_rows")
+})
+
+test_that("SLEAP: score_min, partial and node selection", {
+  out <- sleap(fx(nodes3), score_min = 0.8)
+  expect_identical(attr(out, "time_unit"), "frames")
+  expect_equal(nrow(out), 59L)                  # the dialect removes no row
+  a <- attr(out, "attrition")
+  expect_equal(a$masked, c(39L, 8L, 55L))
+  expect_equal(a$frames_no_position, rep(57L, 3))
+  expect_equal(sum(is.na(out$x)), 57L)
+  m <- attr(sleap(fx(nodes3), score_min = 0.8, partial = "mean"), "attrition")
+  expect_lt(m$frames_no_position[1], 57L)
+
+  # a node is matched as its header is normalised, however it is typed
+  one <- quiet(read_tracks(fx(nodes3), dialect = "sleap", on_invalid = "drop",
+                           dialect_args = list(bodypart = "Tail Base")))
+  expect_equal(nrow(rows_of(one)), 51L)
+  expect_true("tail_base_x" %in% names(rows_of(one)))
+  expect_false("head_x" %in% names(rows_of(one)))
+
+  e <- cond(read_tracks(fx(nodes3), dialect = "sleap", dialect_args = list(bodypart = "wing")))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "available: head, torso, tail_base", fixed = TRUE)
+  e <- cond(read_tracks(fx(nodes3), dialect = "sleap", dialect_args = list(id_col = "trak")))
+  expect_s3_class(e, "radiatR_dialect_error")
+})
+
+test_that("SLEAP: tracks and one node load whole, scores above 1 included", {
+  expect_no_message(ts <- read_tracks(fx(mice3), dialect = "sleap"), class = "radiatR_attrition")
+  d <- rows_of(ts)
+  expect_equal(nrow(d), 60L)
+  expect_setequal(as.character(ids(ts)), c("AEON3B_NTP", "AEON3B_TP1", "AEON3B_TP2"))
+  expect_equal(d$x[d$id == "AEON3B_NTP" & d$time == 0], 773.189331054688)
+  expect_equal(ts@meta$attrition$masked, 0L)
+  expect_gt(max(utils::read.csv(fx(mice3))$centroid.score), 1)
+  expect_identical(attr(sleap(fx(mice3)), "time_unit"), "frames")
+})
+
+test_that("SLEAP: a malformed cell is reported by header, row and file", {
+  p <- edited(mice3, function(l) {
+    l[3] <- sub(",1117.61926269531,", ",oops,", l[3], fixed = TRUE); l })
+  e <- cond(read_tracks(p, dialect = "sleap"))
+  expect_s3_class(e, "radiatR_malformed_values")
+  expect_identical(e$columns, "centroid.x")
+  expect_equal(e$rows, 2L)
+  expect_identical(e$dialect, "sleap")
+})
+
+test_that("SLEAP: a threshold needs score columns", {
+  df <- data.frame(frame_idx = 1:2, track = "a", head_x = c(1, 2), head_y = 0)
+  expect_equal(nrow(rows_of(read_tracks(df, dialect = "sleap"))), 2L)
+  e <- cond(read_tracks(df, dialect = "sleap", dialect_args = list(score_min = 0.5)))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "`score_min` was given", fixed = TRUE)
+})
+
+test_that("SLEAP: nodes that share a normalised name are refused, as is one named twice", {
+  df <- data.frame(frame_idx = 1:2, track = "a", `Tail Base.x` = c(1, 2), `Tail Base.y` = 0,
+                   `tail_base.x` = c(5, 6), `tail_base.y` = 0, head.x = 0, head.y = 0,
+                   check.names = FALSE)
+  e <- cond(sleap(df))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "Tail Base.x, Tail Base.y, tail_base.x, tail_base.y",
+               fixed = TRUE)
+  e <- cond(sleap(fx(nodes3), bodypart = c("Tail Base", "tail_base", "head")))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "distinct nodes", fixed = TRUE)
+})
+
+test_that("SLEAP: only frame_idx and frame columns are declared as frames", {
+  df <- data.frame(frame_time = c(0.1, 0.2), track = "a", head_x = c(1, 2), head_y = 0)
+  expect_null(attr(sleap(df, time_col = "frame_time"), "time_unit"))
+  names(df)[1] <- "frame_idx"
+  expect_identical(attr(sleap(df), "time_unit"), "frames")
+})
