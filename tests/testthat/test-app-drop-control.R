@@ -65,6 +65,7 @@ test_that("missing positions stop the load with an offer; accepting it loads the
     session$setInputs(method = "distal", go3 = 1)
     expect_match(figure_code_text(), ', on_invalid = "drop")', fixed = TRUE)
     expect_match(kinematics_code_text(), ', on_invalid = "drop")', fixed = TRUE)
+    expect_match(stats_code_text(), ', on_invalid = "drop")', fixed = TRUE)
   })
 })
 
@@ -91,6 +92,37 @@ test_that("TrackMate spots in no track can be dropped, and the script says so", 
     expect_match(code, 'dialect_args = list(unlinked = "drop")', fixed = TRUE)
     # the user agreed to drop unlinked spots, not rows with no position
     expect_no_match(code, "on_invalid", fixed = TRUE)
+  })
+})
+
+test_that("each kind of drop is agreed to separately", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  # the v6 fixture (3 spots in no track) with the x of one linked spot blanked
+  lines <- readLines(fx("trackmate_v6_spots.csv"))
+  lines[5] <- sub(",31.985,", ",,", lines[5], fixed = TRUE)
+  path <- withr::local_tempfile(fileext = ".csv")
+  writeLines(lines, path)
+  shiny::testServer(app_dir(), {
+    session$setInputs(input_type = "trajectories")
+    session$setInputs(file = list(datapath = path, name = "spots.csv"))
+    session$setInputs(dialect_sel = "auto")
+    session$setInputs(go2 = 1)
+    expect_identical(rv$drop_offer[c("kind", "n")], list(kind = "unlinked", n = 3L))
+    session$setInputs(drop_btn = 1)
+    # dropping the unlinked spots did not also drop the row with no position
+    expect_equal(rv$step, 1L)
+    expect_identical(rv$drop_offer[c("kind", "n")], list(kind = "positions", n = 1L))
+    session$setInputs(drop_btn = 2)
+    expect_null(rv$error)
+    expect_equal(nrow(as.data.frame(rv$ts)), 5L)
+    expect_identical(rv$dropped, 4L)
+    expect_match(paste(as.character(output$dropped_banner), collapse = "\n"),
+                 "4 row(s) were dropped when this file was loaded (spot in no track; no x/y position)",
+                 fixed = TRUE)
+    session$setInputs(method = "distal", go3 = 1)
+    expect_match(figure_code_text(),
+                 ', dialect_args = list(unlinked = "drop"), on_invalid = "drop")', fixed = TRUE)
   })
 })
 
@@ -171,30 +203,38 @@ test_that("the offer goes when its error is replaced by another", {
   })
 })
 
-test_that("agreeing to drop rows holds for one file only", {
+test_that("agreeing to a drop covers that load only: a later load asks again", {
   skip_if_not_installed("shiny")
   skip_if(!dir.exists(app_dir()), "app dir not found")
-  path <- fx("idtrackerai_trajectories.csv")
+  csv <- withr::local_tempfile(fileext = ".csv")
+  writeLines(c("id,time,xa,xb,y",
+               "a,1,0.1,0.1,0.2", "a,2,,0.2,0.3", "a,3,0.3,,0.4",
+               "a,4,0.4,,0.5", "a,5,0.5,,0.6", "a,6,0.6,0.6,0.7"), csv)
   shiny::testServer(app_dir(), {
     session$setInputs(input_type = "trajectories")
-    session$setInputs(file = list(datapath = path, name = "trajectories.csv"))
-    session$setInputs(dialect_sel = "auto")
+    session$setInputs(file = list(datapath = csv, name = "tracks.csv"))
+    session$setInputs(dialect_sel = "generic")
+    session$setInputs(map_x = "xa", map_y = "y", map_time = "time", map_id = "id")
     session$setInputs(go2 = 1)
+    expect_identical(rv$drop_offer[c("kind", "n")], list(kind = "positions", n = 1L))
     session$setInputs(drop_btn = 1)
-    expect_false(is.null(rv$ts))
+    expect_equal(rv$step, 2L)
+    expect_identical(rv$dropped, 1L)
 
-    # the same choice is not carried to the next upload ...
-    session$setInputs(file = list(datapath = path, name = "second.csv"))
+    # Back, read another column: its three missing rows are not dropped unasked
+    session$setInputs(back_btn = 1)
+    session$setInputs(map_x = "xb")
     session$setInputs(go2 = 2)
-    expect_null(rv$ts)
-    expect_identical(rv$drop_offer$kind, "positions")
-    # ... nor past a change of tracking software
+    expect_equal(rv$step, 1L)
+    expect_identical(rv$drop_offer[c("kind", "n")], list(kind = "positions", n = 3L))
     session$setInputs(drop_btn = 2)
-    expect_false(is.null(rv$ts))
-    session$setInputs(dialect_sel = "idtrackerai_wide")
+    expect_identical(rv$dropped, 3L)
+
+    # and "Next" on the very same read asks again
+    session$setInputs(back_btn = 2)
     session$setInputs(go2 = 3)
-    expect_match(rv$error, "no x/y position", fixed = TRUE)
-    expect_identical(rv$drop_offer$kind, "positions")
+    expect_equal(rv$step, 1L)
+    expect_identical(rv$drop_offer[c("kind", "n")], list(kind = "positions", n = 3L))
   })
 })
 

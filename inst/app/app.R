@@ -559,12 +559,11 @@ server <- function(input, output, session) {
     mode      = "trajectories",
     raw_hd    = NULL,
     hd_map    = NULL,   # list(col, units, convention, group) for the headings spec
-    # Row drops (see drop_offer()). `drop`: the kinds the user has agreed to for
-    # the current file. `drop_offer`: list(kind, n, error) while the load error
-    # shown is one a drop would clear. `drop_used` / `dropped`: the kinds applied
-    # to, and the rows left out of, the loaded rv$ts (meaningful only for an
-    # uploaded file; recorded at load time, like normalize_xy).
-    drop       = character(0),
+    # Row drops (see drop_offer()). `drop_offer`: list(kind, n, error, drop)
+    # while the load error shown is one a drop would clear; `drop` holds the
+    # kinds that load already ran with. `drop_used` / `dropped`: the kinds
+    # applied to, and the rows left out of, the loaded rv$ts (meaningful only
+    # for an uploaded file; recorded at load time, like normalize_xy).
     drop_offer = NULL,
     drop_used  = character(0),
     dropped    = 0L
@@ -621,25 +620,22 @@ server <- function(input, output, session) {
     rv$hd_map <- NULL
     rv$error  <- NULL
     rv$error_detail <- NULL
-    rv$drop   <- character(0)
   })
-
-  # Agreeing to drop rows holds for one file read as one format.
-  observeEvent(input$dialect_sel, rv$drop <- character(0))
 
   # The drop offer lasts only as long as the error it came from.
   observeEvent(rv$error, {
     if (!identical(rv$error, rv$drop_offer$error)) rv$drop_offer <- NULL
   }, ignoreNULL = FALSE)
 
+  # Agreeing to a drop re-runs the load that was refused, with that drop added
+  # to the ones it already ran with. The agreement is not kept: "Next" always
+  # loads with no drops, so a changed file, format or column is asked again.
   observeEvent(input$drop_btn, {
     req(rv$drop_offer)
-    rv$drop <- union(rv$drop, rv$drop_offer$kind)
-    load_upload()
+    load_upload(drop = union(rv$drop_offer$drop, rv$drop_offer$kind))
   })
 
   observeEvent(input$restart, {
-    rv$drop     <- character(0)
     rv$step     <- 1L
     rv$path     <- NULL
     rv$dialect  <- NULL
@@ -690,9 +686,9 @@ server <- function(input, output, session) {
     load_upload()
   })
 
-  # Load the uploaded tracking file with the current Step 1 choices. Shared by
-  # "Next" and by the drop button, which re-runs it once rv$drop has grown.
-  load_upload <- function() {
+  # Load the uploaded tracking file with the current Step 1 choices, leaving out
+  # the kinds of row in `drop` (see drop_offer()).
+  load_upload <- function(drop = character(0)) {
     d <- if (!is.null(input$dialect_sel) &&
              input$dialect_sel != "auto") {
       input$dialect_sel
@@ -720,7 +716,6 @@ server <- function(input, output, session) {
     origin <- if (calibrate)
       c(input$origin_x %||% NA_real_, input$origin_y %||% NA_real_) else NULL
     radius <- if (calibrate) input$radius %||% NA_real_ else NULL
-    drop <- rv$drop
     captured_warn <- character(0)
     dropped <- 0L
     ts <- withCallingHandlers(
@@ -737,7 +732,7 @@ server <- function(input, output, session) {
           rv$error_detail <- ingest_detail(e)
           kind <- drop_offer(e)
           rv$drop_offer <- if (!is.null(kind))
-            list(kind = kind, n = length(e$rows), error = rv$error)
+            list(kind = kind, n = length(e$rows), error = rv$error, drop = drop)
           NULL
         }
       ),
@@ -956,7 +951,6 @@ server <- function(input, output, session) {
   # ---- file upload -----------------------------------------------------------
   observeEvent(input$file, {
     req(input$file)
-    rv$drop      <- character(0)
     rv$path      <- input$file$datapath
     rv$source    <- "file"
     rv$file_name <- input$file$name
