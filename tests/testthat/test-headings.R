@@ -685,3 +685,22 @@ test_that("origin_mean rejects an r_power that is not one finite number", {
     expect_identical(e$arg, "r_power")
   }
 })
+
+test_that("velocity_mean and vm_fit weight steps equally by default; velocity_axis by length", {
+  ts <- unequal_steps()
+  for (rule in c("velocity_mean", "vm_fit"))
+    expect_equal(heading_of(ts, rule = rule), atan2(3, 1), info = rule)
+  expect_equal(heading_of(ts, rule = "velocity_axis"),
+               heading_of(ts, rule = "velocity_axis", weight_by = "step_length"))
+  expect_false(isTRUE(all.equal(
+    heading_of(ts, rule = "velocity_axis"),
+    heading_of(ts, rule = "velocity_axis", weight_by = "uniform"))))
+})
+
+test_that("velocity_mean weighted by step length is the net direction", {
+  hd  <- derive_headings(cpunctatus, rule = "velocity_mean", weight_by = "step_length",
+                         on_missing = "quiet")
+  net <- derive_headings(cpunctatus, rule = "net", on_missing = "quiet")
+  gap <- abs(hd$heading - net$heading[match(hd$id, net$id)])
+  expect_lt(max(pmin(gap, 2 * pi - gap), na.rm = TRUE), 1e-8)
+})
