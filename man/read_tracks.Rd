@@ -74,7 +74,9 @@ Any `NULL` element is auto-detected. Defaults to all-auto.}
 
 \item{mutate}{list of transformations applied after reading (named functions or formulas)}
 
-\item{keep}{only keep these columns (NULL = keep all)}
+\item{keep}{extra columns to retain besides the mapped ones and those a
+dialect produces (NULL = none). All other columns are dropped; a name
+that is not in the data is ignored without a message.}
 
 \item{drop}{drop these columns after mapping}
 
