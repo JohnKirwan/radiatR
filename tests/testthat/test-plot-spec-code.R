@@ -178,6 +178,39 @@ test_that("spec_to_code: example source never emits normalize_xy", {
   expect_false(grepl("normalize_xy", code, fixed = TRUE))
 })
 
+test_that("spec_to_code: a recorded row drop is emitted, and reproduces the load", {
+  sp <- example_spec()
+  expect_false(grepl("on_invalid|dialect_args", spec_to_code(sp)))
+
+  sp$data$drop <- "unlinked"
+  expect_true(grepl(
+    'read_tracks("tracks.csv", dialect = "ethovision", dialect_args = list(unlinked = "drop"))',
+    spec_to_code(sp), fixed = TRUE))
+
+  path <- normalizePath(testthat::test_path("fixtures", "real", "idtrackerai_trajectories.csv"))
+  sp$data <- list(source = "file", path = path, dialect = "idtrackerai_wide",
+                  normalize_xy = FALSE, drop = "positions")
+  code <- spec_to_code(sp)
+  expect_silent(parse(text = code))
+  load_line <- grep("^ts <- read_tracks\\(", strsplit(code, "\n", fixed = TRUE)[[1]], value = TRUE)
+  expect_match(load_line, 'normalize_xy = FALSE, on_invalid = "drop")', fixed = TRUE)
+  expect_warning(ts <- eval(parse(text = load_line)[[1]][[3]]), class = "radiatR_dropped_rows")
+  expect_equal(nrow(as.data.frame(ts)), 86L)
+
+  sp$data <- list(source = "example", path = NULL, dialect = NULL, drop = "positions")
+  expect_false(grepl("on_invalid", spec_to_code(sp), fixed = TRUE))
+})
+
+test_that("dropped_note names the count and the kind of row, or is NULL", {
+  expect_null(dropped_note(0L, character(0)))
+  expect_null(dropped_note(NULL, "positions"))
+  expect_identical(dropped_note(2L, "positions"),
+                   "2 row(s) were dropped when this file was loaded (no x/y position).")
+  expect_identical(
+    dropped_note(5L, c("unlinked", "positions")),
+    "5 row(s) were dropped when this file was loaded (spot in no track; no x/y position).")
+})
+
 test_that("build_plot_spec records the seed for the app's stochastic outputs", {
   df <- data.frame(dir = c(0, 90, 180), cond = c("a","a","b"))
   hf <- build_headings_input(df, col = "dir", units = "degrees",
