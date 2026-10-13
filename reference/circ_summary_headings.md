@@ -42,7 +42,7 @@ circ_summary_headings(
 ## Value
 
 A \`data.frame\` with grouping columns followed by \`mean_dir\`
-(radians, unit-circle convention, 0 to 2π), \`resultant_R\` (0–1),
+(radians, unit-circle convention, 0 to \\2\pi\\), \`resultant_R\` (0–1),
 \`kappa\` (von Mises concentration, with no small-sample bias
 correction; see
 [`circ_summary()`](https://johnkirwan.github.io/radiatR/reference/circ_summary.md)),

@@ -537,9 +537,6 @@ Any remaining exported topics.
   [`set_distance_scale()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
   [`calibrate_distance()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
   : Distance calibration for a Tracks object
-- [`.heading_registry`](https://johnkirwan.github.io/radiatR/reference/dot-heading_registry.md)
-  : Build a data frame of arrow segments representing mean direction
-  vectors Length equals resultant_R; angle equals mean_dir
 - [`draw_tracks()`](https://johnkirwan.github.io/radiatR/reference/draw_tracks.md)
   : Create geom layers for Cartesian track coordinates
 - [`elapsed_seconds()`](https://johnkirwan.github.io/radiatR/reference/elapsed_seconds.md)

@@ -34,7 +34,7 @@ degree_labs(
 
 - units:
 
-  \`"degrees"\` (e.g. \`45°\`) or \`"radians"\` (e.g. \`π/4\`). When
+  \`"degrees"\` (e.g. \`45°\`) or \`"radians"\` (e.g. \\\pi/4\\). When
   \`NULL\` (default) the units are taken from \`display\`.
 
 - size:
