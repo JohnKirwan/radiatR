@@ -50,7 +50,8 @@ with no small-sample bias correction (see \code{\link{circ_summary}()}).}
 \item{display}{A \code{\link{circ_display}} object giving the convention
 in which \code{mean_dir_deg} is reported (the direction of zero and
 whether angles increase clockwise). Defaults to \code{circ_display()}:
-0 = North, clockwise.}
+0 = North, clockwise. Anything else, \code{NULL} included, is an error
+(class \code{radiatR_invalid_argument}).}
 }
 \value{
 An ungrouped \code{tibble} with group columns first followed by
