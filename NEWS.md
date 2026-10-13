@@ -171,6 +171,28 @@
   `untar(system.file("extdata", "tracks.tar.gz", package = "radiatR"),
   exdir = tempdir())` and use `file.path(tempdir(), "tracks")`. The files
   themselves are unchanged.
+* `derive_headings()` rules `velocity_mean`, `vm_fit`, `velocity_axis` and
+  `origin_mean` leave out what has no direction: a step of zero length (a
+  pause) and a position at the origin. Each was counted as pointing along the
+  x axis (`atan2(0, 0)` is 0), which pulled the heading of any track with
+  pauses towards it. In `cpunctatus` a quarter of the steps are pauses, and
+  the default `velocity_mean` heading moves by more than 1 degree in 194 of
+  235 tracks (median shift 12 degrees). A track that never moves now has
+  heading `NA`; it had heading 0.
+* The weighting options of those rules now do something. `weight_by` (for
+  `velocity_mean` and `vm_fit`) and `r_power` (for `origin_mean`) were passed
+  to `circular::mean.circular()`, which has no weights argument, so every
+  value gave the unweighted mean. `weight_by = "step_length"` now weights each
+  step by its length, which is the direction from the first position to the
+  last, as `net` gives; `r_power = 1` gives the bearing of the centroid.
+* `weight_by` defaults to `"uniform"` for `velocity_mean` and `vm_fit` (the
+  argument default was `"step_length"`, which had no effect), so their
+  headings remain the mean of the step directions. `velocity_axis` keeps
+  `"step_length"`, which it already applied. `vm_fit` returns the same heading
+  as `velocity_mean`: its von Mises fit raised an error that was caught, and
+  the maximum-likelihood mean direction is the mean direction in any case.
+* `origin_mean` stops with `radiatR_invalid_argument` when `r_power` is not one
+  finite number; such a value was read as 0.
 
 ## Changes
 

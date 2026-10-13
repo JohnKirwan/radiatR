@@ -623,3 +623,84 @@ test_that("derive_headings(carry=) refuses a column that would overwrite a resul
                       class = "radiatR_invalid_argument")
   expect_match(conditionMessage(err), "'heading'", fixed = TRUE)
 })
+
+# ---- weighting of the step- and position-mean rules --------------------------
+xy_track <- function(x, y) {
+  tracks(data.frame(id = "a", time = seq_along(x), x = x, y = y),
+         id = "id", time = "time", x = "x", y = "y")
+}
+heading_of <- function(ts, ...) derive_headings(ts, ..., on_missing = "quiet")$heading
+
+# one long step east, then three short steps north
+unequal_steps <- function() xy_track(c(0, .5, .5, .5, .5), c(0, 0, .01, .02, .03))
+
+test_that("velocity_mean and vm_fit weight step directions by step length when asked", {
+  for (rule in c("velocity_mean", "vm_fit"))
+    expect_equal(heading_of(unequal_steps(), rule = rule, weight_by = "step_length"),
+                 atan2(.03, .5), info = rule)
+})
+
+test_that("velocity_mean and vm_fit weight step directions equally under weight_by = 'uniform'", {
+  for (rule in c("velocity_mean", "vm_fit"))
+    expect_equal(heading_of(unequal_steps(), rule = rule, weight_by = "uniform"),
+                 atan2(3, 1), info = rule)
+})
+
+test_that("a step of zero length has no direction in the step-mean rules", {
+  paused <- xy_track(c(0, 0, 0, 0, 0), c(0, .1, .1, .1, .2))
+  for (rule in c("velocity_mean", "vm_fit"))
+    for (wb in c("step_length", "uniform"))
+      expect_equal(heading_of(paused, rule = rule, weight_by = wb), pi / 2,
+                   info = paste(rule, wb))
+  one_step <- xy_track(c(0, 0, 0, 0, 0), c(0, .1, .1, .1, .1))
+  expect_equal(heading_of(one_step, rule = "velocity_axis", weight_by = "uniform"), pi / 2)
+})
+
+test_that("a track that never moves has no step-mean heading", {
+  still <- xy_track(rep(.2, 4), rep(.3, 4))
+  for (rule in c("velocity_mean", "vm_fit", "velocity_axis"))
+    expect_identical(heading_of(still, rule = rule), NA_real_, info = rule)
+})
+
+test_that("origin_mean weights bearings by radius^r_power", {
+  ts <- xy_track(c(.9, .1, 0), c(0, .1, .1))
+  expect_equal(heading_of(ts, rule = "origin_mean"), pi / 4)
+  expect_equal(heading_of(ts, rule = "origin_mean", r_power = 0), pi / 4)
+  # r_power = 1 is the bearing of the centroid
+  expect_equal(heading_of(ts, rule = "origin_mean", r_power = 1), atan2(.2, 1))
+})
+
+test_that("origin_mean gives no direction to a point at the origin", {
+  ts <- xy_track(c(0, 0, 0), c(0, .5, .6))
+  for (p in c(0, 1, -1))
+    expect_equal(heading_of(ts, rule = "origin_mean", r_power = p), pi / 2, info = p)
+})
+
+test_that("origin_mean rejects an r_power that is not one finite number", {
+  ts <- xy_track(c(.9, .1, 0), c(0, .1, .1))
+  for (bad in list("a", NA_real_, c(1, 2), Inf)) {
+    e <- tryCatch(derive_headings(ts, rule = "origin_mean", r_power = bad),
+                  radiatR_invalid_argument = function(e) e)
+    expect_s3_class(e, "radiatR_invalid_argument")
+    expect_identical(e$arg, "r_power")
+  }
+})
+
+test_that("velocity_mean and vm_fit weight steps equally by default; velocity_axis by length", {
+  ts <- unequal_steps()
+  for (rule in c("velocity_mean", "vm_fit"))
+    expect_equal(heading_of(ts, rule = rule), atan2(3, 1), info = rule)
+  expect_equal(heading_of(ts, rule = "velocity_axis"),
+               heading_of(ts, rule = "velocity_axis", weight_by = "step_length"))
+  expect_false(isTRUE(all.equal(
+    heading_of(ts, rule = "velocity_axis"),
+    heading_of(ts, rule = "velocity_axis", weight_by = "uniform"))))
+})
+
+test_that("velocity_mean weighted by step length is the net direction", {
+  hd  <- derive_headings(cpunctatus, rule = "velocity_mean", weight_by = "step_length",
+                         on_missing = "quiet")
+  net <- derive_headings(cpunctatus, rule = "net", on_missing = "quiet")
+  gap <- abs(hd$heading - net$heading[match(hd$id, net$id)])
+  expect_lt(max(pmin(gap, 2 * pi - gap), na.rm = TRUE), 1e-8)
+})
