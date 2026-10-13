@@ -704,3 +704,55 @@ test_that("velocity_mean weighted by step length is the net direction", {
   gap <- abs(hd$heading - net$heading[match(hd$id, net$id)])
   expect_lt(max(pmin(gap, 2 * pi - gap), na.rm = TRUE), 1e-8)
 })
+
+# A displacement of zero length has no direction, though atan2(0, 0) is 0 (East).
+still_track <- function(x = .3, y = .2, n = 30) xy_track(rep(x, n), rep(y, n))
+north_track <- function(n) xy_track(rep(0, n), seq(0, .5, length.out = n))
+
+test_that("a track that never moves has no heading under the movement rules", {
+  ts <- still_track()
+  for (rule in c("net", "straight", "goal_bias", "maxspeed_window", "pca_axis",
+                 "window_net", "ransac_straight"))
+    expect_true(all(is.na(heading_of(ts, rule = rule))), info = rule)
+  expect_true(is.na(heading_of(ts, rule = "pca_axis", source = "velocity")))
+})
+
+test_that("a track that never moves is reported by on_missing", {
+  expect_warning(derive_headings(still_track(), rule = "net"), "1 of 1 trials")
+  expect_error(derive_headings(still_track(), rule = "net", on_missing = "error"),
+               "produced no heading")
+})
+
+test_that("distal gives no direction to a track that stays at the origin", {
+  expect_true(is.na(heading_of(still_track(0, 0), rule = "distal")))
+  expect_equal(heading_of(still_track(), rule = "distal"), atan2(.2, .3))
+})
+
+test_that("net gives no direction to a track that ends where it started", {
+  loop <- xy_track(c(0, .2, .2, 0), c(0, 0, .2, 0))
+  expect_true(is.na(heading_of(loop, rule = "net")))
+  expect_equal(derive_headings(loop, rule = "net", return_coords = TRUE,
+                               on_missing = "quiet")$x_end, 0)
+})
+
+test_that("pca_axis has no axis when the points or the steps have no spread", {
+  even_steps <- xy_track(0:5, rep(0, 6))
+  expect_true(is.na(heading_of(even_steps, rule = "pca_axis", source = "velocity")))
+  # steps equal but for rounding: diff(seq(0, 1, .1)) is not constant
+  expect_true(is.na(heading_of(xy_track(rep(0, 11), seq(0, 1, .1)),
+                               rule = "pca_axis", source = "velocity")))
+  expect_equal(heading_of(even_steps, rule = "pca_axis"), 0)
+  out <- derive_headings(still_track(), rule = "pca_axis", return_coords = TRUE,
+                         on_missing = "quiet")
+  expect_true(is.na(out$axis_x) && is.na(out$axis_y))
+})
+
+test_that("window_net fits its window to a track shorter than window_n", {
+  expect_equal(heading_of(north_track(6), rule = "window_net"), rep(pi / 2, 2))
+  expect_equal(heading_of(north_track(3), rule = "window_net"), pi / 2)
+  expect_true(is.na(heading_of(north_track(2), rule = "window_net")))
+})
+
+test_that("maxspeed_window gives the direction of a short moving track", {
+  expect_equal(heading_of(north_track(6), rule = "maxspeed_window"), pi / 2)
+})
