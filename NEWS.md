@@ -175,9 +175,10 @@
   `origin_mean` leave out what has no direction: a step of zero length (a
   pause) and a position at the origin. Each was counted as pointing along the
   x axis (`atan2(0, 0)` is 0), which pulled the heading of any track with
-  pauses towards it. In `cpunctatus` a quarter of the steps are pauses and
-  the `velocity_mean` heading of the median track moves by 12 degrees. A track
-  that never moves now has heading `NA`; it had heading 0.
+  pauses towards it. In `cpunctatus` a quarter of the steps are pauses, and
+  the default `velocity_mean` heading moves by more than 1 degree in 194 of
+  235 tracks (median shift 12 degrees). A track that never moves now has
+  heading `NA`; it had heading 0.
 * The weighting options of those rules now do something. `weight_by` (for
   `velocity_mean` and `vm_fit`) and `r_power` (for `origin_mean`) were passed
   to `circular::mean.circular()`, which has no weights argument, so every
