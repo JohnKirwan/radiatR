@@ -90,4 +90,13 @@ The rules that average directions take a weighting through \code{...}:
 A step of zero length and a position at the origin have no direction and
 are left out of these averages, whatever the weighting. A track with no
 direction left, or whose directions cancel, has heading \code{NA}.
+
+The other rules likewise give \code{NA} where a displacement has zero
+length: a track that never moves (\code{net}, \code{straight},
+\code{goal_bias}, \code{maxspeed_window}, \code{window_net}), one that ends
+where it started (\code{net}), a window whose ends coincide
+(\code{window_net}), positions or steps with no spread (\code{pca_axis}),
+and a track that stays at the origin (\code{distal}). \code{window_net}
+and \code{maxspeed_window} shrink their window to fit a track shorter than
+\code{window_n}.
 }
