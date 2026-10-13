@@ -212,6 +212,8 @@ list_loader_dialects <- function() sort(ls(envir = .loader_registry))
 # ---- helpers -----------------------------------------------------------------
 .is_installed <- function(pkg) isTRUE(requireNamespace(pkg, quietly = TRUE))
 
+.drop_null <- function(x) x[!vapply(x, is.null, logical(1))]
+
 # Guess columns by conventional names
 .guess_col <- function(nms, candidates) {
   ln <- tolower(nms)
@@ -283,10 +285,13 @@ guess_columns <- function(data, mapping = list()) {
 
 # as.numeric() on text read with decimal mark `decimal`: a column left as text
 # by one bad cell still holds "1,5" where the file's decimal mark is a comma.
-.parse_number <- function(s, decimal = ".") {
-  if (identical(decimal, ","))
-    s <- sub("^([-+]?[0-9]*),([0-9]+)$", "\\1.\\2", s)
-  suppressWarnings(as.numeric(s))
+# There a "." is not a decimal mark ("1.234" may as well be 1234), so a value
+# holding one is not a number unless `dot_ok`.
+.parse_number <- function(s, decimal = ".", dot_ok = FALSE) {
+  if (!identical(decimal, ",")) return(suppressWarnings(as.numeric(s)))
+  num <- suppressWarnings(as.numeric(sub("^([-+]?[0-9]*),([0-9]+)$", "\\1.\\2", s)))
+  if (!dot_ok) num[grepl(".", s, fixed = TRUE)] <- NA_real_
+  num
 }
 
 # Numeric coercion that tells missing from malformed. Numeric input is returned
@@ -305,10 +310,9 @@ guess_columns <- function(data, mapping = list()) {
   if (any(bad))
     radiatR_abort_malformed_values(
       column, which(bad), s[bad], source = source, dialect = dialect,
-      # read_opts only helps a file read_tracks() itself read, with a decimal
-      # point; a dialect reads its own file and is not passed read_opts
-      decimal_hint = !is.null(source) && is.null(dialect) &&
-        !identical(decimal, ","))
+      # read_opts only helps a file read_tracks() itself read; a dialect
+      # reads its own file and is not passed read_opts
+      decimal_hint = !is.null(source) && is.null(dialect), decimal = decimal)
   num
 }
 
@@ -327,6 +331,16 @@ guess_columns <- function(data, mapping = list()) {
   paste0("^", fmt, "$")
 }
 
+# Wall-clock fields `lt` (POSIXlt) as instants in `tz`. A time that does not
+# exist there (the hour skipped when clocks go forward) is NA: base R moves it
+# an hour on, or not, by platform.
+.wall_clock <- function(lt, tz) {
+  out <- ISOdatetime(lt$year + 1900, lt$mon + 1, lt$mday, lt$hour, lt$min, lt$sec, tz = tz)
+  back <- as.POSIXlt(out, tz = tz)
+  out[which(back$hour != lt$hour | back$min != lt$min)] <- NA
+  out
+}
+
 # Text time: numbers throughout give numeric time, timestamps in one layout
 # throughout give POSIXct. Otherwise the values that break the majority
 # reading abort with radiatR_malformed_values. Beside a date-time layout a
@@ -342,13 +356,18 @@ guess_columns <- function(data, mapping = list()) {
     return(num)
   }
   hit <- lapply(.time_formats, function(f) grepl(.time_format_regex(f), s))
-  best <- which.max(vapply(hit, sum, integer(1)))
+  # Bare dates count toward a date-time layout that has values of its own.
+  n_hit <- vapply(hit, sum, integer(1))
+  n_bare <- n_hit[match(sub("[ T]%H.*$", "", .time_formats), .time_formats)]
+  has_time <- grepl("%H", .time_formats, fixed = TRUE) & n_hit > 0L
+  best <- which.max(n_hit + ifelse(has_time, n_bare, 0L))
   fmt <- .time_formats[best]
   fmt_tz <- if (endsWith(fmt, "Z")) "UTC" else tz
-  out <- as.POSIXct(strptime(s, fmt, tz = fmt_tz))
+  out <- .wall_clock(strptime(s, fmt, tz = fmt_tz), fmt_tz)
   date_fmt <- sub("[ T]%H.*$", "", fmt)
   bare <- fmt != date_fmt & grepl(.time_format_regex(date_fmt), s)
-  out[bare] <- as.POSIXct(strptime(s[bare], date_fmt, tz = fmt_tz))
+  # a bare date carries no zone, whatever the layout beside it says
+  out[bare] <- as.POSIXct(strptime(s[bare], date_fmt, tz = tz))
   attr(out, "tzone") <- tz
   ok <- (hit[[best]] | bare) & !is.na(out)
   if (all(ok | missing)) return(out)
@@ -358,7 +377,8 @@ guess_columns <- function(data, mapping = list()) {
               else if (as_num) "numeric" else "a date-time"
   radiatR_abort_malformed_values(column, which(bad), s[bad], expected = expected,
                                  source = source, dialect = dialect,
-                                 decimal_hint = FALSE)
+                                 decimal_hint = !is.null(source) && is.null(dialect),
+                                 decimal = decimal)
 }
 
 # Coerce time column to POSIXct or numeric seconds. Numeric time under
@@ -399,13 +419,16 @@ guess_columns <- function(data, mapping = list()) {
 # Sniff the field separator (and, for ';', the decimal mark) from a delimited
 # file's first non-empty lines. Returns list(delim, decimal). Chooses the
 # candidate that appears most often AND consistently across lines; ties or no
-# signal fall back to comma + dot. ';' implies the European decimal comma.
+# signal fall back to comma + dot. ';' implies the European decimal comma,
+# unless the lines read show decimal points and no decimal comma: a dotted
+# number that cannot be digit grouping ("1.5", "0.125"; not "1.234").
 .guess_delim <- function(path) {
   default <- list(delim = ",", decimal = ".")
   lines <- tryCatch(
     readLines(path, n = 20L, warn = FALSE, encoding = "UTF-8"),
     error = function(e) character(0))
   lines <- lines[nzchar(trimws(lines))]
+  rows <- lines
   lines <- utils::head(lines, 5L)
   if (!length(lines)) return(default)
 
@@ -421,7 +444,12 @@ guess_columns <- function(data, mapping = list()) {
   viable <- apply(counts, 2L, function(col) col[1L] > 0 && length(unique(col)) == 1L)
   if (!any(viable)) return(default)
   best <- cands[which(viable)][which.max(counts[1L, viable])]
-  list(delim = best, decimal = if (best == ";") "," else ".")
+  if (best != ";") return(list(delim = best, decimal = "."))
+  cells <- gsub("^\"|\"$", "", trimws(unlist(strsplit(rows, ";", fixed = TRUE))))
+  comma <- grepl("^[-+]?[0-9]*,[0-9]+$", cells)
+  point <- grepl("^[-+]?[0-9]*[.][0-9]+([eE][-+]?[0-9]+)?$", cells) &
+    !grepl("^[-+]?[1-9][0-9]{0,2}([.][0-9]{3})+$", cells)
+  list(delim = best, decimal = if (any(point) && !any(comma)) "." else ",")
 }
 
 # Decimal mark .read_any() sniffs for `path`: what a dialect that reads its own
@@ -439,14 +467,22 @@ guess_columns <- function(data, mapping = list()) {
 # read file with soft dependencies. Delimited formats are content-sniffed
 # (separator + decimal mark) unless delim/decimal are supplied; Excel and
 # Arrow formats dispatch by extension. `sheet` selects an Excel worksheet.
-.read_any <- function(path, ext = NULL, delim = NULL, decimal = NULL, sheet = NULL, ...) {
+# `tz` is the time zone of timestamps that carry none: a reader that types
+# them itself must do so in `tz`, as .coerce_time() does for those left as text.
+.read_any <- function(path, ext = NULL, delim = NULL, decimal = NULL, sheet = NULL,
+                      tz = "UTC", ...) {
   ext <- if (!is.null(ext)) tolower(sub("^\\.", "", ext)) else tolower(sub(".*\\.", "", path))
 
   if (ext %in% c("xlsx", "xls")) {
     if (!.is_installed("readxl"))
       stop("Reading Excel files requires the 'readxl' package; ",
            "install it with install.packages(\"readxl\").")
-    return(readxl::read_excel(path, sheet = sheet %||% 1L, ...))
+    df <- readxl::read_excel(path, sheet = sheet %||% 1L, ...)
+    # A date-time cell has no zone: readxl hands back its wall-clock time as UTC.
+    if (!identical(tz, "UTC"))
+      for (cc in names(df)[vapply(df, inherits, logical(1), "POSIXct")])
+        df[[cc]] <- .wall_clock(as.POSIXlt(df[[cc]], tz = "UTC"), tz)
+    return(df)
   }
 
   if (.is_installed("arrow") && ext %in% c("parquet", "feather")) {
@@ -467,11 +503,21 @@ guess_columns <- function(data, mapping = list()) {
   df <- if (.is_installed("readr"))
     readr::read_delim(
       path, delim = delim,
-      locale = readr::locale(decimal_mark = decimal, grouping_mark = ""),
+      locale = readr::locale(decimal_mark = decimal, grouping_mark = "", tz = tz),
       guess_max = Inf, show_col_types = FALSE, progress = FALSE, ...)
-  else if (.is_installed("data.table"))
-    data.table::fread(
-      path, sep = delim, dec = decimal, showProgress = FALSE, ...)
+  else if (.is_installed("data.table")) {
+    # fread() accepts only tz = "UTC" or "" (local zone) and types unmarked
+    # timestamps in that zone, so a non-UTC tz never reaches it. Hand its
+    # POSIXct columns back as text for .coerce_time() to read in tz, as it
+    # does for text a reader leaves alone.
+    df <- data.table::fread(
+      path, sep = delim, dec = decimal, showProgress = FALSE,
+      tz = if (identical(tz, "UTC")) "UTC" else "", ...)
+    if (!identical(tz, "UTC"))
+      for (cc in names(df)[vapply(df, inherits, logical(1), "POSIXct")])
+        df[[cc]] <- format(df[[cc]], "%Y-%m-%d %H:%M:%OS", tz = "UTC")
+    df
+  }
   else utils::read.table(
     path, header = TRUE, sep = delim, dec = decimal,
     stringsAsFactors = FALSE, ...)
@@ -516,7 +562,8 @@ guess_columns <- function(data, mapping = list()) {
   dfl <- lapply(paths, function(p) {
     if (is.null(reader))
       return(.read_any(p, ext = read_opts$ext, delim = read_opts$delim,
-                       decimal = read_opts$decimal, sheet = read_opts$sheet))
+                       decimal = read_opts$decimal, sheet = read_opts$sheet,
+                       tz = time_args$tz %||% "UTC"))
     out <- tryCatch(reader(p), error = function(e) {
       if (any(startsWith(class(e), "radiatR_"))) rlang::cnd_signal(e)
       rlang::abort(sprintf("read_tracks: dialect '%s' failed on file '%s'.",
@@ -585,16 +632,24 @@ guess_columns <- function(data, mapping = list()) {
 #' @param ... extra args override spec fields
 #' @return A `Tracks` object, as returned by [read_tracks()].
 #' @export
-read_tracks_format <- function(x, format, ...) {
+read_tracks_format <- function(x, format, ...)
+  .read_tracks_format(x, format, list(...))
+
+# `dots` are the caller's overrides of the format. `angle_default` is the angle
+# unit of a format that sets none: guessed here, but read_tracks(format = )
+# keeps its own default.
+.read_tracks_format <- function(x, format, dots, angle_default = "auto") {
   spec <- if (is.character(format) && exists(format, envir = .loader_format_registry, inherits = FALSE)) {
     get(format, envir = .loader_format_registry, inherits = FALSE)
   } else if (is.list(format)) {
     format
   } else stop("format must be a registered name or a list spec")
 
-  # Extract/merge fields with defaults; allow ... to override
-  dots <- list(...)
-  mapping <- spec$mapping %||% list()
+  # Extract/merge fields with defaults; allow `dots` to override
+  # The caller's mapping goes in first, so that a role it names is not looked
+  # up by pattern. A NULL role is no mapping: it does not delete the format's.
+  mapping <- modifyList(spec$mapping %||% list(), .drop_null(dots$mapping %||% list()))
+  dots$mapping <- NULL
 
   # regex mapping (resolve against first file or df headers)
   if (!is.null(spec$regex_mapping)) {
@@ -605,21 +660,21 @@ read_tracks_format <- function(x, format, ...) {
       nm <- names(peek)
     }
     if (!is.null(nm)) {
-      pick <- function(pats) {
-        if (is.null(pats)) return(NULL)
-        pats <- if (is.character(pats)) pats else unlist(pats)
-        hits <- lapply(pats, function(p) grep(p, nm, value = TRUE, ignore.case = TRUE))
-        unique(unlist(hits))[1]
+      # A pattern that matches nothing is an error: left unset, the role would
+      # be guessed from the default column names instead.
+      pick <- function(role) {
+        pats <- unlist(spec$regex_mapping[[role]])
+        if (!is.null(mapping[[role]]) || !length(pats)) return(mapping[[role]])
+        hit <- unlist(lapply(pats, grep, x = nm, value = TRUE, ignore.case = TRUE))
+        if (!length(hit))
+          rlang::abort(sprintf(
+            "read_tracks_format: regex_mapping matched no column: %s = '%s'. Available: %s.",
+            role, paste(pats, collapse = "', '"), paste(nm, collapse = ", ")),
+            class = "radiatR_missing_columns", columns = pats)
+        hit[1L]
       }
-      rm <- spec$regex_mapping
-      mapping <- modifyList(mapping, list(
-        id     = mapping$id     %||% pick(rm$id),
-        time   = mapping$time   %||% pick(rm$time),
-        x      = mapping$x      %||% pick(rm$x),
-        y      = mapping$y      %||% pick(rm$y),
-        angle  = mapping$angle  %||% pick(rm$angle),
-        weight = mapping$weight %||% pick(rm$weight)
-      ))
+      roles <- c("id", "time", "x", "y", "angle", "weight")
+      mapping <- modifyList(mapping, sapply(roles, pick, simplify = FALSE))
     }
   }
 
@@ -635,7 +690,7 @@ read_tracks_format <- function(x, format, ...) {
 
   args <- list(
     mapping        = mapping,
-    angle_unit     = spec$angle$unit %||% spec$angle_unit %||% "auto",
+    angle_unit     = spec$angle$unit %||% spec$angle_unit %||% angle_default,
     time_type      = spec$time$type  %||% spec$time_type %||% "auto",
     tz             = spec$time$tz    %||% spec$tz %||% "UTC",
     fps            = spec$time$fps   %||% spec$fps %||% NULL,
@@ -663,7 +718,13 @@ read_tracks_format <- function(x, format, ...) {
 #'   a duration): seconds are recorded as such in the Tracks metadata
 #'   (`time_unit`), so [elapsed_seconds()] and the kinematics use them directly,
 #'   with no frame rate.
-#' @param tz timezone for POSIX times (default "UTC")
+#' @param tz Time zone of timestamps that carry none (default "UTC") in a
+#'   delimited or Excel file `read_tracks()` reads itself, and in a text column
+#'   of a data frame; a bare date is midnight in `tz`. A wall-clock time that
+#'   does not exist in `tz` (the hour skipped when clocks go forward) is an
+#'   error. A timestamp marked `Z` is UTC whatever `tz` is, a date-time column
+#'   of a data frame keeps its instants, and `tz` does not reach a file read by
+#'   a dialect.
 #' @section Time units from a dialect:
 #' A dialect that knows the unit of its time column says so, and under the
 #' default `time_type = "auto"` that decides how the column is read: TrackMate
@@ -725,7 +786,12 @@ read_tracks_format <- function(x, format, ...) {
 #' dialect. Such a value is never dropped or turned into `NA`. Blank cells and
 #' `NA` are missing values; `nan` and `inf` are read as such. Files are read
 #' with no digit-grouping mark, so `1,5` is malformed unless
-#' `read_opts = list(decimal = ",")` says the comma is the decimal mark.
+#' `read_opts = list(decimal = ",")` says the comma is the decimal mark. Where
+#' it is, a value holding a `.` is malformed in turn, since `1.234` could as
+#' well be 1234. A semicolon-separated file is taken to use decimal commas
+#' unless its first lines show decimal points and no decimal comma (`1.5` or
+#' `0.125`, which cannot be digit grouping);
+#' `read_opts = list(decimal = ".")` says so outright.
 #'
 #' The `trackmate`, `toxtrac`, `idtrackerai_wide` and `trex` dialects check
 #' their source columns the same way, before any reshaping, so the error names
@@ -767,26 +833,10 @@ read_tracks <- function(x,
   on_invalid <- match.arg(on_invalid)
 
   if (!is.null(format)) {
-    return(read_tracks_format(
-      x,
-      format,
-      mapping = mapping,
-      angle_unit = angle_unit,
-      time_type = time_type,
-      tz = tz,
-      fps = fps,
-      normalize_xy = normalize_xy,
-      origin = origin,
-      radius = radius,
-      dialect = dialect,
-      mutate = mutate,
-      keep = keep,
-      drop = drop,
-      id_from_filename = id_from_filename,
-      validate = validate,
-      id_collision = id_collision,
-      on_invalid = on_invalid
-    ))
+    # Only what the caller supplied: a default passed on would override the
+    # format's own setting (its angle unit, frame rate, time zone, ...).
+    supplied <- setdiff(names(match.call())[-1L], c("x", "format"))
+    return(.read_tracks_format(x, format, mget(supplied), angle_default = "radians"))
   }
 
   if (!isTRUE(validate))
@@ -833,7 +883,7 @@ read_tracks <- function(x,
   } else if (is.character(x) && length(x) == 1L) {
     df <- if (!is.null(prep)) .assert_dialect_table(prep(x), dialect, basename(x))
           else .read_any(x, ext = read_opts$ext, delim = read_opts$delim,
-                         decimal = read_opts$decimal, sheet = read_opts$sheet)
+                         decimal = read_opts$decimal, sheet = read_opts$sheet, tz = tz)
     dec <- attr(df, "decimal") %||% "."
     src <- basename(x)
   } else if (is.character(x) && length(x) > 1L) {
@@ -855,6 +905,8 @@ read_tracks <- function(x,
   declared <- if (is.null(dialect)) NULL
               else if (length(x) > 1L && is.character(x)) combined$time_unit
               else attr(df, "time_unit")
+  # The reader's notes have been read; they are not part of the Tracks data.
+  attr(df, "decimal") <- attr(df, "time_unit") <- NULL
   if (!is.null(declared)) {
     if (!(identical(declared, "seconds") || identical(declared, "frames")))
       rlang::abort(sprintf(
@@ -1040,15 +1092,15 @@ read_tracks <- function(x,
   # take it for a frame index and ask for (then divide by) a frame rate.
   if (is.numeric(df[[time]]) && (time_type == "seconds" || time_is_duration))
     meta$time_unit <- "seconds"
-  ts <- tracks(df,
-                id = id, time = time, angle = angle,
-                x = xcol, y = ycol,
-                angle_unit = ang_unit,
-                weight = wcol,
-                normalize_xy = normalize_xy,
-                origin = origin,
-                radius = radius,
-                meta = meta)
+  tracks(df,
+         id = id, time = time, angle = angle,
+         x = xcol, y = ycol,
+         angle_unit = ang_unit,
+         weight = wcol,
+         normalize_xy = normalize_xy,
+         origin = origin,
+         radius = radius,
+         meta = meta)
 }
 
 #' Read all matching files from a directory and bind into a Tracks
@@ -1509,7 +1561,7 @@ register_loader_dialect("trackmate", function(x, id_col = NULL, time_col = NULL,
     head3 <- vapply(inp$df, function(v) trimws(as.character(v[1:3])), character(3))
     head3[is.na(head3)] <- ""
     xy <- match(c(xc, yc), nms)
-    if (all(nzchar(head3[1:2, xy])) && all(is.na(.parse_number(head3[1:2, xy], inp$decimal))) &&
+    if (all(nzchar(head3[1:2, xy])) && all(is.na(.parse_number(head3[1:2, xy], inp$decimal, dot_ok = TRUE))) &&
         all(head3[3, ] == "" | grepl("^\\(.*\\)$", head3[3, ]))) {
       if (!is.null(t_c)) t_unit <- tolower(head3[3, match(t_c, nms)])
       inp$df <- inp$df[-(1:3), , drop = FALSE]

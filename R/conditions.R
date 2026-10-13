@@ -54,7 +54,8 @@ radiatR_abort_invalid_tracks <- function(problems, call = NULL) {
 # resolved.
 radiatR_abort_malformed_values <- function(column, rows, values,
                                            expected = "numeric", source = NULL,
-                                           dialect = NULL, decimal_hint = FALSE) {
+                                           dialect = NULL, decimal_hint = FALSE,
+                                           decimal = ".") {
   where <- c(if (!is.null(source)) sprintf("file '%s'", source),
              if (!is.null(dialect)) sprintf("dialect '%s'", dialect))
   first <- function(x, n) paste0(paste(utils::head(x, n), collapse = ", "),
@@ -66,7 +67,13 @@ radiatR_abort_malformed_values <- function(column, rows, values,
     length(rows), expected, first(rows, 20L),
     first(paste0("'", unique(values), "'"), 10L)
   )
-  if (decimal_hint && any(grepl("^-?[0-9]+,[0-9]+$", values)))
+  # The values look like numbers written with the other decimal mark.
+  if (decimal_hint && identical(decimal, ",") &&
+      any(grepl("^[-+]?([0-9]+[.][0-9]*|[.][0-9]+)([eE][-+]?[0-9]+)?$", values)))
+    msg <- paste0(msg, "\n  The file was read with a decimal comma. If its decimal mark ",
+                  "is a point, pass read_opts = list(decimal = \".\").")
+  else if (decimal_hint && !identical(decimal, ",") &&
+           any(grepl("^-?[0-9]+,[0-9]+$", values)))
     msg <- paste0(msg, "\n  Decimal commas? Pass read_opts = list(decimal = \",\").")
   rlang::abort(msg, class = c("radiatR_malformed_values", "radiatR_invalid_rows"),
                rows = as.integer(rows), ids = character(0),
