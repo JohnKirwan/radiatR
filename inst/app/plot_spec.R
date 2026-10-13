@@ -119,6 +119,15 @@ SPEC_BOX_LABEL_MARGIN <- 0.16         # clearance beyond the outermost ring
 SPEC_VTEST_COLOUR    <- "steelblue"
 SPEC_VTEST_LWD       <- 0.8
 
+# Note for a load that left rows out at the user's request, or NULL when none
+# were. `kinds` are the drops applied (see drop_offer() in app.R). Shiny-free.
+dropped_note <- function(n, kinds) {
+  if (is.null(n) || n <= 0L) return(NULL)
+  why <- c(unlinked = "spot in no track", positions = "no x/y position")[kinds]
+  sprintf("%d row(s) were dropped when this file was loaded (%s).",
+          n, paste(why, collapse = "; "))
+}
+
 # Resolve the figure choices into a spec list.
 #   ts     : the loaded Tracks.
 #   hd     : the headings frame, or NULL (rule "none").
@@ -128,6 +137,8 @@ SPEC_VTEST_LWD       <- 0.8
 #            NULL when the spec predates/omits it (then the package default
 #            applies). origin (length-2 numeric) and radius (scalar) are recorded
 #            only in calibrate mode -- mutually exclusive with normalize_xy = TRUE.
+#            drop: the row drops the load was run with ("positions",
+#            "unlinked"; see drop_offer() in app.R), empty or NULL for none.
 #   inputs : a plain list of the relevant input values (see fields used below).
 build_plot_spec <- function(ts, hd, method, data, inputs) {
   mode <- data$mode %||% "trajectories"
@@ -510,7 +521,11 @@ spec_to_plot <- function(spec, ts, hd) {
         ropts <- c(ropts, paste0("sheet = ", q(spec$data$sheet)))
       ro <- if (length(ropts))
         paste0(", read_opts = list(", paste(ropts, collapse = ", "), ")") else ""
-      add("ts <- read_tracks(", q(spec$data$path), dia, ro, nrm, cal, ")")
+      # Rows the user agreed to leave out; the script then warns as the load did.
+      drp <- paste0(
+        if ("unlinked" %in% spec$data$drop) ", dialect_args = list(unlinked = \"drop\")",
+        if ("positions" %in% spec$data$drop) ", on_invalid = \"drop\"")
+      add("ts <- read_tracks(", q(spec$data$path), dia, ro, nrm, cal, drp, ")")
     }
     if (has_hd) {
       add("")
