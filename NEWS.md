@@ -2,6 +2,11 @@
 
 ## Breaking changes
 
+* `derive_headings(carry = )` now stops when a carried column has the name of
+  a column of the result (`id`, `time`, `heading`, ...). It used to replace
+  the derived values with the carried ones without a message, so a call that
+  relied on that now fails with `radiatR_invalid_argument`: rename the column
+  in the tracks first.
 * `Tracks` objects now enforce the invariants the rest of the package assumes
   (see "Invariants" in `?tracks`): no missing ids; finite, strictly increasing
   time within each id; finite angles and coordinates; finite, non-negative
