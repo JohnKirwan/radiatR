@@ -607,3 +607,18 @@ test_that("distal rule default (max_radius = Inf) is unchanged", {
   hd_inf     <- derive_headings(cpunctatus, rule = "distal", max_radius = Inf)
   expect_equal(hd_default$heading, hd_inf$heading)
 })
+
+test_that("derive_headings(carry=) refuses a column that would overwrite a result column", {
+  d <- data.frame(
+    id      = rep(c("a", "b"), each = 3L),
+    t       = rep(1:3, 2L),
+    x       = c(0, 0.5, 0.9,  0, -0.5, -0.9),
+    y       = c(0, 0.1, 0.0,  0,  0.1,  0.0),
+    heading = 1.234)
+  ts <- tracks(d, id = "id", time = "t", x = "x", y = "y",
+               angle_unit = "radians", normalize_xy = FALSE)
+  # Before this check the derived headings were replaced by the 1.234 column.
+  err <- expect_error(derive_headings(ts, rule = "distal", carry = "heading"),
+                      class = "radiatR_invalid_argument")
+  expect_match(conditionMessage(err), "'heading'", fixed = TRUE)
+})
