@@ -34,11 +34,14 @@ full per-frame xy trajectory.
 
 [`import_tracks()`](https://johnkirwan.github.io/radiatR/reference/import_tracks.md)
 scans a directory for `_point01.txt` / `_point02.txt` pairs and returns
-a tibble of basenames.
+a tibble of basenames. The example files ship as one archive, so unpack
+it into a temporary directory first.
 
 ``` r
 
-track_dir <- system.file("extdata", "tracks", package = "radiatR")
+untar(system.file("extdata", "tracks.tar.gz", package = "radiatR"),
+      exdir = tempdir())
+track_dir <- file.path(tempdir(), "tracks")
 file_tbl  <- import_tracks(track_dir)
 head(file_tbl)
 #> # A tibble: 6 × 3
@@ -338,10 +341,7 @@ After registration the dialect is used by name, like a built-in one:
 
 ``` r
 
-track_file <- system.file(
-  "extdata", "tracks", "10_10_point02.txt",
-  package = "radiatR"
-)
+track_file <- file.path(track_dir, "10_10_point02.txt")
 ts_raw <- read_tracks(track_file, dialect = "dtrack")
 head(ts_raw@data[, c("id", "frame", "x", "y")])
 #>              id frame      x      y
@@ -359,7 +359,6 @@ leaves out the `_point01` landmark files, which share the same layout:
 
 ``` r
 
-track_dir <- system.file("extdata", "tracks", package = "radiatR")
 ts_session <- read_tracks_dir(track_dir, pattern = "^10_.*_point02\\.txt$",
                               dialect = "dtrack")
 ts_session

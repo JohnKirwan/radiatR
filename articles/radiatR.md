@@ -44,11 +44,14 @@ The package ships a full set of example tracks (a millipede orientation
 experiment) that demonstrate the import workflow. Landmark files
 (`_point01.txt`) record two pixel-space reference points per trial (the
 origin and a target location on the circumference); track files
-(`_point02.txt`) contain the full xy trajectory.
+(`_point02.txt`) contain the full xy trajectory. The files ship as one
+archive, unpacked here into a temporary directory.
 
 ``` r
 
-track_dir     <- system.file("extdata", "tracks", package = "radiatR")
+untar(system.file("extdata", "tracks.tar.gz", package = "radiatR"),
+      exdir = tempdir())
+track_dir     <- file.path(tempdir(), "tracks")
 manifest_path <- system.file("extdata", "millipede_trials.csv", package = "radiatR")
 
 file_tbl  <- import_tracks(track_dir)
