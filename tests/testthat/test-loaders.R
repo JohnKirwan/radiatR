@@ -78,14 +78,14 @@ test_that("deeplabcut multi-bodypart centroid is likelihood-weighted", {
   df <- data.frame(
     frame        = 1:3,
     head_x       = c(1, 1, 1), head_y       = c(0, 0, 0),
-    head_likelihood = c(1, 1, 1),
+    head_likelihood = c(0.75, 0.75, 0.75),
     tail_x       = c(0, 0, 0), tail_y       = c(0, 0, 0),
-    tail_likelihood = c(0, 0, 0)   # zero weight
+    tail_likelihood = c(0.25, 0.25, 0.25)
   )
   ts <- read_tracks(df, dialect = "deeplabcut", normalize_xy = TRUE)
   d  <- as.data.frame(ts)
-  # tail excluded by zero likelihood -> centroid = head position
-  expect_equal(d$x_raw[1], 1, tolerance = 1e-9)
+  # weights 0.75 and 0.25 -> centroid three quarters of the way to the head
+  expect_equal(d$x_raw[1], 0.75, tolerance = 1e-9)
 })
 
 test_that("deeplabcut multi-bodypart appends per-bodypart columns", {
@@ -248,10 +248,10 @@ test_that("sleap dialect detects nodes and computes score-weighted centroid", {
     head_x    = c(1, 1, 1), head_y    = c(0, 0, 0), head_score    = c(0.99, 0.99, 0.99),
     thorax_x  = c(0, 0, 0), thorax_y  = c(0, 0, 0), thorax_score  = c(0.01, 0.01, 0.01)
   )
-  ts <- read_tracks(df, dialect = "sleap",
-                     dialect_args = list(score_min = 0.5), normalize_xy = TRUE)
+  ts <- suppressMessages(read_tracks(df, dialect = "sleap", normalize_xy = TRUE,
+                                     dialect_args = list(score_min = 0.5, partial = "mean")))
   d  <- as.data.frame(ts)
-  # thorax below score_min -> centroid = head position
+  # thorax below score_min is masked; partial = "mean" leaves the head position
   expect_equal(d$x_raw[1], 1, tolerance = 1e-9)
   expect_true(all(c("head_x", "head_y", "thorax_x", "thorax_y") %in% names(d)))
 })
@@ -261,20 +261,6 @@ test_that("sleap dialect uses track as id and frame_idx as time", {
                    head_x = c(0,.1,.2), head_y = rep(0,3), head_score = rep(0.9,3))
   ts <- read_tracks(df, dialect = "sleap", dialect_args = list(bodypart = "head"), normalize_xy = TRUE)
   expect_equal(as.data.frame(ts)$id[1], "A")
-})
-
-test_that("deeplabcut_multiheader reads official DLC labeled-data fixture", {
-  path <- system.file("extdata", "dlc_CollectedData_Pranav.csv", package = "radiatR")
-  skip_if(nchar(path) == 0L, "dlc_CollectedData_Pranav.csv not found in extdata")
-  ts <- suppressMessages(read_tracks(path, dialect = "deeplabcut_multiheader", normalize_xy = TRUE))
-  d  <- as.data.frame(ts)
-  expect_s4_class(ts, "Tracks")
-  expect_equal(nrow(d), 116L)
-  # four bodyparts should be detected and appended
-  expect_true(all(c("snout_x","snout_y","leftear_x","leftear_y",
-                    "rightear_x","rightear_y","tailbase_x","tailbase_y") %in% names(d)))
-  # centroid of frame 1: mean(21.521, 33.819, 19.984, 87.11) ≈ 40.609
-  expect_equal(d$x_raw[1], mean(c(21.521, 33.819, 19.984, 87.11)), tolerance = 1e-3)
 })
 
 test_that("sleap dialect reads official SLEAP CSV fixture and handles NA scores", {

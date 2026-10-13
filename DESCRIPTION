@@ -6,7 +6,7 @@ Authors@R: c(
     person("John D.", "Kirwan", email = "john@jkirwan.org",
            role = c("aut", "cre", "cph")),
     person("A. & M.W. Mathis Labs", role = "cph",
-           comment = "example file inst/extdata/dlc_CollectedData_Pranav.csv, from 'DeepLabCut'"),
+           comment = "test fixture tests/testthat/fixtures/real/dlc_CollectedData_Pranav.csv, from 'DeepLabCut'"),
     person("Talmo", "Pereira", role = "cph",
            comment = "example file inst/extdata/sleap_example.csv, from 'SLEAP'"),
     person("The Trustees of Princeton University", role = "cph",

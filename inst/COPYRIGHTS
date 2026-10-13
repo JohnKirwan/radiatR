@@ -1,10 +1,12 @@
 radiatR is copyright John D. Kirwan and licensed under GPL (>= 3), except for
-the third-party example files listed below, which are redistributed unmodified
-under their own licences.
+the third-party example files listed below, which are redistributed unmodified,
+or as the excerpts described, under their own licences.
 
 --------------------------------------------------------------------------------
-inst/extdata/dlc_CollectedData_Pranav.csv
+tests/testthat/fixtures/real/dlc_CollectedData_Pranav.csv
 --------------------------------------------------------------------------------
+
+A test fixture only (labelled training data, which the loader refuses).
 
 Source:    examples/openfield-Pranav-2018-10-30/labeled-data/m4s1/CollectedData_Pranav.csv
            in https://github.com/DeepLabCut/DeepLabCut
@@ -58,9 +60,36 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
 --------------------------------------------------------------------------------
+inst/extdata/dlc_single_wasp_predictions.csv
+--------------------------------------------------------------------------------
+
+Source:    poses/DLC_single-wasp.predictions.csv in
+           https://gin.swc.ucl.ac.uk/neuroinformatics/movement-sample-data ,
+           shared by Sanna Titus (Sainsbury Wellcome Centre, UCL).
+Changes:   the header rows and the first 300 frames of the source file,
+           otherwise unchanged.
+Licence:   Creative Commons Attribution 4.0 International (CC BY 4.0),
+           https://creativecommons.org/licenses/by/4.0/
+
+--------------------------------------------------------------------------------
+inst/extdata/sleap_three_mice.analysis.csv
+--------------------------------------------------------------------------------
+
+Source:    data/sleap/SLEAP_three-mice_Aeon_mixed-labels.analysis.csv in
+           https://github.com/animovement/movement-data , written there by
+           sleap-io from
+           poses/SLEAP_three-mice_Aeon_mixed-labels.analysis.h5 in
+           https://gin.swc.ucl.ac.uk/neuroinformatics/movement-sample-data ,
+           shared by Chang Huan Lo (Sainsbury Wellcome Centre, UCL).
+Changes:   none; the whole file.
+Licence:   Creative Commons Attribution 4.0 International (CC BY 4.0),
+           https://creativecommons.org/licenses/by/4.0/
+
+--------------------------------------------------------------------------------
 tests/testthat/fixtures/real/
 --------------------------------------------------------------------------------
 
 Short excerpts of files written by other tracking programs, used only by the
 tests. tests/testthat/fixtures/real/README.md gives the source and licence of
-each file.
+each file. The BSD 3-Clause notice for sleap_three_nodes.analysis.csv is
+sleap_three_nodes.LICENSE.txt in that directory.
