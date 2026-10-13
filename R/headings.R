@@ -105,6 +105,15 @@
 #' A step of zero length and a position at the origin have no direction and
 #' are left out of these averages, whatever the weighting. A track with no
 #' direction left, or whose directions cancel, has heading \code{NA}.
+#'
+#' The other rules likewise give \code{NA} where a displacement has zero
+#' length: a track that never moves (\code{net}, \code{straight},
+#' \code{goal_bias}, \code{maxspeed_window}, \code{window_net}), one that ends
+#' where it started (\code{net}), a window whose ends coincide
+#' (\code{window_net}), positions or steps with no spread (\code{pca_axis}),
+#' and a track that stays at the origin (\code{distal}). \code{window_net}
+#' and \code{maxspeed_window} shrink their window to fit a track shorter than
+#' \code{window_n}.
 #' @return data.frame with columns id, time (approx), heading (radians, unit-circle
 #'   convention), plus the rule-specific construction columns above when
 #'   `return_coords = TRUE`. For some rules there may be multiple headings per id.
@@ -202,6 +211,12 @@ setGeneric(
   }
 }
 
+# Direction of a displacement, in [0, 2pi). One of zero length has no direction,
+# though atan2(0, 0) is 0.
+.displacement_direction <- function(dx, dy) {
+  if (isTRUE(dx == 0 && dy == 0)) NA_real_ else .wrap_to_2pi(atan2(dy, dx))
+}
+
 # ---- distal rule ------------------------------------------------------------- -------------------------------------------------------------
 # Heading = angle of the most distal point (max radius from origin)
 .set_headings_distal_one <- function(d, id, tc, xc, yc, return_coords = FALSE,
@@ -215,7 +230,7 @@ setGeneric(
   }
   m <- ok[which.max(r[ok])]
   row <- data.frame(id = d[[id]][m], time = d[[tc]][m],
-                    heading = .wrap_to_2pi(atan2(d[[yc]][m], d[[xc]][m])))
+                    heading = .displacement_direction(d[[xc]][m], d[[yc]][m]))
   if (return_coords) {
     row$x_distal <- d[[xc]][m]
     row$y_distal <- d[[yc]][m]
@@ -257,6 +272,7 @@ setGeneric(
   s_turn <- starts[idx_ok[ok_idx]]; e_turn <- ends[idx_ok[ok_idx]]
   s <- s_turn     # start step index
   e <- e_turn + 1 # end step index (because turn array shorter by 1)
+  if (all(vx[s:e] == 0 & vy[s:e] == 0)) return(na_row())  # a run of pauses
   heading <- atan2(d[[yc]][s+1] - d[[yc]][s], d[[xc]][s+1] - d[[xc]][s])
   row <- data.frame(id = d[[id]][s], time = d[[tc]][floor((s+e)/2)],
                     heading = .wrap_to_2pi(heading))
@@ -302,9 +318,9 @@ setGeneric(
 # Heading = angle from first to last point (net displacement)
 .set_headings_net_one <- function(d, id, tc, xc, yc, return_coords = FALSE) {
   s <- 1L; e <- nrow(d)
-  heading <- atan2(d[[yc]][e] - d[[yc]][s], d[[xc]][e] - d[[xc]][s])
   row <- data.frame(id = d[[id]][s], time = stats::median(d[[tc]], na.rm = TRUE),
-                    heading = .wrap_to_2pi(heading))
+                    heading = .displacement_direction(d[[xc]][e] - d[[xc]][s],
+                                                      d[[yc]][e] - d[[yc]][s]))
   if (return_coords) {
     row$x_start <- d[[xc]][s]; row$y_start <- d[[yc]][s]
     row$x_end   <- d[[xc]][e]; row$y_end   <- d[[yc]][e]
@@ -317,13 +333,15 @@ setGeneric(
 .set_headings_window_net_one <- function(d, id, tc, xc, yc, window_n = 21L, stride = 1L) {
   n <- nrow(d)
   if (n < 2L || window_n < 2L) return(data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_))
-  if (window_n > n) window_n <- n
-  half <- floor(window_n/2)
+  # a window spans 2 * half + 1 points: shrink it to fit a shorter track
+  half <- min(floor(window_n/2), (n - 1L) %/% 2L)
+  if (half < 1L) return(data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_))
   idx <- seq(1+half, n-half, by = max(1L, stride))
   out <- lapply(idx, function(i) {
     s <- i - half; e <- i + half
-    heading <- atan2(d[[yc]][e] - d[[yc]][s], d[[xc]][e] - d[[xc]][s])
-    data.frame(id = d[[id]][i], time = d[[tc]][i], heading = .wrap_to_2pi(heading))
+    data.frame(id = d[[id]][i], time = d[[tc]][i],
+               heading = .displacement_direction(d[[xc]][e] - d[[xc]][s],
+                                                 d[[yc]][e] - d[[yc]][s]))
   })
   do.call(rbind, out)
 }
@@ -338,8 +356,8 @@ setGeneric(
   dr <- diff(r)
   sx <- sum(dr * cos(th), na.rm = TRUE)
   sy <- sum(dr * sin(th), na.rm = TRUE)
-  heading <- atan2(sy, sx)
-  data.frame(id = d[[id]][1], time = stats::median(d[[tc]], na.rm = TRUE), heading = .wrap_to_2pi(heading))
+  data.frame(id = d[[id]][1], time = stats::median(d[[tc]], na.rm = TRUE),
+             heading = .displacement_direction(sx, sy))
 }
 
 # ---- pca_axis rule -----------------------------------------------------------
@@ -357,15 +375,18 @@ setGeneric(
   }
   if (source == "position") {
     M <- cbind(d[[xc]], d[[yc]])
-    M <- scale(M, center = TRUE, scale = FALSE)
   } else {
     if (nrow(d) < 2L) return(na_row())
     M <- cbind(diff(d[[xc]]), diff(d[[yc]]))
-    M <- scale(M, center = TRUE, scale = FALSE)
   }
   if (nrow(M) < 2L) return(na_row())
+  size2 <- max(abs(M))^2
+  M <- scale(M, center = TRUE, scale = FALSE)
   S <- crossprod(M) / (nrow(M) - 1)
-  ev <- eigen(S, symmetric = TRUE)$vectors[,1]
+  eg <- eigen(S, symmetric = TRUE)
+  # no spread beyond rounding (same points, or same steps), so no axis
+  if (eg$values[1] <= .Machine$double.eps * size2) return(na_row())
+  ev <- eg$vectors[,1]
   # align sign with net displacement
   net <- c(d[[xc]][nrow(d)] - d[[xc]][1], d[[yc]][nrow(d)] - d[[yc]][1])
   if (sum(ev * net) < 0) ev <- -ev
@@ -426,8 +447,9 @@ setGeneric(
   rs[is.na(rs)] <- -Inf
   center <- which.max(rs)
   s <- max(1L, center - half); e <- min(n, center + half)
-  heading <- atan2(d[[yc]][e] - d[[yc]][s], d[[xc]][e] - d[[xc]][s])
-  data.frame(id = d[[id]][center], time = d[[tc]][center], heading = .wrap_to_2pi(heading))
+  data.frame(id = d[[id]][center], time = d[[tc]][center],
+             heading = .displacement_direction(d[[xc]][e] - d[[xc]][s],
+                                               d[[yc]][e] - d[[yc]][s]))
 }
 
 # ---- vm_fit rule -------------------------------------------------------------
