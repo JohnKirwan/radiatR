@@ -28,10 +28,6 @@ jobs:
   manifest:
     runs-on: ubuntu-latest
     env:
-      # The project .Rprofile activates renv, which repoints .libPaths() and
-      # breaks setup-r-dependencies' pak install. Disable the autoloader so CI
-      # installs into the normal library (same as the package's other workflows).
-      RENV_CONFIG_AUTOLOADER_ENABLED: false
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
