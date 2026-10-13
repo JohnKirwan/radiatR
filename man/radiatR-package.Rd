@@ -28,11 +28,18 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: John D. Kirwan \email{john@jkirwan.org}
+\strong{Maintainer}: John D. Kirwan \email{john@jkirwan.org} [copyright holder]
 
 Authors:
 \itemize{
-  \item John D. Kirwan \email{john@jkirwan.org}
+  \item John D. Kirwan \email{john@jkirwan.org} [copyright holder]
+}
+
+Other contributors:
+\itemize{
+  \item A. & M.W. Mathis Labs (test fixture tests/testthat/fixtures/real/dlc_CollectedData_Pranav.csv, from 'DeepLabCut') [copyright holder]
+  \item Talmo Pereira (example file inst/extdata/sleap_example.csv, from 'SLEAP') [copyright holder]
+  \item The Trustees of Princeton University (example file inst/extdata/sleap_example.csv, from 'SLEAP') [copyright holder]
 }
 
 }

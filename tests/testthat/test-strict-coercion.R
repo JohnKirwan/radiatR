@@ -553,6 +553,231 @@ test_that("a wall-clock time that does not exist in tz is not moved an hour on",
   skip_if_not_installed("writexl")
   path <- withr::local_tempfile(fileext = ".xlsx")
   writexl::write_xlsx(data.frame(t = as.POSIXct(s, tz = "UTC")), path)
-  expect_identical(is.na(radiatR:::.read_any(path, tz = "America/New_York")$t),
-                   c(FALSE, TRUE, FALSE))
+  got <- radiatR:::.read_any(path, tz = "America/New_York")
+  expect_identical(is.na(got$t), c(FALSE, TRUE, FALSE))
+  expect_identical(attr(got, "tz_gaps")$t$rows, 2L)
+  expect_null(attr(radiatR:::.read_any(path), "tz_gaps"))
+
+  # as the time column it stops the load, naming the value and the cause
+  writexl::write_xlsx(xy_df(frame = as.POSIXct(s, tz = "UTC")), path)
+  e <- malformed(read_tracks(path, tz = "America/New_York"))
+  expect_s3_class(e, "radiatR_malformed_values")
+  expect_identical(e$columns, "frame")
+  expect_identical(e$rows, 2L)
+  expect_identical(e$values, "2024-03-10 02:30:00")
+  expect_match(conditionMessage(e), "America/New_York", fixed = TRUE)
+  expect_s3_class(read_tracks(path)@data$frame, "POSIXct")
+})
+
+test_that("a kept Excel date-time column is not blanked by a time that tz skips", {
+  skip_if_not_installed("readxl")
+  skip_if_not_installed("writexl")
+  path <- withr::local_tempfile(fileext = ".xlsx")
+  stamp <- as.POSIXct(sprintf("2024-03-10 0%d:30:00", 1:3), tz = "UTC")
+  writexl::write_xlsx(xy_df(stamp = stamp), path)
+  e <- malformed(read_tracks(path, keep = "stamp", tz = "America/New_York"))
+  expect_s3_class(e, "radiatR_malformed_values")
+  expect_identical(e$columns, "stamp")
+  expect_identical(e$rows, 2L)
+  expect_identical(e$source, basename(path))
+  # a column that is not used does not stop the load
+  expect_identical(nrow(read_tracks(path, tz = "America/New_York")@data), 3L)
+  # nor does it in one file of several
+  other <- withr::local_tempfile(fileext = ".xlsx")
+  writexl::write_xlsx(xy_df(id = "b", stamp = stamp + 86400), other)
+  expect_identical(nrow(read_tracks(c(path, other), tz = "America/New_York")@data), 6L)
+  e <- malformed(read_tracks(c(other, path), keep = "stamp", tz = "America/New_York"))
+  expect_identical(e$source, basename(path))
+  # files of one name are told apart: the skipped time is in the second
+  dirs <- file.path(withr::local_tempdir(), c("d1", "d2"))
+  for (d in dirs) dir.create(d)
+  same <- file.path(dirs, "a.xlsx")
+  writexl::write_xlsx(xy_df(id = "b", stamp = stamp + 86400), same[1])
+  writexl::write_xlsx(xy_df(stamp = stamp), same[2])
+  e <- malformed(read_tracks(same, keep = "stamp", tz = "America/New_York"))
+  expect_s3_class(e, "radiatR_malformed_values")
+  expect_identical(e$rows, 2L)
+})
+
+test_that("a time that tz skips, typed by readr, is named and not blanked", {
+  skip_if_not_installed("readr")
+  dir <- withr::local_tempdir()
+  stamp <- sprintf("2024-03-10 0%d:30:00", 1:3)
+  path <- file.path(dir, "kept.csv")
+  utils::write.csv(xy_df(stamp = stamp), path, row.names = FALSE)
+  ny <- function(...) suppressWarnings(read_tracks(..., tz = "America/New_York"))
+  e <- malformed(ny(path, keep = "stamp"))
+  expect_s3_class(e, "radiatR_malformed_values")
+  expect_identical(e$columns, "stamp")
+  expect_identical(e$rows, 2L)
+  expect_identical(e$values, "2024-03-10 02:30:00")
+  expect_identical(e$source, "kept.csv")
+  expect_identical(nrow(ny(path)@data), 3L)
+  expect_s3_class(read_tracks(path, keep = "stamp")@data$stamp, "POSIXct")
+  # as the time column
+  timed <- file.path(dir, "timed.csv")
+  utils::write.csv(xy_df(frame = stamp), timed, row.names = FALSE)
+  e <- malformed(ny(timed))
+  expect_s3_class(e, "radiatR_malformed_values")
+  expect_identical(e$values, "2024-03-10 02:30:00")
+})
+
+# ---- ids are labels ------------------------------------------------------------
+
+id_file <- function(dir, a, b, sep = ",") {
+  path <- tempfile(tmpdir = dir, fileext = ".csv")
+  writeLines(c(paste("id", "frame", "x", "y", sep = sep),
+               paste(a, 1:2, c(10, 11), c(20, 21), sep = sep),
+               paste(b, 3:4, c(30, 31), c(40, 41), sep = sep)), path)
+  path
+}
+# readr, then data.table::fread(), then utils::read.table(); the fread() pass
+# needs data.table, or it would be a second read.table() pass under its name
+readers <- c(list(character(0)),
+             if (requireNamespace("data.table", quietly = TRUE)) list("readr"),
+             list(c("readr", "data.table")))
+hide_readers <- function(hide, env = parent.frame())
+  testthat::local_mocked_bindings(
+    .is_installed = function(pkg) !pkg %in% hide && requireNamespace(pkg, quietly = TRUE),
+    .env = env)
+
+test_that("ids that differ as text are not merged by reading them as numbers", {
+  dir <- withr::local_tempdir()
+  cases <- list(c("1.1", "1.10", ";"), c("1.1", "1.10", ","), c("1", "1.0", ","),
+                c("1e1", "10", ","), c("01", "1", ","), c("1.1", "1.10", "\t"),
+                c("T", "TRUE", ","))
+  for (hide in readers) {
+    hide_readers(hide)
+    for (k in cases) {
+      # two rows per id, in whatever order the ids sort
+      got <- read_tracks(id_file(dir, k[1], k[2], k[3]))@data$id
+      expect_identical(sort(got), sort(rep(k[1:2], each = 2L)),
+                       info = paste(c(k, "without", hide), collapse = " "))
+    }
+  }
+})
+
+test_that("ids that read as distinct numbers are numbers under every reader", {
+  dir <- withr::local_tempdir()
+  for (hide in readers) {
+    hide_readers(hide)
+    # as the reader typed them: integer or double by reader
+    for (k in list(c("1", "2"), c("1.0", "2.0"), c("1.5", "10"))) {
+      got <- read_tracks(id_file(dir, k[1], k[2]))@data$id
+      expect_true(is.numeric(got), info = paste(c(k, "without", hide), collapse = " "))
+      expect_equal(got, rep(as.numeric(k), each = 2L),
+                   info = paste(c(k, "without", hide), collapse = " "))
+    }
+    # an id-like column that is not the id is read the same way
+    path <- file.path(dir, "subject.csv")
+    writeLines(c("id,frame,x,y,subject", "a,1,1,2,1.1", "a,2,2,3,1.10"), path)
+    expect_identical(read_tracks(path, keep = "subject")@data$subject, c("1.1", "1.10"))
+  }
+})
+
+test_that("a mapped id column is read as labels too", {
+  dir <- withr::local_tempdir()
+  path <- file.path(dir, "who.csv")
+  writeLines(c("who,frame,x,y", "1.1,1,1,2", "1.1,2,2,3", "1.10,3,3,4", "1.10,4,4,5"), path)
+  for (hide in readers) {
+    hide_readers(hide)
+    expect_identical(read_tracks(path, mapping = list(id = "who"))@data$who,
+                     rep(c("1.1", "1.10"), each = 2L))
+  }
+})
+
+test_that("files that disagree on the id type are combined as text ids", {
+  dir <- withr::local_tempdir()
+  files <- c(id_file(dir, "1.1", "1.10"), id_file(dir, "7", "8"))
+  # the ids of a file typed as numbers are taken from its text, not from the
+  # numbers: 1.10 is not 1.1, nor 300000 3e+05
+  other <- c(id_file(dir, "1.1", "x"), id_file(dir, "1.10", "300000"))
+  for (hide in readers) {
+    hide_readers(hide)
+    expect_identical(unique(read_tracks(files)@data$id), c("1.1", "1.10", "7", "8"))
+    expect_identical(sort(unique(read_tracks(other)@data$id)),
+                     sort(c("1.1", "x", "1.10", "300000")))
+    # whole numbers in one file and fractions in another are numbers in both
+    got <- read_tracks(c(id_file(dir, "1", "2"), id_file(dir, "1.5", "2.5")))@data$id
+    expect_equal(sort(unique(got)), c(1, 1.5, 2, 2.5))
+  }
+})
+
+test_that("the text of a label column is the text of the same cells", {
+  dir <- withr::local_tempdir()
+  # one name fewer than fields: read.table() takes the first field as row names
+  path <- file.path(dir, "rownames.txt")
+  writeLines(c("id\tframe\tx\ty", "r1\t1.1\t1\t1\t101", "r2\t1.1\t2\t2\t102",
+               "r3\t1.10\t3\t3\t103", "r4\t1.10\t4\t4\t104"), path)
+  hide_readers(c("readr", "data.table"))
+  expect_identical(read_tracks(path, read_opts = list(delim = "\t"))@data$id,
+                   rep(c("1.1", "1.10"), each = 2L))
+  # text that does not read as the values the reader typed is not attached
+  df <- data.frame(id = c(1, 1, 2), x = 1:3)
+  expect_error(radiatR:::.keep_labels(df, NULL, function(pos) data.frame(id = c("7", "8", "9"))),
+               class = "radiatR_label_misread")
+  expect_identical(radiatR:::.keep_labels(df, NULL, function(pos) data.frame(id = c("1", "1.0", "2")))$id,
+                   c("1", "1.0", "2"))
+})
+
+# ---- what the caller did not supply does not override a format ---------------
+
+test_that("an explicit NULL beside format = does not delete the format's setting", {
+  d <- cbind(xy_df(), cond = "u")
+  spec <- list(time = list(type = "frames", fps = 25), keep = "cond")
+  for (tr in list(read_tracks(d, format = spec, fps = NULL, keep = NULL),
+                  read_tracks_format(d, spec, fps = NULL, keep = NULL))) {
+    expect_equal(frame_rate(tr), 25)
+    expect_true("cond" %in% names(tr@data))
+  }
+})
+
+test_that("the caller's dialect overrides the format's", {
+  for (nm in c("zz_format", "zz_caller"))
+    local({
+      nm <- nm
+      register_loader_dialect(nm, overwrite = TRUE, fun = function(x, ...)
+        transform(x, who = nm))
+    })
+  withr::defer(rm(list = c("zz_format", "zz_caller"), envir = radiatR:::.loader_registry))
+  spec <- list(dialect = "zz_format", dialect_args = list())
+  expect_identical(unique(read_tracks(xy_df(), format = spec)@data$who), "zz_format")
+  # the caller's dialect_args are not its dialect: the format's still runs
+  expect_identical(unique(read_tracks(xy_df(), format = spec,
+                                      dialect_args = list(tag = 1))@data$who), "zz_format")
+  expect_identical(unique(read_tracks(xy_df(), format = spec, dialect = "zz_caller")@data$who),
+                   "zz_caller")
+  expect_identical(unique(read_tracks(xy_df(), format = spec, dialect = NULL)@data$who),
+                   "zz_format")
+})
+
+test_that("a format's dialect_args reach its dialect", {
+  register_loader_dialect("zz_tag", overwrite = TRUE, fun = function(x, tag = "default", ...)
+    transform(x, who = tag))
+  withr::defer(rm(list = "zz_tag", envir = radiatR:::.loader_registry))
+  spec <- list(dialect = "zz_tag", dialect_args = list(tag = "format"))
+  who <- function(tr) unique(tr@data$who)
+  expect_identical(who(read_tracks(xy_df(), format = spec)), "format")
+  expect_identical(who(read_tracks_format(xy_df(), spec)), "format")
+  expect_identical(who(read_tracks(xy_df(), format = spec, dialect_args = list(tag = "caller"))),
+                   "caller")
+  expect_identical(who(read_tracks(xy_df(), format = list(dialect = "zz_tag"))), "default")
+})
+
+test_that("load_manifest() passes on only what its caller supplied", {
+  skip_if_not_installed("tibble")
+  dir <- withr::local_tempdir()
+  utils::write.csv(data.frame(id = "a", frame = 1:3, theta = c(90, 180, 270), cond = "u"),
+                   file.path(dir, "one.csv"), row.names = FALSE)
+  file_tbl <- tibble::tibble(basename = "one", track = "one.csv")
+  spec <- list(angle = list(unit = "degrees"), time = list(type = "frames", fps = 25),
+               keep = "cond")
+  tr <- load_manifest(file_tbl, dir, format = spec)
+  expect_equal(tr@data$theta, c(90, 180, 270) * pi / 180)
+  expect_equal(frame_rate(tr), 25)
+  expect_true("cond" %in% names(tr@data))
+  # what the caller supplies still overrides the format
+  expect_equal(frame_rate(load_manifest(file_tbl, dir, format = spec, fps = 50)), 50)
+  # and without a format the defaults are read_tracks()'s own
+  expect_identical(suppressWarnings(load_manifest(file_tbl, dir))@angle_unit, "radians")
 })
