@@ -48,13 +48,16 @@ guess_dialect <- function(path) {
     readLines(path, n = 4L),
     error = function(e) character(0L)
   )
+  # A binary file (an Excel workbook is a zip) or one in another encoding has
+  # lines that are not valid text: they label nothing.
+  hdr[!validUTF8(hdr)] <- ""
   # DeepLabCut labels its header rows: scorer, (individuals,) bodyparts, coords
-  lab <- tolower(trimws(sub(",.*$", "", hdr)))
+  lab <- tolower(gsub("^\"|\"$", "", trimws(sub(",.*$", "", hdr))))
   if (identical(lab[1:3], c("scorer", "bodyparts", "coords")) ||
       identical(lab, c("scorer", "individuals", "bodyparts", "coords"))) {
     return("deeplabcut")
   }
-  if (!length(hdr)) return("generic")
+  if (!length(hdr) || !nzchar(hdr[1L])) return("generic")
   # Header cells, lower-cased and then reduced to [a-z0-9_]. Lower-casing must
   # come first: reducing first turned every capital into "_", so TRACK_ID and
   # "Pos. X (mm)" never matched. Only dialects checked against real exports are
@@ -65,6 +68,11 @@ guess_dialect <- function(path) {
   nm <- gsub("^_+|_+$", "",
              gsub("[^a-z0-9]+", "_", tolower(strsplit(hdr[1L], sep, fixed = TRUE)[[1L]])))
 
+  # A flat <bodypart>_x / _y / _likelihood table is offered to the deeplabcut
+  # dialect, which refuses it by name: read as plain columns it would load one
+  # bodypart, placeholder rows included, without saying so.
+  if (any(grepl("_likelihood$", nm)) && any(grepl("_x$", nm)))
+    return("deeplabcut")
   if ("frame_idx" %in% nm && any(grepl("_score$", nm)))
     return("sleap")
   if ("track_id" %in% nm && "position_x" %in% nm)

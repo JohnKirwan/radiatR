@@ -99,10 +99,26 @@ test_that("real exports are auto-detected and load through the app's loader", {
   expect_identical(e$guess_dialect(fx("dlc_two_mice_predictions.csv")), "deeplabcut")
   expect_identical(e$guess_dialect(fx("sleap_three_nodes.analysis.csv")), "sleap")
   expect_false("deeplabcut_multiheader" %in% e$DIALECT_CHOICES)
-  # the deeplabcut dialect reads DeepLabCut's header rows, not a flat table
+  # a flat <bodypart>_x table is offered to the deeplabcut dialect, which refuses it by name
   flat <- withr::local_tempfile(fileext = ".csv")
   writeLines(c("frame,head_x,head_y,head_likelihood", "0,1,2,0.9"), flat)
-  expect_identical(e$guess_dialect(flat), "generic")
+  expect_identical(e$guess_dialect(flat), "deeplabcut")
+  err <- tryCatch(radiatR::read_tracks(flat, dialect = "deeplabcut"), error = function(e) e)
+  expect_match(e$plain_error(err), "is not a DeepLabCut output file", fixed = TRUE)
+  # a binary file, or one in another encoding, is generic rather than an error
+  bin <- withr::local_tempfile(fileext = ".xlsx")
+  writeBin(as.raw(c(0x50, 0x4B, 0x03, 0x04, 0xFE, 0xFF, 0x0A, 0x80, 0x0A)), bin)
+  expect_identical(suppressWarnings(e$guess_dialect(bin)), "generic")
+  latin <- withr::local_tempfile(fileext = ".csv")
+  writeBin(c(charToRaw("id,time,x,y\na,1,"), as.raw(0xE9), charToRaw(",2\n")), latin)
+  expect_identical(e$guess_dialect(latin), "generic")
+  # a re-save with every header field quoted is still a DeepLabCut file
+  quoted <- withr::local_tempfile(fileext = ".csv")
+  lines <- readLines(fx("dlc_single_wasp_predictions.csv"))
+  lines[1:3] <- vapply(strsplit(lines[1:3], ",", fixed = TRUE),
+                       function(f) paste0("\"", f, "\"", collapse = ","), character(1))
+  writeLines(lines, quoted)
+  expect_identical(e$guess_dialect(quoted), "deeplabcut")
   # a dialect's refusal is the headline, not a guess at it from its wording
   err <- tryCatch(radiatR::read_tracks(fx("dlc_CollectedData_Pranav.csv"), dialect = "deeplabcut"),
                   error = function(e) e)

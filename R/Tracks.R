@@ -819,7 +819,9 @@ setAs("data.frame", "Tracks", function(from) {
 #'   ids, and agree on frame_rate/time_unit/distance_scale/distance_unit/normalize_xy
 #'   metadata (including all-unset); mismatches error rather than silently
 #'   picking one input's values. Per-id metadata (e.g. `reference`) and the
-#'   attrition records of the loads are merged across all inputs.
+#'   attrition records of the loads are merged across all inputs. A subset
+#'   carries the whole record of its load, so recombining subsets of one load
+#'   repeats that record.
 #' @param recursive Ignored; maintained for signature compatibility
 #' @rdname Tracks-class
 #' @export

@@ -128,7 +128,7 @@ one import that disagree.
 
 The `deeplabcut` and `sleap` dialects take each position from one or more
 points (bodyparts, nodes). A point is masked in a frame when its
-coordinates are missing, when its score (likelihood) is 0, or when a
+coordinates are missing or not finite, when its score (likelihood) is 0, or when a
 threshold is given (`dialect_args = list(likelihood_min = )` for
 DeepLabCut, `score_min` for SLEAP) and its score is missing or below it.
 A frame with a masked point has no position, unless
@@ -141,7 +141,8 @@ kept in the `attrition` element of the Tracks metadata: a data frame with
 one row per source file and point, giving the rows in which the point was
 masked (`masked`), the rows read from that file (`frames`), the rows left
 without a position (`frames_no_position`), and the threshold and `partial`
-setting used. `c()` row-binds these records.
+setting used. `c()` row-binds these records; a subset keeps the whole
+record of its load, so recombining subsets of one load repeats it.
 }
 
 \section{Malformed values}{
