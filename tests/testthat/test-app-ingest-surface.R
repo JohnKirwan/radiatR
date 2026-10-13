@@ -161,8 +161,9 @@ test_that("an uploaded TrackMate 7 file is detected, loaded in seconds, and need
 })
 
 test_that("an uploaded idtracker.ai file is detected; its 'nan' positions stop the load", {
-  # The app loads with on_invalid = "error" and has no control to drop rows, so
-  # a file with missing positions is refused by name rather than half-loaded.
+  # The app loads with on_invalid = "error" until the user agrees to drop the
+  # rows (test-app-drop-control.R), so a file with missing positions is refused
+  # by name rather than half-loaded.
   skip_if_not_installed("shiny")
   skip_if(!dir.exists(app_dir()), "app dir not found")
   path <- normalizePath(testthat::test_path("fixtures", "real", "idtrackerai_trajectories.csv"))
@@ -172,7 +173,7 @@ test_that("an uploaded idtracker.ai file is detected; its 'nan' positions stop t
     session$setInputs(dialect_sel = "auto")
     session$setInputs(go2 = 1)
     expect_null(rv$ts)
-    expect_match(rv$error, "not valid track data", fixed = TRUE)
+    expect_match(rv$error, "2 row(s) of this file have no x/y position", fixed = TRUE)
     expect_match(rv$error_detail, "non-finite coordinates", fixed = TRUE)
   })
 })

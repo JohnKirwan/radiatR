@@ -153,14 +153,26 @@ detect_cond_col <- function(ts) {
 # (output$normalize_box); the resolved logical is recorded on rv$normalize_xy.
 load_ts <- function(path, dialect, mapping = list(), read_opts = list(delim = NULL),
                     normalize_xy = TRUE, origin = NULL, radius = NULL,
-                    on_invalid = "error") {
+                    on_invalid = "error", dialect_args = list()) {
   if (is.null(dialect) || dialect %in% c("auto", "generic"))
     return(read_tracks(path, mapping = mapping, read_opts = read_opts,
                        normalize_xy = normalize_xy, origin = origin, radius = radius,
                        on_invalid = on_invalid))
-  read_tracks(path, dialect = dialect, mapping = mapping, read_opts = read_opts,
+  read_tracks(path, dialect = dialect, dialect_args = dialect_args,
+              mapping = mapping, read_opts = read_opts,
               normalize_xy = normalize_xy, origin = origin, radius = radius,
               on_invalid = on_invalid)
+}
+
+# The rows a failed load could leave out if the user agrees: "positions" for
+# rows with a missing or non-finite x/y (read_tracks(on_invalid = "drop")),
+# "unlinked" for TrackMate spots in no track (unlinked = "drop"). NULL for any
+# other error: a malformed value or a broken track is never dropped.
+drop_offer <- function(e) {
+  if (inherits(e, "radiatR_unlinked_rows")) return("unlinked")
+  if (inherits(e, "radiatR_invalid_rows") && !inherits(e, "radiatR_malformed_values"))
+    return("positions")
+  NULL
 }
 
 # The bundled Cylindroiulus punctatus millipede example, as a Tracks, so
@@ -431,10 +443,16 @@ plain_error <- function(e) {
       e$columns, e$expected, e$values[1]
     ))
   if (inherits(e, "radiatR_unlinked_rows"))
-    return(paste(
-      "This TrackMate file contains spots that belong to no track.",
-      "Export \"Spots in tracks\" from TrackMate and upload that file instead."
-    ))
+    return(sprintf(paste(
+      "This TrackMate file contains %d spot(s) that belong to no track.",
+      "Export \"Spots in tracks\" from TrackMate and upload that file instead,",
+      "or drop those spots to continue."
+    ), length(e$rows)))
+  if (identical(drop_offer(e), "positions"))
+    return(sprintf(paste(
+      "%d row(s) of this file have no x/y position.",
+      "Drop them to continue, or see Technical details for the rows and ids affected."
+    ), length(e$rows)))
   if (inherits(e, c("radiatR_invalid_rows", "radiatR_invalid_tracks")))
     return(paste(
       "Some rows of this file are not valid track data.",
@@ -540,7 +558,16 @@ server <- function(input, output, session) {
     error_detail = NULL,
     mode      = "trajectories",
     raw_hd    = NULL,
-    hd_map    = NULL    # list(col, units, convention, group) for the headings spec
+    hd_map    = NULL,   # list(col, units, convention, group) for the headings spec
+    # Row drops (see drop_offer()). `drop`: the kinds the user has agreed to for
+    # the current file. `drop_offer`: list(kind, n, error) while the load error
+    # shown is one a drop would clear. `drop_used` / `dropped`: the kinds applied
+    # to, and the rows left out of, the loaded rv$ts (meaningful only for an
+    # uploaded file; recorded at load time, like normalize_xy).
+    drop       = character(0),
+    drop_offer = NULL,
+    drop_used  = character(0),
+    dropped    = 0L
   )
 
   # Single source of truth for axial mode, resolved from the Directionality control.
@@ -594,9 +621,25 @@ server <- function(input, output, session) {
     rv$hd_map <- NULL
     rv$error  <- NULL
     rv$error_detail <- NULL
+    rv$drop   <- character(0)
+  })
+
+  # Agreeing to drop rows holds for one file read as one format.
+  observeEvent(input$dialect_sel, rv$drop <- character(0))
+
+  # The drop offer lasts only as long as the error it came from.
+  observeEvent(rv$error, {
+    if (!identical(rv$error, rv$drop_offer$error)) rv$drop_offer <- NULL
+  }, ignoreNULL = FALSE)
+
+  observeEvent(input$drop_btn, {
+    req(rv$drop_offer)
+    rv$drop <- union(rv$drop, rv$drop_offer$kind)
+    load_upload()
   })
 
   observeEvent(input$restart, {
+    rv$drop     <- character(0)
     rv$step     <- 1L
     rv$path     <- NULL
     rv$dialect  <- NULL
@@ -644,6 +687,12 @@ server <- function(input, output, session) {
       rv$error_detail <- NULL
       return()
     }
+    load_upload()
+  })
+
+  # Load the uploaded tracking file with the current Step 1 choices. Shared by
+  # "Next" and by the drop button, which re-runs it once rv$drop has grown.
+  load_upload <- function() {
     d <- if (!is.null(input$dialect_sel) &&
              input$dialect_sel != "auto") {
       input$dialect_sel
@@ -671,28 +720,38 @@ server <- function(input, output, session) {
     origin <- if (calibrate)
       c(input$origin_x %||% NA_real_, input$origin_y %||% NA_real_) else NULL
     radius <- if (calibrate) input$radius %||% NA_real_ else NULL
+    drop <- rv$drop
     captured_warn <- character(0)
+    dropped <- 0L
     ts <- withCallingHandlers(
       tryCatch(
         load_ts(rv$path, d, mapping = map,
                 read_opts = c(delim_read_opts(input$delim_sel),
                               list(ext = tolower(tools::file_ext(rv$file_name %||% "")),
                                    sheet = input$sheet_sel)),
-                normalize_xy = nrm, origin = origin, radius = radius),
+                normalize_xy = nrm, origin = origin, radius = radius,
+                on_invalid = if ("positions" %in% drop) "drop" else "error",
+                dialect_args = if ("unlinked" %in% drop) list(unlinked = "drop") else list()),
         error = function(e) {
           rv$error        <- plain_error(e)
           rv$error_detail <- ingest_detail(e)
+          kind <- drop_offer(e)
+          rv$drop_offer <- if (!is.null(kind))
+            list(kind = kind, n = length(e$rows), error = rv$error)
           NULL
         }
       ),
       warning = function(w) {
         captured_warn <<- c(captured_warn, conditionMessage(w))
+        if (inherits(w, "radiatR_dropped_rows")) dropped <<- dropped + length(w$rows)
         invokeRestart("muffleWarning")
       }
     )
     if (!is.null(ts)) {
       rv$ts            <- ts
       rv$dialect       <- d
+      rv$drop_used     <- drop
+      rv$dropped       <- dropped
       rv$normalize_xy  <- nrm
       rv$origin        <- origin
       rv$radius        <- radius
@@ -702,7 +761,7 @@ server <- function(input, output, session) {
       rv$error_detail  <- if (length(captured_warn))
                             paste(captured_warn, collapse = "\n") else NULL
     }
-  })
+  }
 
   # One-line description of the selected heading method, shown under the dropdown.
   output$method_help <- renderUI({
@@ -897,6 +956,7 @@ server <- function(input, output, session) {
   # ---- file upload -----------------------------------------------------------
   observeEvent(input$file, {
     req(input$file)
+    rv$drop      <- character(0)
     rv$path      <- input$file$datapath
     rv$source    <- "file"
     rv$file_name <- input$file$name
@@ -1008,6 +1068,10 @@ server <- function(input, output, session) {
     err_box <- if (!is.null(rv$error))
       div(class = "alert alert-danger mt-3 mb-0",
           div(rv$error),
+          if (!is.null(rv$drop_offer))
+            actionButton("drop_btn",
+                         sprintf("Drop these %d row(s) and continue", rv$drop_offer$n),
+                         class = "btn-sm btn-outline-danger my-1"),
           if (!is.null(rv$error_detail))
             tags$details(class = "small mt-1",
               tags$summary("Technical details"),
@@ -1019,6 +1083,7 @@ server <- function(input, output, session) {
           tags$details(class = "small mb-0",
             tags$summary("Notes"),
             tags$pre(class = "mb-0", rv$error_detail)))
+    err_box <- tagList(dropped_ui(), err_box)
 
     # ---- Step 1: upload ----
     if (rv$step == 1L) {
@@ -1195,6 +1260,7 @@ server <- function(input, output, session) {
     # ---- Step 3: results ----
     } else {
       tagList(
+        uiOutput("dropped_banner"),
         uiOutput("attrition_banner"),
         navset_card_tab(
           id = "results_tab",
@@ -1696,7 +1762,7 @@ server <- function(input, output, session) {
         dialect = if (is.null(rv$dialect) || rv$dialect %in% c("auto", "generic"))
           NULL else rv$dialect,
         normalize_xy = rv$normalize_xy,
-        origin = rv$origin, radius = rv$radius,
+        origin = rv$origin, radius = rv$radius, drop = rv$drop_used,
         delim = input$delim_sel, sheet = input$sheet_sel),
       inputs = list(
         cond_col = input$cond_col, cond_col2 = input$cond_col2,
@@ -1760,6 +1826,15 @@ server <- function(input, output, session) {
     )
     print(p)
   }, res = 120)
+
+  # Rows the user agreed to leave out of the uploaded file, shown under the
+  # wizard and above the results. An example or a headings upload drops none.
+  dropped_ui <- reactive({
+    if (is.null(rv$ts) || !identical(rv$source, "file")) return(NULL)
+    note <- dropped_note(rv$dropped, rv$drop_used)
+    if (!is.null(note)) div(class = "alert alert-warning mt-3 mb-3", note)
+  })
+  output$dropped_banner <- renderUI(dropped_ui())
 
   # Attrition banner: shown only when some trials produced no heading. Derived
   # headings get a loud bias caveat; provided headings get a neutral note.
@@ -2046,7 +2121,7 @@ server <- function(input, output, session) {
         dialect = if (is.null(rv$dialect) || rv$dialect %in% c("auto", "generic"))
           NULL else rv$dialect,
         normalize_xy = rv$normalize_xy,
-        origin = rv$origin, radius = rv$radius,
+        origin = rv$origin, radius = rv$radius, drop = rv$drop_used,
         delim = input$delim_sel, sheet = input$sheet_sel)))
   })
 
