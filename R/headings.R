@@ -248,15 +248,34 @@ setGeneric(
   row
 }
 
+# Weighted mean direction, in [0, 2pi). An angle whose weight is zero or not
+# finite has no say: a step of zero length and a point at the origin have no
+# direction, though atan2(0, 0) is 0. NA when no angle is left or the weighted
+# unit vectors cancel. (circular::mean.circular() has no weights argument.)
+.weighted_mean_direction <- function(th, w) {
+  ok <- is.finite(th) & is.finite(w) & w > 0
+  if (!any(ok)) return(NA_real_)
+  s  <- sum(w[ok] * sin(th[ok]))
+  co <- sum(w[ok] * cos(th[ok]))
+  if (sqrt(s^2 + co^2) <= sum(w[ok]) * .Machine$double.eps) return(NA_real_)
+  .wrap_to_2pi(atan2(s, co))
+}
+
+# Weights of the steps of a path: their length, or 1 for each step that moves.
+.step_weights <- function(vx, vy, weight_by) {
+  len <- sqrt(vx^2 + vy^2)
+  if (weight_by == "step_length") len else as.numeric(len > 0)
+}
+
 # ---- origin_mean rule --------------------------------------------------------
-# Heading = circular mean of position bearings from origin; optionally radius-weighted (equiv. angle of centroid when power=1)
+# Heading = mean of position bearings from origin, weighted by radius^r_power
+# (r_power = 1 gives the bearing of the centroid)
 .set_headings_origin_mean_one <- function(d, id, tc, xc, yc, r_power = 0) {
   th <- atan2(d[[yc]], d[[xc]])
   r  <- sqrt(d[[xc]]^2 + d[[yc]]^2)
-  w  <- if (is.finite(r_power) && r_power != 0) r^r_power else NULL
-  tcirc <- .as_circ(th)
-  mu <- tryCatch(circular::mean.circular(tcirc, weights = w, na.rm = TRUE), error = function(e) NA_real_)
-  data.frame(id = d[[id]][1], time = stats::median(d[[tc]], na.rm = TRUE), heading = .wrap_to_2pi(as.numeric(mu)))
+  w  <- ifelse(r > 0, r^r_power, 0)
+  data.frame(id = d[[id]][1], time = stats::median(d[[tc]], na.rm = TRUE),
+             heading = .weighted_mean_direction(th, w))
 }
 
 # ---- net rule ----------------------------------------------------------------
@@ -392,24 +411,10 @@ setGeneric(
 }
 
 # ---- vm_fit rule -------------------------------------------------------------
-# Von Mises fit to step headings; mu is heading; falls back to mean if MLE not available
-.set_headings_vm_fit_one <- function(d, id, tc, xc, yc, weight_by = c("step_length","uniform")) {
-  weight_by <- match.arg(weight_by)
-  if (nrow(d) < 2L) return(data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_))
-  vx <- diff(d[[xc]]); vy <- diff(d[[yc]])
-  th <- atan2(vy, vx)
-  w  <- if (weight_by == "step_length") sqrt(vx^2 + vy^2) else NULL
-  tcirc <- .as_circ(th)
-  mu <- tryCatch({
-      if ("mle.vonmises" %in% getNamespaceExports("circular")) {
-        fit <- circular::mle.vonmises(tcirc, w = w)
-        as.numeric(fit$mu)
-      } else {
-        as.numeric(circular::mean.circular(tcirc, weights = w, na.rm = TRUE))
-      }
-    }, error = function(e) as.numeric(circular::mean.circular(tcirc, weights = w, na.rm = TRUE)))
-  data.frame(id = d[[id]][1], time = stats::median(d[[tc]], na.rm = TRUE), heading = .wrap_to_2pi(mu))
-}
+# Von Mises fit to step headings; mu is heading. The maximum-likelihood mean
+# direction of a von Mises is the (weighted) mean direction, so this is
+# velocity_mean under another name.
+.set_headings_vm_fit_one <- function(...) .set_headings_velocity_mean_one(...)
 
 # ---- exit/entry rules --------------------------------------------------------
 # Heading at first outward exit from radius r0 (exit) or first inward entry (entry)
@@ -466,11 +471,9 @@ setGeneric(
   weight_by <- match.arg(weight_by)
   if (nrow(d) < 2L) return(data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_))
   vx <- diff(d[[xc]]); vy <- diff(d[[yc]])
-  th <- atan2(vy, vx)
-  w  <- if (weight_by == "step_length") sqrt(vx^2 + vy^2) else NULL
-  tcirc <- .as_circ(th)
-  mu <- tryCatch(circular::mean.circular(tcirc, weights = w, na.rm = TRUE), error = function(e) NA_real_)
-  data.frame(id = d[[id]][1], time = stats::median(d[[tc]], na.rm = TRUE), heading = .wrap_to_2pi(as.numeric(mu)))
+  data.frame(id = d[[id]][1], time = stats::median(d[[tc]], na.rm = TRUE),
+             heading = .weighted_mean_direction(atan2(vy, vx),
+                                                .step_weights(vx, vy, weight_by)))
 }
 
 # ---- velocity_axis rule ------------------------------------------------------
@@ -483,8 +486,8 @@ setGeneric(
     return(data.frame(id = d[[id]][1], time = d[[tc]][1], heading = NA_real_))
   vx <- diff(d[[xc]]); vy <- diff(d[[yc]])
   th <- atan2(vy, vx)
-  w  <- if (weight_by == "step_length") sqrt(vx^2 + vy^2) else rep(1, length(th))
-  ok <- is.finite(th) & is.finite(w)
+  w  <- .step_weights(vx, vy, weight_by)
+  ok <- is.finite(th) & is.finite(w) & w > 0
   axis <- if (any(ok)) {
     mv <- sum(w[ok] * exp(1i * 2 * th[ok])) / sum(w[ok])
     (Arg(mv) / 2) %% pi
@@ -586,6 +589,9 @@ setMethod("derive_headings", "Tracks", function(
       },
       origin_mean = {
         r_power <- dots$r_power %||% 0
+        if (!is.numeric(r_power) || length(r_power) != 1L || !is.finite(r_power))
+          rlang::abort("`r_power` must be one finite number.",
+                       class = "radiatR_invalid_argument", arg = "r_power")
         do.call(rbind, lapply(sp, function(ii) .set_headings_origin_mean_one(d[ii, , drop = FALSE], id, tc, xc, yc, r_power = r_power)))
       },
       net = {
