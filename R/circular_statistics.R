@@ -10,8 +10,12 @@
 #' length, concentration) from the step-angle column of a `Tracks`.
 #'
 #' @param x A [`Tracks`] object.
-#' @param w Character. Name of a weight column in `x@data`. When `NULL`
-#'   (default), all steps are weighted equally.
+#' @param w Character. Name of a weight column in `x@data`, used in place of
+#'   the weight column of `x`. Its values must be finite and `>= 0`; a zero
+#'   weight excludes an observation. When `NULL` (default), the weight column
+#'   of `x` is used, and all steps are weighted equally when `x` has none.
+#'   A group whose weights are all zero is an error (class
+#'   `radiatR_nonestimable`).
 #' @param by Character. `"id"` (default) returns one row per trial;
 #'   `"global"` pools all observations into a single summary row.
 #' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
@@ -19,11 +23,12 @@
 #'   reported as an axis in `[0, pi)` radians / `[0, 180)` degrees. Default
 #'   `FALSE` (ordinary directional data).
 #' @return A `data.frame` with columns `id`, `n`, `t_start`, `t_end`,
-#'   `mean_dir` (radians, unit-circle convention, 0 to 2pi), `resultant_R`
-#'   (0--1), and `kappa`
+#'   `mean_dir` (radians, unit-circle convention, 0 to 2pi; weighted when
+#'   weights are used), `resultant_R` (0--1), and `kappa`
 #'   (von Mises concentration: the maximum-likelihood estimate from the mean
 #'   resultant length, weighted when weights are used; `NA` for fewer than
-#'   three valid angles, `Inf` when all angles coincide).
+#'   three valid angles of positive weight, `Inf` when all angles coincide).
+#'   `n` counts the valid angles whatever their weight.
 #'   No small-sample bias correction is applied, so \code{kappa} is biased
 #'   upward for small \code{n}: \code{circular::mle.vonmises(bias = TRUE)}
 #'   gives a corrected estimate and \code{\link{boot_kappa_ci}()} reports the
@@ -93,28 +98,47 @@ setGeneric("circ_summary", function(x, w = NULL, by = c("id","global"), axial = 
 setMethod("circ_summary", "Tracks", function(x, w = NULL, by = c("id","global"), axial = FALSE) {
   by <- match.arg(by)
   id <- x@cols$id; tm <- x@cols$time; th <- x@cols$angle
-  wcol <- if (is.null(w)) x@cols$weight else w
   d <- as.data.frame(x)
+  # The Tracks weight column is checked by validity; a column named in `w` is not.
+  if (!is.null(w)) {
+    if (!is.character(w) || length(w) != 1L || !w %in% names(d))
+      rlang::abort(
+        sprintf("`w` must name one column of the tracks; %s is not a column.",
+                paste0("'", format(w), "'", collapse = ", ")),
+        class = "radiatR_invalid_argument", arg = "w")
+    bad <- if (is.numeric(d[[w]])) which(!is.finite(d[[w]]) | d[[w]] < 0) else seq_len(nrow(d))
+    if (length(bad))
+      rlang::abort(
+        sprintf("Weight column '%s' must be numeric, finite and >= 0; %d value(s) are not.\n  rows: %s",
+                w, length(bad),
+                paste0(paste(utils::head(bad, 20L), collapse = ", "),
+                       if (length(bad) > 20L) ", ...")),
+        class = "radiatR_invalid_argument", arg = "w", columns = w, rows = bad)
+  }
+  wcol <- w %||% x@cols$weight
   split_idx <- if (by == "id") split(seq_len(nrow(d)), d[[id]]) else list(all = seq_len(nrow(d)))
 
   rows <- lapply(names(split_idx), function(k) {
     ii <- split_idx[[k]]
     theta <- d[[th]][ii]
-    wts <- if (!is.null(wcol) && wcol %in% names(d)) d[[wcol]][ii] else NULL
-
     valid <- !is.na(theta)
-    if (!is.null(wts)) {
-      valid <- valid & !is.na(wts)
-    }
     theta_valid <- theta[valid]
-    wts_valid <- if (!is.null(wts)) wts[valid] else NULL
+    wts_valid <- if (!is.null(wcol)) d[[wcol]][ii][valid] else NULL
+    # A zero weight excludes an observation, so all-zero weights leave none.
+    if (length(wts_valid) && sum(wts_valid) == 0)
+      radiatR_abort_nonestimable(
+        "circ_summary", group = if (by == "id") k, n = length(wts_valid),
+        reason = "its weights sum to zero, so no observation is counted")
 
     folded <- .fold_angles(theta_valid, axial)
     tc <- circular::circular(folded, units = "radians", modulo = "2pi")
-    mu <- if (length(folded)) {
-      circular::mean.circular(tc, na.rm = TRUE, weights = wts_valid)
-    } else {
+    # mean.circular() has no weights argument: it would ignore them silently.
+    mu <- if (!length(folded)) {
       NA_real_
+    } else if (is.null(wts_valid)) {
+      circular::mean.circular(tc, na.rm = TRUE)
+    } else {
+      circular::weighted.mean.circular(tc, w = wts_valid, na.rm = TRUE)
     }
 
     if (length(folded)) {
@@ -131,8 +155,10 @@ setMethod("circ_summary", "Tracks", function(x, w = NULL, by = c("id","global"),
       R <- NA_real_
     }
 
-    # Same minimum as circ_summarise(): kappa is not reported below 3 angles.
-    kap    <- if (length(folded) >= 3L && !is.na(R)) .kappa_from_Rbar(R) else NA_real_
+    # Same minimum as circ_summarise(): kappa is not reported below 3 angles,
+    # and a zero-weight angle is not one of them.
+    n_used <- if (is.null(wts_valid)) length(folded) else sum(wts_valid > 0)
+    kap    <- if (n_used >= 3L && !is.na(R)) .kappa_from_Rbar(R) else NA_real_
     out_mu <- .unfold_mean(.wrap_to_2pi(as.numeric(mu)), axial)
     data.frame(
       id          = if (by == "id") k else "global",
@@ -394,7 +420,8 @@ count_goal_entries <- function(x, target_angle, target_radius = 1,
 #' @param display A \code{\link{circ_display}} object giving the convention
 #'   in which \code{mean_dir_deg} is reported (the direction of zero and
 #'   whether angles increase clockwise). Defaults to \code{circ_display()}:
-#'   0 = North, clockwise.
+#'   0 = North, clockwise. Anything else, \code{NULL} included, is an error
+#'   (class \code{radiatR_invalid_argument}).
 #'
 #' @return An ungrouped \code{tibble} with group columns first followed by
 #'   requested stat columns in the order given in \code{stats}.
@@ -438,6 +465,12 @@ circ_summarise <- function(data,
     stop(sprintf("Unknown stats: '%s'. Valid values are: %s.",
                  paste(unknown, collapse = "', '"),
                  paste(valid_stats, collapse = ", ")))
+
+  if (!inherits(display, "circ_display"))
+    rlang::abort(
+      sprintf("`display` must be a circ_display() object, not %s. Use circ_display() for 0 = North, clockwise.",
+              if (is.null(display)) "NULL" else paste0("<", class(display)[1L], ">")),
+      class = "radiatR_invalid_argument", arg = "display")
 
   .check_angle_units(data[[col_name]], units, col_name)
   if (units == "degrees") data[[col_name]] <- data[[col_name]] * pi / 180

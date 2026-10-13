@@ -12,8 +12,12 @@ circ_summary(x, w = NULL, by = c("id", "global"), axial = FALSE)
 \arguments{
 \item{x}{A [`Tracks`] object.}
 
-\item{w}{Character. Name of a weight column in `x@data`. When `NULL`
-(default), all steps are weighted equally.}
+\item{w}{Character. Name of a weight column in `x@data`, used in place of
+the weight column of `x`. Its values must be finite and `>= 0`; a zero
+weight excludes an observation. When `NULL` (default), the weight column
+of `x` is used, and all steps are weighted equally when `x` has none.
+A group whose weights are all zero is an error (class
+`radiatR_nonestimable`).}
 
 \item{by}{Character. `"id"` (default) returns one row per trial;
 `"global"` pools all observations into a single summary row.}
@@ -25,11 +29,12 @@ reported as an axis in `[0, pi)` radians / `[0, 180)` degrees. Default
 }
 \value{
 A `data.frame` with columns `id`, `n`, `t_start`, `t_end`,
-  `mean_dir` (radians, unit-circle convention, 0 to 2pi), `resultant_R`
-  (0--1), and `kappa`
+  `mean_dir` (radians, unit-circle convention, 0 to 2pi; weighted when
+  weights are used), `resultant_R` (0--1), and `kappa`
   (von Mises concentration: the maximum-likelihood estimate from the mean
   resultant length, weighted when weights are used; `NA` for fewer than
-  three valid angles, `Inf` when all angles coincide).
+  three valid angles of positive weight, `Inf` when all angles coincide).
+  `n` counts the valid angles whatever their weight.
   No small-sample bias correction is applied, so \code{kappa} is biased
   upward for small \code{n}: \code{circular::mle.vonmises(bias = TRUE)}
   gives a corrected estimate and \code{\link{boot_kappa_ci}()} reports the

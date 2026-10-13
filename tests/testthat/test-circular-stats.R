@@ -1818,3 +1818,21 @@ test_that("test_gof errors on missing group_col", {
   expect_error(test_gof(hd, group_col = "nope"), "not found")
 })
 
+test_that("circ_summarise() rejects a display that is not a circ_display", {
+  hd <- data.frame(heading = c(0, pi / 4, pi / 2))
+  for (bad in list(NULL, "north", list(zero = 0, clockwise = TRUE))) {
+    e <- tryCatch(circ_summarise(hd, heading, units = "radians", display = bad),
+                  radiatR_invalid_argument = function(e) e)
+    expect_s3_class(e, "radiatR_invalid_argument")
+    expect_identical(e$arg, "display")
+    expect_match(conditionMessage(e), "circ_display()", fixed = TRUE)
+  }
+})
+
+test_that("circ_summarise() reports mean_dir_deg in the display it is given", {
+  hd <- data.frame(heading = c(0, 0))
+  east_ccw <- circ_display(zero = 0, clockwise = FALSE)
+  expect_equal(circ_summarise(hd, heading, units = "radians")$mean_dir_deg, 90)
+  expect_equal(circ_summarise(hd, heading, units = "radians",
+                              display = east_ccw)$mean_dir_deg, 0)
+})
