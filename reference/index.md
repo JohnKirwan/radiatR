@@ -106,7 +106,7 @@ Mean direction, resultant length, concentration, and within-trial
 dispersion.
 
 - [`circ_summary()`](https://johnkirwan.github.io/radiatR/reference/circ_summary.md)
-  : Circular summaries per trajectory
+  : Circular summary statistics for trajectories
 - [`circ_summarise()`](https://johnkirwan.github.io/radiatR/reference/circ_summarise.md)
   : Tidy circular summary of a grouped data frame
 - [`circ_dispersion()`](https://johnkirwan.github.io/radiatR/reference/circ_dispersion.md)
@@ -496,7 +496,7 @@ Any remaining exported topics.
 - [`circ_summarise()`](https://johnkirwan.github.io/radiatR/reference/circ_summarise.md)
   : Tidy circular summary of a grouped data frame
 - [`circ_summary()`](https://johnkirwan.github.io/radiatR/reference/circ_summary.md)
-  : Circular summaries per trajectory
+  : Circular summary statistics for trajectories
 - [`circ_summary_headings()`](https://johnkirwan.github.io/radiatR/reference/circ_summary_headings.md)
   : Circular statistics over derived headings
 - [`circular_mapping`](https://johnkirwan.github.io/radiatR/reference/circular_mapping.md)

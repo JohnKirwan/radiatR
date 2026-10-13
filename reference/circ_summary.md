@@ -1,4 +1,4 @@
-# Circular summaries per trajectory
+# Circular summary statistics for trajectories
 
 Computes per-trial or global circular statistics (mean direction,
 resultant length, concentration) from the step-angle column of a
@@ -7,8 +7,6 @@ resultant length, concentration) from the step-angle column of a
 ## Usage
 
 ``` r
-circ_summary(x, w = NULL, by = c("id", "global"), axial = FALSE)
-
 circ_summary(x, w = NULL, by = c("id", "global"), axial = FALSE)
 
 # S4 method for class 'Tracks'
@@ -40,14 +38,16 @@ circ_summary(x, w = NULL, by = c("id", "global"), axial = FALSE)
 
 ## Value
 
-data.frame(id, n, t_start, t_end, mean_dir, resultant_R, kappa)
-
 A \`data.frame\` with columns \`id\`, \`n\`, \`t_start\`, \`t_end\`,
 \`mean_dir\` (radians, unit-circle convention, 0 to 2pi),
 \`resultant_R\` (0–1), and \`kappa\` (von Mises concentration: the
 maximum-likelihood estimate from the mean resultant length, weighted
 when weights are used; \`NA\` for fewer than three valid angles, \`Inf\`
-when all angles coincide).
+when all angles coincide). No small-sample bias correction is applied,
+so `kappa` is biased upward for small `n`:
+`circular::mle.vonmises(bias = TRUE)` gives a corrected estimate and
+[`boot_kappa_ci()`](https://johnkirwan.github.io/radiatR/reference/boot_kappa_ci.md)
+reports the bias.
 
 ## Examples
 

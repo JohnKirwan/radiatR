@@ -59,7 +59,10 @@ circ_summarise(
   missing), `"n_missing"` (excluded, non-finite headings), `"mean_dir"`,
   `"mean_dir_deg"`, `"resultant_R"`, `"kappa"`. Default: `"n"`,
   `"mean_dir"`, `"mean_dir_deg"`, `"resultant_R"`, `"kappa"`
-  (`"n_total"`/`"n_missing"` are opt-in).
+  (`"n_total"`/`"n_missing"` are opt-in). `"kappa"` is the von Mises
+  maximum-likelihood estimate from the mean resultant length, with no
+  small-sample bias correction (see
+  [`circ_summary()`](https://johnkirwan.github.io/radiatR/reference/circ_summary.md)).
 
 - display:
 
