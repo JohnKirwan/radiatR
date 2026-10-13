@@ -55,6 +55,9 @@ jobs:
       - name: Install app dependencies (radiatR from GitHub)
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          # Bumped to discard the cached library, whose shiny and svglite still
+          # carry the `any::` metadata: an installed package is not reinstalled.
+          cache-version: 2
           packages: |
             any::rsconnect
             shiny
