@@ -254,19 +254,23 @@ an id column.</td>
 (<code>midline_points</code>, <code>outline_points</code>).</td>
 </tr>
 <tr class="even">
-<td>
-<code>deeplabcut</code> / <code>deeplabcut_multiheader</code>
-</td>
-<td>Multi-bodypart CSV; single bodypart, or a likelihood-weighted
-centroid of several; three-row scorer/bodypart/coord header. Bodypart
-columns are preserved for <code>bodypart_axis</code>.</td>
-<td>Native HDF5 (<code>.h5</code>) export.</td>
+<td><code>deeplabcut</code></td>
+<td>The predictions CSV: header rows <code>scorer</code> /
+<code>bodyparts</code> / <code>coords</code>, with
+<code>individuals</code> for multi-animal projects (one track per
+individual). A single bodypart, or a likelihood-weighted centroid of
+several; <code>likelihood_min</code> masks points and the count is kept
+in the metadata. Bodypart columns are preserved for
+<code>bodypart_axis</code>.</td>
+<td>Native HDF5 (<code>.h5</code>) export; labelled training data
+(<code>CollectedData_*.csv</code>); 3-D output.</td>
 </tr>
 <tr class="odd">
 <td><code>sleap</code></td>
 <td>Analysis CSV: <code>&lt;node&gt;.x</code> / <code>.y</code> /
-<code>.score</code>; multi-node centroid; <code>track</code> and
-<code>frame_idx</code>.</td>
+<code>.score</code>; a single node or a score-weighted centroid;
+<code>track</code> and <code>frame_idx</code>; <code>score_min</code>
+masks points and the count is kept in the metadata.</td>
 <td>Native <code>.slp</code> / HDF5 export.</td>
 </tr>
 <tr class="even">
@@ -323,43 +327,65 @@ below).</p>
 can be tried without any external data. Each loads with one
 <code><a href="../reference/read_tracks.html">read_tracks()</a></code> call, pointing the <code>dialect</code>
 argument at the matching tool.</p>
-<p><strong>DeepLabCut</strong> — a three-row scorer/bodypart/coord
-header; by default the position is the likelihood-weighted centroid of
-all bodyparts, and each bodypart’s coordinates are retained for use with
-the <code>bodypart_axis</code> rule.</p>
+<p><strong>DeepLabCut</strong> — the predictions CSV written when a
+video is analysed (header rows <code>scorer</code>,
+<code>bodyparts</code>, <code>coords</code>, plus
+<code>individuals</code> for multi-animal projects). By default the
+position is the likelihood-weighted centroid of all bodyparts, the time
+is the frame index, and each bodypart’s coordinates are kept for the
+<code>bodypart_axis</code> rule.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dlc_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"dlc_CollectedData_Pranav.csv"</span>,</span>
+<code class="sourceCode R"><span><span class="va">dlc_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"dlc_single_wasp_predictions.csv"</span>,</span>
 <span>                        package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span>
-<span><span class="va">ts_dlc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_tracks.html">read_tracks</a></span><span class="op">(</span><span class="va">dlc_path</span>, dialect <span class="op">=</span> <span class="st">"deeplabcut_multiheader"</span><span class="op">)</span></span>
+<span><span class="va">ts_dlc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_tracks.html">read_tracks</a></span><span class="op">(</span><span class="va">dlc_path</span>, dialect <span class="op">=</span> <span class="st">"deeplabcut"</span>, fps <span class="op">=</span> <span class="fl">40</span><span class="op">)</span></span>
 <span><span class="va">ts_dlc</span></span>
-<span><span class="co">#&gt; Tracks: 1 trajectories, 116 observations</span></span>
+<span><span class="co">#&gt; Tracks: 1 trajectories, 300 observations</span></span>
 <span><span class="co">#&gt; Columns: id='id', time='time', angle='angle' (radians), x='x', y='y'</span></span>
-<span><span class="co">#&gt;   id time        x        y snout_x snout_y leftear_x leftear_y rightear_x</span></span>
-<span><span class="co">#&gt; 1  1    1 40.60850 233.5307  21.521 265.428    33.819   265.941     19.984</span></span>
-<span><span class="co">#&gt; 2  1    2 34.58775 272.0897  10.248 288.487    19.984   297.198     12.298</span></span>
-<span><span class="co">#&gt; 3  1    3 46.37325 325.3802  24.596 354.075    38.431   354.075     23.058</span></span>
-<span><span class="co">#&gt; 4  1    4 79.16725 343.1865  73.787 374.572    78.911   366.373     57.390</span></span>
-<span><span class="co">#&gt; 5  1    5 65.07625 317.9502  38.431 333.066    50.729   341.777     39.968</span></span>
-<span><span class="co">#&gt; 6  1    6 53.41900 326.7892  23.571 327.430    30.745   339.215     28.183</span></span>
-<span><span class="co">#&gt;   rightear_y tailbase_x tailbase_y    angle</span></span>
-<span><span class="co">#&gt; 1    250.056     87.110    152.698 1.398629</span></span>
-<span><span class="co">#&gt; 2    281.313     95.821    221.361 1.444356</span></span>
-<span><span class="co">#&gt; 3    337.166     99.408    256.205 1.429230</span></span>
-<span><span class="co">#&gt; 4    361.761    106.581    270.040 1.344079</span></span>
-<span><span class="co">#&gt; 5    323.331    131.177    273.627 1.368910</span></span>
-<span><span class="co">#&gt; 6    321.793    131.177    318.719 1.408763</span></span></code></pre></div>
+<span><span class="co">#&gt;   id time        x        y   head_x   head_y stinger_x stinger_y     angle</span></span>
+<span><span class="co">#&gt; 1  1    0 1084.859 421.3867 1086.238 421.5013  1083.866  421.3042 0.3704886</span></span>
+<span><span class="co">#&gt; 2  1    1 1084.742 421.5025 1086.020 421.5443  1083.370  421.4577 0.3706179</span></span>
+<span><span class="co">#&gt; 3  1    2 1084.573 421.7333 1085.545 421.8074  1082.950  421.6096 0.3708553</span></span>
+<span><span class="co">#&gt; 4  1    3 1083.631 423.8910 1085.084 422.5898  1081.628  425.6838 0.3728769</span></span>
+<span><span class="co">#&gt; 5  1    4 1082.897 424.1358 1085.193 422.4883  1078.615  427.2081 0.3733029</span></span>
+<span><span class="co">#&gt; 6  1    5 1082.439 424.0955 1084.933 422.5358  1077.953  426.9004 0.3734143</span></span></code></pre></div>
+<p>A likelihood threshold masks the points below it. A frame with a
+masked point has no position, so it is dropped only when
+<code>on_invalid = "drop"</code> says so, and what was masked is
+reported and kept:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ts_dlc_sure</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_tracks.html">read_tracks</a></span><span class="op">(</span><span class="va">dlc_path</span>, dialect <span class="op">=</span> <span class="st">"deeplabcut"</span>, fps <span class="op">=</span> <span class="fl">40</span>,</span>
+<span>                           dialect_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>likelihood_min <span class="op">=</span> <span class="fl">0.9</span><span class="op">)</span>,</span>
+<span>                           on_invalid <span class="op">=</span> <span class="st">"drop"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; deeplabcut: 104 of 300 row(s) have no position (threshold 0.9, partial = "na").</span></span>
+<span><span class="co">#&gt; Masked points: head 104, stinger 57.</span></span>
+<span><span class="co">#&gt; Warning: Dropped 104 row(s) with non-finite coordinates.</span></span>
+<span><span class="va">ts_dlc_sure</span><span class="op">@</span><span class="va">meta</span><span class="op">$</span><span class="va">attrition</span></span>
+<span><span class="co">#&gt;                            source   point masked frames frames_no_position</span></span>
+<span><span class="co">#&gt; 1 dlc_single_wasp_predictions.csv    head    104    300                104</span></span>
+<span><span class="co">#&gt; 2 dlc_single_wasp_predictions.csv stinger     57    300                104</span></span>
+<span><span class="co">#&gt;   score_min partial</span></span>
+<span><span class="co">#&gt; 1       0.9      na</span></span>
+<span><span class="co">#&gt; 2       0.9      na</span></span></code></pre></div>
 <p><strong>SLEAP</strong> — an analysis CSV with
 <code>&lt;node&gt;.x</code> / <code>.y</code> / <code>.score</code>
 columns, <code>track</code> as the individual and <code>frame_idx</code>
-as time.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sleap_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sleap_example.csv"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span>
+as time (frames). The <code>score_min</code> and <code>partial</code>
+arguments work as <code>likelihood_min</code> and <code>partial</code>
+do for DeepLabCut.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sleap_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sleap_three_mice.analysis.csv"</span>,</span>
+<span>                          package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span></span>
 <span><span class="va">ts_sleap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_tracks.html">read_tracks</a></span><span class="op">(</span><span class="va">sleap_path</span>, dialect <span class="op">=</span> <span class="st">"sleap"</span><span class="op">)</span></span>
 <span><span class="va">ts_sleap</span></span>
-<span><span class="co">#&gt; Tracks: 1 trajectories, 1 observations</span></span>
+<span><span class="co">#&gt; Tracks: 3 trajectories, 60 observations</span></span>
 <span><span class="co">#&gt; Columns: id='id', time='time', angle='angle' (radians), x='x', y='y'</span></span>
-<span><span class="co">#&gt;   id time        x        y      a_x      a_y      b_x      b_y     angle</span></span>
-<span><span class="co">#&gt; 1  1    0 242.2826 195.6278 205.9301 187.8896 278.6352 203.3659 0.6792588</span></span></code></pre></div>
+<span><span class="co">#&gt;            id time        x        y centroid_x centroid_y     angle</span></span>
+<span><span class="co">#&gt; 1  AEON3B_NTP    0 773.1893 1061.692   773.1893   1061.692 0.9413537</span></span>
+<span><span class="co">#&gt; 4  AEON3B_NTP    1 773.2671 1061.651   773.2671   1061.651 0.9412873</span></span>
+<span><span class="co">#&gt; 7  AEON3B_NTP    2 773.3159 1061.604   773.3159   1061.604 0.9412362</span></span>
+<span><span class="co">#&gt; 10 AEON3B_NTP    3 773.2766 1061.557   773.2766   1061.557 0.9412393</span></span>
+<span><span class="co">#&gt; 13 AEON3B_NTP    4 773.1517 1061.586   773.1517   1061.586 0.9413291</span></span>
+<span><span class="co">#&gt; 16 AEON3B_NTP    5 771.1488 1061.770   771.1488   1061.770 0.9426457</span></span></code></pre></div>
 <p>The bundled dtrack example is larger and is shown in full in the
 <em>Loading a Real Experiment</em> section above.</p>
 </div>
@@ -368,7 +394,7 @@ as time.</p>
 </h2>
 <p>For data already in a data frame or CSV, <code><a href="../reference/read_tracks.html">read_tracks()</a></code>
 is the central entry point.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">example_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  id   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>,</span>
 <span>  time <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">3</span><span class="op">)</span>, times <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>,</span>
@@ -390,7 +416,7 @@ is the central entry point.</p>
 <p>To batch a directory of CSV files, <code><a href="../reference/read_tracks_dir.html">read_tracks_dir()</a></code>
 calls <code><a href="../reference/read_tracks.html">read_tracks()</a></code> for each match and row-binds the
 result.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">csv_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">csv_dir</span><span class="op">)</span></span>
 <span></span>
@@ -411,7 +437,7 @@ result.</p>
 <code><a href="../reference/import_info.html">import_info()</a></code> works on any manifest CSV, and
 <code><a href="../reference/import_tracks.html">import_tracks()</a></code> works on any directory following the
 <code>_point01</code> / <code>_point02</code> naming convention.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">manifest_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".csv"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/writeLines.html" class="external-link">writeLines</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"file,type, arc"</span>, <span class="st">"trial01.csv, baseline,90"</span>, <span class="st">"trial02.csv,stimulus,135"</span><span class="op">)</span>,</span>
@@ -436,7 +462,7 @@ that is not a table at all.</p>
 <p>The bundled millipede tracks were made with dtrack, which writes a
 headerless, tab-separated file of <code>frame</code>, <code>x</code>,
 <code>y</code> and a flag column. A loader for it:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dtrack_loader</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="co"># colClasses = "numeric" makes a malformed cell an error, not a silent NA</span></span>
 <span>  <span class="va">d</span> <span class="op">&lt;-</span> <span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.delim</a></span><span class="op">(</span><span class="va">x</span>, header <span class="op">=</span> <span class="cn">FALSE</span>, colClasses <span class="op">=</span> <span class="st">"numeric"</span><span class="op">)</span></span>
@@ -452,7 +478,7 @@ headerless, tab-separated file of <code>frame</code>, <code>x</code>,
 <span><span class="fu"><a href="../reference/register_loader_dialect.html">register_loader_dialect</a></span><span class="op">(</span><span class="st">"dtrack"</span>, <span class="va">dtrack_loader</span><span class="op">)</span></span></code></pre></div>
 <p>After registration the dialect is used by name, like a built-in
 one:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">track_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">track_dir</span>, <span class="st">"10_10_point02.txt"</span><span class="op">)</span></span>
 <span><span class="va">ts_raw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_tracks.html">read_tracks</a></span><span class="op">(</span><span class="va">track_file</span>, dialect <span class="op">=</span> <span class="st">"dtrack"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">ts_raw</span><span class="op">@</span><span class="va">data</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"frame"</span>, <span class="st">"x"</span>, <span class="st">"y"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
@@ -467,7 +493,7 @@ one:</p>
 results are combined. Here <code>pattern</code> picks one session’s
 trajectory files and leaves out the <code>_point01</code> landmark
 files, which share the same layout:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ts_session</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_tracks_dir.html">read_tracks_dir</a></span><span class="op">(</span><span class="va">track_dir</span>, pattern <span class="op">=</span> <span class="st">"^10_.*_point02\\.txt$"</span>,</span>
 <span>                              dialect <span class="op">=</span> <span class="st">"dtrack"</span><span class="op">)</span></span>
 <span><span class="va">ts_session</span></span>

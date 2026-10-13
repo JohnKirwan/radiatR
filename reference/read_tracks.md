@@ -163,10 +163,32 @@ A dialect that knows the unit of its time column says so, and under the
 default \`time_type = "auto"\` that decides how the column is read:
 TrackMate \`POSITION_T\` (when the version 7 units row gives seconds),
 ToxTrac \`Time (sec)\`, idtracker.ai \`seconds\` and TRex \`time\` are
-seconds, and need no \`fps\`; \`FRAME\`/\`frame\` columns are frames. A
-contrary explicit \`time_type\` stops with a
-\`radiatR_time_type_mismatch\` error, as do files of one import that
-disagree.
+seconds, and need no \`fps\`; \`FRAME\`/\`frame\` columns, the
+DeepLabCut frame index and SLEAP \`frame_idx\` are frames. A contrary
+explicit \`time_type\` stops with a \`radiatR_time_type_mismatch\`
+error, as do files of one import that disagree.
+
+## Masked points
+
+The \`deeplabcut\` and \`sleap\` dialects take each position from one or
+more points (bodyparts, nodes). A point is masked in a frame when its
+coordinates are missing or not finite, when its score (likelihood) is 0,
+or when a threshold is given (\`dialect_args = list(likelihood_min = )\`
+for DeepLabCut, \`score_min\` for SLEAP) and its score is missing or
+below it. A frame with a masked point has no position, unless
+\`dialect_args = list(partial = "mean")\` asks for the score-weighted
+mean of the points that remain. The dialect never removes a row: frames
+without a position meet \`on_invalid\` like any other missing
+coordinate.
+
+What was masked is reported in one message (class \`radiatR_attrition\`)
+and kept in the \`attrition\` element of the Tracks metadata: a data
+frame with one row per source file and point, giving the rows in which
+the point was masked (\`masked\`), the rows read from that file
+(\`frames\`), the rows left without a position (\`frames_no_position\`),
+and the threshold and \`partial\` setting used. \`c()\` row-binds these
+records; a subset keeps the whole record of its load, so recombining
+subsets of one load repeats it.
 
 ## Malformed values
 
@@ -187,14 +209,14 @@ use decimal commas unless its first lines show decimal points and no
 decimal comma (\`1.5\` or \`0.125\`, which cannot be digit grouping);
 \`read_opts = list(decimal = ".")\` says so outright.
 
-The \`trackmate\`, \`toxtrac\`, \`idtrackerai_wide\` and \`trex\`
-dialects check their source columns the same way, before any reshaping,
-so the error names the header as the program wrote it and the row of the
-file's table. A missing or non-finite position found afterwards (see
-\`on_invalid\`) is still counted in the rows of the table the dialect
-returns, which for a wide format is the reshaped one. Coordinates that
-the pose and zone dialects convert themselves (ANY-maze, EthoVision,
-DeepLabCut, SLEAP) are not yet checked this way.
+The \`trackmate\`, \`toxtrac\`, \`idtrackerai_wide\`, \`trex\`,
+\`deeplabcut\` and \`sleap\` dialects check their source columns the
+same way, before any reshaping, so the error names the header as the
+program wrote it and the row of the file's table. A missing or
+non-finite position found afterwards (see \`on_invalid\`) is still
+counted in the rows of the table the dialect returns, which for a wide
+format is the reshaped one. Coordinates that the zone dialects convert
+themselves (ANY-maze, EthoVision) are not yet checked this way.
 
 A time column given as text must hold either numbers throughout or
 timestamps in one layout throughout: \`YYYY-MM-DD HH:MM:SS\`,

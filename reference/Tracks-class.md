@@ -122,8 +122,10 @@ c(x, ..., recursive = FALSE)
   agree on
   frame_rate/time_unit/distance_scale/distance_unit/normalize_xy
   metadata (including all-unset); mismatches error rather than silently
-  picking one input's values. Per-id metadata (e.g. \`reference\`) is
-  merged across all inputs.
+  picking one input's values. Per-id metadata (e.g. \`reference\`) and
+  the attrition records of the loads are merged across all inputs. A
+  subset carries the whole record of its load, so recombining subsets of
+  one load repeats that record.
 
 - recursive:
 

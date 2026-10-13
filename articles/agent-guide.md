@@ -147,6 +147,8 @@ it.
 | `radiatR_invalid_tracks` | the data break a `Tracks` invariant (see [`?tracks`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md)) |
 | `radiatR_nonestimable` | a statistic cannot be estimated for a group |
 | `radiatR_dropped_rows` | warning raised when `on_invalid = "drop"` removed rows |
+| `radiatR_attrition` | message from the `deeplabcut` and `sleap` dialects: the points masked at load and the rows left without a position (kept in `@meta$attrition`; not the heading attrition of the next section) |
+| `radiatR_dialect_error` | a dialect cannot read the file as that program’s output; the message says why |
 
 - `on_invalid = "error"` is the default. `"drop"` removes rows with
   missing or non-finite x/y and warns; it is a decision about the data,

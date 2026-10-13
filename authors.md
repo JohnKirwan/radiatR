@@ -5,7 +5,8 @@
 - **John D. Kirwan**. Author, maintainer, copyright holder.
 
 - **A. & M.W. Mathis Labs**. Copyright holder.  
-  example file inst/extdata/dlc_CollectedData_Pranav.csv, from
+  test fixture
+  tests/testthat/fixtures/real/dlc_CollectedData_Pranav.csv, from
   'DeepLabCut'
 
 - **Talmo Pereira**. Copyright holder.  

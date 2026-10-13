@@ -4,6 +4,52 @@
 
 ### Breaking changes
 
+- The `deeplabcut` dialect now reads the predictions CSV DeepLabCut
+  writes: header rows `scorer` / `bodyparts` / `coords`, and
+  `individuals` for multi-animal projects, which load as one track per
+  individual (`dialect_args = list(individuals = )` selects some). The
+  frame index is the time, in frames. `deeplabcut_multiheader` is
+  removed;
+  [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  names `deeplabcut` as its replacement (`radiatR_removed_dialect`). A
+  flat `<bodypart>_x` table is still accepted as a data frame, no longer
+  as a file. Labelled training data (`CollectedData_*.csv`, indexed by
+  image) is refused with an error saying so; the bundled example is now
+  `dlc_single_wasp_predictions.csv`, a predictions file.
+
+- `deeplabcut` and `sleap` apply one rule to missing and low-confidence
+  points (see “Masked points” in
+  [`?read_tracks`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)).
+  A point is masked when its coordinates are missing, its score is 0, or
+  it is below `likelihood_min` / `score_min`. A frame with a masked
+  point has no position, so it stops the load under
+  `on_invalid = "error"` and is dropped under `"drop"`;
+  `dialect_args = list(partial = "mean")` averages the points that
+  remain instead. Before, a threshold on one bodypart removed rows
+  without saying so, a threshold on several averaged whatever passed,
+  and DeepLabCut’s (0, 0) placeholder for a frame with no detection was
+  read as a position. The per-bodypart columns are `NA` where the point
+  is masked.
+
+- What those dialects masked is reported in one message (class
+  `radiatR_attrition`) and kept in `Tracks` metadata
+  (`@meta$attrition`): per file and point, the rows masked, the rows
+  read and the rows left without a position.
+  [`c()`](https://rdrr.io/r/base/c.html) row-binds the records of its
+  inputs.
+
+- A threshold now needs a score column for every selected point, and
+  must be one number; a negative score is malformed
+  (`radiatR_malformed_values`). DeepLabCut and SLEAP columns are checked
+  strictly, like the other dialects’: a threshold used to be compared as
+  text when the score column was text (`"1e-3" >= 0.9`). `bodypart` must
+  name distinct points, and two SLEAP headers that differ only in case
+  or punctuation are refused.
+
+- DeepLabCut and SLEAP time is declared as frames (files, and data
+  frames whose time column is a frame column), so `fps` alone gives
+  elapsed seconds and `time_type = "seconds"` is refused for them.
+
 - `derive_headings(carry = )` now stops when a carried column has the
   name of a column of the result (`id`, `time`, `heading`, …). It used
   to replace the derived values with the carried ones without a message,
@@ -170,6 +216,15 @@
   unchanged.
 
 ### Changes
+
+- The `sleap` dialect accepts a node name as it is written in the file
+  (`bodypart = "Tail Base"`).
+
+- The app detects DeepLabCut files by their header rows, multi-animal
+  files included. A flat `<bodypart>_likelihood` table is still offered
+  to the `deeplabcut` dialect, which now refuses it by name; choose
+  “Generic CSV” to load it as plain columns. A dialect’s refusal of a
+  file is shown as the app’s error headline.
 
 - New vignette
   [`vignette("agent-guide")`](https://johnkirwan.github.io/radiatR/articles/agent-guide.md):

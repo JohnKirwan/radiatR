@@ -29,7 +29,7 @@ tools.
 
 | Dialect | Tool |
 |----|----|
-| `deeplabcut` / `deeplabcut_multiheader` | DeepLabCut (single point or multi-bodypart centroid) |
+| `deeplabcut` | DeepLabCut predictions CSV, single- or multi-animal (single bodypart or likelihood-weighted centroid) |
 | `sleap` | SLEAP (analysis CSV; single node or score-weighted centroid) |
 | `idtrackerai_wide` | idtracker.ai |
 | `ethovision` | EthoVision XT (including multi-zone) |

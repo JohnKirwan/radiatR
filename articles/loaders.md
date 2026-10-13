@@ -165,8 +165,8 @@ limitations are general:
 | Dialect | Handled | Not handled |
 |----|----|----|
 | `trex` | Positional CSV: plain `X`/`Y`, the `#wcentroid` / `#centroid` / `#pcentroid` centroid variants, and TRex’s `(cm)` / `(px)` unit annotations in headers. Per-individual `_fishN` files (id from filename) and aggregated files with an id column. | Native `.npz` export; posture export (`midline_points`, `outline_points`). |
-| `deeplabcut` / `deeplabcut_multiheader` | Multi-bodypart CSV; single bodypart, or a likelihood-weighted centroid of several; three-row scorer/bodypart/coord header. Bodypart columns are preserved for `bodypart_axis`. | Native HDF5 (`.h5`) export. |
-| `sleap` | Analysis CSV: `<node>.x` / `.y` / `.score`; multi-node centroid; `track` and `frame_idx`. | Native `.slp` / HDF5 export. |
+| `deeplabcut` | The predictions CSV: header rows `scorer` / `bodyparts` / `coords`, with `individuals` for multi-animal projects (one track per individual). A single bodypart, or a likelihood-weighted centroid of several; `likelihood_min` masks points and the count is kept in the metadata. Bodypart columns are preserved for `bodypart_axis`. | Native HDF5 (`.h5`) export; labelled training data (`CollectedData_*.csv`); 3-D output. |
+| `sleap` | Analysis CSV: `<node>.x` / `.y` / `.score`; a single node or a score-weighted centroid; `track` and `frame_idx`; `score_min` masks points and the count is kept in the metadata. | Native `.slp` / HDF5 export. |
 | `ethovision` | Centre position, and multi-zone exports (nose, tail, etc.); zone centroid or single-zone selection. | Native `.xlsx` (export to CSV first). |
 | `anymaze` | Centre position, optional nose/tail zones, units row. | — |
 | `trackmate` | Spot tables with `TRACK_ID` / `FRAME` / `POSITION_T` / `POSITION_X` / `POSITION_Y`, including the three extra header rows of version 7. Spots in no track (`TRACK_ID` `None`) stop the load unless `dialect_args = list(unlinked = "drop")`. | Native TrackMate `.xml`. |
@@ -187,47 +187,71 @@ be tried without any external data. Each loads with one
 [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
 call, pointing the `dialect` argument at the matching tool.
 
-**DeepLabCut** — a three-row scorer/bodypart/coord header; by default
-the position is the likelihood-weighted centroid of all bodyparts, and
-each bodypart’s coordinates are retained for use with the
-`bodypart_axis` rule.
+**DeepLabCut** — the predictions CSV written when a video is analysed
+(header rows `scorer`, `bodyparts`, `coords`, plus `individuals` for
+multi-animal projects). By default the position is the
+likelihood-weighted centroid of all bodyparts, the time is the frame
+index, and each bodypart’s coordinates are kept for the `bodypart_axis`
+rule.
 
 ``` r
 
-dlc_path <- system.file("extdata", "dlc_CollectedData_Pranav.csv",
+dlc_path <- system.file("extdata", "dlc_single_wasp_predictions.csv",
                         package = "radiatR")
-ts_dlc <- read_tracks(dlc_path, dialect = "deeplabcut_multiheader")
+ts_dlc <- read_tracks(dlc_path, dialect = "deeplabcut", fps = 40)
 ts_dlc
-#> Tracks: 1 trajectories, 116 observations
+#> Tracks: 1 trajectories, 300 observations
 #> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y'
-#>   id time        x        y snout_x snout_y leftear_x leftear_y rightear_x
-#> 1  1    1 40.60850 233.5307  21.521 265.428    33.819   265.941     19.984
-#> 2  1    2 34.58775 272.0897  10.248 288.487    19.984   297.198     12.298
-#> 3  1    3 46.37325 325.3802  24.596 354.075    38.431   354.075     23.058
-#> 4  1    4 79.16725 343.1865  73.787 374.572    78.911   366.373     57.390
-#> 5  1    5 65.07625 317.9502  38.431 333.066    50.729   341.777     39.968
-#> 6  1    6 53.41900 326.7892  23.571 327.430    30.745   339.215     28.183
-#>   rightear_y tailbase_x tailbase_y    angle
-#> 1    250.056     87.110    152.698 1.398629
-#> 2    281.313     95.821    221.361 1.444356
-#> 3    337.166     99.408    256.205 1.429230
-#> 4    361.761    106.581    270.040 1.344079
-#> 5    323.331    131.177    273.627 1.368910
-#> 6    321.793    131.177    318.719 1.408763
+#>   id time        x        y   head_x   head_y stinger_x stinger_y     angle
+#> 1  1    0 1084.859 421.3867 1086.238 421.5013  1083.866  421.3042 0.3704886
+#> 2  1    1 1084.742 421.5025 1086.020 421.5443  1083.370  421.4577 0.3706179
+#> 3  1    2 1084.573 421.7333 1085.545 421.8074  1082.950  421.6096 0.3708553
+#> 4  1    3 1083.631 423.8910 1085.084 422.5898  1081.628  425.6838 0.3728769
+#> 5  1    4 1082.897 424.1358 1085.193 422.4883  1078.615  427.2081 0.3733029
+#> 6  1    5 1082.439 424.0955 1084.933 422.5358  1077.953  426.9004 0.3734143
+```
+
+A likelihood threshold masks the points below it. A frame with a masked
+point has no position, so it is dropped only when `on_invalid = "drop"`
+says so, and what was masked is reported and kept:
+
+``` r
+
+ts_dlc_sure <- read_tracks(dlc_path, dialect = "deeplabcut", fps = 40,
+                           dialect_args = list(likelihood_min = 0.9),
+                           on_invalid = "drop")
+#> deeplabcut: 104 of 300 row(s) have no position (threshold 0.9, partial = "na").
+#> Masked points: head 104, stinger 57.
+#> Warning: Dropped 104 row(s) with non-finite coordinates.
+ts_dlc_sure@meta$attrition
+#>                            source   point masked frames frames_no_position
+#> 1 dlc_single_wasp_predictions.csv    head    104    300                104
+#> 2 dlc_single_wasp_predictions.csv stinger     57    300                104
+#>   score_min partial
+#> 1       0.9      na
+#> 2       0.9      na
 ```
 
 **SLEAP** — an analysis CSV with `<node>.x` / `.y` / `.score` columns,
-`track` as the individual and `frame_idx` as time.
+`track` as the individual and `frame_idx` as time (frames). The
+`score_min` and `partial` arguments work as `likelihood_min` and
+`partial` do for DeepLabCut.
 
 ``` r
 
-sleap_path <- system.file("extdata", "sleap_example.csv", package = "radiatR")
+sleap_path <- system.file("extdata", "sleap_three_mice.analysis.csv",
+                          package = "radiatR")
 ts_sleap <- read_tracks(sleap_path, dialect = "sleap")
 ts_sleap
-#> Tracks: 1 trajectories, 1 observations
+#> Tracks: 3 trajectories, 60 observations
 #> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y'
-#>   id time        x        y      a_x      a_y      b_x      b_y     angle
-#> 1  1    0 242.2826 195.6278 205.9301 187.8896 278.6352 203.3659 0.6792588
+#>            id time        x        y centroid_x centroid_y     angle
+#> 1  AEON3B_NTP    0 773.1893 1061.692   773.1893   1061.692 0.9413537
+#> 4  AEON3B_NTP    1 773.2671 1061.651   773.2671   1061.651 0.9412873
+#> 7  AEON3B_NTP    2 773.3159 1061.604   773.3159   1061.604 0.9412362
+#> 10 AEON3B_NTP    3 773.2766 1061.557   773.2766   1061.557 0.9412393
+#> 13 AEON3B_NTP    4 773.1517 1061.586   773.1517   1061.586 0.9413291
+#> 16 AEON3B_NTP    5 771.1488 1061.770   771.1488   1061.770 0.9426457
 ```
 
 The bundled dtrack example is larger and is shown in full in the
