@@ -40,7 +40,10 @@ a duration): seconds are recorded as such in the Tracks metadata
 (`time_unit`), so [elapsed_seconds()] and the kinematics use them directly,
 with no frame rate.}
 
-\item{tz}{timezone for POSIX times (default "UTC")}
+\item{tz}{Time zone of timestamps that carry none (default "UTC"), whether
+the file reader types them or they are parsed from text. A timestamp
+marked `Z` is UTC whatever `tz` is, and a date-time column of a data frame
+keeps its instants.}
 
 \item{fps}{Frames-per-second. Required when time_type = "frames" (the time
 column is kept as a raw frame index). When a single finite positive value
@@ -126,7 +129,10 @@ file in a multi-file import), the offending strings, the file and the
 dialect. Such a value is never dropped or turned into `NA`. Blank cells and
 `NA` are missing values; `nan` and `inf` are read as such. Files are read
 with no digit-grouping mark, so `1,5` is malformed unless
-`read_opts = list(decimal = ",")` says the comma is the decimal mark.
+`read_opts = list(decimal = ",")` says the comma is the decimal mark. Where
+it is (the default for a semicolon-separated file), a value holding a `.`
+is malformed in turn, since `1.234` could as well be 1234;
+`read_opts = list(decimal = ".")` says the file uses decimal points.
 
 The `trackmate`, `toxtrac`, `idtrackerai_wide` and `trex` dialects check
 their source columns the same way, before any reshaping, so the error names

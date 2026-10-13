@@ -49,22 +49,26 @@
   `inf` are read as such. Previously one bad cell made `read_tracks()` report
   every row of the column as non-finite, and `"drop"` then dropped them all; a
   bad cell after the first 1000 rows of a file was read as missing when readr
-  is installed; and a multi-file import failed with a type-clash error from
-  vctrs.
+  is installed; and in a multi-file import the bad cell surfaced as a
+  type-clash error from vctrs.
 
   Files are now read with column types guessed from every row and with no
   digit-grouping mark, so `1,5` or `1,234.5` in a tab-separated file is
   malformed rather than read as 15 or 1234.5. Pass
   `read_opts = list(decimal = ",")` for decimal commas. Where the decimal mark
   is a comma (the default for semicolon-separated files), one bad cell names
-  that cell only, not every `1,5` in its column.
+  that cell only, not every `1,5` in its column, and a value holding a `.` is
+  malformed in turn: `1.234` beside `1,5` was read as 1.234, though it could
+  as well be 1234. A semicolon-separated file that uses decimal points
+  therefore stops with that error until `read_opts = list(decimal = ".")`
+  says so; it used to load.
 
   The check covers the columns `read_tracks()` converts itself and the time
   column of every dialect but ANY-maze. An error raised inside a dialect does
   not yet name the file or the source column, and counts rows after the
   dialect's own filtering and reshaping. Coordinates that a dialect converts
-  itself (ANY-maze, EthoVision, DeepLabCut, SLEAP, TRex) are not yet
-  checked this way.
+  itself (ANY-maze, EthoVision, DeepLabCut, SLEAP) are not yet checked this
+  way.
 
 * Text time columns are parsed strictly. Every value must match one timestamp
   layout in full: `YYYY-MM-DD HH:MM:SS`, `YYYY-MM-DD HH:MM` or `YYYY-MM-DD`
@@ -82,8 +86,10 @@
 
 * `read_tracks()` stops with a `radiatR_missing_columns` error when `mapping`
   names a column that is not in the data. A missing `angle` column used to be
-  ignored without notice, and a missing x, y or weight column gave an error
-  that did not name it.
+  ignored without notice, and a missing x or y column gave an error that did
+  not name it. A `regex_mapping` pattern (see `read_tracks_format()`) that
+  matches no column is the same error, naming the role and the pattern; the
+  role used to be left unset and guessed from the default column names.
 
 * The `validate` argument of `read_tracks()` is deprecated. It never skipped
   anything, because `Tracks` invariants are checked whenever an object is
@@ -147,6 +153,14 @@
   arguments.
 
 ## Bug fixes
+
+* `read_tracks(tz = )` now applies to every timestamp that carries no time
+  zone. A timestamp the file reader typed itself (`YYYY-MM-DD HH:MM:SS` with
+  readr or data.table installed, or an Excel date-time cell) was read as UTC
+  whatever `tz` was, while one left as text (`YYYY/MM/DD HH:MM:SS`) was read
+  in `tz`: the same wall-clock time came out hours apart, between two files of
+  one import or between two machines with different readers installed. A
+  timestamp marked `Z` is still UTC.
 
 * `circ_summarise()` and `circ_summary()` on a `Tracks` object now return the
   von Mises concentration `kappa`; it was always `NA`. The estimator was

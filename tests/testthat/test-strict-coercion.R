@@ -339,3 +339,137 @@ test_that("validate is deprecated and invariants are checked regardless", {
   expect_error(suppressWarnings(read_tracks(xy_df(frame = c(1, 1, 2)), validate = FALSE)),
                class = "radiatR_invalid_tracks")
 })
+
+# ---- time zone of file timestamps --------------------------------------------
+
+# Two files with the same wall-clock times: readr types the first layout
+# itself, the second stays text and is parsed by .coerce_time().
+tz_files <- function(dir) {
+  rows <- function(id, day) sprintf("%s,%s 10:00:0%d,0.%d,0.2", id, day, 1:2, 1:2)
+  writeLines(c("id,time,x,y", rows("a", "2024-01-01")), file.path(dir, "a.csv"))
+  writeLines(c("id,time,x,y", rows("b", "2024/01/01")), file.path(dir, "b.csv"))
+  file.path(dir, c("a.csv", "b.csv"))
+}
+ny_epoch <- as.numeric(as.POSIXct("2024-01-01 10:00:01", tz = "America/New_York")) + 0:1
+
+test_that("tz applies to a file's timestamps whichever layout they use", {
+  f <- tz_files(withr::local_tempdir())
+  for (p in f)
+    expect_identical(as.numeric(read_tracks(p, tz = "America/New_York")@data$time),
+                     ny_epoch, info = basename(p))
+})
+
+test_that("the files of one import are read in the same tz", {
+  f <- tz_files(withr::local_tempdir())
+  got <- read_tracks(f, tz = "America/New_York")
+  expect_identical(as.numeric(got@data$time), rep(ny_epoch, 2))
+})
+
+test_that("a timestamp marked Z keeps its instant under another tz", {
+  path <- withr::local_tempfile(fileext = ".csv")
+  writeLines(c("id,time,x,y", "a,2024-01-01T10:00:01Z,0.1,0.2",
+               "a,2024-01-01T10:00:02Z,0.2,0.2"), path)
+  utc <- as.numeric(as.POSIXct("2024-01-01 10:00:01", tz = "UTC")) + 0:1
+  expect_identical(as.numeric(read_tracks(path, tz = "America/New_York")@data$time), utc)
+})
+
+test_that("tz is honoured by the fallback readers too", {
+  f <- tz_files(withr::local_tempdir())
+  for (hide in list("readr", c("readr", "data.table"))) {
+    testthat::local_mocked_bindings(
+      .is_installed = function(pkg) !pkg %in% hide && requireNamespace(pkg, quietly = TRUE))
+    got <- read_tracks(f, tz = "America/New_York")
+    expect_identical(as.numeric(got@data$time), rep(ny_epoch, 2),
+                     info = paste("without", paste(hide, collapse = ", ")))
+  }
+})
+
+# ---- a dot where the decimal mark is a comma ---------------------------------
+
+test_that("a dot is not a second decimal mark in comma-decimal text", {
+  e <- malformed(radiatR:::.as_numeric_strict(c("1,5", "1.234", "2,5"), "x", decimal = ","))
+  expect_identical(e$rows, 2L)
+  expect_identical(e$values, "1.234")
+})
+
+test_that("a dot in a comma-decimal file is malformed and earns a hint", {
+  path <- withr::local_tempfile(fileext = ".csv")
+  writeLines(c("id;frame;x;y", "a;1;1,5;0,25", "a;2;1.234;0,5", "a;3;2,5;0,75"), path)
+  e <- malformed(read_tracks(path))
+  expect_identical(e$columns, "x")
+  expect_identical(e$rows, 2L)
+  expect_identical(e$values, "1.234")
+  expect_match(conditionMessage(e), "read_opts = list(decimal = \".\")", fixed = TRUE)
+})
+
+test_that("a semicolon file with decimal points loads once read_opts says so", {
+  path <- withr::local_tempfile(fileext = ".csv")
+  writeLines(c("id;frame;x;y", "a;1;1.5;0.25", "a;2;2.25;0.5", "a;3;3.125;0.75"), path)
+  e <- malformed(read_tracks(path))
+  expect_identical(e$rows, 1:3)
+  expect_match(conditionMessage(e), "read_opts = list(decimal = \".\")", fixed = TRUE)
+  ok <- read_tracks(path, read_opts = list(decimal = "."))
+  expect_equal(as.data.frame(ok)$x, c(1.5, 2.25, 3.125))
+})
+
+test_that("dotted numeric time in a comma-decimal file is malformed too", {
+  path <- withr::local_tempfile(fileext = ".csv")
+  writeLines(c("id;frame;x;y", "a;0.5;1,5;0,25", "a;1.5;2,25;0,5"), path)
+  e <- malformed(read_tracks(path))
+  expect_identical(e$columns, "frame")
+  expect_match(conditionMessage(e), "read_opts = list(decimal = \".\")", fixed = TRUE)
+})
+
+# ---- smaller findings --------------------------------------------------------
+
+test_that("read_tracks returns its Tracks visibly", {
+  expect_visible(read_tracks(xy_df()))
+})
+
+test_that("reader attributes do not leak into the Tracks data", {
+  path <- withr::local_tempfile(fileext = ".csv")
+  utils::write.csv(xy_df(), path, row.names = FALSE)
+  expect_null(attr(read_tracks(path)@data, "decimal"))
+
+  skip_if_not_installed("tibble")
+  register_loader_dialect("zz_tibble", overwrite = TRUE, fun = function(x, ...)
+    structure(tibble::as_tibble(x), time_unit = "seconds", decimal = ","))
+  withr::defer(rm(list = "zz_tibble", envir = radiatR:::.loader_registry))
+  tr <- read_tracks(xy_df(), dialect = "zz_tibble")
+  expect_identical(tr@meta$time_unit, "seconds")
+  expect_null(attr(tr@data, "time_unit"))
+  expect_null(attr(tr@data, "decimal"))
+})
+
+test_that("bare dates count toward the date-time layout they sit beside", {
+  got <- radiatR:::.coerce_time(c("2024-01-01", "2024-01-02", "2024-01-02 12:00:00"))
+  expect_identical(format(got, "%Y-%m-%d %H:%M:%S"),
+                   c("2024-01-01 00:00:00", "2024-01-02 00:00:00", "2024-01-02 12:00:00"))
+  # another separator is still another layout
+  e <- malformed(radiatR:::.coerce_time(c("2024/01/01", "2024/01/02", "2024-01-02 12:00:00")))
+  expect_identical(e$rows, 3L)
+})
+
+test_that("a regex_mapping resolves columns by pattern", {
+  d <- stats::setNames(xy_df(), c("id", "frame", "pos_h", "pos_v"))
+  tr <- read_tracks_format(d, list(regex_mapping = list(x = "_h$", y = "_v$")))
+  expect_identical(unlist(tr@cols[c("x", "y")], use.names = FALSE), c("pos_h", "pos_v"))
+})
+
+test_that("a regex_mapping pattern that matches no column is named", {
+  spec <- list(regex_mapping = list(x = "^x$", y = "^y$", angle = "theta"))
+  e <- tryCatch(read_tracks_format(xy_df(), spec), radiatR_missing_columns = function(e) e)
+  expect_s3_class(e, "radiatR_missing_columns")
+  expect_match(conditionMessage(e), "angle = 'theta'", fixed = TRUE)
+})
+
+test_that("Excel date-times, which carry no zone, are read in tz", {
+  skip_if_not_installed("readxl")
+  skip_if_not_installed("writexl")
+  path <- withr::local_tempfile(fileext = ".xlsx")
+  d <- xy_df(frame = as.POSIXct("2024-01-01 10:00:01", tz = "UTC") + c(0, 1, 2.5))
+  writexl::write_xlsx(d, path)
+  ny <- as.numeric(as.POSIXct("2024-01-01 10:00:01", tz = "America/New_York")) + c(0, 1, 2.5)
+  expect_equal(as.numeric(read_tracks(path, tz = "America/New_York")@data$frame), ny)
+  expect_equal(as.numeric(read_tracks(path)@data$frame), as.numeric(d$frame))
+})
