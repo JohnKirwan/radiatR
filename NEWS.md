@@ -347,6 +347,24 @@
   manifest metadata for the second and later trials of a video when the file
   table has fewer rows than the video has trials.
 
+* `circ_summary()` on weighted `Tracks` now weights `mean_dir`. It was the
+  unweighted mean beside a weighted `resultant_R` and `kappa`, because
+  `circular::mean.circular()` ignores a `weights` argument. Results change for
+  any `Tracks` with a weight column, or with `w = `.
+
+* `circ_summary()` stops with an error of class `radiatR_nonestimable`, naming
+  the id, when a group's weights are all zero. It returned `resultant_R = NaN`
+  without comment.
+
+* `circ_summary(w = )` checks the column it is given: a name that is not a
+  column, or a column with missing, non-finite or negative values, is an error
+  of class `radiatR_invalid_argument`. A misspelt name was ignored and the
+  summary computed unweighted; rows with a missing weight were dropped.
+
+* `circ_summarise(display = )` requires a `circ_display()` object and says so
+  (class `radiatR_invalid_argument`). `display = NULL` failed with "argument is
+  of length zero".
+
 # radiatR 0.1.2
 
 ## Breaking changes
