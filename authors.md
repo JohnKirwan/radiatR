@@ -2,7 +2,17 @@
 
 ## Authors
 
-- **John D. Kirwan**. Author, maintainer.
+- **John D. Kirwan**. Author, maintainer, copyright holder.
+
+- **A. & M.W. Mathis Labs**. Copyright holder.  
+  example file inst/extdata/dlc_CollectedData_Pranav.csv, from
+  'DeepLabCut'
+
+- **Talmo Pereira**. Copyright holder.  
+  example file inst/extdata/sleap_example.csv, from 'SLEAP'
+
+- **The Trustees of Princeton University**. Copyright holder.  
+  example file inst/extdata/sleap_example.csv, from 'SLEAP'
 
 ## Citation
 
