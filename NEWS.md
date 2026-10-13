@@ -350,7 +350,8 @@
 * `circ_summary()` on weighted `Tracks` now weights `mean_dir`. It was the
   unweighted mean beside a weighted `resultant_R` and `kappa`, because
   `circular::mean.circular()` ignores a `weights` argument. Results change for
-  any `Tracks` with a weight column, or with `w = `.
+  any `Tracks` with a weight column, or with `w = `. `kappa` is `NA` unless
+  three angles have a positive weight; zero-weight angles counted before.
 
 * `circ_summary()` stops with an error of class `radiatR_nonestimable`, naming
   the id, when a group's weights are all zero. It returned `resultant_R = NaN`

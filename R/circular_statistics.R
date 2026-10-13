@@ -27,7 +27,8 @@
 #'   weights are used), `resultant_R` (0--1), and `kappa`
 #'   (von Mises concentration: the maximum-likelihood estimate from the mean
 #'   resultant length, weighted when weights are used; `NA` for fewer than
-#'   three valid angles, `Inf` when all angles coincide).
+#'   three valid angles of positive weight, `Inf` when all angles coincide).
+#'   `n` counts the valid angles whatever their weight.
 #'   No small-sample bias correction is applied, so \code{kappa} is biased
 #'   upward for small \code{n}: \code{circular::mle.vonmises(bias = TRUE)}
 #'   gives a corrected estimate and \code{\link{boot_kappa_ci}()} reports the
@@ -154,8 +155,10 @@ setMethod("circ_summary", "Tracks", function(x, w = NULL, by = c("id","global"),
       R <- NA_real_
     }
 
-    # Same minimum as circ_summarise(): kappa is not reported below 3 angles.
-    kap    <- if (length(folded) >= 3L && !is.na(R)) .kappa_from_Rbar(R) else NA_real_
+    # Same minimum as circ_summarise(): kappa is not reported below 3 angles,
+    # and a zero-weight angle is not one of them.
+    n_used <- if (is.null(wts_valid)) length(folded) else sum(wts_valid > 0)
+    kap    <- if (n_used >= 3L && !is.na(R)) .kappa_from_Rbar(R) else NA_real_
     out_mu <- .unfold_mean(.wrap_to_2pi(as.numeric(mu)), axial)
     data.frame(
       id          = if (by == "id") k else "global",
