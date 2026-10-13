@@ -58,10 +58,9 @@
   `read_opts = list(decimal = ",")` for decimal commas. Where the decimal mark
   is a comma (the default for semicolon-separated files), one bad cell names
   that cell only, not every `1,5` in its column, and a value holding a `.` is
-  malformed in turn: `1.234` beside `1,5` was read as 1.234, though it could
-  as well be 1234. A semicolon-separated file that uses decimal points
-  therefore stops with that error until `read_opts = list(decimal = ".")`
-  says so; it used to load.
+  malformed in turn, since `1.234` could as well be 1234. A
+  semicolon-separated file that uses decimal points therefore stops with that
+  error until `read_opts = list(decimal = ".")` says so.
 
   The check covers the columns `read_tracks()` converts itself and the time
   column of every dialect but ANY-maze. An error raised inside a dialect does
@@ -88,8 +87,7 @@
   names a column that is not in the data. A missing `angle` column used to be
   ignored without notice, and a missing x or y column gave an error that did
   not name it. A `regex_mapping` pattern (see `read_tracks_format()`) that
-  matches no column is the same error, naming the role and the pattern; the
-  role used to be left unset and guessed from the default column names.
+  matches no column is the same error, naming the role and the pattern.
 
 * The `validate` argument of `read_tracks()` is deprecated. It never skipped
   anything, because `Tracks` invariants are checked whenever an object is
@@ -161,6 +159,11 @@
   in `tz`: the same wall-clock time came out hours apart, between two files of
   one import or between two machines with different readers installed. A
   timestamp marked `Z` is still UTC.
+
+* `read_tracks(format = )` uses the `mapping` and `regex_mapping` of the
+  format. Both were discarded, so the columns were guessed from their names
+  instead: a format mapping x to `pos_x` read a column named `x` if the file
+  had one. A `mapping` passed alongside `format` still takes precedence.
 
 * `circ_summarise()` and `circ_summary()` on a `Tracks` object now return the
   von Mises concentration `kappa`; it was always `NA`. The estimator was

@@ -52,7 +52,7 @@ Suggests:
     rmarkdown,
     ggrepel,
     arrow,
-    data.table,
+    data.table (>= 1.14.0),
     jsonlite,
     readr,
     readxl,

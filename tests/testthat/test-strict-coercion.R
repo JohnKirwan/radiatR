@@ -450,10 +450,22 @@ test_that("bare dates count toward the date-time layout they sit beside", {
   expect_identical(e$rows, 3L)
 })
 
+xy_cols <- function(tr) unlist(tr@cols[c("x", "y")], use.names = FALSE)
+
 test_that("a regex_mapping resolves columns by pattern", {
   d <- stats::setNames(xy_df(), c("id", "frame", "pos_h", "pos_v"))
-  tr <- read_tracks_format(d, list(regex_mapping = list(x = "_h$", y = "_v$")))
-  expect_identical(unlist(tr@cols[c("x", "y")], use.names = FALSE), c("pos_h", "pos_v"))
+  spec <- list(regex_mapping = list(x = "_h$", y = "_v$"))
+  expect_identical(xy_cols(read_tracks_format(d, spec)), c("pos_h", "pos_v"))
+  expect_identical(xy_cols(read_tracks(d, format = spec)), c("pos_h", "pos_v"))
+})
+
+test_that("read_tracks(format = ) keeps the format's mapping over guessed columns", {
+  d <- cbind(xy_df(), pos_h = c(0.5, 0.6, 0.7), pos_v = c(0.5, 0.6, 0.7))
+  spec <- list(mapping = list(x = "pos_h", y = "pos_v"))
+  expect_identical(xy_cols(read_tracks(d, format = spec)), c("pos_h", "pos_v"))
+  # an explicit mapping still overrides the format's
+  got <- read_tracks(d, format = spec, mapping = list(x = "x", y = "y"))
+  expect_identical(xy_cols(got), c("x", "y"))
 })
 
 test_that("a regex_mapping pattern that matches no column is named", {

@@ -793,7 +793,8 @@ read_tracks <- function(x,
     return(read_tracks_format(
       x,
       format,
-      mapping = mapping,
+      # only the roles the caller named: a NULL would delete the format's own
+      mapping = mapping[!vapply(mapping, is.null, logical(1))],
       angle_unit = angle_unit,
       time_type = time_type,
       tz = tz,
