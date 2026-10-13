@@ -73,7 +73,8 @@ circ_summarise(
   object giving the convention in which `mean_dir_deg` is reported (the
   direction of zero and whether angles increase clockwise). Defaults to
   [`circ_display()`](https://johnkirwan.github.io/radiatR/reference/circ_display.md):
-  0 = North, clockwise.
+  0 = North, clockwise. Anything else, `NULL` included, is an error
+  (class `radiatR_invalid_argument`).
 
 ## Value
 
