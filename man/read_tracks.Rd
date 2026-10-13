@@ -145,6 +145,22 @@ setting used. `c()` row-binds these records; a subset keeps the whole
 record of its load, so recombining subsets of one load repeats it.
 }
 
+\section{Ids}{
+
+An id is a label, not a measurement. In a delimited file the id column
+(the one named in `mapping`, or any column named `id`, `track`,
+`trajectory`, `animal` or `subject`) is kept as the text in the file
+wherever reading it as numbers would merge ids that are written
+differently: `1.1` and `1.10`, `1` and `1.0`, `01` and `1`. Ids that read
+as distinct numbers stay numbers. Where the delimited files of one import
+do not agree on the type of the id column, the ids of each file are the
+text in that file. Ids that are numbers in every file are compared as
+numbers across files (see `id_collision`). A data frame and an Excel or
+Arrow file keep the types they come with. Not covered: an id column that a
+dialect is pointed to by an argument of its own (its ids may still be
+merged).
+}
+
 \section{Malformed values}{
 
 A cell in an x, y, angle, weight or time column that is present but does not

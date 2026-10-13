@@ -232,7 +232,36 @@
   `x` if the file had one), and its angle unit, time type, time zone and
   frame rate gave way to the defaults, so degrees were read as radians. Now
   only the arguments the caller supplies override the format, `mapping` role
-  by role, and `read_opts` is passed on.
+  by role, and `read_opts` is passed on. An argument given as `NULL` counts
+  as not supplied (`fps = NULL` or `keep = NULL` used to delete the format's
+  frame rate or kept columns), a `dialect` the caller names replaces the
+  format's, and `load_manifest(format = )` follows the same rule: it passed
+  on all of its own defaults, so a degrees format was read as radians there
+  too. A format's `dialect_args` reach its dialect: they were handed to
+  `read_tracks()` as arguments of its own, which stopped with "unused
+  argument".
+
+* Ids that are written differently are no longer merged into one track. A
+  file reader types an id column as numbers when it can, so in any delimited
+  file ids `1.1` and `1.10`, `1` and `1.0`, `1e1` and `10` (and `01` and `1`
+  without readr) were read as the same id, with no condition.
+  `read_tracks()` now keeps such a column as the text in the file (`T` and
+  `TRUE`, read as one logical value, likewise). The same holds for the mapped
+  id column and for any column named `id`, `track`, `trajectory`, `animal` or
+  `subject`. Ids that read as distinct numbers are numbers as before. Where
+  the delimited files of one import disagree on the type of the id column,
+  the ids of each file are the text in that file; the import used to stop
+  with a type error, or read `TRUE` beside numeric ids as 1.
+
+* A time that does not exist in `tz` (the hour skipped when clocks go
+  forward), in an Excel date-time cell or in a delimited file read with
+  readr, stops the load with a `radiatR_malformed_values` error naming the
+  file, column, row and value, when it is in a column `read_tracks()` uses:
+  the time column or one kept with `keep = `. It was read as `NA`, which
+  blanked a kept column (without a word from an Excel file, with readr's
+  "parsing issues" warning from a delimited one) and gave a time column an
+  error that named neither the value nor the cause. In a column that is not
+  used it is still `NA`.
 
 * `circ_summarise()` and `circ_summary()` on a `Tracks` object now return the
   von Mises concentration `kappa`; it was always `NA`. The estimator was
