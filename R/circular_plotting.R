@@ -348,7 +348,7 @@ add_radial_grid <- function(rings_major = 0.5, rings_minor = c(0.25, 0.75),
 #'   the label units when `units` is `NULL`.
 #' @param colour,color Label colour. Default `"black"`. `color` is the
 #'   American-spelling alias.
-#' @param units `"degrees"` (e.g. `45°`) or `"radians"` (e.g. `π/4`). When
+#' @param units `"degrees"` (e.g. `45°`) or `"radians"` (e.g. \eqn{\pi/4}{pi/4}). When
 #'   `NULL` (default) the units are taken from `display`.
 #' @param size Label text size, in mm. Default `3.88` (ggplot2's default
 #'   text size).
@@ -2583,7 +2583,7 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   equivalent to `angle_labels = "none"`. Tick styling (colour, width, length)
 #'   follows the chosen `theme`'s `axis.ticks`.
 #' @param angle_labels Circumference labels. `"degrees"` (default; e.g. `45°`),
-#'   `"radians"` (e.g. `π/4`), or `"none"` use diagonal angle labels via
+#'   `"radians"` (e.g. \eqn{\pi/4}{pi/4}), or `"none"` use diagonal angle labels via
 #'   [degree_labs()]. The domain scales `"cardinal"` (N/E/S/W), `"hours"`
 #'   (24-hour clock), `"months"` (Jan...Dec), and `"seconds"` instead label the
 #'   circumference via [circumference_labs()], aligning the tick count to the scale. For

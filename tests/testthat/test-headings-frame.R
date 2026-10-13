@@ -384,6 +384,7 @@ test_that("new_headings_frame is a tibble subclass carrying the canonical attrib
 })
 
 test_that("the class and display attribute survive dplyr verbs and base subsetting", {
+  skip_if_not_installed("dplyr")
   hd <- new_headings_frame(tibble::tibble(heading = seq(0, 1, length.out = 6), g = rep(c("a","b"), 3)),
                            display = circ_display(zero = 0, clockwise = FALSE))
   # class (incl. tbl_df, so it stays a real tibble) AND display must both survive

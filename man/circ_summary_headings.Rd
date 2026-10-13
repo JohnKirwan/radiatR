@@ -28,7 +28,7 @@ onto the heading table with `carry` (e.g. `carry = "arc"`).}
 }
 \value{
 A `data.frame` with grouping columns followed by `mean_dir`
-  (radians, unit-circle convention, 0 to 2π), `resultant_R` (0–1), `kappa`
+  (radians, unit-circle convention, 0 to \eqn{2\pi}{2*pi}), `resultant_R` (0–1), `kappa`
   (von Mises concentration, with no small-sample bias correction; see
   \code{\link{circ_summary}()}), and `n` (number of valid headings in the group).
 }

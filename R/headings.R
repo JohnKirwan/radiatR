@@ -703,7 +703,7 @@ setMethod("derive_headings", "Tracks", function(
 #'   `circ0`, `circ1`, `carry`, `return_coords`, or `coords`.
 #'
 #' @return A `data.frame` with grouping columns followed by `mean_dir`
-#'   (radians, unit-circle convention, 0 to 2π), `resultant_R` (0–1), `kappa`
+#'   (radians, unit-circle convention, 0 to \eqn{2\pi}{2*pi}), `resultant_R` (0–1), `kappa`
 #'   (von Mises concentration, with no small-sample bias correction; see
 #'   \code{\link{circ_summary}()}), and `n` (number of valid headings in the group).
 #'
@@ -779,9 +779,6 @@ circ_summary_headings <- function(x, rule = c("crossing","distal","straight","or
   res
 }
 
-# ---- plotting helpers: mean direction arrows ---------------------------------
-#' Build a data frame of arrow segments representing mean direction vectors
-#' Length equals resultant_R; angle equals mean_dir
 # ---- user-defined rule registry ----------------------------------------------
 .heading_registry <- new.env(parent = emptyenv())
 
