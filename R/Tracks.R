@@ -875,6 +875,8 @@ setMethod("c", signature(x="Tracks"), function(x, ..., recursive = FALSE) {
   # load records: every input's, not just the first's
   attrition <- Filter(Negate(is.null), lapply(xs, function(z) z@meta$attrition))
   if (length(attrition)) meta$attrition <- do.call(rbind, attrition)
+  source_meta <- do.call(c, lapply(xs, function(z) z@meta$source_meta))
+  if (length(source_meta)) meta$source_meta <- source_meta
   new("Tracks",
       data = df,
       cols = x@cols,
