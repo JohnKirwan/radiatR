@@ -56,6 +56,11 @@ the mean direction (`"bootstrap_ci"`, via
 can be replaced with Bayesian credible interval bounds from any model
 before passing to [add_circ_interval()].
 }
+\examples{
+hd <- derive_headings(cpunctatus[1:5], rule = "distal")
+# Fast: +/-1 circular SD
+compute_circ_interval(hd, stat = "sd")
+}
 \seealso{
 [add_circ_interval()], [add_heading_interval()]
 }
