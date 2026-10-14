@@ -470,6 +470,10 @@ plain_error <- function(e) {
     ))
   # A dialect says what is wrong with the file in its own words.
   if (inherits(e, "radiatR_dialect_error")) return(conditionMessage(e))
+  # So does the reader, for a file that is not one table or ids that differ
+  # only by whitespace (these name columns, which the guesses below misread).
+  if (inherits(e, c("radiatR_malformed_file", "radiatR_ambiguous_ids")))
+    return(sub("^read_tracks: ", "", conditionMessage(e)))
   m <- conditionMessage(e)
   if (grepl("id|time|mapping", m, ignore.case = TRUE))
     return(paste(
@@ -994,7 +998,7 @@ server <- function(input, output, session) {
     ds <- input$delim_sel
     ss <- input$sheet_sel
     parsed <- tryCatch(
-      as.data.frame(upload_read(rv$path, rv$file_name, ds, ss)),
+      as.data.frame(upload_read(rv$path, rv$file_name, ds, ss, unique_names = TRUE)),
       error = function(e) {
         rv$error        <- plain_error(e)
         rv$error_detail <- ingest_detail(e)

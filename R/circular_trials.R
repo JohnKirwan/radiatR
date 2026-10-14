@@ -27,6 +27,32 @@
   out
 }
 
+# A landmark or track file of get_all_object_pos(): tab-separated, no header,
+# frame, x and y in the first three fields of every line (any more are not
+# read, and need not be on every line). Read as text and coerced strictly, so
+# that a decimal comma, a word or a short line stops the read naming the file,
+# not later arithmetic.
+.read_trial_file <- function(path) {
+  src <- basename(path)
+  n <- utils::count.fields(path, sep = "\t", quote = "\"", comment.char = "",
+                           blank.lines.skip = FALSE)
+  short <- which(is.na(n) | (n > 0L & n < 3L))
+  if (length(short) || !any(n > 0L))
+    radiatR_abort_malformed_file(
+      src, "columns", lines = short, caller = "get_all_object_pos", detail = paste0(
+        "it needs frame, x and y in the first three tab-separated fields of every line",
+        if (length(short)) sprintf(" (line(s) %s)", paste(utils::head(short, 20L), collapse = ", ")),
+        "."))
+  # every field named, so that read.table() does not size rows from the
+  # first five lines and wrap a longer one
+  df <- utils::read.table(path, sep = "\t", header = FALSE, quote = "\"",
+                          comment.char = "", colClasses = "character", fill = TRUE,
+                          blank.lines.skip = TRUE, col.names = paste0("V", seq_len(max(n))))[1:3]
+  names(df) <- c("frame", "x", "y")
+  for (cc in names(df)) df[[cc]] <- .as_numeric_strict(df[[cc]], cc, source = src)
+  df
+}
+
 #' Summarise per-trial metadata for a single video.
 #'
 #' Uses paired landmark coordinates to determine the temporal bounds of each
@@ -345,7 +371,14 @@ get_tracked_object_pos <- function(
 #'
 #' @return A `Tracks` combining the normalised observations for all valid
 #'   trials in the manifest. The aggregated trial limits are available via
-#'   `meta$trial_limits`.
+#'   `meta$trial_limits`. Each landmark and track file is tab-separated with
+#'   frame, x and y in the first three fields of every line (further fields
+#'   are not read); a cell that is not a number stops with a
+#'   `radiatR_malformed_values` error, and a line with fewer than three fields
+#'   or an odd number of landmark rows with a `radiatR_malformed_file` error,
+#'   each naming the file.
+#'   When no file holds a valid trial the call stops with a
+#'   `radiatR_no_valid_trials` error.
 #'
 #' @importFrom utils read.delim
 #' @export
@@ -360,19 +393,13 @@ get_all_object_pos <- function(landmarks = NULL, track = NULL,
   oob_trials <- 0L
 
   for (i in seq_len(nrow(file_tbl))) {
-    track_df <- utils::read.delim(
-      normalizePath(file.path(track_dir, file_tbl$track[i])),
-      sep = "\t", header = FALSE
-    )[, 1:3]
-    names(track_df) <- c("frame", "x", "y")
-    landmarks_df <- utils::read.delim(
-      normalizePath(file.path(track_dir, file_tbl$landmark[i])),
-      sep = "\t", header = FALSE
-    )[, 1:3]
-    names(landmarks_df) <- c("frame", "x", "y")
-    if (nrow(landmarks_df) %% 2 == 1) {
-      warning("Odd number of landmarks: ", file_tbl$basename[i])
-    }
+    track_df <- .read_trial_file(file.path(track_dir, file_tbl$track[i]))
+    landmarks_df <- .read_trial_file(file.path(track_dir, file_tbl$landmark[i]))
+    if (nrow(landmarks_df) %% 2 == 1)
+      radiatR_abort_malformed_file(
+        file_tbl$landmark[i], "odd_landmarks", caller = "get_all_object_pos", detail = sprintf(paste0(
+          "it holds %d landmark rows; each trial has two (origin, then reference)."),
+          nrow(landmarks_df)))
     trial_limits <- get_trial_limits(landmarks_df, track_df, file_tbl, i)
     # Suppress the per-file out-of-bounds notice; tally instead and report once
     # after the loop so a large manifest emits a single aggregated message.
@@ -389,10 +416,7 @@ get_all_object_pos <- function(landmarks = NULL, track = NULL,
     message(.oob_message(oob_points, oob_trials))
   }
 
-  if (!length(trajsets)) {
-    warning("No valid tracks were produced for the supplied files.")
-    return(NULL)
-  }
+  if (!length(trajsets)) radiatR_abort_no_valid_trials(nrow(file_tbl))
 
   combined_ts <- trajsets[[1]]
   if (length(trajsets) > 1) {

@@ -81,3 +81,54 @@ radiatR_abort_malformed_values <- function(column, rows, values,
                expected = expected, source = source, dialect = dialect,
                call = NULL)
 }
+
+# A file whose layout cannot be read as one table: a row with more or fewer
+# fields than the header (`problem = "ragged"`, `lines` are line numbers in
+# the file, header = 1), or a column name used twice (`"duplicate_columns"`,
+# `columns` the names). Every reader stops on it rather than drop, wrap or
+# shift rows. `caller` names the function in the message.
+radiatR_abort_malformed_file <- function(source, problem, detail, lines = integer(0),
+                                         columns = character(0), caller = "read_tracks") {
+  rlang::abort(
+    sprintf("%s: file '%s' is not one table: %s", caller, source, detail),
+    class = "radiatR_malformed_file", source = source, problem = problem,
+    lines = as.integer(lines), columns = as.character(columns), call = NULL)
+}
+
+# Ids that are distinct as written but the same once their surrounding
+# whitespace is removed (" 1" and "1"). Readers disagree on whether that
+# whitespace is kept, so such ids are taken as neither one track nor two.
+radiatR_abort_ambiguous_ids <- function(column, ids) {
+  rlang::abort(
+    sprintf(paste0(
+      "read_tracks: ids in column '%s' differ only by surrounding whitespace (%s%s). ",
+      "Trim them, or make them distinct, before reading."),
+      column, paste0("'", utils::head(ids, 10L), "'", collapse = ", "),
+      if (length(ids) > 10L) ", ..." else ""),
+    class = "radiatR_ambiguous_ids", columns = column, ids = as.character(ids),
+    call = NULL)
+}
+
+# get_all_object_pos(): no file of the manifest holds a valid trial (each
+# track starts too far from the centre), so there is no Tracks to return.
+radiatR_abort_no_valid_trials <- function(n_files) {
+  rlang::abort(sprintf(paste0(
+    "get_all_object_pos: none of the %d file(s) holds a valid trial (each track ",
+    "starts too far from the centre)."), n_files),
+    class = "radiatR_no_valid_trials", n_files = as.integer(n_files), call = NULL)
+}
+
+# The files of one import hold the id column as different types (numbers in
+# one, text in another) and a file cannot be read again for the ids as they
+# are written in it (a dialect's table, Parquet, Feather).
+radiatR_abort_id_type_mismatch <- function(column, sources, types, dialect = NULL) {
+  shown <- !is.na(types)
+  rlang::abort(sprintf(paste0(
+    "read_tracks: the files do not hold id column '%s' as one type (%s)%s, and the ids ",
+    "cannot be read again as the text in each file. Make the column the same type in ",
+    "every file (as text, for labels)."),
+    column, paste0(sources[shown], ": ", types[shown], collapse = ", "),
+    if (!is.null(dialect)) sprintf(" under dialect '%s'", dialect) else ""),
+    class = "radiatR_id_type_mismatch", columns = column, sources = sources[shown],
+    types = types[shown], call = NULL)
+}

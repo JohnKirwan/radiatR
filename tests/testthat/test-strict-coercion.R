@@ -703,15 +703,222 @@ test_that("files that disagree on the id type are combined as text ids", {
   }
 })
 
-test_that("the text of a label column is the text of the same cells", {
+test_that("ids written differently in two files are two ids, not a collision", {
   dir <- withr::local_tempdir()
-  # one name fewer than fields: read.table() takes the first field as row names
-  path <- file.path(dir, "rownames.txt")
-  writeLines(c("id\tframe\tx\ty", "r1\t1.1\t1\t1\t101", "r2\t1.1\t2\t2\t102",
-               "r3\t1.10\t3\t3\t103", "r4\t1.10\t4\t4\t104"), path)
-  hide_readers(c("readr", "data.table"))
-  expect_identical(read_tracks(path, read_opts = list(delim = "\t"))@data$id,
-                   rep(c("1.1", "1.10"), each = 2L))
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    # 1.1 and 1.10 are one number but two labels
+    got <- read_tracks(c(id_file(dir, "1.1", "2"), id_file(dir, "1.10", "3")))@data$id
+    expect_identical(sort(unique(got)), c("1.1", "1.10", "2", "3"), info = info)
+    # the same label in both files still collides
+    expect_error(read_tracks(c(id_file(dir, "1", "2"), id_file(dir, "1", "3"))),
+                 "collide", info = info)
+    got <- read_tracks(c(id_file(dir, "1", "2"), id_file(dir, "1", "3")),
+                       id_collision = "namespace")@data$id
+    expect_length(unique(got), 4L)
+  }
+})
+
+test_that("an id typed as a date or time keeps the labels it was read from", {
+  dir <- withr::local_tempdir()
+  path <- id_file(dir, "2024-01-01 00:00", "2024-01-01 00:00:00")
+  for (hide in readers) {
+    hide_readers(hide)
+    expect_identical(sort(unique(as.character(read_tracks(path)@data$id))),
+                     c("2024-01-01 00:00", "2024-01-01 00:00:00"),
+                     info = paste(c("without", hide), collapse = " "))
+  }
+  # distinct dates are left as the reader typed them
+  got <- read_tracks(id_file(dir, "2024-01-01", "2024-01-02"))@data$id
+  expect_identical(unique(as.character(got)), c("2024-01-01", "2024-01-02"))
+})
+
+test_that("an id type the files disagree on is read as text, or stops the load", {
+  dir <- withr::local_tempdir()
+  csv <- id_file(dir, "a", "b")
+  # a dialect's tables cannot be read again for the text of their ids
+  register_loader_dialect("ids_as_read", function(path) utils::read.csv(path),
+                          overwrite = TRUE)
+  withr::defer(rm("ids_as_read", envir = radiatR:::.loader_registry))
+  e <- expect_error(read_tracks(c(id_file(dir, "1", "2"), csv), dialect = "ids_as_read"),
+                    class = "radiatR_id_type_mismatch")
+  expect_identical(e$types, c("number", "text"))
+  # an Excel file's ids are read as the text of its cells
+  skip_if_not_installed("readxl")
+  skip_if_not_installed("writexl")
+  xl <- file.path(dir, "num.xlsx")
+  writexl::write_xlsx(data.frame(id = c(1.5, 1.5, 1e5, 1e5), frame = 1:4, x = 1:4, y = 5:8), xl)
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    expect_identical(unique(read_tracks(c(xl, csv))@data$id), c("1.5", "100000", "a", "b"),
+                     info = info)
+    # the same id in an Excel file and a CSV still collides
+    expect_error(read_tracks(c(xl, id_file(dir, "100000", "9"))), "collide", info = info)
+  }
+})
+
+test_that("ids that differ only by surrounding whitespace stop the read", {
+  dir <- withr::local_tempdir()
+  quoted <- id_file(dir, "\" 1\"", "1")
+  bare <- id_file(dir, " a", "a")
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    for (p in c(quoted, bare)) {
+      e <- expect_error(read_tracks(p), class = "radiatR_ambiguous_ids", info = info)
+      expect_setequal(trimws(e$ids), c("1", "a")[c(p == quoted, p == bare)])
+    }
+  }
+  # a data frame too
+  expect_error(read_tracks(data.frame(id = c("x ", "x"), frame = 1:2, x = 1:2, y = 1:2)),
+               class = "radiatR_ambiguous_ids")
+  # one id with whitespace and no twin is that id
+  expect_identical(unique(read_tracks(data.frame(id = c(" x", " x"), frame = 1:2, x = 1:2,
+                                                 y = 1:2))@data$id), " x")
+})
+
+# ---- every reader reads the same table ------------------------------------------
+
+test_that("a row with more or fewer fields than the header stops every reader", {
+  dir <- withr::local_tempdir()
+  w <- function(name, lines) { p <- file.path(dir, name); writeLines(lines, p); p }
+  hdr <- "id,frame,x,y"
+  ok <- sprintf("1,%d,%d,2", 1:7, 1:7)
+  cases <- list(
+    short = w("short.csv", c(hdr, ok[1:2], "1,9,3", ok[3])),
+    long = w("long.csv", c(hdr, ok[1:2], "1,9,3,4,5", ok[3])),
+    # read.table() sizes rows from the first five lines and wraps a later long row
+    late = w("late.csv", c(hdr, ok, "1,9,3,4,5,6,7,8", "1,10,1,2")),
+    rownames = w("rownames.csv", c(hdr, sprintf("r%d,1,%d,%d,2", 1:3, 1:3, 1:3))),
+    # fread() shifted the columns of this one
+    trailing = w("trailing.csv", c(hdr, paste0(ok[1:3], ","))),
+    # and filled this one
+    widehead = w("widehead.csv", c(paste0(hdr, ",z"), ok[1:3])),
+    # and skipped this first line, which the other readers take as the header
+    preamble = w("preamble.csv", c("# exported by a tracker", hdr, ok[1:3])),
+    # readr dropped a last line cut off mid-row, without a warning
+    cut = w("cut.csv", c(hdr, ok[1:3], "1,9,3")),
+    # a quote that is never closed
+    quote = w("quote.csv", c(hdr, ok[1:2], "\"1,9,3,4", ok[3])))
+  for (hide in readers) {
+    hide_readers(hide)
+    for (k in names(cases)) {
+      e <- expect_error(suppressWarnings(read_tracks(cases[[k]])),
+                        class = "radiatR_malformed_file",
+                        info = paste(c(k, "without", hide), collapse = " "))
+      expect_identical(e$problem, "ragged")
+      expect_identical(grepl("row names", conditionMessage(e)), k %in% c("rownames", "trailing"),
+                       info = paste(c(k, "without", hide), collapse = " "))
+      # the line in the file, header = 1, whichever reader found it
+      if (k %in% c("short", "long", "late", "cut"))
+        expect_identical(e$lines, c(short = 4L, long = 4L, late = 9L, cut = 5L)[[k]],
+                         info = paste(c(k, "without", hide), collapse = " "))
+    }
+  }
+})
+
+test_that("quoted line breaks and latin-1 bytes are no ragged rows", {
+  dir <- withr::local_tempdir()
+  qhdr <- file.path(dir, "qhdr.csv")
+  lines <- c("id,\"fr", "ame\",x,y,note", "a,1,1,2,\"line", "break\"", "a,2,2,3,z",
+             "b,3,3,4,w")
+  writeLines(lines, qhdr)
+  # readr and fread() kept the "\r\n" of a quoted line break, read.table() "\n"
+  qcrlf <- file.path(dir, "qcrlf.csv")
+  writeBin(charToRaw(paste0(paste(lines, collapse = "\r\n"), "\r\n")), qcrlf)
+  latin <- file.path(dir, "latin.csv")
+  # past the first 20 lines, which the delimiter sniffer reads as UTF-8
+  writeBin(c(charToRaw(paste0("id,frame,x,y,note\n",
+                              paste0(sprintf("a,%d,%d,2,b\n", 1:30, 1:30), collapse = ""),
+                              "a,31,31,2,")),
+             as.raw(0xe9), charToRaw("\n")), latin)
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    for (p in c(qhdr, qcrlf)) {
+      tr <- read_tracks(p, mapping = list(time = "fr\name"), keep = "note")
+      expect_identical(tr@data$note, c("line\nbreak", "z", "w"),
+                       info = paste(info, basename(p)))
+    }
+    expect_identical(nrow(read_tracks(latin)@data), 31L, info = info)
+  }
+})
+
+test_that("a compressed file is counted as the table it holds", {
+  dir <- withr::local_tempdir()
+  txt <- c("id,frame,x,y", "a,1,1,2", "a,2,2,3", "a,3,3,4")
+  # fread() reads neither gzip nor bzip2 without R.utils, nor xz at all
+  packed <- file.path(dir, c("t.csv.gz", "t.csv.bz2", "t.csv.xz"))
+  Map(function(path, open) {
+    con <- open(path, "w"); writeLines(txt, con); close(con)
+  }, packed, list(gzfile, bzfile, xzfile))
+  writeLines(txt, file.path(dir, "t.csv"))
+  zp <- file.path(dir, "t.zip")
+  suppressWarnings(try(withr::with_dir(dir, utils::zip("t.zip", "t.csv", flags = "-q")),
+                       silent = TRUE))
+  skip_if_not(file.exists(zp), "no zip program")
+  # read.table() reads neither a zip archive nor, here, needs to
+  for (hide in readers[lengths(readers) < 2L]) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    for (p in packed)
+      expect_identical(nrow(read_tracks(p)@data), 3L, info = paste(info, basename(p)))
+    expect_identical(nrow(read_tracks(zp)@data), 3L, info = info)
+  }
+})
+
+test_that("an empty cell is missing under every reader", {
+  dir <- withr::local_tempdir()
+  path <- file.path(dir, "blank_id.csv")
+  writeLines(c("id,frame,x,y", "a,1,1,2", ",2,2,3", "a,3,3,4"), path)
+  for (hide in readers) {
+    hide_readers(hide)
+    # read.table() read the blank id as "", a track of its own
+    e <- expect_error(read_tracks(path), class = "radiatR_invalid_tracks",
+                      info = paste(c("without", hide), collapse = " "))
+    expect_identical(e$rows, 2L)
+  }
+})
+
+test_that("blank lines, quotes, apostrophes and # are read alike by every reader", {
+  dir <- withr::local_tempdir()
+  path <- file.path(dir, "cells.csv")
+  writeLines(c("id,frame,x,y,note", "1,1,1,2,it's", "", "1,2,2,3,a#b",
+               "1,3,3,4,\"c,d\"", "1,4,4,5,\" e \""), path)
+  for (hide in readers) {
+    hide_readers(hide)
+    tr <- read_tracks(path, keep = "note")
+    expect_identical(tr@data$note, c("it's", "a#b", "c,d", " e "),
+                     info = paste(c("without", hide), collapse = " "))
+  }
+})
+
+test_that("column names are trimmed, and a name used twice stops the read", {
+  dir <- withr::local_tempdir()
+  spaced <- file.path(dir, "spaced.csv")
+  writeLines(c(" id ,frame,x,y", "a,1,1,2", "b,2,2,3"), spaced)
+  twice <- file.path(dir, "twice.csv")
+  writeLines(c("id,frame,x,y,id", "1,1,1,2,a", "2,2,2,3,b"), twice)
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    expect_identical(unique(read_tracks(spaced)@data$id), c("a", "b"), info = info)
+    e <- expect_error(read_tracks(twice), class = "radiatR_malformed_file", info = info)
+    expect_identical(e$problem, "duplicate_columns")
+    expect_identical(e$columns, "id")
+  }
+  skip_if_not_installed("readxl")
+  skip_if_not_installed("writexl")
+  xl <- file.path(dir, "twice.xlsx")
+  df <- data.frame(id = 1:2, frame = 1:2, x = 1:2, y = 1:2, id2 = c("a", "b"))
+  names(df)[5] <- "id"
+  writexl::write_xlsx(df, xl)
+  expect_error(read_tracks(xl), class = "radiatR_malformed_file")
+})
+
+test_that("the text of a label column is the text of the same cells", {
   # text that does not read as the values the reader typed is not attached
   df <- data.frame(id = c(1, 1, 2), x = 1:3)
   expect_error(radiatR:::.keep_labels(df, NULL, function(pos) data.frame(id = c("7", "8", "9"))),
