@@ -68,7 +68,7 @@ Default colour is \code{"darkorange"} to distinguish from
 \code{add_circular_kde} (\code{"tomato"}).
 }
 \examples{
-hd <- derive_headings(cpunctatus[1:10], rule = "distal", frame_select = "all")
+hd <- derive_headings(cpunctatus[1:10], rule = "distal")
 fit <- wrappedcauchy_fit(hd)
 radiate(cpunctatus[1:10]) + add_wrappedcauchy_density(fit)
 }

@@ -493,7 +493,7 @@ degree_labs <- function(display = circ_display(), colour = "black",
 #' @return A `geom_segment()` layer.
 #' @examples
 #' # Arrow showing mean direction and resultant length
-#' hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+#' hd <- derive_headings(cpunctatus[1:5], rule = "distal")
 #' library(ggplot2)
 #' ggplot() +
 #'   coord_fixed() +
@@ -1207,7 +1207,7 @@ add_heading_density <- function(headings_df,
 #' @seealso [add_circ_interval()], [add_heading_interval()]
 #' @importFrom circular circular mean.circular sd.circular mle.vonmises.bootstrap.ci
 #' @examples
-#' hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+#' hd <- derive_headings(cpunctatus[1:5], rule = "distal")
 #' # Fast: +/-1 circular SD
 #' compute_circ_interval(hd, stat = "sd")
 #' @export
@@ -1278,7 +1278,7 @@ compute_circ_interval <- function(headings_df,
 #' @importFrom ggplot2 geom_path aes
 #' @importFrom rlang .data sym
 #' @examples
-#' hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+#' hd <- derive_headings(cpunctatus[1:5], rule = "distal")
 #' iv <- compute_circ_interval(hd, stat = "sd")
 #' library(ggplot2)
 #' ggplot() +
@@ -1409,7 +1409,7 @@ add_circ_interval <- function(interval_df,
 #' @importFrom ggplot2 geom_path aes
 #' @importFrom rlang .data sym
 #' @examples
-#' hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+#' hd <- derive_headings(cpunctatus[1:5], rule = "distal")
 #' library(ggplot2)
 #' ggplot() +
 #'   coord_fixed() +
@@ -1480,7 +1480,7 @@ add_heading_interval <- function(headings_df,
 #' @seealso [add_circ_mean()], [add_heading_arrow()]
 #' @importFrom circular circular mean.circular rho.circular
 #' @examples
-#' hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+#' hd <- derive_headings(cpunctatus[1:5], rule = "distal")
 #' compute_circ_mean(hd)
 #' @export
 compute_circ_mean <- function(headings_df,
@@ -1551,7 +1551,7 @@ compute_circ_mean <- function(headings_df,
 #' @importFrom rlang .data sym
 #' @importFrom grid arrow unit
 #' @examples
-#' hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+#' hd <- derive_headings(cpunctatus[1:5], rule = "distal")
 #' sm <- compute_circ_mean(hd)
 #' library(ggplot2)
 #' ggplot() +
@@ -1647,7 +1647,7 @@ add_circ_mean <- function(summary_df,
 #' @importFrom rlang .data sym
 #' @importFrom grid arrow unit
 #' @examples
-#' hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+#' hd <- derive_headings(cpunctatus[1:5], rule = "distal")
 #' library(ggplot2)
 #' ggplot() +
 #'   coord_fixed() +
@@ -1884,7 +1884,7 @@ add_heading_vectors <- function(headings_df, colour_col = NULL, colour = NULL,
 #' @importFrom ggplot2 geom_point aes
 #' @importFrom rlang .data sym
 #' @examples
-#' hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+#' hd <- derive_headings(cpunctatus[1:5], rule = "distal")
 #' library(ggplot2)
 #' ggplot() +
 #'   coord_fixed() +
@@ -2171,7 +2171,7 @@ setMethod("gg_traj", "Tracks",
         missing <- setdiff(facets, names(d))
         if (length(missing)) stop("facets column(s) not found: ", paste(missing, collapse = ", "))
         p <- p + ggplot2::facet_wrap(stats::as.formula(paste("~", paste(facets, collapse = "+"))),
-                                     scales = "free", ncol = ncol)
+                                     ncol = ncol)
       } else stop("facets must be NULL or character vector of column names")
     }
 
@@ -3387,7 +3387,7 @@ build_label_data <- function(data, label_col, x_col, y_col, colour_col = NULL, p
 #' @return A \code{geom_polygon} layer that can be added to a \code{radiate()}
 #'   plot with \code{+}.
 #' @examples
-#' hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+#' hd <- derive_headings(cpunctatus[1:5], rule = "distal")
 #' radiate(cpunctatus[1:5]) + add_angle_rose(hd)
 #' @export
 add_angle_rose <- function(hd, bins = 12L, angle_col = "heading",
@@ -3473,7 +3473,7 @@ add_angle_rose <- function(hd, bins = 12L, angle_col = "heading",
 #' @return A \code{geom_polygon} layer, or \code{NULL} if \code{fit} is all
 #'   \code{NA}.
 #' @examples
-#' hd <- derive_headings(cpunctatus[1:10], rule = "distal", frame_select = "all")
+#' hd <- derive_headings(cpunctatus[1:10], rule = "distal")
 #' fit <- vonmises_fit(hd)
 #' radiate(cpunctatus[1:10]) + add_vonmises_density(fit)
 #' @export
@@ -3577,7 +3577,7 @@ add_vonmises_density <- function(fit, scale = 0.4, inner_r = 0,
 #'   `FALSE`.
 #' @return A \code{geom_polygon} layer, or \code{NULL} if estimation fails.
 #' @examples
-#' hd <- derive_headings(cpunctatus[1:10], rule = "distal", frame_select = "all")
+#' hd <- derive_headings(cpunctatus[1:10], rule = "distal")
 #' radiate(cpunctatus[1:10]) + add_circular_kde(hd)
 #' @export
 add_circular_kde <- function(hd, angle_col = "heading", group_col = NULL,
@@ -3695,7 +3695,7 @@ add_circular_kde <- function(hd, angle_col = "heading", group_col = NULL,
 #' @return A \code{geom_polygon} layer, or \code{NULL} if estimation fails.
 #' @seealso \code{\link{add_vonmises_density}}, \code{\link{add_circular_kde}}
 #' @examples
-#' hd <- derive_headings(cpunctatus[1:10], rule = "distal", frame_select = "all")
+#' hd <- derive_headings(cpunctatus[1:10], rule = "distal")
 #' fit <- wrappedcauchy_fit(hd)
 #' radiate(cpunctatus[1:10]) + add_wrappedcauchy_density(fit)
 #' @export
@@ -3805,7 +3805,7 @@ add_wrappedcauchy_density <- function(fit, scale = 0.4, inner_r = 0,
 #' @return A \code{geom_path} layer, or \code{NULL} if no group has \code{n >= 2}.
 #' @seealso \code{\link{add_heading_arrow}}, \code{\link{add_circ}}
 #' @examples
-#' hd <- derive_headings(cpunctatus[1:10], rule = "distal", frame_select = "all")
+#' hd <- derive_headings(cpunctatus[1:10], rule = "distal")
 #' radiate(cpunctatus[1:10]) +
 #'   add_heading_arrow(hd) +
 #'   add_critical_r(hd)
@@ -3913,7 +3913,7 @@ add_critical_r <- function(hd, alpha = 0.05,
 #'   inside the unit circle.
 #' @seealso \code{\link{add_critical_r}}, \code{\link{add_heading_arrow}}
 #' @examples
-#' hd <- derive_headings(cpunctatus[1:10], rule = "distal", frame_select = "all")
+#' hd <- derive_headings(cpunctatus[1:10], rule = "distal")
 #' radiate(cpunctatus[1:10]) +
 #'   add_heading_arrow(hd) +
 #'   add_critical_v_line(hd, mu0 = 0)

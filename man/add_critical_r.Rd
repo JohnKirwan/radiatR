@@ -75,7 +75,7 @@ so one circle is drawn per panel at the radius appropriate to that panel's
 \code{n}.  Pass \code{group_col} to split each cell further by colour.
 }
 \examples{
-hd <- derive_headings(cpunctatus[1:10], rule = "distal", frame_select = "all")
+hd <- derive_headings(cpunctatus[1:10], rule = "distal")
 radiate(cpunctatus[1:10]) +
   add_heading_arrow(hd) +
   add_critical_r(hd)

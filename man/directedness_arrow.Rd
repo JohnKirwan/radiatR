@@ -34,7 +34,7 @@ Computes the circular mean direction and resultant length, returning a
 }
 \examples{
 # Arrow showing mean direction and resultant length
-hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+hd <- derive_headings(cpunctatus[1:5], rule = "distal")
 library(ggplot2)
 ggplot() +
   coord_fixed() +

@@ -79,7 +79,7 @@ column in \code{data} (from a prior call to \code{\link{stack_headings}}),
 it is used as-is; otherwise stacking is computed internally.
 }
 \examples{
-hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+hd <- derive_headings(cpunctatus[1:5], rule = "distal")
 library(ggplot2)
 ggplot() +
   coord_fixed() +

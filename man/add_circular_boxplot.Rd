@@ -93,8 +93,9 @@ poles of the axis (offsets are computed with mod-pi arithmetic so the box is
 a short band even when the axis sits on the 0/pi seam). Composable with `+`.
 }
 \examples{
-hd <- derive_headings(cpunctatus[1:10], rule = "distal", frame_select = "all")
-radiate(cpunctatus[1:10]) + add_circular_boxplot(hd)
+tr <- simulate_tracks(output = "trajset", seed = 1)
+hd <- derive_headings(tr, rule = "distal")
+radiate(tr) + add_circular_boxplot(hd)
 }
 \references{
 Buttarazzi, D., Pandolfo, G. & Porzio, G. C. (2018). A boxplot

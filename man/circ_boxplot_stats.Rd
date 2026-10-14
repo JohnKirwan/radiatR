@@ -39,7 +39,8 @@ observations are flagged as far-out under that reference). Pairs with
 [add_circular_boxplot()] for rendering.
 }
 \examples{
-hd <- derive_headings(cpunctatus[1:10], rule = "distal", frame_select = "all")
+tr <- simulate_tracks(output = "trajset", seed = 1)
+hd <- derive_headings(tr, rule = "distal")
 circ_boxplot_stats(hd)
 }
 \references{

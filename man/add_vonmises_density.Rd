@@ -63,7 +63,7 @@ peaks at \code{scale} so the two layers align when given matching
 \code{scale} values.
 }
 \examples{
-hd <- derive_headings(cpunctatus[1:10], rule = "distal", frame_select = "all")
+hd <- derive_headings(cpunctatus[1:10], rule = "distal")
 fit <- vonmises_fit(hd)
 radiate(cpunctatus[1:10]) + add_vonmises_density(fit)
 }
