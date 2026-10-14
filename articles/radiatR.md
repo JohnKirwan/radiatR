@@ -66,7 +66,7 @@ ts_demo
 #> Transform steps: unit_circle_mapping 
 #> # A tibble: 6 × 10
 #>   trial_id frame     x     y trans_x  trans_y rel_theta video order vid_ord
-#>   <chr>    <int> <dbl> <dbl>   <dbl>    <dbl>     <dbl> <chr> <chr> <chr>  
+#>   <chr>    <dbl> <dbl> <dbl>   <dbl>    <dbl>     <dbl> <chr> <chr> <chr>  
 #> 1 10_1_1       1  456.  372. 0.00511  0           6.21  10_1  1     10_1_1 
 #> 2 10_1_1       2  458.  370. 0.0128   0.00770     0.464 10_1  1     10_1_1 
 #> 3 10_1_1       3  456.  370. 0.00511  0.00770     0.908 10_1  1     10_1_1 

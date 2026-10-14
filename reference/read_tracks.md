@@ -203,17 +203,39 @@ An id is a label, not a measurement. In a delimited file the id column
 (the one named in \`mapping\`, or any column named \`id\`, \`track\`,
 \`trajectory\`, \`animal\` or \`subject\`) is kept as the text in the
 file wherever reading it as numbers would merge ids that are written
-differently: \`1.1\` and \`1.10\`, \`1\` and \`1.0\`, \`01\` and \`1\`.
-Ids that read as distinct numbers stay numbers. Where the delimited
-files of one import do not agree on the type of the id column, the ids
-of each file are the text in that file. Ids that are numbers in every
-file are compared as numbers across files (see \`id_collision\`). A data
-frame and an Excel or Arrow file keep the types they come with. An
-\`anymaze\` file is read as text, so the column its \`id_col\` names
-keeps its text. For \`ethovision\`, \`id_col\` applies to a data frame
-only (a file is one track, id \`"1"\`). Not covered: an id column that
-another dialect is pointed to by an argument of its own (its ids may
-still be merged).
+differently: \`1.1\` and \`1.10\`, \`1\` and \`1.0\`, \`01\` and \`1\`,
+or \`2024-01-01 00:00\` and \`2024-01-01 00:00:00\`. Ids that read as
+distinct numbers (or dates) stay numbers. Where the delimited files of
+one import do not agree on the type of the id column, or two of them
+hold one number (written \`1.1\` in one and \`1.10\` in the other, or
+alike), the ids of each file are the text in that file (for an Excel
+file, the text of its cells); two files that write one id alike collide
+(see \`id_collision\`). Where the types still disagree in tables that
+cannot be read again for their text (a dialect's tables, Parquet or
+Feather files), the load stops with a \`radiatR_id_type_mismatch\`
+error. A data frame and an Excel or Arrow file read alone keep the types
+they come with. Ids that differ only by surrounding whitespace (\`" 1"\`
+and \`"1"\`) stop the load with a \`radiatR_ambiguous_ids\` error, as
+readers disagree on whether they are one id. An \`anymaze\` file is read
+as text, so the column its \`id_col\` names keeps its text. For
+\`ethovision\`, \`id_col\` applies to a data frame only (a file is one
+track, id \`"1"\`). Not covered: an id column that another dialect is
+pointed to by an argument of its own (its ids may still be merged).
+
+## Reading delimited files
+
+Whichever reader is installed (readr, then data.table, then base R), a
+delimited file is read as one table: \`"\` is the only quote character,
+nothing is a comment (\`#\` and \`'\` are text), blank lines are
+skipped, an empty cell is missing, a cell keeps its surrounding
+whitespace and column names lose theirs. The fields of each line are
+counted first: a row with more or fewer fields than the header (a last
+line cut off, an unclosed quote, a table written with row names or with
+a separator at the end of every row) stops the load with a
+\`radiatR_malformed_file\` error naming the lines (\`problem =
+"ragged"\`), as does a reader returning fewer rows than the file holds
+(\`"rows"\`) and a column name used twice (\`"duplicate_columns"\`; a
+dialect handles its format's repeated columns itself).
 
 ## Malformed values
 

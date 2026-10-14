@@ -55,4 +55,11 @@ get_all_object_pos(
 
 A \`Tracks\` combining the normalised observations for all valid trials
 in the manifest. The aggregated trial limits are available via
-\`meta\$trial_limits\`.
+\`meta\$trial_limits\`. Each landmark and track file is tab-separated
+with frame, x and y in the first three fields of every line (further
+fields are not read); a cell that is not a number stops with a
+\`radiatR_malformed_values\` error, and a line with fewer than three
+fields or an odd number of landmark rows with a
+\`radiatR_malformed_file\` error, each naming the file. When no file
+holds a valid trial the call stops with a \`radiatR_no_valid_trials\`
+error.
