@@ -385,6 +385,27 @@ setValidity("Tracks", function(object) {
 #'   trajectories. Must contain columns `step`, `order`, `id`, `implementation`, `params`,
 #'   and `depends_on`.
 #' @return A Tracks S4 object
+#' @examples
+#' df <- data.frame(
+#'   id   = rep(c("a", "b"), each = 3),
+#'   time = rep(1:3, 2),
+#'   x    = c(0, 0.3, 0.6, 0, -0.2, -0.5),
+#'   y    = c(0, 0.2, 0.5, 0, 0.3, 0.7)
+#' )
+#' ts <- tracks(df, x = "x", y = "y")
+#' ts
+#' length(ts)
+#' ts["b"]
+#'
+#' # combine objects with the same column mapping
+#' more <- tracks(data.frame(id = "c", time = 1:2, x = c(0, 0.4), y = c(0, -0.4)),
+#'                x = "x", y = "y")
+#' length(c(ts, more))
+#'
+#' # pixel coordinates: arena centre (320, 240), edge 200 px from it
+#' px <- data.frame(id = "d", time = 1:3,
+#'                  x = c(320, 380, 450), y = c(240, 280, 330))
+#' tracks(px, x = "x", y = "y", origin = c(320, 240), radius = 200)
 #' @rdname Tracks-class
 #' @export
 tracks <- function(df,
@@ -654,6 +675,14 @@ setMethod("show", "Tracks", function(object) {
 #'
 #' @return For `transform_history`, a tibble describing the recorded steps. For
 #'   `log_transform` and `set_transform_history`, the updated `Tracks` object.
+#' @examples
+#' df <- data.frame(id = "a", time = 1:3, x = c(0, 0.3, 0.6), y = c(0, 0.2, 0.5))
+#' ts <- tracks(df, x = "x", y = "y")
+#' ts <- log_transform(ts, "smooth", params = list(list(window = 3)))
+#' transform_history(ts)
+#' # replace the whole log, here with an empty one
+#' ts <- set_transform_history(ts, transform_history(ts)[0, ])
+#' nrow(transform_history(ts))
 #' @name transform_history
 NULL
 
@@ -761,6 +790,8 @@ setMethod("trajectory", "Tracks", function(x, id) {
 #' @param row.names,optional Accepted for S3 generic consistency; ignored.
 #' @param ... Ignored.
 #' @return A data frame: the Tracks's `data` slot.
+#' @examples
+#' head(as.data.frame(cpunctatus))
 #' @exportS3Method base::as.data.frame
 as.data.frame.Tracks <- function(x, row.names = NULL, optional = FALSE, ...) {
   d    <- x@data

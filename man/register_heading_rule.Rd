@@ -22,6 +22,15 @@ Adds a named function to the heading rule registry so it can be called by
 accept \code{(df, cols, ...)} and return a data frame with columns
 \code{id}, \code{time}, and \code{heading} (radians).
 }
+\examples{
+last_bearing <- function(df, cols, ...) {
+  n <- nrow(df)
+  data.frame(id = df[[cols$id]][n], time = df[[cols$time]][n],
+             heading = atan2(df[[cols$y]][n], df[[cols$x]][n]) \%\% (2 * pi))
+}
+register_heading_rule("last_bearing", last_bearing, overwrite = TRUE)
+head(derive_headings(cpunctatus, rule = "last_bearing"))
+}
 \seealso{
 \code{\link{list_heading_rules}}, \code{\link{derive_headings}}
 }

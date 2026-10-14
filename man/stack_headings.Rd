@@ -67,6 +67,11 @@ Observations at the same angle (or within \code{tol} radians of each other)
 are assigned successive radial positions, preventing overplotting of
 coincident or binned headings.
 }
+\examples{
+d <- data.frame(heading = bin_angles(c(0.10, 0.12, 0.13, 1.50, 1.52),
+                                     width = pi / 18))
+stack_headings(d, col = "heading")
+}
 \seealso{
 \code{\link{headings_frame}}, \code{add_stacked_headings}
 }
