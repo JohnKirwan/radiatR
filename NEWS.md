@@ -25,6 +25,8 @@
   misspelling was taken by partial matching (`min_length = 50` acted as
   `min_len`); both now stop. `return_coords` is accepted by every built-in
   rule. Registered and function rules still receive `...` unchecked.
+  `angle_convention`, which no rule ever read (a heading is in the unit-circle
+  convention), is among the options that now stop: drop it from such calls.
 
 * The `ethovision` dialect now reads the text export EthoVision XT writes: a
   first line giving the number of header lines, a block of trial details, a

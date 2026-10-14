@@ -315,7 +315,6 @@ sim_analysis <- simulate_tracks(conditions = conds_analysis, seed = 21,
 hd <- derive_headings(sim_analysis$trajset, rule = "crossing",
                        circ0 = 0.2, circ1 = 0.4,
                        coords = "absolute",
-                       angle_convention = "unit_circle",
                        return_coords = TRUE)
 names(hd)[names(hd) == "id"] <- "trial_id"
 
