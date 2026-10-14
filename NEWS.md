@@ -2,6 +2,13 @@
 
 ## Breaking changes
 
+* `draw_tracks()`, `line_circle_intercept_df()`,
+  `line_circle_intercept_traj()` and `new_headings_frame()` are no longer
+  exported. They are internal helpers: draw tracks with `radiate()` or
+  `gg_traj()`, intersect a segment with the unit circle with
+  `line_circle_intercept()`, and build a headings frame with
+  `headings_frame()`.
+
 * The `deeplabcut` dialect now reads the predictions CSV DeepLabCut writes:
   header rows `scorer` / `bodyparts` / `coords`, and `individuals` for
   multi-animal projects, which load as one track per individual
