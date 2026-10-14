@@ -352,6 +352,17 @@
 
 ## Bug fixes
 
+* `read_tracks()` with a `tz` other than `"UTC"` put a timestamp that names
+  its zone (`2024-01-01T10:00:00Z`, `...+02:00`) at the wrong instant when
+  the file was read by `data.table::fread()` (readr not installed): the
+  instant was written back as UTC wall-clock text and read again in `tz`,
+  moving it by the zone's offset (10:00Z read in New York as 15:00Z), and its
+  fraction of a second was dropped. Such columns are now read again as the
+  text in the file. Text time also reads a UTC offset (`+02:00`, `-0130`,
+  `+02`, at most 14 hours), so a file with offsets gives the same instants
+  under every reader; `read.table()` refused them before. A column that
+  mixes zoned and unzoned date-times is malformed, as one mixing `Z` with
+  unmarked times was.
 * `gg_traj()` with `facets =` stopped when the plot was drawn: it asked
   `facet_wrap()` for free scales, which `coord_equal()` does not allow. The
   panels now share fixed scales, so trajectories on the unit circle are drawn

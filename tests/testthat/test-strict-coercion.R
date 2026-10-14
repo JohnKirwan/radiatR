@@ -384,6 +384,54 @@ test_that("tz is honoured by the fallback readers too", {
   }
 })
 
+test_that("a timestamp that names its zone is that instant under every reader and tz", {
+  dir <- withr::local_tempdir()
+  z <- file.path(dir, "z.csv")
+  writeBin(charToRaw(paste0("id,time,x,y\na,2024-01-01T10:00:00Z,.1,.1\n",
+                            "a,2024-01-01T11:00:00.5Z,.2,.2\n")), z)
+  off <- file.path(dir, "off.csv")
+  writeBin(charToRaw(paste0("id,time,x,y\na,2024-01-01T10:00:00+02:00,.1,.1\n",
+                            "a,2024-01-01T11:00:00-0130,.2,.2\n",
+                            "a,2024-01-01T12:00:00+02,.3,.3\n")), off)
+  want_z   <- as.numeric(as.POSIXct(c("2024-01-01 10:00:00", "2024-01-01 11:00:00.5"),
+                                    tz = "UTC"))
+  # rows come back in time order: 08:00, 10:00, 12:30 UTC
+  want_off <- as.numeric(as.POSIXct(c("2024-01-01 08:00:00", "2024-01-01 10:00:00",
+                                      "2024-01-01 12:30:00"), tz = "UTC"))
+  for (hide in list(character(0), "readr", c("readr", "data.table"))) {
+    testthat::local_mocked_bindings(
+      .is_installed = function(pkg) !pkg %in% hide && requireNamespace(pkg, quietly = TRUE))
+    for (tz in c("UTC", "America/New_York")) {
+      info <- paste("tz", tz, "without", paste(hide, collapse = ", "))
+      got <- read_tracks(z, tz = tz)@data$time
+      expect_equal(as.numeric(got), want_z, tolerance = 1e-6, info = info)
+      expect_identical(attr(got, "tzone"), tz, info = info)
+      expect_equal(as.numeric(read_tracks(off, tz = tz)@data$time), want_off,
+                   tolerance = 1e-6, info = info)
+    }
+  }
+})
+
+test_that("text time reads a zone designator and refuses a column that mixes zoned and unzoned", {
+  t1 <- radiatR:::.coerce_time(c("2024-01-01T10:00:00+05:30", "2024-01-01T10:00:00Z"),
+                               tz = "Europe/Paris")
+  expect_equal(as.numeric(t1),
+               as.numeric(as.POSIXct(c("2024-01-01 04:30:00", "2024-01-01 10:00:00"),
+                                     tz = "UTC")))
+  # a bare date beside zoned times is midnight in tz, as beside Z
+  t2 <- radiatR:::.coerce_time(c("2024-01-01", "2024-01-01T10:00:00+01:00"),
+                               tz = "America/New_York")
+  expect_equal(as.numeric(t2[1]),
+               as.numeric(as.POSIXct("2024-01-01", tz = "America/New_York")))
+  e <- malformed(radiatR:::.coerce_time(
+    c("2024-01-01 10:00:00", "2024-01-01 11:00:00", "2024-01-01T12:00:00+01:00"),
+    tz = "UTC", column = "time"))
+  expect_identical(e$rows, 3L)
+  # an offset outside +-14:00 is no offset
+  malformed(radiatR:::.coerce_time(c("2024-01-01T10:00:00+15:00"), tz = "UTC",
+                                   column = "time"))
+})
+
 # ---- a dot where the decimal mark is a comma ---------------------------------
 
 test_that("a dot is not a second decimal mark in comma-decimal text", {
