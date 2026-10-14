@@ -2,6 +2,15 @@
 
 ## Breaking changes
 
+* `derive_headings(rule = "straight")` measures turns between moving steps
+  only. A pause (a step of zero length) has no direction; it was read as a
+  turn of 0, so a pause hid any turn around it, padded runs, and a run that
+  began on a pause had heading 0 (East). Pauses now neither break a run nor
+  count toward `min_len`. On `cpunctatus`, 47 of 235 trials have no straight
+  run (20 before: 30 lost their run, 3 gained one), and 104 of the 185 with
+  a heading either way change by more than a degree (median 90 degrees
+  among those that change).
+
 * The `ethovision` dialect now reads the text export EthoVision XT writes: a
   first line giving the number of header lines, a block of trial details, a
   names row and a units row, `;`-separated (or `,` or tab), in latin-1, UTF-8
