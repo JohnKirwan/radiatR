@@ -349,14 +349,15 @@ test_that(".read_any sniffs a tab-delimited file that carries a .csv extension",
 })
 
 test_that(".read_any honours an explicit delim/decimal override over the sniffer", {
-  # genuinely semicolon, but force comma -> should NOT split into x/y/frame
+  # genuinely semicolon, but force comma: the header is one field and the rows
+  # three, so the forced delimiter is taken and the file is not one table
   p <- tempfile(fileext = ".csv")
   writeLines(c("x;y;frame", "0,1;0,2;1", "0,3;0,4;2"), p)
-  # forcing the wrong delimiter parses the row as one column; the resulting
-  # vroom parse notice is expected here, so silence it.
-  forced <- suppressWarnings(
-    as.data.frame(radiatR:::.read_any(p, delim = ",", decimal = ".")))
-  expect_equal(ncol(forced), 1L)            # comma reading sees a single column
+  expect_error(suppressWarnings(radiatR:::.read_any(p, delim = ",", decimal = ".")),
+               class = "radiatR_malformed_file")
+  # a forced delimiter that fits is used over the sniffed one
+  writeLines(c("x;y;frame", "0.1;0.2;1", "0.3;0.4;2"), p)
+  expect_named(radiatR:::.read_any(p, delim = ";", decimal = "."), c("x", "y", "frame"))
 })
 
 test_that(".read_any still reads a plain comma CSV unchanged", {

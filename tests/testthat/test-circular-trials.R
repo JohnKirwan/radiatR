@@ -114,6 +114,44 @@ test_that("get_all_object_pos reports out-of-bounds points once, aggregated over
   expect_match(oob, "across 6 trials")   # aggregated across 3 files x 2 trials
 })
 
+test_that("get_all_object_pos reads its files strictly and names the file", {
+  tmp <- withr::local_tempdir()
+  lm <- c("1\t0\t0", "2\t1\t0", "6\t0\t0", "7\t-1\t0")
+  trk <- sprintf("%d\t%s\t%s", 1:10, format(seq(0, -1, length.out = 10)),
+                 format(seq(0, 0.2, length.out = 10)))
+  run <- function(landmarks = lm, track = trk) {
+    writeLines(landmarks, file.path(tmp, "v_point01.txt"))
+    writeLines(track, file.path(tmp, "v_point02.txt"))
+    ft <- tibble::tibble(basename = "v", landmark = "v_point01.txt", track = "v_point02.txt")
+    suppressWarnings(get_all_object_pos(file_tbl = ft, track_dir = tmp))
+  }
+  expect_s4_class(run(), "Tracks")
+  e <- expect_error(run(track = gsub(".", ",", trk, fixed = TRUE)),
+                    class = "radiatR_malformed_values")
+  expect_identical(e$source, "v_point02.txt")
+  bad <- trk; bad[5] <- "5\tabc\t0.1"
+  e <- expect_error(run(track = bad), class = "radiatR_malformed_values")
+  expect_identical(c(e$columns, e$rows), c("x", "5"))
+  bad <- trk; bad[5] <- "5\t0.1"
+  e <- expect_error(run(track = bad), class = "radiatR_malformed_file")
+  expect_identical(c(e$problem, e$lines), c("columns", "5"))
+  expect_match(conditionMessage(e), "^get_all_object_pos: file 'v_point02.txt'")
+  # fields past the third need not be on every line
+  extra <- trk; extra[c(2, 7)] <- paste0(extra[c(2, 7)], "\t\tnote")
+  expect_s4_class(run(track = extra), "Tracks")
+  e <- expect_error(run(landmarks = c("1\t0", "2\t1")), class = "radiatR_malformed_file")
+  expect_identical(e$problem, "columns")
+  e <- expect_error(run(landmarks = lm[1:3]), class = "radiatR_malformed_file")
+  expect_identical(c(e$problem, e$source), c("odd_landmarks", "v_point01.txt"))
+  # a blank line is no row, and its file keeps its line numbers
+  bad <- c(trk[1:2], "", trk[3:4], "4\t0.1")
+  e <- expect_error(run(track = bad), class = "radiatR_malformed_file")
+  expect_identical(c(e$problem, e$lines), c("columns", "6"))
+  # every trial starts far from the centre
+  far <- sprintf("%d\t%s\t0", 1:10, format(seq(-0.8, -1, length.out = 10)))
+  expect_error(run(track = far), class = "radiatR_no_valid_trials")
+})
+
 test_that("the loader pipeline exposes `track`, not `animal_track`", {
   for (fn in list(get_trial_limits, get_tracked_object_pos, get_all_object_pos)) {
     args <- names(formals(fn))

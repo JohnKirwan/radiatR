@@ -36,6 +36,21 @@ test_that("headings upload honours the semicolon delimiter (lazy read)", {
   })
 })
 
+test_that("a headings file with a column name used twice is refused, naming it", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  tmp <- tempfile(fileext = ".csv")
+  writeLines(c("heading,cond,heading", "10,a,200", "20,b,210"), tmp)
+  # a preview leaves repeated columns to the dialect
+  expect_named(upload_read(tmp, "angles.csv"), c("heading", "cond", "heading"))
+  shiny::testServer(app_dir(), {
+    session$setInputs(input_type = "headings")
+    session$setInputs(file = list(datapath = tmp, name = "angles.csv"))
+    expect_null(rv$raw_hd)
+    expect_match(rv$error, "column name(s) 'heading' appear more than once", fixed = TRUE)
+  })
+})
+
 test_that("a failed headings upload clears stale example state (PR #20 guard)", {
   skip_if_not_installed("shiny")
   skip_if(!dir.exists(app_dir()), "app dir not found")

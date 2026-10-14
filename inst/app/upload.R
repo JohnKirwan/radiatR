@@ -23,12 +23,16 @@ accepted_exts <- function(mode = "trajectories") {
 # column-mapping preview. Dispatch keys on the ORIGINAL filename's extension
 # (`name`) while bytes are read from Shiny's temp `path` (datapath). Delimiter
 # and Excel sheet come from the wizard controls (NULL/"auto" -> sniff/first).
-upload_read <- function(path, name, delim_sel = NULL, sheet_sel = NULL) {
+# `unique_names`: a column name used twice stops the read, as it does for
+# read_tracks(); previews leave it to the dialect (TRex writes `frame` twice).
+upload_read <- function(path, name, delim_sel = NULL, sheet_sel = NULL,
+                        unique_names = FALSE) {
   ext <- tolower(tools::file_ext(name %||% path))
   radiatR:::.read_any(
     path,
     ext   = if (nzchar(ext)) ext else NULL,
     delim = delim_read_opts(delim_sel)$delim,
-    sheet = if (!is.null(sheet_sel) && nzchar(sheet_sel)) sheet_sel else NULL
+    sheet = if (!is.null(sheet_sel) && nzchar(sheet_sel)) sheet_sel else NULL,
+    unique_names = unique_names
   )
 }
