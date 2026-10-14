@@ -428,8 +428,9 @@ test_that("text time reads a zone designator and refuses a column that mixes zon
     tz = "UTC", column = "time"))
   expect_identical(e$rows, 3L)
   # an offset outside +-14:00 is no offset
-  malformed(radiatR:::.coerce_time(c("2024-01-01T10:00:00+15:00"), tz = "UTC",
-                                   column = "time"))
+  expect_error(radiatR:::.coerce_time(c("2024-01-01T10:00:00+15:00"), tz = "UTC",
+                                      column = "time"),
+               class = "radiatR_malformed_values")
 })
 
 # ---- a dot where the decimal mark is a comma ---------------------------------

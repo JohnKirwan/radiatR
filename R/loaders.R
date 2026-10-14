@@ -474,10 +474,11 @@ guess_columns <- function(data, mapping = list()) {
   has_time <- grepl("%H", .time_formats, fixed = TRUE) & n_hit > 0L
   best <- which.max(n_hit + ifelse(has_time, n_bare, 0L))
   fmt <- .time_formats[best]
-  out <- .wall_clock(strptime(core, fmt, tz = tz), tz)
   # a zoned value is the instant its own zone says, wherever tz is
   z <- zn$zoned
-  out[z] <- .wall_clock(strptime(core[z], fmt, tz = "UTC"), "UTC") - zn$offset[z]
+  out <- .POSIXct(rep(NA_real_, length(core)), tz = tz)
+  out[!z] <- .wall_clock(strptime(core[!z], fmt, tz = tz), tz)
+  out[z] <-.wall_clock(strptime(core[z], fmt, tz = "UTC"), "UTC") - zn$offset[z]
   date_fmt <- sub("[ T]%H.*$", "", fmt)
   bare <- fmt != date_fmt & grepl(.time_format_regex(date_fmt), s)
   # a bare date carries no zone, whatever the layout beside it says
