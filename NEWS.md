@@ -36,6 +36,13 @@
   before. Both declare their time as seconds. The mean of several EthoVision
   points divided the sum of y by the count of x present; it now masks a point
   missing either coordinate.
+* `draw_tracks()`, `line_circle_intercept_df()`,
+  `line_circle_intercept_traj()` and `new_headings_frame()` are no longer
+  exported. They are internal helpers: draw tracks with `radiate()` or
+  `gg_traj()`, intersect a segment with the unit circle with
+  `line_circle_intercept()`, and build a headings frame with
+  `headings_frame()`.
+
 * The `deeplabcut` dialect now reads the predictions CSV DeepLabCut writes:
   header rows `scorer` / `bodyparts` / `coords`, and `individuals` for
   multi-animal projects, which load as one track per individual
