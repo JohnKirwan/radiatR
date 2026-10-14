@@ -269,3 +269,24 @@ test_that("in a browser, the drop button loads an idtracker.ai file", {
                fixed = TRUE)
   expect_false(is.null(app$get_value(input = "method")))   # reached Configure
 })
+
+test_that("a file that is not one table, or ambiguous ids, are explained as the reader says", {
+  skip_if_not_installed("shiny")
+  app_file <- file.path(app_dir(), "app.R")
+  skip_if(!file.exists(app_file), "app.R not found")
+  e <- new.env()
+  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
+  err_of <- function(expr) tryCatch(expr, error = function(cnd) cnd)
+  path <- withr::local_tempfile(fileext = ".csv")
+
+  writeLines(c("id,frame,x,y,id", "1,1,1,2,a", "2,2,2,3,b"), path)
+  err <- err_of(read_tracks(path))
+  expect_s3_class(err, "radiatR_malformed_file")
+  expect_match(e$plain_error(err), sprintf(
+    "^file '%s' is not one table: column name\\(s\\) 'id' appear more than once", basename(path)))
+  expect_null(e$drop_offer(err))
+
+  err <- err_of(read_tracks(data.frame(id = c(" 1", "1"), frame = 1:2, x = 1:2, y = 1:2)))
+  expect_s3_class(err, "radiatR_ambiguous_ids")
+  expect_match(e$plain_error(err), "^ids in column 'id' differ only by surrounding whitespace")
+})

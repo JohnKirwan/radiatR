@@ -519,14 +519,24 @@ guess_columns <- function(data, mapping = list()) {
 # `id` names the mapped id column, a label column like those an id is guessed
 # from (see .keep_labels()).
 .read_any <- function(path, ext = NULL, delim = NULL, decimal = NULL, sheet = NULL,
-                      tz = "UTC", id = NULL, id_text = FALSE, ...) {
+                      tz = "UTC", id = NULL, id_text = FALSE, unique_names = FALSE, ...) {
   ext <- if (!is.null(ext)) tolower(sub("^\\.", "", ext)) else tolower(sub(".*\\.", "", path))
 
   if (ext %in% c("xlsx", "xls")) {
     if (!.is_installed("readxl"))
       stop("Reading Excel files requires the 'readxl' package; ",
            "install it with install.packages(\"readxl\").")
-    df <- readxl::read_excel(path, sheet = sheet %||% 1L, ...)
+    # With `id_text` the id column is read as the text of its cells (a number
+    # cell 100000 as "100000"), to be compared with the ids of a text file.
+    types <- NULL
+    if (id_text && !is.null(id)) {
+      nm <- names(readxl::read_excel(path, sheet = sheet %||% 1L, n_max = 0L,
+                                     .name_repair = "minimal"))
+      types <- ifelse(trimws(nm) %in% id, "text", "guess")
+    }
+    df <- .check_names(readxl::read_excel(path, sheet = sheet %||% 1L, col_types = types,
+                                          .name_repair = "minimal", ...),
+                       basename(path), unique_names)
     # A date-time cell has no zone: readxl hands back its wall-clock time as UTC.
     # A time that does not exist in `tz` is NA and is noted in `tz_gaps` (rows
     # and values by column), as below for readr: read_tracks() stops on one in
@@ -562,11 +572,19 @@ guess_columns <- function(data, mapping = list()) {
   # Column types are guessed from every row, and no grouping mark is assumed:
   # readr's defaults turn a malformed cell past row 1000 into NA and read
   # "1,5" as 15, which hides both from the strict coercion downstream.
+  # Every reader reads the same cells: '"' is the only quote, nothing is a
+  # comment, blank lines are skipped, an empty cell or NA is missing, a cell
+  # keeps its surrounding whitespace and column names are kept as written. The fields are counted first, and
+  # every row must be read: each reader drops, wraps, fills or shifts rows of
+  # a ragged file in its own way, some with only a warning (see .check_fields()).
+  src <- basename(path)
+  records <- .check_fields(path, delim, src)
   df <- if (.is_installed("readr"))
     readr::read_delim(
       path, delim = delim,
       locale = readr::locale(decimal_mark = decimal, grouping_mark = "", tz = tz),
-      guess_max = Inf, show_col_types = FALSE, progress = FALSE, ...)
+      guess_max = Inf, name_repair = "minimal", show_col_types = FALSE,
+      progress = FALSE, ...)
   else if (.is_installed("data.table")) {
     # fread() accepts only tz = "UTC" or "" (local zone) and types unmarked
     # timestamps in that zone, so a non-UTC tz never reaches it. Hand its
@@ -574,6 +592,7 @@ guess_columns <- function(data, mapping = list()) {
     # does for text a reader leaves alone.
     df <- data.table::fread(
       path, sep = delim, dec = decimal, showProgress = FALSE,
+      blank.lines.skip = TRUE, strip.white = FALSE, na.strings = c("", "NA"),
       tz = if (identical(tz, "UTC")) "UTC" else "", ...)
     if (!identical(tz, "UTC"))
       for (cc in names(df)[vapply(df, inherits, logical(1), "POSIXct")])
@@ -581,8 +600,14 @@ guess_columns <- function(data, mapping = list()) {
     df
   }
   else utils::read.table(
-    path, header = TRUE, sep = delim, dec = decimal,
-    stringsAsFactors = FALSE, ...)
+    path, header = TRUE, sep = delim, dec = decimal, quote = "\"", comment.char = "",
+    na.strings = c("", "NA"), check.names = FALSE, stringsAsFactors = FALSE, ...)
+  # fread() skips first lines it takes for a preamble, readr a cut-off last line
+  if (nrow(df) != records)
+    radiatR_abort_malformed_file(src, "rows", detail = sprintf(paste0(
+      "%d row(s) were read of the %d in the file (a first line taken for a ",
+      "preamble, or a last line cut off?)."), nrow(df), records))
+  df <- .check_names(df, src, unique_names)
   # Kept for the strict coercion of any column the reader left as text.
   attr(df, "decimal") <- decimal
   # readr reads a time that does not exist in `tz` as NA, with a warning that
@@ -602,14 +627,81 @@ guess_columns <- function(data, mapping = list()) {
     if (.is_installed("readr"))
       readr::read_delim(
         path, delim = delim, show_col_types = FALSE, progress = FALSE,
+        name_repair = "minimal",
         col_types = paste(ifelse(seq_along(df) %in% pos, "c", "_"), collapse = ""), ...)
     else if (.is_installed("data.table"))
       data.table::fread(path, sep = delim, select = pos, colClasses = "character",
+                        blank.lines.skip = TRUE, strip.white = FALSE,
                         showProgress = FALSE, ...)
-    # every column, so that a row-names field stays where the first read put it
-    else utils::read.table(path, header = TRUE, sep = delim, stringsAsFactors = FALSE,
-                           colClasses = "character", ...)[pos]
+    else utils::read.table(path, header = TRUE, sep = delim, quote = "\"",
+                           comment.char = "", check.names = FALSE,
+                           stringsAsFactors = FALSE, colClasses = "character", ...)[pos]
   })
+}
+
+# Count the fields of each record of a delimited file, as .read_any() reads
+# it ('"' quotes, no comment character), and stop on any record whose count
+# is not the header's. Returns the number of records after the header, which
+# the reader must return as rows. A record quoted over several lines is
+# counted on its last line; it is reported by the line it starts on.
+.check_fields <- function(path, delim, source) {
+  n <- utils::count.fields(path, sep = delim, quote = "\"", comment.char = "",
+                           blank.lines.skip = FALSE)
+  run <- 0L
+  start <- integer(length(n))
+  for (i in seq_along(n)) {
+    start[i] <- i - run
+    run <- if (is.na(n[i])) run + 1L else 0L
+  }
+  if (run > 0L)
+    radiatR_abort_malformed_file(source, "ragged", lines = start[length(n)], detail = sprintf(
+      "a quote opened on line %d is not closed.", start[length(n)]))
+  rec <- which(!is.na(n) & n > 0L)
+  if (!length(rec)) return(0L)
+  h <- rec[1L]
+  rows <- rec[-1L]
+  bad <- rows[n[rows] != n[h]]
+  if (length(bad))
+    .abort_ragged(source, start[bad], n[h], every = if (length(bad) == length(rows) &&
+                                                          length(unique(n[bad])) == 1L) n[bad[1L]])
+  length(rows)
+}
+
+# A row of `source` with more or fewer fields than the `n` of its `first`
+# line: at file `lines` (first line = 1). `every`: the number of fields every
+# data row has, when they all differ from the header alike; one more than the
+# header is the layout of a table written with row names, or of rows that end
+# in a separator.
+.abort_ragged <- function(source, lines, n, every = NULL, first = "the header",
+                          caller = "read_tracks") {
+  radiatR_abort_malformed_file(
+    source, "ragged", lines = lines, caller = caller, detail = if (!is.null(every)) paste0(
+      sprintf("every row has %d fields where its header has %d names", every, n),
+      if (every == n + 1L) paste0(
+        " (a table written with row names, or a separator at the end of every row?). ",
+        "Give the first column a name, or remove the last separator"), ".")
+    else sprintf("line(s) %s do not have the %d fields of %s.",
+                 paste(utils::head(lines, 20L), collapse = ", "), n, first))
+}
+
+# Column names are taken as written less surrounding whitespace (readr keeps
+# " id" where the other readers trim it), and a name used twice is kept, not
+# renamed (readers rename the second differently, or not at all). With
+# `unique_names` a name used twice stops the read: which column a role is read
+# from would otherwise depend on the reader. A dialect, which knows its
+# format's repeated columns, sorts them out itself. Unnamed columns (a
+# trailing separator) are not checked.
+.check_names <- function(df, source, unique_names = FALSE) {
+  names(df) <- trimws(names(df))
+  nm <- names(df)[nzchar(names(df))]
+  dup <- unique(nm[duplicated(nm)])
+  if (unique_names && length(dup))
+    radiatR_abort_malformed_file(
+      source, "duplicate_columns", columns = dup, detail = sprintf(paste0(
+        "column name(s) %s appear more than once. A tracker's export is read with its ",
+        "dialect (see list_loader_dialects())."),
+        paste0("'", dup, "'", collapse = ", ")))
+  df
 }
 
 # Names an id column is guessed from, in order of preference.
@@ -626,7 +718,10 @@ guess_columns <- function(data, mapping = list()) {
 # from other cells, and stops the load rather than be attached to the rows.
 .keep_labels <- function(df, id, read_text, id_text = FALSE) {
   is_id <- names(df) %in% id
-  typed <- vapply(df, function(v) is.numeric(v) || is.logical(v), logical(1))
+  # dates and times too: "2024-01-01 00:00" and "2024-01-01 00:00:00" are one
+  # instant but two labels
+  typed <- vapply(df, function(v) is.numeric(v) || is.logical(v) ||
+                    inherits(v, c("Date", "POSIXt", "difftime")), logical(1))
   pos <- unname(which(
     ((is_id | tolower(names(df)) %in% .id_candidates) & typed) |
       (id_text & is_id & !vapply(df, is.character, logical(1)))))
@@ -640,15 +735,20 @@ guess_columns <- function(data, mapping = list()) {
   if (ncol(text) != length(pos) || nrow(text) != nrow(df)) misread(names(df)[pos[1L]])
   for (i in seq_along(pos)) {
     was <- df[[pos[i]]]
-    label <- trimws(as.character(text[[i]]))
+    label <- as.character(text[[i]])
     seen <- !is.na(was)
     if (typed[pos[i]]) {
-      now <- if (is.logical(was)) as.logical(label[seen])
-             else .parse_number(label[seen], attr(df, "decimal") %||% ".", dot_ok = TRUE)
       # near enough is the same cells; an integer64 loses digits as a double
       num <- suppressWarnings(as.numeric(was[seen]))
-      if (!isTRUE(all(now == num | abs(now - num) <= 1e-8 * abs(num))))
-        misread(names(df)[pos[i]])
+      same <- if (is.numeric(was) || is.logical(was)) {
+        now <- if (is.logical(was)) as.logical(trimws(label[seen]))
+               else .parse_number(trimws(label[seen]), attr(df, "decimal") %||% ".", dot_ok = TRUE)
+        all(now == num | abs(now - num) <= 1e-8 * abs(num))
+      } else {
+        # a date or time: one text is one value wherever it is written
+        all(tapply(num, label[seen], function(v) length(unique(v)) == 1L))
+      }
+      if (!isTRUE(same)) misread(names(df)[pos[i]])
     }
     label[!seen] <- NA_character_
     if ((id_text && is_id[pos[i]]) || length(unique(label)) > length(unique(was)))
@@ -776,7 +876,8 @@ guess_columns <- function(data, mapping = list()) {
   read <- function(p, id, id_text = FALSE)
     .read_any(p, ext = read_opts$ext, delim = read_opts$delim,
               decimal = read_opts$decimal, sheet = read_opts$sheet,
-              tz = time_args$tz %||% "UTC", id = id, id_text = id_text)
+              tz = time_args$tz %||% "UTC", id = id, id_text = id_text,
+              unique_names = TRUE)
   dfl <- lapply(paths, function(p) {
     if (is.null(reader)) return(read(p, mapping$id))
     out <- tryCatch(reader(p), error = function(e) {
@@ -802,19 +903,33 @@ guess_columns <- function(data, mapping = list()) {
   id_col <- if (synth) (mapping$id %||% "..id") else real_id
 
   # Ids are labels: where the files this function read do not agree on the
-  # type of the id column (numbers in one, text in another), a file that was
-  # not read as text is read again for the ids as they are written in it.
-  id_type <- vapply(dfl, function(d) {
+  # type of the id column (numbers in one, text in another), or two files hold
+  # one typed value (written 1.1 in one and 1.10 in the other, or alike), a
+  # file that was not read as text is read again for the ids as they are
+  # written in it. A table that cannot be read again (Parquet, Feather, a
+  # dialect's) where the types still disagree stops the load: its ids written
+  # as R prints them (1e+05) would not match the same ids written in a file.
+  id_type <- function(dfl) vapply(dfl, function(d) {
     v <- d[[id_col]]
     if (!id_col %in% names(d)) NA_character_
     else if (is.character(v) || is.factor(v)) "text"
-    else if (is.numeric(v) || inherits(v, "integer64")) "number"
+    # fread() reads a large whole number as integer64, which does not bind
+    # with the doubles of another reader: read both again as text
+    else if (inherits(v, "integer64")) "integer64"
+    else if (is.numeric(v)) "number"
     else class(v)[1L]
   }, character(1))
-  if (is.null(reader) && length(unique(stats::na.omit(id_type))) > 1L) {
-    again <- which(!is.na(id_type) & id_type != "text")
-    dfl[again] <- lapply(paths[again], read, id = id_col, id_text = TRUE)
+  types <- id_type(dfl)
+  if (is.null(reader)) {
+    again <- which(!is.na(types) & types != "text")
+    shared <- anyDuplicated(unlist(lapply(dfl[again], function(d)
+      unique(as.character(d[[id_col]][!is.na(d[[id_col]])])))))
+    if (length(unique(stats::na.omit(types))) > 1L || shared)
+      dfl[again] <- lapply(paths[again], read, id = id_col, id_text = TRUE)
+    types <- id_type(dfl)
   }
+  if (length(unique(stats::na.omit(types))) > 1L)
+    radiatR_abort_id_type_mismatch(id_col, basename(paths), types, dialect)
   tz_gaps <- Map(function(d, p) list(source = basename(p), cols = attr(d, "tz_gaps")),
                  dfl, paths)
 
@@ -1045,16 +1160,38 @@ read_tracks_format <- function(x, format, ...)
 #' (the one named in `mapping`, or any column named `id`, `track`,
 #' `trajectory`, `animal` or `subject`) is kept as the text in the file
 #' wherever reading it as numbers would merge ids that are written
-#' differently: `1.1` and `1.10`, `1` and `1.0`, `01` and `1`. Ids that read
-#' as distinct numbers stay numbers. Where the delimited files of one import
-#' do not agree on the type of the id column, the ids of each file are the
-#' text in that file. Ids that are numbers in every file are compared as
-#' numbers across files (see `id_collision`). A data frame and an Excel or
-#' Arrow file keep the types they come with. An `anymaze` file is read as
-#' text, so the column its `id_col` names keeps its text. For `ethovision`,
-#' `id_col` applies to a data frame only (a file is one track, id `"1"`).
-#' Not covered: an id column that another dialect is
-#' pointed to by an argument of its own (its ids may still be merged).
+#' differently: `1.1` and `1.10`, `1` and `1.0`, `01` and `1`, or
+#' `2024-01-01 00:00` and `2024-01-01 00:00:00`. Ids that read as distinct
+#' numbers (or dates) stay numbers. Where the delimited files of one import do
+#' not agree on the type of the id column, or two of them hold one number
+#' (written `1.1` in one and `1.10` in the other, or alike), the ids of each
+#' file are the text in that file (for an Excel file, the text of its cells);
+#' two files that write one id alike collide (see `id_collision`). Where the
+#' types still disagree in tables that cannot be read again for their text
+#' (a dialect's tables, Parquet or Feather files), the load stops with a
+#' `radiatR_id_type_mismatch` error. A data frame and an Excel or Arrow file
+#' read alone keep the types they come with. Ids that differ only
+#' by surrounding whitespace (`" 1"` and `"1"`) stop the load with a
+#' `radiatR_ambiguous_ids` error, as readers disagree on whether they are one
+#' id. An `anymaze` file is read as text, so the column its `id_col` names
+#' keeps its text. For `ethovision`, `id_col` applies to a data frame only (a
+#' file is one track, id `"1"`). Not covered: an id column that another
+#' dialect is pointed to by an argument of its own (its ids may still be
+#' merged).
+#'
+#' @section Reading delimited files:
+#' Whichever reader is installed (readr, then data.table, then base R), a
+#' delimited file is read as one table: `"` is the only quote character,
+#' nothing is a comment (`#` and `'` are text), blank lines are skipped, an
+#' empty cell is missing, a cell keeps its surrounding whitespace and column
+#' names lose theirs. The fields of each line are counted first: a row with
+#' more or fewer fields than the header (a last line cut off, an unclosed
+#' quote, a table written with row names or with a separator at the end of
+#' every row) stops the load with a `radiatR_malformed_file` error naming the
+#' lines (`problem = "ragged"`), as does a reader returning fewer rows than
+#' the file holds (`"rows"`) and a column name used twice
+#' (`"duplicate_columns"`; a dialect handles its format's repeated columns
+#' itself).
 #'
 #' @section Malformed values:
 #' A cell in an x, y, angle, weight or time column that is present but does not
@@ -1170,7 +1307,7 @@ read_tracks <- function(x,
     df <- if (!is.null(prep)) .assert_dialect_table(prep(x), dialect, basename(x))
           else .read_any(x, ext = read_opts$ext, delim = read_opts$delim,
                          decimal = read_opts$decimal, sheet = read_opts$sheet, tz = tz,
-                         id = mapping$id)
+                         id = mapping$id, unique_names = TRUE)
     dec <- attr(df, "decimal") %||% "."
     src <- basename(x)
     tz_gaps <- list(list(source = src, cols = attr(df, "tz_gaps")))
@@ -1250,6 +1387,15 @@ read_tracks <- function(x,
     message("Id column '", id, "' is empty; ignoring it.")
     empty_ids <- c(empty_ids, id)
     id <- guess_columns(df[setdiff(names(df), empty_ids)], mapping)$id
+  }
+
+  # " 1" and "1" are one id to some readers and two to others: take neither.
+  if (!is.null(id) && (is.character(df[[id]]) || is.factor(df[[id]]))) {
+    lab <- unique(as.character(df[[id]]))
+    lab <- lab[!is.na(lab)]
+    bare <- trimws(lab)
+    amb <- bare %in% bare[duplicated(bare)]
+    if (any(amb)) radiatR_abort_ambiguous_ids(id, lab[amb])
   }
 
   # Multi-file id-collision policy. Only runs for multi-file imports (the combine
@@ -2303,17 +2449,21 @@ register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL,
     m <- if (!is.null(stem)) regmatches(stem, regexpr("[0-9]+$", stem)) else character(0)
     rep(if (length(m)) m else (stem %||% "1"), nrow(inp$df))
   }
-  # TRex can write `frame` twice; a reader that repairs duplicate names turns
-  # them into frame_<position>. Identical copies stand for the one column.
+  # TRex can write `frame` twice, which every file reader keeps as two
+  # columns of one name (a table read elsewhere may have them renamed
+  # frame_<position>). Identical copies stand for the one column.
   frame_c <- .guess_col(nms, "frame")
-  copies <- grep("^frame_[0-9]+$", nms, value = TRUE)
-  if (is.null(frame_c) && length(copies) > 1L) {
-    same <- vapply(copies[-1L], function(cc)
-      identical(.dialect_col(inp, cc), .dialect_col(inp, copies[1L])), logical(1))
+  copies <- which(nms == "frame")
+  if (length(copies) < 2L && is.null(frame_c)) {
+    copies <- grep("^frame_[0-9]+$", nms)
+    if (length(copies) > 1L) frame_c <- nms[copies[1L]]
+  }
+  if (length(copies) > 1L) {
+    same <- vapply(copies[-1L], function(k)
+      identical(inp$df[[k]], inp$df[[copies[1L]]]), logical(1))
     if (!all(same))
-      stop("trex: the repeated frame columns (", paste(.dialect_header(inp, copies), collapse = ", "),
+      stop("trex: the repeated frame columns (", paste(names(inp$df)[copies], collapse = ", "),
            ") differ; name one with time_col")
-    frame_c <- copies[1L]
   }
   time <- time_col %||% frame_c %||% .guess_col(nms, c("frames","time","t","timestamp"))
   # frame/frames and row order are frames; TRex's `time` is seconds

@@ -42,6 +42,38 @@
   `gg_traj()`, intersect a segment with the unit circle with
   `line_circle_intercept()`, and build a headings frame with
   `headings_frame()`.
+* `read_tracks()` reads a delimited file the same way whichever reader is
+  installed (see "Reading delimited files" in `?read_tracks`), and stops
+  where the readers used to disagree. The fields of each line are counted
+  first, and a row with more or fewer fields than the header is a
+  `radiatR_malformed_file` error naming its line: `fread()` kept the rows
+  before it, `read.table()` wrapped a long row past the fifth line into
+  extra rows, and readr shifted the fields, with at most a warning; readr
+  dropped a last line cut off mid-row without one. So is an unclosed quote,
+  a table written with row names or a separator at the end of every row
+  (one name fewer than fields), which each reader read differently, a first
+  line `fread()` skipped as a preamble, and a column name used twice in a
+  file read without a dialect (readr renamed both, so the file lost its id
+  column and became one track). Every row of the file must be read. Under
+  `read.table()` a `#` no longer cuts a cell short, an apostrophe no longer
+  swallows rows and an empty cell is missing (a blank id was a track of its
+  own); `fread()` reads past a blank line and keeps a text cell's
+  surrounding whitespace, as the other readers do. Column names lose their
+  surrounding whitespace under every reader (readr kept `" id"`, so no id
+  was found).
+* Ids that differ only by surrounding whitespace (`" 1"` and `"1"`) stop
+  `read_tracks()` with a `radiatR_ambiguous_ids` error: readr and
+  `read.table()` read them as two tracks and `fread()` as one.
+* `get_all_object_pos()` reads its landmark and track files strictly: a cell
+  that is not a number (a decimal comma, a word) is a
+  `radiatR_malformed_values` error naming the file, row and column, where it
+  failed with `non-numeric argument to binary operator`; a line with fewer
+  than three fields is a `radiatR_malformed_file` error (fields past the
+  third are not read, and need not be on every line). An
+  odd number of landmark rows is a `radiatR_malformed_file` error naming the
+  file (it was a warning, then an error that named none). When no file holds
+  a valid trial it stops with `radiatR_no_valid_trials` instead of returning
+  `NULL` with a warning.
 
 * The `deeplabcut` dialect now reads the predictions CSV DeepLabCut writes:
   header rows `scorer` / `bodyparts` / `coords`, and `individuals` for
@@ -318,6 +350,18 @@
   `facet_wrap()` for free scales, which `coord_equal()` does not allow. The
   panels now share fixed scales, so trajectories on the unit circle are drawn
   at the same scale in every panel.
+* Ids are kept as labels in more cases (see "Ids" in `?read_tracks`). Two
+  files of one import whose ids read as one number, written differently
+  (`1.1` in one file and `1.10` in the other), are two ids: they were
+  reported as colliding, and `id_collision = "namespace"` labelled both
+  `1.1`. An id column typed as a date or time keeps its text where two
+  labels are one instant (`2024-01-01 00:00` and `2024-01-01 00:00:00` were
+  one track). An Excel file's ids are compared with a delimited file's as
+  the text of their cells (`100000`), and `fread()`'s large whole numbers
+  (integer64) as text too. Where the id types still disagree, in tables
+  that cannot be read again for their text (two tables from one dialect, a
+  Parquet file), the load stops with `radiatR_id_type_mismatch`; it
+  stopped with an internal `Can't combine` error.
 * `derive_headings()` and `circ_summary_headings()` now require `rule`.
   Called without it, `derive_headings()` stopped with an internal
   `'length = 16' in coercion to 'logical(1)'` error, and
