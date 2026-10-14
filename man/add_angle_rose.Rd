@@ -23,7 +23,7 @@ add_angle_rose(
 }
 \arguments{
 \item{hd}{Data frame of headings, e.g. from \code{\link{pose_to_headings}}
-or \code{derive_headings(\ldots, frame_select = "all")}.}
+or \code{derive_headings(\ldots, rule = "bodypart_axis", frame_select = "all")}.}
 
 \item{bins}{Integer; number of equal angular sectors.  Default \code{12}.}
 

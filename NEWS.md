@@ -18,6 +18,13 @@
   sign, which had been left to the eigenvector routine. On `cpunctatus`,
   `source = "velocity"` changes 198 of 235 headings by more than a degree
   (median 6.4, max 86.4); `source = "position"` changes none; no new `NA`.
+* A built-in `derive_headings()` rule stops with a `radiatR_invalid_argument`
+  error naming any option in `...` it does not read (e.g. `rule = "distal",
+  frame_select = "all"`, which only the body-part rules read), and lists the
+  options it takes. A misplaced option was silently ignored, and a longer
+  misspelling was taken by partial matching (`min_length = 50` acted as
+  `min_len`); both now stop. `return_coords` is accepted by every built-in
+  rule. Registered and function rules still receive `...` unchecked.
 
 * The `ethovision` dialect now reads the text export EthoVision XT writes: a
   first line giving the number of header lines, a block of trial details, a

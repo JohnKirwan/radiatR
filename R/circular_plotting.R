@@ -3361,7 +3361,7 @@ build_label_data <- function(data, label_col, x_col, y_col, colour_col = NULL, p
 #' \code{radiate(facets = ...)} call.
 #'
 #' @param hd Data frame of headings, e.g. from \code{\link{pose_to_headings}}
-#'   or \code{derive_headings(\ldots, frame_select = "all")}.
+#'   or \code{derive_headings(\ldots, rule = "bodypart_axis", frame_select = "all")}.
 #' @param bins Integer; number of equal angular sectors.  Default \code{12}.
 #' @param angle_col Column containing headings in radians.  Default
 #'   \code{"heading"}.

@@ -801,6 +801,42 @@ test_that("straight: a run that starts after a pause takes its first moving step
   expect_equal(heading_of(ts, rule = "straight"), pi / 2)
 })
 
+# ---- rule options ------------------------------------------------------------
+
+test_that("a built-in rule rejects an option it does not read", {
+  expect_error(derive_headings(cpunctatus, rule = "distal", frame_select = "all"),
+               class = "radiatR_invalid_argument")
+  expect_error(derive_headings(cpunctatus, rule = "distal", frame_select = "all"),
+               "frame_select")
+  expect_error(derive_headings(cpunctatus, rule = "net", 3),
+               class = "radiatR_invalid_argument")      # unnamed extra argument
+  # a misspelling that is not a prefix (`$` partial matching let `min_length` through)
+  expect_error(derive_headings(cpunctatus, rule = "straight", minlen = 4),
+               "It takes: `tol`, `min_len`", fixed = TRUE)
+  expect_error(derive_headings(cpunctatus, rule = "straight", min_length = 50),
+               class = "radiatR_invalid_argument")
+})
+
+test_that("return_coords is accepted by every built-in rule", {
+  args <- list(crossing = list(circ0 = .2, circ1 = .4), exit = list(r0 = .5),
+               entry = list(r0 = .5), ring_tangent = list(r_star = .5))
+  for (rule in names(radiatR:::.builtin_rule_options)) {
+    expect_no_error(do.call(derive_headings,
+      c(list(cpunctatus, rule = rule, return_coords = TRUE, on_missing = "quiet"),
+        args[[rule]])))
+  }
+})
+
+test_that("registered and function rules are not checked", {
+  f <- function(df, cols, anything = 1, ...) data.frame(id = df[[cols$id]][1],
+                                                        time = df[[cols$time]][1], heading = 0)
+  expect_no_error(derive_headings(cpunctatus, rule = f, anything = 2, on_missing = "quiet"))
+  register_heading_rule("tmp_rule_unknown_opts", f, overwrite = TRUE)
+  on.exit(rm("tmp_rule_unknown_opts", envir = radiatR:::.heading_registry))
+  expect_no_error(derive_headings(cpunctatus, rule = "tmp_rule_unknown_opts",
+                                  whatever = TRUE, on_missing = "quiet"))
+})
+
 # ---- rule argument -----------------------------------------------------------
 test_that("derive_headings() requires a rule and names the choices", {
   ts <- unequal_steps()
