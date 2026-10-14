@@ -62,7 +62,11 @@
   surrounding whitespace, as the other readers do. Column names lose their
   surrounding whitespace under every reader (readr kept `" id"`, so no id
   was found). A gzip, bzip2 or xz file is read under `fread()` without
-  R.utils (it stopped asking for R.utils, or read an xz file as text).
+  R.utils (it stopped asking for R.utils, or read an xz file as text). A
+  line break quoted in a column name or cell of a file with Windows (CRLF)
+  line endings is read as `"\n"` under every reader, as `read.table()` read
+  it (readr and `fread()` kept `"\r\n"`, so `mapping = list(time =
+  "fr\name")` found no column).
 * Ids that differ only by surrounding whitespace (`" 1"` and `"1"`) stop
   `read_tracks()` with a `radiatR_ambiguous_ids` error: readr and
   `read.table()` read them as two tracks and `fread()` as one.

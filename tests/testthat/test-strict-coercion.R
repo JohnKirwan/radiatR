@@ -822,8 +822,12 @@ test_that("a row with more or fewer fields than the header stops every reader", 
 test_that("quoted line breaks and latin-1 bytes are no ragged rows", {
   dir <- withr::local_tempdir()
   qhdr <- file.path(dir, "qhdr.csv")
-  writeLines(c("id,\"fr", "ame\",x,y,note", "a,1,1,2,\"line", "break\"", "a,2,2,3,z",
-               "b,3,3,4,w"), qhdr)
+  lines <- c("id,\"fr", "ame\",x,y,note", "a,1,1,2,\"line", "break\"", "a,2,2,3,z",
+             "b,3,3,4,w")
+  writeLines(lines, qhdr)
+  # readr and fread() kept the "\r\n" of a quoted line break, read.table() "\n"
+  qcrlf <- file.path(dir, "qcrlf.csv")
+  writeBin(charToRaw(paste0(paste(lines, collapse = "\r\n"), "\r\n")), qcrlf)
   latin <- file.path(dir, "latin.csv")
   # past the first 20 lines, which the delimiter sniffer reads as UTF-8
   writeBin(c(charToRaw(paste0("id,frame,x,y,note\n",
@@ -833,8 +837,11 @@ test_that("quoted line breaks and latin-1 bytes are no ragged rows", {
   for (hide in readers) {
     hide_readers(hide)
     info <- paste(c("without", hide), collapse = " ")
-    expect_identical(nrow(read_tracks(qhdr, mapping = list(time = "fr\name"))@data), 3L,
-                     info = info)
+    for (p in c(qhdr, qcrlf)) {
+      tr <- read_tracks(p, mapping = list(time = "fr\name"), keep = "note")
+      expect_identical(tr@data$note, c("line\nbreak", "z", "w"),
+                       info = paste(info, basename(p)))
+    }
     expect_identical(nrow(read_tracks(latin)@data), 31L, info = info)
   }
 })
