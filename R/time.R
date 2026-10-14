@@ -43,6 +43,8 @@
 #' @param units `"seconds"` (default), `"minutes"`, or `"milliseconds"`.
 #' @return A numeric vector aligned to the object's observations.
 #' @seealso [frame_rate()], [track_duration()]
+#' @examples
+#' head(elapsed_seconds(cpunctatus))
 #' @export
 elapsed_seconds <- function(ts, units = c("seconds", "minutes", "milliseconds")) {
   units <- match.arg(units)
@@ -59,6 +61,8 @@ elapsed_seconds <- function(ts, units = c("seconds", "minutes", "milliseconds"))
 #' @inheritParams elapsed_seconds
 #' @return A data frame with columns `id` and `duration`.
 #' @seealso [frame_rate()], [elapsed_seconds()]
+#' @examples
+#' head(track_duration(cpunctatus, units = "minutes"))
 #' @export
 track_duration <- function(ts, units = c("seconds", "minutes", "milliseconds")) {
   units <- match.arg(units)

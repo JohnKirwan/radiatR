@@ -22,6 +22,9 @@ POSIXct time is used directly, and so is numeric time loaded as seconds
 is neither needed nor applied to it. Any other numeric time is a frame index
 and requires a frame rate.
 }
+\examples{
+head(elapsed_seconds(cpunctatus))
+}
 \seealso{
 [frame_rate()], [track_duration()]
 }

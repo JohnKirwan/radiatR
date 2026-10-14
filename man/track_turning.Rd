@@ -32,6 +32,9 @@ A `data.frame` with one row per trajectory: the id column and a numeric
 Summarises each trajectory's [angular_velocity()] (signed turning rate,
 counter-clockwise positive) by the chosen statistic.
 }
+\examples{
+head(track_turning(cpunctatus, units = "degrees"))
+}
 \seealso{
 [angular_velocity()], [track_velocity()], [track_speed()]
 }

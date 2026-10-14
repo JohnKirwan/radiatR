@@ -35,6 +35,9 @@ Numeric (frame) time requires a frame rate ([set_frame_rate()]); POSIXct time
 is used directly. The result is scale-free (an angle), so no distance
 calibration is applied.
 }
+\examples{
+summary(angular_velocity(cpunctatus, units = "degrees"))
+}
 \seealso{
 [velocity_vector()], [instantaneous_speed()], [frame_rate()]
 }
