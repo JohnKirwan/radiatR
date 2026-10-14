@@ -242,6 +242,22 @@ list_loader_dialects <- function() sort(ls(envir = .loader_registry))
   "none"
 }
 
+# A line break quoted in a name or cell of a CRLF file is "\r\n" to readr and
+# fread() and "\n" to read.table(): make it "\n" whichever reader read it.
+.lf_breaks <- function(df) {
+  # by bytes, as a cell may not be valid in the locale; keep each encoding mark
+  lf <- function(v) {
+    out <- gsub("\r\n", "\n", v, fixed = TRUE, useBytes = TRUE)
+    Encoding(out) <- Encoding(v)
+    out
+  }
+  names(df) <- lf(names(df))
+  crlf <- vapply(df, function(v)
+    is.character(v) && any(grepl("\r\n", v, fixed = TRUE, useBytes = TRUE)), logical(1))
+  for (cc in which(crlf)) df[[cc]] <- lf(df[[cc]])
+  df
+}
+
 # Write the gzip, bzip2 or xz file `path` decompressed to `to`.
 .decompress <- function(path, to) {
   from <- gzfile(path, "rb")
@@ -630,6 +646,7 @@ guess_columns <- function(data, mapping = list()) {
   else utils::read.table(
     path, header = TRUE, sep = delim, dec = decimal, quote = "\"", comment.char = "",
     na.strings = c("", "NA"), check.names = FALSE, stringsAsFactors = FALSE, ...)
+  df <- .lf_breaks(df)
   # fread() skips first lines it takes for a preamble, readr a cut-off last line
   if (nrow(df) != records)
     radiatR_abort_malformed_file(src, "rows", detail = sprintf(paste0(
