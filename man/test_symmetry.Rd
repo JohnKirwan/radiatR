@@ -47,6 +47,10 @@ The test uses a large-sample normal approximation and can be liberal at small
 \eqn{n} or low concentration; treat borderline results at small samples with
 caution.
 }
+\examples{
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+test_symmetry(hd, group_col = "arc")
+}
 \references{
 Pewsey, A. (2002). Testing circular symmetry. \emph{Canadian
   Journal of Statistics} 30(4), 591--600. \doi{10.2307/3316098}.

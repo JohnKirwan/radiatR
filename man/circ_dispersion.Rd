@@ -31,3 +31,7 @@ within-trial summaries from \code{\link{pose_to_headings}} or
 \code{derive_headings(\ldots, frame_select = "all")}, but accepts any data
 frame with an angle column.
 }
+\examples{
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+circ_dispersion(hd, group_col = "arc")
+}

@@ -54,6 +54,11 @@ The \code{kappa_bias}/\code{R_bias} columns report the bootstrap estimate of
 that bias (bootstrap mean minus the sample estimate); the intervals
 themselves are the raw percentile envelope and are not bias-shifted.
 }
+\examples{
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+set.seed(1)
+boot_kappa_ci(hd, group_col = "arc", R = 199)
+}
 \seealso{
 \code{\link{boot_mean_ci}}, \code{\link{boot_kappa_contrast}},
   \code{\link{vonmises_fit}}, \code{\link{circ_dispersion}},

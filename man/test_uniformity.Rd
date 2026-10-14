@@ -74,6 +74,12 @@ level rather than a continuous p-value. Set \code{p_method = "monte_carlo"}
 to obtain a continuous p-value for those three by simulation instead (usable
 with \code{p_adjust}).
 }
+\examples{
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+test_uniformity(hd, group_col = "arc", p_adjust = "BH")
+# the target lies at 0 rad: test for orientation towards it
+test_uniformity(hd, group_col = "arc", test = "vtest", mu = 0)
+}
 \references{
 Landler, L., Ruxton, G.D. & Malkemper, E.P. (2019). The
   Hermans-Rasson test as a powerful alternative to the Rayleigh test for
