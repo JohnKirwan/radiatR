@@ -34,6 +34,11 @@ Numeric (frame) time requires a frame rate ([set_frame_rate()]); POSIXct time
 is used directly. With the default coordinate columns the unit is radii
 per second, because radiatR normalises trajectories to a unit circle.
 }
+\examples{
+frame_rate(cpunctatus) # one frame every 5 s
+head(track_speed(cpunctatus))
+head(track_speed(cpunctatus, stat = "max"))
+}
 \seealso{
 [step_speed()], [elapsed_seconds()], [track_duration()],
   [straightness_index()]

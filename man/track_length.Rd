@@ -21,6 +21,10 @@ Total distance travelled along each trajectory. With a distance calibration
 set ([set_distance_scale()]) the result is in physical units; otherwise in the
 units of the recorded `x`/`y` coordinates.
 }
+\examples{
+# unit-circle coordinates, so lengths are in arena radii
+head(track_length(cpunctatus))
+}
 \seealso{
 [set_distance_scale()], [track_speed()], [straightness_index()]
 }

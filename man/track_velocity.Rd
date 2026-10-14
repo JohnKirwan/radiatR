@@ -26,6 +26,12 @@ its start has zero net velocity). Distance-calibrated when a scale is set.
 Numeric (frame) time requires a frame rate ([set_frame_rate()]); POSIXct time
 is used directly.
 }
+\examples{
+tv <- track_velocity(cpunctatus)
+head(tv)
+# net direction of travel of each track
+head(atan2(tv$vy, tv$vx))
+}
 \seealso{
 [velocity_vector()], [track_speed()], [track_turning()],
   [set_distance_scale()]

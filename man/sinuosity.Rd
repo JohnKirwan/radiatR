@@ -22,6 +22,9 @@ ordering each trajectory's points by its time column when one is recorded.
 Distance-calibrated: with a `distance_scale` set the step lengths are in real
 units, so the reported sinuosity is in \eqn{1/\sqrt{\mathrm{unit}}}.
 }
+\examples{
+head(sinuosity(cpunctatus))
+}
 \seealso{
 [path_sinuosity()], [straightness_index()], [tortuosity_ratio()],
   [set_distance_scale()]
