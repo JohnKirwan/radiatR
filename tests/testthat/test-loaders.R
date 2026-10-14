@@ -761,6 +761,18 @@ test_that("a file read as one column says the separator was not found", {
   e <- expect_error(read_tracks(p), class = "radiatR_malformed_file")
   expect_identical(e$problem, "one_column")
   expect_match(conditionMessage(e), "read_opts")
+  expect_match(conditionMessage(e), "single column")
+  expect_false(grepl(dirname(p), conditionMessage(e), fixed = TRUE))
+  e2 <- expect_error(read_tracks(p, read_opts = list(delim = "|")),
+                     class = "radiatR_malformed_file")
+  expect_false(grepl("read_opts", conditionMessage(e2), fixed = TRUE))
+})
+
+test_that("an explicit ext exempts an extensionless path from the one-column error", {
+  p <- withr::local_tempfile()
+  writeBin(charToRaw("id\n1\n2\n"), p)
+  e <- tryCatch(read_tracks(p, read_opts = list(ext = "xlsx")), error = function(e) e)
+  expect_false(inherits(e, "radiatR_malformed_file"))
 })
 
 test_that("namespace gives files that share a stem their own prefix", {

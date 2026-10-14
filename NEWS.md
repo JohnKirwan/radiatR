@@ -406,9 +406,11 @@
   read as one column. A delimited file that still reads as a single column
   stops with a `radiatR_malformed_file` error saying no separator was found,
   instead of "Need either an angle column or both x and y columns".
-* `read_tracks()` no longer stops with "invalid UTF-8" when the first lines of
-  a delimited file hold a byte that is not UTF-8 (a latin-1 label): the
-  separator and decimal mark are sniffed from such lines too.
+* `read_tracks()` no longer stops with "invalid UTF-8" in the separator sniff
+  when the first lines of a delimited file hold a byte that is not UTF-8 in a
+  data cell that is not an id (a latin-1 label): the separator and decimal mark
+  are sniffed from such lines too. A latin-1 byte in a column name or in an id
+  column still stops the read.
 * `read_tracks()` with a `tz` other than `"UTC"` put a timestamp that names
   its zone (`2024-01-01T10:00:00Z`, `...+02:00`) at the wrong instant when
   the file was read by `data.table::fread()` (readr not installed): the

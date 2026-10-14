@@ -84,8 +84,9 @@ radiatR_abort_malformed_values <- function(column, rows, values,
 
 # A file whose layout cannot be read as one table: a row with more or fewer
 # fields than the header (`problem = "ragged"`, `lines` are line numbers in
-# the file, header = 1), or a column name used twice (`"duplicate_columns"`,
-# `columns` the names). Every reader stops on it rather than drop, wrap or
+# the file, header = 1), a column name used twice (`"duplicate_columns"`,
+# `columns` the names), or a delimited file that read as one column
+# (`"one_column"`, `columns` that column). Every reader stops on it rather than drop, wrap or
 # shift rows. `caller` names the function in the message.
 radiatR_abort_malformed_file <- function(source, problem, detail, lines = integer(0),
                                          columns = character(0), caller = "read_tracks") {
