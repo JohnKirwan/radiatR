@@ -91,6 +91,9 @@ path_tortuosity <- function(x, y) {
 #' @return A `data.frame` with one row per trajectory: the id column and a
 #'   numeric `length` column.
 #' @seealso [set_distance_scale()], [track_speed()], [straightness_index()]
+#' @examples
+#' # unit-circle coordinates, so lengths are in arena radii
+#' head(track_length(cpunctatus))
 #' @export
 track_length <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
   out <- .trajectory_metric(ts, x_col, y_col, "length", .path_length)
@@ -135,6 +138,8 @@ track_length <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
 #' @return A `data.frame` with one row per trajectory: the `Tracks`'s id column
 #'   and a numeric `straightness` column.
 #' @seealso [path_straightness()], [tortuosity_ratio()]
+#' @examples
+#' head(straightness_index(cpunctatus))
 #' @export
 straightness_index <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
   .trajectory_metric(ts, x_col, y_col, "straightness", path_straightness)
@@ -152,6 +157,8 @@ straightness_index <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
 #' @return A `data.frame` with one row per trajectory: the `Tracks`'s id column
 #'   and a numeric `tortuosity` column (`>= 1`, possibly `Inf`).
 #' @seealso [path_tortuosity()], [straightness_index()]
+#' @examples
+#' head(tortuosity_ratio(cpunctatus))
 #' @export
 tortuosity_ratio <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
   .trajectory_metric(ts, x_col, y_col, "tortuosity", path_tortuosity)
@@ -213,6 +220,8 @@ path_sinuosity <- function(x, y) {
 #'   and a numeric `sinuosity` column (`>= 0`).
 #' @seealso [path_sinuosity()], [straightness_index()], [tortuosity_ratio()],
 #'   [set_distance_scale()]
+#' @examples
+#' head(sinuosity(cpunctatus))
 #' @export
 sinuosity <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
   scl <- distance_scale(ts) %||% 1
@@ -269,6 +278,10 @@ step_speed <- function(x, y, seconds) {
 #'   numeric `speed` column (`NA` for tracks with fewer than two usable points).
 #' @seealso [step_speed()], [elapsed_seconds()], [track_duration()],
 #'   [straightness_index()]
+#' @examples
+#' frame_rate(cpunctatus) # one frame every 5 s
+#' head(track_speed(cpunctatus))
+#' head(track_speed(cpunctatus, stat = "max"))
 #' @export
 track_speed <- function(ts, stat = c("mean", "max", "median"),
                         x_col = ts@cols$x, y_col = ts@cols$y) {
@@ -316,6 +329,8 @@ track_speed <- function(ts, stat = c("mean", "max", "median"),
 #' @return A numeric vector, one value per observation in `ts@data` order, `NA`
 #'   at each trajectory's first point.
 #' @seealso [step_speed()], [track_speed()], [elapsed_seconds()]
+#' @examples
+#' summary(instantaneous_speed(cpunctatus))
 #' @export
 instantaneous_speed <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
   if (!methods::is(ts, "Tracks")) stop("'ts' must be a Tracks.")
@@ -355,6 +370,8 @@ instantaneous_speed <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
 #' @return A `data.frame` with columns `vx` and `vy`, one row per observation in
 #'   `ts@data` order (`NA` at each trajectory's first point).
 #' @seealso [instantaneous_speed()], [angular_velocity()], [set_distance_scale()]
+#' @examples
+#' head(velocity_vector(cpunctatus))
 #' @export
 velocity_vector <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
   if (!methods::is(ts, "Tracks")) stop("'ts' must be a Tracks.")
@@ -448,6 +465,8 @@ velocity_angle <- function(ts, units = c("radians", "degrees"),
 #' @return A numeric vector, one value per observation in `ts@data` order, `NA`
 #'   at each trajectory's first and last point.
 #' @seealso [velocity_vector()], [instantaneous_speed()], [frame_rate()]
+#' @examples
+#' summary(angular_velocity(cpunctatus, units = "degrees"))
 #' @export
 angular_velocity <- function(ts, units = c("radians", "degrees"),
                              x_col = ts@cols$x, y_col = ts@cols$y) {
@@ -494,6 +513,11 @@ angular_velocity <- function(ts, units = c("radians", "degrees"),
 #'   `vx`, `vy` (`NA` for tracks with fewer than two points or zero duration).
 #' @seealso [velocity_vector()], [track_speed()], [track_turning()],
 #'   [set_distance_scale()]
+#' @examples
+#' tv <- track_velocity(cpunctatus)
+#' head(tv)
+#' # net direction of travel of each track
+#' head(atan2(tv$vy, tv$vx))
 #' @export
 track_velocity <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
   if (!methods::is(ts, "Tracks")) stop("'ts' must be a Tracks.")
@@ -538,6 +562,8 @@ track_velocity <- function(ts, x_col = ts@cols$x, y_col = ts@cols$y) {
 #' @return A `data.frame` with one row per trajectory: the id column and a numeric
 #'   `turning` column (`NA` for tracks with fewer than three points).
 #' @seealso [angular_velocity()], [track_velocity()], [track_speed()]
+#' @examples
+#' head(track_turning(cpunctatus, units = "degrees"))
 #' @export
 track_turning <- function(ts, stat = c("mean_abs", "mean", "max_abs", "median_abs"),
                           units = c("radians", "degrees"),

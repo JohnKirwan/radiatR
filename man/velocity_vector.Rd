@@ -29,6 +29,9 @@ is used directly. With a distance calibration ([set_distance_scale()]) the
 components are in physical units per second; otherwise coordinate units per
 second.
 }
+\examples{
+head(velocity_vector(cpunctatus))
+}
 \seealso{
 [instantaneous_speed()], [angular_velocity()], [set_distance_scale()]
 }

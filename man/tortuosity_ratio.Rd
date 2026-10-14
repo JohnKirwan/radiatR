@@ -21,6 +21,9 @@ A `data.frame` with one row per trajectory: the `Tracks`'s id column
 Computes [path_tortuosity()] for each trajectory in a `Tracks`, ordering
 each trajectory's points by its time column when one is recorded.
 }
+\examples{
+head(tortuosity_ratio(cpunctatus))
+}
 \seealso{
 [path_tortuosity()], [straightness_index()]
 }

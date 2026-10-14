@@ -28,6 +28,9 @@ Numeric (frame) time requires a frame rate ([set_frame_rate()]); POSIXct time
 is used directly. With the default coordinate columns the unit is radii
 per second.
 }
+\examples{
+summary(instantaneous_speed(cpunctatus))
+}
 \seealso{
 [step_speed()], [track_speed()], [elapsed_seconds()]
 }
