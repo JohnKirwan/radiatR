@@ -571,9 +571,15 @@ guess_columns <- function(data, mapping = list()) {
 # `lines` are the file's lines when the caller has read (and decoded) them.
 .guess_delim <- function(path, lines = NULL) {
   default <- list(delim = ",", decimal = ".")
-  lines <- if (!is.null(lines)) utils::head(lines, 20L) else tryCatch(
-    readLines(path, n = 20L, warn = FALSE, encoding = "UTF-8"),
-    error = function(e) character(0))
+  if (is.null(lines)) {
+    lines <- readLines(path, n = 20L, warn = FALSE, encoding = "UTF-8")
+    # The sniff looks only at separators and digits, which are ASCII: read a
+    # line that is not UTF-8 (latin-1 from a Windows program) as latin-1 so the
+    # pattern matching below can run on it.
+    bad <- !validUTF8(lines)
+    lines[bad] <- iconv(lines[bad], "latin1", "UTF-8")
+  }
+  lines <- utils::head(lines, 20L)
   lines <- lines[nzchar(trimws(lines))]
   rows <- lines
   lines <- utils::head(lines, 5L)

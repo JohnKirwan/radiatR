@@ -718,3 +718,17 @@ test_that("read_tracks forwards read_opts$ext to .read_any", {
   expect_s4_class(ts, "Tracks")
   expect_equal(nrow(as.data.frame(ts)), 3L)
 })
+
+test_that("a byte that is not UTF-8 does not stop the separator sniff", {
+  p <- withr::local_tempfile(fileext = ".csv")
+  writeBin(c(charToRaw("id,time,x,y,note\n1,1,0.1,0.2,caf"), as.raw(0xe9),
+             charToRaw("\n1,2,0.2,0.3,b\n")), p)
+  expect_identical(.guess_delim(p), list(delim = ",", decimal = "."))
+  ts <- read_tracks(p)
+  expect_equal(ts@data[[ts@cols$x]], c(.1, .2))
+  # ';' with decimal commas, latin-1 in a label
+  p2 <- withr::local_tempfile(fileext = ".csv")
+  writeBin(c(charToRaw("id;time;x;y;note\n1;1;0,1;0,2;caf"), as.raw(0xe9),
+             charToRaw("\n1;2;0,2;0,3;b\n")), p2)
+  expect_identical(.guess_delim(p2), list(delim = ";", decimal = ","))
+})

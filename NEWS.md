@@ -383,6 +383,9 @@
   counts missing headings and the trials they come from, and the app's
   attrition banner does the same. `missing_ids` lists each trial once, and
   the new `n_trials` attribute gives the number of trials.
+* `read_tracks()` no longer stops with "invalid UTF-8" when the first lines of
+  a delimited file hold a byte that is not UTF-8 (a latin-1 label): the
+  separator and decimal mark are sniffed from such lines too.
 * `read_tracks()` with a `tz` other than `"UTC"` put a timestamp that names
   its zone (`2024-01-01T10:00:00Z`, `...+02:00`) at the wrong instant when
   the file was read by `data.table::fread()` (readr not installed): the
