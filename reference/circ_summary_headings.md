@@ -7,12 +7,7 @@ concentration) optionally grouped by one or more metadata columns.
 ## Usage
 
 ``` r
-circ_summary_headings(
-  x,
-  rule = c("crossing", "distal", "straight", "origin_mean", "net", "velocity_mean"),
-  group_by = "id",
-  ...
-)
+circ_summary_headings(x, rule, group_by = "id", ...)
 ```
 
 ## Arguments
@@ -23,9 +18,9 @@ circ_summary_headings(
 
 - rule:
 
-  Character. Heading derivation rule passed to \[derive_headings()\].
-  One of \`"crossing"\`, \`"distal"\`, \`"straight"\`,
-  \`"origin_mean"\`, \`"net"\`, or \`"velocity_mean"\`.
+  Required. Heading derivation rule passed to \[derive_headings()\]. One
+  of \`"crossing"\`, \`"distal"\`, \`"straight"\`, \`"origin_mean"\`,
+  \`"net"\`, or \`"velocity_mean"\`.
 
 - group_by:
 

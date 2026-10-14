@@ -326,6 +326,21 @@
 
 ### Bug fixes
 
+- [`derive_headings()`](https://johnkirwan.github.io/radiatR/reference/derive_headings.md)
+  and
+  [`circ_summary_headings()`](https://johnkirwan.github.io/radiatR/reference/circ_summary_headings.md)
+  now require `rule`. Called without it,
+  [`derive_headings()`](https://johnkirwan.github.io/radiatR/reference/derive_headings.md)
+  stopped with an internal `'length = 16' in coercion to 'logical(1)'`
+  error, and
+  [`circ_summary_headings()`](https://johnkirwan.github.io/radiatR/reference/circ_summary_headings.md)
+  fell back to `"crossing"`, which then stopped for want of `circ0` and
+  `circ1`. Both now stop with an error that lists the available rules.
+  [`derive_headings()`](https://johnkirwan.github.io/radiatR/reference/derive_headings.md)
+  also refuses a `rule` that is not a single name or a function (a
+  vector, `NA`, a number), which previously gave the same internal
+  error.
+
 - `read_tracks(tz = )` now applies to every timestamp without a time
   zone in a delimited or Excel file that
   [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
