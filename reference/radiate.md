@@ -118,7 +118,7 @@ radiate(
 
 - ...:
 
-  Additional arguments forwarded to \[draw_tracks()\].
+  Additional arguments forwarded to the track geom.
 
 - x_col:
 
@@ -130,7 +130,8 @@ radiate(
 
 - geom:
 
-  Geom specification passed to \[draw_tracks()\].
+  Geom specification: \`"path"\`, \`"point"\` or a ggplot2 geom
+  function.
 
 - group_col:
 

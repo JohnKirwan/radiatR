@@ -73,7 +73,6 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/derive_headings.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/directedness_arrow.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/distance_scale.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/draw_tracks.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/elapsed_seconds.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/fitted_directions.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/frame_rate.html</loc></url>
@@ -91,13 +90,10 @@
 <url><loc>https://johnkirwan.github.io/radiatR/reference/instantaneous_speed.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/launch_app.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/line_circle_intercept.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/line_circle_intercept_df.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/line_circle_intercept_traj.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/list_heading_rules.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/list_loader_dialects.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/list_loader_formats.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/load_manifest.html</loc></url>
-<url><loc>https://johnkirwan.github.io/radiatR/reference/new_headings_frame.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/path_sinuosity.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/path_straightness.html</loc></url>
 <url><loc>https://johnkirwan.github.io/radiatR/reference/path_tortuosity.html</loc></url>

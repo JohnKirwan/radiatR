@@ -85,8 +85,6 @@ data using built-in rules or custom functions.
   : Derive per-frame headings from pose data without a Tracks
 - [`headings_frame()`](https://johnkirwan.github.io/radiatR/reference/headings_frame.md)
   : Construct a headings frame from a data frame of angles
-- [`new_headings_frame()`](https://johnkirwan.github.io/radiatR/reference/new_headings_frame.md)
-  : Low-level headings_frame constructor
 - [`hf_display()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
   [`hf_heading_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
   [`hf_colour_col()`](https://johnkirwan.github.io/radiatR/reference/hf_accessors.md)
@@ -192,8 +190,6 @@ The main radiate() function and its building blocks.
   : Speed distribution histogram for a Tracks
 - [`gg_traj()`](https://johnkirwan.github.io/radiatR/reference/gg_traj.md)
   : Plot trajectories from a Tracks (overlay or faceted)
-- [`draw_tracks()`](https://johnkirwan.github.io/radiatR/reference/draw_tracks.md)
-  : Create geom layers for Cartesian track coordinates
 - [`add_ticks()`](https://johnkirwan.github.io/radiatR/reference/add_ticks.md)
   : Create evenly spaced radial tick marks.
 - [`add_circ()`](https://johnkirwan.github.io/radiatR/reference/add_circ.md)
@@ -310,10 +306,6 @@ Angle-convention conversions and geometric helpers.
   : Wrap angles to the interval (-pi, pi\]
 - [`line_circle_intercept()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept.md)
   : Find the intercept of a line with the unit circle
-- [`line_circle_intercept_df()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept_df.md)
-  : Intersection helper using track rows
-- [`line_circle_intercept_traj()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept_traj.md)
-  : Intersection helper for Tracks trajectories
 - [`derive_coords()`](https://johnkirwan.github.io/radiatR/reference/derive_coords.md)
   : Derive polar and reference-relative coordinates from unit-circle
   position
@@ -537,8 +529,6 @@ Any remaining exported topics.
   [`set_distance_scale()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
   [`calibrate_distance()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
   : Distance calibration for a Tracks object
-- [`draw_tracks()`](https://johnkirwan.github.io/radiatR/reference/draw_tracks.md)
-  : Create geom layers for Cartesian track coordinates
 - [`elapsed_seconds()`](https://johnkirwan.github.io/radiatR/reference/elapsed_seconds.md)
   : Elapsed time per observation of a Tracks object
 - [`fitted_directions()`](https://johnkirwan.github.io/radiatR/reference/fitted_directions.md)
@@ -577,10 +567,6 @@ Any remaining exported topics.
   : Launch the radiatR Shiny companion app
 - [`line_circle_intercept()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept.md)
   : Find the intercept of a line with the unit circle
-- [`line_circle_intercept_df()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept_df.md)
-  : Intersection helper using track rows
-- [`line_circle_intercept_traj()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept_traj.md)
-  : Intersection helper for Tracks trajectories
 - [`list_heading_rules()`](https://johnkirwan.github.io/radiatR/reference/list_heading_rules.md)
   : List registered custom heading rules
 - [`list_loader_dialects()`](https://johnkirwan.github.io/radiatR/reference/list_loader_dialects.md)
@@ -589,8 +575,6 @@ Any remaining exported topics.
   : List registered declarative formats
 - [`load_manifest()`](https://johnkirwan.github.io/radiatR/reference/load_manifest.md)
   : Load trajectories listed in a file table into a Tracks
-- [`new_headings_frame()`](https://johnkirwan.github.io/radiatR/reference/new_headings_frame.md)
-  : Low-level headings_frame constructor
 - [`path_sinuosity()`](https://johnkirwan.github.io/radiatR/reference/path_sinuosity.md)
   : Sinuosity index for a single trajectory
 - [`path_straightness()`](https://johnkirwan.github.io/radiatR/reference/path_straightness.md)
