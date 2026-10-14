@@ -36,7 +36,12 @@ jobs:
       - name: Setup R
         uses: r-lib/actions/setup-r@v2
         with:
-          use-public-rspm: true
+          # Install from CRAN source, not Posit Package Manager binaries. pak
+          # skips LinkingTo-only packages (cpp11, progress) when it installs
+          # binaries, and writeManifest then aborts because renv counts them
+          # as required. Source installs also record a plain CRAN URL in the
+          # manifest instead of a binary URL tied to one Linux distribution.
+          use-public-rspm: false
           # The manifest records this R version for the Connect Cloud build.
           # Pin one minor behind the newest release (the version the package is
           # already CI-tested on) for a Connect-Cloud-supported runtime.
