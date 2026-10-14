@@ -112,7 +112,6 @@ reference:
       - circ_summary_headings
       - pose_to_headings
       - headings_frame
-      - new_headings_frame
       - hf_accessors
       - register_heading_rule
       - list_heading_rules
@@ -174,7 +173,6 @@ reference:
       - plot_speed_direction
       - plot_speed_histogram
       - gg_traj
-      - draw_tracks
       - add_ticks
       - add_circ
       - degree_labs
@@ -247,8 +245,6 @@ reference:
     contents:
       - rad_shepherd
       - line_circle_intercept
-      - line_circle_intercept_df
-      - line_circle_intercept_traj
       - derive_coords
 
   - title: "Reference frame & transforms"

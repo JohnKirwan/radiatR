@@ -109,13 +109,13 @@ radiate(data, ...)
 \arguments{
 \item{data}{Data frame or `Tracks`.}
 
-\item{...}{Additional arguments forwarded to [draw_tracks()].}
+\item{...}{Additional arguments forwarded to the track geom.}
 
 \item{x_col}{Name of the x-coordinate column.  Default \code{"rel_x"}.}
 
 \item{y_col}{Name of the y-coordinate column.  Default \code{"rel_y"}.}
 
-\item{geom}{Geom specification passed to [draw_tracks()].}
+\item{geom}{Geom specification: `"path"`, `"point"` or a ggplot2 geom function.}
 
 \item{group_col}{Optional column for grouping aesthetics.}
 

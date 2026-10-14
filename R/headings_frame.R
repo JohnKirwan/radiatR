@@ -81,7 +81,7 @@ headings_frame <- function(data,
 #'   `color_col` is the American-spelling alias.
 #' @param coords `"absolute"` or `"relative"`.
 #' @return A `headings_frame`.
-#' @export
+#' @noRd
 new_headings_frame <- function(data, display = circ_display(),
                                heading_col = "heading", colour_col = NULL,
                                coords = "absolute", color_col = NULL) {
