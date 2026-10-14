@@ -38,6 +38,10 @@ von Mises quantiles at the sample's estimated concentration (so ~0.7% of
 observations are flagged as far-out under that reference). Pairs with
 [add_circular_boxplot()] for rendering.
 }
+\examples{
+hd <- derive_headings(cpunctatus[1:10], rule = "distal", frame_select = "all")
+circ_boxplot_stats(hd)
+}
 \references{
 Buttarazzi, D., Pandolfo, G. & Porzio, G. C. (2018). A boxplot
   for circular data. \emph{Biometrics} 74(4), 1492--1501.

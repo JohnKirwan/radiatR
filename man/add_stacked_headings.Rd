@@ -78,6 +78,14 @@ angles radially to avoid overplotting. If \code{stack_r} is already a
 column in \code{data} (from a prior call to \code{\link{stack_headings}}),
 it is used as-is; otherwise stacking is computed internally.
 }
+\examples{
+hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+library(ggplot2)
+ggplot() +
+  coord_fixed() +
+  add_circ() +
+  add_stacked_headings(hd)
+}
 \seealso{
 \code{\link{headings_frame}}, \code{\link{stack_headings}},
   \code{\link{add_heading_points}}

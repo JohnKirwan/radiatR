@@ -303,6 +303,14 @@
   of the `cpunctatus` example data from about 6 s to about 0.1 s. The drawn
   geometry is unchanged. `line_circle_intercept()` is now vectorised over its
   arguments.
+* Nineteen help pages in the circular-plotting and circular-boxplot groups now
+  have runnable examples: `circ_display()`, `directedness_arrow()`,
+  `compute_circ_interval()`, `add_circ_interval()`, `add_heading_interval()`,
+  `compute_circ_mean()`, `add_circ_mean()`, `add_heading_arrow()`,
+  `add_stacked_headings()`, `line_circle_intercept()`, `gg_traj()`,
+  `add_angle_rose()`, `add_vonmises_density()`, `add_circular_kde()`,
+  `add_wrappedcauchy_density()`, `add_critical_r()`, `add_critical_v_line()`,
+  `circ_boxplot_stats()` and `add_circular_boxplot()`.
 
 ## Bug fixes
 

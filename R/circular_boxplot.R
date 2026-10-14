@@ -136,6 +136,9 @@
 #' @source Algorithm reimplemented from the \pkg{bpDir} package.
 #' @seealso [add_circular_boxplot()], [circ_summarise()], [vonmises_fit()]
 #' @importFrom circular circular median.circular A1inv rho.circular qvonmises
+#' @examples
+#' hd <- derive_headings(cpunctatus[1:10], rule = "distal", frame_select = "all")
+#' circ_boxplot_stats(hd)
 #' @export
 circ_boxplot_stats <- function(hd, angle_col = "heading", axial = FALSE) {
   theta <- if (is.data.frame(hd)) {
@@ -199,6 +202,9 @@ circ_boxplot_stats <- function(hd, angle_col = "heading", axial = FALSE) {
 #' @importFrom ggplot2 geom_polygon geom_path geom_segment geom_point aes
 #' @importFrom rlang .data
 #' @importFrom grid arrow unit
+#' @examples
+#' hd <- derive_headings(cpunctatus[1:10], rule = "distal", frame_select = "all")
+#' radiate(cpunctatus[1:10]) + add_circular_boxplot(hd)
 #' @export
 add_circular_boxplot <- function(hd, angle_col = "heading", axial = FALSE,
                                  radius = 1.1, width = 0.05,
