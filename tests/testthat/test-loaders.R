@@ -99,59 +99,6 @@ test_that("deeplabcut multi-bodypart appends per-bodypart columns", {
   expect_equal(d$y_raw[1], 0.05, tolerance = 1e-9)  # mean of 0.1 and 0
 })
 
-# ---- ethovision zone detection -----------------------------------------------
-
-test_that("ethovision detects prefix-style body zones and appends columns", {
-  df <- data.frame(time = 1:3,
-                   x_center = c(0, .1, .2), y_center = c(0, 0, 0),
-                   x_nose   = c(.1, .2, .3), y_nose   = c(.1, .1, .1),
-                   x_tail   = c(-.1, 0, .1), y_tail   = c(-.1, -.1, -.1))
-  ts <- read_tracks(df, dialect = "ethovision", normalize_xy = TRUE)
-  d  <- as.data.frame(ts)
-  expect_true(all(c("nose_x", "nose_y", "tail_x", "tail_y") %in% names(d)))
-})
-
-test_that("ethovision zone centroid uses selected zones", {
-  df <- data.frame(time = 1:3,
-                   x_center = c(0, .1, .2), y_center = c(0, 0, 0),
-                   x_nose   = c(1, 1, 1),   y_nose   = c(0, 0, 0),
-                   x_tail   = c(-1, -1, -1), y_tail  = c(0, 0, 0))
-  ts <- read_tracks(df, dialect = "ethovision",
-                     dialect_args = list(zone = c("nose", "tail")), normalize_xy = TRUE)
-  d  <- as.data.frame(ts)
-  expect_equal(d$x_raw[1], 0, tolerance = 1e-9)  # centroid of 1 and -1
-})
-
-# ---- anymaze zone detection --------------------------------------------------
-
-test_that("anymaze detects <zone> X Centre columns and normalises them", {
-  df <- data.frame(
-    "Trial time"    = 0:2,
-    "X Centre"      = c(5, 6, 7),
-    "Y Centre"      = c(10, 11, 12),
-    "Nose X Centre" = c(6, 7, 8),
-    "Nose Y Centre" = c(11, 12, 13),
-    check.names = FALSE
-  )
-  ts <- read_tracks(df, dialect = "anymaze", normalize_xy = TRUE)
-  d  <- as.data.frame(ts)
-  expect_true(all(c("nose_x", "nose_y") %in% names(d)))
-})
-
-test_that("anymaze zone centroid averages selected zones", {
-  df <- data.frame(
-    "Trial time"    = 0:2,
-    "X Centre"      = c(5, 6, 7),  "Y Centre"      = c(0, 0, 0),
-    "Nose X Centre" = c(10, 10, 10), "Nose Y Centre" = c(0, 0, 0),
-    "Tail X Centre" = c(0, 0, 0),   "Tail Y Centre" = c(0, 0, 0),
-    check.names = FALSE
-  )
-  ts <- read_tracks(df, dialect = "anymaze",
-                     dialect_args = list(zone = c("nose", "tail")), normalize_xy = TRUE)
-  d  <- as.data.frame(ts)
-  expect_equal(d$x_raw[1], 5, tolerance = 1e-9)  # mean of 10 and 0
-})
-
 # ---- ctrax dialect removed --------------------------------------------------
 test_that("ctrax dialect is gone (unknown dialect error)", {
   expect_false(exists("ctrax", envir = radiatR:::.loader_registry, inherits = FALSE))

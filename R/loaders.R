@@ -200,6 +200,13 @@ list_loader_formats <- function() sort(ls(envir = .loader_format_registry))
 #' and `partial`, one row per point, with whole non-negative counts and one
 #' `frames` and one `frames_no_position` value (the per-file totals, repeated
 #' on each row). See "Masked points" in [read_tracks()].
+#'
+#' A dialect can keep facts about the file it read (a header block, the units
+#' of its columns) with `attr(out, "source_meta")`: a list with distinct names
+#' other than `source` and `path`. [read_tracks()] stores one record per file
+#' in `Tracks@meta$source_meta`, each the dialect's list with the file's name
+#' (`source`) and path (`path`) in front. The records are a plain list in file
+#' order, not named by file, because files in different folders share names.
 #' @param name Unique dialect name
 #' @param fun Function that accepts (x, ...) and returns a data.frame with id/time/angle or id/time/x/y
 #' @param overwrite Replace an existing dialect registered with the same name
@@ -426,15 +433,42 @@ guess_columns <- function(data, mapping = list()) {
   out
 }
 
+# A time column of durations written H:MM:SS(.fff), as ANY-maze writes them,
+# as seconds. Hours run to any length; minutes and seconds are two digits
+# below 60. A difftime (hms included) is converted. Missing cells are NA.
+# Anything else is malformed, plain numbers included: their unit (seconds,
+# milliseconds, frames) cannot be told, and a caller who knows it converts
+# them with as.difftime().
+.parse_duration <- function(v, column, source = NULL, dialect = NULL, decimal = ".") {
+  if (inherits(v, "difftime")) return(as.numeric(v, units = "secs"))
+  s <- trimws(as.character(v))
+  missing <- .is_missing_chr(s)
+  mark <- if (identical(decimal, ",")) "," else "[.]"
+  pat <- paste0("^([0-9]+):([0-5][0-9]):([0-5][0-9](", mark, "[0-9]+)?)$")
+  dur <- !missing & grepl(pat, s)
+  part <- function(i) as.numeric(sub(",", ".", sub(pat, paste0("\\", i), s[dur]), fixed = TRUE))
+  bad <- !missing & !dur
+  if (any(bad))
+    radiatR_abort_malformed_values(
+      column, which(bad), s[bad], source = source, dialect = dialect,
+      expected = paste0("a duration H:MM:SS.fff (a column of seconds can be given as ",
+                        "as.difftime(<seconds>, units = \"secs\"))"))
+  out <- rep(NA_real_, length(s))
+  out[dur] <- part(1L) * 3600 + part(2L) * 60 + part(3L)
+  out[missing] <- NA_real_
+  out
+}
+
 # Sniff the field separator (and, for ';', the decimal mark) from a delimited
 # file's first non-empty lines. Returns list(delim, decimal). Chooses the
 # candidate that appears most often AND consistently across lines; ties or no
 # signal fall back to comma + dot. ';' implies the European decimal comma,
 # unless the lines read show decimal points and no decimal comma: a dotted
 # number that cannot be digit grouping ("1.5", "0.125"; not "1.234").
-.guess_delim <- function(path) {
+# `lines` are the file's lines when the caller has read (and decoded) them.
+.guess_delim <- function(path, lines = NULL) {
   default <- list(delim = ",", decimal = ".")
-  lines <- tryCatch(
+  lines <- if (!is.null(lines)) utils::head(lines, 20L) else tryCatch(
     readLines(path, n = 20L, warn = FALSE, encoding = "UTF-8"),
     error = function(e) character(0))
   lines <- lines[nzchar(trimws(lines))]
@@ -457,8 +491,11 @@ guess_columns <- function(data, mapping = list()) {
   if (best != ";") return(list(delim = best, decimal = "."))
   cells <- gsub("^\"|\"$", "", trimws(unlist(strsplit(rows, ";", fixed = TRUE))))
   comma <- grepl("^[-+]?[0-9]*,[0-9]+$", cells)
-  point <- grepl("^[-+]?[0-9]*[.][0-9]+([eE][-+]?[0-9]+)?$", cells) &
-    !grepl("^[-+]?[1-9][0-9]{0,2}([.][0-9]{3})+$", cells)
+  # a duration's fraction ("0:00:00.320", as ANY-maze writes time) is a
+  # decimal point too
+  point <- (grepl("^[-+]?[0-9]*[.][0-9]+([eE][-+]?[0-9]+)?$", cells) &
+              !grepl("^[-+]?[1-9][0-9]{0,2}([.][0-9]{3})+$", cells)) |
+    grepl("^[0-9]+:[0-5][0-9]:[0-5][0-9][.][0-9]+$", cells)
   list(delim = best, decimal = if (any(point) && !any(comma)) "." else ",")
 }
 
@@ -641,6 +678,25 @@ guess_columns <- function(data, mapping = list()) {
   out
 }
 
+# What a dialect wants kept about the file it read (attr "source_meta" of its
+# result, a named list), as a record that says which file: `source` (its
+# name) and `path` (as given to read_tracks()). NULL when the dialect set
+# none. read_tracks() keeps the records in a list, one per file, and never
+# keyed by file name: files in different folders share names.
+.source_meta_record <- function(out, path, dialect) {
+  sm <- attr(out, "source_meta")
+  if (is.null(sm)) return(NULL)
+  if (!is.list(sm) || is.data.frame(sm) || is.null(names(sm)) || !all(nzchar(names(sm))) ||
+      anyDuplicated(names(sm)) || any(names(sm) %in% c("source", "path")))
+    rlang::abort(sprintf(paste0(
+      "read_tracks: dialect '%s' returned a `source_meta` that is not a list with distinct ",
+      "names other than `source` and `path`."), dialect),
+      class = "radiatR_dialect_error",
+      source = if (!is.null(path)) basename(path))
+  c(list(source = if (is.null(path)) NA_character_ else basename(path),
+         path = if (is.null(path)) NA_character_ else path), sm)
+}
+
 # What a dialect reports about the points it masked (see .dialect_position()):
 # a data frame with these columns, one row per source file and point.
 .attrition_cols <- c("source", "point", "masked", "frames", "frames_no_position",
@@ -686,7 +742,9 @@ guess_columns <- function(data, mapping = list()) {
   if (lost > 0 && on_invalid == "error")
     msg <- paste0(
       msg, "\n  Pass on_invalid = \"drop\" to leave those rows out",
-      if (partial == "na")
+      # with one point there is nothing left to average (and a dialect that
+      # reads one point has no `partial`)
+      if (partial == "na" && length(unique(masked$point)) > 1L)
         ", or dialect_args = list(partial = \"mean\") to average the points that remain",
       ".")
   rlang::inform(msg, class = "radiatR_attrition")
@@ -795,9 +853,11 @@ guess_columns <- function(data, mapping = list()) {
       class = "radiatR_time_type_mismatch")
 
   attrition <- Filter(Negate(is.null), lapply(dfl, attr, "attrition"))
+  source_meta <- Filter(Negate(is.null),
+                        Map(.source_meta_record, dfl, paths, MoreArgs = list(dialect = dialect)))
   df <- vctrs::vec_rbind(!!!dfl)
   list(df = df, id_col = id_col, synth = synth, time_unit = units[[1L]],
-       attrition = attrition, tz_gaps = tz_gaps)
+       attrition = attrition, source_meta = unname(source_meta), tz_gaps = tz_gaps)
 }
 
 # ---- core: read_tracks ------------------------------------------------------
@@ -909,7 +969,10 @@ read_tracks_format <- function(x, format, ...)
 #' `POSITION_T` (when the version 7 units row gives seconds), ToxTrac
 #' `Time (sec)`, idtracker.ai `seconds` and TRex `time` are seconds, and need
 #' no `fps`; `FRAME`/`frame` columns, the DeepLabCut frame index and SLEAP
-#' `frame_idx` are frames. A contrary explicit
+#' `frame_idx` are frames. `ethovision` (`Trial time`, or `Recording time`
+#' through `time_col`) and `anymaze` (`Time`, a duration) declare seconds; an
+#' `ethovision` data frame's time is taken as seconds (EthoVision writes no
+#' other unit), and a file's units row is checked. A contrary explicit
 #' `time_type` stops with a `radiatR_time_type_mismatch` error, as do files of
 #' one import that disagree.
 #' @param fps Frames-per-second. Required when time_type = "frames" (the time
@@ -932,8 +995,11 @@ read_tracks_format <- function(x, format, ...)
 #'   `decimal` (decimal mark), and `sheet` (Excel worksheet name or number).
 #'   Any `NULL` element is auto-detected. Defaults to all-auto.
 #' @section Masked points:
-#' The `deeplabcut` and `sleap` dialects take each position from one or more
-#' points (bodyparts, nodes). A point is masked in a frame when its
+#' The `deeplabcut`, `sleap`, `ethovision` and `anymaze` dialects take each
+#' position from one or more points (bodyparts, nodes, body points; ANY-maze's
+#' centre point alone). EthoVision writes `-` and ANY-maze an empty cell for a
+#' sample with no position; neither has scores, thresholds, or for `anymaze` a
+#' `partial` argument. A point is masked in a frame when its
 #' coordinates are missing or not finite, when its score (likelihood) is 0, or when a
 #' threshold is given (`dialect_args = list(likelihood_min = )` for
 #' DeepLabCut, `score_min` for SLEAP) and its score is missing or below it.
@@ -984,9 +1050,11 @@ read_tracks_format <- function(x, format, ...)
 #' do not agree on the type of the id column, the ids of each file are the
 #' text in that file. Ids that are numbers in every file are compared as
 #' numbers across files (see `id_collision`). A data frame and an Excel or
-#' Arrow file keep the types they come with. Not covered: an id column that a
-#' dialect is pointed to by an argument of its own (its ids may still be
-#' merged).
+#' Arrow file keep the types they come with. An `anymaze` file is read as
+#' text, so the column its `id_col` names keeps its text. For `ethovision`,
+#' `id_col` applies to a data frame only (a file is one track, id `"1"`).
+#' Not covered: an id column that another dialect is
+#' pointed to by an argument of its own (its ids may still be merged).
 #'
 #' @section Malformed values:
 #' A cell in an x, y, angle, weight or time column that is present but does not
@@ -1002,17 +1070,17 @@ read_tracks_format <- function(x, format, ...)
 #' it is, a value holding a `.` is malformed in turn, since `1.234` could as
 #' well be 1234. A semicolon-separated file is taken to use decimal commas
 #' unless its first lines show decimal points and no decimal comma (`1.5` or
-#' `0.125`, which cannot be digit grouping);
+#' `0.125`, which cannot be digit grouping, or the fraction of a duration such
+#' as `0:00:00.320`);
 #' `read_opts = list(decimal = ".")` says so outright.
 #'
-#' The `trackmate`, `toxtrac`, `idtrackerai_wide`, `trex`, `deeplabcut` and
-#' `sleap` dialects check
-#' their source columns the same way, before any reshaping, so the error names
+#' Every built-in dialect checks
+#' its source columns the same way, before any reshaping, so the error names
 #' the header as the program wrote it and the row of the file's table. A
 #' missing or non-finite position found afterwards (see `on_invalid`) is still
 #' counted in the rows of the table the dialect returns, which for a wide
-#' format is the reshaped one. Coordinates that the zone dialects convert
-#' themselves (ANY-maze, EthoVision) are not yet checked this way.
+#' format is the reshaped one. ANY-maze writes time as a duration
+#' (`0:01:02.500`), read as seconds; a cell that is not one is malformed.
 #'
 #' A time column given as text must hold either numbers throughout or
 #' timestamps in one layout throughout: `YYYY-MM-DD HH:MM:SS`,
@@ -1132,9 +1200,14 @@ read_tracks <- function(x,
     else if (length(x) > 1L && is.character(x)) combined$attrition
     else Filter(Negate(is.null), list(attr(df, "attrition"))), dialect)
   .inform_attrition(attrition, dialect, on_invalid)
+  # What the dialect wants kept about each file: one record per file.
+  source_meta <- if (is.null(dialect)) list()
+                 else if (length(x) > 1L && is.character(x)) combined$source_meta
+                 else Filter(Negate(is.null), list(
+                   .source_meta_record(df, if (is.character(x)) x, dialect)))
   # The reader's notes have been read; they are not part of the Tracks data.
   attr(df, "decimal") <- attr(df, "time_unit") <- attr(df, "attrition") <-
-    attr(df, "tz_gaps") <- NULL
+    attr(df, "source_meta") <- attr(df, "tz_gaps") <- NULL
   if (!is.null(declared)) {
     if (!(identical(declared, "seconds") || identical(declared, "frames")))
       rlang::abort(sprintf(
@@ -1322,6 +1395,7 @@ read_tracks <- function(x,
   if (is.numeric(df[[time]]) && (time_type == "seconds" || time_is_duration))
     meta$time_unit <- "seconds"
   if (length(attrition)) meta$attrition <- do.call(rbind, attrition)
+  if (length(source_meta)) meta$source_meta <- source_meta
   tracks(df,
          id = id, time = time, angle = angle,
          x = xcol, y = ycol,
@@ -1568,11 +1642,13 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
                dialect = inp$dialect, decimal = inp$decimal)
 }
 
-# A dialect's result, carrying for read_tracks() the unit of its time column
-# and, from a dialect that masks points, its attrition record.
-.dialect_output <- function(out, time_unit = NULL, attrition = NULL) {
+# A dialect's result, carrying for read_tracks() the unit of its time column,
+# from a dialect that masks points its attrition record, and whatever else
+# about the file is to be kept with the load (`source_meta`, a named list).
+.dialect_output <- function(out, time_unit = NULL, attrition = NULL, source_meta = NULL) {
   attr(out, "time_unit") <- time_unit
   attr(out, "attrition") <- attrition
+  attr(out, "source_meta") <- source_meta
   out
 }
 
@@ -1876,69 +1952,212 @@ register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = N
   .dialect_output(do.call(rbind, unname(rows)), unit)
 })
 
-# EthoVision XT: single- or multi-body-point exports.
-# Standard export: "X Center" / "Y Center" -> x_center / y_center (prefix style).
-# Multiple Body Point Tracking export adds "X Nose", "Y Nose", "X Tail", "Y Tail"
-# (also prefix style) or "<Zone> point X" / "<Zone> point Y" (suffix style).
-# zone = NULL  -> use the centre/primary position (backward-compatible default).
-# zone = "nose"               -> position from that single zone.
-# zone = c("nose", "tail")    -> equal-weight centroid of those zones.
-# All detected zone columns are always appended for use with bodypart_axis.
-register_loader_dialect("ethovision", function(x, id_col = NULL, time_col = NULL,
-                                               zone = NULL) {
-  df <- if (is.character(x) && file.exists(x)) .read_any(x) else x
-  stopifnot(is.data.frame(df))
-  norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(v))
-  nms  <- norm(names(df)); names(df) <- nms
-
-  # Detect zones from prefix style (x_<zone>, y_<zone>) and suffix style (<zone>_x, <zone>_y).
-  # Normalise prefix zones to suffix style so access is uniform.
-  zones_a <- intersect(sub("^x_", "", grep("^x_.+", nms, value = TRUE)),
-                       sub("^y_", "", grep("^y_.+", nms, value = TRUE)))
-  zones_b <- intersect(sub("_x$",  "", grep(".+_x$",  nms, value = TRUE)),
-                       sub("_y$",  "", grep(".+_y$",  nms, value = TRUE)))
-  for (z in setdiff(zones_a, zones_b)) {
-    df[[paste0(z, "_x")]] <- df[[paste0("x_", z)]]
-    df[[paste0(z, "_y")]] <- df[[paste0("y_", z)]]
-  }
-  nms      <- names(df)
-  zones_all <- setdiff(union(zones_a, zones_b), c("x", "y", ""))
-
-  id   <- id_col %||% .guess_col(nms, c("id","animal","subject","trial","track_id")) %||% "1"
-  time <- time_col %||% .guess_col(nms, c("time","time_s","position_t","t","frame")) %||% "..row"
-  if (time == "..row") { df[["..row"]] <- seq_len(nrow(df)); time <- "..row" }
-  xc   <- .guess_col(nms, c("x_center","x_centre","position_x","x"))
-  yc   <- .guess_col(nms, c("y_center","y_centre","position_y","y"))
-  if (is.null(xc) || is.null(yc)) stop("ethovision: could not find x/y columns")
-
-  if (!is.null(zone)) {
-    sel <- zone
-    bad <- setdiff(sel, zones_all)
-    if (length(bad))
-      stop("ethovision: zone(s) not found: ", paste(bad, collapse = ", "),
-           "; available: ", paste(zones_all, collapse = ", "))
-    if (length(sel) == 1L) {
-      cx <- as.numeric(df[[paste0(sel, "_x")]])
-      cy <- as.numeric(df[[paste0(sel, "_y")]])
-    } else {
-      xs   <- vapply(sel, function(z) as.numeric(df[[paste0(z, "_x")]]), numeric(nrow(df)))
-      ys   <- vapply(sel, function(z) as.numeric(df[[paste0(z, "_y")]]), numeric(nrow(df)))
-      dim(xs) <- c(nrow(df), length(sel)); dim(ys) <- c(nrow(df), length(sel))
-      wsum <- rowSums(!is.na(xs))
-      cx   <- ifelse(wsum > 0L, rowSums(xs, na.rm = TRUE) / wsum, NA_real_)
-      cy   <- ifelse(wsum > 0L, rowSums(ys, na.rm = TRUE) / wsum, NA_real_)
-    }
+# The lines of a text file as UTF-8 text: UTF-16 when it starts with a UTF-16
+# byte-order mark, otherwise UTF-8 when every line is valid UTF-8, otherwise
+# latin-1 (the Windows programs that write tracking exports). A UTF-8
+# byte-order mark is removed. Bytes are never dropped: a line that is not
+# valid UTF-8 makes the whole file latin-1, in which every byte is a character.
+.read_text_lines <- function(path) {
+  bom <- readBin(path, "raw", n = 2L)
+  if (identical(bom, as.raw(c(0xff, 0xfe))) || identical(bom, as.raw(c(0xfe, 0xff)))) {
+    con <- file(path, encoding = "UTF-16")
+    lines <- tryCatch(enc2utf8(readLines(con, warn = FALSE)), finally = close(con))
   } else {
-    cx <- as.numeric(df[[xc]]); cy <- as.numeric(df[[yc]])
+    lines <- readLines(path, warn = FALSE)
+    if (all(validUTF8(lines))) Encoding(lines) <- "UTF-8"
+    else lines <- iconv(lines, "latin1", "UTF-8")
+  }
+  if (length(lines)) lines[1L] <- sub(paste0("^", intToUtf8(0xfeff)), "", lines[1L])
+  lines
+}
+
+# An EthoVision XT text export as a table of text columns. Line 1 gives the
+# number of header lines N. Lines 2 to N-2 are key/value pairs about the trial,
+# line N-1 holds the column names, line N their units, and the data follow.
+# Fields are separated by ";" (or "," or a tab), each line ends with a
+# separator, and a value the program did not have is written "-" (NA here).
+# The text is latin-1 unless it is valid UTF-8 or starts with a UTF-16
+# byte-order mark. Every data row must have the fields of the names row.
+# attr(, "decimal") is the decimal mark of the data rows alone: the header
+# block of a file written with decimal points still holds "3,6 %".
+# attr(, "ethovision") is list(header =, units =): the header block as a named
+# character vector, and the units named by column.
+.read_ethovision <- function(path) {
+  src <- basename(path)
+  fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error", source = src)
+  lines <- .read_text_lines(path)
+  first <- if (length(lines)) lines[1L] else ""
+  top <- regmatches(first, regexec("^\\s*\"?number of header lines:?\"?\\s*([;,\t])", first,
+                                   ignore.case = TRUE))[[1L]]
+  if (length(top) != 2L)
+    fail(paste0("ethovision: '%s' is not an EthoVision text export. Its first line is '%s'; ",
+                "an export starts with \"Number of header lines:\" and a count. A table whose ",
+                "first line is its column header is read as a data frame, not as a file."),
+         src, substr(first, 1L, 60L))
+  delim <- top[2L]
+  fields <- function(ln)
+    scan(text = ln, what = "", sep = delim, quote = "\"", quiet = TRUE, strip.white = TRUE,
+         na.strings = character(0), blank.lines.skip = FALSE)
+  count <- fields(first)[2L]
+  if (is.na(count) || !grepl("^[0-9]{1,6}$", count))
+    fail("ethovision: the number of header lines on line 1 of '%s' is '%s', not a whole number.",
+         src, if (is.na(count)) "" else count)
+  n_hdr <- as.integer(count)
+  if (n_hdr < 3L)
+    fail(paste0("ethovision: line 1 of '%s' gives %d header lines; an export has at least 3 ",
+                "(the count, the names row and the units row)."), src, n_hdr)
+  if (length(lines) < n_hdr)
+    fail("ethovision: '%s' says it has %d header lines; it has %d line(s) in all.",
+         src, n_hdr, length(lines))
+  block <- lapply(lines[seq_len(n_hdr - 2L)[-1L]], fields)
+  block <- block[vapply(block, function(f) length(f) > 0L && nzchar(f[1L]), logical(1))]
+  header <- stats::setNames(
+    vapply(block, function(f) if (length(f) > 1L) f[2L] else "", character(1)),
+    vapply(block, `[`, character(1), 1L))
+  nm <- fields(lines[n_hdr - 1L])
+  un <- fields(lines[n_hdr])
+  trail <- length(nm) > 1L && !nzchar(nm[length(nm)])
+  if (trail) nm <- nm[-length(nm)]
+  if (!length(nm) || any(!nzchar(nm)) || anyDuplicated(nm))
+    fail("ethovision: line %d of '%s' should name the columns, each once; it reads '%s'.",
+         n_hdr - 1L, src, substr(lines[n_hdr - 1L], 1L, 80L))
+  if (length(un) != length(nm) + trail || (trail && nzchar(un[length(un)])))
+    fail(paste0("ethovision: line %d of '%s' has %d field(s); the names row has %d. The units ",
+                "row has one cell per column (empty for a unitless one)."),
+         n_hdr, src, length(un), length(nm) + trail)
+  un <- un[seq_along(nm)]
+  data <- lines[-seq_len(n_hdr)]
+  while (length(data) && !nzchar(trimws(data[length(data)]))) data <- data[-length(data)]
+  if (!length(data)) fail("ethovision: '%s' has no data rows.", src)
+  n_fields <- length(nm) + trail
+  con <- textConnection(data)
+  nf <- tryCatch(utils::count.fields(con, sep = delim, quote = "\"", comment.char = "",
+                                     blank.lines.skip = FALSE),
+                 finally = close(con))
+  ragged <- which(is.na(nf) | nf != n_fields)
+  if (length(ragged))
+    fail(paste0("ethovision: line %d of '%s' has %s field(s); the names row has %d. If the ",
+                "file was cut off there, delete the partial line."),
+         n_hdr + ragged[1L], src, nf[ragged[1L]], n_fields)
+  d <- utils::read.table(text = data, sep = delim, quote = "\"", header = FALSE,
+                         colClasses = "character", comment.char = "",
+                         na.strings = character(0), strip.white = TRUE)
+  if (trail) {
+    extra <- which(nzchar(d[[length(d)]]))
+    if (length(extra))
+      fail(paste0("ethovision: line %d of '%s' has a value after its last column; the names ",
+                  "row ends there."), n_hdr + extra[1L], src)
+  }
+  d <- d[seq_along(nm)]
+  names(d) <- nm
+  d[d == "-"] <- NA_character_
+  cells <- unlist(d, use.names = FALSE)
+  comma <- any(grepl("^[-+]?[0-9]*,[0-9]+$", cells))
+  point <- any(grepl("^[-+]?[0-9]*[.][0-9]+([eE][-+]?[0-9]+)?$", cells))
+  attr(d, "decimal") <- if (delim != "," && comma && !point) "," else "."
+  attr(d, "ethovision") <- list(header = header, units = stats::setNames(un, nm))
+  d
+}
+
+# EthoVision XT (Noldus). A file is the text export read by .read_ethovision():
+# one subject in one trial, so one track with id "1", and its header block and
+# units are kept as the load's source_meta. A data frame is a table with
+# EthoVision's column names, with an optional id column named by `id_col`.
+#
+# The names row labels each body point "X <point>" / "Y <point>" ("X center",
+# and with multi-point tracking "X nose", "X tail"). Headers are matched
+# lower-cased, with runs of other characters as "_".
+# bodypart = NULL            -> the center point
+# bodypart = "nose"          -> that point
+# bodypart = c("nose","tail") -> their mean, under the masking rule of
+#                               .dialect_position() (`partial`)
+# A point the program did not find ("-") is masked. Every point found is
+# appended as <point>_x / <point>_y for heading rules such as bodypart_axis.
+#
+# The time is `Trial time` (seconds since the trial started) unless `time_col`
+# names another column; a file's units row must give it in seconds.
+register_loader_dialect("ethovision", function(x, bodypart = NULL, partial = c("na", "mean"),
+                                               time_col = NULL, id_col = NULL, zone = NULL) {
+  partial <- match.arg(partial)
+  if (!is.null(zone))
+    rlang::abort(paste0(
+      "ethovision: `zone` is now `bodypart`. In EthoVision a zone is an area of the arena; ",
+      "the argument names body points (center, nose, tail)."),
+      class = "radiatR_dialect_error")
+  norm <- function(v) gsub("^_+|_+$", "", gsub("[^a-z0-9]+", "_", tolower(v)))
+  inp <- .dialect_input(x, "ethovision", norm, read = .read_ethovision)
+  fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error",
+                                     source = inp$source)
+  nms <- inp$names; n <- nrow(inp$df)
+  lay <- attr(inp$df, "ethovision")
+  # a table the caller read from an export still writes "-" for a value the
+  # program did not have
+  if (is.null(lay)) {
+    text <- vapply(inp$df, function(v) is.character(v) || is.factor(v), logical(1))
+    inp$df[text] <- lapply(inp$df[text], function(v) {
+      v <- as.character(v)
+      replace(v, which(trimws(v) == "-"), NA_character_)
+    })
+  }
+  arg_col <- function(col, arg) {
+    if (is.null(col)) return(NULL)
+    if (!is.character(col) || length(col) != 1L || is.na(col))
+      fail("ethovision: `%s` must name one column.", arg)
+    .dialect_require(inp, norm(col), arg)
   }
 
-  out <- data.frame(id   = if (id == "1") rep("1", nrow(df)) else df[[id]],
-                    time = df[[time]], x = cx, y = cy, stringsAsFactors = FALSE)
-  for (z in zones_all) {
-    out[[paste0(z, "_x")]] <- as.numeric(df[[paste0(z, "_x")]])
-    out[[paste0(z, "_y")]] <- as.numeric(df[[paste0(z, "_y")]])
+  of <- function(prefix) sub(prefix, "", grep(prefix, nms, value = TRUE))
+  found <- intersect(of("^x_"), of("^y_"))
+  if (!length(found))
+    fail("ethovision: no `X <point>` / `Y <point>` column pairs found; the columns are: %s.",
+         paste(names(inp$df), collapse = ", "))
+  # "centre" is the same point as "center", in a header and in `bodypart`
+  us <- function(v) sub("^centre$", "center", v)
+  if (all(c("center", "centre") %in% found))
+    fail("ethovision: the table has both %s; they are the same point.",
+         paste(.dialect_header(inp, c("x_center", "x_centre")), collapse = " and "))
+  x_cols <- stats::setNames(paste0("x_", found), us(found))
+  y_cols <- stats::setNames(paste0("y_", found), us(found))
+  points <- names(x_cols)
+  if (is.null(bodypart) && !"center" %in% points)
+    fail("ethovision: the table has no center point; name the point(s) to use with `bodypart`: %s.",
+         paste(points, collapse = ", "))
+  sel <- .dialect_select(if (is.null(bodypart)) "center"
+                         else if (is.character(bodypart)) us(norm(bodypart)) else bodypart,
+                         points, "body point", "ethovision", inp$source)
+
+  tc <- arg_col(time_col, "time_col")
+  if (is.null(tc)) {
+    if (!"trial_time" %in% nms)
+      fail("ethovision: no `Trial time` column; name the time column with `time_col`.")
+    tc <- "trial_time"
   }
-  out
+  if (!is.null(lay)) {
+    unit <- lay$units[[match(tc, nms)]]
+    if (!identical(tolower(gsub("[^A-Za-z]", "", unit)), "s"))
+      fail("ethovision: the time column '%s' is in '%s', not in seconds (s).",
+           .dialect_header(inp, tc), unit)
+    if (!is.null(id_col))
+      fail(paste0("ethovision: `id_col` does not apply to an EthoVision file, which holds one ",
+                  "subject (id \"1\"). Load several files with id_collision = \"namespace\"."))
+  }
+  ic <- arg_col(id_col, "id_col")
+  same <- nms %in% nms[duplicated(nms)] &
+    nms %in% c(paste0("x_", found), paste0("y_", found), tc, ic)
+  if (any(same))
+    fail("ethovision: these headers name the same column once case and punctuation are set aside: %s.",
+         paste(names(inp$df)[same], collapse = ", "))
+
+  all_pts <- .dialect_points(inp, x_cols, y_cols)
+  pos <- .dialect_position(list(x = all_pts$x[, sel, drop = FALSE],
+                                y = all_pts$y[, sel, drop = FALSE]),
+                           NULL, partial, "ethovision", inp$source)
+  out <- data.frame(id = if (is.null(ic)) rep("1", n) else .dialect_col(inp, ic),
+                    time = .dialect_time(inp, tc, "seconds"),
+                    x = pos$x, y = pos$y, stringsAsFactors = FALSE)
+  out <- cbind(out, .dialect_position(all_pts, NULL, "na", "ethovision", inp$source)$points)
+  attr(out, "decimal") <- inp$decimal
+  .dialect_output(out, "seconds", pos$attrition, lay)
 })
 
 # TrackMate (Fiji) spot tables: TRACK_ID, FRAME, POSITION_T, POSITION_X,
@@ -2125,82 +2344,86 @@ register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL,
   ), unit)
 })
 
-# ANY-maze (Stoelting): CSV export.  Standard columns: "Trial time", "X Centre",
-# "Y Centre".  Newer versions with nose/tail tracking add "Nose X Centre",
-# "Nose Y Centre", "Tail X Centre", "Tail Y Centre" (or _Center, American).
-# zone = NULL  -> primary centre position (default, backward-compatible).
-# zone = "nose" / zone = c("nose","tail") -> single-zone or equal-weight centroid.
-# skip_units_row strips the optional units row ANY-maze inserts after the header.
-register_loader_dialect("anymaze", function(x, id_col = NULL, time_col = NULL,
-                                            zone = NULL, skip_units_row = TRUE) {
-  df <- if (is.character(x) && length(x) == 1L && file.exists(x)) .read_any(x) else x
-  stopifnot(is.data.frame(df))
-  norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(trimws(v)))
-  nms  <- norm(names(df)); names(df) <- nms
+# A delimited file whose first line is its header, as a table of text columns.
+# Nothing is typed, so a dialect coerces each column itself and a label column
+# keeps its text ("1.1" and "1.10" stay apart). The text is decoded as
+# .read_text_lines() decodes it, and the separator and the decimal mark (attr
+# "decimal") are sniffed as .read_any() sniffs them. Blank lines after the
+# last row are not rows. Every row must have the header's fields:
+# read.table() would pad a short row and wrap a long one.
+.read_text_table <- function(path, dialect) {
+  src <- basename(path)
+  fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error", source = src)
+  lines <- .read_text_lines(path)
+  while (length(lines) && !nzchar(trimws(lines[length(lines)]))) lines <- lines[-length(lines)]
+  if (length(lines) < 2L) fail("%s: '%s' has no data rows.", dialect, src)
+  g <- .guess_delim(path, lines)
+  con <- textConnection(lines)
+  nf <- tryCatch(utils::count.fields(con, sep = g$delim, quote = "\"", comment.char = "",
+                                     blank.lines.skip = FALSE),
+                 finally = close(con))
+  ragged <- which(is.na(nf) | nf != nf[1L])
+  if (length(ragged))
+    fail("%s: line %d of '%s' has %s field(s); its header names %d.",
+         dialect, ragged[1L], src, nf[ragged[1L]], nf[1L])
+  d <- utils::read.table(text = lines, header = TRUE, sep = g$delim, quote = "\"",
+                         colClasses = "character", check.names = FALSE, comment.char = "",
+                         na.strings = character(0), strip.white = TRUE)
+  attr(d, "decimal") <- g$decimal
+  d
+}
 
-  # Detect multi-point zones from "<zone> X Centre" -> <zone>_x_centre pattern,
-  # then normalise to plain <zone>_x / <zone>_y for uniform access.
-  pat_x <- grep("_x_centr[ei]$", nms, value = TRUE)
-  pat_y <- grep("_y_centr[ei]$", nms, value = TRUE)
-  zones_centre <- intersect(sub("_x_centr[ei]$", "", pat_x),
-                            sub("_y_centr[ei]$", "", pat_y))
-  for (z in zones_centre) {
-    xz <- grep(paste0("^", z, "_x_centr"), nms, value = TRUE)[1L]
-    yz <- grep(paste0("^", z, "_y_centr"), nms, value = TRUE)[1L]
-    df[[paste0(z, "_x")]] <- suppressWarnings(as.numeric(df[[xz]]))
-    df[[paste0(z, "_y")]] <- suppressWarnings(as.numeric(df[[yz]]))
+# ANY-maze (Stoelting) CSV export: `Time`, `Centre position X`, `Centre
+# position Y`, then one 0/1 column per zone of the arena (`In <zone>`), which
+# are not read. There is no units row. Headers are matched lower-cased, with
+# runs of other characters as "_". The time is a duration H:MM:SS.fff, read as
+# seconds (see .parse_duration()); `time_col` names another time column. The
+# export holds one animal, id "1", unless `id_col` names an id column, which is
+# kept as written. A sample with no position is masked and counted under
+# .dialect_position(); only the centre point is read, so there is no
+# `bodypart`.
+register_loader_dialect("anymaze", function(x, time_col = NULL, id_col = NULL, zone = NULL,
+                                            bodypart = NULL, skip_units_row = NULL) {
+  gone <- function(msg) rlang::abort(msg, class = "radiatR_dialect_error")
+  if (!is.null(zone) || !is.null(bodypart))
+    gone(paste0("anymaze: `zone` and `bodypart` are not arguments of this dialect. It reads ",
+                "the centre position (`Centre position X` / `Centre position Y`) only."))
+  if (!is.null(skip_units_row))
+    gone(paste0("anymaze: `skip_units_row` was removed. An ANY-maze export has no units row, ",
+                "and no row is skipped."))
+  norm <- function(v) gsub("^_+|_+$", "", gsub("[^a-z0-9]+", "_", tolower(v)))
+  inp <- .dialect_input(x, "anymaze", norm, read = function(p) .read_text_table(p, "anymaze"))
+  fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error",
+                                     source = inp$source)
+  nms <- inp$names; n <- nrow(inp$df)
+  arg_col <- function(col, arg) {
+    if (is.null(col)) return(NULL)
+    if (!is.character(col) || length(col) != 1L || is.na(col))
+      fail("anymaze: `%s` must name one column.", arg)
+    .dialect_require(inp, norm(col), arg)
   }
-  nms <- names(df)
-  zones_plain <- intersect(sub("_x$", "", grep(".+_x$", nms, value = TRUE)),
-                           sub("_y$", "", grep(".+_y$", nms, value = TRUE)))
-  zones_all <- setdiff(union(zones_centre, zones_plain), c("x", "y", "..row"))
+  xc <- .guess_col(nms, c("centre_position_x", "center_position_x"))
+  yc <- .guess_col(nms, c("centre_position_y", "center_position_y"))
+  if (is.null(xc) || is.null(yc))
+    fail("anymaze: no `Centre position X` / `Centre position Y` columns; the columns are: %s.",
+         paste(names(inp$df), collapse = ", "))
+  tc <- arg_col(time_col, "time_col") %||% (if ("time" %in% nms) "time")
+  if (is.null(tc))
+    fail("anymaze: no `Time` column; name the time column with `time_col`.")
+  ic <- arg_col(id_col, "id_col")
+  same <- nms %in% nms[duplicated(nms)] & nms %in% c(xc, yc, tc, ic)
+  if (any(same))
+    fail("anymaze: these headers name the same column once case and punctuation are set aside: %s.",
+         paste(names(inp$df)[same], collapse = ", "))
 
-  # Strip optional units row before any numeric operations
-  xc_peek <- .guess_col(nms, c("x_centre","x_center","x_pos","x_position","x"))
-  if (skip_units_row && !is.null(xc_peek) && nrow(df) > 0 &&
-      is.na(suppressWarnings(as.numeric(df[[xc_peek]][1L]))))
-    df <- df[-1L, , drop = FALSE]
-
-  id   <- id_col %||% .guess_col(nms, c("id","animal","subject","trial","track")) %||% "1"
-  time <- time_col %||% .guess_col(nms, c("trial_time","time_s","time","t")) %||% "..row"
-  if (time == "..row") { df[["..row"]] <- seq_len(nrow(df)); time <- "..row" }
-  xc <- .guess_col(nms, c("x_centre","x_center","x_pos","x_position","x"))
-  yc <- .guess_col(nms, c("y_centre","y_center","y_pos","y_position","y"))
-  if (is.null(xc) || is.null(yc)) stop("anymaze: could not find x/y position columns")
-
-  if (!is.null(zone)) {
-    sel <- zone
-    bad <- setdiff(sel, zones_all)
-    if (length(bad))
-      stop("anymaze: zone(s) not found: ", paste(bad, collapse = ", "),
-           "; available: ", paste(zones_all, collapse = ", "))
-    if (length(sel) == 1L) {
-      cx <- suppressWarnings(as.numeric(df[[paste0(sel, "_x")]]))
-      cy <- suppressWarnings(as.numeric(df[[paste0(sel, "_y")]]))
-    } else {
-      xs   <- vapply(sel, function(z) suppressWarnings(as.numeric(df[[paste0(z,"_x")]])), numeric(nrow(df)))
-      ys   <- vapply(sel, function(z) suppressWarnings(as.numeric(df[[paste0(z,"_y")]])), numeric(nrow(df)))
-      dim(xs) <- c(nrow(df), length(sel)); dim(ys) <- c(nrow(df), length(sel))
-      wsum <- rowSums(!is.na(xs))
-      cx   <- ifelse(wsum > 0L, rowSums(xs, na.rm = TRUE) / wsum, NA_real_)
-      cy   <- ifelse(wsum > 0L, rowSums(ys, na.rm = TRUE) / wsum, NA_real_)
-    }
-  } else {
-    cx <- suppressWarnings(as.numeric(df[[xc]]))
-    cy <- suppressWarnings(as.numeric(df[[yc]]))
-  }
-
-  out <- data.frame(
-    id   = if (id == "1") rep("1", nrow(df)) else df[[id]],
-    time = suppressWarnings(as.numeric(df[[time]])),
-    x = cx, y = cy,
-    stringsAsFactors = FALSE
-  )
-  for (z in zones_all) {
-    out[[paste0(z, "_x")]] <- suppressWarnings(as.numeric(df[[paste0(z, "_x")]]))
-    out[[paste0(z, "_y")]] <- suppressWarnings(as.numeric(df[[paste0(z, "_y")]]))
-  }
-  out
+  pos <- .dialect_position(.dialect_points(inp, c(center = xc), c(center = yc)),
+                           NULL, "na", "anymaze", inp$source)
+  out <- data.frame(id = if (is.null(ic)) rep("1", n) else .dialect_col(inp, ic),
+                    time = .parse_duration(.dialect_col(inp, tc), .dialect_header(inp, tc),
+                                           inp$source, "anymaze", inp$decimal),
+                    x = pos$x, y = pos$y, stringsAsFactors = FALSE)
+  attr(out, "decimal") <- inp$decimal
+  .dialect_output(out, "seconds", pos$attrition)
 })
 
 # SLEAP (https://sleap.ai) analysis CSV: `track`, `frame_idx`, then <node>.x /

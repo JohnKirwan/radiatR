@@ -17,6 +17,8 @@ actually write, not against a hand-built table.
 | `dlc_CollectedData_Pranav.csv` | DeepLabCut *labelled training data* (rows indexed by image, no likelihoods), kept as the case the `deeplabcut` dialect must refuse | `examples/openfield-Pranav-2018-10-30/labeled-data/m4s1/CollectedData_Pranav.csv` in <https://github.com/DeepLabCut/DeepLabCut> (commit 9a129d4946323799cf4328ec567f237ecde8c24d; (c) A. & M.W. Mathis Labs, see `inst/COPYRIGHTS`) | LGPL-3.0 |
 | `sleap_three_nodes.analysis.csv` | SLEAP analysis CSV (`track`, `frame_idx`, `instance.score`, then `<node>.x` / `.y` / `.score` for `head`, `torso`, `tail_base`): the first 59 rows, two tracks. Nodes SLEAP did not find are blank with score 0.0 | `data/sleap/new_video.v002.000_mice_new.analysis.csv` in <https://github.com/animovement/movement-data>, from `new_data/results.zip` in <https://github.com/talmolab/cosyne-tutorial-data> (the SLEAP tutorial at Cosyne 2024) | BSD-3-Clause, Copyright (c) 2024, Talmo Lab at the Salk Institute |
 | `sleap_three_mice.analysis.csv` | SLEAP analysis CSV layout, one node (`centroid`), three tracks, 20 frames, scores above 1. Written by sleap-io from a SLEAP `.h5`, not by SLEAP's own exporter | `data/sleap/SLEAP_three-mice_Aeon_mixed-labels.analysis.csv` in <https://github.com/animovement/movement-data>, derived from `poses/SLEAP_three-mice_Aeon_mixed-labels.analysis.h5` in <https://gin.swc.ucl.ac.uk/neuroinformatics/movement-sample-data>, shared by Chang Huan Lo (Sainsbury Wellcome Centre) | CC BY 4.0 |
+| `ethovision_trial.txt` | EthoVision XT text export of one tracked termite (latin-1, CRLF, `;`-separated with a trailing `;`): the 33 header lines, then data rows 1 to 20 and 1600 to 1650 of the source, the rows between cut. 71 rows; the 31 in which the subject was not found (`"-"`, source rows 1607 to 1626 and 1634 to 1644) are every such row of the source | `data/ethovision/S22-Track-Cupim02SeptTarde-Trial.txt` in <https://github.com/animovement/movement-data> (commit `09a5fc3`), redistributed there from doi:10.5281/zenodo.3628061 by Julieth Castiblanco, Paulo Fellipe Cristaldo, Leticia Ribeiro Paiva and Og DeSouza | CC BY 4.0 |
+| `ethovision_truncated.txt` | `ethovision_trial.txt` followed by the last line of the source file, which is cut off after three fields and has no line ending: the case the `ethovision` dialect must refuse | as above | CC BY 4.0 |
 
 `sleap_three_nodes.analysis.csv` is redistributed under the BSD 3-Clause
 licence of talmolab/cosyne-tutorial-data. `sleap_three_nodes.LICENSE.txt`
@@ -29,3 +31,16 @@ a recording. The loaders were also run against real ToxTrac output (the
 `Tracking_0.txt` and `Tracking_RealSpace_1.txt` samples in
 <https://github.com/AmanRathoreP/ToxTrac-Data-Analyser>, older 6-column layout),
 which is not bundled because that repository states no licence.
+
+The two EthoVision files are cut with `sed -n '1,53p;1633,1683p'` (and
+`tail -n 1` for the cut-off line), so their bytes are the source's. Without
+its cut-off last line the whole source file loads under
+`read_tracks(dialect = "ethovision", on_invalid = "drop")`: 1,876 rows, 31
+without a position.
+
+No ANY-maze export is bundled: the real file the `anymaze` dialect was checked
+against (`MWM/MWMSimplified/N14Months/NData/Madhavan14m_C1_Days1-4 - Test
+6.csv` in <https://github.com/CowenLab/Ovariectomy_and_development>, 460 rows,
+1 without a position) is in a repository that states no licence.
+`../anymaze_synthetic.csv` has that file's layout (the header, `H:MM:SS.fff`
+times, an empty first position, `In <zone>` columns) with invented values.

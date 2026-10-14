@@ -2,6 +2,40 @@
 
 ## Breaking changes
 
+* The `ethovision` dialect now reads the text export EthoVision XT writes: a
+  first line giving the number of header lines, a block of trial details, a
+  names row and a units row, `;`-separated (or `,` or tab), in latin-1, UTF-8
+  or UTF-16, with `-` for a value the program did not have. Neither it nor
+  `anymaze` read a real export before. A file is one track (id `"1"`); its
+  time is `Trial time`, in seconds; a row with the wrong number of fields
+  stops the load, naming the line, so a file cut off mid-row has to have its
+  partial last line removed. A table whose first line is its column header is
+  read as a data frame, no longer as a file.
+* `ethovision`: `zone =` is now `bodypart =` (a zone is an area of the arena
+  in EthoVision; the argument names body points). The default is the centre
+  point; `bodypart = c("nose", "tail")` gives their mean. `zone =` stops with
+  an error naming the new argument. The nose and tail columns are read by the
+  names EthoVision documents (`X nose`, `Y tail`), which no export available
+  to us contains.
+* The `anymaze` dialect now reads ANY-maze's `Time`, `Centre position X`,
+  `Centre position Y` export. `Time` is a duration (`0:01:02.500`), read as
+  seconds. The centre point alone is read: `zone =` is removed, as is
+  `skip_units_row =` (the dialect deleted the first row whenever its position
+  was not a number, which on a real export is the first sample). The columns
+  it used to look for (`X Centre`, `Nose X Centre`) are in no export found.
+  A file without a time column is an error, and so is a `Time` of plain
+  numbers, whose unit cannot be told: give a data frame with a `difftime`
+  column instead. Pass the file path, or read `Time` as text (e.g.
+  `readr::read_csv(f, col_types = readr::cols(Time = "c"))`): readr's own
+  time parsing drops the fraction of a second.
+* Both dialects follow the rule for missing points (see "Masked points" in
+  `?read_tracks`): a sample without a position has an `NA` position, is
+  counted in `@meta$attrition`, and stops the load under
+  `on_invalid = "error"` or is dropped under `"drop"`. A malformed cell stops
+  the load (`radiatR_malformed_values`); both dialects coerced silently
+  before. Both declare their time as seconds. The mean of several EthoVision
+  points divided the sum of y by the count of x present; it now masks a point
+  missing either coordinate.
 * `draw_tracks()`, `line_circle_intercept_df()`,
   `line_circle_intercept_traj()` and `new_headings_frame()` are no longer
   exported. They are internal helpers: draw tracks with `radiate()` or
@@ -216,6 +250,15 @@
 
 * The `sleap` dialect accepts a node name as it is written in the file
   (`bodypart = "Tail Base"`).
+* A dialect can keep facts about the file it read with
+  `attr(out, "source_meta")` (see `?register_loader_dialect`).
+  `read_tracks()` stores one record per file in `Tracks@meta$source_meta`,
+  with the file's name and path; `c()` concatenates them. `ethovision` keeps
+  the export's header block (`header`: trial, arena and subject names, start
+  time, ...) and the units of its columns (`units`) there.
+* The message about masked points offers `partial = "mean"` only when the
+  position was taken from more than one point.
+* The app detects EthoVision and ANY-maze uploads.
 * The app detects DeepLabCut files by their header rows, multi-animal files
   included. A flat `<bodypart>_likelihood` table is still offered to the
   `deeplabcut` dialect, which now refuses it by name; choose "Generic CSV" to
