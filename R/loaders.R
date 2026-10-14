@@ -200,6 +200,13 @@ list_loader_formats <- function() sort(ls(envir = .loader_format_registry))
 #' and `partial`, one row per point, with whole non-negative counts and one
 #' `frames` and one `frames_no_position` value (the per-file totals, repeated
 #' on each row). See "Masked points" in [read_tracks()].
+#'
+#' A dialect can keep facts about the file it read (a header block, the units
+#' of its columns) with `attr(out, "source_meta")`: a list with distinct names
+#' other than `source` and `path`. [read_tracks()] stores one record per file
+#' in `Tracks@meta$source_meta`, each the dialect's list with the file's name
+#' (`source`) and path (`path`) in front. The records are a plain list in file
+#' order, not named by file, because files in different folders share names.
 #' @param name Unique dialect name
 #' @param fun Function that accepts (x, ...) and returns a data.frame with id/time/angle or id/time/x/y
 #' @param overwrite Replace an existing dialect registered with the same name
@@ -641,6 +648,25 @@ guess_columns <- function(data, mapping = list()) {
   out
 }
 
+# What a dialect wants kept about the file it read (attr "source_meta" of its
+# result, a named list), as a record that says which file: `source` (its
+# name) and `path` (as given to read_tracks()). NULL when the dialect set
+# none. read_tracks() keeps the records in a list, one per file, and never
+# keyed by file name: files in different folders share names.
+.source_meta_record <- function(out, path, dialect) {
+  sm <- attr(out, "source_meta")
+  if (is.null(sm)) return(NULL)
+  if (!is.list(sm) || is.data.frame(sm) || is.null(names(sm)) || !all(nzchar(names(sm))) ||
+      anyDuplicated(names(sm)) || any(names(sm) %in% c("source", "path")))
+    rlang::abort(sprintf(paste0(
+      "read_tracks: dialect '%s' returned a `source_meta` that is not a list with distinct ",
+      "names other than `source` and `path`."), dialect),
+      class = "radiatR_dialect_error",
+      source = if (!is.null(path)) basename(path))
+  c(list(source = if (is.null(path)) NA_character_ else basename(path),
+         path = if (is.null(path)) NA_character_ else path), sm)
+}
+
 # What a dialect reports about the points it masked (see .dialect_position()):
 # a data frame with these columns, one row per source file and point.
 .attrition_cols <- c("source", "point", "masked", "frames", "frames_no_position",
@@ -795,9 +821,11 @@ guess_columns <- function(data, mapping = list()) {
       class = "radiatR_time_type_mismatch")
 
   attrition <- Filter(Negate(is.null), lapply(dfl, attr, "attrition"))
+  source_meta <- Filter(Negate(is.null),
+                        Map(.source_meta_record, dfl, paths, MoreArgs = list(dialect = dialect)))
   df <- vctrs::vec_rbind(!!!dfl)
   list(df = df, id_col = id_col, synth = synth, time_unit = units[[1L]],
-       attrition = attrition, tz_gaps = tz_gaps)
+       attrition = attrition, source_meta = unname(source_meta), tz_gaps = tz_gaps)
 }
 
 # ---- core: read_tracks ------------------------------------------------------
@@ -1132,9 +1160,14 @@ read_tracks <- function(x,
     else if (length(x) > 1L && is.character(x)) combined$attrition
     else Filter(Negate(is.null), list(attr(df, "attrition"))), dialect)
   .inform_attrition(attrition, dialect, on_invalid)
+  # What the dialect wants kept about each file: one record per file.
+  source_meta <- if (is.null(dialect)) list()
+                 else if (length(x) > 1L && is.character(x)) combined$source_meta
+                 else Filter(Negate(is.null), list(
+                   .source_meta_record(df, if (is.character(x)) x, dialect)))
   # The reader's notes have been read; they are not part of the Tracks data.
   attr(df, "decimal") <- attr(df, "time_unit") <- attr(df, "attrition") <-
-    attr(df, "tz_gaps") <- NULL
+    attr(df, "source_meta") <- attr(df, "tz_gaps") <- NULL
   if (!is.null(declared)) {
     if (!(identical(declared, "seconds") || identical(declared, "frames")))
       rlang::abort(sprintf(
@@ -1322,6 +1355,7 @@ read_tracks <- function(x,
   if (is.numeric(df[[time]]) && (time_type == "seconds" || time_is_duration))
     meta$time_unit <- "seconds"
   if (length(attrition)) meta$attrition <- do.call(rbind, attrition)
+  if (length(source_meta)) meta$source_meta <- source_meta
   tracks(df,
          id = id, time = time, angle = angle,
          x = xcol, y = ycol,
@@ -1568,11 +1602,13 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
                dialect = inp$dialect, decimal = inp$decimal)
 }
 
-# A dialect's result, carrying for read_tracks() the unit of its time column
-# and, from a dialect that masks points, its attrition record.
-.dialect_output <- function(out, time_unit = NULL, attrition = NULL) {
+# A dialect's result, carrying for read_tracks() the unit of its time column,
+# from a dialect that masks points its attrition record, and whatever else
+# about the file is to be kept with the load (`source_meta`, a named list).
+.dialect_output <- function(out, time_unit = NULL, attrition = NULL, source_meta = NULL) {
   attr(out, "time_unit") <- time_unit
   attr(out, "attrition") <- attrition
+  attr(out, "source_meta") <- source_meta
   out
 }
 
