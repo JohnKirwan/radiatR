@@ -79,7 +79,9 @@
 #' @param on_missing One of `"warn"` (default), `"error"`, or `"quiet"`,
 #'   controlling what happens when a rule produces no heading (`NA`) for one or
 #'   more trials. The `NA` rows are always retained; the returned object carries
-#'   `n_total`, `n_missing`, and `missing_ids` attributes. `"warn"` emits a
+#'   `n_total` and `n_missing` (headings, i.e. rows), `n_trials` (distinct
+#'   trials) and `missing_ids` (the trials with at least one missing heading)
+#'   attributes. `"warn"` emits a
 #'   warning, `"error"` stops, `"quiet"` is silent. Rule-based failures are often
 #'   non-random (e.g. tracks that never reach the circumference) and can bias
 #'   circular statistics, so they are surfaced by default.
@@ -769,16 +771,21 @@ setMethod("derive_headings", "Tracks", function(
   n_total     <- nrow(res)
   miss        <- is.na(res$heading)
   n_missing   <- sum(miss)
-  missing_ids <- res$id[miss]
+  missing_ids <- unique(res$id[miss])
+  n_trials    <- length(unique(res$id))
 
   if (n_missing > 0L && on_missing != "quiet") {
-    pct <- round(100 * n_missing / n_total, 1)
-    msg <- sprintf(
-      paste0("derive_headings(rule = '%s'): %d of %d trials (%.1f%%) produced ",
-             "no heading and are excluded from circular statistics. Rule-based ",
-             "failures are often non-random and can bias results; inspect ",
-             "attr(x, \"missing_ids\")."),
-      rule_label, n_missing, n_total, pct)
+    pct  <- round(100 * n_missing / n_total, 1)
+    # a rule with several headings per trial (window_net, crossing) counts rows
+    what <- if (n_trials == n_total)
+      sprintf("%d of %d trials (%.1f%%) produced no heading", n_missing, n_total, pct)
+    else
+      sprintf("%d of %d headings (%.1f%%), from %d of %d trials, are missing",
+              n_missing, n_total, pct, length(missing_ids), n_trials)
+    msg <- paste0("derive_headings(rule = '", rule_label, "'): ", what,
+                  " and are excluded from circular statistics. Rule-based ",
+                  "failures are often non-random and can bias results; inspect ",
+                  "attr(x, \"missing_ids\").")
     if (on_missing == "error")
       stop(msg, " Set on_missing = \"warn\" or \"quiet\" to proceed.", call. = FALSE)
     warning(msg, call. = FALSE)
@@ -786,8 +793,8 @@ setMethod("derive_headings", "Tracks", function(
 
   # Return a durable headings_frame instead of a plain df + loose attrs. The
   # canonical display/heading metadata rides through dplyr verbs; the attrition
-  # attributes (n_total/n_missing/missing_ids) are re-attached for downstream
-  # used-vs-total reporting.
+  # attributes (n_total/n_missing/n_trials/missing_ids) are re-attached for
+  # downstream used-vs-total reporting.
   out <- new_headings_frame(
     res,
     display     = attr(res, "display", exact = TRUE) %||% circ_display(),
@@ -797,6 +804,7 @@ setMethod("derive_headings", "Tracks", function(
   )
   attr(out, "n_total")     <- n_total
   attr(out, "n_missing")   <- n_missing
+  attr(out, "n_trials")    <- n_trials
   attr(out, "missing_ids") <- missing_ids
   out
 })
