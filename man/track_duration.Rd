@@ -18,6 +18,9 @@ A data frame with columns `id` and `duration`.
 Total elapsed time of each trajectory (its last point minus its first),
 computed via [elapsed_seconds()].
 }
+\examples{
+head(track_duration(cpunctatus, units = "minutes"))
+}
 \seealso{
 [frame_rate()], [elapsed_seconds()]
 }
