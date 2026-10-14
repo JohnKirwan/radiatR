@@ -521,7 +521,7 @@ circ_summarise <- function(data,
 #' Computes circular mean direction, mean resultant length \emph{R}, circular
 #' standard deviation, and sample size for each group.  Designed for
 #' within-trial summaries from \code{\link{pose_to_headings}} or
-#' \code{derive_headings(\ldots, frame_select = "all")}, but accepts any data
+#' \code{derive_headings(\ldots, rule = "bodypart_axis", frame_select = "all")}, but accepts any data
 #' frame with an angle column.
 #'
 #' @param hd Data frame containing headings in radians.

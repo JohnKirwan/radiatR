@@ -2,6 +2,32 @@
 
 ## Breaking changes
 
+* `derive_headings(rule = "straight")` measures turns between moving steps
+  only. A pause (a step of zero length) has no direction; it was read as a
+  turn of 0, so a pause hid any turn around it, padded runs, and a run that
+  began on a pause had heading 0 (East). Pauses now neither break a run nor
+  count toward `min_len`. On `cpunctatus`, 47 of 235 trials have no straight
+  run (20 before: 30 lost their run, 3 gained one), and 104 of the 185 with
+  a heading either way change by more than a degree (median 90 degrees
+  among those that change).
+* `derive_headings(rule = "pca_axis", source = "velocity")` takes the axis of
+  the steps about zero, not about their mean, so a track of equal steps has
+  their direction as its axis (it had none, or one set by rounding). Under
+  either source a track whose net displacement has no component along the
+  axis (one that ends where it started) has heading `NA`: the axis has no
+  sign, which had been left to the eigenvector routine. On `cpunctatus`,
+  `source = "velocity"` changes 198 of 235 headings by more than a degree
+  (median 6.4, max 86.4); `source = "position"` changes none; no new `NA`.
+* A built-in `derive_headings()` rule stops with a `radiatR_invalid_argument`
+  error naming any option in `...` it does not read (e.g. `rule = "distal",
+  frame_select = "all"`, which only the body-part rules read), and lists the
+  options it takes. A misplaced option was silently ignored, and a longer
+  misspelling was taken by partial matching (`min_length = 50` acted as
+  `min_len`); both now stop. `return_coords` is accepted by every built-in
+  rule. Registered and function rules still receive `...` unchecked.
+  `angle_convention`, which no rule ever read (a heading is in the unit-circle
+  convention), is among the options that now stop: drop it from such calls.
+
 * The `ethovision` dialect now reads the text export EthoVision XT writes: a
   first line giving the number of header lines, a block of trial details, a
   names row and a units row, `;`-separated (or `,` or tab), in latin-1, UTF-8
@@ -352,6 +378,11 @@
 
 ## Bug fixes
 
+* `derive_headings()` no longer calls headings "trials" for a rule that gives
+  several per trial (`window_net`, `crossing`): the `on_missing` message
+  counts missing headings and the trials they come from, and the app's
+  attrition banner does the same. `missing_ids` lists each trial once, and
+  the new `n_trials` attribute gives the number of trials.
 * `read_tracks()` with a `tz` other than `"UTC"` put a timestamp that names
   its zone (`2024-01-01T10:00:00Z`, `...+02:00`) at the wrong instant when
   the file was read by `data.table::fread()` (readr not installed): the

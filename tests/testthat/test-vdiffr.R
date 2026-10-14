@@ -47,8 +47,7 @@ vdiffr_headings <- function() {
   suppressWarnings(
     derive_headings(cpunctatus, rule = "crossing",
                     circ0 = 0.3, circ1 = 0.6,
-                    coords = "absolute",
-                    angle_convention = "unit_circle")
+                    coords = "absolute")
   )
 }
 

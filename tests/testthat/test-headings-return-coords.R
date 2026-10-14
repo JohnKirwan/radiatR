@@ -46,11 +46,12 @@ test_that("straight return_coords adds run endpoints that lie on the track", {
     trk <- dat[dat[[idc]] == hd$id[i], ]
     on0 <- any(abs(trk[[xc]] - hd$x_seg0[i]) < 1e-9 & abs(trk[[yc]] - hd$y_seg0[i]) < 1e-9)
     on1 <- any(abs(trk[[xc]] - hd$x_seg1[i]) < 1e-9 & abs(trk[[yc]] - hd$y_seg1[i]) < 1e-9)
-    # endpoints are real points of the track; they may coincide for a track whose
-    # straightest run is stationary (the rule treats a zero-displacement run as
-    # turn 0), so the columns faithfully report whatever segment the rule chose
+    # endpoints are real points of the track: the start of the run's first
+    # moving step and the end of its last
     expect_true(on0 && on1)
   }
+  # a run is made of moving steps, so its endpoints differ
+  expect_true(all(hd$x_seg0[ok] != hd$x_seg1[ok] | hd$y_seg0[ok] != hd$y_seg1[ok]))
 
   hd0 <- derive_headings(cpunctatus, rule = "straight", on_missing = "quiet")
   expect_false(any(c("x_seg0", "x_seg1") %in% names(hd0)))

@@ -53,8 +53,7 @@ data(cpunctatus)
 
 hd <- derive_headings(cpunctatus, rule = "crossing",
                       circ0 = 0.2, circ1 = 0.4,
-                      coords = "relative",
-                      angle_convention = "clock")
+                      coords = "relative")
 names(hd)[names(hd) == "id"] <- "trial_id"
 
 # attach target half-width (arc) from the dataset, by trial
