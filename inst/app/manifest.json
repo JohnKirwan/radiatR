@@ -1421,16 +1421,16 @@
         "RemoteUsername": "JohnKirwan",
         "RemotePkgRef": "github::JohnKirwan/radiatR@master",
         "RemoteRef": "master",
-        "RemoteSha": "88e3aeb00682037e9eebfa6557bcac7455f93abb",
+        "RemoteSha": "15bcc939b283957fd32b0df691e57273dbe52e38",
         "GithubRepo": "radiatR",
         "GithubUsername": "JohnKirwan",
         "GithubRef": "master",
-        "GithubSHA1": "88e3aeb00682037e9eebfa6557bcac7455f93abb",
+        "GithubSHA1": "15bcc939b283957fd32b0df691e57273dbe52e38",
         "NeedsCompilation": "no",
-        "Packaged": "2026-10-14 09:45:58 UTC; runner",
+        "Packaged": "2026-10-14 18:06:08 UTC; runner",
         "Author": "John D. Kirwan [aut, cre, cph],\n  A. & M.W. Mathis Labs [cph] (test fixture\n    tests/testthat/fixtures/real/dlc_CollectedData_Pranav.csv, from\n    'DeepLabCut'),\n  Talmo Pereira [cph] (example file inst/extdata/sleap_example.csv, from\n    'SLEAP'),\n  The Trustees of Princeton University [cph] (example file\n    inst/extdata/sleap_example.csv, from 'SLEAP')",
         "Maintainer": "John D. Kirwan <john@jkirwan.org>",
-        "Built": "R 4.5.3; ; 2026-10-14 09:45:59 UTC; unix"
+        "Built": "R 4.5.3; ; 2026-10-14 18:06:13 UTC; unix"
       }
     },
     "rappdirs": {
@@ -2081,7 +2081,7 @@
   },
   "files": {
     "app.R": {
-      "checksum": "7128c783894a9cf7f40d5bf2e59093e7"
+      "checksum": "dae9e6241a339afd3de469fd99f0e4f8"
     },
     "download_helpers.R": {
       "checksum": "baed9472b0de62136d821fe7dd0bdfac"
@@ -2099,7 +2099,7 @@
       "checksum": "5ead9614c339dab20298a43076ffe1e8"
     },
     "upload.R": {
-      "checksum": "f5057c450568aeb191f3ddec55cdd9ba"
+      "checksum": "607da8df7ce749037a8fc928aa47684c"
     },
     "www/apple-touch-icon.png": {
       "checksum": "5742e2e36ebe10ed7e65f6ab23716300"
