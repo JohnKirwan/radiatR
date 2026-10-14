@@ -51,6 +51,9 @@ guess_dialect <- function(path) {
   # A binary file (an Excel workbook is a zip) or one in another encoding has
   # lines that are not valid text: they label nothing.
   hdr[!validUTF8(hdr)] <- ""
+  # A UTF-8 byte-order mark before the first header is not part of it.
+  bom <- rawToChar(as.raw(c(0xef, 0xbb, 0xbf)))
+  if (length(hdr)) hdr[1L] <- sub(paste0("^", bom), "", hdr[1L], useBytes = TRUE)
   # DeepLabCut labels its header rows: scorer, (individuals,) bodyparts, coords
   lab <- tolower(gsub("^\"|\"$", "", trimws(sub(",.*$", "", hdr))))
   if (identical(lab[1:3], c("scorer", "bodyparts", "coords")) ||
@@ -58,11 +61,15 @@ guess_dialect <- function(path) {
     return("deeplabcut")
   }
   if (!length(hdr) || !nzchar(hdr[1L])) return("generic")
+  # An EthoVision text export says so on its first line, which is plain ASCII
+  # even where the file is latin-1. (A UTF-16 export is not valid UTF-8 and is
+  # chosen from the dropdown.)
+  if (grepl("^\"?number of header lines", tolower(trimws(hdr[1L]))))
+    return("ethovision")
   # Header cells, lower-cased and then reduced to [a-z0-9_]. Lower-casing must
   # come first: reducing first turned every capital into "_", so TRACK_ID and
   # "Pos. X (mm)" never matched. Only dialects checked against real exports are
-  # detected; EthoVision and ANY-maze are chosen from the dropdown until theirs
-  # are (they never matched before either, for the reason above).
+  # detected.
   sep <- if (grepl("\t", hdr[1L], fixed = TRUE)) "\t"
          else if (grepl(";", hdr[1L], fixed = TRUE)) ";" else ","
   nm <- gsub("^_+|_+$", "",
@@ -77,6 +84,9 @@ guess_dialect <- function(path) {
     return("sleap")
   if ("track_id" %in% nm && "position_x" %in% nm)
     return("trackmate")
+  if (all(c("centre_position_x", "centre_position_y") %in% nm) ||
+      all(c("center_position_x", "center_position_y") %in% nm))
+    return("anymaze")
   # idtracker.ai's wide table is nothing but x<id>/y<id> pairs and a time
   # column; a file with other columns that happens to have x1/y1 is not one.
   pair <- grepl("^[xy]_?[0-9]+$", nm)

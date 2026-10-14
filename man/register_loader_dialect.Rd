@@ -40,4 +40,11 @@ it left out with `attr(out, "attrition")`: a data frame with columns
 and `partial`, one row per point, with whole non-negative counts and one
 `frames` and one `frames_no_position` value (the per-file totals, repeated
 on each row). See "Masked points" in [read_tracks()].
+
+A dialect can keep facts about the file it read (a header block, the units
+of its columns) with `attr(out, "source_meta")`: a list with distinct names
+other than `source` and `path`. [read_tracks()] stores one record per file
+in `Tracks@meta$source_meta`, each the dialect's list with the file's name
+(`source`) and path (`path`) in front. The records are a plain list in file
+order, not named by file, because files in different folders share names.
 }
