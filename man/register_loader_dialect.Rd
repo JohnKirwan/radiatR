@@ -48,3 +48,18 @@ in `Tracks@meta$source_meta`, each the dialect's list with the file's name
 (`source`) and path (`path`) in front. The records are a plain list in file
 order, not named by file, because files in different folders share names.
 }
+\examples{
+# dtrack writes headerless, tab-separated frame, x, y (and a flag) columns
+dtrack_loader <- function(x) {
+  d <- utils::read.delim(x, header = FALSE, colClasses = "numeric")
+  data.frame(id = tools::file_path_sans_ext(basename(x)),
+             frame = d[[1]], x = d[[2]], y = d[[3]])
+}
+register_loader_dialect("dtrack", dtrack_loader, overwrite = TRUE)
+list_loader_dialects()
+
+untar(system.file("extdata", "tracks.tar.gz", package = "radiatR"),
+      exdir = tempdir())
+track_dir <- file.path(tempdir(), "tracks")
+read_tracks(file.path(track_dir, "10_10_point02.txt"), dialect = "dtrack")
+}

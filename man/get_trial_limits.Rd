@@ -28,3 +28,18 @@ trial, the origin, and the reference heading. Additional metadata from
 `file_tbl` is merged into the result. Accepts landmark and track data either
 as data frames or as `Tracks` objects.
 }
+\examples{
+untar(system.file("extdata", "tracks.tar.gz", package = "radiatR"),
+      exdir = tempdir())
+track_dir <- file.path(tempdir(), "tracks")
+file_tbl <- import_tracks(track_dir)[1, ]
+read_xy <- function(f) {
+  d <- utils::read.delim(file.path(track_dir, f), header = FALSE)[1:3]
+  stats::setNames(d, c("frame", "x", "y"))
+}
+landmarks <- read_xy(file_tbl$landmark)  # origin, then reference, per trial
+track <- read_xy(file_tbl$track)
+limits <- get_trial_limits(landmarks, track, file_tbl, vid_num = 1)
+limits
+
+}
