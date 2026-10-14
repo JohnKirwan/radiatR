@@ -65,6 +65,17 @@ models the mean with a constant concentration), and the estimator that pairs
 with \code{\link{simulate_tracks}}'s \code{concentration_slope}. The model is
 fitted by maximum likelihood with \code{\link[stats]{optim}}.
 }
+\examples{
+# Does orientation sharpen as the stimulus arc widens?
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc",
+                      coords = "relative")
+hd$arc_deg <- as.numeric(as.character(hd$arc))
+fit <- concentration_regression(hd, heading ~ arc_deg)
+fit
+summary(fit)
+# Fitted kappa for a narrow, medium and wide arc
+predict(fit, newdata = data.frame(arc_deg = c(5, 25, 50)))
+}
 \references{
 Mardia, K. V. & Jupp, P. E. (2000). \emph{Directional Statistics}.
   Wiley.
