@@ -1019,6 +1019,25 @@ guess_columns <- function(data, mapping = list()) {
   rlang::inform(msg, class = "radiatR_attrition")
 }
 
+# The prefix id_collision = "namespace" gives each file of an import: its name
+# less extension, or, where two files share that (n1.csv and n1.tsv), its full
+# name, or, where two still share it (a/n1.csv and b/n1.csv), the fewest
+# trailing parts of its path that tell them apart.
+.source_labels <- function(paths) {
+  up <- unique(paths)
+  parts <- strsplit(gsub("\\\\", "/", up), "/", fixed = TRUE)
+  lab <- tools::file_path_sans_ext(basename(up))
+  shared <- function(l) l %in% l[duplicated(l)]
+  s <- shared(lab); lab[s] <- basename(up[s])
+  for (k in seq(2L, max(2L, lengths(parts)))) {
+    s <- shared(lab)
+    if (!any(s)) break
+    lab[s] <- vapply(parts[s], function(p) paste(utils::tail(p, k), collapse = "/"),
+                     character(1))
+  }
+  stats::setNames(lab, up)
+}
+
 # Read and combine multiple track files into one long data frame, preserving
 # per-file trajectory identity. Schema is detected from the FIRST file: a batch
 # is assumed to share one schema (standard for batch imports; mixed-schema
@@ -1331,8 +1350,10 @@ read_tracks_format <- function(x, format, ...)
 #' @param id_collision how to handle a trajectory id that appears under more
 #'   than one source file during a multi-file import: `"error"` (default) stops
 #'   with a message naming the colliding id(s) and files; `"namespace"` rewrites
-#'   every id to `paste0(file_stem, "::", id)` so ids are unique per file. Has no
-#'   effect on single-file or data.frame input.
+#'   every id as `<file>::<id>`, where `<file>` is the file name less extension,
+#'   or the full file name where two files share that, or the trailing part of
+#'   the path that tells them apart (`a/n1.csv`). Has no effect on single-file
+#'   or data.frame input.
 #' @param on_invalid How to handle rows whose x/y coordinates are missing or
 #'   non-finite: "error" (default) aborts with a radiatR_invalid_rows condition
 #'   listing the affected rows and ids; "drop" removes them and signals a
@@ -1617,13 +1638,14 @@ read_tracks <- function(x,
         }, character(1))
         stop("read_tracks: trajectory id(s) collide across source files:\n",
              paste(details, collapse = "\n"),
-             "\nPass id_collision = \"namespace\" to prefix ids with the file ",
-             "stem, or supply a mapping that yields file-unique ids.",
+             "\nPass id_collision = \"namespace\" to prefix ids with the file's ",
+             "name, or supply a mapping that yields file-unique ids.",
              call. = FALSE)
       } else {
-        # "namespace": prefix ALL ids (not just colliding ones) so id "1" means
-        # the same thing everywhere it appears.
-        df[[id]] <- paste0(tools::file_path_sans_ext(src_vals), "::", id_vals)
+        # "namespace": prefix ALL ids (not just colliding ones) with the file's
+        # own label (see .source_labels()) so id "1" means the same thing
+        # everywhere it appears.
+        df[[id]] <- paste0(unname(.source_labels(path_vals)[path_vals]), "::", id_vals)
       }
     }
   }

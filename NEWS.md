@@ -383,6 +383,10 @@
   counts missing headings and the trials they come from, and the app's
   attrition banner does the same. `missing_ids` lists each trial once, and
   the new `n_trials` attribute gives the number of trials.
+* `read_tracks(id_collision = "namespace")` gave files that share a name less
+  extension (`n1.csv` and `n1.xlsx`, or `a/n1.csv` and `b/n1.csv`) the same
+  prefix, so their ids still collided. Such files are now prefixed with their
+  full name, or the end of their path that tells them apart (`a/n1.csv`).
 * Ids written with surrounding spaces and no unpadded twin (` 1`, ` 10`) are
   the same ids under every reader: readr kept them as the text `" 1"`, where
   `data.table::fread()` and `read.table()` read the number 1.

@@ -97,8 +97,10 @@ checked. Any value but `TRUE` warns.}
 \item{id_collision}{how to handle a trajectory id that appears under more
 than one source file during a multi-file import: `"error"` (default) stops
 with a message naming the colliding id(s) and files; `"namespace"` rewrites
-every id to `paste0(file_stem, "::", id)` so ids are unique per file. Has no
-effect on single-file or data.frame input.}
+every id as `<file>::<id>`, where `<file>` is the file name less extension,
+or the full file name where two files share that, or the trailing part of
+the path that tells them apart (`a/n1.csv`). Has no effect on single-file
+or data.frame input.}
 
 \item{on_invalid}{How to handle rows whose x/y coordinates are missing or
 non-finite: "error" (default) aborts with a radiatR_invalid_rows condition
