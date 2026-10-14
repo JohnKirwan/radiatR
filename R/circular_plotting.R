@@ -2159,7 +2159,7 @@ setMethod("gg_traj", "Tracks",
 #'
 #' @return A list containing a single ggplot2 layer.
 #'
-#' @export
+#' @noRd
 draw_tracks <- function(data, x_col, y_col, geom = "path", mapping = NULL, ...) {
   if (missing(x_col) || missing(y_col)) {
     stop("Both `x_col` and `y_col` must be specified.")
@@ -2250,7 +2250,7 @@ line_circle_intercept <- function(x0, y0, x1, y1) {
 #' @param df Data frame with `x` and `y` columns.
 #' @param row_in,row_out Row indices (or names) identifying the start and end of the vector.
 #' @return Tibble with `x_int`/`y_int`.
-#' @export
+#' @noRd
 line_circle_intercept_df <- function(df, row_in, row_out) {
   if (!all(c("x", "y") %in% names(df))) {
     stop("`df` must contain x/y columns.")
@@ -2269,7 +2269,7 @@ line_circle_intercept_df <- function(df, row_in, row_out) {
 #' @param id Identifier of the trajectory
 #' @param range Numeric index vector (e.g., rows within a trial)
 #' @return Tibble with `x_int`/`y_int`
-#' @export
+#' @noRd
 line_circle_intercept_traj <- function(traj, id, range) {
   df <- traj@data
   id_col <- traj@cols$id
@@ -2464,7 +2464,7 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #' the object and handed off to the plotting helpers.
 #'
 #' @param data Data frame or `Tracks`.
-#' @param geom Geom specification passed to [draw_tracks()].
+#' @param geom Geom specification: `"path"`, `"point"` or a ggplot2 geom function.
 #' @param group_col Optional column for grouping aesthetics.
 #' @param colour_col,color_col Optional column for colour aesthetics. Mutually
 #'   exclusive with `colour_cycle`. `color_col` is the American-spelling alias.
@@ -2607,7 +2607,7 @@ line_circle_intercept_traj <- function(traj, id, range) {
 #'   (clock). Orthogonal to `angle_labels` (the format). Ignored by the domain
 #'   scales (`"cardinal"`/`"hours"`/`"months"`/`"seconds"`), which carry their
 #'   own count.
-#' @param ... Additional arguments forwarded to [draw_tracks()].
+#' @param ... Additional arguments forwarded to the track geom.
 #' @return A `ggplot2` object.
 #' @inheritSection radiatR-package American spellings
 #' @importFrom ggplot2 scale_colour_viridis_c guide_colourbar
