@@ -17,6 +17,10 @@
 #'   (default \code{TRUE}).  Set to \code{FALSE} when running headless.
 #' @return Called for its side-effect; returns the result of
 #'   \code{\link[shiny]{runApp}} invisibly.
+#' @examples
+#' if (interactive() && requireNamespace("shiny", quietly = TRUE)) {
+#'   launch_app()
+#' }
 #' @export
 launch_app <- function(port = NULL, launch_browser = TRUE) {
   rlang::check_installed("shiny", reason = "to run the radiatR app")

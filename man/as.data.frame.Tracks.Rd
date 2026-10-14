@@ -25,3 +25,6 @@ from any caller. (A bare S4 method on the base S3 generic is only reached
 from within the package's own namespace, not from user code using the
 installed package.)
 }
+\examples{
+head(as.data.frame(cpunctatus))
+}

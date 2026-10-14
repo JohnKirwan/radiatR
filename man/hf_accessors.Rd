@@ -31,3 +31,11 @@ Accessors for the metadata a [headings_frame] carries. They also work on a
 plain data frame, returning sensible defaults, so any function can read the
 display convention without assuming the input is classed.
 }
+\examples{
+hf <- headings_frame(data.frame(h = c(0.1, 1.2, 3)), h, units = "radians")
+hf_heading_col(hf)
+hf_coords(hf)
+hf_display(hf)
+# a plain data frame gives the defaults
+hf_heading_col(data.frame(h = 1))
+}

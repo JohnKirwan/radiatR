@@ -12,6 +12,9 @@ Sorted character vector of registered rule names.
 \description{
 List registered custom heading rules
 }
+\examples{
+list_heading_rules()
+}
 \seealso{
 \code{\link{register_heading_rule}}
 }

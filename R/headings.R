@@ -124,6 +124,15 @@
 #' @return data.frame with columns id, time (approx), heading (radians, unit-circle
 #'   convention), plus the rule-specific construction columns above when
 #'   `return_coords = TRUE`. For some rules there may be multiple headings per id.
+#' @examples
+#' h <- derive_headings(cpunctatus, rule = "distal")
+#' head(h)
+#' # ignore tracking outliers beyond the circumference and keep the point used
+#' head(derive_headings(cpunctatus, rule = "distal", max_radius = 1,
+#'                      return_coords = TRUE))
+#' # per-trial reference frame, carrying a condition column for grouping
+#' head(derive_headings(cpunctatus, rule = "net", coords = "relative",
+#'                      carry = "arc"))
 #' @export
 setGeneric(
   "derive_headings",
@@ -853,6 +862,14 @@ circ_summary_headings <- function(x, rule, group_by = "id", ...) {
 #' @param overwrite Logical; replace an existing rule of the same name.
 #' @return The rule name, invisibly.
 #' @seealso \code{\link{list_heading_rules}}, \code{\link{derive_headings}}
+#' @examples
+#' last_bearing <- function(df, cols, ...) {
+#'   n <- nrow(df)
+#'   data.frame(id = df[[cols$id]][n], time = df[[cols$time]][n],
+#'              heading = atan2(df[[cols$y]][n], df[[cols$x]][n]) %% (2 * pi))
+#' }
+#' register_heading_rule("last_bearing", last_bearing, overwrite = TRUE)
+#' head(derive_headings(cpunctatus, rule = "last_bearing"))
 #' @export
 register_heading_rule <- function(name, fun, overwrite = FALSE) {
   stopifnot(is.character(name), length(name) == 1L, is.function(fun))
@@ -866,6 +883,8 @@ register_heading_rule <- function(name, fun, overwrite = FALSE) {
 #'
 #' @return Sorted character vector of registered rule names.
 #' @seealso \code{\link{register_heading_rule}}
+#' @examples
+#' list_heading_rules()
 #' @export
 list_heading_rules <- function() sort(ls(envir = .heading_registry))
 
@@ -988,6 +1007,13 @@ register_heading_rule("ellipse_axis", function(df, cols, theta_col = "theta",
 #' @return Data frame with columns \code{id}, \code{time}, \code{heading} (in
 #'   radians), with an \code{angle_convention} attribute for downstream
 #'   compatibility.
+#' @examples
+#' pose <- data.frame(
+#'   id     = "fish1", frame = 1:4,
+#'   head_x = c(0.1, 0.2, 0.2, 0.1), head_y = c(0.0, 0.1, 0.2, 0.3),
+#'   tail_x = c(0.0, 0.1, 0.2, 0.2), tail_y = c(0.0, 0.0, 0.1, 0.2)
+#' )
+#' pose_to_headings(pose, anterior = "head", posterior = "tail")
 #' @export
 pose_to_headings <- function(df, anterior = NULL, posterior = NULL,
                               theta_col = NULL,

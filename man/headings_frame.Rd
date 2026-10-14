@@ -38,6 +38,11 @@ downstream functions (\code{stack_headings},
 \code{add_stacked_headings}, \code{\link{radiate}}) will use as
 defaults.
 }
+\examples{
+d <- data.frame(trial = 1:5, angle = c(10, 45, 80, 350, 20))
+hf <- headings_frame(d, angle, units = "degrees")
+hf
+}
 \seealso{
 \code{stack_headings}, \code{add_stacked_headings},
   \code{\link{radiate}}

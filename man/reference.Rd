@@ -21,6 +21,10 @@ The reference direction (unit-circle radians) against which each trajectory's
 relative frame (`rel_theta`/`rel_x`/`rel_y`) is defined. Trajectories with no
 recorded reference default to `0` (relative frame equals absolute frame).
 }
+\examples{
+x <- set_reference(cpunctatus[1:3], pi / 2)
+reference(x)
+}
 \seealso{
 [set_reference()], [derive_coords()]
 }
