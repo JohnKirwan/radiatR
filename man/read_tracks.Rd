@@ -227,3 +227,17 @@ timestamps in one layout throughout: `YYYY-MM-DD HH:MM:SS`,
 date-times is midnight.
 }
 
+\examples{
+df <- data.frame(
+  id   = rep(c("A", "B"), each = 4),
+  time = rep(0:3, times = 2),
+  x    = c(1, 1.2, 1.4, 1.5, -0.2, -0.1, 0, 0.15),
+  y    = c(0, 0.1, 0.3, 0.4, 1.0, 1.1, 1.3, 1.5)
+)
+read_tracks(df, mapping = list(id = "id", time = "time", x = "x", y = "y"))
+
+# A DeepLabCut predictions file, recorded at 40 frames per second
+dlc <- system.file("extdata", "dlc_single_wasp_predictions.csv",
+                   package = "radiatR")
+read_tracks(dlc, dialect = "deeplabcut", fps = 40)
+}

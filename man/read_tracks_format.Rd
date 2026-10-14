@@ -19,3 +19,18 @@ A `Tracks` object, as returned by [read_tracks()].
 \description{
 Construct a Tracks from a *format* spec (registered name or inline list)
 }
+\examples{
+raw <- data.frame(animal = "m1", seconds = c(0, 0.5, 1),
+                  pos_x = c(0.1, 0.2, 0.3), pos_y = c(0, 0.05, 0.1))
+# An inline spec: columns found by pattern, time in seconds
+spec <- list(
+  regex_mapping = list(id = "^animal", time = "^sec",
+                       x = "^pos_?x", y = "^pos_?y"),
+  time = list(type = "seconds")
+)
+read_tracks_format(raw, spec)
+
+# The same spec registered under a name
+register_loader_format("my_tracker", spec, overwrite = TRUE)
+read_tracks_format(raw, "my_tracker")
+}

@@ -79,6 +79,12 @@ import_info <- function(filename, cond_cols = NULL, file_tbl = NULL){
 #'   two-file role split is specific to that experiment and is not a general
 #'   dtrack convention. `vignette("loaders")` registers a custom loader that
 #'   reads an individual trajectory file.
+#' @examples
+#' untar(system.file("extdata", "tracks.tar.gz", package = "radiatR"),
+#'       exdir = tempdir())
+#' track_dir <- file.path(tempdir(), "tracks")
+#' file_tbl <- import_tracks(track_dir)
+#' head(file_tbl)
 #' @export
 #' @importFrom tibble tibble
 #
@@ -149,6 +155,15 @@ escape_specials <- function(x) {
 #' @param overwrite Overwrite an existing format of the same name
 #' @return `name`, invisibly. Called for its side effect of registering the
 #'   format for [read_tracks_format()].
+#' @examples
+#' # A tracker whose columns are found by pattern; time is in seconds
+#' spec <- list(
+#'   regex_mapping = list(id = "^animal", time = "^sec",
+#'                        x = "^pos_?x", y = "^pos_?y"),
+#'   time = list(type = "seconds")
+#' )
+#' register_loader_format("my_tracker", spec, overwrite = TRUE)
+#' list_loader_formats()
 #' @export
 register_loader_format <- function(name, spec, overwrite = FALSE) {
   stopifnot(is.character(name), length(name) == 1L)
@@ -172,6 +187,9 @@ register_loader_format <- function(name, spec, overwrite = FALSE) {
 
 #' List registered declarative formats
 #' @return A sorted character vector of registered format names.
+#' @examples
+#' # Empty until a format is registered with register_loader_format()
+#' list_loader_formats()
 #' @export
 list_loader_formats <- function() sort(ls(envir = .loader_format_registry))
 
@@ -212,6 +230,20 @@ list_loader_formats <- function() sort(ls(envir = .loader_format_registry))
 #' @param overwrite Replace an existing dialect registered with the same name
 #' @return `name`, invisibly. Called for its side effect of registering the
 #'   dialect for `read_tracks(dialect = )`.
+#' @examples
+#' # dtrack writes headerless, tab-separated frame, x, y (and a flag) columns
+#' dtrack_loader <- function(x) {
+#'   d <- utils::read.delim(x, header = FALSE, colClasses = "numeric")
+#'   data.frame(id = tools::file_path_sans_ext(basename(x)),
+#'              frame = d[[1]], x = d[[2]], y = d[[3]])
+#' }
+#' register_loader_dialect("dtrack", dtrack_loader, overwrite = TRUE)
+#' list_loader_dialects()
+#'
+#' untar(system.file("extdata", "tracks.tar.gz", package = "radiatR"),
+#'       exdir = tempdir())
+#' track_dir <- file.path(tempdir(), "tracks")
+#' read_tracks(file.path(track_dir, "10_10_point02.txt"), dialect = "dtrack")
 #' @export
 register_loader_dialect <- function(name, fun, overwrite = FALSE) {
   stopifnot(is.character(name), length(name) == 1L, is.function(fun))
@@ -223,6 +255,9 @@ register_loader_dialect <- function(name, fun, overwrite = FALSE) {
 
 #' List registered loader dialects
 #' @return A sorted character vector of registered dialect names.
+#' @examples
+#' # Built-in dialects plus any registered this session
+#' list_loader_dialects()
 #' @export
 list_loader_dialects <- function() sort(ls(envir = .loader_registry))
 
@@ -1030,6 +1065,20 @@ guess_columns <- function(data, mapping = list()) {
 #' @param format registered format name or list spec
 #' @param ... extra args override spec fields
 #' @return A `Tracks` object, as returned by [read_tracks()].
+#' @examples
+#' raw <- data.frame(animal = "m1", seconds = c(0, 0.5, 1),
+#'                   pos_x = c(0.1, 0.2, 0.3), pos_y = c(0, 0.05, 0.1))
+#' # An inline spec: columns found by pattern, time in seconds
+#' spec <- list(
+#'   regex_mapping = list(id = "^animal", time = "^sec",
+#'                        x = "^pos_?x", y = "^pos_?y"),
+#'   time = list(type = "seconds")
+#' )
+#' read_tracks_format(raw, spec)
+#'
+#' # The same spec registered under a name
+#' register_loader_format("my_tracker", spec, overwrite = TRUE)
+#' read_tracks_format(raw, "my_tracker")
 #' @export
 read_tracks_format <- function(x, format, ...)
   .read_tracks_format(x, format, list(...))
@@ -1275,6 +1324,19 @@ read_tracks_format <- function(x, format, ...)
 #' date-times is midnight.
 #' @param format Optional loader format name or list spec registered via [register_loader_format()]
 #' @return Tracks
+#' @examples
+#' df <- data.frame(
+#'   id   = rep(c("A", "B"), each = 4),
+#'   time = rep(0:3, times = 2),
+#'   x    = c(1, 1.2, 1.4, 1.5, -0.2, -0.1, 0, 0.15),
+#'   y    = c(0, 0.1, 0.3, 0.4, 1.0, 1.1, 1.3, 1.5)
+#' )
+#' read_tracks(df, mapping = list(id = "id", time = "time", x = "x", y = "y"))
+#'
+#' # A DeepLabCut predictions file, recorded at 40 frames per second
+#' dlc <- system.file("extdata", "dlc_single_wasp_predictions.csv",
+#'                    package = "radiatR")
+#' read_tracks(dlc, dialect = "deeplabcut", fps = 40)
 #' @export
 read_tracks <- function(x,
                          mapping = list(id=NULL, time=NULL, x=NULL, y=NULL, angle=NULL, weight=NULL),
@@ -1608,6 +1670,20 @@ read_tracks <- function(x,
 #' @param recursive Recurse into subdirectories when TRUE
 #' @param ... Additional arguments passed to `read_tracks()`
 #' @return A single `Tracks` object combining every matching file.
+#' @examples
+#' df <- data.frame(
+#'   id   = rep(c("A", "B"), each = 4),
+#'   time = rep(0:3, times = 2),
+#'   x    = c(1, 1.2, 1.4, 1.5, -0.2, -0.1, 0, 0.15),
+#'   y    = c(0, 0.1, 0.3, 0.4, 1.0, 1.1, 1.3, 1.5)
+#' )
+#' csv_dir <- file.path(tempdir(), "csv_tracks")
+#' dir.create(csv_dir)
+#' write.csv(df, file.path(csv_dir, "day1.csv"), row.names = FALSE)
+#' write.csv(transform(df, id = paste0(id, "2")), file.path(csv_dir, "day2.csv"),
+#'           row.names = FALSE)
+#' read_tracks_dir(csv_dir, pattern = "\\.csv$")
+#' unlink(csv_dir, recursive = TRUE)
 #' @export
 read_tracks_dir <- function(dir, pattern = "\\.(csv|tsv|txt|parquet|feather)$", recursive = FALSE, ...) {
   stopifnot(dir.exists(dir))
@@ -1708,6 +1784,26 @@ read_tracks_dir <- function(dir, pattern = "\\.(csv|tsv|txt|parquet|feather)$", 
 #' @param ... Additional arguments forwarded to [read_tracks()].
 #'
 #' @return A `Tracks` with metadata columns replicated for each observation.
+#' @examples
+#' untar(system.file("extdata", "tracks.tar.gz", package = "radiatR"),
+#'       exdir = tempdir())
+#' track_dir <- file.path(tempdir(), "tracks")
+#' # dtrack writes headerless, tab-separated frame, x, y (and a flag) columns
+#' dtrack_loader <- function(x) {
+#'   d <- utils::read.delim(x, header = FALSE, colClasses = "numeric")
+#'   data.frame(id = tools::file_path_sans_ext(basename(x)),
+#'              frame = d[[1]], x = d[[2]], y = d[[3]])
+#' }
+#' register_loader_dialect("dtrack", dtrack_loader, overwrite = TRUE)
+#' file_tbl <- import_tracks(track_dir)[1:3, ]
+#' manifest <- import_info(system.file("extdata", "millipede_trials.csv",
+#'                                     package = "radiatR"))
+#' manifest <- manifest[manifest$file %in% file_tbl$basename, ]
+#' ts <- load_manifest(file_tbl, track_dir, manifest = manifest,
+#'                     manifest_cols = c(arc = "arc", type = "type"),
+#'                     dialect = "dtrack")
+#' ts
+#' unique(ts@data[, c("id", "arc", "type")])
 #' @export
 load_manifest <- function(file_tbl, track_dir, manifest = NULL,
                                   manifest_cols = NULL,
