@@ -193,7 +193,8 @@ every row) stops the load with a `radiatR_malformed_file` error naming the
 lines (`problem = "ragged"`), as does a reader returning fewer rows than
 the file holds (`"rows"`) and a column name used twice
 (`"duplicate_columns"`; a dialect handles its format's repeated columns
-itself).
+itself), and a delimited file that reads as a single column
+(`"one_column"`).
 }
 
 \section{Malformed values}{

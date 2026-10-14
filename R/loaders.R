@@ -638,7 +638,7 @@ guess_columns <- function(data, mapping = list()) {
   lines <- tryCatch(readLines(path, n = 20L, warn = FALSE),
                     error = function(e) character(0))
   if (!all(validUTF8(lines))) return(".")
-  .guess_delim(path)$decimal
+  .guess_delim(path, lines)$decimal
 }
 
 # read file with soft dependencies. Delimited formats are content-sniffed
@@ -1035,6 +1035,7 @@ guess_columns <- function(data, mapping = list()) {
     lab[s] <- vapply(parts[s], function(p) paste(utils::tail(p, k), collapse = "/"),
                      character(1))
   }
+  stopifnot("two source paths normalise to one namespace label" = !anyDuplicated(lab))
   stats::setNames(lab, up)
 }
 
@@ -1396,7 +1397,8 @@ read_tracks_format <- function(x, format, ...)
 #' lines (`problem = "ragged"`), as does a reader returning fewer rows than
 #' the file holds (`"rows"`) and a column name used twice
 #' (`"duplicate_columns"`; a dialect handles its format's repeated columns
-#' itself).
+#' itself), and a delimited file that reads as a single column
+#' (`"one_column"`).
 #'
 #' @section Malformed values:
 #' A cell in an x, y, angle, weight or time column that is present but does not
@@ -1654,13 +1656,16 @@ read_tracks <- function(x,
   # than ask for columns it does not have. (A one-column sheet or Arrow file is
   # a real one-column table; the generic error below stands for it.)
   user_cols <- setdiff(names(df), c("..source_file", "..source_path"))
+  one_ext <- tolower(read_opts$ext %||% tools::file_ext(if (is.character(x)) x[1L] else ""))
+  one_ext <- sub("^\\.", "", one_ext)
   if (is.null(angle) && is.null(dialect) && is.character(x) && length(user_cols) == 1L &&
-      !tolower(tools::file_ext(x[1L])) %in% c("xlsx", "xls", "parquet", "feather"))
+      !one_ext %in% c("xlsx", "xls", "parquet", "feather"))
     radiatR_abort_malformed_file(
-      x[1L], "one_column", columns = user_cols, detail = sprintf(paste0(
-        "read as a single column ('%s'); no separator (, ; tab |) is used the ",
-        "same number of times on its lines. Name it with read_opts = list(delim = )."),
-        user_cols))
+      basename(x[1L]), "one_column", columns = user_cols, detail = sprintf(paste0(
+        "read as a single column ('%s'). If it has more columns, %s or read a ",
+        "tracker's export with its dialect (see list_loader_dialects()); ",
+        "otherwise map the column."),
+        user_cols, if (is.null(read_opts$delim)) "name its separator with read_opts = list(delim = )," else "check the separator you named,"))
 
   if (is.null(angle) && (is.null(xcol) || is.null(ycol)))
     stop("Need either an angle column or both x and y columns; specify mapping=")

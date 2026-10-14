@@ -192,3 +192,10 @@ test_that("a dialect's declared time unit is checked and cannot be contradicted"
   plain <- tbl("minutes")(NULL)
   expect_error(elapsed_seconds(read_tracks(plain)), "frame rate")
 })
+
+test_that("a dialect that ignores its path content reads an unreadable path", {
+  local_dialect("toy_nopath", function(x)
+    data.frame(id = "a", frame = 1:3, x = c(.1, .2, .3), y = c(.1, .2, .3)))
+  d <- withr::local_tempdir()
+  expect_equal(nrow(read_tracks(d, dialect = "toy_nopath")@data), 3L)
+})
