@@ -49,7 +49,8 @@
   `radiatR_malformed_file` error naming its line: `fread()` kept the rows
   before it, `read.table()` wrapped a long row past the fifth line into
   extra rows, and readr shifted the fields, with at most a warning; readr
-  dropped a last line cut off mid-row without one. So is an unclosed quote,
+  dropped a last line cut off mid-row without one. So is a line of spaces
+  (readr skipped it; `fread()` stopped reading there), an unclosed quote,
   a table written with row names or a separator at the end of every row
   (one name fewer than fields), which each reader read differently, a first
   line `fread()` skipped as a preamble, and a column name used twice in a
