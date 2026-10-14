@@ -48,6 +48,16 @@ units per unit of the recorded `x`/`y` coordinates; it is applied on demand
 and the stored coordinates are never altered. radiatR otherwise analyses in
 normalised (unit-circle) space -- this is an optional calibration hook.
 }
+\examples{
+distance_scale(cpunctatus) # NULL: not calibrated
+x <- set_distance_scale(cpunctatus, 150, unit = "mm")
+distance_unit(x)
+# the same scale from a known separation: 0.5 coordinate units is 75 mm
+x <- calibrate_distance(cpunctatus, coord_distance = 0.5,
+                        real_distance = 75, unit = "mm")
+distance_scale(x)
+head(track_length(x))
+}
 \seealso{
 [frame_rate()], [track_length()], [track_speed()]
 }

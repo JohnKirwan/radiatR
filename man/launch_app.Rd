@@ -30,3 +30,8 @@ be deployed to any Shiny-compatible server. For a one-off manual deploy:
   rsconnect::deployApp(system.file("app", package = "radiatR"))
 }
 }
+\examples{
+if (interactive() && requireNamespace("shiny", quietly = TRUE)) {
+  launch_app()
+}
+}

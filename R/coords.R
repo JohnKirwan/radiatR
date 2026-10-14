@@ -46,6 +46,9 @@ derive_coords <- function(trans_x, trans_y, reference = 0) {
 #' @return For `reference()`, a data frame with `id` and `ref_theta` (or `NULL`
 #'   when none is set).
 #' @seealso [set_reference()], [derive_coords()]
+#' @examples
+#' x <- set_reference(cpunctatus[1:3], pi / 2)
+#' reference(x)
 #' @rdname reference
 #' @export
 setGeneric("reference", function(x) standardGeneric("reference"))
@@ -80,6 +83,14 @@ setMethod("reference", "Tracks", function(x) x@meta$reference)
 #'   (`id`,`ref_theta`) data frame setting them per trajectory.
 #' @return The updated [`Tracks`].
 #' @seealso [reference()], [derive_coords()]
+#' @examples
+#' x <- cpunctatus[1:2]
+#' # one reference for every trajectory, in unit-circle radians
+#' reference(set_reference(x, pi / 2))
+#' # or one per trajectory, named by id; a reference of 0 makes the
+#' # relative frame equal the absolute one
+#' x <- set_reference(x, stats::setNames(c(0, pi), ids(x)))
+#' head(as.data.frame(x)[c("trial_id", "abs_theta", "rel_theta")])
 #' @rdname set_reference
 #' @export
 setGeneric("set_reference", function(x, value) standardGeneric("set_reference"))
@@ -139,6 +150,10 @@ setMethod("set_reference", "Tracks", function(x, value) {
 #' @return `frame_rate()` the stored fps (or `NULL`); `set_frame_rate()` the
 #'   modified `Tracks`.
 #' @seealso [elapsed_seconds()], [track_duration()]
+#' @examples
+#' frame_rate(cpunctatus)
+#' x <- set_frame_rate(cpunctatus, 25)
+#' frame_rate(x)
 #' @name frame_rate
 #' @export
 setGeneric("frame_rate", function(x) standardGeneric("frame_rate"))
@@ -180,6 +195,15 @@ setMethod("set_frame_rate", "Tracks", function(x, fps) {
 #' @return `distance_scale()`/`distance_unit()` the stored values (or `NULL`);
 #'   `set_distance_scale()`/`calibrate_distance()` the modified `Tracks`.
 #' @seealso [frame_rate()], [track_length()], [track_speed()]
+#' @examples
+#' distance_scale(cpunctatus) # NULL: not calibrated
+#' x <- set_distance_scale(cpunctatus, 150, unit = "mm")
+#' distance_unit(x)
+#' # the same scale from a known separation: 0.5 coordinate units is 75 mm
+#' x <- calibrate_distance(cpunctatus, coord_distance = 0.5,
+#'                         real_distance = 75, unit = "mm")
+#' distance_scale(x)
+#' head(track_length(x))
 #' @name distance_scale
 #' @export
 setGeneric("distance_scale", function(x) standardGeneric("distance_scale"))

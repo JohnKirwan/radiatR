@@ -40,6 +40,10 @@ This is the data-filtering counterpart to the plot-only
 a copy), whereas `restrict_to_circumference()` returns a new `Tracks` whose
 data the metrics actually see.
 }
+\examples{
+x <- restrict_to_circumference(cpunctatus)
+c(before = nrow(as.data.frame(cpunctatus)), after = nrow(as.data.frame(x)))
+}
 \seealso{
 [radiate()] (`clip_tracks`), [track_length()], [track_speed()],
   [transform_history()]
