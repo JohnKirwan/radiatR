@@ -1912,6 +1912,104 @@ register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = N
   .dialect_output(do.call(rbind, unname(rows)), unit)
 })
 
+# The lines of a text file as UTF-8 text: UTF-16 when it starts with a UTF-16
+# byte-order mark, otherwise UTF-8 when every line is valid UTF-8, otherwise
+# latin-1 (the Windows programs that write tracking exports). A UTF-8
+# byte-order mark is removed. Bytes are never dropped: a line that is not
+# valid UTF-8 makes the whole file latin-1, in which every byte is a character.
+.read_text_lines <- function(path) {
+  bom <- readBin(path, "raw", n = 2L)
+  if (identical(bom, as.raw(c(0xff, 0xfe))) || identical(bom, as.raw(c(0xfe, 0xff)))) {
+    con <- file(path, encoding = "UTF-16")
+    lines <- tryCatch(enc2utf8(readLines(con, warn = FALSE)), finally = close(con))
+  } else {
+    lines <- readLines(path, warn = FALSE)
+    if (all(validUTF8(lines))) Encoding(lines) <- "UTF-8"
+    else lines <- iconv(lines, "latin1", "UTF-8")
+  }
+  if (length(lines)) lines[1L] <- sub(paste0("^", intToUtf8(0xfeff)), "", lines[1L])
+  lines
+}
+
+# An EthoVision XT text export as a table of text columns. Line 1 gives the
+# number of header lines N. Lines 2 to N-2 are key/value pairs about the trial,
+# line N-1 holds the column names, line N their units, and the data follow.
+# Fields are separated by ";" (or "," or a tab), each line ends with a
+# separator, and a value the program did not have is written "-" (NA here).
+# The text is latin-1 unless it is valid UTF-8 or starts with a UTF-16
+# byte-order mark. Every data row must have the fields of the names row.
+# attr(, "decimal") is the decimal mark of the data rows alone: the header
+# block of a file written with decimal points still holds "3,6 %".
+# attr(, "ethovision") is list(header =, units =): the header block as a named
+# character vector, and the units named by column.
+.read_ethovision <- function(path) {
+  src <- basename(path)
+  fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error", source = src)
+  lines <- .read_text_lines(path)
+  first <- if (length(lines)) lines[1L] else ""
+  top <- regmatches(first, regexec("^\\s*\"?number of header lines:?\"?\\s*([;,\t])", first,
+                                   ignore.case = TRUE))[[1L]]
+  if (length(top) != 2L)
+    fail(paste0("ethovision: '%s' is not an EthoVision text export. Its first line is '%s'; ",
+                "an export starts with \"Number of header lines:\" and a count. A table whose ",
+                "first line is its column header is read as a data frame, not as a file."),
+         src, substr(first, 1L, 60L))
+  delim <- top[2L]
+  fields <- function(ln)
+    scan(text = ln, what = "", sep = delim, quote = "\"", quiet = TRUE, strip.white = TRUE,
+         na.strings = character(0), blank.lines.skip = FALSE)
+  count <- fields(first)[2L]
+  if (is.na(count) || !grepl("^[0-9]{1,6}$", count))
+    fail("ethovision: the number of header lines on line 1 of '%s' is '%s', not a whole number.",
+         src, if (is.na(count)) "" else count)
+  n_hdr <- as.integer(count)
+  if (n_hdr < 3L)
+    fail(paste0("ethovision: line 1 of '%s' gives %d header lines; an export has at least 3 ",
+                "(the count, the names row and the units row)."), src, n_hdr)
+  if (length(lines) < n_hdr)
+    fail("ethovision: '%s' says it has %d header lines; it has %d line(s) in all.",
+         src, n_hdr, length(lines))
+  block <-lapply(lines[seq_len(n_hdr - 2L)[-1L]], fields)
+  block <- block[vapply(block, function(f) length(f) > 0L && nzchar(f[1L]), logical(1))]
+  header <- stats::setNames(
+    vapply(block, function(f) if (length(f) > 1L) f[2L] else "", character(1)),
+    vapply(block, `[`, character(1), 1L))
+  nm <- fields(lines[n_hdr - 1L])
+  un <- fields(lines[n_hdr])
+  trail <- length(nm) > 1L && !nzchar(nm[length(nm)])
+  if (trail) nm <- nm[-length(nm)]
+  if (!length(nm) || any(!nzchar(nm)) || anyDuplicated(nm))
+    fail("ethovision: line %d of '%s' should name the columns, each once; it reads '%s'.",
+         n_hdr - 1L, src, substr(lines[n_hdr - 1L], 1L, 80L))
+  un <- un[seq_along(nm)]
+  un[is.na(un)] <- ""
+  data <- lines[-seq_len(n_hdr)]
+  while (length(data) && !nzchar(trimws(data[length(data)]))) data <- data[-length(data)]
+  if (!length(data)) fail("ethovision: '%s' has no data rows.", src)
+  n_fields <- length(nm) + trail
+  con <- textConnection(data)
+  nf <- tryCatch(utils::count.fields(con, sep = delim, quote = "\"", comment.char = "",
+                                     blank.lines.skip = FALSE),
+                 finally = close(con))
+  ragged <- which(is.na(nf) | nf != n_fields)
+  if (length(ragged))
+    fail(paste0("ethovision: line %d of '%s' has %s field(s); the names row has %d. If the ",
+                "file was cut off there, delete the partial line."),
+         n_hdr + ragged[1L], src, nf[ragged[1L]], n_fields)
+  d <- utils::read.table(text = data, sep = delim, quote = "\"", header = FALSE,
+                         colClasses = "character", comment.char = "",
+                         na.strings = character(0), strip.white = TRUE)
+  d <- d[seq_along(nm)]
+  names(d) <- nm
+  d[d == "-"] <- NA_character_
+  cells <- unlist(d, use.names = FALSE)
+  comma <- any(grepl("^[-+]?[0-9]*,[0-9]+$", cells))
+  point <- any(grepl("^[-+]?[0-9]*[.][0-9]+([eE][-+]?[0-9]+)?$", cells))
+  attr(d, "decimal") <- if (delim != "," && comma && !point) "," else "."
+  attr(d, "ethovision") <- list(header = header, units = stats::setNames(un, nm))
+  d
+}
+
 # EthoVision XT: single- or multi-body-point exports.
 # Standard export: "X Center" / "Y Center" -> x_center / y_center (prefix style).
 # Multiple Body Point Tracking export adds "X Nose", "Y Nose", "X Tail", "Y Tail"
