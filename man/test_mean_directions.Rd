@@ -66,6 +66,13 @@ Two tests of equal mean direction across groups:
   concentrations are similar.}
 }
 }
+\examples{
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+test_mean_directions(hd, group_col = "arc")
+set.seed(1)
+test_mean_directions(hd, group_col = "arc", method = "permutation",
+                     n_perm = 199)
+}
 \seealso{
 \code{\link{test_distributions}}, \code{\link{test_concentration}}
 }

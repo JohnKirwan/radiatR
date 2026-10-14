@@ -78,6 +78,10 @@ dispersion jointly.
   \code{component} (\code{"mean"}, \code{"dispersion"}).}
 }
 }
+\examples{
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "type")
+test_distributions(hd, group_col = "type")
+}
 \seealso{
 \code{\link{test_mean_directions}}, \code{\link{test_concentration}},
   \code{\link{test_uniformity}}

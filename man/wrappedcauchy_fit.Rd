@@ -45,6 +45,10 @@ estimation use \code{\link{vonmises_fit}} with the same data and compare
 model fits visually via \code{\link{add_vonmises_density}} and
 \code{\link{add_wrappedcauchy_density}}.
 }
+\examples{
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+wrappedcauchy_fit(hd, group_col = "arc")
+}
 \seealso{
 \code{\link{vonmises_fit}}, \code{\link{add_wrappedcauchy_density}}
 }

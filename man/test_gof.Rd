@@ -57,3 +57,9 @@ which tests "is this uniform?", \code{test_gof} tests a different null
 hypothesis: "does this fit a wrapped Cauchy?" — useful when a unimodal but
 non-von-Mises shape (heavier or lighter tails) is suspected.
 }
+\examples{
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+set.seed(1)
+# n_boot kept small to run quickly; use the default in an analysis
+test_gof(hd[hd$arc == "50", ], n_boot = 99)
+}

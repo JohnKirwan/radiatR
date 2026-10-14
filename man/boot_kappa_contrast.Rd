@@ -55,6 +55,11 @@ The concentration ratio is skewed and can be unstable or non-finite when the
 denominator concentration is near zero; \eqn{\Delta\kappa} is the more robust
 default in the low-concentration regime.
 }
+\examples{
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "type")
+set.seed(1)
+boot_kappa_contrast(hd, group_col = "type", R = 199)
+}
 \seealso{
 \code{\link{boot_kappa_ci}}, \code{\link{test_concentration}}
 }

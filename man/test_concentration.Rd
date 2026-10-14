@@ -40,3 +40,7 @@ Two tests are available:
   angular dispersions -- no distributional assumption required.}
 }
 }
+\examples{
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "type")
+test_concentration(hd, group_col = "type")
+}
