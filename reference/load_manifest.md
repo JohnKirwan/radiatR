@@ -108,12 +108,12 @@ ts
 #> 5 10_10_point02     5 484.85 406.34 0.6975293    10_10 10_10_point01.txt
 #> 6 10_10_point02     6 484.06 417.40 0.7115858    10_10 10_10_point01.txt
 #>               track arc     type                              source_file
-#> 1 10_10_point02.txt  10 stimulus /tmp/RtmpskGEg8/tracks/10_10_point02.txt
-#> 2 10_10_point02.txt  10 stimulus /tmp/RtmpskGEg8/tracks/10_10_point02.txt
-#> 3 10_10_point02.txt  10 stimulus /tmp/RtmpskGEg8/tracks/10_10_point02.txt
-#> 4 10_10_point02.txt  10 stimulus /tmp/RtmpskGEg8/tracks/10_10_point02.txt
-#> 5 10_10_point02.txt  10 stimulus /tmp/RtmpskGEg8/tracks/10_10_point02.txt
-#> 6 10_10_point02.txt  10 stimulus /tmp/RtmpskGEg8/tracks/10_10_point02.txt
+#> 1 10_10_point02.txt  10 stimulus /tmp/Rtmpg8RraV/tracks/10_10_point02.txt
+#> 2 10_10_point02.txt  10 stimulus /tmp/Rtmpg8RraV/tracks/10_10_point02.txt
+#> 3 10_10_point02.txt  10 stimulus /tmp/Rtmpg8RraV/tracks/10_10_point02.txt
+#> 4 10_10_point02.txt  10 stimulus /tmp/Rtmpg8RraV/tracks/10_10_point02.txt
+#> 5 10_10_point02.txt  10 stimulus /tmp/Rtmpg8RraV/tracks/10_10_point02.txt
+#> 6 10_10_point02.txt  10 stimulus /tmp/Rtmpg8RraV/tracks/10_10_point02.txt
 unique(ts@data[, c("id", "arc", "type")])
 #>                id arc     type
 #> 1   10_10_point02  10 stimulus

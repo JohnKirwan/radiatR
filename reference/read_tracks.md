@@ -58,9 +58,10 @@ read_tracks(
   or Excel file \`read_tracks()\` reads itself, and in a text column of
   a data frame; a bare date is midnight in \`tz\`. A wall-clock time
   that does not exist in \`tz\` (the hour skipped when clocks go
-  forward) is an error. A timestamp marked \`Z\` is UTC whatever \`tz\`
-  is, a date-time column of a data frame keeps its instants, and \`tz\`
-  does not reach a file read by a dialect.
+  forward) is an error. A timestamp that ends in a zone designator
+  (\`Z\`, \`+02:00\`, \`-0130\`, \`+02\`) is that instant whatever
+  \`tz\` is, a date-time column of a data frame keeps its instants, and
+  \`tz\` does not reach a file read by a dialect.
 
 - fps:
 

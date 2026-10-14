@@ -467,6 +467,23 @@
 
 ### Bug fixes
 
+- [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  with a `tz` other than `"UTC"` put a timestamp that names its zone
+  (`2024-01-01T10:00:00Z`, `...+02:00`) at the wrong instant when the
+  file was read by
+  [`data.table::fread()`](https://rdrr.io/pkg/data.table/man/fread.html)
+  (readr not installed): the instant was written back as UTC wall-clock
+  text and read again in `tz`, moving it by the zone’s offset (10:00Z
+  read in New York as 15:00Z), and its fraction of a second was dropped.
+  Such columns are now read again as the text in the file. Text time
+  also reads a UTC offset (`+02:00`, `-0130`, `+02`, at most 14 hours),
+  so a file with offsets gives the same instants under every reader;
+  [`read.table()`](https://rdrr.io/r/utils/read.table.html) refused them
+  before. A `Z` or offset is read after any accepted layout
+  (`2024-01-01 10:00:00Z` too). On the text path a column that mixes
+  zoned and unzoned date-times is malformed, as one mixing `Z` with
+  unmarked times was.
+
 - [`gg_traj()`](https://johnkirwan.github.io/radiatR/reference/gg_traj.md)
   with `facets =` stopped when the plot was drawn: it asked
   [`facet_wrap()`](https://ggplot2.tidyverse.org/reference/facet_wrap.html)
