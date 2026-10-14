@@ -60,3 +60,33 @@ stores one record per file in \`Tracks@meta\$source_meta\`, each the
 dialect's list with the file's name (\`source\`) and path (\`path\`) in
 front. The records are a plain list in file order, not named by file,
 because files in different folders share names.
+
+## Examples
+
+``` r
+# dtrack writes headerless, tab-separated frame, x, y (and a flag) columns
+dtrack_loader <- function(x) {
+  d <- utils::read.delim(x, header = FALSE, colClasses = "numeric")
+  data.frame(id = tools::file_path_sans_ext(basename(x)),
+             frame = d[[1]], x = d[[2]], y = d[[3]])
+}
+register_loader_dialect("dtrack", dtrack_loader, overwrite = TRUE)
+list_loader_dialects()
+#> [1] "anymaze"          "deeplabcut"       "dtrack"           "ethovision"      
+#> [5] "idtrackerai_wide" "sleap"            "toxtrac"          "trackmate"       
+#> [9] "trex"            
+
+untar(system.file("extdata", "tracks.tar.gz", package = "radiatR"),
+      exdir = tempdir())
+track_dir <- file.path(tempdir(), "tracks")
+read_tracks(file.path(track_dir, "10_10_point02.txt"), dialect = "dtrack")
+#> Tracks: 1 trajectories, 299 observations
+#> Columns: id='id', time='frame', angle='angle' (radians), x='x', y='y'
+#>              id frame      x      y     angle
+#> 1 10_10_point02     1 469.83 379.47 0.6794034
+#> 2 10_10_point02     2 477.73 386.58 0.6803267
+#> 3 10_10_point02     3 479.31 388.95 0.6817012
+#> 4 10_10_point02     4 482.48 400.81 0.6931992
+#> 5 10_10_point02     5 484.85 406.34 0.6975293
+#> 6 10_10_point02     6 484.06 417.40 0.7115858
+```

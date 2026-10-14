@@ -101,6 +101,35 @@ in `Tracks@meta$source_meta`, each the dialect's list with the file's name
 order, not named by file, because files in different folders share names.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># dtrack writes headerless, tab-separated frame, x, y (and a flag) columns</span></span></span>
+<span class="r-in"><span><span class="va">dtrack_loader</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="va">d</span> <span class="op">&lt;-</span> <span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.delim</a></span><span class="op">(</span><span class="va">x</span>, header <span class="op">=</span> <span class="cn">FALSE</span>, colClasses <span class="op">=</span> <span class="st">"numeric"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>id <span class="op">=</span> <span class="fu">tools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/tools/fileutils.html" class="external-link">file_path_sans_ext</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/basename.html" class="external-link">basename</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>             frame <span class="op">=</span> <span class="va">d</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, x <span class="op">=</span> <span class="va">d</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span>, y <span class="op">=</span> <span class="va">d</span><span class="op">[[</span><span class="fl">3</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span><span class="fu">register_loader_dialect</span><span class="op">(</span><span class="st">"dtrack"</span>, <span class="va">dtrack_loader</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="list_loader_dialects.html">list_loader_dialects</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "anymaze"          "deeplabcut"       "dtrack"           "ethovision"      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [5] "idtrackerai_wide" "sleap"            "toxtrac"          "trackmate"       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [9] "trex"            </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/untar.html" class="external-link">untar</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"tracks.tar.gz"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>      exdir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">track_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"tracks"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="read_tracks.html">read_tracks</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">track_dir</span>, <span class="st">"10_10_point02.txt"</span><span class="op">)</span>, dialect <span class="op">=</span> <span class="st">"dtrack"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Tracks: 1 trajectories, 299 observations</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Columns: id='id', time='frame', angle='angle' (radians), x='x', y='y'</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              id frame      x      y     angle</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 10_10_point02     1 469.83 379.47 0.6794034</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 10_10_point02     2 477.73 386.58 0.6803267</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 10_10_point02     3 479.31 388.95 0.6817012</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 10_10_point02     4 482.48 400.81 0.6931992</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 10_10_point02     5 484.85 406.34 0.6975293</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6 10_10_point02     6 484.06 417.40 0.7115858</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

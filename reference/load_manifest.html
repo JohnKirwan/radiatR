@@ -132,6 +132,49 @@ only, not calibration.</p></dd>
     <p>A `Tracks` with metadata columns replicated for each observation.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/untar.html" class="external-link">untar</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"tracks.tar.gz"</span>, package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>      exdir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">track_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"tracks"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># dtrack writes headerless, tab-separated frame, x, y (and a flag) columns</span></span></span>
+<span class="r-in"><span><span class="va">dtrack_loader</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="va">d</span> <span class="op">&lt;-</span> <span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.delim</a></span><span class="op">(</span><span class="va">x</span>, header <span class="op">=</span> <span class="cn">FALSE</span>, colClasses <span class="op">=</span> <span class="st">"numeric"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>id <span class="op">=</span> <span class="fu">tools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/tools/fileutils.html" class="external-link">file_path_sans_ext</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/basename.html" class="external-link">basename</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>             frame <span class="op">=</span> <span class="va">d</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, x <span class="op">=</span> <span class="va">d</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span>, y <span class="op">=</span> <span class="va">d</span><span class="op">[[</span><span class="fl">3</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="register_loader_dialect.html">register_loader_dialect</a></span><span class="op">(</span><span class="st">"dtrack"</span>, <span class="va">dtrack_loader</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">file_tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="import_tracks.html">import_tracks</a></span><span class="op">(</span><span class="va">track_dir</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">manifest</span> <span class="op">&lt;-</span> <span class="fu"><a href="import_info.html">import_info</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"millipede_trials.csv"</span>,</span></span>
+<span class="r-in"><span>                                    package <span class="op">=</span> <span class="st">"radiatR"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">manifest</span> <span class="op">&lt;-</span> <span class="va">manifest</span><span class="op">[</span><span class="va">manifest</span><span class="op">$</span><span class="va">file</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">file_tbl</span><span class="op">$</span><span class="va">basename</span>, <span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">ts</span> <span class="op">&lt;-</span> <span class="fu">load_manifest</span><span class="op">(</span><span class="va">file_tbl</span>, <span class="va">track_dir</span>, manifest <span class="op">=</span> <span class="va">manifest</span>,</span></span>
+<span class="r-in"><span>                    manifest_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>arc <span class="op">=</span> <span class="st">"arc"</span>, type <span class="op">=</span> <span class="st">"type"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                    dialect <span class="op">=</span> <span class="st">"dtrack"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ts</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Tracks: 3 trajectories, 412 observations</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Columns: id='id', time='frame', angle='angle' (radians), x='x', y='y'</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              id frame      x      y     angle basename          landmark</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 10_10_point02     1 469.83 379.47 0.6794034    10_10 10_10_point01.txt</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 10_10_point02     2 477.73 386.58 0.6803267    10_10 10_10_point01.txt</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 10_10_point02     3 479.31 388.95 0.6817012    10_10 10_10_point01.txt</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 10_10_point02     4 482.48 400.81 0.6931992    10_10 10_10_point01.txt</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 10_10_point02     5 484.85 406.34 0.6975293    10_10 10_10_point01.txt</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6 10_10_point02     6 484.06 417.40 0.7115858    10_10 10_10_point01.txt</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               track arc     type                              source_file</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 10_10_point02.txt  10 stimulus /tmp/RtmpDgnJ4U/tracks/10_10_point02.txt</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 10_10_point02.txt  10 stimulus /tmp/RtmpDgnJ4U/tracks/10_10_point02.txt</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 10_10_point02.txt  10 stimulus /tmp/RtmpDgnJ4U/tracks/10_10_point02.txt</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 10_10_point02.txt  10 stimulus /tmp/RtmpDgnJ4U/tracks/10_10_point02.txt</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 10_10_point02.txt  10 stimulus /tmp/RtmpDgnJ4U/tracks/10_10_point02.txt</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6 10_10_point02.txt  10 stimulus /tmp/RtmpDgnJ4U/tracks/10_10_point02.txt</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">ts</span><span class="op">@</span><span class="va">data</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"arc"</span>, <span class="st">"type"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                id arc     type</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1   10_10_point02  10 stimulus</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 300 10_11_point02  10 stimulus</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 365 10_12_point02  10 stimulus</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

@@ -270,3 +270,38 @@ timestamps in one layout throughout: \`YYYY-MM-DD HH:MM:SS\`,
 \`YYYY-MM-DD HH:MM\` or \`YYYY-MM-DD\` (with \`-\` or \`/\`), or ISO
 8601 \`YYYY-MM-DDTHH:MM:SS\` with an optional \`Z\` for UTC. A bare date
 beside date-times is midnight.
+
+## Examples
+
+``` r
+df <- data.frame(
+  id   = rep(c("A", "B"), each = 4),
+  time = rep(0:3, times = 2),
+  x    = c(1, 1.2, 1.4, 1.5, -0.2, -0.1, 0, 0.15),
+  y    = c(0, 0.1, 0.3, 0.4, 1.0, 1.1, 1.3, 1.5)
+)
+read_tracks(df, mapping = list(id = "id", time = "time", x = "x", y = "y"))
+#> Tracks: 2 trajectories, 8 observations
+#> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y'
+#>   id time    x   y      angle
+#> 1  A    0  1.0 0.0 0.00000000
+#> 2  A    1  1.2 0.1 0.08314123
+#> 3  A    2  1.4 0.3 0.21109333
+#> 4  A    3  1.5 0.4 0.26060239
+#> 5  B    0 -0.2 1.0 1.76819189
+#> 6  B    1 -0.1 1.1 1.66145621
+
+# A DeepLabCut predictions file, recorded at 40 frames per second
+dlc <- system.file("extdata", "dlc_single_wasp_predictions.csv",
+                   package = "radiatR")
+read_tracks(dlc, dialect = "deeplabcut", fps = 40)
+#> Tracks: 1 trajectories, 300 observations
+#> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y'
+#>   id time        x        y   head_x   head_y stinger_x stinger_y     angle
+#> 1  1    0 1084.859 421.3867 1086.238 421.5013  1083.866  421.3042 0.3704886
+#> 2  1    1 1084.742 421.5025 1086.020 421.5443  1083.370  421.4577 0.3706179
+#> 3  1    2 1084.573 421.7333 1085.545 421.8074  1082.950  421.6096 0.3708553
+#> 4  1    3 1083.631 423.8910 1085.084 422.5898  1081.628  425.6838 0.3728769
+#> 5  1    4 1082.897 424.1358 1085.193 422.4883  1078.615  427.2081 0.3733029
+#> 6  1    5 1082.439 424.0955 1084.933 422.5358  1077.953  426.9004 0.3734143
+```
