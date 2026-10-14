@@ -20,3 +20,13 @@ register_loader_format(name, spec, overwrite = FALSE)
 \description{
 The spec maps cleanly onto read_tracks() args and supports regex-based column finding.
 }
+\examples{
+# A tracker whose columns are found by pattern; time is in seconds
+spec <- list(
+  regex_mapping = list(id = "^animal", time = "^sec",
+                       x = "^pos_?x", y = "^pos_?y"),
+  time = list(type = "seconds")
+)
+register_loader_format("my_tracker", spec, overwrite = TRUE)
+list_loader_formats()
+}

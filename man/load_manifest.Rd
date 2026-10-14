@@ -57,3 +57,24 @@ This high-level helper combines the file discovery tibble returned by
 each track file using [read_tracks()], and merges the results into a single
 `Tracks`.
 }
+\examples{
+untar(system.file("extdata", "tracks.tar.gz", package = "radiatR"),
+      exdir = tempdir())
+track_dir <- file.path(tempdir(), "tracks")
+# dtrack writes headerless, tab-separated frame, x, y (and a flag) columns
+dtrack_loader <- function(x) {
+  d <- utils::read.delim(x, header = FALSE, colClasses = "numeric")
+  data.frame(id = tools::file_path_sans_ext(basename(x)),
+             frame = d[[1]], x = d[[2]], y = d[[3]])
+}
+register_loader_dialect("dtrack", dtrack_loader, overwrite = TRUE)
+file_tbl <- import_tracks(track_dir)[1:3, ]
+manifest <- import_info(system.file("extdata", "millipede_trials.csv",
+                                    package = "radiatR"))
+manifest <- manifest[manifest$file \%in\% file_tbl$basename, ]
+ts <- load_manifest(file_tbl, track_dir, manifest = manifest,
+                    manifest_cols = c(arc = "arc", type = "type"),
+                    dialect = "dtrack")
+ts
+unique(ts@data[, c("id", "arc", "type")])
+}

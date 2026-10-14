@@ -26,3 +26,18 @@ A single `Tracks` object combining every matching file.
 \description{
 Read all matching files from a directory and bind into a Tracks
 }
+\examples{
+df <- data.frame(
+  id   = rep(c("A", "B"), each = 4),
+  time = rep(0:3, times = 2),
+  x    = c(1, 1.2, 1.4, 1.5, -0.2, -0.1, 0, 0.15),
+  y    = c(0, 0.1, 0.3, 0.4, 1.0, 1.1, 1.3, 1.5)
+)
+csv_dir <- file.path(tempdir(), "csv_tracks")
+dir.create(csv_dir)
+write.csv(df, file.path(csv_dir, "day1.csv"), row.names = FALSE)
+write.csv(transform(df, id = paste0(id, "2")), file.path(csv_dir, "day2.csv"),
+          row.names = FALSE)
+read_tracks_dir(csv_dir, pattern = "\\\\.csv$")
+unlink(csv_dir, recursive = TRUE)
+}

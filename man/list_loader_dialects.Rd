@@ -12,3 +12,7 @@ A sorted character vector of registered dialect names.
 \description{
 List registered loader dialects
 }
+\examples{
+# Built-in dialects plus any registered this session
+list_loader_dialects()
+}
