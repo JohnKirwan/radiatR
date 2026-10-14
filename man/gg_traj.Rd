@@ -55,3 +55,10 @@ ggplot object
 \description{
 Plot trajectories from a Tracks (overlay or faceted)
 }
+\examples{
+# Overlay trajectories for the first two trials
+gg_traj(cpunctatus[1:2])
+
+# Facet by trial, cartesian coordinates
+gg_traj(cpunctatus[1:4], facets = "trial_id", coord = "cartesian")
+}

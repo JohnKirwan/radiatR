@@ -435,6 +435,14 @@ test_that("trajectory helpers create ggplot objects", {
   gp <- gg_traj(ts, geom = "path", coord = "cartesian")
   expect_s3_class(gp, "ggplot")
 
+  ts2 <- tracks(rbind(df, transform(df, id = "B", x = -x)), id = "id",
+                time = "time", x = "x", y = "y")
+  for (crd in c("polar", "cartesian")) {
+    expect_s3_class(
+      ggplot2::ggplotGrob(gg_traj(ts2, facets = "id", coord = crd)), "gtable"
+    )
+  }
+
   layer_list <- draw_tracks(df, "x", "y")
   expect_type(layer_list, "list")
   expect_s3_class(layer_list[[0 + 1]], "LayerInstance")

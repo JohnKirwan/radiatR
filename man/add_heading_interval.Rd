@@ -73,6 +73,14 @@ Convenience wrapper that calls [compute_circ_interval()] followed by
 directly when you need to replace `lower`/`upper` with Bayesian credible
 interval bounds before rendering.
 }
+\examples{
+hd <- derive_headings(cpunctatus[1:5], rule = "distal")
+library(ggplot2)
+ggplot() +
+  coord_fixed() +
+  add_circ() +
+  add_heading_interval(hd, stat = "sd")
+}
 \seealso{
 [compute_circ_interval()], [add_circ_interval()]
 }

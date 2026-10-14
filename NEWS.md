@@ -303,9 +303,21 @@
   of the `cpunctatus` example data from about 6 s to about 0.1 s. The drawn
   geometry is unchanged. `line_circle_intercept()` is now vectorised over its
   arguments.
+* Nineteen help pages in the circular-plotting and circular-boxplot groups now
+  have runnable examples: `circ_display()`, `directedness_arrow()`,
+  `compute_circ_interval()`, `add_circ_interval()`, `add_heading_interval()`,
+  `compute_circ_mean()`, `add_circ_mean()`, `add_heading_arrow()`,
+  `add_stacked_headings()`, `line_circle_intercept()`, `gg_traj()`,
+  `add_angle_rose()`, `add_vonmises_density()`, `add_circular_kde()`,
+  `add_wrappedcauchy_density()`, `add_critical_r()`, `add_critical_v_line()`,
+  `circ_boxplot_stats()` and `add_circular_boxplot()`.
 
 ## Bug fixes
 
+* `gg_traj()` with `facets =` stopped when the plot was drawn: it asked
+  `facet_wrap()` for free scales, which `coord_equal()` does not allow. The
+  panels now share fixed scales, so trajectories on the unit circle are drawn
+  at the same scale in every panel.
 * `derive_headings()` and `circ_summary_headings()` now require `rule`.
   Called without it, `derive_headings()` stopped with an internal
   `'length = 16' in coercion to 'logical(1)'` error, and

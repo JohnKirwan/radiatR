@@ -82,6 +82,12 @@ Sample size \code{n} is taken per boundary from \code{hd}: one boundary
 per occupied combination of \code{facets} and \code{group_col} columns,
 or a single pooled boundary when both are \code{NULL}.
 }
+\examples{
+hd <- derive_headings(cpunctatus[1:10], rule = "distal")
+radiate(cpunctatus[1:10]) +
+  add_heading_arrow(hd) +
+  add_critical_v_line(hd, mu0 = 0)
+}
 \seealso{
 \code{\link{add_critical_r}}, \code{\link{add_heading_arrow}}
 }
