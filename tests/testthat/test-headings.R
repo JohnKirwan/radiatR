@@ -735,16 +735,28 @@ test_that("net gives no direction to a track that ends where it started", {
                                on_missing = "quiet")$x_end, 0)
 })
 
-test_that("pca_axis has no axis when the points or the steps have no spread", {
+test_that("pca_axis takes the step axis about zero", {
   even_steps <- xy_track(0:5, rep(0, 6))
-  expect_true(is.na(heading_of(even_steps, rule = "pca_axis", source = "velocity")))
+  expect_equal(heading_of(even_steps, rule = "pca_axis", source = "velocity"), 0)
   # steps equal but for rounding: diff(seq(0, 1, .1)) is not constant
-  expect_true(is.na(heading_of(xy_track(rep(0, 11), seq(0, 1, .1)),
-                               rule = "pca_axis", source = "velocity")))
+  expect_equal(heading_of(xy_track(rep(0, 11), seq(0, 1, .1)),
+                          rule = "pca_axis", source = "velocity"), pi / 2)
+  expect_equal(heading_of(xy_track(c(0, 1), c(0, 1)),     # a single step
+                          rule = "pca_axis", source = "velocity"), pi / 4)
   expect_equal(heading_of(even_steps, rule = "pca_axis"), 0)
   out <- derive_headings(still_track(), rule = "pca_axis", return_coords = TRUE,
                          on_missing = "quiet")
   expect_true(is.na(out$axis_x) && is.na(out$axis_y))
+})
+
+test_that("pca_axis has no heading when the net displacement gives no sign", {
+  # out along the x axis and back: a clear axis, no net displacement
+  loop <- xy_track(c(0, .1, .2, .3, .2, .1, 0), c(0, .001, 0, .001, 0, .001, 0))
+  for (src in c("position", "velocity"))
+    expect_true(is.na(heading_of(loop, rule = "pca_axis", source = src)), info = src)
+  out <- derive_headings(loop, rule = "pca_axis", return_coords = TRUE,
+                         on_missing = "quiet")
+  expect_true(is.na(out$axis_x))
 })
 
 test_that("window_net fits its window to a track shorter than window_n", {

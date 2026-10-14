@@ -10,6 +10,14 @@
   run (20 before: 30 lost their run, 3 gained one), and 104 of the 185 with
   a heading either way change by more than a degree (median 90 degrees
   among those that change).
+* `derive_headings(rule = "pca_axis", source = "velocity")` takes the axis of
+  the steps about zero, not about their mean, so a track of equal steps has
+  their direction as its axis (it had none, or one set by rounding). Under
+  either source a track whose net displacement has no component along the
+  axis (one that ends where it started) has heading `NA`: the axis has no
+  sign, which had been left to the eigenvector routine. On `cpunctatus`,
+  `source = "velocity"` changes 198 of 235 headings by more than a degree
+  (median 6.4, max 86.4); `source = "position"` changes none; no new `NA`.
 
 * The `ethovision` dialect now reads the text export EthoVision XT writes: a
   first line giving the number of header lines, a block of trial details, a

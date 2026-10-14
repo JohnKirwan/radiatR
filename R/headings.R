@@ -97,6 +97,10 @@
 #' step of zero length (a pause) has no direction: turns are measured between
 #' successive moving steps, so a pause neither breaks a run nor counts toward
 #' `min_len`. The heading is the direction of the run's first moving step.
+#' `pca_axis` takes `source = "position"` (default; the principal axis of the
+#' positions about their centroid) or `"velocity"` (the principal axis of the
+#' steps about zero, which weights a step by its squared length; compare
+#' `velocity_axis`, which weights by length).
 #'
 #' The rules that average directions take a weighting through \code{...}:
 #' \itemize{
@@ -122,9 +126,11 @@
 #' length: a track that never moves (\code{net}, \code{straight},
 #' \code{goal_bias}, \code{maxspeed_window}, \code{window_net}), one that ends
 #' where it started (\code{net}), a window whose ends coincide
-#' (\code{window_net}), positions or steps with no spread (\code{pca_axis}),
-#' and a track that stays at the origin (\code{distal}). \code{window_net}
-#' and \code{maxspeed_window} shrink their window to fit a track shorter than
+#' (\code{window_net}), positions with no spread, or steps none of which
+#' moves (\code{pca_axis}), a \code{pca_axis} track whose net displacement has
+#' no component along its axis (the axis then has no sign), and a track that
+#' stays at the origin (\code{distal}). \code{window_net} and
+#' \code{maxspeed_window} shrink their window to fit a track shorter than
 #' \code{window_n}.
 #' @return data.frame with columns id, time (approx), heading (radians, unit-circle
 #'   convention), plus the rule-specific construction columns above when
@@ -376,7 +382,8 @@ setGeneric(
 }
 
 # ---- pca_axis rule -----------------------------------------------------------
-# Heading of first principal axis of positions or velocities; sign aligned with net displacement
+# Heading of the first principal axis of the positions (centred) or of the steps
+# (about zero); sign from the net displacement, NA when that gives none
 .set_headings_pca_axis_one <- function(d, id, tc, xc, yc, source = c("position","velocity"),
                                        return_coords = FALSE) {
   source <- match.arg(source)
@@ -388,23 +395,30 @@ setGeneric(
     }
     row
   }
+  if (nrow(d) < 2L) return(na_row())
   if (source == "position") {
     M <- cbind(d[[xc]], d[[yc]])
+    size2 <- max(abs(M))^2
+    M <- scale(M, center = TRUE, scale = FALSE)
+    S <- crossprod(M) / (nrow(M) - 1)
   } else {
-    if (nrow(d) < 2L) return(na_row())
+    # the axis of the steps about zero, not about their mean: a track of equal
+    # steps has their direction as its axis
     M <- cbind(diff(d[[xc]]), diff(d[[yc]]))
+    size2 <- max(abs(M))^2
+    S <- crossprod(M) / nrow(M)
   }
-  if (nrow(M) < 2L) return(na_row())
-  size2 <- max(abs(M))^2
-  M <- scale(M, center = TRUE, scale = FALSE)
-  S <- crossprod(M) / (nrow(M) - 1)
   eg <- eigen(S, symmetric = TRUE)
-  # no spread beyond rounding (same points, or same steps), so no axis
+  # no spread beyond rounding (same points, or no step moves), so no axis
   if (eg$values[1] <= .Machine$double.eps * size2) return(na_row())
-  ev <- eg$vectors[,1]
-  # align sign with net displacement
-  net <- c(d[[xc]][nrow(d)] - d[[xc]][1], d[[yc]][nrow(d)] - d[[yc]][1])
-  if (sum(ev * net) < 0) ev <- -ev
+  ev <- eg$vectors[, 1]
+  # the axis has no sign of its own: take the net displacement's, and give no
+  # heading when the net displacement has none along the axis
+  net  <- c(d[[xc]][nrow(d)] - d[[xc]][1], d[[yc]][nrow(d)] - d[[yc]][1])
+  proj <- sum(ev * net)
+  if (abs(proj) <= 64 * .Machine$double.eps * max(abs(c(d[[xc]], d[[yc]]))))
+    return(na_row())
+  if (proj < 0) ev <- -ev
   heading <- atan2(ev[2], ev[1])
   row <- data.frame(id = d[[id]][1], time = stats::median(d[[tc]], na.rm = TRUE),
                     heading = .wrap_to_2pi(heading))
