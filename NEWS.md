@@ -383,6 +383,10 @@
   counts missing headings and the trials they come from, and the app's
   attrition banner does the same. `missing_ids` lists each trial once, and
   the new `n_trials` attribute gives the number of trials.
+* Ids written with surrounding spaces and no unpadded twin (` 1`, ` 10`) are
+  the same ids under every reader: readr kept them as the text `" 1"`, where
+  `data.table::fread()` and `read.table()` read the number 1.
+
 * The separator sniff of `read_tracks()` counts fields as the readers do, so
   a separator inside a quoted field no longer counts: a `;` file with `;` in
   a quoted label is read as `;`. A file whose header alone has a different

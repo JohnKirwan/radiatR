@@ -828,6 +828,23 @@ test_that("ids that differ only by surrounding whitespace stop the read", {
                                                  y = 1:2))@data$id), " x")
 })
 
+test_that("padded numeric ids with no twin get the same labels under every reader", {
+  dir <- withr::local_tempdir()
+  pad <- file.path(dir, "pad.csv")
+  writeBin(charToRaw(paste0("id,time,x,y\n 1,1,.1,.1\n 1,2,.2,.2\n",
+                            " 10,1,.1,.1\n 10,2,.2,.3\n")), pad)
+  merge <- file.path(dir, "merge.csv")
+  writeBin(charToRaw(paste0("id,time,x,y\n 1.1,1,.1,.1\n 1.1,2,.2,.2\n",
+                            " 1.10,1,.1,.1\n 1.10,2,.2,.3\n")), merge)
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    expect_identical(sort(unique(as.character(read_tracks(pad)@data$id))),
+                     c("1", "10"), info = info)
+    expect_length(unique(read_tracks(merge)@data$id), 2L)
+  }
+})
+
 # ---- every reader reads the same table ------------------------------------------
 
 test_that("a row with more or fewer fields than the header stops every reader", {

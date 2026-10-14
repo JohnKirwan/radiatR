@@ -870,6 +870,22 @@ guess_columns <- function(data, mapping = list()) {
 # `pos` as text; text that does not read as the values the reader typed is
 # from other cells, and stops the load rather than be attached to the rows.
 .keep_labels <- function(df, id, read_text, id_text = FALSE) {
+  # readr keeps the whitespace around a cell, so " 1" is text to it and the
+  # number 1 to the other readers. Type such an id-like column as they do,
+  # unless that would merge labels (" 1.1" and " 1.10"), which stay text under
+  # every reader.
+  dec <- attr(df, "decimal") %||% "."
+  for (j in which((names(df) %in% id | tolower(names(df)) %in% .id_candidates) &
+                  vapply(df, is.character, logical(1)))) {
+    if (id_text && names(df)[j] %in% id) next
+    v <- df[[j]]
+    seen <- !is.na(v)
+    if (!any(seen) || !any(v[seen] != trimws(v[seen]))) next
+    num <- .parse_number(trimws(v[seen]), dec, dot_ok = !identical(dec, ","))
+    if (anyNA(num) || length(unique(num)) != length(unique(v[seen]))) next
+    out <- rep(NA_real_, length(v)); out[seen] <- num
+    df[[j]] <- out
+  }
   is_id <- names(df) %in% id
   # dates and times too: "2024-01-01 00:00" and "2024-01-01 00:00:00" are one
   # instant but two labels
