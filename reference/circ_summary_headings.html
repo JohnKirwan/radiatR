@@ -99,7 +99,7 @@ onto the heading table with `carry` (e.g. `carry = "arc"`).</p></dd>
 <span class="r-in"><span><span class="co"># per-trial headings (default)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">circ_summary_headings</span><span class="op">(</span><span class="va">cpunctatus</span>, rule <span class="op">=</span> <span class="st">"crossing"</span>,</span></span>
 <span class="r-in"><span>                           circ0 <span class="op">=</span> <span class="fl">0.2</span>, circ1 <span class="op">=</span> <span class="fl">0.4</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>derive_headings(rule = 'crossing'): 25 of 251 trials (10.0%) produced no heading and are excluded from circular statistics. Rule-based failures are often non-random and can bias results; inspect attr(x, "missing_ids").</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>derive_headings(rule = 'crossing'): 25 of 251 headings (10.0%), from 25 of 235 trials, are missing and are excluded from circular statistics. Rule-based failures are often non-random and can bias results; inspect attr(x, "missing_ids").</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        id mean_dir resultant_R kappa n</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 10_10_1 6.233783           1   Inf 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2 10_11_1 1.335350           1   Inf 1</span>
@@ -112,7 +112,7 @@ onto the heading table with `carry` (e.g. `carry = "arc"`).</p></dd>
 <span class="r-in"><span><span class="fu">circ_summary_headings</span><span class="op">(</span><span class="va">cpunctatus</span>, rule <span class="op">=</span> <span class="st">"crossing"</span>,</span></span>
 <span class="r-in"><span>                      circ0 <span class="op">=</span> <span class="fl">0.2</span>, circ1 <span class="op">=</span> <span class="fl">0.4</span>,</span></span>
 <span class="r-in"><span>                      carry <span class="op">=</span> <span class="st">"arc"</span>, group_by <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>derive_headings(rule = 'crossing'): 25 of 251 trials (10.0%) produced no heading and are excluded from circular statistics. Rule-based failures are often non-random and can bias results; inspect attr(x, "missing_ids").</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>derive_headings(rule = 'crossing'): 25 of 251 headings (10.0%), from 25 of 235 trials, are missing and are excluded from circular statistics. Rule-based failures are often non-random and can bias results; inspect attr(x, "missing_ids").</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   arc  mean_dir resultant_R      kappa  n</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1   0 2.4441971  0.21852376 0.44789786 33</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2   5 6.1710354  0.03518184 0.07040728 30</span>

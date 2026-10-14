@@ -162,10 +162,11 @@ it.
 [`derive_headings()`](https://johnkirwan.github.io/radiatR/reference/derive_headings.md)
 returns one row per track (some rules can return more). When a rule
 yields no heading for a track, the row is kept with `NA` and the result
-carries `n_total`, `n_missing` and `missing_ids` attributes.
-`on_missing` controls what else happens: `"warn"` (the default) raises a
-warning, `"error"` stops, `"quiet"` says nothing. The `ransac_straight`
-rule draws random numbers, so call
+carries `n_total` and `n_missing` (headings, i.e. rows), `n_trials`
+(distinct trials) and `missing_ids` (each trial with a missing heading,
+once) attributes. `on_missing` controls what else happens: `"warn"` (the
+default) raises a warning, `"error"` stops, `"quiet"` says nothing. The
+`ransac_straight` rule draws random numbers, so call
 [`set.seed()`](https://rdrr.io/r/base/Random.html) before it.
 
 ``` r

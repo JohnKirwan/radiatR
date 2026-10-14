@@ -150,8 +150,7 @@ ts <- read_tracks(
 # 2. Derive headings
 hd <- derive_headings(ts, rule = "crossing",
                       circ0 = 0.3, circ1 = 0.6,
-                      coords = "absolute",
-                      angle_convention = "unit_circle")
+                      coords = "absolute")
 
 # 3. Circular summary per condition
 compute_circ_mean(hd, group_col = "condition")

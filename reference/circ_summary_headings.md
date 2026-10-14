@@ -50,7 +50,7 @@ data(cpunctatus)
 # per-trial headings (default)
 head(circ_summary_headings(cpunctatus, rule = "crossing",
                            circ0 = 0.2, circ1 = 0.4))
-#> Warning: derive_headings(rule = 'crossing'): 25 of 251 trials (10.0%) produced no heading and are excluded from circular statistics. Rule-based failures are often non-random and can bias results; inspect attr(x, "missing_ids").
+#> Warning: derive_headings(rule = 'crossing'): 25 of 251 headings (10.0%), from 25 of 235 trials, are missing and are excluded from circular statistics. Rule-based failures are often non-random and can bias results; inspect attr(x, "missing_ids").
 #>        id mean_dir resultant_R kappa n
 #> 1 10_10_1 6.233783           1   Inf 1
 #> 2 10_11_1 1.335350           1   Inf 1
@@ -63,7 +63,7 @@ head(circ_summary_headings(cpunctatus, rule = "crossing",
 circ_summary_headings(cpunctatus, rule = "crossing",
                       circ0 = 0.2, circ1 = 0.4,
                       carry = "arc", group_by = "arc")
-#> Warning: derive_headings(rule = 'crossing'): 25 of 251 trials (10.0%) produced no heading and are excluded from circular statistics. Rule-based failures are often non-random and can bias results; inspect attr(x, "missing_ids").
+#> Warning: derive_headings(rule = 'crossing'): 25 of 251 headings (10.0%), from 25 of 235 trials, are missing and are excluded from circular statistics. Rule-based failures are often non-random and can bias results; inspect attr(x, "missing_ids").
 #>   arc  mean_dir resultant_R      kappa  n
 #> 1   0 2.4441971  0.21852376 0.44789786 33
 #> 2   5 6.1710354  0.03518184 0.07040728 30

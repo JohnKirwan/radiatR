@@ -4,8 +4,8 @@ Computes circular mean direction, mean resultant length *R*, circular
 standard deviation, and sample size for each group. Designed for
 within-trial summaries from
 [`pose_to_headings`](https://johnkirwan.github.io/radiatR/reference/pose_to_headings.md)
-or `derive_headings(..., frame_select = "all")`, but accepts any data
-frame with an angle column.
+or `derive_headings(..., rule = "bodypart_axis", frame_select = "all")`,
+but accepts any data frame with an angle column.
 
 ## Usage
 

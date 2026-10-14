@@ -295,12 +295,14 @@ prefixes each id with its file stem.</li>
 </h2>
 <p><code><a href="../reference/derive_headings.html">derive_headings()</a></code> returns one row per track (some rules
 can return more). When a rule yields no heading for a track, the row is
-kept with <code>NA</code> and the result carries <code>n_total</code>,
-<code>n_missing</code> and <code>missing_ids</code> attributes.
-<code>on_missing</code> controls what else happens: <code>"warn"</code>
-(the default) raises a warning, <code>"error"</code> stops,
-<code>"quiet"</code> says nothing. The <code>ransac_straight</code> rule
-draws random numbers, so call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> before it.</p>
+kept with <code>NA</code> and the result carries <code>n_total</code>
+and <code>n_missing</code> (headings, i.e. rows), <code>n_trials</code>
+(distinct trials) and <code>missing_ids</code> (each trial with a
+missing heading, once) attributes. <code>on_missing</code> controls what
+else happens: <code>"warn"</code> (the default) raises a warning,
+<code>"error"</code> stops, <code>"quiet"</code> says nothing. The
+<code>ransac_straight</code> rule draws random numbers, so call
+<code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> before it.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">hd</span>, <span class="st">"n_total"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 60</span></span>

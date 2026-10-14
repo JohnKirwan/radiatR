@@ -35,7 +35,8 @@ add_angle_rose(
 
   Data frame of headings, e.g. from
   [`pose_to_headings`](https://johnkirwan.github.io/radiatR/reference/pose_to_headings.md)
-  or `derive_headings(..., frame_select = "all")`.
+  or
+  `derive_headings(..., rule = "bodypart_axis", frame_select = "all")`.
 
 - bins:
 

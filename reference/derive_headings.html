@@ -84,7 +84,9 @@ called once per trajectory as `f(df, cols, ...)` that returns columns
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>rule-specific parameters, including `return_coords` (see below)</p></dd>
+<dd><p>rule-specific options (see Details), including `return_coords`.
+A built-in rule stops with an error naming any option it does not read;
+registered and function rules receive `...` unchecked.</p></dd>
 
 
 <dt id="arg-coords">coords<a class="anchor" aria-label="anchor" href="#arg-coords"></a></dt>
@@ -107,7 +109,9 @@ landmark-rotated frame; errors if not registered).</p></dd>
 <dd><p>One of `"warn"` (default), `"error"`, or `"quiet"`,
 controlling what happens when a rule produces no heading (`NA`) for one or
 more trials. The `NA` rows are always retained; the returned object carries
-`n_total`, `n_missing`, and `missing_ids` attributes. `"warn"` emits a
+`n_total` and `n_missing` (headings, i.e. rows), `n_trials` (distinct
+trials) and `missing_ids` (the trials with at least one missing heading)
+attributes. `"warn"` emits a
 warning, `"error"` stops, `"quiet"` is silent. Rule-based failures are often
 non-random (e.g. tracks that never reach the circumference) and can bias
 circular statistics, so they are surfaced by default.</p></dd>
@@ -130,7 +134,16 @@ construction coordinates each rule used to derive the heading, in the chosen
 vector). Other rules ignore it.
 The `distal` rule accepts `max_radius` (default `Inf`): the furthest-point
 search is restricted to positions with radius `&lt;= max_radius`, so
-`max_radius = 1` ignores beyond-circumference (`rho &gt; 1`) tracking outliers.</p>
+`max_radius = 1` ignores beyond-circumference (`rho &gt; 1`) tracking outliers.
+The `straight` rule takes `tol` (default `pi/18`, the largest turn between
+successive steps) and `min_len` (default `5`, the fewest steps in a run). A
+step of zero length (a pause) has no direction: turns are measured between
+successive moving steps, so a pause neither breaks a run nor counts toward
+`min_len`. The heading is the direction of the run's first moving step.
+`pca_axis` takes `source = "position"` (default; the principal axis of the
+positions about their centroid) or `"velocity"` (the principal axis of the
+steps about zero, which weights a step by its squared length; compare
+`velocity_axis`, which weights by length).</p>
 <p>The rules that average directions take a weighting through <code>...</code>:</p><ul><li><p><code>velocity_mean</code> and <code>vm_fit</code> average the directions of
     the steps of a track. <code>weight_by = "uniform"</code> (default) counts
     every step once; <code>"step_length"</code> weights a step by its length,
@@ -151,9 +164,11 @@ direction left, or whose directions cancel, has heading <code>NA</code>.</p>
 length: a track that never moves (<code>net</code>, <code>straight</code>,
 <code>goal_bias</code>, <code>maxspeed_window</code>, <code>window_net</code>), one that ends
 where it started (<code>net</code>), a window whose ends coincide
-(<code>window_net</code>), positions or steps with no spread (<code>pca_axis</code>),
-and a track that stays at the origin (<code>distal</code>). <code>window_net</code>
-and <code>maxspeed_window</code> shrink their window to fit a track shorter than
+(<code>window_net</code>), positions with no spread, or steps none of which
+moves (<code>pca_axis</code>), a <code>pca_axis</code> track whose net displacement has
+no component along its axis (the axis then has no sign), and a track that
+stays at the origin (<code>distal</code>). <code>window_net</code> and
+<code>maxspeed_window</code> shrink their window to fit a track shorter than
 <code>window_n</code>.</p>
     </div>
 
