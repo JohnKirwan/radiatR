@@ -73,6 +73,10 @@ successive steps) and `min_len` (default `5`, the fewest steps in a run). A
 step of zero length (a pause) has no direction: turns are measured between
 successive moving steps, so a pause neither breaks a run nor counts toward
 `min_len`. The heading is the direction of the run's first moving step.
+`pca_axis` takes `source = "position"` (default; the principal axis of the
+positions about their centroid) or `"velocity"` (the principal axis of the
+steps about zero, which weights a step by its squared length; compare
+`velocity_axis`, which weights by length).
 
 The rules that average directions take a weighting through \code{...}:
 \itemize{
@@ -98,9 +102,11 @@ The other rules likewise give \code{NA} where a displacement has zero
 length: a track that never moves (\code{net}, \code{straight},
 \code{goal_bias}, \code{maxspeed_window}, \code{window_net}), one that ends
 where it started (\code{net}), a window whose ends coincide
-(\code{window_net}), positions or steps with no spread (\code{pca_axis}),
-and a track that stays at the origin (\code{distal}). \code{window_net}
-and \code{maxspeed_window} shrink their window to fit a track shorter than
+(\code{window_net}), positions with no spread, or steps none of which
+moves (\code{pca_axis}), a \code{pca_axis} track whose net displacement has
+no component along its axis (the axis then has no sign), and a track that
+stays at the origin (\code{distal}). \code{window_net} and
+\code{maxspeed_window} shrink their window to fit a track shorter than
 \code{window_n}.
 }
 \examples{
