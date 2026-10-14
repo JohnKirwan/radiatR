@@ -15,3 +15,10 @@ Sorted character vector of registered rule names.
 ## See also
 
 [`register_heading_rule`](https://johnkirwan.github.io/radiatR/reference/register_heading_rule.md)
+
+## Examples
+
+``` r
+list_heading_rules()
+#> [1] "bodypart_axis" "ellipse_axis" 
+```

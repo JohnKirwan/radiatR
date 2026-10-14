@@ -81,6 +81,30 @@ display convention without assuming the input is classed.</p>
   `hf_coords()` a string; `hf_colour_col()` a string or `NULL`.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">hf</span> <span class="op">&lt;-</span> <span class="fu"><a href="headings_frame.html">headings_frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>h <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">1.2</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span>, <span class="va">h</span>, units <span class="op">=</span> <span class="st">"radians"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">hf_heading_col</span><span class="op">(</span><span class="va">hf</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "h"</span>
+<span class="r-in"><span><span class="fu">hf_coords</span><span class="op">(</span><span class="va">hf</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "absolute"</span>
+<span class="r-in"><span><span class="fu">hf_display</span><span class="op">(</span><span class="va">hf</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $zero</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1.570796</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $clockwise</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $units</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "degrees"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"class")</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "circ_display"</span>
+<span class="r-in"><span><span class="co"># a plain data frame gives the defaults</span></span></span>
+<span class="r-in"><span><span class="fu">hf_heading_col</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>h <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "heading"</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

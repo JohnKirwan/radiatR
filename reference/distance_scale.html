@@ -116,6 +116,28 @@ separation in coordinate units and its real-world length; the scale is
     <div class="dont-index"><p>[frame_rate()], [track_length()], [track_speed()]</p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">distance_scale</span><span class="op">(</span><span class="va">cpunctatus</span><span class="op">)</span> <span class="co"># NULL: not calibrated</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
+<span class="r-in"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu">set_distance_scale</span><span class="op">(</span><span class="va">cpunctatus</span>, <span class="fl">150</span>, unit <span class="op">=</span> <span class="st">"mm"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">distance_unit</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "mm"</span>
+<span class="r-in"><span><span class="co"># the same scale from a known separation: 0.5 coordinate units is 75 mm</span></span></span>
+<span class="r-in"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu">calibrate_distance</span><span class="op">(</span><span class="va">cpunctatus</span>, coord_distance <span class="op">=</span> <span class="fl">0.5</span>,</span></span>
+<span class="r-in"><span>                        real_distance <span class="op">=</span> <span class="fl">75</span>, unit <span class="op">=</span> <span class="st">"mm"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">distance_scale</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 150</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="track_length.html">track_length</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         trial_id    length</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_1_1    10_1_1  204.6837</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_10_1  10_10_1 1310.8161</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_11_1  10_11_1  191.7538</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_12_1  10_12_1  185.6550</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_13_1  10_13_1  238.8916</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_14_1  10_14_1  140.4793</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

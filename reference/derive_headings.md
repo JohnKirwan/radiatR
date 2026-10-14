@@ -118,3 +118,43 @@ a track that never moves (`net`, `straight`, `goal_bias`,
 with no spread (`pca_axis`), and a track that stays at the origin
 (`distal`). `window_net` and `maxspeed_window` shrink their window to
 fit a track shorter than `window_n`.
+
+## Examples
+
+``` r
+h <- derive_headings(cpunctatus, rule = "distal")
+head(h)
+#> # A tibble: 6 × 3
+#>   id       time heading
+#>   <chr>   <int>   <dbl>
+#> 1 10_10_1   299    4.77
+#> 2 10_11_1    78    1.41
+#> 3 10_12_1    49    2.25
+#> 4 10_13_1   101    4.73
+#> 5 10_14_1    30    1.94
+#> 6 10_15_1    55    5.03
+# ignore tracking outliers beyond the circumference and keep the point used
+head(derive_headings(cpunctatus, rule = "distal", max_radius = 1,
+                     return_coords = TRUE))
+#> # A tibble: 6 × 5
+#>   id       time heading x_distal y_distal
+#>   <chr>   <int>   <dbl>    <dbl>    <dbl>
+#> 1 10_10_1   299    4.77   0.0545   -0.880
+#> 2 10_11_1    77    1.41   0.155     0.974
+#> 3 10_12_1    45    2.25  -0.612     0.755
+#> 4 10_13_1    99    4.73   0.0150   -0.997
+#> 5 10_14_1    30    1.94  -0.356     0.907
+#> 6 10_15_1    51    4.96   0.238    -0.961
+# per-trial reference frame, carrying a condition column for grouping
+head(derive_headings(cpunctatus, rule = "net", coords = "relative",
+                     carry = "arc"))
+#> # A tibble: 6 × 4
+#>   id       time heading arc  
+#>   <chr>   <dbl>   <dbl> <ord>
+#> 1 10_10_1 150      1.54 10   
+#> 2 10_11_1  46      6.15 10   
+#> 3 10_12_1  25.5    2.18 10   
+#> 4 10_13_1  61.5    6.28 10   
+#> 5 10_14_1  15.5    5.24 10   
+#> 6 10_15_1  28.5    3.41 10   
+```

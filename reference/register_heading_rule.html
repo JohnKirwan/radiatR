@@ -87,6 +87,26 @@ accept <code>(df, cols, ...)</code> and return a data frame with columns
     <div class="dont-index"><p><code><a href="list_heading_rules.html">list_heading_rules</a></code>, <code><a href="derive_headings.html">derive_headings</a></code></p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">last_bearing</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">df</span>, <span class="va">cols</span>, <span class="va">...</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="va">n</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>id <span class="op">=</span> <span class="va">df</span><span class="op">[[</span><span class="va">cols</span><span class="op">$</span><span class="va">id</span><span class="op">]</span><span class="op">]</span><span class="op">[</span><span class="va">n</span><span class="op">]</span>, time <span class="op">=</span> <span class="va">df</span><span class="op">[[</span><span class="va">cols</span><span class="op">$</span><span class="va">time</span><span class="op">]</span><span class="op">]</span><span class="op">[</span><span class="va">n</span><span class="op">]</span>,</span></span>
+<span class="r-in"><span>             heading <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">atan2</a></span><span class="op">(</span><span class="va">df</span><span class="op">[[</span><span class="va">cols</span><span class="op">$</span><span class="va">y</span><span class="op">]</span><span class="op">]</span><span class="op">[</span><span class="va">n</span><span class="op">]</span>, <span class="va">df</span><span class="op">[[</span><span class="va">cols</span><span class="op">$</span><span class="va">x</span><span class="op">]</span><span class="op">]</span><span class="op">[</span><span class="va">n</span><span class="op">]</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/Arithmetic.html" class="external-link">%%</a></span> <span class="op">(</span><span class="fl">2</span> <span class="op">*</span> <span class="va">pi</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span><span class="fu">register_heading_rule</span><span class="op">(</span><span class="st">"last_bearing"</span>, <span class="va">last_bearing</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="derive_headings.html">derive_headings</a></span><span class="op">(</span><span class="va">cpunctatus</span>, rule <span class="op">=</span> <span class="st">"last_bearing"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 6 × 3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   id       time heading</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> 10_10_1   299    4.77</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> 10_11_1    78    1.41</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> 10_12_1    49    2.25</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> 10_13_1   101    4.73</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> 10_14_1    30    1.94</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> 10_15_1    55    5.03</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

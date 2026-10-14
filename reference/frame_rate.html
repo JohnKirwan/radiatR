@@ -95,6 +95,15 @@ loaded with `read_tracks(time_type = "seconds")`) is never divided by it.</p>
     <div class="dont-index"><p>[elapsed_seconds()], [track_duration()]</p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">frame_rate</span><span class="op">(</span><span class="va">cpunctatus</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.2</span>
+<span class="r-in"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu">set_frame_rate</span><span class="op">(</span><span class="va">cpunctatus</span>, <span class="fl">25</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">frame_rate</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 25</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

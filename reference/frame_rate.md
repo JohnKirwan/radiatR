@@ -39,3 +39,13 @@ modified \`Tracks\`.
 ## See also
 
 \[elapsed_seconds()\], \[track_duration()\]
+
+## Examples
+
+``` r
+frame_rate(cpunctatus)
+#> [1] 0.2
+x <- set_frame_rate(cpunctatus, 25)
+frame_rate(x)
+#> [1] 25
+```

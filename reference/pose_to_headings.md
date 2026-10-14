@@ -64,3 +64,19 @@ pose_to_headings(
 
 Data frame with columns `id`, `time`, `heading` (in radians), with an
 `angle_convention` attribute for downstream compatibility.
+
+## Examples
+
+``` r
+pose <- data.frame(
+  id     = "fish1", frame = 1:4,
+  head_x = c(0.1, 0.2, 0.2, 0.1), head_y = c(0.0, 0.1, 0.2, 0.3),
+  tail_x = c(0.0, 0.1, 0.2, 0.2), tail_y = c(0.0, 0.0, 0.1, 0.2)
+)
+pose_to_headings(pose, anterior = "head", posterior = "tail")
+#>      id time   heading
+#> 1 fish1    1 0.0000000
+#> 2 fish1    2 0.7853982
+#> 3 fish1    3 1.5707963
+#> 4 fish1    4 2.3561945
+```

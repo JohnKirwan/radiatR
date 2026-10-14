@@ -92,3 +92,17 @@ stack_headings(
 
 [`headings_frame`](https://johnkirwan.github.io/radiatR/reference/headings_frame.md),
 `add_stacked_headings`
+
+## Examples
+
+``` r
+d <- data.frame(heading = bin_angles(c(0.10, 0.12, 0.13, 1.50, 1.52),
+                                     width = pi / 18))
+stack_headings(d, col = "heading")
+#>     heading stack_r stack_n
+#> 1 0.1745329  0.9875       3
+#> 2 0.1745329  0.9625       3
+#> 3 0.1745329  0.9375       3
+#> 4 1.5707963  0.9875       2
+#> 5 1.5707963  0.9625       2
+```

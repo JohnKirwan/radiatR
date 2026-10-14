@@ -52,3 +52,13 @@ new \`Tracks\` whose data the metrics actually see.
 
 \[radiate()\] (\`clip_tracks\`), \[track_length()\], \[track_speed()\],
 \[transform_history()\]
+
+## Examples
+
+``` r
+x <- restrict_to_circumference(cpunctatus)
+#> restrict_to_circumference(truncate): removed 489 of 44331 rows.
+c(before = nrow(as.data.frame(cpunctatus)), after = nrow(as.data.frame(x)))
+#> before  after 
+#>  44331  43842 
+```

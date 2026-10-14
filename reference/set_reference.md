@@ -37,3 +37,29 @@ The updated \[\`Tracks\`\].
 ## See also
 
 \[reference()\], \[derive_coords()\]
+
+## Examples
+
+``` r
+x <- cpunctatus[1:2]
+# one reference for every trajectory, in unit-circle radians
+reference(set_reference(x, pi / 2))
+#> # A tibble: 2 × 2
+#>   id      ref_theta
+#>   <chr>       <dbl>
+#> 1 10_1_1       1.57
+#> 2 10_10_1      1.57
+# or one per trajectory, named by id; a reference of 0 makes the
+# relative frame equal the absolute one
+x <- set_reference(x, stats::setNames(c(0, pi), ids(x)))
+head(as.data.frame(x)[c("trial_id", "abs_theta", "rel_theta")])
+#> # A tibble: 6 × 3
+#>   trial_id abs_theta rel_theta
+#>   <chr>        <dbl>     <dbl>
+#> 1 10_1_1       0         0    
+#> 2 10_1_1       0.541     0.541
+#> 3 10_1_1       0.985     0.985
+#> 4 10_1_1       1.57      1.57 
+#> 5 10_1_1       5.03      5.03 
+#> 6 10_1_1       5.18      5.18 
+```

@@ -35,3 +35,11 @@ deploy:
 
 
       rsconnect::deployApp(system.file("app", package = "radiatR"))
+
+## Examples
+
+``` r
+if (interactive() && requireNamespace("shiny", quietly = TRUE)) {
+  launch_app()
+}
+```

@@ -186,3 +186,52 @@ called through
 [`read_tracks`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md),
 rows are those of the combined table passed to `tracks()` (after any
 rows removed by `on_invalid = "drop"`), not line numbers in a file.
+
+## Examples
+
+``` r
+df <- data.frame(
+  id   = rep(c("a", "b"), each = 3),
+  time = rep(1:3, 2),
+  x    = c(0, 0.3, 0.6, 0, -0.2, -0.5),
+  y    = c(0, 0.2, 0.5, 0, 0.3, 0.7)
+)
+ts <- tracks(df, x = "x", y = "y")
+ts
+#> Tracks: 2 trajectories, 6 observations
+#> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y'
+#>   id time    x   y     angle
+#> 1  a    1  0.0 0.0 0.0000000
+#> 2  a    2  0.3 0.2 0.5880026
+#> 3  a    3  0.6 0.5 0.6947383
+#> 4  b    1  0.0 0.0 0.0000000
+#> 5  b    2 -0.2 0.3 2.1587989
+#> 6  b    3 -0.5 0.7 2.1910458
+length(ts)
+#> [1] 2
+ts["b"]
+#> Tracks: 1 trajectories, 3 observations
+#> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y'
+#>   id time    x   y    angle
+#> 4  b    1  0.0 0.0 0.000000
+#> 5  b    2 -0.2 0.3 2.158799
+#> 6  b    3 -0.5 0.7 2.191046
+
+# combine objects with the same column mapping
+more <- tracks(data.frame(id = "c", time = 1:2, x = c(0, 0.4), y = c(0, -0.4)),
+               x = "x", y = "y")
+length(c(ts, more))
+#> [1] 3
+
+# pixel coordinates: arena centre (320, 240), edge 200 px from it
+px <- data.frame(id = "d", time = 1:3,
+                 x = c(320, 380, 450), y = c(240, 280, 330))
+tracks(px, x = "x", y = "y", origin = c(320, 240), radius = 200)
+#> Tracks: 1 trajectories, 3 observations
+#> Columns: id='id', time='time', angle='angle' (radians), x='x', y='y', raw_x='x_raw', raw_y='y_raw'
+#> Transform steps: calibrate_unit_circle 
+#>   id time    x    y x_raw y_raw     angle
+#> 1  d    1 0.00 0.00   320   240 0.0000000
+#> 2  d    2 0.30 0.20   380   280 0.5880026
+#> 3  d    3 0.65 0.45   450   330 0.6055447
+```

@@ -34,3 +34,24 @@ The rule name, invisibly.
 
 [`list_heading_rules`](https://johnkirwan.github.io/radiatR/reference/list_heading_rules.md),
 [`derive_headings`](https://johnkirwan.github.io/radiatR/reference/derive_headings.md)
+
+## Examples
+
+``` r
+last_bearing <- function(df, cols, ...) {
+  n <- nrow(df)
+  data.frame(id = df[[cols$id]][n], time = df[[cols$time]][n],
+             heading = atan2(df[[cols$y]][n], df[[cols$x]][n]) %% (2 * pi))
+}
+register_heading_rule("last_bearing", last_bearing, overwrite = TRUE)
+head(derive_headings(cpunctatus, rule = "last_bearing"))
+#> # A tibble: 6 × 3
+#>   id       time heading
+#>   <chr>   <int>   <dbl>
+#> 1 10_10_1   299    4.77
+#> 2 10_11_1    78    1.41
+#> 3 10_12_1    49    2.25
+#> 4 10_13_1   101    4.73
+#> 5 10_14_1    30    1.94
+#> 6 10_15_1    55    5.03
+```

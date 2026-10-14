@@ -61,3 +61,26 @@ modified \`Tracks\`.
 ## See also
 
 \[frame_rate()\], \[track_length()\], \[track_speed()\]
+
+## Examples
+
+``` r
+distance_scale(cpunctatus) # NULL: not calibrated
+#> NULL
+x <- set_distance_scale(cpunctatus, 150, unit = "mm")
+distance_unit(x)
+#> [1] "mm"
+# the same scale from a known separation: 0.5 coordinate units is 75 mm
+x <- calibrate_distance(cpunctatus, coord_distance = 0.5,
+                        real_distance = 75, unit = "mm")
+distance_scale(x)
+#> [1] 150
+head(track_length(x))
+#>         trial_id    length
+#> 10_1_1    10_1_1  204.6837
+#> 10_10_1  10_10_1 1310.8161
+#> 10_11_1  10_11_1  191.7538
+#> 10_12_1  10_12_1  185.6550
+#> 10_13_1  10_13_1  238.8916
+#> 10_14_1  10_14_1  140.4793
+```

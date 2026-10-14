@@ -51,3 +51,19 @@ A `data.frame` with additional class `"headings_frame"` and attributes
 
 `stack_headings`, `add_stacked_headings`,
 [`radiate`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
+
+## Examples
+
+``` r
+d <- data.frame(trial = 1:5, angle = c(10, 45, 80, 350, 20))
+hf <- headings_frame(d, angle, units = "degrees")
+hf
+#> # A tibble: 5 × 2
+#>   trial angle
+#>   <int> <dbl>
+#> 1     1 0.175
+#> 2     2 0.785
+#> 3     3 1.40 
+#> 4     4 6.11 
+#> 5     5 0.349
+```
