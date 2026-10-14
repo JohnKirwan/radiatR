@@ -992,8 +992,11 @@ read_tracks_format <- function(x, format, ...)
 #'   `decimal` (decimal mark), and `sheet` (Excel worksheet name or number).
 #'   Any `NULL` element is auto-detected. Defaults to all-auto.
 #' @section Masked points:
-#' The `deeplabcut` and `sleap` dialects take each position from one or more
-#' points (bodyparts, nodes). A point is masked in a frame when its
+#' The `deeplabcut`, `sleap`, `ethovision` and `anymaze` dialects take each
+#' position from one or more points (bodyparts, nodes, body points; ANY-maze's
+#' centre point alone). EthoVision writes `-` and ANY-maze an empty cell for a
+#' sample with no position; neither has scores, thresholds, or for `anymaze` a
+#' `partial` argument. A point is masked in a frame when its
 #' coordinates are missing or not finite, when its score (likelihood) is 0, or when a
 #' threshold is given (`dialect_args = list(likelihood_min = )` for
 #' DeepLabCut, `score_min` for SLEAP) and its score is missing or below it.
@@ -1044,9 +1047,10 @@ read_tracks_format <- function(x, format, ...)
 #' do not agree on the type of the id column, the ids of each file are the
 #' text in that file. Ids that are numbers in every file are compared as
 #' numbers across files (see `id_collision`). A data frame and an Excel or
-#' Arrow file keep the types they come with. Not covered: an id column that a
-#' dialect is pointed to by an argument of its own (its ids may still be
-#' merged).
+#' Arrow file keep the types they come with. The `ethovision` and `anymaze`
+#' dialects read their files as text, so the id column named by their
+#' `id_col` keeps its text. Not covered: an id column that another dialect is
+#' pointed to by an argument of its own (its ids may still be merged).
 #'
 #' @section Malformed values:
 #' A cell in an x, y, angle, weight or time column that is present but does not
@@ -1065,14 +1069,13 @@ read_tracks_format <- function(x, format, ...)
 #' `0.125`, which cannot be digit grouping);
 #' `read_opts = list(decimal = ".")` says so outright.
 #'
-#' The `trackmate`, `toxtrac`, `idtrackerai_wide`, `trex`, `deeplabcut` and
-#' `sleap` dialects check
-#' their source columns the same way, before any reshaping, so the error names
+#' Every built-in dialect checks
+#' its source columns the same way, before any reshaping, so the error names
 #' the header as the program wrote it and the row of the file's table. A
 #' missing or non-finite position found afterwards (see `on_invalid`) is still
 #' counted in the rows of the table the dialect returns, which for a wide
-#' format is the reshaped one. Coordinates that the zone dialects convert
-#' themselves (ANY-maze, EthoVision) are not yet checked this way.
+#' format is the reshaped one. ANY-maze writes time as a duration
+#' (`0:01:02.500`), read as seconds; a cell that is not one is malformed.
 #'
 #' A time column given as text must hold either numbers throughout or
 #' timestamps in one layout throughout: `YYYY-MM-DD HH:MM:SS`,
