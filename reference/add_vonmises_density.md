@@ -89,3 +89,13 @@ add_vonmises_density(
 ## Value
 
 A `geom_polygon` layer, or `NULL` if `fit` is all `NA`.
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus[1:10], rule = "distal")
+fit <- vonmises_fit(hd)
+radiate(cpunctatus[1:10]) + add_vonmises_density(fit)
+#> Warning: Removed 5 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
+```

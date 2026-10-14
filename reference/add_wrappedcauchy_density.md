@@ -99,3 +99,13 @@ Default colour is `"darkorange"` to distinguish from
 
 [`add_vonmises_density`](https://johnkirwan.github.io/radiatR/reference/add_vonmises_density.md),
 [`add_circular_kde`](https://johnkirwan.github.io/radiatR/reference/add_circular_kde.md)
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus[1:10], rule = "distal")
+fit <- wrappedcauchy_fit(hd)
+radiate(cpunctatus[1:10]) + add_wrappedcauchy_density(fit)
+#> Warning: Removed 5 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
+```

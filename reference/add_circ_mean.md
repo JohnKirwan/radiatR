@@ -69,3 +69,15 @@ A \`geom_segment()\` layer.
 ## See also
 
 \[compute_circ_mean()\], \[add_heading_arrow()\]
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus[1:5], rule = "distal")
+sm <- compute_circ_mean(hd)
+library(ggplot2)
+ggplot() +
+  coord_fixed() +
+  add_circ() +
+  add_circ_mean(sm)
+```

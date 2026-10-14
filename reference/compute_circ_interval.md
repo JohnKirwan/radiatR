@@ -78,3 +78,13 @@ the +/-pi discontinuity). \`lower\` and \`upper\` are \`NA\` when \`n \<
 ## See also
 
 \[add_circ_interval()\], \[add_heading_interval()\]
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus[1:5], rule = "distal")
+# Fast: +/-1 circular SD
+compute_circ_interval(hd, stat = "sd")
+#>   mean_dir      lower     upper wraps
+#> 1 1.088074 -0.9910045 -3.116032  TRUE
+```

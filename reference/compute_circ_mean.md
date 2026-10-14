@@ -60,3 +60,12 @@ statistics are \`NA\` when a cell contains fewer than 2 finite angles.
 ## See also
 
 \[add_circ_mean()\], \[add_heading_arrow()\]
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus[1:5], rule = "distal")
+compute_circ_mean(hd)
+#>   mean_dir resultant_R
+#> 1 1.088074   0.1151771
+```

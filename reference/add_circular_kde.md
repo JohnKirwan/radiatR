@@ -112,3 +112,12 @@ The `bw` parameter is a *concentration* parameter (analogous to
 data-following estimate; smaller values over-smooth towards uniform.
 `NULL` (default) selects bandwidth automatically via
 [`bw.nrd.circular`](https://rdrr.io/pkg/circular/man/bw.circular.html).
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus[1:10], rule = "distal")
+radiate(cpunctatus[1:10]) + add_circular_kde(hd)
+#> Warning: Removed 5 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
+```

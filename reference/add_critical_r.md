@@ -105,3 +105,14 @@ one circle is drawn per panel at the radius appropriate to that panel's
 
 [`add_heading_arrow`](https://johnkirwan.github.io/radiatR/reference/add_heading_arrow.md),
 [`add_circ`](https://johnkirwan.github.io/radiatR/reference/add_circ.md)
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus[1:10], rule = "distal")
+radiate(cpunctatus[1:10]) +
+  add_heading_arrow(hd) +
+  add_critical_r(hd)
+#> Warning: Removed 5 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
+```

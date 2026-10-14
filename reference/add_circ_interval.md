@@ -81,3 +81,15 @@ posterior_upper ggplot() + coord_fixed() + add_circ_interval(iv) “\`
 ## See also
 
 \[compute_circ_interval()\], \[add_heading_interval()\]
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus[1:5], rule = "distal")
+iv <- compute_circ_interval(hd, stat = "sd")
+library(ggplot2)
+ggplot() +
+  coord_fixed() +
+  add_circ() +
+  add_circ_interval(iv)
+```

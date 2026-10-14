@@ -41,3 +41,15 @@ directedness_arrow(
 ## Value
 
 A \`geom_segment()\` layer.
+
+## Examples
+
+``` r
+# Arrow showing mean direction and resultant length
+hd <- derive_headings(cpunctatus[1:5], rule = "distal")
+library(ggplot2)
+ggplot() +
+  coord_fixed() +
+  add_circ() +
+  directedness_arrow(hd, angle_col = "heading")
+```

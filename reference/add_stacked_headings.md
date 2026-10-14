@@ -112,3 +112,14 @@ layer.
 [`headings_frame`](https://johnkirwan.github.io/radiatR/reference/headings_frame.md),
 [`stack_headings`](https://johnkirwan.github.io/radiatR/reference/stack_headings.md),
 [`add_heading_points`](https://johnkirwan.github.io/radiatR/reference/add_heading_points.md)
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus[1:5], rule = "distal")
+library(ggplot2)
+ggplot() +
+  coord_fixed() +
+  add_circ() +
+  add_stacked_headings(hd)
+```

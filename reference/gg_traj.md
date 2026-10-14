@@ -69,3 +69,14 @@ gg_traj(
 ## Value
 
 ggplot object
+
+## Examples
+
+``` r
+# Overlay trajectories for the first two trials
+gg_traj(cpunctatus[1:2])
+
+
+# Facet by trial, cartesian coordinates
+gg_traj(cpunctatus[1:4], facets = "trial_id", coord = "cartesian")
+```

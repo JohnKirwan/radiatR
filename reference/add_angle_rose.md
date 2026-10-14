@@ -99,3 +99,12 @@ add_angle_rose(
 A `geom_polygon` layer that can be added to a
 [`radiate()`](https://johnkirwan.github.io/radiatR/reference/radiate.md)
 plot with `+`.
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus[1:5], rule = "distal")
+radiate(cpunctatus[1:5]) + add_angle_rose(hd)
+#> Warning: Removed 3 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
+```

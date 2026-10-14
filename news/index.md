@@ -392,7 +392,38 @@
   [`line_circle_intercept()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept.md)
   is now vectorised over its arguments.
 
+- Nineteen help pages in the circular-plotting and circular-boxplot
+  groups now have runnable examples:
+  [`circ_display()`](https://johnkirwan.github.io/radiatR/reference/circ_display.md),
+  [`directedness_arrow()`](https://johnkirwan.github.io/radiatR/reference/directedness_arrow.md),
+  [`compute_circ_interval()`](https://johnkirwan.github.io/radiatR/reference/compute_circ_interval.md),
+  [`add_circ_interval()`](https://johnkirwan.github.io/radiatR/reference/add_circ_interval.md),
+  [`add_heading_interval()`](https://johnkirwan.github.io/radiatR/reference/add_heading_interval.md),
+  [`compute_circ_mean()`](https://johnkirwan.github.io/radiatR/reference/compute_circ_mean.md),
+  [`add_circ_mean()`](https://johnkirwan.github.io/radiatR/reference/add_circ_mean.md),
+  [`add_heading_arrow()`](https://johnkirwan.github.io/radiatR/reference/add_heading_arrow.md),
+  [`add_stacked_headings()`](https://johnkirwan.github.io/radiatR/reference/add_stacked_headings.md),
+  [`line_circle_intercept()`](https://johnkirwan.github.io/radiatR/reference/line_circle_intercept.md),
+  [`gg_traj()`](https://johnkirwan.github.io/radiatR/reference/gg_traj.md),
+  [`add_angle_rose()`](https://johnkirwan.github.io/radiatR/reference/add_angle_rose.md),
+  [`add_vonmises_density()`](https://johnkirwan.github.io/radiatR/reference/add_vonmises_density.md),
+  [`add_circular_kde()`](https://johnkirwan.github.io/radiatR/reference/add_circular_kde.md),
+  [`add_wrappedcauchy_density()`](https://johnkirwan.github.io/radiatR/reference/add_wrappedcauchy_density.md),
+  [`add_critical_r()`](https://johnkirwan.github.io/radiatR/reference/add_critical_r.md),
+  [`add_critical_v_line()`](https://johnkirwan.github.io/radiatR/reference/add_critical_v_line.md),
+  [`circ_boxplot_stats()`](https://johnkirwan.github.io/radiatR/reference/circ_boxplot_stats.md)
+  and
+  [`add_circular_boxplot()`](https://johnkirwan.github.io/radiatR/reference/add_circular_boxplot.md).
+
 ### Bug fixes
+
+- [`gg_traj()`](https://johnkirwan.github.io/radiatR/reference/gg_traj.md)
+  with `facets =` stopped when the plot was drawn: it asked
+  [`facet_wrap()`](https://ggplot2.tidyverse.org/reference/facet_wrap.html)
+  for free scales, which
+  [`coord_equal()`](https://ggplot2.tidyverse.org/reference/coord_fixed.html)
+  does not allow. The panels now share fixed scales, so trajectories on
+  the unit circle are drawn at the same scale in every panel.
 
 - [`derive_headings()`](https://johnkirwan.github.io/radiatR/reference/derive_headings.md)
   and

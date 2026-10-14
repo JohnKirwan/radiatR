@@ -29,3 +29,49 @@ circ_display(zero = pi/2, clockwise = TRUE, units = c("degrees", "radians"))
 ## Value
 
 A \`circ_display\` list.
+
+## Examples
+
+``` r
+# Default: North at top, clockwise, degrees
+circ_display()
+#> $zero
+#> [1] 1.570796
+#> 
+#> $clockwise
+#> [1] TRUE
+#> 
+#> $units
+#> [1] "degrees"
+#> 
+#> attr(,"class")
+#> [1] "circ_display"
+
+# Stimulus at East should appear at top
+circ_display(zero = 0)
+#> $zero
+#> [1] 0
+#> 
+#> $clockwise
+#> [1] TRUE
+#> 
+#> $units
+#> [1] "degrees"
+#> 
+#> attr(,"class")
+#> [1] "circ_display"
+
+# Counterclockwise, radians
+circ_display(clockwise = FALSE, units = "radians")
+#> $zero
+#> [1] 1.570796
+#> 
+#> $clockwise
+#> [1] FALSE
+#> 
+#> $units
+#> [1] "radians"
+#> 
+#> attr(,"class")
+#> [1] "circ_display"
+```

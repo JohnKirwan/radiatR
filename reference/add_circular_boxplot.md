@@ -136,3 +136,11 @@ circular data. *Biometrics* 74(4), 1492–1501.
 ## See also
 
 \[circ_boxplot_stats()\], \[radiate()\]
+
+## Examples
+
+``` r
+tr <- simulate_tracks(output = "trajset", seed = 1)
+hd <- derive_headings(tr, rule = "distal")
+radiate(tr) + add_circular_boxplot(hd)
+```

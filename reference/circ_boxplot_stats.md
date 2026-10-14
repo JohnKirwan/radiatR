@@ -56,3 +56,50 @@ circular data. *Biometrics* 74(4), 1492–1501.
 ## See also
 
 \[add_circular_boxplot()\], \[circ_summarise()\], \[vonmises_fit()\]
+
+## Examples
+
+``` r
+tr <- simulate_tracks(output = "trajset", seed = 1)
+hd <- derive_headings(tr, rule = "distal")
+circ_boxplot_stats(hd)
+#> $median
+#> [1] 6.146777
+#> 
+#> $antimedian
+#> [1] 3.005184
+#> 
+#> $hinges
+#> [1] 5.7343562 0.4583497
+#> 
+#> $box_arc
+#> [1] 5.7343562 0.4583497
+#> 
+#> $constant
+#> [1] 2.149198
+#> 
+#> $kappa
+#> [1] 2.071822
+#> 
+#> $fences
+#> [1] 3.569730 2.622976
+#> 
+#> $whiskers
+#> [1] 4.167899 1.316886
+#> 
+#> $far_out
+#> numeric(0)
+#> 
+#> $n
+#> [1] 60
+#> 
+#> $axial
+#> [1] FALSE
+#> 
+#> $drawable
+#> [1] TRUE
+#> 
+#> $reason
+#> [1] NA
+#> 
+```

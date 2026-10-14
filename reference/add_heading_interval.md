@@ -107,3 +107,14 @@ A \`geom_path()\` layer.
 ## See also
 
 \[compute_circ_interval()\], \[add_circ_interval()\]
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus[1:5], rule = "distal")
+library(ggplot2)
+ggplot() +
+  coord_fixed() +
+  add_circ() +
+  add_heading_interval(hd, stat = "sd")
+```

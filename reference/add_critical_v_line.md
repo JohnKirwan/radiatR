@@ -114,3 +114,14 @@ pooled boundary when both are `NULL`.
 
 [`add_critical_r`](https://johnkirwan.github.io/radiatR/reference/add_critical_r.md),
 [`add_heading_arrow`](https://johnkirwan.github.io/radiatR/reference/add_heading_arrow.md)
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus[1:10], rule = "distal")
+radiate(cpunctatus[1:10]) +
+  add_heading_arrow(hd) +
+  add_critical_v_line(hd, mu0 = 0)
+#> Warning: Removed 5 rows containing missing values or values outside the scale range
+#> (`geom_path()`).
+```
