@@ -164,22 +164,29 @@ default \`time_type = "auto"\` that decides how the column is read:
 TrackMate \`POSITION_T\` (when the version 7 units row gives seconds),
 ToxTrac \`Time (sec)\`, idtracker.ai \`seconds\` and TRex \`time\` are
 seconds, and need no \`fps\`; \`FRAME\`/\`frame\` columns, the
-DeepLabCut frame index and SLEAP \`frame_idx\` are frames. A contrary
-explicit \`time_type\` stops with a \`radiatR_time_type_mismatch\`
-error, as do files of one import that disagree.
+DeepLabCut frame index and SLEAP \`frame_idx\` are frames.
+\`ethovision\` (\`Trial time\`, or \`Recording time\` through
+\`time_col\`) and \`anymaze\` (\`Time\`, a duration) declare seconds; an
+\`ethovision\` data frame's time is taken as seconds (EthoVision writes
+no other unit), and a file's units row is checked. A contrary explicit
+\`time_type\` stops with a \`radiatR_time_type_mismatch\` error, as do
+files of one import that disagree.
 
 ## Masked points
 
-The \`deeplabcut\` and \`sleap\` dialects take each position from one or
-more points (bodyparts, nodes). A point is masked in a frame when its
-coordinates are missing or not finite, when its score (likelihood) is 0,
-or when a threshold is given (\`dialect_args = list(likelihood_min = )\`
-for DeepLabCut, \`score_min\` for SLEAP) and its score is missing or
-below it. A frame with a masked point has no position, unless
-\`dialect_args = list(partial = "mean")\` asks for the score-weighted
-mean of the points that remain. The dialect never removes a row: frames
-without a position meet \`on_invalid\` like any other missing
-coordinate.
+The \`deeplabcut\`, \`sleap\`, \`ethovision\` and \`anymaze\` dialects
+take each position from one or more points (bodyparts, nodes, body
+points; ANY-maze's centre point alone). EthoVision writes \`-\` and
+ANY-maze an empty cell for a sample with no position; neither has
+scores, thresholds, or for \`anymaze\` a \`partial\` argument. A point
+is masked in a frame when its coordinates are missing or not finite,
+when its score (likelihood) is 0, or when a threshold is given
+(\`dialect_args = list(likelihood_min = )\` for DeepLabCut,
+\`score_min\` for SLEAP) and its score is missing or below it. A frame
+with a masked point has no position, unless \`dialect_args =
+list(partial = "mean")\` asks for the score-weighted mean of the points
+that remain. The dialect never removes a row: frames without a position
+meet \`on_invalid\` like any other missing coordinate.
 
 What was masked is reported in one message (class \`radiatR_attrition\`)
 and kept in the \`attrition\` element of the Tracks metadata: a data
@@ -201,9 +208,12 @@ Ids that read as distinct numbers stay numbers. Where the delimited
 files of one import do not agree on the type of the id column, the ids
 of each file are the text in that file. Ids that are numbers in every
 file are compared as numbers across files (see \`id_collision\`). A data
-frame and an Excel or Arrow file keep the types they come with. Not
-covered: an id column that a dialect is pointed to by an argument of its
-own (its ids may still be merged).
+frame and an Excel or Arrow file keep the types they come with. An
+\`anymaze\` file is read as text, so the column its \`id_col\` names
+keeps its text. For \`ethovision\`, \`id_col\` applies to a data frame
+only (a file is one track, id \`"1"\`). Not covered: an id column that
+another dialect is pointed to by an argument of its own (its ids may
+still be merged).
 
 ## Malformed values
 
@@ -221,17 +231,17 @@ are read with no digit-grouping mark, so \`1,5\` is malformed unless
 Where it is, a value holding a \`.\` is malformed in turn, since
 \`1.234\` could as well be 1234. A semicolon-separated file is taken to
 use decimal commas unless its first lines show decimal points and no
-decimal comma (\`1.5\` or \`0.125\`, which cannot be digit grouping);
-\`read_opts = list(decimal = ".")\` says so outright.
+decimal comma (\`1.5\` or \`0.125\`, which cannot be digit grouping, or
+the fraction of a duration such as \`0:00:00.320\`); \`read_opts =
+list(decimal = ".")\` says so outright.
 
-The \`trackmate\`, \`toxtrac\`, \`idtrackerai_wide\`, \`trex\`,
-\`deeplabcut\` and \`sleap\` dialects check their source columns the
-same way, before any reshaping, so the error names the header as the
-program wrote it and the row of the file's table. A missing or
-non-finite position found afterwards (see \`on_invalid\`) is still
-counted in the rows of the table the dialect returns, which for a wide
-format is the reshaped one. Coordinates that the zone dialects convert
-themselves (ANY-maze, EthoVision) are not yet checked this way.
+Every built-in dialect checks its source columns the same way, before
+any reshaping, so the error names the header as the program wrote it and
+the row of the file's table. A missing or non-finite position found
+afterwards (see \`on_invalid\`) is still counted in the rows of the
+table the dialect returns, which for a wide format is the reshaped one.
+ANY-maze writes time as a duration (\`0:01:02.500\`), read as seconds; a
+cell that is not one is malformed.
 
 A time column given as text must hold either numbers throughout or
 timestamps in one layout throughout: \`YYYY-MM-DD HH:MM:SS\`,

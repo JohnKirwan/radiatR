@@ -275,14 +275,27 @@ masks points and the count is kept in the metadata.</td>
 </tr>
 <tr class="even">
 <td><code>ethovision</code></td>
-<td>Centre position, and multi-zone exports (nose, tail, etc.); zone
-centroid or single-zone selection.</td>
-<td>Native <code>.xlsx</code> (export to CSV first).</td>
+<td>The text export: a first line giving the number of header lines, the
+trial details, a names row and a units row. One track per file,
+<code>Trial time</code> in seconds. The centre point, or the body points
+named in <code>bodypart</code> (<code>nose</code>, <code>tail</code>)
+and their mean; a sample EthoVision marks <code>-</code> has no position
+and is counted in the metadata. The header block and units are kept in
+<code>@meta$source_meta</code>.</td>
+<td>Native <code>.xlsx</code> (export as text). A file cut off mid-row
+(delete the partial last line).</td>
 </tr>
 <tr class="odd">
 <td><code>anymaze</code></td>
-<td>Centre position, optional nose/tail zones, units row.</td>
-<td>—</td>
+<td>The CSV export: <code>Time</code> as a duration
+(<code>0:01:02.500</code>), <code>Centre position X</code> /
+<code>Centre position Y</code>. A sample with an empty position is
+counted in the metadata. Pass the file path, or read <code>Time</code>
+as text
+(<code>readr::read_csv(f, col_types = readr::cols(Time = "c"))</code>):
+readr’s own time parsing drops the fraction of a second.</td>
+<td>Head and tail positions; the <code>In &lt;zone&gt;</code> occupancy
+columns.</td>
 </tr>
 <tr class="even">
 <td><code>trackmate</code></td>

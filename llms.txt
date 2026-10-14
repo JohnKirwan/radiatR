@@ -14,7 +14,7 @@ tools.
   EthoVision, TrackMate, idtracker.ai and other tracking tools, via
   registered dialects; register a loader for any other format
 - **Pose-estimation support** — multi-bodypart centroid and body-axis
-  heading from DeepLabCut, EthoVision multi-zone, ANY-maze nose/tail
+  heading from DeepLabCut, SLEAP and EthoVision body points
 - **Heading rule registry** — derive per-trial headings by any of 15+
   built-in rules or register your own
 - **Circular statistics** — mean direction, resultant length,
@@ -32,11 +32,11 @@ tools.
 | `deeplabcut` | DeepLabCut predictions CSV, single- or multi-animal (single bodypart or likelihood-weighted centroid) |
 | `sleap` | SLEAP (analysis CSV; single node or score-weighted centroid) |
 | `idtrackerai_wide` | idtracker.ai |
-| `ethovision` | EthoVision XT (including multi-zone) |
+| `ethovision` | EthoVision XT text export (centre point, or named body points) |
 | `trackmate` | TrackMate (Fiji) |
 | `toxtrac` | ToxTrac |
 | `trex` | TRex (positional CSV; plain `X`/`Y` or `#wcentroid`/`#centroid`/`#pcentroid` variants) |
-| `anymaze` | ANY-maze (including nose/tail zones) |
+| `anymaze` | ANY-maze CSV export (centre position) |
 
 Register additional formats with
 [`register_loader_dialect()`](https://johnkirwan.github.io/radiatR/reference/register_loader_dialect.md)
