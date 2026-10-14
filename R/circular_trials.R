@@ -70,6 +70,19 @@
 #'
 #' @return A tibble with one row per trial containing trial limits and reference
 #'   metadata.
+#' @examples
+#' untar(system.file("extdata", "tracks.tar.gz", package = "radiatR"),
+#'       exdir = tempdir())
+#' track_dir <- file.path(tempdir(), "tracks")
+#' file_tbl <- import_tracks(track_dir)[1, ]
+#' read_xy <- function(f) {
+#'   d <- utils::read.delim(file.path(track_dir, f), header = FALSE)[1:3]
+#'   stats::setNames(d, c("frame", "x", "y"))
+#' }
+#' landmarks <- read_xy(file_tbl$landmark)  # origin, then reference, per trial
+#' track <- read_xy(file_tbl$track)
+#' limits <- get_trial_limits(landmarks, track, file_tbl, vid_num = 1)
+#' limits
 #'
 #' @importFrom tibble as_tibble
 #' @export
@@ -241,6 +254,19 @@ get_trial_limits <- function(landmarks, track, file_tbl, vid_num) {
 #' @return A `Tracks` containing all valid trial observations. The corresponding
 #'   trial limits (including `valid_track` flags) are stored in
 #'   `meta$trial_limits`.
+#' @examples
+#' untar(system.file("extdata", "tracks.tar.gz", package = "radiatR"),
+#'       exdir = tempdir())
+#' track_dir <- file.path(tempdir(), "tracks")
+#' file_tbl <- import_tracks(track_dir)[1, ]
+#' read_xy <- function(f) {
+#'   d <- utils::read.delim(file.path(track_dir, f), header = FALSE)[1:3]
+#'   stats::setNames(d, c("frame", "x", "y"))
+#' }
+#' landmarks <- read_xy(file_tbl$landmark)  # origin, then reference, per trial
+#' track <- read_xy(file_tbl$track)
+#' limits <- get_trial_limits(landmarks, track, file_tbl, vid_num = 1)
+#' get_tracked_object_pos(limits, track)
 #'
 #' @importFrom tibble tibble add_column as_tibble
 #' @export
@@ -379,6 +405,18 @@ get_tracked_object_pos <- function(
 #'   each naming the file.
 #'   When no file holds a valid trial the call stops with a
 #'   `radiatR_no_valid_trials` error.
+#' @examples
+#' untar(system.file("extdata", "tracks.tar.gz", package = "radiatR"),
+#'       exdir = tempdir())
+#' track_dir <- file.path(tempdir(), "tracks")
+#' file_tbl <- import_tracks(track_dir)[1:3, ]
+#' manifest <- import_info(system.file("extdata", "millipede_trials.csv",
+#'                                     package = "radiatR"))
+#' manifest <- manifest[manifest$file %in% file_tbl$basename, ]
+#' ts <- get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir,
+#'                          manifest = manifest)
+#' ts
+#' ts@meta$trial_limits[, c("video", "arc", "type", "ref_theta")]
 #'
 #' @importFrom utils read.delim
 #' @export

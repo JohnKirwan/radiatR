@@ -12,3 +12,7 @@ A sorted character vector of registered format names.
 \description{
 List registered declarative formats
 }
+\examples{
+# Empty until a format is registered with register_loader_format()
+list_loader_formats()
+}

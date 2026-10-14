@@ -33,3 +33,10 @@ The default suffixes match the export naming convention used by dtrack
   dtrack convention. `vignette("loaders")` registers a custom loader that
   reads an individual trajectory file.
 }
+\examples{
+untar(system.file("extdata", "tracks.tar.gz", package = "radiatR"),
+      exdir = tempdir())
+track_dir <- file.path(tempdir(), "tracks")
+file_tbl <- import_tracks(track_dir)
+head(file_tbl)
+}

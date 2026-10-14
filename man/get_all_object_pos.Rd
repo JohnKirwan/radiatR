@@ -50,3 +50,17 @@ coordinates. The per-trial outputs are combined into a single tibble, and
 the augmented trial limits are returned alongside it. Supply `manifest` to
 join per-file metadata (matched on `file`) onto every trial.
 }
+\examples{
+untar(system.file("extdata", "tracks.tar.gz", package = "radiatR"),
+      exdir = tempdir())
+track_dir <- file.path(tempdir(), "tracks")
+file_tbl <- import_tracks(track_dir)[1:3, ]
+manifest <- import_info(system.file("extdata", "millipede_trials.csv",
+                                    package = "radiatR"))
+manifest <- manifest[manifest$file \%in\% file_tbl$basename, ]
+ts <- get_all_object_pos(file_tbl = file_tbl, track_dir = track_dir,
+                         manifest = manifest)
+ts
+ts@meta$trial_limits[, c("video", "arc", "type", "ref_theta")]
+
+}

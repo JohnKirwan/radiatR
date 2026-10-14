@@ -44,3 +44,18 @@ scales the coordinates, and computes angles in both absolute and
 reference-relative frames. The function optionally controls how inner/outer
 radius crossings are selected.
 }
+\examples{
+untar(system.file("extdata", "tracks.tar.gz", package = "radiatR"),
+      exdir = tempdir())
+track_dir <- file.path(tempdir(), "tracks")
+file_tbl <- import_tracks(track_dir)[1, ]
+read_xy <- function(f) {
+  d <- utils::read.delim(file.path(track_dir, f), header = FALSE)[1:3]
+  stats::setNames(d, c("frame", "x", "y"))
+}
+landmarks <- read_xy(file_tbl$landmark)  # origin, then reference, per trial
+track <- read_xy(file_tbl$track)
+limits <- get_trial_limits(landmarks, track, file_tbl, vid_num = 1)
+get_tracked_object_pos(limits, track)
+
+}
