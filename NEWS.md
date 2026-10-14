@@ -61,7 +61,8 @@
   own); `fread()` reads past a blank line and keeps a text cell's
   surrounding whitespace, as the other readers do. Column names lose their
   surrounding whitespace under every reader (readr kept `" id"`, so no id
-  was found).
+  was found). A gzip, bzip2 or xz file is read under `fread()` without
+  R.utils (it stopped asking for R.utils, or read an xz file as text).
 * Ids that differ only by surrounding whitespace (`" 1"` and `"1"`) stop
   `read_tracks()` with a `radiatR_ambiguous_ids` error: readr and
   `read.table()` read them as two tracks and `fread()` as one.
