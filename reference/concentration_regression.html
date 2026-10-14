@@ -156,6 +156,34 @@ training data.</p></dd>
   <code><a href="test_concentration.html">test_concentration</a></code>, <code><a href="simulate_tracks.html">simulate_tracks</a></code></p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Does orientation sharpen as the stimulus arc widens?</span></span></span>
+<span class="r-in"><span><span class="va">hd</span> <span class="op">&lt;-</span> <span class="fu"><a href="derive_headings.html">derive_headings</a></span><span class="op">(</span><span class="va">cpunctatus</span>, rule <span class="op">=</span> <span class="st">"distal"</span>, carry <span class="op">=</span> <span class="st">"arc"</span>,</span></span>
+<span class="r-in"><span>                      coords <span class="op">=</span> <span class="st">"relative"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">hd</span><span class="op">$</span><span class="va">arc_deg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">hd</span><span class="op">$</span><span class="va">arc</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu">concentration_regression</span><span class="op">(</span><span class="va">hd</span>, <span class="va">heading</span> <span class="op">~</span> <span class="va">arc_deg</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fit</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Von Mises concentration regression (kappa ~ covariates)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   link = log, mu = 0.05412, n = 235, converged = TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          term    estimate         se statistic      p_value    conf.low</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 (Intercept) -2.61654159 0.72101041 -3.628993 0.0002845292 -4.02969603</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2     arc_deg  0.06127567 0.01628527  3.762643 0.0001681271  0.02935712</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     conf.high</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 -1.20338715</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2  0.09319422</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          term    estimate         se statistic      p_value    conf.low</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 (Intercept) -2.61654159 0.72101041 -3.628993 0.0002845292 -4.02969603</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2     arc_deg  0.06127567 0.01628527  3.762643 0.0001681271  0.02935712</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     conf.high</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 -1.20338715</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2  0.09319422</span>
+<span class="r-in"><span><span class="co"># Fitted kappa for a narrow, medium and wide arc</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit</span>, newdata <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>arc_deg <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fl">25</span>, <span class="fl">50</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.09924505 0.33802013 1.56399261</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

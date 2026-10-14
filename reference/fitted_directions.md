@@ -49,3 +49,26 @@ non-converged fit yields \`NA\` \`mean_dir\` rows, which
 ## See also
 
 \[circ_regression()\], \[add_circ_mean()\], \[compute_circ_mean()\]
+
+## Examples
+
+``` r
+set.seed(1)
+x <- runif(60, -1, 1)
+noise <- as.numeric(circular::rvonmises(60, circular::circular(0), kappa = 8))
+hd <- data.frame(x = x, heading = (1 + 2 * atan(1.5 * x) + noise) %% (2 * pi))
+fit <- circ_regression(hd, heading ~ x)
+arrows <- fitted_directions(fit, at = c(-1, -0.5, 0, 0.5, 1))
+arrows
+#>   mean_dir resultant_R    x
+#> 1 5.229655   0.9487831 -1.0
+#> 2 5.907878   0.9487831 -0.5
+#> 3 0.920445   0.9487831  0.0
+#> 4 2.216197   0.9487831  0.5
+#> 5 2.894420   0.9487831  1.0
+library(ggplot2)
+ggplot() +
+  coord_fixed() +
+  add_circ() +
+  add_circ_mean(arrows, colour_col = "x")
+```

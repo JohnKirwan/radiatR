@@ -101,3 +101,32 @@ Mardia, K. V. & Jupp, P. E. (2000). *Directional Statistics*. Wiley.
 [`boot_kappa_ci`](https://johnkirwan.github.io/radiatR/reference/boot_kappa_ci.md),
 [`test_concentration`](https://johnkirwan.github.io/radiatR/reference/test_concentration.md),
 [`simulate_tracks`](https://johnkirwan.github.io/radiatR/reference/simulate_tracks.md)
+
+## Examples
+
+``` r
+# Does orientation sharpen as the stimulus arc widens?
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc",
+                      coords = "relative")
+hd$arc_deg <- as.numeric(as.character(hd$arc))
+fit <- concentration_regression(hd, heading ~ arc_deg)
+fit
+#> Von Mises concentration regression (kappa ~ covariates)
+#>   link = log, mu = 0.05412, n = 235, converged = TRUE
+#>          term    estimate         se statistic      p_value    conf.low
+#> 1 (Intercept) -2.61654159 0.72101041 -3.628993 0.0002845292 -4.02969603
+#> 2     arc_deg  0.06127567 0.01628527  3.762643 0.0001681271  0.02935712
+#>     conf.high
+#> 1 -1.20338715
+#> 2  0.09319422
+summary(fit)
+#>          term    estimate         se statistic      p_value    conf.low
+#> 1 (Intercept) -2.61654159 0.72101041 -3.628993 0.0002845292 -4.02969603
+#> 2     arc_deg  0.06127567 0.01628527  3.762643 0.0001681271  0.02935712
+#>     conf.high
+#> 1 -1.20338715
+#> 2  0.09319422
+# Fitted kappa for a narrow, medium and wide arc
+predict(fit, newdata = data.frame(arc_deg = c(5, 25, 50)))
+#> [1] 0.09924505 0.33802013 1.56399261
+```

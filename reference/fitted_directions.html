@@ -105,6 +105,29 @@ orient with the panel. Default [circ_display()].</p></dd>
     <div class="dont-index"><p>[circ_regression()], [add_circ_mean()], [compute_circ_mean()]</p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">60</span>, <span class="op">-</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">noise</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu">circular</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/circular/man/vonmises.html" class="external-link">rvonmises</a></span><span class="op">(</span><span class="fl">60</span>, <span class="fu">circular</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/circular/man/circular.html" class="external-link">circular</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>, kappa <span class="op">=</span> <span class="fl">8</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">hd</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">x</span>, heading <span class="op">=</span> <span class="op">(</span><span class="fl">1</span> <span class="op">+</span> <span class="fl">2</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">atan</a></span><span class="op">(</span><span class="fl">1.5</span> <span class="op">*</span> <span class="va">x</span><span class="op">)</span> <span class="op">+</span> <span class="va">noise</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/Arithmetic.html" class="external-link">%%</a></span> <span class="op">(</span><span class="fl">2</span> <span class="op">*</span> <span class="va">pi</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="circ_regression.html">circ_regression</a></span><span class="op">(</span><span class="va">hd</span>, <span class="va">heading</span> <span class="op">~</span> <span class="va">x</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">arrows</span> <span class="op">&lt;-</span> <span class="fu">fitted_directions</span><span class="op">(</span><span class="va">fit</span>, at <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span>, <span class="op">-</span><span class="fl">0.5</span>, <span class="fl">0</span>, <span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">arrows</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   mean_dir resultant_R    x</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 5.229655   0.9487831 -1.0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 5.907878   0.9487831 -0.5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 0.920445   0.9487831  0.0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 2.216197   0.9487831  0.5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 2.894420   0.9487831  1.0</span>
+<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/coord_fixed.html" class="external-link">coord_fixed</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="add_circ.html">add_circ</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="add_circ_mean.html">add_circ_mean</a></span><span class="op">(</span><span class="va">arrows</span>, colour_col <span class="op">=</span> <span class="st">"x"</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="fitted_directions-1.png" alt="" width="700" height="433"></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

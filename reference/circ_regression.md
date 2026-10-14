@@ -84,3 +84,24 @@ response. *Biometrics* 48, 665-677. Mardia, K. V. & Jupp, P. E. (2000).
 [`circ_cor`](https://johnkirwan.github.io/radiatR/reference/circ_cor.md),
 [`vonmises_fit`](https://johnkirwan.github.io/radiatR/reference/vonmises_fit.md),
 [`simulate_tracks`](https://johnkirwan.github.io/radiatR/reference/simulate_tracks.md)
+
+## Examples
+
+``` r
+# Headings whose mean turns with x: mu0 = 1, slope 1.5
+set.seed(1)
+x <- runif(60, -1, 1)
+noise <- as.numeric(circular::rvonmises(60, circular::circular(0), kappa = 8))
+hd <- data.frame(x = x, heading = (1 + 2 * atan(1.5 * x) + noise) %% (2 * pi))
+fit <- circ_regression(hd, heading ~ x)
+fit
+#> Circular-linear regression (Fisher-Lee)
+#>   mu0 = 0.9204, kappa = 10.03, n = 60, converged = TRUE
+#>   term estimate         se statistic p_value conf.low conf.high
+#> 1    x 1.513717 0.07762576  19.50019       0 1.361573  1.665861
+summary(fit)
+#>   term estimate         se statistic p_value conf.low conf.high
+#> 1    x 1.513717 0.07762576  19.50019       0 1.361573  1.665861
+predict(fit, newdata = data.frame(x = c(-1, 0, 1)))
+#> [1] 5.229655 0.920445 2.894420
+```

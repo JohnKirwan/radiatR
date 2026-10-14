@@ -90,3 +90,34 @@ likelihood. Journal of Experimental Biology, 220(21), 3878-3882.
 
 [`vonmises_fit`](https://johnkirwan.github.io/radiatR/reference/vonmises_fit.md),
 [`test_uniformity`](https://johnkirwan.github.io/radiatR/reference/test_uniformity.md)
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc",
+                      coords = "relative")
+# Control (no stimulus) against the widest arc
+circ_model_select(hd[hd$arc %in% c("0", "50"), ], group_col = "arc")
+#>    arc            model  n k    logLik       AIC      AICc       BIC      dAICc
+#> 4   50 unimodal_uniform 26 3 -25.31838  56.63676  57.72767  60.41105  0.0000000
+#> 5   50          bimodal 26 5 -25.01426  60.02851  63.02851  66.31900  5.3008401
+#> 3   50            axial 26 2 -35.64951  75.29902  75.82076  77.81522 18.0930879
+#> 2   50         unimodal 26 2 -39.71644  83.43288  83.95462  85.94908 26.2269499
+#> 1   50          uniform 26 0 -47.78480  95.56961  95.56961  95.56961 37.8419340
+#> 11   0          uniform 35 0 -64.32570 128.65139 128.65139 128.65139  0.0000000
+#> 41   0 unimodal_uniform 35 3 -61.16608 128.33216 129.10635 132.99820  0.4549588
+#> 31   0            axial 35 2 -63.36687 130.73373 131.10873 133.84443  2.4573380
+#> 21   0         unimodal 35 2 -64.15780 132.31560 132.69060 135.42630  4.0392093
+#> 51   0          bimodal 35 5        NA        NA        NA        NA         NA
+#>          weight
+#> 4  9.339324e-01
+#> 5  6.595574e-02
+#> 3  1.100149e-04
+#> 2  1.884541e-06
+#> 1  5.662965e-09
+#> 11 4.500595e-01
+#> 41 3.584898e-01
+#> 31 1.317242e-01
+#> 21 5.972646e-02
+#> 51           NA
+```
