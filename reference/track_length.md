@@ -29,3 +29,17 @@ numeric \`length\` column.
 ## See also
 
 \[set_distance_scale()\], \[track_speed()\], \[straightness_index()\]
+
+## Examples
+
+``` r
+# unit-circle coordinates, so lengths are in arena radii
+head(track_length(cpunctatus))
+#>         trial_id    length
+#> 10_1_1    10_1_1 1.3645581
+#> 10_10_1  10_10_1 8.7387738
+#> 10_11_1  10_11_1 1.2783589
+#> 10_12_1  10_12_1 1.2376997
+#> 10_13_1  10_13_1 1.5926105
+#> 10_14_1  10_14_1 0.9365288
+```

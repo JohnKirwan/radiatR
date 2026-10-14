@@ -46,3 +46,11 @@ no distance calibration is applied.
 ## See also
 
 \[velocity_vector()\], \[instantaneous_speed()\], \[frame_rate()\]
+
+## Examples
+
+``` r
+summary(angular_velocity(cpunctatus, units = "degrees"))
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.     NAs 
+#> -36.000   0.000   0.000   1.131   0.636  36.000     470 
+```

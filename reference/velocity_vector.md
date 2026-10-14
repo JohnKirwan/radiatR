@@ -39,3 +39,16 @@ second; otherwise coordinate units per second.
 
 \[instantaneous_speed()\], \[angular_velocity()\],
 \[set_distance_scale()\]
+
+## Examples
+
+``` r
+head(velocity_vector(cpunctatus))
+#>             vx           vy
+#> 1           NA           NA
+#> 2  0.001539699  0.001539699
+#> 3 -0.001539699  0.000000000
+#> 4 -0.001022153  0.000000000
+#> 5  0.001022153 -0.004606159
+#> 6  0.002050776 -0.003066460
+```

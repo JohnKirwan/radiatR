@@ -30,3 +30,16 @@ and a numeric \`tortuosity\` column (\`\>= 1\`, possibly \`Inf\`).
 ## See also
 
 \[path_tortuosity()\], \[straightness_index()\]
+
+## Examples
+
+``` r
+head(tortuosity_ratio(cpunctatus))
+#>         trial_id tortuosity
+#> 10_1_1    10_1_1   1.390284
+#> 10_10_1  10_10_1  10.103932
+#> 10_11_1  10_11_1   1.250880
+#> 10_12_1  10_12_1   1.212296
+#> 10_13_1  10_13_1   1.565293
+#> 10_14_1  10_14_1   1.068591
+```

@@ -32,3 +32,16 @@ and a numeric \`sinuosity\` column (\`\>= 0\`).
 
 \[path_sinuosity()\], \[straightness_index()\], \[tortuosity_ratio()\],
 \[set_distance_scale()\]
+
+## Examples
+
+``` r
+head(sinuosity(cpunctatus))
+#>         trial_id sinuosity
+#> 10_1_1    10_1_1  3.995306
+#> 10_10_1  10_10_1  2.329886
+#> 10_11_1  10_11_1  3.771568
+#> 10_12_1  10_12_1  3.248539
+#> 10_13_1  10_13_1  3.249218
+#> 10_14_1  10_14_1  1.687342
+```

@@ -30,3 +30,10 @@ A numeric vector aligned to the object's observations.
 ## See also
 
 \[frame_rate()\], \[track_duration()\]
+
+## Examples
+
+``` r
+head(elapsed_seconds(cpunctatus))
+#> [1]  0  5 10 15 20 25
+```

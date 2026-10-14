@@ -37,3 +37,11 @@ unit is radii per second.
 ## See also
 
 \[step_speed()\], \[track_speed()\], \[elapsed_seconds()\]
+
+## Examples
+
+``` r
+summary(instantaneous_speed(cpunctatus))
+#>     Min.  1st Qu.   Median     Mean  3rd Qu.     Max.      NAs 
+#> 0.000000 0.000000 0.001030 0.001609 0.002505 0.333357      235 
+```

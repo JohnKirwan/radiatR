@@ -30,3 +30,16 @@ and a numeric \`straightness\` column.
 ## See also
 
 \[path_straightness()\], \[tortuosity_ratio()\]
+
+## Examples
+
+``` r
+head(straightness_index(cpunctatus))
+#>         trial_id straightness
+#> 10_1_1    10_1_1   0.71927750
+#> 10_10_1  10_10_1   0.09897137
+#> 10_11_1  10_11_1   0.79943750
+#> 10_12_1  10_12_1   0.82488090
+#> 10_13_1  10_13_1   0.63885806
+#> 10_14_1  10_14_1   0.93581201
+```

@@ -45,3 +45,16 @@ points).
 ## See also
 
 \[angular_velocity()\], \[track_velocity()\], \[track_speed()\]
+
+## Examples
+
+``` r
+head(track_turning(cpunctatus, units = "degrees"))
+#>         trial_id  turning
+#> 10_1_1    10_1_1 7.485018
+#> 10_10_1  10_10_1 4.021752
+#> 10_11_1  10_11_1 6.795136
+#> 10_12_1  10_12_1 5.855719
+#> 10_13_1  10_13_1 6.088549
+#> 10_14_1  10_14_1 2.343546
+```

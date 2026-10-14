@@ -91,6 +91,22 @@ is used directly.</p>
   [set_distance_scale()]</p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">tv</span> <span class="op">&lt;-</span> <span class="fu">track_velocity</span><span class="op">(</span><span class="va">cpunctatus</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">tv</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         trial_id            vx            vy</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_1_1    10_1_1  0.0016297844  0.0018342959</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_10_1  10_10_1  0.0000116351 -0.0005803454</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_11_1  10_11_1  0.0004857098  0.0031564992</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_12_1  10_12_1 -0.0027444592  0.0033678666</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_13_1  10_13_1  0.0000000000 -0.0025758280</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_14_1  10_14_1 -0.0030766624  0.0052025950</span>
+<span class="r-in"><span><span class="co"># net direction of travel of each track</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">atan2</a></span><span class="op">(</span><span class="va">tv</span><span class="op">$</span><span class="va">vy</span>, <span class="va">tv</span><span class="op">$</span><span class="va">vx</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1]  0.8443675 -1.5507504  1.4181177  2.2545541 -1.5707963  2.1048466</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

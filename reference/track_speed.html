@@ -99,6 +99,28 @@ per second, because radiatR normalises trajectories to a unit circle.</p>
   [straightness_index()]</p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="frame_rate.html">frame_rate</a></span><span class="op">(</span><span class="va">cpunctatus</span><span class="op">)</span> <span class="co"># one frame every 5 s</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.2</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">track_speed</span><span class="op">(</span><span class="va">cpunctatus</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         trial_id       speed</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_1_1    10_1_1 0.003411395</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_10_1  10_10_1 0.005864949</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_11_1  10_11_1 0.003994872</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_12_1  10_12_1 0.005266807</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_13_1  10_13_1 0.004031925</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_14_1  10_14_1 0.006458819</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">track_speed</span><span class="op">(</span><span class="va">cpunctatus</span>, stat <span class="op">=</span> <span class="st">"max"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         trial_id       speed</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_1_1    10_1_1 0.006643996</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_10_1  10_10_1 0.017706398</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_11_1  10_11_1 0.009319729</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_12_1  10_12_1 0.008478391</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_13_1  10_13_1 0.009196630</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10_14_1  10_14_1 0.009512586</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 
