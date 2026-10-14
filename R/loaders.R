@@ -231,6 +231,26 @@ list_loader_dialects <- function() sort(ls(envir = .loader_registry))
 
 .drop_null <- function(x) x[!vapply(x, is.null, logical(1))]
 
+# The compression of a file, told by its first bytes: "zip", "gzip", "bzip2",
+# "xz" or "none".
+.compression <- function(path) {
+  head <- readBin(path, "raw", 6L)
+  sigs <- list(zip = c(0x50, 0x4b, 0x03, 0x04), gzip = c(0x1f, 0x8b),
+               bzip2 = c(0x42, 0x5a, 0x68), xz = c(0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x00))
+  for (k in names(sigs))
+    if (identical(head[seq_along(sigs[[k]])], as.raw(sigs[[k]]))) return(k)
+  "none"
+}
+
+# Write the gzip, bzip2 or xz file `path` decompressed to `to`.
+.decompress <- function(path, to) {
+  from <- gzfile(path, "rb")
+  on.exit(close(from))
+  out <- file(to, "wb")
+  on.exit(close(out), add = TRUE)
+  while (length(b <- readBin(from, "raw", 1e6L))) writeBin(b, out)
+}
+
 # Guess columns by conventional names
 .guess_col <- function(nms, candidates) {
   ln <- tolower(nms)
@@ -590,8 +610,16 @@ guess_columns <- function(data, mapping = list()) {
     # timestamps in that zone, so a non-UTC tz never reaches it. Hand its
     # POSIXct columns back as text for .coerce_time() to read in tz, as it
     # does for text a reader leaves alone.
+    # fread() decompresses gzip and bzip2 only with R.utils, and parses xz as
+    # it stands: hand it the file decompressed (it reads a zip archive itself).
+    input <- path
+    if (.compression(path) %in% c("gzip", "bzip2", "xz")) {
+      input <- tempfile()
+      on.exit(unlink(input), add = TRUE)
+      .decompress(path, input)
+    }
     df <- data.table::fread(
-      path, sep = delim, dec = decimal, showProgress = FALSE,
+      input, sep = delim, dec = decimal, showProgress = FALSE,
       blank.lines.skip = TRUE, strip.white = FALSE, na.strings = c("", "NA"),
       tz = if (identical(tz, "UTC")) "UTC" else "", ...)
     if (!identical(tz, "UTC"))
@@ -648,8 +676,7 @@ guess_columns <- function(data, mapping = list()) {
 .check_fields <- function(path, delim, source) {
   # readr and fread() read the first file of a zip archive; count its fields
   # (gzip, bzip2 and xz are decompressed by file() itself)
-  zip <- identical(readBin(path, "raw", 4L), as.raw(c(0x50, 0x4b, 0x03, 0x04)))
-  con <- if (zip) unz(path, utils::unzip(path, list = TRUE)$Name[1L]) else path
+  con <- if (.compression(path) == "zip") unz(path, utils::unzip(path, list = TRUE)$Name[1L]) else path
   n <- utils::count.fields(con, sep = delim, quote = "\"", comment.char = "",
                            blank.lines.skip = FALSE)
   run <- 0L
