@@ -5,20 +5,11 @@
 \alias{derive_headings,Tracks-method}
 \title{Derive heading angle(s) from trajectories using specified rule}
 \usage{
-derive_headings(
-  x,
-  rule = c("crossing", "distal", "straight", "origin_mean", "net", "velocity_mean",
-    "velocity_axis", "window_net", "goal_bias", "pca_axis", "ransac_straight",
-    "maxspeed_window", "vm_fit", "exit", "entry", "ring_tangent"),
-  ...,
-  coords = c("absolute", "relative")
-)
+derive_headings(x, rule, ..., coords = c("absolute", "relative"))
 
 \S4method{derive_headings}{Tracks}(
   x,
-  rule = c("crossing", "distal", "straight", "origin_mean", "net", "velocity_mean",
-    "velocity_axis", "window_net", "goal_bias", "pca_axis", "ransac_straight",
-    "maxspeed_window", "vm_fit", "exit", "entry", "ring_tangent"),
+  rule,
   ...,
   first_only = FALSE,
   carry = NULL,
@@ -29,7 +20,14 @@ derive_headings(
 \arguments{
 \item{x}{Tracks}
 
-\item{rule}{one of "crossing", "distal", "straight"}
+\item{rule}{Required. A single rule name, or a function. Built-in rules:
+`"crossing"`, `"distal"`, `"straight"`, `"origin_mean"`, `"net"`,
+`"velocity_mean"`, `"velocity_axis"`, `"window_net"`, `"goal_bias"`,
+`"pca_axis"`, `"ransac_straight"`, `"maxspeed_window"`, `"vm_fit"`,
+`"exit"`, `"entry"`, `"ring_tangent"`; a name registered with
+[register_heading_rule()] (see [list_heading_rules()]); or a function
+called once per trajectory as `f(df, cols, ...)` that returns columns
+`id`, `time` and `heading`.}
 
 \item{...}{rule-specific parameters, including `return_coords` (see below)}
 

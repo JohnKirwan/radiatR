@@ -4,17 +4,12 @@
 \alias{circ_summary_headings}
 \title{Circular statistics over derived headings}
 \usage{
-circ_summary_headings(
-  x,
-  rule = c("crossing", "distal", "straight", "origin_mean", "net", "velocity_mean"),
-  group_by = "id",
-  ...
-)
+circ_summary_headings(x, rule, group_by = "id", ...)
 }
 \arguments{
 \item{x}{A [`Tracks`] object.}
 
-\item{rule}{Character. Heading derivation rule passed to [derive_headings()].
+\item{rule}{Required. Heading derivation rule passed to [derive_headings()].
 One of `"crossing"`, `"distal"`, `"straight"`, `"origin_mean"`, `"net"`,
 or `"velocity_mean"`.}
 

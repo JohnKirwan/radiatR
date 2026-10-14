@@ -256,6 +256,15 @@
 
 ## Bug fixes
 
+* `derive_headings()` and `circ_summary_headings()` now require `rule`.
+  Called without it, `derive_headings()` stopped with an internal
+  `'length = 16' in coercion to 'logical(1)'` error, and
+  `circ_summary_headings()` fell back to `"crossing"`, which then stopped for
+  want of `circ0` and `circ1`. Both now stop with an error that lists the
+  available rules. `derive_headings()` also refuses a `rule` that is not a
+  single name or a function (a vector, `NA`, a number), which previously gave
+  the same internal error.
+
 * `read_tracks(tz = )` now applies to every timestamp without a time zone in
   a delimited or Excel file that `read_tracks()` reads itself. A timestamp the
   file reader typed (`YYYY-MM-DD HH:MM:SS` with readr or data.table installed,
