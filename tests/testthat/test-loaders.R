@@ -762,3 +762,30 @@ test_that("a file read as one column says the separator was not found", {
   expect_identical(e$problem, "one_column")
   expect_match(conditionMessage(e), "read_opts")
 })
+
+test_that("namespace gives files that share a stem their own prefix", {
+  dir <- withr::local_tempdir()
+  dir.create(file.path(dir, "a")); dir.create(file.path(dir, "b"))
+  rows <- "id,time,x,y\n1,1,.1,.1\n1,2,.2,.2\n"
+  writeBin(charToRaw(rows), file.path(dir, "n1.csv"))
+  writeBin(charToRaw(gsub(",", "\t", rows)), file.path(dir, "n1.tsv"))
+  writeBin(charToRaw(rows), file.path(dir, "a", "n2.csv"))
+  writeBin(charToRaw(rows), file.path(dir, "b", "n2.csv"))
+  ts <- read_tracks(c(file.path(dir, "n1.csv"), file.path(dir, "n1.tsv"),
+                      file.path(dir, "a", "n2.csv"), file.path(dir, "b", "n2.csv")),
+                    id_collision = "namespace")
+  ids <- unique(as.character(ts@data$id))
+  expect_length(ids, 4L)
+  expect_true(all(c("n1.csv::1", "n1.tsv::1") %in% ids))
+  expect_true(all(c("a/n2.csv::1", "b/n2.csv::1") %in% ids))
+  # a stem used once keeps the short prefix
+  ts2 <- read_tracks(c(file.path(dir, "n1.csv"), file.path(dir, "a", "n2.csv")),
+                     id_collision = "namespace")
+  expect_setequal(unique(as.character(ts2@data$id)), c("n1::1", "n2::1"))
+})
+
+test_that(".source_labels picks the shortest prefix that is unique", {
+  expect_identical(
+    unname(.source_labels(c("x/n1.csv", "x/n1.tsv", "a/n2.csv", "b/n2.csv", "c/n3.csv"))),
+    c("n1.csv", "n1.tsv", "a/n2.csv", "b/n2.csv", "n3"))
+})
