@@ -50,6 +50,12 @@ doubled-angle fit) and likelihoods with the \code{circular} package densities.
 The table reports model comparison only; obtain the fitted parameters of a
 chosen model from \code{\link{vonmises_fit}}.
 }
+\examples{
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc",
+                      coords = "relative")
+# Control (no stimulus) against the widest arc
+circ_model_select(hd[hd$arc \%in\% c("0", "50"), ], group_col = "arc")
+}
 \references{
 Burnham, K.P. & Anderson, D.R. (2002). Model Selection and
   Multimodel Inference, 2nd ed. Springer.

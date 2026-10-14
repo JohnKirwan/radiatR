@@ -24,6 +24,16 @@
 #'   (2000). \emph{Directional Statistics}. Wiley.
 #' @seealso \code{\link{circ_cor}}, \code{\link{vonmises_fit}},
 #'   \code{\link{simulate_tracks}}
+#' @examples
+#' # Headings whose mean turns with x: mu0 = 1, slope 1.5
+#' set.seed(1)
+#' x <- runif(60, -1, 1)
+#' noise <- as.numeric(circular::rvonmises(60, circular::circular(0), kappa = 8))
+#' hd <- data.frame(x = x, heading = (1 + 2 * atan(1.5 * x) + noise) %% (2 * pi))
+#' fit <- circ_regression(hd, heading ~ x)
+#' fit
+#' summary(fit)
+#' predict(fit, newdata = data.frame(x = c(-1, 0, 1)))
 #' @importFrom stats model.frame model.matrix model.response terms delete.response qnorm na.omit .getXlevels predict fitted
 #' @importFrom circular circular lm.circular
 #' @export
@@ -145,6 +155,19 @@ print.circ_regression <- function(x, ...) {
 #'   `add_circ_mean(colour_col = "<predictor>")`. A non-converged fit yields `NA`
 #'   `mean_dir` rows, which `add_circ_mean()` skips.
 #' @seealso [circ_regression()], [add_circ_mean()], [compute_circ_mean()]
+#' @examples
+#' set.seed(1)
+#' x <- runif(60, -1, 1)
+#' noise <- as.numeric(circular::rvonmises(60, circular::circular(0), kappa = 8))
+#' hd <- data.frame(x = x, heading = (1 + 2 * atan(1.5 * x) + noise) %% (2 * pi))
+#' fit <- circ_regression(hd, heading ~ x)
+#' arrows <- fitted_directions(fit, at = c(-1, -0.5, 0, 0.5, 1))
+#' arrows
+#' library(ggplot2)
+#' ggplot() +
+#'   coord_fixed() +
+#'   add_circ() +
+#'   add_circ_mean(arrows, colour_col = "x")
 #' @importFrom circular A1
 #' @export
 fitted_directions <- function(fit, at = NULL, newdata = NULL, display = NULL) {

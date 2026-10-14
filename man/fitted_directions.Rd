@@ -34,6 +34,20 @@ how the mean heading sweeps with the predictor. The arrow length is the
 model's implied resultant length \code{circular::A1(kappa)}, the same for
 every arrow, so direction and colour carry the signal.
 }
+\examples{
+set.seed(1)
+x <- runif(60, -1, 1)
+noise <- as.numeric(circular::rvonmises(60, circular::circular(0), kappa = 8))
+hd <- data.frame(x = x, heading = (1 + 2 * atan(1.5 * x) + noise) \%\% (2 * pi))
+fit <- circ_regression(hd, heading ~ x)
+arrows <- fitted_directions(fit, at = c(-1, -0.5, 0, 0.5, 1))
+arrows
+library(ggplot2)
+ggplot() +
+  coord_fixed() +
+  add_circ() +
+  add_circ_mean(arrows, colour_col = "x")
+}
 \seealso{
 [circ_regression()], [add_circ_mean()], [compute_circ_mean()]
 }

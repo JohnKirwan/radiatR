@@ -42,6 +42,16 @@
 #'   Wiley.
 #' @seealso \code{\link{circ_regression}}, \code{\link{boot_kappa_ci}},
 #'   \code{\link{test_concentration}}, \code{\link{simulate_tracks}}
+#' @examples
+#' # Does orientation sharpen as the stimulus arc widens?
+#' hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc",
+#'                       coords = "relative")
+#' hd$arc_deg <- as.numeric(as.character(hd$arc))
+#' fit <- concentration_regression(hd, heading ~ arc_deg)
+#' fit
+#' summary(fit)
+#' # Fitted kappa for a narrow, medium and wide arc
+#' predict(fit, newdata = data.frame(arc_deg = c(5, 25, 50)))
 #' @importFrom stats model.frame model.matrix model.response terms delete.response qnorm pnorm na.omit optim .getXlevels predict fitted
 #' @export
 concentration_regression <- function(data, formula, link = c("log", "identity"),
