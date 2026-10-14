@@ -407,10 +407,32 @@ guess_columns <- function(data, mapping = list()) {
 # Timestamp layouts accepted for text time, in order of preference. A value
 # must match its layout in full: base as.POSIXct() accepts a prefix match,
 # which silently cuts "2024-01-01T10:00:00Z" and "2024-01-01 garbage" to
-# midnight. A trailing "Z" is read as UTC.
+# midnight. A zone designator after the time ("Z", "+02:00", "-0130", "+02")
+# is read apart from the layout (see .split_zone()).
 .time_formats <- c("%Y-%m-%d %H:%M:%OS", "%Y/%m/%d %H:%M:%OS",
-                   "%Y-%m-%dT%H:%M:%OS", "%Y-%m-%dT%H:%M:%OSZ",
+                   "%Y-%m-%dT%H:%M:%OS",
                    "%Y-%m-%d %H:%M", "%Y/%m/%d %H:%M", "%Y-%m-%d", "%Y/%m/%d")
+
+# The zone designator that ends a date-time: "Z" (UTC) or an offset from UTC
+# of at most 14 hours, +hh:mm, +hhmm or +hh. Returns the value without it
+# (`core`), whether it had one (`zoned`) and the offset in seconds (`offset`,
+# NA where it had none or one out of range: `zoned` & is.na(offset) is no
+# date-time).
+.split_zone <- function(s) {
+  zre <- "(Z|[+-][0-9]{2}(:?[0-9]{2})?)$"
+  zoned <- !is.na(s) & grepl(paste0("[0-9]:[0-9]{2}(:[0-9]{2}([.][0-9]+)?)?", zre), s)
+  core <- s
+  core[zoned] <- sub(zre, "", s[zoned])
+  z <- substring(s[zoned], nchar(core[zoned]) + 1L)
+  digits <- gsub("[^0-9]", "", z)
+  hh <- as.integer(substr(digits, 1L, 2L))
+  mm <- ifelse(nchar(digits) >= 4L, as.integer(substr(digits, 3L, 4L)), 0L)
+  secs <- ifelse(z == "Z", 0, ifelse(startsWith(z, "-"), -1, 1) * (hh * 3600 + mm * 60))
+  secs[z != "Z" & (mm > 59L | abs(secs) > 14 * 3600)] <- NA_real_
+  offset <- rep(NA_real_, length(s))
+  offset[zoned] <- secs
+  list(core = core, zoned = zoned, offset = offset)
+}
 
 .time_format_regex <- function(fmt) {
   subs <- list(c("%OS", "[0-9]{1,2}([.][0-9]+)?"), c("%Y", "[0-9]{4}"),
@@ -443,21 +465,31 @@ guess_columns <- function(data, mapping = list()) {
     num[missing] <- NA_real_
     return(num)
   }
-  hit <- lapply(.time_formats, function(f) grepl(.time_format_regex(f), s))
+  zn <- .split_zone(s)
+  core <- zn$core
+  hit <- lapply(.time_formats, function(f) grepl(.time_format_regex(f), core))
   # Bare dates count toward a date-time layout that has values of its own.
   n_hit <- vapply(hit, sum, integer(1))
   n_bare <- n_hit[match(sub("[ T]%H.*$", "", .time_formats), .time_formats)]
   has_time <- grepl("%H", .time_formats, fixed = TRUE) & n_hit > 0L
   best <- which.max(n_hit + ifelse(has_time, n_bare, 0L))
   fmt <- .time_formats[best]
-  fmt_tz <- if (endsWith(fmt, "Z")) "UTC" else tz
-  out <- .wall_clock(strptime(s, fmt, tz = fmt_tz), fmt_tz)
+  # a zoned value is the instant its own zone says, wherever tz is
+  z <- zn$zoned
+  out <- .POSIXct(rep(NA_real_, length(core)), tz = tz)
+  out[!z] <- .wall_clock(strptime(core[!z], fmt, tz = tz), tz)
+  out[z] <-.wall_clock(strptime(core[z], fmt, tz = "UTC"), "UTC") - zn$offset[z]
   date_fmt <- sub("[ T]%H.*$", "", fmt)
   bare <- fmt != date_fmt & grepl(.time_format_regex(date_fmt), s)
   # a bare date carries no zone, whatever the layout beside it says
   out[bare] <- as.POSIXct(strptime(s[bare], date_fmt, tz = tz))
   attr(out, "tzone") <- tz
   ok <- (hit[[best]] | bare) & !is.na(out)
+  # Zoned and unzoned date-times in one column are two readings: the fewer
+  # are malformed, as a layout in the minority is.
+  dt <- hit[[best]] & !bare
+  if (any(dt & z) && any(dt & !z))
+    ok[dt & (if (sum(dt & z) >= sum(dt & !z)) !z else z)] <- FALSE
   if (all(ok | missing)) return(out)
   as_num <- sum(num_ok) >= sum(ok)
   bad <- !missing & !(if (as_num) num_ok else ok)
@@ -658,9 +690,10 @@ guess_columns <- function(data, mapping = list()) {
       progress = FALSE, ...)
   else if (.is_installed("data.table")) {
     # fread() accepts only tz = "UTC" or "" (local zone) and types unmarked
-    # timestamps in that zone, so a non-UTC tz never reaches it. Hand its
-    # POSIXct columns back as text for .coerce_time() to read in tz, as it
-    # does for text a reader leaves alone.
+    # timestamps in that zone, so a non-UTC tz never reaches it. Its POSIXct
+    # columns are read again as the text in the file, for .coerce_time() to
+    # read in tz as it does text a reader leaves alone: an instant written
+    # back as text would lose its zone ("Z", "+02:00") and fraction.
     # fread() decompresses gzip and bzip2 only with R.utils, and parses xz as
     # it stands: hand it the file decompressed (it reads a zip archive itself).
     input <- path
@@ -673,9 +706,18 @@ guess_columns <- function(data, mapping = list()) {
       input, sep = delim, dec = decimal, showProgress = FALSE,
       blank.lines.skip = TRUE, strip.white = FALSE, na.strings = c("", "NA"),
       tz = if (identical(tz, "UTC")) "UTC" else "", ...)
-    if (!identical(tz, "UTC"))
-      for (cc in names(df)[vapply(df, inherits, logical(1), "POSIXct")])
-        df[[cc]] <- format(df[[cc]], "%Y-%m-%d %H:%M:%OS", tz = "UTC")
+    pos <- which(vapply(df, inherits, logical(1), "POSIXct"))
+    if (!identical(tz, "UTC") && length(pos)) {
+      text <- data.table::fread(
+        input, sep = delim, select = unname(pos), colClasses = "character",
+        showProgress = FALSE, blank.lines.skip = TRUE, strip.white = FALSE,
+        na.strings = c("", "NA"), ...)
+      if (nrow(text) != nrow(df) || ncol(text) != length(pos))
+        radiatR_abort_malformed_file(basename(path), "rows", detail = sprintf(paste0(
+          "its date-time column(s) %s were not read the same way twice."),
+          paste0("'", names(df)[pos], "'", collapse = ", ")))
+      for (i in seq_along(pos)) df[[pos[i]]] <- text[[i]]
+    }
     df
   }
   else utils::read.table(
@@ -1173,7 +1215,8 @@ read_tracks_format <- function(x, format, ...)
 #'   delimited or Excel file `read_tracks()` reads itself, and in a text column
 #'   of a data frame; a bare date is midnight in `tz`. A wall-clock time that
 #'   does not exist in `tz` (the hour skipped when clocks go forward) is an
-#'   error. A timestamp marked `Z` is UTC whatever `tz` is, a date-time column
+#'   error. A timestamp that ends in a zone designator (`Z`, `+02:00`,
+#'   `-0130`, `+02`) is that instant whatever `tz` is, a date-time column
 #'   of a data frame keeps its instants, and `tz` does not reach a file read by
 #'   a dialect.
 #' @section Time units from a dialect:
