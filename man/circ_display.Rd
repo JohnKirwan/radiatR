@@ -23,3 +23,13 @@ A `circ_display` list.
 Describes how unit-circle radian angles are rendered in plots and tables.
 Pass to any display function as the `display` argument.
 }
+\examples{
+# Default: North at top, clockwise, degrees
+circ_display()
+
+# Stimulus at East should appear at top
+circ_display(zero = 0)
+
+# Counterclockwise, radians
+circ_display(clockwise = FALSE, units = "radians")
+}

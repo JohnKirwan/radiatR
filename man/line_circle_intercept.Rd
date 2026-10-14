@@ -18,3 +18,10 @@ A tibble with the intersection point closest to `(x1, y1)`.
 Vectorised over its arguments: each `(x0, y0)` -> `(x1, y1)` pair gives one
 row of the result.
 }
+\examples{
+# A ray from the origin through (2, 0) hits the unit circle at (1, 0)
+line_circle_intercept(0, 0, 2, 0)
+
+# Vectorised: multiple rays at once
+line_circle_intercept(c(0, 0), c(0, 0), c(2, 0), c(0, 3))
+}

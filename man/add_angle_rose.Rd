@@ -70,3 +70,7 @@ outer radius is proportional to the proportion (or count) of frames in that
 bin.  The layer can be faceted by passing the same column used in the parent
 \code{radiate(facets = ...)} call.
 }
+\examples{
+hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+radiate(cpunctatus[1:5]) + add_angle_rose(hd)
+}

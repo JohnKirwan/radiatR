@@ -32,3 +32,12 @@ A `geom_segment()` layer.
 Computes the circular mean direction and resultant length, returning a
 `geom_segment()` layer that can be added to an existing ggplot.
 }
+\examples{
+# Arrow showing mean direction and resultant length
+hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+library(ggplot2)
+ggplot() +
+  coord_fixed() +
+  add_circ() +
+  directedness_arrow(hd, angle_col = "heading")
+}

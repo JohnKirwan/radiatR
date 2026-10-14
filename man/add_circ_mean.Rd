@@ -49,6 +49,15 @@ as a `geom_segment()` arrow. `mean_dir` must be in unit-circle convention
 (0 = East, CCW), as returned by [compute_circ_mean()]. Rows where
 `mean_dir` or `resultant_R` is `NA` are silently skipped.
 }
+\examples{
+hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+sm <- compute_circ_mean(hd)
+library(ggplot2)
+ggplot() +
+  coord_fixed() +
+  add_circ() +
+  add_circ_mean(sm)
+}
 \seealso{
 [compute_circ_mean()], [add_heading_arrow()]
 }

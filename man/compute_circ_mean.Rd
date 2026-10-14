@@ -46,6 +46,10 @@ a headings data frame, typically the output of [derive_headings()].
 (0 = East, counterclockwise), regardless of the input convention, making it
 suitable for direct use in [add_circ_mean()].
 }
+\examples{
+hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+compute_circ_mean(hd)
+}
 \seealso{
 [add_circ_mean()], [add_heading_arrow()]
 }
