@@ -79,6 +79,6 @@ data-following estimate; smaller values over-smooth towards uniform.
 \code{\link[circular]{bw.nrd.circular}}.
 }
 \examples{
-hd <- derive_headings(cpunctatus[1:10], rule = "distal", frame_select = "all")
+hd <- derive_headings(cpunctatus[1:10], rule = "distal")
 radiate(cpunctatus[1:10]) + add_circular_kde(hd)
 }

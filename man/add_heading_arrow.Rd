@@ -58,7 +58,7 @@ Convenience wrapper that calls [compute_circ_mean()] followed by
 or modify the summary data frame before rendering.
 }
 \examples{
-hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+hd <- derive_headings(cpunctatus[1:5], rule = "distal")
 library(ggplot2)
 ggplot() +
   coord_fixed() +

@@ -50,7 +50,7 @@ as a `geom_segment()` arrow. `mean_dir` must be in unit-circle convention
 `mean_dir` or `resultant_R` is `NA` are silently skipped.
 }
 \examples{
-hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+hd <- derive_headings(cpunctatus[1:5], rule = "distal")
 sm <- compute_circ_mean(hd)
 library(ggplot2)
 ggplot() +

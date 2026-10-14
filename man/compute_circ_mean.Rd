@@ -47,7 +47,7 @@ a headings data frame, typically the output of [derive_headings()].
 suitable for direct use in [add_circ_mean()].
 }
 \examples{
-hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+hd <- derive_headings(cpunctatus[1:5], rule = "distal")
 compute_circ_mean(hd)
 }
 \seealso{

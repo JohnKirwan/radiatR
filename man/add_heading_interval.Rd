@@ -74,7 +74,7 @@ directly when you need to replace `lower`/`upper` with Bayesian credible
 interval bounds before rendering.
 }
 \examples{
-hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+hd <- derive_headings(cpunctatus[1:5], rule = "distal")
 library(ggplot2)
 ggplot() +
   coord_fixed() +

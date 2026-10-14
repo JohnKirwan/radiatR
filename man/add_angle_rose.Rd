@@ -71,6 +71,6 @@ bin.  The layer can be faceted by passing the same column used in the parent
 \code{radiate(facets = ...)} call.
 }
 \examples{
-hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+hd <- derive_headings(cpunctatus[1:5], rule = "distal")
 radiate(cpunctatus[1:5]) + add_angle_rose(hd)
 }

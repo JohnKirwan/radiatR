@@ -314,6 +314,10 @@
 
 ## Bug fixes
 
+* `gg_traj()` with `facets =` stopped when the plot was drawn: it asked
+  `facet_wrap()` for free scales, which `coord_equal()` does not allow. The
+  panels now share fixed scales, so trajectories on the unit circle are drawn
+  at the same scale in every panel.
 * `derive_headings()` and `circ_summary_headings()` now require `rule`.
   Called without it, `derive_headings()` stopped with an internal
   `'length = 16' in coercion to 'logical(1)'` error, and

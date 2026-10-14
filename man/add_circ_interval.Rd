@@ -63,7 +63,7 @@ ggplot() + coord_fixed() + add_circ_interval(iv)
 ```
 }
 \examples{
-hd <- derive_headings(cpunctatus[1:5], rule = "distal", frame_select = "all")
+hd <- derive_headings(cpunctatus[1:5], rule = "distal")
 iv <- compute_circ_interval(hd, stat = "sd")
 library(ggplot2)
 ggplot() +
