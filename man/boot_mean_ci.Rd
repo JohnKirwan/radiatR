@@ -47,6 +47,11 @@ normal-approximation interval from \code{\link{vonmises_fit}}, it makes no
 distributional assumption and stays usable at low concentration or small
 sample size, where that approximation is unreliable.
 }
+\examples{
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+set.seed(1)
+boot_mean_ci(hd, group_col = "arc", R = 199)
+}
 \seealso{
 \code{\link{vonmises_fit}}, \code{\link{circ_dispersion}}
 }
