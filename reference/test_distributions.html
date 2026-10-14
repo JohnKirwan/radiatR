@@ -165,6 +165,14 @@ Ignored by the other methods (which already give continuous p-values).</p></dd>
   <code><a href="test_uniformity.html">test_uniformity</a></code></p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">hd</span> <span class="op">&lt;-</span> <span class="fu"><a href="derive_headings.html">derive_headings</a></span><span class="op">(</span><span class="va">cpunctatus</span>, rule <span class="op">=</span> <span class="st">"distal"</span>, carry <span class="op">=</span> <span class="st">"type"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">test_distributions</span><span class="op">(</span><span class="va">hd</span>, group_col <span class="op">=</span> <span class="st">"type"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           method    component statistic df   p_value n_groups   n</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 watson_wheeler distribution  4.418555  2 0.1097799        2 235</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

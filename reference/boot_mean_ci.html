@@ -122,6 +122,22 @@ in \([0, \pi)\) and the interval is scaled accordingly. Default
     <div class="dont-index"><p><code><a href="vonmises_fit.html">vonmises_fit</a></code>, <code><a href="circ_dispersion.html">circ_dispersion</a></code></p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">hd</span> <span class="op">&lt;-</span> <span class="fu"><a href="derive_headings.html">derive_headings</a></span><span class="op">(</span><span class="va">cpunctatus</span>, rule <span class="op">=</span> <span class="st">"distal"</span>, carry <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">boot_mean_ci</span><span class="op">(</span><span class="va">hd</span>, group_col <span class="op">=</span> <span class="st">"arc"</span>, R <span class="op">=</span> <span class="fl">199</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   arc        mu    mu_deg      ci_lo    ci_hi resultant_R  n</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  10 1.3766939  78.87875 -1.4921571 3.812127  0.07055967 29</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2  15 0.7363627  42.19048 -0.6126016 1.996328  0.24477975 30</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  20 3.8069634 218.12293  1.3390950 6.357445  0.07326231 27</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  30 5.9212227 339.26107  4.3594085 8.083512  0.12936762 37</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  40 3.5642725 204.21777  0.6403791 6.238911  0.06536414 20</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6  50 1.5873930  90.95092 -0.3378658 4.424066  0.15790182 26</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7   5 2.4205480 138.68719 -0.4536937 5.257315  0.07181952 31</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8   0 3.0747577 176.17064  1.4943839 4.453216  0.23531457 35</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

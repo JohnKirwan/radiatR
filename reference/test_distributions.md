@@ -109,3 +109,12 @@ A tidy data frame. Omnibus output has columns `method`, `component`,
 [`test_mean_directions`](https://johnkirwan.github.io/radiatR/reference/test_mean_directions.md),
 [`test_concentration`](https://johnkirwan.github.io/radiatR/reference/test_concentration.md),
 [`test_uniformity`](https://johnkirwan.github.io/radiatR/reference/test_uniformity.md)
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "type")
+test_distributions(hd, group_col = "type")
+#>           method    component statistic df   p_value n_groups   n
+#> 1 watson_wheeler distribution  4.418555  2 0.1097799        2 235
+```

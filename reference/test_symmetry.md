@@ -69,3 +69,19 @@ Statistics* 30(4), 591–600.
 
 [`test_uniformity`](https://johnkirwan.github.io/radiatR/reference/test_uniformity.md),
 [`vonmises_fit`](https://johnkirwan.github.io/radiatR/reference/vonmises_fit.md)
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+test_symmetry(hd, group_col = "arc")
+#>   arc  statistic   p_value  n                test
+#> 1  10 1.56321945 0.1180010 29 reflective_symmetry
+#> 2  15 0.88419396 0.3765915 30 reflective_symmetry
+#> 3  20 0.29553248 0.7675871 27 reflective_symmetry
+#> 4  30 0.08177353 0.9348268 37 reflective_symmetry
+#> 5  40 0.07846124 0.9374612 20 reflective_symmetry
+#> 6  50 0.20542215 0.8372423 26 reflective_symmetry
+#> 7   5 0.01789729 0.9857208 31 reflective_symmetry
+#> 8   0 0.69364399 0.4879055 35 reflective_symmetry
+```

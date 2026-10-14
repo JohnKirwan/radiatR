@@ -62,3 +62,13 @@ only, not direction).
 **Circular-circular** (Fisher's \\\rho\\, via
 [`cor.circular`](https://rdrr.io/pkg/circular/man/cor.circular.html)):
 \\r \in \[-1, 1\]\\.
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus, rule = "distal")
+# does the heading depend on the frame at which it was taken?
+circ_cor(hd, x_col = "time")
+#>            r   n            type statistic df  p_value
+#> 1 0.07432422 235 circular-linear  1.298161  2 0.522526
+```

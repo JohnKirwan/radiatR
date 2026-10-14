@@ -69,3 +69,14 @@ concentration, `[0, 1)`), `test`, and `p_value_adj` (when
 fails to converge. If the wrapped-Cauchy fit succeeds but the bootstrap
 step itself fails, the row is kept with valid `statistic`/`mu`/`rho` but
 `p_value` set to `NA`.
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+set.seed(1)
+# n_boot kept small to run quickly; use the default in an analysis
+test_gof(hd[hd$arc == "50", ], n_boot = 99)
+#>   statistic p_value  n       mu       rho          test
+#> 1 0.0448869    0.15 26 1.563125 0.1752985 wrappedcauchy
+```

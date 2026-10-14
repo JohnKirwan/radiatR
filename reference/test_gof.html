@@ -134,6 +134,16 @@ p-values; lower it for quick exploratory calls. Set the RNG seed with
   <code>p_value</code> set to <code>NA</code>.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">hd</span> <span class="op">&lt;-</span> <span class="fu"><a href="derive_headings.html">derive_headings</a></span><span class="op">(</span><span class="va">cpunctatus</span>, rule <span class="op">=</span> <span class="st">"distal"</span>, carry <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># n_boot kept small to run quickly; use the default in an analysis</span></span></span>
+<span class="r-in"><span><span class="fu">test_gof</span><span class="op">(</span><span class="va">hd</span><span class="op">[</span><span class="va">hd</span><span class="op">$</span><span class="va">arc</span> <span class="op">==</span> <span class="st">"50"</span>, <span class="op">]</span>, n_boot <span class="op">=</span> <span class="fl">99</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   statistic p_value  n       mu       rho          test</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.0448869    0.15 26 1.563125 0.1752985 wrappedcauchy</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

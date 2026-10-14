@@ -68,3 +68,14 @@ multimodality. *JRSS B* 43(1), 97–99. Fisher, N.I. & Marron, J.S.
 
 [`circ_model_select`](https://johnkirwan.github.io/radiatR/reference/circ_model_select.md),
 [`test_symmetry`](https://johnkirwan.github.io/radiatR/reference/test_symmetry.md)
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+set.seed(1)
+# n_boot kept small to run quickly; use the default in an analysis
+test_unimodality(hd[hd$arc == "20", ], n_boot = 19)
+#>   statistic p_value  n            test
+#> 1  10.96432     0.1 27 unimodality_lrt
+```

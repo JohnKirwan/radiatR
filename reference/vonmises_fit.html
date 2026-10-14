@@ -123,6 +123,30 @@ interval on \(\mu\) uses a normal approximation and is unreliable for
 \(\kappa &lt; 0.5\) or small samples.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">hd</span> <span class="op">&lt;-</span> <span class="fu"><a href="derive_headings.html">derive_headings</a></span><span class="op">(</span><span class="va">cpunctatus</span>, rule <span class="op">=</span> <span class="st">"distal"</span>, carry <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">vonmises_fit</span><span class="op">(</span><span class="va">hd</span>, group_col <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   arc         mu     mu_deg     kappa     se_mu  se_kappa      ci_lo    ci_hi</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  10  1.3766939   78.87875 0.1414721 1.8586062 0.2635984 -2.2661073 5.019495</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2  15  0.7363627   42.19048 0.5049583 0.5193281 0.2705529 -0.2815015 1.754227</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  20 -2.4762219 -141.87707 0.1469196 1.8549744 0.2732671 -6.1119050 1.159461</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  30 -0.3619626  -20.73893 0.2609305 0.8947965 0.2354640 -2.1157316 1.391806</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  40 -2.7189128 -155.78223 0.1310085 2.4163809 0.3172455 -7.4549324 2.017107</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6  50  1.5873930   90.95092 0.3198224 0.8727033 0.2826711 -0.1230741 3.297860</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7   5  2.4205480  138.68719 0.1440111 1.7660376 0.2549880 -1.0408221 5.881918</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8   0  3.0747577  176.17064 0.4842605 0.5007446 0.2495643  2.0933164 4.056199</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    n</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 29</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 30</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 27</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 37</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 20</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6 26</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7 31</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8 35</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

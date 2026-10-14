@@ -36,3 +36,15 @@ sector_summary(hd, sectors = 8L, group_col = NULL, angle_col = "heading")
 
 Data frame with columns `group_col` (if supplied), `sector` (degree
 label), `mid_angle` (sector midpoint in radians), `count`, `proportion`.
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+sector_summary(hd, sectors = 4)
+#>        sector  mid_angle count proportion
+#> 1 -135degrees -2.3561945    59  0.2510638
+#> 2  -45degrees -0.7853982    54  0.2297872
+#> 3   45degrees  0.7853982    59  0.2510638
+#> 4  135degrees  2.3561945    63  0.2680851
+```

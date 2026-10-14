@@ -136,6 +136,31 @@ themselves are the raw percentile envelope and are not bias-shifted.</p>
   <code><a href="test_concentration.html">test_concentration</a></code></p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">hd</span> <span class="op">&lt;-</span> <span class="fu"><a href="derive_headings.html">derive_headings</a></span><span class="op">(</span><span class="va">cpunctatus</span>, rule <span class="op">=</span> <span class="st">"distal"</span>, carry <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">boot_kappa_ci</span><span class="op">(</span><span class="va">hd</span>, group_col <span class="op">=</span> <span class="st">"arc"</span>, R <span class="op">=</span> <span class="fl">199</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   arc     kappa kappa_ci_lo kappa_ci_hi kappa_bias resultant_R    R_ci_lo</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  10 0.1414721  0.07297546   0.8233801 0.24019287  0.07055967 0.03646332</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2  15 0.5049583  0.13689467   1.1292648 0.06859720  0.24477975 0.06828717</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  20 0.1469196  0.04620455   0.7923231 0.22601901  0.07326231 0.02309611</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  30 0.2609305  0.08182301   0.7906745 0.13712105  0.12936762 0.04087731</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  40 0.1310085  0.07051089   0.8753393 0.27263171  0.06536414 0.03523355</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6  50 0.3198224  0.11040234   1.1019951 0.16021242  0.15790182 0.05511723</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7   5 0.1440111  0.05746202   0.7538006 0.19788764  0.07181952 0.02871915</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8   0 0.4842605  0.12024121   1.0191277 0.05178532  0.23531457 0.06001221</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     R_ci_hi     R_bias  n</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.3807554 0.11379845 29</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 0.4927208 0.02546300 30</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 0.3683435 0.10747749 27</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 0.3676731 0.06323782 37</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 0.4010783 0.12871590 20</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6 0.4834778 0.07038950 26</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7 0.3526907 0.09451140 31</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8 0.4545285 0.01821682 35</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

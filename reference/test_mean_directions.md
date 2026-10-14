@@ -90,3 +90,17 @@ and `p_value_adj` (when `p_adjust != "none"`).
 
 [`test_distributions`](https://johnkirwan.github.io/radiatR/reference/test_distributions.md),
 [`test_concentration`](https://johnkirwan.github.io/radiatR/reference/test_concentration.md)
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+test_mean_directions(hd, group_col = "arc")
+#>   n_groups statistic df1 df2      p_value            test
+#> 1        8  19.24386   7 227 4.088332e-20 Watson-Williams
+set.seed(1)
+test_mean_directions(hd, group_col = "arc", method = "permutation",
+                     n_perm = 199)
+#>   n_groups statistic df1 df2 p_value        test
+#> 1        8 0.1089999  NA  NA    0.76 permutation
+```

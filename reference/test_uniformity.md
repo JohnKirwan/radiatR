@@ -103,3 +103,30 @@ powered by the multivariate Rayleigh test. Annals of the Institute of
 Statistical Mathematics, 62(2), 323-340.
 [doi:10.1007/s10463-008-0179-9](https://doi.org/10.1007/s10463-008-0179-9)
 .
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+test_uniformity(hd, group_col = "arc", p_adjust = "BH")
+#>   arc  statistic   p_value  n     test p_value_adj
+#> 1  10 0.07055967 0.8675534 29 rayleigh   0.9199680
+#> 2  15 0.24477975 0.1662359 30 rayleigh   0.6649438
+#> 3  20 0.07326231 0.8672420 27 rayleigh   0.9199680
+#> 4  30 0.12936762 0.5414943 37 rayleigh   0.9199680
+#> 5  40 0.06536414 0.9199680 20 rayleigh   0.9199680
+#> 6  50 0.15790182 0.5274183 26 rayleigh   0.9199680
+#> 7   5 0.07181952 0.8542494 31 rayleigh   0.9199680
+#> 8   0 0.23531457 0.1441169 35 rayleigh   0.6649438
+# the target lies at 0 rad: test for orientation towards it
+test_uniformity(hd, group_col = "arc", test = "vtest", mu = 0)
+#>   arc    statistic    p_value  n  test
+#> 1  10  0.013609964 0.45898856 29 vtest
+#> 2  15  0.181361290 0.08049445 30 vtest
+#> 3  20 -0.057634581 0.66303263 27 vtest
+#> 4  30  0.120985069 0.14978536 37 vtest
+#> 5  40 -0.059611637 0.64566419 20 vtest
+#> 6  50 -0.002620525 0.50748393 26 vtest
+#> 7   5 -0.053944829 0.66361241 31 vtest
+#> 8   0 -0.234789199 0.97543503 35 vtest
+```

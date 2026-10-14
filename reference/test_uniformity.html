@@ -168,6 +168,32 @@ to obtain a continuous p-value. Ignored by the other tests.</p></dd>
 .</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">hd</span> <span class="op">&lt;-</span> <span class="fu"><a href="derive_headings.html">derive_headings</a></span><span class="op">(</span><span class="va">cpunctatus</span>, rule <span class="op">=</span> <span class="st">"distal"</span>, carry <span class="op">=</span> <span class="st">"arc"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">test_uniformity</span><span class="op">(</span><span class="va">hd</span>, group_col <span class="op">=</span> <span class="st">"arc"</span>, p_adjust <span class="op">=</span> <span class="st">"BH"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   arc  statistic   p_value  n     test p_value_adj</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  10 0.07055967 0.8675534 29 rayleigh   0.9199680</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2  15 0.24477975 0.1662359 30 rayleigh   0.6649438</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  20 0.07326231 0.8672420 27 rayleigh   0.9199680</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  30 0.12936762 0.5414943 37 rayleigh   0.9199680</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  40 0.06536414 0.9199680 20 rayleigh   0.9199680</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6  50 0.15790182 0.5274183 26 rayleigh   0.9199680</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7   5 0.07181952 0.8542494 31 rayleigh   0.9199680</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8   0 0.23531457 0.1441169 35 rayleigh   0.6649438</span>
+<span class="r-in"><span><span class="co"># the target lies at 0 rad: test for orientation towards it</span></span></span>
+<span class="r-in"><span><span class="fu">test_uniformity</span><span class="op">(</span><span class="va">hd</span>, group_col <span class="op">=</span> <span class="st">"arc"</span>, test <span class="op">=</span> <span class="st">"vtest"</span>, mu <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   arc    statistic    p_value  n  test</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  10  0.013609964 0.45898856 29 vtest</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2  15  0.181361290 0.08049445 30 vtest</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  20 -0.057634581 0.66303263 27 vtest</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  30  0.120985069 0.14978536 37 vtest</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  40 -0.059611637 0.64566419 20 vtest</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6  50 -0.002620525 0.50748393 26 vtest</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7   5 -0.053944829 0.66361241 31 vtest</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8   0 -0.234789199 0.97543503 35 vtest</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

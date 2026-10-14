@@ -114,6 +114,15 @@ only, not direction).</p>
 <code><a href="https://rdrr.io/pkg/circular/man/cor.circular.html" class="external-link">cor.circular</a></code>): \(r \in [-1, 1]\).</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">hd</span> <span class="op">&lt;-</span> <span class="fu"><a href="derive_headings.html">derive_headings</a></span><span class="op">(</span><span class="va">cpunctatus</span>, rule <span class="op">=</span> <span class="st">"distal"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># does the heading depend on the frame at which it was taken?</span></span></span>
+<span class="r-in"><span><span class="fu">circ_cor</span><span class="op">(</span><span class="va">hd</span>, x_col <span class="op">=</span> <span class="st">"time"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            r   n            type statistic df  p_value</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.07432422 235 circular-linear  1.298161  2 0.522526</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

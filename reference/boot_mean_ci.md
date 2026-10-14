@@ -65,3 +65,20 @@ than two finite angles yield an all-`NA` interval.
 
 [`vonmises_fit`](https://johnkirwan.github.io/radiatR/reference/vonmises_fit.md),
 [`circ_dispersion`](https://johnkirwan.github.io/radiatR/reference/circ_dispersion.md)
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+set.seed(1)
+boot_mean_ci(hd, group_col = "arc", R = 199)
+#>   arc        mu    mu_deg      ci_lo    ci_hi resultant_R  n
+#> 1  10 1.3766939  78.87875 -1.4921571 3.812127  0.07055967 29
+#> 2  15 0.7363627  42.19048 -0.6126016 1.996328  0.24477975 30
+#> 3  20 3.8069634 218.12293  1.3390950 6.357445  0.07326231 27
+#> 4  30 5.9212227 339.26107  4.3594085 8.083512  0.12936762 37
+#> 5  40 3.5642725 204.21777  0.6403791 6.238911  0.06536414 20
+#> 6  50 1.5873930  90.95092 -0.3378658 4.424066  0.15790182 26
+#> 7   5 2.4205480 138.68719 -0.4536937 5.257315  0.07181952 31
+#> 8   0 3.0747577 176.17064  1.4943839 4.453216  0.23531457 35
+```

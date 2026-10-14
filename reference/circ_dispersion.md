@@ -40,3 +40,19 @@ circ_dispersion(hd, group_col = NULL, angle_col = "heading", axial = FALSE)
 Data frame with columns `group_col` (if supplied), `mean_dir`,
 `resultant_R`, `circ_sd`, `n`. Circular standard deviation is \\\sqrt{-2
 \log R}\\.
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+circ_dispersion(hd, group_col = "arc")
+#>   arc  mean_dir resultant_R  circ_sd  n
+#> 1  10 1.3766939  0.07055967 2.302736 29
+#> 2  15 0.7363627  0.24477975 1.677734 30
+#> 3  20 3.8069634  0.07326231 2.286355 27
+#> 4  30 5.9212227  0.12936762 2.022423 37
+#> 5  40 3.5642725  0.06536414 2.335715 20
+#> 6  50 1.5873930  0.15790182 1.921344 26
+#> 7   5 2.4205480  0.07181952 2.295038 31
+#> 8   0 3.0747577  0.23531457 1.701077 35
+```

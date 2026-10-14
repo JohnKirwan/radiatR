@@ -61,3 +61,19 @@ and
 
 [`vonmises_fit`](https://johnkirwan.github.io/radiatR/reference/vonmises_fit.md),
 [`add_wrappedcauchy_density`](https://johnkirwan.github.io/radiatR/reference/add_wrappedcauchy_density.md)
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+wrappedcauchy_fit(hd, group_col = "arc")
+#>   arc        mu    mu_deg        rho convergence  n
+#> 1  10 1.6263621  93.18369 0.07404461           0 29
+#> 2  15 0.5620111  32.20086 0.26981160           0 30
+#> 3  20 4.0454657 231.78811 0.06713990           0 27
+#> 4  30 5.9329393 339.93238 0.11018508           0 37
+#> 5  40 3.6165430 207.21265 0.07759535           0 20
+#> 6  50 1.5631250  89.56047 0.17529850           0 26
+#> 7   5 2.4195766 138.63153 0.07084348           0 31
+#> 8   0 3.2233141 184.68229 0.28541815           0 35
+```

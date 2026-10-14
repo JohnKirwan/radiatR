@@ -76,3 +76,17 @@ robust default in the low-concentration regime.
 
 [`boot_kappa_ci`](https://johnkirwan.github.io/radiatR/reference/boot_kappa_ci.md),
 [`test_concentration`](https://johnkirwan.github.io/radiatR/reference/test_concentration.md)
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "type")
+set.seed(1)
+boot_kappa_contrast(hd, group_col = "type", R = 199)
+#>     group1  group2 delta_kappa delta_kappa_ci_lo delta_kappa_ci_hi kappa_ratio
+#> 1 stimulus control  -0.3763879        -0.9632376         0.1203899   0.2227573
+#>   kappa_ratio_ci_lo kappa_ratio_ci_hi    delta_R delta_R_ci_lo delta_R_ci_hi
+#> 1        0.06317176          2.005804 -0.1814566    -0.4084071    0.05912743
+#>    p_value  n1 n2
+#> 1 0.120603 200 35
+```

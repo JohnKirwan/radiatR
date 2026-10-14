@@ -54,3 +54,12 @@ test_concentration(
 
 One-row tidy data frame with `statistic`, `df` (parametric only),
 `p_value`, and `test`.
+
+## Examples
+
+``` r
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "type")
+test_concentration(hd, group_col = "type")
+#>   statistic df   p_value        test
+#> 1  1.828271  1 0.1763319 equal.kappa
+```
