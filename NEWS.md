@@ -25,7 +25,9 @@
   it used to look for (`X Centre`, `Nose X Centre`) are in no export found.
   A file without a time column is an error, and so is a `Time` of plain
   numbers, whose unit cannot be told: give a data frame with a `difftime`
-  column instead.
+  column instead. Pass the file path, or read `Time` as text (e.g.
+  `readr::read_csv(f, col_types = readr::cols(Time = "c"))`): readr's own
+  time parsing drops the fraction of a second.
 * Both dialects follow the rule for missing points (see "Masked points" in
   `?read_tracks`): a sample without a position has an `NA` position, is
   counted in `@meta$attrition`, and stops the load under

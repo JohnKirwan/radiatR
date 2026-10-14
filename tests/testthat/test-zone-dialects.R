@@ -204,6 +204,21 @@ test_that("EthoVision reader: a row cut off or over-long stops the read, naming 
   expect_identical(ev_read(ev_file(c(ev_lines(), "", ""))), ref)
 })
 
+test_that("EthoVision reader: a value after the last column is refused, not dropped", {
+  e <- cond(ev_read(ev_data_edited(function(x) { x[3] <- sub(";$", ";999", x[3]); x })))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "line 36 of .* has a value after its last column")
+})
+
+test_that("EthoVision reader: the units row must match the names row", {
+  l <- ev_lines()
+  for (bad in c(sub(";$", "", l[33]), paste0(l[33], "\"x\";"))) {
+    e <- cond(ev_read(ev_file(replace(l, 33, bad))))
+    expect_s3_class(e, "radiatR_dialect_error")
+    expect_match(conditionMessage(e), "line 33 of .* has \\d+ field\\(s\\); the names row has")
+  }
+})
+
 test_that("EthoVision reader: column names must be present and distinct", {
   l <- ev_lines()
   for (bad in list(sub("\"Y center\"", "\"X center\"", l[32]), sub("\"Area\"", "\"\"", l[32]))) {
@@ -599,8 +614,7 @@ test_that("ANY-maze: a time given as difftime or hms is converted, not read as s
   df$Time <- as.difftime(seq_len(nrow(df)), units = "mins")
   ts <- am_tracks(df)
   expect_equal(rows_of(ts)[[ts@cols$time]][1:2], c(120, 180))
-  skip_if_not_installed("hms")
-  df$Time <- hms::hms(seconds = seq_len(nrow(df)) * 1.5)
+  df$Time <- structure(seq_len(nrow(df)) * 1.5, units = "secs", class = c("hms", "difftime"))
   ts <- am_tracks(df)
   expect_equal(rows_of(ts)[[ts@cols$time]][1:2], c(3, 4.5))
 })

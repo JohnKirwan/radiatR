@@ -27,6 +27,14 @@ test_that("EthoVision and ANY-maze files are detected from their first line", {
   expect_identical(e$guess_dialect(p), "ethovision")
   writeLines(c("Time,Center position X,Center position Y", "0:00:00.000,1,2"), p)
   expect_identical(e$guess_dialect(p), "anymaze")
+  # a UTF-8 byte-order mark before the first line is not part of it
+  with_bom <- function(src) {
+    q <- withr::local_tempfile(fileext = ".txt", .local_envir = parent.frame())
+    writeBin(c(as.raw(c(0xef, 0xbb, 0xbf)), readBin(src, "raw", file.size(src))), q)
+    q
+  }
+  expect_identical(e$guess_dialect(with_bom(ev_path())), "ethovision")
+  expect_identical(e$guess_dialect(with_bom(am_path())), "anymaze")
   # a table that only mentions a centre is not an ANY-maze export
   writeLines(c("time,centre_x,centre_y", "0,1,2"), p)
   expect_identical(e$guess_dialect(p), "generic")

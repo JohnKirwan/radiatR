@@ -51,6 +51,9 @@ guess_dialect <- function(path) {
   # A binary file (an Excel workbook is a zip) or one in another encoding has
   # lines that are not valid text: they label nothing.
   hdr[!validUTF8(hdr)] <- ""
+  # A UTF-8 byte-order mark before the first header is not part of it.
+  bom <- rawToChar(as.raw(c(0xef, 0xbb, 0xbf)))
+  if (length(hdr)) hdr[1L] <- sub(paste0("^", bom), "", hdr[1L], useBytes = TRUE)
   # DeepLabCut labels its header rows: scorer, (individuals,) bodyparts, coords
   lab <- tolower(gsub("^\"|\"$", "", trimws(sub(",.*$", "", hdr))))
   if (identical(lab[1:3], c("scorer", "bodyparts", "coords")) ||

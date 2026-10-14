@@ -969,7 +969,10 @@ read_tracks_format <- function(x, format, ...)
 #' `POSITION_T` (when the version 7 units row gives seconds), ToxTrac
 #' `Time (sec)`, idtracker.ai `seconds` and TRex `time` are seconds, and need
 #' no `fps`; `FRAME`/`frame` columns, the DeepLabCut frame index and SLEAP
-#' `frame_idx` are frames. A contrary explicit
+#' `frame_idx` are frames. `ethovision` (`Trial time`, or `Recording time`
+#' through `time_col`) and `anymaze` (`Time`, a duration) declare seconds; an
+#' `ethovision` data frame's time is taken as seconds (EthoVision writes no
+#' other unit), and a file's units row is checked. A contrary explicit
 #' `time_type` stops with a `radiatR_time_type_mismatch` error, as do files of
 #' one import that disagree.
 #' @param fps Frames-per-second. Required when time_type = "frames" (the time
@@ -1047,9 +1050,10 @@ read_tracks_format <- function(x, format, ...)
 #' do not agree on the type of the id column, the ids of each file are the
 #' text in that file. Ids that are numbers in every file are compared as
 #' numbers across files (see `id_collision`). A data frame and an Excel or
-#' Arrow file keep the types they come with. The `ethovision` and `anymaze`
-#' dialects read their files as text, so the id column named by their
-#' `id_col` keeps its text. Not covered: an id column that another dialect is
+#' Arrow file keep the types they come with. An `anymaze` file is read as
+#' text, so the column its `id_col` names keeps its text. For `ethovision`,
+#' `id_col` applies to a data frame only (a file is one track, id `"1"`).
+#' Not covered: an id column that another dialect is
 #' pointed to by an argument of its own (its ids may still be merged).
 #'
 #' @section Malformed values:
@@ -1066,7 +1070,8 @@ read_tracks_format <- function(x, format, ...)
 #' it is, a value holding a `.` is malformed in turn, since `1.234` could as
 #' well be 1234. A semicolon-separated file is taken to use decimal commas
 #' unless its first lines show decimal points and no decimal comma (`1.5` or
-#' `0.125`, which cannot be digit grouping);
+#' `0.125`, which cannot be digit grouping, or the fraction of a duration such
+#' as `0:00:00.320`);
 #' `read_opts = list(decimal = ".")` says so outright.
 #'
 #' Every built-in dialect checks
@@ -2004,7 +2009,7 @@ register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = N
   if (length(lines) < n_hdr)
     fail("ethovision: '%s' says it has %d header lines; it has %d line(s) in all.",
          src, n_hdr, length(lines))
-  block <-lapply(lines[seq_len(n_hdr - 2L)[-1L]], fields)
+  block <- lapply(lines[seq_len(n_hdr - 2L)[-1L]], fields)
   block <- block[vapply(block, function(f) length(f) > 0L && nzchar(f[1L]), logical(1))]
   header <- stats::setNames(
     vapply(block, function(f) if (length(f) > 1L) f[2L] else "", character(1)),
@@ -2016,8 +2021,11 @@ register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = N
   if (!length(nm) || any(!nzchar(nm)) || anyDuplicated(nm))
     fail("ethovision: line %d of '%s' should name the columns, each once; it reads '%s'.",
          n_hdr - 1L, src, substr(lines[n_hdr - 1L], 1L, 80L))
+  if (length(un) != length(nm) + trail || (trail && nzchar(un[length(un)])))
+    fail(paste0("ethovision: line %d of '%s' has %d field(s); the names row has %d. The units ",
+                "row has one cell per column (empty for a unitless one)."),
+         n_hdr, src, length(un), length(nm) + trail)
   un <- un[seq_along(nm)]
-  un[is.na(un)] <- ""
   data <- lines[-seq_len(n_hdr)]
   while (length(data) && !nzchar(trimws(data[length(data)]))) data <- data[-length(data)]
   if (!length(data)) fail("ethovision: '%s' has no data rows.", src)
@@ -2034,6 +2042,12 @@ register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = N
   d <- utils::read.table(text = data, sep = delim, quote = "\"", header = FALSE,
                          colClasses = "character", comment.char = "",
                          na.strings = character(0), strip.white = TRUE)
+  if (trail) {
+    extra <- which(nzchar(d[[length(d)]]))
+    if (length(extra))
+      fail(paste0("ethovision: line %d of '%s' has a value after its last column; the names ",
+                  "row ends there."), n_hdr + extra[1L], src)
+  }
   d <- d[seq_along(nm)]
   names(d) <- nm
   d[d == "-"] <- NA_character_
