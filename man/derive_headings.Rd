@@ -29,7 +29,9 @@ derive_headings(x, rule, ..., coords = c("absolute", "relative"))
 called once per trajectory as `f(df, cols, ...)` that returns columns
 `id`, `time` and `heading`.}
 
-\item{...}{rule-specific parameters, including `return_coords` (see below)}
+\item{...}{rule-specific options (see Details), including `return_coords`.
+A built-in rule stops with an error naming any option it does not read;
+registered and function rules receive `...` unchecked.}
 
 \item{coords}{Character. Which Cartesian columns to use: `"absolute"`
 (default, uses whatever `x`/`y` the `Tracks` currently holds in

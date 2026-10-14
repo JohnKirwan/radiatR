@@ -68,7 +68,9 @@
 #'   [register_heading_rule()] (see [list_heading_rules()]); or a function
 #'   called once per trajectory as `f(df, cols, ...)` that returns columns
 #'   `id`, `time` and `heading`.
-#' @param ... rule-specific parameters, including `return_coords` (see below)
+#' @param ... rule-specific options (see Details), including `return_coords`.
+#'   A built-in rule stops with an error naming any option it does not read;
+#'   registered and function rules receive `...` unchecked.
 #' @param coords Character. Which Cartesian columns to use: `"absolute"`
 #'   (default, uses whatever `x`/`y` the `Tracks` currently holds in
 #'   `Tracks@@cols` -- calibrated only if the caller supplied or normalized
@@ -567,6 +569,42 @@ setGeneric(
              heading = axis)
 }
 
+# Options each built-in rule reads from `...`. `return_coords` is accepted by
+# every built-in (the rules that do not draw construction coordinates ignore
+# it, as documented). Registered and function rules take their own `...`.
+.builtin_rule_options <- list(
+  crossing        = c("circ0", "circ1", "direction"),
+  distal          = "max_radius",
+  straight        = c("tol", "min_len"),
+  origin_mean     = "r_power",
+  net             = character(),
+  velocity_mean   = "weight_by",
+  velocity_axis   = "weight_by",
+  window_net      = c("window_n", "stride"),
+  goal_bias       = character(),
+  pca_axis        = "source",
+  ransac_straight = c("eps", "min_inliers", "n_iter"),
+  maxspeed_window = "window_n",
+  vm_fit          = "weight_by",
+  exit            = "r0",
+  entry           = "r0",
+  ring_tangent    = c("r_star", "smooth_n", "deriv_span", "direction")
+)
+
+.check_rule_options <- function(rule, dots) {
+  if (!length(dots)) return(invisible(NULL))
+  nms <- names(dots) %||% rep("", length(dots))
+  ok  <- c(.builtin_rule_options[[rule]], "return_coords")
+  bad <- !nzchar(nms) | !nms %in% ok
+  if (!any(bad)) return(invisible(NULL))
+  shown <- ifelse(nzchar(nms[bad]), paste0("`", nms[bad], "`"), "an unnamed argument")
+  rlang::abort(
+    sprintf("derive_headings(rule = \"%s\") does not take %s. It takes: %s.",
+            rule, paste(shown, collapse = ", "),
+            paste0("`", ok, "`", collapse = ", ")),
+    class = "radiatR_invalid_argument", arg = "...")
+}
+
 # ---- method for Tracks ------------------------------------------------------
 #' @param first_only logical; if TRUE, return only the first matching heading per trajectory
 #' @param carry optional character vector of columns from the source data to append via nearest time
@@ -583,7 +621,7 @@ setMethod("derive_headings", "Tracks", function(
 
   coords     <- match.arg(coords)
   on_missing <- match.arg(on_missing)
-  builtins <- c("crossing","distal","straight","origin_mean","net","velocity_mean","velocity_axis","window_net","goal_bias","pca_axis","ransac_straight","maxspeed_window","vm_fit","exit","entry","ring_tangent")
+  builtins <- names(.builtin_rule_options)
   if (missing(rule))
     stop("derive_headings: `rule` is required. Built-in rules: ",
          paste(builtins, collapse = ", "), ". Registered rules: ",
@@ -633,6 +671,7 @@ setMethod("derive_headings", "Tracks", function(
       stop(sprintf("Unknown heading rule '%s'. Register via register_heading_rule() or supply a function.", rule))
     }
   } else {
+    .check_rule_options(rule, dots)
     res <- switch(rule,
       crossing = {
         circ0 <- dots$circ0; circ1 <- dots$circ1
