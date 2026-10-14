@@ -360,9 +360,10 @@
   fraction of a second was dropped. Such columns are now read again as the
   text in the file. Text time also reads a UTC offset (`+02:00`, `-0130`,
   `+02`, at most 14 hours), so a file with offsets gives the same instants
-  under every reader; `read.table()` refused them before. A column that
-  mixes zoned and unzoned date-times is malformed, as one mixing `Z` with
-  unmarked times was.
+  under every reader; `read.table()` refused them before. A `Z` or offset
+  is read after any accepted layout (`2024-01-01 10:00:00Z` too). On the
+  text path a column that mixes zoned and unzoned date-times is malformed,
+  as one mixing `Z` with unmarked times was.
 * `gg_traj()` with `facets =` stopped when the plot was drawn: it asked
   `facet_wrap()` for free scales, which `coord_equal()` does not allow. The
   panels now share fixed scales, so trajectories on the unit circle are drawn
