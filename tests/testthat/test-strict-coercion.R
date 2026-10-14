@@ -839,6 +839,25 @@ test_that("quoted line breaks and latin-1 bytes are no ragged rows", {
   }
 })
 
+test_that("a compressed file is counted as the table it holds", {
+  dir <- withr::local_tempdir()
+  txt <- c("id,frame,x,y", "a,1,1,2", "a,2,2,3", "a,3,3,4")
+  gz <- file.path(dir, "t.csv.gz")
+  con <- gzfile(gz, "w"); writeLines(txt, con); close(con)
+  writeLines(txt, file.path(dir, "t.csv"))
+  zp <- file.path(dir, "t.zip")
+  suppressWarnings(try(withr::with_dir(dir, utils::zip("t.zip", "t.csv", flags = "-q")),
+                       silent = TRUE))
+  skip_if_not(file.exists(zp), "no zip program")
+  # read.table() reads neither a zip archive nor, here, needs to
+  for (hide in readers[lengths(readers) < 2L]) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    expect_identical(nrow(read_tracks(gz)@data), 3L, info = info)
+    expect_identical(nrow(read_tracks(zp)@data), 3L, info = info)
+  }
+})
+
 test_that("an empty cell is missing under every reader", {
   dir <- withr::local_tempdir()
   path <- file.path(dir, "blank_id.csv")

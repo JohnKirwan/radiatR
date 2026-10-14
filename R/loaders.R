@@ -643,9 +643,14 @@ guess_columns <- function(data, mapping = list()) {
 # it ('"' quotes, no comment character), and stop on any record whose count
 # is not the header's. Returns the number of records after the header, which
 # the reader must return as rows. A record quoted over several lines is
-# counted on its last line; it is reported by the line it starts on.
+# counted on its last line; it is reported by the line it starts on. A line
+# of spaces is not blank: it has one field.
 .check_fields <- function(path, delim, source) {
-  n <- utils::count.fields(path, sep = delim, quote = "\"", comment.char = "",
+  # readr and fread() read the first file of a zip archive; count its fields
+  # (gzip, bzip2 and xz are decompressed by file() itself)
+  zip <- identical(readBin(path, "raw", 4L), as.raw(c(0x50, 0x4b, 0x03, 0x04)))
+  con <- if (zip) unz(path, utils::unzip(path, list = TRUE)$Name[1L]) else path
+  n <- utils::count.fields(con, sep = delim, quote = "\"", comment.char = "",
                            blank.lines.skip = FALSE)
   run <- 0L
   start <- integer(length(n))
