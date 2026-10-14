@@ -717,6 +717,16 @@ test_that("a track that never moves has no heading under the movement rules", {
   expect_true(is.na(heading_of(ts, rule = "pca_axis", source = "velocity")))
 })
 
+test_that("on_missing counts headings, not trials, for a multi-heading rule", {
+  ts <- xy_track(c(0, .1, .1, .1, .2), rep(0, 5))   # middle window has no displacement
+  expect_warning(hd <- derive_headings(ts, rule = "window_net", window_n = 3),
+                 "1 of 3 headings .* from 1 of 1 trials")
+  expect_identical(attr(hd, "missing_ids"), "a")
+  expect_identical(attr(hd, "n_trials"), 1L)
+  # one heading per trial keeps the trial wording
+  expect_warning(derive_headings(still_track(), rule = "net"), "1 of 1 trials")
+})
+
 test_that("a track that never moves is reported by on_missing", {
   expect_warning(derive_headings(still_track(), rule = "net"), "1 of 1 trials")
   expect_error(derive_headings(still_track(), rule = "net", on_missing = "error"),

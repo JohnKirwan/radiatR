@@ -46,7 +46,9 @@ landmark-rotated frame; errors if not registered).}
 \item{on_missing}{One of `"warn"` (default), `"error"`, or `"quiet"`,
 controlling what happens when a rule produces no heading (`NA`) for one or
 more trials. The `NA` rows are always retained; the returned object carries
-`n_total`, `n_missing`, and `missing_ids` attributes. `"warn"` emits a
+`n_total` and `n_missing` (headings, i.e. rows), `n_trials` (distinct
+trials) and `missing_ids` (the trials with at least one missing heading)
+attributes. `"warn"` emits a
 warning, `"error"` stops, `"quiet"` is silent. Rule-based failures are often
 non-random (e.g. tracks that never reach the circumference) and can bias
 circular statistics, so they are surfaced by default.}

@@ -1853,13 +1853,18 @@ server <- function(input, output, session) {
     if (derived) {
       n_total   <- attr(rv$hd, "n_total")   %||% nrow(rv$hd)
       n_missing <- attr(rv$hd, "n_missing") %||% sum(is.na(rv$hd$heading))
+      # from the data: the condition-column merge() drops the attributes
+      n_trials         <- length(unique(rv$hd$id))
+      n_trials_missing <- length(unique(rv$hd$id[is.na(rv$hd$heading)]))
       rule      <- rv$method
     } else {
       n_total   <- nrow(rv$hd)
       n_missing <- sum(is.na(rv$hd$heading))
+      n_trials  <- n_trials_missing <- NULL
       rule      <- NULL
     }
-    note <- attrition_note(n_total, n_missing, derived = derived, rule = rule)
+    note <- attrition_note(n_total, n_missing, derived = derived, rule = rule,
+                           n_trials = n_trials, n_trials_missing = n_trials_missing)
     if (is.null(note)) return(NULL)
     div(class = if (derived) "alert alert-warning mt-0 mb-3"
                 else "alert alert-info mt-0 mb-3",

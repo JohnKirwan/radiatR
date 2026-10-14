@@ -376,6 +376,11 @@
 
 ## Bug fixes
 
+* `derive_headings()` no longer calls headings "trials" for a rule that gives
+  several per trial (`window_net`, `crossing`): the `on_missing` message
+  counts missing headings and the trials they come from, and the app's
+  attrition banner does the same. `missing_ids` lists each trial once, and
+  the new `n_trials` attribute gives the number of trials.
 * `read_tracks()` with a `tz` other than `"UTC"` put a timestamp that names
   its zone (`2024-01-01T10:00:00Z`, `...+02:00`) at the wrong instant when
   the file was read by `data.table::fread()` (readr not installed): the

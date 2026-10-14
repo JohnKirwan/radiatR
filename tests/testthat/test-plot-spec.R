@@ -139,6 +139,14 @@ test_that("attrition_note: provided wording is neutral", {
   expect_false(grepl("bias", msg))
 })
 
+test_that("attrition_note: multi-heading rules count headings and trials", {
+  msg <- attrition_note(n_total = 300, n_missing = 30, derived = TRUE,
+                        rule = "window_net", n_trials = 10, n_trials_missing = 4)
+  expect_match(msg, "270 of 300 headings")
+  expect_match(msg, "4 of 10 trials")
+  expect_false(grepl("of 300 trials", msg))
+})
+
 test_that("attrition_note: returns NULL when there is no attrition", {
   expect_null(attrition_note(n_total = 100, n_missing = 0, derived = TRUE, rule = "distal"))
   expect_null(attrition_note(n_total = 100, n_missing = NULL, derived = FALSE))
