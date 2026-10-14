@@ -756,3 +756,20 @@ test_that("window_net fits its window to a track shorter than window_n", {
 test_that("maxspeed_window gives the direction of a short moving track", {
   expect_equal(heading_of(north_track(6), rule = "maxspeed_window"), pi / 2)
 })
+
+# ---- rule argument -----------------------------------------------------------
+test_that("derive_headings() requires a rule and names the choices", {
+  ts <- unequal_steps()
+  expect_error(derive_headings(ts), "`rule` is required.*distal")
+})
+
+test_that("derive_headings() refuses a rule vector instead of a cryptic && error", {
+  ts <- unequal_steps()
+  expect_error(derive_headings(ts, rule = c("distal", "net")), "single rule name or a function")
+  expect_error(derive_headings(ts, rule = NA_character_), "single rule name or a function")
+  expect_error(derive_headings(ts, rule = 1), "single rule name or a function")
+})
+
+test_that("circ_summary_headings() requires a rule", {
+  expect_error(circ_summary_headings(unequal_steps()), "`rule` is required")
+})

@@ -60,7 +60,14 @@
 #' Derive heading angle(s) from trajectories using specified rule
 #'
 #' @param x Tracks
-#' @param rule one of "crossing", "distal", "straight"
+#' @param rule Required. A single rule name, or a function. Built-in rules:
+#'   `"crossing"`, `"distal"`, `"straight"`, `"origin_mean"`, `"net"`,
+#'   `"velocity_mean"`, `"velocity_axis"`, `"window_net"`, `"goal_bias"`,
+#'   `"pca_axis"`, `"ransac_straight"`, `"maxspeed_window"`, `"vm_fit"`,
+#'   `"exit"`, `"entry"`, `"ring_tangent"`; a name registered with
+#'   [register_heading_rule()] (see [list_heading_rules()]); or a function
+#'   called once per trajectory as `f(df, cols, ...)` that returns columns
+#'   `id`, `time` and `heading`.
 #' @param ... rule-specific parameters, including `return_coords` (see below)
 #' @param coords Character. Which Cartesian columns to use: `"absolute"`
 #'   (default, uses whatever `x`/`y` the `Tracks` currently holds in
@@ -122,7 +129,7 @@ setGeneric(
   "derive_headings",
   function(
     x,
-    rule = c("crossing","distal","straight","origin_mean","net","velocity_mean","velocity_axis","window_net","goal_bias","pca_axis","ransac_straight","maxspeed_window","vm_fit","exit","entry","ring_tangent"),
+    rule,
     ...,
     coords = c("absolute", "relative")
   ) standardGeneric("derive_headings")
@@ -545,9 +552,7 @@ setGeneric(
 #' @export
 setMethod("derive_headings", "Tracks", function(
     x,
-    rule = c("crossing","distal","straight","origin_mean","net","velocity_mean",
-             "velocity_axis","window_net","goal_bias","pca_axis","ransac_straight",
-             "maxspeed_window","vm_fit","exit","entry","ring_tangent"),
+    rule,
     ...,
     first_only = FALSE,
     carry = NULL,
@@ -556,9 +561,16 @@ setMethod("derive_headings", "Tracks", function(
 
   coords     <- match.arg(coords)
   on_missing <- match.arg(on_missing)
-  # Capture a readable rule label before match.arg(rule) reassigns `rule` in the
-  # built-in dispatch branch below.
-  rule_label <- if (is.function(rule)) "custom" else as.character(rule)[1]
+  builtins <- c("crossing","distal","straight","origin_mean","net","velocity_mean","velocity_axis","window_net","goal_bias","pca_axis","ransac_straight","maxspeed_window","vm_fit","exit","entry","ring_tangent")
+  if (missing(rule))
+    stop("derive_headings: `rule` is required. Built-in rules: ",
+         paste(builtins, collapse = ", "), ". Registered rules: ",
+         if (length(list_heading_rules())) paste(list_heading_rules(), collapse = ", ") else "none",
+         ".", call. = FALSE)
+  if (!is.function(rule) && !(is.character(rule) && length(rule) == 1L && !is.na(rule)))
+    stop("derive_headings: `rule` must be a single rule name or a function, not ",
+         deparse1(rule), ".", call. = FALSE)
+  rule_label <- if (is.function(rule)) "custom" else rule
 
   id <- x@cols$id; tc <- x@cols$time
 
@@ -577,9 +589,6 @@ setMethod("derive_headings", "Tracks", function(
 
   d <- as.data.frame(x)
   sp <- split(seq_len(nrow(d)), d[[id]])
-
-  # built-in dispatcher
-  builtins <- c("crossing","distal","straight","origin_mean","net","velocity_mean","velocity_axis","window_net","goal_bias","pca_axis","ransac_straight","maxspeed_window","vm_fit","exit","entry","ring_tangent")
 
   # locate user rule if provided as function or registered name
   dots <- list(...)
@@ -602,7 +611,6 @@ setMethod("derive_headings", "Tracks", function(
       stop(sprintf("Unknown heading rule '%s'. Register via register_heading_rule() or supply a function.", rule))
     }
   } else {
-    rule <- match.arg(rule)
     res <- switch(rule,
       crossing = {
         circ0 <- dots$circ0; circ1 <- dots$circ1
@@ -740,7 +748,7 @@ setMethod("derive_headings", "Tracks", function(
 #' optionally grouped by one or more metadata columns.
 #'
 #' @param x A [`Tracks`] object.
-#' @param rule Character. Heading derivation rule passed to [derive_headings()].
+#' @param rule Required. Heading derivation rule passed to [derive_headings()].
 #'   One of `"crossing"`, `"distal"`, `"straight"`, `"origin_mean"`, `"net"`,
 #'   or `"velocity_mean"`.
 #' @param group_by Character vector of column names used to group headings
@@ -767,9 +775,12 @@ setMethod("derive_headings", "Tracks", function(
 #'                       carry = "arc", group_by = "arc")
 #'
 #' @export
-circ_summary_headings <- function(x, rule = c("crossing","distal","straight","origin_mean","net","velocity_mean"),
-                                  group_by = "id", ...) {
-  rule <- match.arg(rule)
+circ_summary_headings <- function(x, rule, group_by = "id", ...) {
+  if (missing(rule))
+    stop("circ_summary_headings: `rule` is required: one of \"crossing\", ",
+         "\"distal\", \"straight\", \"origin_mean\", \"net\", \"velocity_mean\".",
+         call. = FALSE)
+  rule <- match.arg(rule, c("crossing","distal","straight","origin_mean","net","velocity_mean"))
 
   hd <- derive_headings(x, rule = rule, ...)
   coords <- attr(hd, "coords") %||% "absolute"
