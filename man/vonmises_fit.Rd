@@ -51,3 +51,7 @@ direction); larger values indicate increasing concentration.  The confidence
 interval on \eqn{\mu} uses a normal approximation and is unreliable for
 \eqn{\kappa < 0.5} or small samples.
 }
+\examples{
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+vonmises_fit(hd, group_col = "arc")
+}

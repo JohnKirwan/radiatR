@@ -535,6 +535,9 @@ circ_summarise <- function(data,
 #'   data: statistics are computed via the angle-doubling method and the mean is
 #'   reported as an axis in `[0, pi)` radians / `[0, 180)` degrees. Default
 #'   `FALSE` (ordinary directional data).
+#' @examples
+#' hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+#' circ_dispersion(hd, group_col = "arc")
 #' @export
 circ_dispersion <- function(hd, group_col = NULL, angle_col = "heading",
                             axial = FALSE) {
@@ -585,6 +588,9 @@ circ_dispersion <- function(hd, group_col = NULL, angle_col = "heading",
 #' @return Data frame with columns \code{group_col} (if supplied),
 #'   \code{sector} (degree label), \code{mid_angle} (sector midpoint in
 #'   radians), \code{count}, \code{proportion}.
+#' @examples
+#' hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+#' sector_summary(hd, sectors = 4)
 #' @export
 sector_summary <- function(hd, sectors = 8L, group_col = NULL,
                             angle_col = "heading") {
@@ -658,6 +664,9 @@ sector_summary <- function(hd, sectors = 8L, group_col = NULL,
 #'   (MLE concentration), \code{se_mu}, \code{se_kappa} (asymptotic standard
 #'   errors), \code{ci_lo} and \code{ci_hi} (\code{conf}-level interval on
 #'   \eqn{\mu}, radians), \code{n}.
+#' @examples
+#' hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+#' vonmises_fit(hd, group_col = "arc")
 #' @export
 vonmises_fit <- function(hd, group_col = NULL, angle_col = "heading",
                           conf = 0.95, axial = FALSE) {
@@ -751,6 +760,9 @@ vonmises_fit <- function(hd, group_col = NULL, angle_col = "heading",
 #'   \code{1} = not converged; \code{NA} when the fit could not be attempted),
 #'   \code{n}.
 #' @seealso \code{\link{vonmises_fit}}, \code{\link{add_wrappedcauchy_density}}
+#' @examples
+#' hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+#' wrappedcauchy_fit(hd, group_col = "arc")
 #' @export
 wrappedcauchy_fit <- function(hd, group_col = NULL, angle_col = "heading",
                               axial = FALSE) {
@@ -823,6 +835,10 @@ wrappedcauchy_fit <- function(hd, group_col = NULL, angle_col = "heading",
 #' @return Tidy data frame with columns \code{group_col} (if supplied),
 #'   \code{r}, \code{n}, \code{type}, and when \code{test = TRUE} also
 #'   \code{statistic}, \code{df}, \code{p_value}.
+#' @examples
+#' hd <- derive_headings(cpunctatus, rule = "distal")
+#' # does the heading depend on the frame at which it was taken?
+#' circ_cor(hd, x_col = "time")
 #' @export
 circ_cor <- function(hd, x_col, angle_col = "heading",
                       group_col = NULL,
@@ -1032,6 +1048,11 @@ circ_cor <- function(hd, x_col, angle_col = "heading",
 #'   distributions powered by the multivariate Rayleigh test. Annals of the
 #'   Institute of Statistical Mathematics, 62(2), 323-340.
 #'   \doi{10.1007/s10463-008-0179-9}.
+#' @examples
+#' hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+#' test_uniformity(hd, group_col = "arc", p_adjust = "BH")
+#' # the target lies at 0 rad: test for orientation towards it
+#' test_uniformity(hd, group_col = "arc", test = "vtest", mu = 0)
 #' @export
 test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
                              test = c("rayleigh", "vtest", "kuiper", "rao",
@@ -1173,6 +1194,11 @@ test_uniformity <- function(hd, group_col = NULL, angle_col = "heading",
 #'   If the wrapped-Cauchy fit succeeds but the bootstrap step itself fails,
 #'   the row is kept with valid \code{statistic}/\code{mu}/\code{rho} but
 #'   \code{p_value} set to \code{NA}.
+#' @examples
+#' hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+#' set.seed(1)
+#' # n_boot kept small to run quickly; use the default in an analysis
+#' test_gof(hd[hd$arc == "50", ], n_boot = 99)
 #' @export
 test_gof <- function(hd, group_col = NULL, angle_col = "heading",
                       dist = c("wrappedcauchy"), p_adjust = "none",
@@ -1282,6 +1308,12 @@ test_gof <- function(hd, group_col = NULL, angle_col = "heading",
 #'   data: the test is run via the angle-doubling method, comparing group axes.
 #'   Default `FALSE` (ordinary directional data).
 #' @seealso \code{\link{test_distributions}}, \code{\link{test_concentration}}
+#' @examples
+#' hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+#' test_mean_directions(hd, group_col = "arc")
+#' set.seed(1)
+#' test_mean_directions(hd, group_col = "arc", method = "permutation",
+#'                      n_perm = 199)
 #' @export
 test_mean_directions <- function(hd, group_col, angle_col = "heading",
                                   method = c("watson_williams", "permutation"),
@@ -1383,6 +1415,9 @@ test_mean_directions <- function(hd, group_col, angle_col = "heading",
 #' @param axial Logical. Treat the angles as axial (bidirectional, mod-pi)
 #'   data: the test is run via the angle-doubling method, comparing axial
 #'   concentrations. Default `FALSE` (ordinary directional data).
+#' @examples
+#' hd <- derive_headings(cpunctatus, rule = "distal", carry = "type")
+#' test_concentration(hd, group_col = "type")
 #' @export
 test_concentration <- function(hd, group_col, angle_col = "heading",
                                 parametric = TRUE, axial = FALSE) {
@@ -1553,6 +1588,9 @@ test_concentration <- function(hd, group_col, angle_col = "heading",
 #'   \code{p_adjust != "none"}.
 #' @seealso \code{\link{test_mean_directions}}, \code{\link{test_concentration}},
 #'   \code{\link{test_uniformity}}
+#' @examples
+#' hd <- derive_headings(cpunctatus, rule = "distal", carry = "type")
+#' test_distributions(hd, group_col = "type")
 #' @export
 test_distributions <- function(hd, group_col, angle_col = "heading",
                                method = c("watson_wheeler", "watson_two", "rao"),
@@ -1646,6 +1684,10 @@ test_distributions <- function(hd, group_col, angle_col = "heading",
 #'   \code{resultant_R}, and \code{n}. Groups with fewer than two finite angles
 #'   yield an all-\code{NA} interval.
 #' @seealso \code{\link{vonmises_fit}}, \code{\link{circ_dispersion}}
+#' @examples
+#' hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+#' set.seed(1)
+#' boot_mean_ci(hd, group_col = "arc", R = 199)
 #' @export
 boot_mean_ci <- function(hd, group_col = NULL, angle_col = "heading",
                          conf = 0.95, R = 999L, axial = FALSE) {
@@ -1745,6 +1787,9 @@ boot_mean_ci <- function(hd, group_col = NULL, angle_col = "heading",
 #' @references Pewsey, A. (2002). Testing circular symmetry. \emph{Canadian
 #'   Journal of Statistics} 30(4), 591--600. \doi{10.2307/3316098}.
 #' @seealso \code{\link{test_uniformity}}, \code{\link{vonmises_fit}}
+#' @examples
+#' hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+#' test_symmetry(hd, group_col = "arc")
 #' @export
 test_symmetry <- function(hd, group_col = NULL, angle_col = "heading",
                           p_adjust = "none", axial = FALSE) {
@@ -1830,6 +1875,11 @@ test_symmetry <- function(hd, group_col = NULL, angle_col = "heading",
 #'   Marron, J.S. (2001). Mode testing via the excess mass estimate.
 #'   \emph{Biometrika} 88(2), 499--517.
 #' @seealso \code{\link{circ_model_select}}, \code{\link{test_symmetry}}
+#' @examples
+#' hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+#' set.seed(1)
+#' # n_boot kept small to run quickly; use the default in an analysis
+#' test_unimodality(hd[hd$arc == "20", ], n_boot = 19)
 #' @export
 test_unimodality <- function(hd, group_col = NULL, angle_col = "heading",
                              n_boot = 199L) {
@@ -1915,6 +1965,10 @@ test_unimodality <- function(hd, group_col = NULL, angle_col = "heading",
 #' @seealso \code{\link{boot_mean_ci}}, \code{\link{boot_kappa_contrast}},
 #'   \code{\link{vonmises_fit}}, \code{\link{circ_dispersion}},
 #'   \code{\link{test_concentration}}
+#' @examples
+#' hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+#' set.seed(1)
+#' boot_kappa_ci(hd, group_col = "arc", R = 199)
 #' @export
 boot_kappa_ci <- function(hd, group_col = NULL, angle_col = "heading",
                           conf = 0.95, R = 999L, axial = FALSE) {
@@ -2001,6 +2055,10 @@ boot_kappa_ci <- function(hd, group_col = NULL, angle_col = "heading",
 #'   \code{delta_R}, \code{delta_R_ci_lo}/\code{delta_R_ci_hi}, \code{p_value}
 #'   (two-sided bootstrap p for \eqn{\Delta\kappa = 0}), \code{n1}, \code{n2}.
 #' @seealso \code{\link{boot_kappa_ci}}, \code{\link{test_concentration}}
+#' @examples
+#' hd <- derive_headings(cpunctatus, rule = "distal", carry = "type")
+#' set.seed(1)
+#' boot_kappa_contrast(hd, group_col = "type", R = 199)
 #' @export
 boot_kappa_contrast <- function(hd, group_col, angle_col = "heading",
                                 conf = 0.95, R = 999L, axial = FALSE) {

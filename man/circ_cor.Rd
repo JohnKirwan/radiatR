@@ -49,3 +49,8 @@ only, not direction).
 \strong{Circular-circular} (Fisher's \eqn{\rho}, via
 \code{\link[circular]{cor.circular}}): \eqn{r \in [-1, 1]}.
 }
+\examples{
+hd <- derive_headings(cpunctatus, rule = "distal")
+# does the heading depend on the frame at which it was taken?
+circ_cor(hd, x_col = "time")
+}
