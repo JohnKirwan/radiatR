@@ -120,6 +120,11 @@
 #'   orientation data full circle: model-based approaches with maximum likelihood.
 #'   Journal of Experimental Biology, 220(21), 3878-3882.
 #' @seealso \code{\link{vonmises_fit}}, \code{\link{test_uniformity}}
+#' @examples
+#' hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc",
+#'                       coords = "relative")
+#' # Control (no stimulus) against the widest arc
+#' circ_model_select(hd[hd$arc %in% c("0", "50"), ], group_col = "arc")
 #' @export
 circ_model_select <- function(hd, angle_col = "heading", group_col = NULL) {
   stopifnot(is.data.frame(hd))
