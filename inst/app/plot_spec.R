@@ -82,16 +82,23 @@ build_headings_input <- function(df, col, units, convention, group = NULL) {
 # `derived` selects the loud, bias-caveat wording (headings derived from tracks
 # via a rule) vs the neutral wording (angles provided directly). Shiny-free so
 # it can be unit-tested.
-attrition_note <- function(n_total, n_missing, derived, rule = NULL) {
+attrition_note <- function(n_total, n_missing, derived, rule = NULL,
+                           n_trials = NULL, n_trials_missing = NULL) {
   if (is.null(n_missing) || is.null(n_total) || n_missing <= 0L) return(NULL)
   used <- n_total - n_missing
   pct  <- round(100 * n_missing / n_total)
   if (isTRUE(derived)) {
-    sprintf(paste0("%d of %d trials produced a heading; %d (%d%%) were excluded ",
-                   "by rule '%s'. Rule-based exclusion is often non-random and ",
-                   "can bias circular statistics — inspect the excluded ",
-                   "trials before interpreting."),
-            used, n_total, n_missing, pct, rule %||% "?")
+    # a rule with several headings per trial (window_net, crossing) counts rows
+    unit <- if (is.null(n_trials) || n_trials == n_total) "trials" else "headings"
+    from <- if (unit == "headings" && !is.null(n_trials_missing))
+      sprintf(", from %d of %d trials,", n_trials_missing, n_trials) else ""
+    lead <- if (unit == "trials") "%d of %d trials produced a heading"
+            else "%d of %d headings are present"
+    sprintf(paste0(lead, "; %d (%d%%)%s were excluded by rule '%s'. ",
+                   "Rule-based exclusion is often non-random and can bias ",
+                   "circular statistics — inspect the excluded trials before ",
+                   "interpreting."),
+            used, n_total, n_missing, pct, from, rule %||% "?")
   } else {
     sprintf("%d of %d rows have no angle and are excluded from the statistics.",
             n_missing, n_total)

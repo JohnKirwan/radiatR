@@ -717,6 +717,16 @@ test_that("a track that never moves has no heading under the movement rules", {
   expect_true(is.na(heading_of(ts, rule = "pca_axis", source = "velocity")))
 })
 
+test_that("on_missing counts headings, not trials, for a multi-heading rule", {
+  ts <- xy_track(c(0, .1, .1, .1, .2), rep(0, 5))   # middle window has no displacement
+  expect_warning(hd <- derive_headings(ts, rule = "window_net", window_n = 3),
+                 "1 of 3 headings .* from 1 of 1 trials")
+  expect_identical(attr(hd, "missing_ids"), "a")
+  expect_identical(attr(hd, "n_trials"), 1L)
+  # one heading per trial keeps the trial wording
+  expect_warning(derive_headings(still_track(), rule = "net"), "1 of 1 trials")
+})
+
 test_that("a track that never moves is reported by on_missing", {
   expect_warning(derive_headings(still_track(), rule = "net"), "1 of 1 trials")
   expect_error(derive_headings(still_track(), rule = "net", on_missing = "error"),
@@ -735,16 +745,28 @@ test_that("net gives no direction to a track that ends where it started", {
                                on_missing = "quiet")$x_end, 0)
 })
 
-test_that("pca_axis has no axis when the points or the steps have no spread", {
+test_that("pca_axis takes the step axis about zero", {
   even_steps <- xy_track(0:5, rep(0, 6))
-  expect_true(is.na(heading_of(even_steps, rule = "pca_axis", source = "velocity")))
+  expect_equal(heading_of(even_steps, rule = "pca_axis", source = "velocity"), 0)
   # steps equal but for rounding: diff(seq(0, 1, .1)) is not constant
-  expect_true(is.na(heading_of(xy_track(rep(0, 11), seq(0, 1, .1)),
-                               rule = "pca_axis", source = "velocity")))
+  expect_equal(heading_of(xy_track(rep(0, 11), seq(0, 1, .1)),
+                          rule = "pca_axis", source = "velocity"), pi / 2)
+  expect_equal(heading_of(xy_track(c(0, 1), c(0, 1)),     # a single step
+                          rule = "pca_axis", source = "velocity"), pi / 4)
   expect_equal(heading_of(even_steps, rule = "pca_axis"), 0)
   out <- derive_headings(still_track(), rule = "pca_axis", return_coords = TRUE,
                          on_missing = "quiet")
   expect_true(is.na(out$axis_x) && is.na(out$axis_y))
+})
+
+test_that("pca_axis has no heading when the net displacement gives no sign", {
+  # out along the x axis and back: a clear axis, no net displacement
+  loop <- xy_track(c(0, .1, .2, .3, .2, .1, 0), c(0, .001, 0, .001, 0, .001, 0))
+  for (src in c("position", "velocity"))
+    expect_true(is.na(heading_of(loop, rule = "pca_axis", source = src)), info = src)
+  out <- derive_headings(loop, rule = "pca_axis", return_coords = TRUE,
+                         on_missing = "quiet")
+  expect_true(is.na(out$axis_x))
 })
 
 test_that("window_net fits its window to a track shorter than window_n", {
@@ -755,6 +777,74 @@ test_that("window_net fits its window to a track shorter than window_n", {
 
 test_that("maxspeed_window gives the direction of a short moving track", {
   expect_equal(heading_of(north_track(6), rule = "maxspeed_window"), pi / 2)
+})
+
+# ---- straight: pauses ---------------------------------------------------------
+
+test_that("straight: a pause does not hide a turn", {
+  # east x3, pause, north x3
+  ts <- xy_track(c(0, .1, .2, .3, .3, .3, .3, .3), c(0, 0, 0, 0, 0, .1, .2, .3))
+  expect_true(is.na(heading_of(ts, rule = "straight", min_len = 6)))
+  out <- derive_headings(ts, rule = "straight", min_len = 3, return_coords = TRUE,
+                         on_missing = "quiet")
+  expect_equal(out$heading, 0)                       # first of two equal runs
+  expect_equal(c(out$x_seg0, out$y_seg0, out$x_seg1, out$y_seg1), c(0, 0, .3, 0))
+})
+
+test_that("straight: a pause inside a run neither breaks it nor counts toward min_len", {
+  ts <- xy_track(c(0, .1, .2, .2, .3, .4), rep(0, 6))   # 4 moving steps, 1 pause
+  expect_equal(heading_of(ts, rule = "straight", min_len = 4), 0)
+  expect_true(is.na(heading_of(ts, rule = "straight", min_len = 5)))
+})
+
+test_that("straight: remaps run indices past leading pauses", {
+  ts <- xy_track(c(0, 0, 0, .1, .2, .3, .4), rep(0, 7))  # rows 1-3 still, then east
+  out <- derive_headings(ts, rule = "straight", min_len = 4, return_coords = TRUE,
+                         on_missing = "quiet")
+  expect_equal(out$heading, 0)
+  expect_equal(out$time, 5)                              # rows 3..7, midpoint 5
+  expect_equal(c(out$x_seg0, out$x_seg1), c(0, .4))
+})
+
+test_that("straight: a run that starts after a pause takes its first moving step", {
+  ts <- xy_track(rep(0, 7), c(0, 0, .1, .2, .3, .4, .5))
+  expect_equal(heading_of(ts, rule = "straight"), pi / 2)
+})
+
+# ---- rule options ------------------------------------------------------------
+
+test_that("a built-in rule rejects an option it does not read", {
+  expect_error(derive_headings(cpunctatus, rule = "distal", frame_select = "all"),
+               class = "radiatR_invalid_argument")
+  expect_error(derive_headings(cpunctatus, rule = "distal", frame_select = "all"),
+               "frame_select")
+  expect_error(derive_headings(cpunctatus, rule = "net", 3),
+               class = "radiatR_invalid_argument")      # unnamed extra argument
+  # a misspelling that is not a prefix (`$` partial matching let `min_length` through)
+  expect_error(derive_headings(cpunctatus, rule = "straight", minlen = 4),
+               "It takes: `tol`, `min_len`", fixed = TRUE)
+  expect_error(derive_headings(cpunctatus, rule = "straight", min_length = 50),
+               class = "radiatR_invalid_argument")
+})
+
+test_that("return_coords is accepted by every built-in rule", {
+  args <- list(crossing = list(circ0 = .2, circ1 = .4), exit = list(r0 = .5),
+               entry = list(r0 = .5), ring_tangent = list(r_star = .5))
+  for (rule in names(radiatR:::.builtin_rule_options)) {
+    expect_no_error(do.call(derive_headings,
+      c(list(cpunctatus, rule = rule, return_coords = TRUE, on_missing = "quiet"),
+        args[[rule]])))
+  }
+})
+
+test_that("registered and function rules are not checked", {
+  f <- function(df, cols, anything = 1, ...) data.frame(id = df[[cols$id]][1],
+                                                        time = df[[cols$time]][1], heading = 0)
+  expect_no_error(derive_headings(cpunctatus, rule = f, anything = 2, on_missing = "quiet"))
+  register_heading_rule("tmp_rule_unknown_opts", f, overwrite = TRUE)
+  on.exit(rm("tmp_rule_unknown_opts", envir = radiatR:::.heading_registry))
+  expect_no_error(derive_headings(cpunctatus, rule = "tmp_rule_unknown_opts",
+                                  whatever = TRUE, on_missing = "quiet"))
 })
 
 # ---- rule argument -----------------------------------------------------------

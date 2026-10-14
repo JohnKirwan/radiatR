@@ -29,7 +29,9 @@ derive_headings(x, rule, ..., coords = c("absolute", "relative"))
 called once per trajectory as `f(df, cols, ...)` that returns columns
 `id`, `time` and `heading`.}
 
-\item{...}{rule-specific parameters, including `return_coords` (see below)}
+\item{...}{rule-specific options (see Details), including `return_coords`.
+A built-in rule stops with an error naming any option it does not read;
+registered and function rules receive `...` unchecked.}
 
 \item{coords}{Character. Which Cartesian columns to use: `"absolute"`
 (default, uses whatever `x`/`y` the `Tracks` currently holds in
@@ -44,7 +46,9 @@ landmark-rotated frame; errors if not registered).}
 \item{on_missing}{One of `"warn"` (default), `"error"`, or `"quiet"`,
 controlling what happens when a rule produces no heading (`NA`) for one or
 more trials. The `NA` rows are always retained; the returned object carries
-`n_total`, `n_missing`, and `missing_ids` attributes. `"warn"` emits a
+`n_total` and `n_missing` (headings, i.e. rows), `n_trials` (distinct
+trials) and `missing_ids` (the trials with at least one missing heading)
+attributes. `"warn"` emits a
 warning, `"error"` stops, `"quiet"` is silent. Rule-based failures are often
 non-random (e.g. tracks that never reach the circumference) and can bias
 circular statistics, so they are surfaced by default.}
@@ -68,6 +72,15 @@ vector). Other rules ignore it.
 The `distal` rule accepts `max_radius` (default `Inf`): the furthest-point
 search is restricted to positions with radius `<= max_radius`, so
 `max_radius = 1` ignores beyond-circumference (`rho > 1`) tracking outliers.
+The `straight` rule takes `tol` (default `pi/18`, the largest turn between
+successive steps) and `min_len` (default `5`, the fewest steps in a run). A
+step of zero length (a pause) has no direction: turns are measured between
+successive moving steps, so a pause neither breaks a run nor counts toward
+`min_len`. The heading is the direction of the run's first moving step.
+`pca_axis` takes `source = "position"` (default; the principal axis of the
+positions about their centroid) or `"velocity"` (the principal axis of the
+steps about zero, which weights a step by its squared length; compare
+`velocity_axis`, which weights by length).
 
 The rules that average directions take a weighting through \code{...}:
 \itemize{
@@ -93,9 +106,11 @@ The other rules likewise give \code{NA} where a displacement has zero
 length: a track that never moves (\code{net}, \code{straight},
 \code{goal_bias}, \code{maxspeed_window}, \code{window_net}), one that ends
 where it started (\code{net}), a window whose ends coincide
-(\code{window_net}), positions or steps with no spread (\code{pca_axis}),
-and a track that stays at the origin (\code{distal}). \code{window_net}
-and \code{maxspeed_window} shrink their window to fit a track shorter than
+(\code{window_net}), positions with no spread, or steps none of which
+moves (\code{pca_axis}), a \code{pca_axis} track whose net displacement has
+no component along its axis (the axis then has no sign), and a track that
+stays at the origin (\code{distal}). \code{window_net} and
+\code{maxspeed_window} shrink their window to fit a track shorter than
 \code{window_n}.
 }
 \examples{

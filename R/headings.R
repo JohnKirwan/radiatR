@@ -68,7 +68,9 @@
 #'   [register_heading_rule()] (see [list_heading_rules()]); or a function
 #'   called once per trajectory as `f(df, cols, ...)` that returns columns
 #'   `id`, `time` and `heading`.
-#' @param ... rule-specific parameters, including `return_coords` (see below)
+#' @param ... rule-specific options (see Details), including `return_coords`.
+#'   A built-in rule stops with an error naming any option it does not read;
+#'   registered and function rules receive `...` unchecked.
 #' @param coords Character. Which Cartesian columns to use: `"absolute"`
 #'   (default, uses whatever `x`/`y` the `Tracks` currently holds in
 #'   `Tracks@@cols` -- calibrated only if the caller supplied or normalized
@@ -77,7 +79,9 @@
 #' @param on_missing One of `"warn"` (default), `"error"`, or `"quiet"`,
 #'   controlling what happens when a rule produces no heading (`NA`) for one or
 #'   more trials. The `NA` rows are always retained; the returned object carries
-#'   `n_total`, `n_missing`, and `missing_ids` attributes. `"warn"` emits a
+#'   `n_total` and `n_missing` (headings, i.e. rows), `n_trials` (distinct
+#'   trials) and `missing_ids` (the trials with at least one missing heading)
+#'   attributes. `"warn"` emits a
 #'   warning, `"error"` stops, `"quiet"` is silent. Rule-based failures are often
 #'   non-random (e.g. tracks that never reach the circumference) and can bias
 #'   circular statistics, so they are surfaced by default.
@@ -92,6 +96,15 @@
 #' The `distal` rule accepts `max_radius` (default `Inf`): the furthest-point
 #' search is restricted to positions with radius `<= max_radius`, so
 #' `max_radius = 1` ignores beyond-circumference (`rho > 1`) tracking outliers.
+#' The `straight` rule takes `tol` (default `pi/18`, the largest turn between
+#' successive steps) and `min_len` (default `5`, the fewest steps in a run). A
+#' step of zero length (a pause) has no direction: turns are measured between
+#' successive moving steps, so a pause neither breaks a run nor counts toward
+#' `min_len`. The heading is the direction of the run's first moving step.
+#' `pca_axis` takes `source = "position"` (default; the principal axis of the
+#' positions about their centroid) or `"velocity"` (the principal axis of the
+#' steps about zero, which weights a step by its squared length; compare
+#' `velocity_axis`, which weights by length).
 #'
 #' The rules that average directions take a weighting through \code{...}:
 #' \itemize{
@@ -117,9 +130,11 @@
 #' length: a track that never moves (\code{net}, \code{straight},
 #' \code{goal_bias}, \code{maxspeed_window}, \code{window_net}), one that ends
 #' where it started (\code{net}), a window whose ends coincide
-#' (\code{window_net}), positions or steps with no spread (\code{pca_axis}),
-#' and a track that stays at the origin (\code{distal}). \code{window_net}
-#' and \code{maxspeed_window} shrink their window to fit a track shorter than
+#' (\code{window_net}), positions with no spread, or steps none of which
+#' moves (\code{pca_axis}), a \code{pca_axis} track whose net displacement has
+#' no component along its axis (the axis then has no sign), and a track that
+#' stays at the origin (\code{distal}). \code{window_net} and
+#' \code{maxspeed_window} shrink their window to fit a track shorter than
 #' \code{window_n}.
 #' @return data.frame with columns id, time (approx), heading (radians, unit-circle
 #'   convention), plus the rule-specific construction columns above when
@@ -255,8 +270,10 @@ setGeneric(
 }
 
 # ---- straight rule -----------------------------------------------------------
-# Heading = angle of the longest contiguous segment where turning angle <= tol
-# turning angle between steps i-1->i and i->i+1 via atan2(cross, dot)
+# Heading = direction of the first step of the longest run of moving steps whose
+# successive turns are all <= tol. A pause (a step of zero length) has no
+# direction: turns are measured between successive moving steps, so a pause
+# neither breaks a run nor counts toward min_len (which counts moving steps).
 .set_headings_straight_one <- function(d, id, tc, xc, yc, tol = pi/18, min_len = 5L,
                                        return_coords = FALSE) {
   na_row <- function() {
@@ -267,35 +284,27 @@ setGeneric(
     }
     row
   }
-  n <- nrow(d)
-  if (n < min_len + 1L) return(na_row())
   vx <- diff(d[[xc]]); vy <- diff(d[[yc]])
-  # angles between successive displacement vectors
-  cross <- vx[-1]*vy[-length(vy)] - vy[-1]*vx[-length(vx)]
-  dot   <- vx[-1]*vx[-length(vx)] + vy[-1]*vy[-length(vy)]
-  turn  <- atan2(cross, dot)  # in (-pi, pi]
-  ok <- is.finite(turn) & (abs(turn) <= tol)
-  # run-length encoding to find longest ok-run
-  r <- rle(ok)
+  mv <- which(vx != 0 | vy != 0)   # moving steps; step i joins points i and i + 1
+  k  <- length(mv)
+  if (k < min_len) return(na_row())
+  ux <- vx[mv]; uy <- vy[mv]
+  turn <- atan2(ux[-k] * uy[-1] - uy[-k] * ux[-1], ux[-k] * ux[-1] + uy[-k] * uy[-1])
+  r <- rle(abs(turn) <= tol)
   ends <- cumsum(r$lengths)
   starts <- ends - r$lengths + 1L
   idx_ok <- which(r$values)
   if (!length(idx_ok)) return(na_row())
-  # choose longest run meeting min_len-1 turning checks => segment length >= min_len
   lens <- r$lengths[idx_ok]
-  ok_idx <- which.max(lens)
-  if (lens[ok_idx] < (min_len - 1L)) return(na_row())
-  s_turn <- starts[idx_ok[ok_idx]]; e_turn <- ends[idx_ok[ok_idx]]
-  s <- s_turn     # start step index
-  e <- e_turn + 1 # end step index (because turn array shorter by 1)
-  if (all(vx[s:e] == 0 & vy[s:e] == 0)) return(na_row())  # a run of pauses
-  heading <- atan2(d[[yc]][s+1] - d[[yc]][s], d[[xc]][s+1] - d[[xc]][s])
-  row <- data.frame(id = d[[id]][s], time = d[[tc]][floor((s+e)/2)],
-                    heading = .wrap_to_2pi(heading))
+  j <- which.max(lens)
+  if (lens[j] + 1L < min_len) return(na_row())   # m turns span m + 1 steps
+  first <- mv[starts[idx_ok[j]]]                 # first moving step of the run
+  p1    <- mv[ends[idx_ok[j]] + 1L] + 1L         # end point of its last step
+  row <- data.frame(id = d[[id]][first], time = d[[tc]][floor((first + p1) / 2)],
+                    heading = .wrap_to_2pi(atan2(vy[first], vx[first])))
   if (return_coords) {
-    last_pt <- e_turn + 2L          # last point of the straight run
-    row$x_seg0 <- d[[xc]][s];        row$y_seg0 <- d[[yc]][s]
-    row$x_seg1 <- d[[xc]][last_pt];  row$y_seg1 <- d[[yc]][last_pt]
+    row$x_seg0 <- d[[xc]][first]; row$y_seg0 <- d[[yc]][first]
+    row$x_seg1 <- d[[xc]][p1];    row$y_seg1 <- d[[yc]][p1]
   }
   row
 }
@@ -377,7 +386,8 @@ setGeneric(
 }
 
 # ---- pca_axis rule -----------------------------------------------------------
-# Heading of first principal axis of positions or velocities; sign aligned with net displacement
+# Heading of the first principal axis of the positions (centred) or of the steps
+# (about zero); sign from the net displacement, NA when that gives none
 .set_headings_pca_axis_one <- function(d, id, tc, xc, yc, source = c("position","velocity"),
                                        return_coords = FALSE) {
   source <- match.arg(source)
@@ -389,23 +399,30 @@ setGeneric(
     }
     row
   }
+  if (nrow(d) < 2L) return(na_row())
   if (source == "position") {
     M <- cbind(d[[xc]], d[[yc]])
+    size2 <- max(abs(M))^2
+    M <- scale(M, center = TRUE, scale = FALSE)
+    S <- crossprod(M) / (nrow(M) - 1)
   } else {
-    if (nrow(d) < 2L) return(na_row())
+    # the axis of the steps about zero, not about their mean: a track of equal
+    # steps has their direction as its axis
     M <- cbind(diff(d[[xc]]), diff(d[[yc]]))
+    size2 <- max(abs(M))^2
+    S <- crossprod(M) / nrow(M)
   }
-  if (nrow(M) < 2L) return(na_row())
-  size2 <- max(abs(M))^2
-  M <- scale(M, center = TRUE, scale = FALSE)
-  S <- crossprod(M) / (nrow(M) - 1)
   eg <- eigen(S, symmetric = TRUE)
-  # no spread beyond rounding (same points, or same steps), so no axis
+  # no spread beyond rounding (same points, or no step moves), so no axis
   if (eg$values[1] <= .Machine$double.eps * size2) return(na_row())
-  ev <- eg$vectors[,1]
-  # align sign with net displacement
-  net <- c(d[[xc]][nrow(d)] - d[[xc]][1], d[[yc]][nrow(d)] - d[[yc]][1])
-  if (sum(ev * net) < 0) ev <- -ev
+  ev <- eg$vectors[, 1]
+  # the axis has no sign of its own: take the net displacement's, and give no
+  # heading when the net displacement has none along the axis
+  net  <- c(d[[xc]][nrow(d)] - d[[xc]][1], d[[yc]][nrow(d)] - d[[yc]][1])
+  proj <- sum(ev * net)
+  if (abs(proj) <= 64 * .Machine$double.eps * max(abs(c(d[[xc]], d[[yc]]))))
+    return(na_row())
+  if (proj < 0) ev <- -ev
   heading <- atan2(ev[2], ev[1])
   row <- data.frame(id = d[[id]][1], time = stats::median(d[[tc]], na.rm = TRUE),
                     heading = .wrap_to_2pi(heading))
@@ -554,6 +571,42 @@ setGeneric(
              heading = axis)
 }
 
+# Options each built-in rule reads from `...`. `return_coords` is accepted by
+# every built-in (the rules that do not draw construction coordinates ignore
+# it, as documented). Registered and function rules take their own `...`.
+.builtin_rule_options <- list(
+  crossing        = c("circ0", "circ1", "direction"),
+  distal          = "max_radius",
+  straight        = c("tol", "min_len"),
+  origin_mean     = "r_power",
+  net             = character(),
+  velocity_mean   = "weight_by",
+  velocity_axis   = "weight_by",
+  window_net      = c("window_n", "stride"),
+  goal_bias       = character(),
+  pca_axis        = "source",
+  ransac_straight = c("eps", "min_inliers", "n_iter"),
+  maxspeed_window = "window_n",
+  vm_fit          = "weight_by",
+  exit            = "r0",
+  entry           = "r0",
+  ring_tangent    = c("r_star", "smooth_n", "deriv_span", "direction")
+)
+
+.check_rule_options <- function(rule, dots) {
+  if (!length(dots)) return(invisible(NULL))
+  nms <- names(dots) %||% rep("", length(dots))
+  ok  <- c(.builtin_rule_options[[rule]], "return_coords")
+  bad <- !nzchar(nms) | !nms %in% ok
+  if (!any(bad)) return(invisible(NULL))
+  shown <- ifelse(nzchar(nms[bad]), paste0("`", nms[bad], "`"), "an unnamed argument")
+  rlang::abort(
+    sprintf("derive_headings(rule = \"%s\") does not take %s. It takes: %s.",
+            rule, paste(shown, collapse = ", "),
+            paste0("`", ok, "`", collapse = ", ")),
+    class = "radiatR_invalid_argument", arg = "...")
+}
+
 # ---- method for Tracks ------------------------------------------------------
 #' @param first_only logical; if TRUE, return only the first matching heading per trajectory
 #' @param carry optional character vector of columns from the source data to append via nearest time
@@ -570,7 +623,7 @@ setMethod("derive_headings", "Tracks", function(
 
   coords     <- match.arg(coords)
   on_missing <- match.arg(on_missing)
-  builtins <- c("crossing","distal","straight","origin_mean","net","velocity_mean","velocity_axis","window_net","goal_bias","pca_axis","ransac_straight","maxspeed_window","vm_fit","exit","entry","ring_tangent")
+  builtins <- names(.builtin_rule_options)
   if (missing(rule))
     stop("derive_headings: `rule` is required. Built-in rules: ",
          paste(builtins, collapse = ", "), ". Registered rules: ",
@@ -620,6 +673,7 @@ setMethod("derive_headings", "Tracks", function(
       stop(sprintf("Unknown heading rule '%s'. Register via register_heading_rule() or supply a function.", rule))
     }
   } else {
+    .check_rule_options(rule, dots)
     res <- switch(rule,
       crossing = {
         circ0 <- dots$circ0; circ1 <- dots$circ1
@@ -717,16 +771,21 @@ setMethod("derive_headings", "Tracks", function(
   n_total     <- nrow(res)
   miss        <- is.na(res$heading)
   n_missing   <- sum(miss)
-  missing_ids <- res$id[miss]
+  missing_ids <- unique(res$id[miss])
+  n_trials    <- length(unique(res$id))
 
   if (n_missing > 0L && on_missing != "quiet") {
-    pct <- round(100 * n_missing / n_total, 1)
-    msg <- sprintf(
-      paste0("derive_headings(rule = '%s'): %d of %d trials (%.1f%%) produced ",
-             "no heading and are excluded from circular statistics. Rule-based ",
-             "failures are often non-random and can bias results; inspect ",
-             "attr(x, \"missing_ids\")."),
-      rule_label, n_missing, n_total, pct)
+    pct  <- round(100 * n_missing / n_total, 1)
+    # a rule with several headings per trial (window_net, crossing) counts rows
+    what <- if (n_trials == n_total)
+      sprintf("%d of %d trials (%.1f%%) produced no heading", n_missing, n_total, pct)
+    else
+      sprintf("%d of %d headings (%.1f%%), from %d of %d trials, are missing",
+              n_missing, n_total, pct, length(missing_ids), n_trials)
+    msg <- paste0("derive_headings(rule = '", rule_label, "'): ", what,
+                  " and are excluded from circular statistics. Rule-based ",
+                  "failures are often non-random and can bias results; inspect ",
+                  "attr(x, \"missing_ids\").")
     if (on_missing == "error")
       stop(msg, " Set on_missing = \"warn\" or \"quiet\" to proceed.", call. = FALSE)
     warning(msg, call. = FALSE)
@@ -734,8 +793,8 @@ setMethod("derive_headings", "Tracks", function(
 
   # Return a durable headings_frame instead of a plain df + loose attrs. The
   # canonical display/heading metadata rides through dplyr verbs; the attrition
-  # attributes (n_total/n_missing/missing_ids) are re-attached for downstream
-  # used-vs-total reporting.
+  # attributes (n_total/n_missing/n_trials/missing_ids) are re-attached for
+  # downstream used-vs-total reporting.
   out <- new_headings_frame(
     res,
     display     = attr(res, "display", exact = TRUE) %||% circ_display(),
@@ -745,6 +804,7 @@ setMethod("derive_headings", "Tracks", function(
   )
   attr(out, "n_total")     <- n_total
   attr(out, "n_missing")   <- n_missing
+  attr(out, "n_trials")    <- n_trials
   attr(out, "missing_ids") <- missing_ids
   out
 })
