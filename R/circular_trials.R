@@ -105,7 +105,11 @@ get_trial_limits <- function(landmarks, track, file_tbl, vid_num) {
     ))
   ), .name_repair = "minimal")
 
+  # A trial that is not mapped has no landmark and no order, not the origin / 0.
   tl$video <- as.character(tl$video)
+  tl$order <- NA_character_
+  tl$vid_ord <- NA_character_
+  for (col in c("x0", "y0", "x1", "y1")) tl[[col]] <- NA_real_
 
   for (i in seq_len(num_trials)) {
     origin <- landmarks_df[(i * 2) - 1, c("x", "y"), drop = TRUE]
@@ -199,12 +203,16 @@ get_trial_limits <- function(landmarks, track, file_tbl, vid_num) {
   }
 
   if (radius_criterion == "first_past") {
-    if (!any(mapped$trans_rho > circ0, na.rm = TRUE))
-      warning("No points beyond inner radius for ", tl$video)
-    inner_idx <- which(mapped$trans_rho >= circ0)
-    inner_idx <- if (length(inner_idx)) inner_idx[1] else which.max(mapped$trans_rho)
-    outer_idx <- which(mapped$trans_rho >= circ1)
-    outer_idx <- if (length(outer_idx)) outer_idx[1] else which.max(mapped$trans_rho)
+    # the first point at or beyond each radius; none there, no landmark
+    first_at <- function(r, side) {
+      k <- which(mapped$trans_rho >= r)
+      if (length(k)) return(k[1L])
+      warning(sprintf("No points beyond %s radius for %s trial %d; its %s landmark is NA.",
+                      side, tl$video, i, side), call. = FALSE)
+      NA_integer_
+    }
+    inner_idx <- first_at(circ0, "inner")
+    outer_idx <- first_at(circ1, "outer")
   } else {
     inner_idx <- which.min(abs(mapped$trans_rho - circ0))
     outer_idx <- which.min(abs(mapped$trans_rho - circ1))
@@ -246,7 +254,8 @@ get_trial_limits <- function(landmarks, track, file_tbl, vid_num) {
 #' @param circ1 Outer radius threshold (default `0.2`).
 #' @param radius_criterion Strategy for choosing the radius landmarks. `"first_past"`
 #'   selects the first point beyond each threshold, while `"closest"` chooses the
-#'   closest sample to the specified radius.
+#'   closest sample to the specified radius. With `"first_past"`, a radius no
+#'   point reaches gives that landmark `NA`, with a warning.
 #' @param .report_oob Internal. When `TRUE` (default), emit a single message
 #'   summarising any track points that fall outside the unit circle. Callers that
 #'   loop over many files (e.g. [get_all_object_pos()]) set this to `FALSE` and
@@ -274,6 +283,16 @@ get_tracked_object_pos <- function(
     trial_limits, track,
     circ0 = 0.1, circ1 = 0.2, radius_criterion = c("first_past", "closest"),
     .report_oob = TRUE) {
+  .tracked_object_pos(trial_limits, track, circ0 = circ0, circ1 = circ1,
+                      radius_criterion = radius_criterion, .report_oob = .report_oob)$ts
+}
+
+# get_tracked_object_pos() and the trial_limits it filled in, which a caller
+# that combines files (get_all_object_pos()) keeps even when no trial is valid
+# (`ts` is then NULL).
+.tracked_object_pos <- function(trial_limits, track, circ0 = 0.1, circ1 = 0.2,
+                                radius_criterion = c("first_past", "closest"),
+                                .report_oob = TRUE) {
 
   radius_criterion <- match.arg(radius_criterion)
   track_df <- .coerce_xy_frame(track, "track")
@@ -334,9 +353,7 @@ get_tracked_object_pos <- function(
     }
   }
 
-  if (!length(trial_tracks)) {
-    return(NULL)
-  }
+  if (!length(trial_tracks)) return(list(ts = NULL, trial_limits = trial_limits))
 
   combined <- tibble::as_tibble(do.call(rbind, trial_tracks))
   combined <- tibble::add_column(
@@ -372,7 +389,7 @@ get_tracked_object_pos <- function(
   trajset@meta$oob_points <- oob_points
   trajset@meta$oob_trials <- oob_trials
 
-  trajset
+  list(ts = trajset, trial_limits = trial_limits)
 }
 
 #' Aggregate track positions across all videos in a manifest.
@@ -397,7 +414,8 @@ get_tracked_object_pos <- function(
 #'
 #' @return A `Tracks` combining the normalised observations for all valid
 #'   trials in the manifest. The aggregated trial limits are available via
-#'   `meta$trial_limits`. Each landmark and track file is tab-separated with
+#'   `meta$trial_limits`, which holds every trial of every file, with
+#'   `valid_track` `FALSE` for those dropped. Each landmark and track file is tab-separated with
 #'   frame, x and y in the first three fields of every line (further fields
 #'   are not read); a cell that is not a number stops with a
 #'   `radiatR_malformed_values` error, and a line with fewer than three fields
@@ -441,10 +459,11 @@ get_all_object_pos <- function(landmarks = NULL, track = NULL,
     trial_limits <- get_trial_limits(landmarks_df, track_df, file_tbl, i)
     # Suppress the per-file out-of-bounds notice; tally instead and report once
     # after the loop so a large manifest emits a single aggregated message.
-    ts <- get_tracked_object_pos(trial_limits, track_df, .report_oob = FALSE)
+    res <- .tracked_object_pos(trial_limits, track_df, .report_oob = FALSE)
+    trial_limits_list <- c(trial_limits_list, list(res$trial_limits))
+    ts <- res$ts
     if (!is.null(ts)) {
       trajsets <- c(trajsets, list(ts))
-      trial_limits_list <- c(trial_limits_list, list(ts@meta$trial_limits))
       oob_points <- oob_points + (ts@meta$oob_points %||% 0L)
       oob_trials <- oob_trials + (ts@meta$oob_trials %||% 0L)
     }

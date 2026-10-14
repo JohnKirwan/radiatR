@@ -309,6 +309,14 @@
 * `window_net` gives `NA` for a window whose first and last positions are the
   same (350 of 39631 windows in `cpunctatus`, which had heading 0), so
   `on_missing` now warns about them.
+* `get_tracked_object_pos()` and `get_all_object_pos()` with
+  `radius_criterion = "first_past"` give a landmark (`x0`/`y0`, `x1`/`y1` in
+  `meta$trial_limits`) of `NA`, with a warning naming the trial, when no point
+  of the trial reaches that radius. The farthest point was substituted, with
+  a warning only for the inner radius. A trial that is not mapped (it starts
+  too far from the centre) has `NA` landmarks and `order`/`vid_ord` in
+  `trial_limits`, not 0. `get_all_object_pos()` keeps the `trial_limits` rows
+  of a file none of whose trials is valid.
 
 ## Changes
 

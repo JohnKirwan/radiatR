@@ -159,3 +159,38 @@ test_that("the loader pipeline exposes `track`, not `animal_track`", {
     expect_false("animal_track" %in% args)
   }
 })
+
+test_that("first_past gives no landmark for a radius the track never reaches", {
+  landmarks <- data.frame(frame = c(1, 2), x = c(0, 1), y = c(0, 0))
+  track <- data.frame(frame = 1:5, x = c(0, .05, .12, .15, .1), y = 0)  # past .1, never .2
+  file_tbl <- tibble::tibble(basename = "v", arc = 0, type = "stimulus",
+                             landmark = "v_point01.txt", track = "v_point02.txt")
+  tl <- get_trial_limits(landmarks, track, file_tbl, vid_num = 1)
+  expect_warning(ts <- get_tracked_object_pos(tl, track, circ0 = .1, circ1 = .2),
+                 "outer landmark is NA")
+  lim <- ts@meta$trial_limits
+  expect_equal(lim$x0, .12)
+  expect_true(is.na(lim$x1) && is.na(lim$y1))
+})
+
+test_that("get_all_object_pos keeps the trial_limits of a file with no valid trial", {
+  landmarks <- data.frame(frame = c(1, 2, 6, 7), x = c(0, 1, 0, 1), y = c(0, 0, 0, 0))
+  good <- data.frame(frame = 1:10, x = c(0, .5, .8, .9, .3, 0, .5, .8, .9, .2), y = 0)
+  far  <- data.frame(frame = 1:10, x = 5, y = 0)                    # every trial invalid
+  tmp <- withr::local_tempdir()
+  rows <- lapply(c("good", "far"), function(base) {
+    utils::write.table(landmarks, file.path(tmp, paste0(base, "_point01.txt")),
+                       sep = "\t", col.names = FALSE, row.names = FALSE)
+    utils::write.table(get(base), file.path(tmp, paste0(base, "_point02.txt")),
+                       sep = "\t", col.names = FALSE, row.names = FALSE)
+    tibble::tibble(basename = base, landmark = paste0(base, "_point01.txt"),
+                   track = paste0(base, "_point02.txt"))
+  })
+  ts <- suppressWarnings(get_all_object_pos(file_tbl = do.call(rbind, rows), track_dir = tmp))
+  lim <- ts@meta$trial_limits
+  expect_equal(nrow(lim), 4L)
+  expect_identical(lim$valid_track, c(TRUE, TRUE, FALSE, FALSE))
+  expect_true(all(is.na(lim[3:4, c("x0", "y0", "x1", "y1")])))
+  expect_true(all(is.na(lim$order[3:4])))
+  expect_type(lim$order, "character")
+})
