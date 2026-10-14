@@ -140,3 +140,25 @@ of the combined table passed to \code{tracks()} (after any rows removed by
 \code{on_invalid = "drop"}), not line numbers in a file.
 }
 
+\examples{
+df <- data.frame(
+  id   = rep(c("a", "b"), each = 3),
+  time = rep(1:3, 2),
+  x    = c(0, 0.3, 0.6, 0, -0.2, -0.5),
+  y    = c(0, 0.2, 0.5, 0, 0.3, 0.7)
+)
+ts <- tracks(df, x = "x", y = "y")
+ts
+length(ts)
+ts["b"]
+
+# combine objects with the same column mapping
+more <- tracks(data.frame(id = "c", time = 1:2, x = c(0, 0.4), y = c(0, -0.4)),
+               x = "x", y = "y")
+length(c(ts, more))
+
+# pixel coordinates: arena centre (320, 240), edge 200 px from it
+px <- data.frame(id = "d", time = 1:3,
+                 x = c(320, 380, 450), y = c(240, 280, 330))
+tracks(px, x = "x", y = "y", origin = c(320, 240), radius = 200)
+}

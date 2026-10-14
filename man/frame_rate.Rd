@@ -31,6 +31,11 @@ the object's metadata; the time/frame column is not altered. It converts
 frame indices only: time that is already real (POSIXct, or numeric seconds
 loaded with `read_tracks(time_type = "seconds")`) is never divided by it.
 }
+\examples{
+frame_rate(cpunctatus)
+x <- set_frame_rate(cpunctatus, 25)
+frame_rate(x)
+}
 \seealso{
 [elapsed_seconds()], [track_duration()]
 }

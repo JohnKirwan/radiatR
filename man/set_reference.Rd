@@ -27,6 +27,15 @@ columns (`rel_theta`/`rel_x`/`rel_y`) from the unit-circle position via
 recorded in [transform_history()]. This is the drift-safe way to change the
 reference frame -- prefer it over a manual [apply_transform()].
 }
+\examples{
+x <- cpunctatus[1:2]
+# one reference for every trajectory, in unit-circle radians
+reference(set_reference(x, pi / 2))
+# or one per trajectory, named by id; a reference of 0 makes the
+# relative frame equal the absolute one
+x <- set_reference(x, stats::setNames(c(0, pi), ids(x)))
+head(as.data.frame(x)[c("trial_id", "abs_theta", "rel_theta")])
+}
 \seealso{
 [reference()], [derive_coords()]
 }

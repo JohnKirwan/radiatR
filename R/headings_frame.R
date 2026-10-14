@@ -21,6 +21,10 @@
 #'
 #' @seealso \code{stack_headings}, \code{add_stacked_headings},
 #'   \code{\link{radiate}}
+#' @examples
+#' d <- data.frame(trial = 1:5, angle = c(10, 45, 80, 350, 20))
+#' hf <- headings_frame(d, angle, units = "degrees")
+#' hf
 #' @importFrom rlang ensym as_string
 #' @export
 headings_frame <- function(data,
@@ -123,6 +127,13 @@ dplyr_reconstruct.headings_frame <- function(data, template)
 #' @param x A `headings_frame` or plain data frame.
 #' @return `hf_display()` a [circ_display()] object; `hf_heading_col()` /
 #'   `hf_coords()` a string; `hf_colour_col()` a string or `NULL`.
+#' @examples
+#' hf <- headings_frame(data.frame(h = c(0.1, 1.2, 3)), h, units = "radians")
+#' hf_heading_col(hf)
+#' hf_coords(hf)
+#' hf_display(hf)
+#' # a plain data frame gives the defaults
+#' hf_heading_col(data.frame(h = 1))
 #' @name hf_accessors
 #' @export
 hf_display <- function(x) attr(x, "display", exact = TRUE) %||% circ_display()
@@ -225,6 +236,10 @@ bin_angles <- function(angles, width, phase = 0) {
 #'   requested. Row count is unchanged.
 #'
 #' @seealso \code{\link{headings_frame}}, \code{add_stacked_headings}
+#' @examples
+#' d <- data.frame(heading = bin_angles(c(0.10, 0.12, 0.13, 1.50, 1.52),
+#'                                      width = pi / 18))
+#' stack_headings(d, col = "heading")
 #' @export
 stack_headings <- function(data,
                            col       = NULL,

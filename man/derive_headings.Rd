@@ -98,3 +98,13 @@ and a track that stays at the origin (\code{distal}). \code{window_net}
 and \code{maxspeed_window} shrink their window to fit a track shorter than
 \code{window_n}.
 }
+\examples{
+h <- derive_headings(cpunctatus, rule = "distal")
+head(h)
+# ignore tracking outliers beyond the circumference and keep the point used
+head(derive_headings(cpunctatus, rule = "distal", max_radius = 1,
+                     return_coords = TRUE))
+# per-trial reference frame, carrying a condition column for grouping
+head(derive_headings(cpunctatus, rule = "net", coords = "relative",
+                     carry = "arc"))
+}

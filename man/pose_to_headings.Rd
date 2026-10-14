@@ -48,3 +48,11 @@ data.  The output is compatible with \code{\link{circ_dispersion}},
 \code{\link{sector_summary}}, \code{\link{add_heading_points}}, and
 \code{\link{add_angle_rose}}.
 }
+\examples{
+pose <- data.frame(
+  id     = "fish1", frame = 1:4,
+  head_x = c(0.1, 0.2, 0.2, 0.1), head_y = c(0.0, 0.1, 0.2, 0.3),
+  tail_x = c(0.0, 0.1, 0.2, 0.2), tail_y = c(0.0, 0.0, 0.1, 0.2)
+)
+pose_to_headings(pose, anterior = "head", posterior = "tail")
+}
