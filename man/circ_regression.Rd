@@ -52,6 +52,17 @@ interface. The response is a heading in radians (unit-circle convention); the
 right-hand side supplies one or more linear covariates (factors and
 interactions are expanded by \code{model.matrix}).
 }
+\examples{
+# Headings whose mean turns with x: mu0 = 1, slope 1.5
+set.seed(1)
+x <- runif(60, -1, 1)
+noise <- as.numeric(circular::rvonmises(60, circular::circular(0), kappa = 8))
+hd <- data.frame(x = x, heading = (1 + 2 * atan(1.5 * x) + noise) \%\% (2 * pi))
+fit <- circ_regression(hd, heading ~ x)
+fit
+summary(fit)
+predict(fit, newdata = data.frame(x = c(-1, 0, 1)))
+}
 \references{
 Fisher, N. I. & Lee, A. J. (1992). Regression models for an
   angular response. \emph{Biometrics} 48, 665-677. Mardia, K. V. & Jupp, P. E.
