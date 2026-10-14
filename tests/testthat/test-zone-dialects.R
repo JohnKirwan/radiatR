@@ -427,3 +427,204 @@ test_that("EthoVision: a folder of trials needs id_collision = 'namespace'", {
   expect_identical(vapply(ts@meta$source_meta, `[[`, "", "path"), p)
   expect_identical(sum(ts@meta$attrition$masked), 62L)
 })
+
+# ---- durations -----------------------------------------------------------------
+
+duration <- function(v, decimal = ".")
+  radiatR:::.parse_duration(v, "Time", "f.csv", "anymaze", decimal)
+
+test_that("a duration H:MM:SS.fff is read as seconds", {
+  expect_equal(duration(c("0:00:00.000", "0:00:00.320", "0:01:00.016", "1:02:03.5",
+                          "100:00:00", " 0:00:01 ")),
+               c(0, 0.32, 60.016, 3723.5, 360000, 1))
+  expect_equal(duration(c("0:00:00,320", "1:02:03,5"), decimal = ","), c(0.32, 3723.5))
+  expect_identical(duration(c("0:00:01", "", NA, "NA")), c(1, NA, NA, NA))
+})
+
+test_that("plain numbers are refused, as text or as numbers: their unit is unknown", {
+  for (v in list(c("0", "0.32", "60"), c(0, 0.5), 1:2)) {
+    e <- cond(duration(v))
+    expect_s3_class(e, "radiatR_malformed_values")
+    expect_match(conditionMessage(e), "as.difftime(<seconds>, units = \"secs\")", fixed = TRUE)
+  }
+  expect_equal(duration(as.difftime(c(0, 0.5), units = "secs")), c(0, 0.5))
+})
+
+test_that("anything else is malformed, and the two forms are not mixed", {
+  for (bad in list("0:60:00", "0:00:61", "12:30", "-0:00:01", "0:0:01", "noon", "0:00:01.",
+                   "0:00:01,5")) {
+    e <- cond(duration(c("0:00:00.000", bad)))
+    expect_s3_class(e, "radiatR_malformed_values")
+    expect_match(conditionMessage(e), "rows: 2\n")
+    expect_match(conditionMessage(e), "a duration H:MM:SS.fff")
+  }
+  e <- cond(duration(c("0:00:01", "2", "0:00:03", "x")))
+  expect_match(conditionMessage(e), "rows: 2, 4\n")
+  expect_s3_class(cond(duration(c("1", "x"))), "radiatR_malformed_values")
+  expect_s3_class(cond(duration("0:00:01.5", decimal = ",")), "radiatR_malformed_values")
+})
+
+# ---- ANY-maze dialect ----------------------------------------------------------
+
+am_fixture <- function() testthat::test_path("fixtures", "anymaze_synthetic.csv")
+am_tracks <- function(x = am_fixture(), ..., on_invalid = "drop")
+  quiet(read_tracks(x, dialect = "anymaze", dialect_args = list(...), on_invalid = on_invalid))
+# A copy of the synthetic ANY-maze file with its lines rewritten by `edit`.
+am_edited <- function(edit, env = parent.frame()) {
+  p <- withr::local_tempfile(fileext = ".csv", .local_envir = env)
+  writeLines(edit(readLines(am_fixture())), p)
+  p
+}
+
+test_that("ANY-maze: the export layout loads as one track in seconds", {
+  ts <- am_tracks()
+  d <- rows_of(ts)
+  expect_identical(nrow(d), 11L)
+  expect_identical(unique(as.character(d[[ts@cols$id]])), "1")
+  expect_equal(d[[ts@cols$time]], c(0.32, 0.352, 0.384, 1, 2.016, 5.504, 10, 30.25, 59.984,
+                                    60.016, 3723.5))
+  expect_equal(c(d[[ts@cols$x]][1], d[[ts@cols$y]][1]), c(410, 352))
+  expect_identical(ts@meta$time_unit, "seconds")
+  expect_false("source_meta" %in% names(ts@meta))
+  expect_false(any(grepl("^in_|^In ", names(d))))
+})
+
+test_that("ANY-maze: the blank first sample is counted, not stripped", {
+  a <- am_tracks()@meta$attrition
+  expect_identical(a$point, "center")
+  expect_identical(c(a$masked, a$frames, a$frames_no_position), c(1L, 12L, 1L))
+  e <- cond(quiet(read_tracks(am_fixture(), dialect = "anymaze")))
+  expect_s3_class(e, "radiatR_invalid_rows")
+  # a first row that has a position is a sample like any other
+  full <- am_edited(function(x) sub("^0:00:00.000,,,", "0:00:00.000,409,351,", x))
+  expect_identical(nrow(rows_of(am_tracks(full, on_invalid = "error"))), 12L)
+})
+
+test_that("the attrition message offers partial = 'mean' only where points can be averaged", {
+  said <- function(...) {
+    msg <- NULL
+    withCallingHandlers(cond(read_tracks(...)), radiatR_attrition = function(m) {
+      msg <<- conditionMessage(m)
+      invokeRestart("muffleMessage")
+    })
+    msg
+  }
+  # anymaze reads one point and has no `partial` argument
+  one <- said(am_fixture(), dialect = "anymaze")
+  expect_match(one, "1 of 12 row(s) have no position", fixed = TRUE)
+  expect_match(one, "on_invalid = \"drop\"", fixed = TRUE)
+  expect_no_match(one, "partial = \"mean\"", fixed = TRUE)
+  expect_no_match(said(fx("ethovision_trial.txt"), dialect = "ethovision"),
+                  "partial = \"mean\"", fixed = TRUE)
+  two <- said(ev_multipoint(), dialect = "ethovision",
+              dialect_args = list(bodypart = c("nose", "tail")))
+  expect_match(two, "dialect_args = list(partial = \"mean\")", fixed = TRUE)
+})
+
+test_that("ANY-maze: malformed cells and short rows stop the load, naming where", {
+  e <- cond(am_tracks(am_edited(function(x) sub(",411,353,", ",4l1,353,", x))))
+  expect_s3_class(e, "radiatR_malformed_values")
+  expect_match(conditionMessage(e), "Column 'Centre position X'")
+  expect_match(conditionMessage(e), "rows: 3\n")
+  t <- cond(am_tracks(am_edited(function(x) sub("^0:00:01.000,", "0:00:61.000,", x))))
+  expect_s3_class(t, "radiatR_malformed_values")
+  expect_match(conditionMessage(t), "Column 'Time'")
+  r <- cond(am_tracks(am_edited(function(x) { x[4] <- "0:00:00.352,411"; x })))
+  expect_s3_class(r, "radiatR_dialect_error")
+  expect_match(conditionMessage(r), "line 4 of .* has 2 field\\(s\\); its header names 8")
+  n <- cond(am_tracks(am_edited(function(x) x[1])))
+  expect_match(conditionMessage(n), "no data rows")
+})
+
+test_that("ANY-maze: the columns it reads must be there", {
+  old <- am_edited(function(x) sub("Centre position X,Centre position Y", "X Centre,Y Centre", x))
+  e <- cond(am_tracks(old))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "no `Centre position X` / `Centre position Y` columns")
+  expect_match(conditionMessage(e), "X Centre, Y Centre, In Q1")
+  us <- am_edited(function(x) gsub("Centre position", "Center position", x))
+  expect_identical(nrow(rows_of(am_tracks(us))), 11L)
+  clock <- am_edited(function(x) sub("^Time,", "Clock,", x))
+  expect_match(conditionMessage(cond(am_tracks(clock))), "no `Time` column")
+  expect_equal(rows_of(am_tracks(clock, time_col = "clock"))[[2]][1], 0.32)
+  expect_s3_class(cond(am_tracks(time_col = "Elapsed")), "radiatR_dialect_error")
+})
+
+test_that("ANY-maze: a named id column keeps its text, whatever its case", {
+  fish <- am_edited(function(x)
+    paste0(x, c(",Fish", rep(",1.1", 6), rep(",1.10", 6))))
+  ts <- am_tracks(fish, id_col = "fish")
+  expect_identical(sort(unique(as.character(rows_of(ts)[[ts@cols$id]]))), c("1.1", "1.10"))
+  expect_identical(as.vector(table(rows_of(ts)[[ts@cols$id]])), c(5L, 6L))
+  expect_s3_class(cond(am_tracks(fish, id_col = "animal")), "radiatR_dialect_error")
+})
+
+test_that("ANY-maze: a semicolon file with decimal commas reads the same", {
+  eu <- am_edited(function(x) {
+    x <- gsub("(:[0-9]{2})\\.([0-9]{3});", "\\1,\\2;", gsub(",", ";", x, fixed = TRUE))
+    sub(",320;410;", ",320;410,5;", x, fixed = TRUE)
+  })
+  d <- rows_of(am_tracks(eu))
+  expect_equal(d[[2]][1:2], c(0.32, 0.352))
+  expect_equal(d[[3]][1], 410.5)
+})
+
+test_that("ANY-maze: a file with every field quoted reads the same", {
+  quoted <- am_edited(function(x) gsub("([^,]+)", "\"\\1\"", x))
+  expect_equal(rows_of(am_tracks(quoted)), rows_of(am_tracks()))
+})
+
+test_that("ANY-maze: latin-1 text, a byte-order mark and blank last lines read the same", {
+  ref <- rows_of(am_tracks())
+  l <- readLines(am_fixture())
+  # a zone named "Zone m<e-acute>diane", written in latin-1
+  latin <- withr::local_tempfile(fileext = ".csv")
+  writeBin(c(charToRaw(sub("In Platform", "In Zone m", l[1], fixed = TRUE)), as.raw(0xe9),
+             charToRaw(paste0("diane\n", paste(l[-1], collapse = "\n"), "\n"))), latin)
+  expect_equal(rows_of(am_tracks(latin)), ref)
+  bom <- withr::local_tempfile(fileext = ".csv")
+  writeBin(c(as.raw(c(0xef, 0xbb, 0xbf)),
+             charToRaw(paste0(paste(l, collapse = "\r\n"), "\r\n  \r\n\r\n"))), bom)
+  expect_equal(rows_of(am_tracks(bom)), ref)
+})
+
+test_that("ANY-maze: semicolons with decimal points in the times read the same", {
+  # whole-number positions leave the durations as the only decimal evidence
+  semi <- am_edited(function(x) gsub(",", ";", x, fixed = TRUE))
+  expect_equal(rows_of(am_tracks(semi)), rows_of(am_tracks()))
+})
+
+test_that("ANY-maze: a time given as difftime or hms is converted, not read as seconds", {
+  df <- utils::read.csv(am_fixture(), check.names = FALSE)
+  df$Time <- as.difftime(seq_len(nrow(df)), units = "mins")
+  ts <- am_tracks(df)
+  expect_equal(rows_of(ts)[[ts@cols$time]][1:2], c(120, 180))
+  skip_if_not_installed("hms")
+  df$Time <- hms::hms(seconds = seq_len(nrow(df)) * 1.5)
+  ts <- am_tracks(df)
+  expect_equal(rows_of(ts)[[ts@cols$time]][1:2], c(3, 4.5))
+})
+
+test_that("ANY-maze: a table in memory loads as the file does; a numeric time is refused", {
+  df <- utils::read.csv(am_fixture(), check.names = FALSE)
+  expect_equal(rows_of(am_tracks(df)), rows_of(am_tracks()))
+  df$Time <- seq(0, by = 0.5, length.out = nrow(df))
+  e <- cond(am_tracks(df))
+  expect_s3_class(e, "radiatR_malformed_values")
+  expect_match(conditionMessage(e), "Column 'Time'")
+  df$Time <- as.difftime(df$Time, units = "secs")
+  ts <- am_tracks(df)
+  expect_equal(rows_of(ts)[[ts@cols$time]][1:2], c(0.5, 1))
+  expect_identical(ts@meta$time_unit, "seconds")
+})
+
+test_that("ANY-maze: removed arguments are refused with the reason", {
+  for (args in list(list(zone = "nose"), list(bodypart = "head"))) {
+    e <- cond(do.call(am_tracks, c(list(am_fixture()), args)))
+    expect_s3_class(e, "radiatR_dialect_error")
+    expect_match(conditionMessage(e), "reads the centre position")
+  }
+  e <- cond(am_tracks(skip_units_row = FALSE))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "`skip_units_row` was removed")
+})
