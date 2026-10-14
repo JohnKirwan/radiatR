@@ -564,8 +564,11 @@ guess_columns <- function(data, mapping = list()) {
 
 # Sniff the field separator (and, for ';', the decimal mark) from a delimited
 # file's first non-empty lines. Returns list(delim, decimal). Chooses the
-# candidate that appears most often AND consistently across lines; ties or no
-# signal fall back to comma + dot. ';' implies the European decimal comma,
+# candidate that appears most often AND consistently across lines; fields are
+# counted as .check_fields() counts them (a separator inside quotes is not
+# one); a header that alone differs is left to .check_fields(), which names
+# it; no signal falls back to comma + dot (read_tracks() names a file that
+# then reads as one column). ';' implies the European decimal comma,
 # unless the lines read show decimal points and no decimal comma: a dotted
 # number that cannot be digit grouping ("1.5", "0.125"; not "1.234").
 # `lines` are the file's lines when the caller has read (and decoded) them.
@@ -581,24 +584,42 @@ guess_columns <- function(data, mapping = list()) {
   }
   lines <- utils::head(lines, 20L)
   lines <- lines[nzchar(trimws(lines))]
-  rows <- lines
+  sample <- lines
   lines <- utils::head(lines, 5L)
   if (!length(lines)) return(default)
 
   cands <- c(",", ";", "\t", "|")
-  counts <- vapply(cands, function(d) {
-    vapply(lines, function(ln) lengths(regmatches(ln, gregexpr(d, ln, fixed = TRUE))),
-           integer(1))
-  }, integer(length(lines)))
-  if (is.null(dim(counts))) counts <- matrix(counts, nrow = length(lines))
+  # Times each candidate separates fields on each line, counted as
+  # .check_fields() counts them: a separator inside quotes is part of a field,
+  # and a line that continues a quoted field gives NA (dropped). Up to the 20
+  # kept lines are counted so that continuations still leave 5 counts.
+  per <- lapply(cands, function(d) {
+    con <- textConnection(sample)
+    on.exit(close(con))
+    n <- utils::count.fields(con, sep = d, quote = "\"", comment.char = "",
+                             blank.lines.skip = TRUE)
+    n[!is.na(n)] - 1L
+  })
+  k <- min(5L, lengths(per))
+  if (k == 0L) return(default)   # an unclosed quote: leave it to .check_fields()
+  counts <- matrix(vapply(per, function(n) n[seq_len(k)], integer(k)), nrow = k)
 
   # a separator is viable only if it appears at least once and the same number
   # of times on every line we looked at (consistency guard)
-  viable <- apply(counts, 2L, function(col) col[1L] > 0 && length(unique(col)) == 1L)
+  consistent <- function(m) apply(m, 2L, function(col) col[1L] > 0 && length(unique(col)) == 1L)
+  first <- 1L
+  viable <- consistent(counts)
+  # A header that alone differs (a table written with row names): take the
+  # rows' separator and leave the header to .check_fields(), which names it.
+  # It must separate the header too, or a ';' file's decimal commas could win.
+  if (!any(viable) && nrow(counts) > 1L) {
+    first <- 2L
+    viable <- consistent(counts[-1L, , drop = FALSE]) & counts[1L, ] > 0L
+  }
   if (!any(viable)) return(default)
-  best <- cands[which(viable)][which.max(counts[1L, viable])]
+  best <- cands[which(viable)][which.max(counts[first, viable])]
   if (best != ";") return(list(delim = best, decimal = "."))
-  cells <- gsub("^\"|\"$", "", trimws(unlist(strsplit(rows, ";", fixed = TRUE))))
+  cells <- gsub("^\"|\"$", "", trimws(unlist(strsplit(sample, ";", fixed = TRUE))))
   comma <- grepl("^[-+]?[0-9]*,[0-9]+$", cells)
   # a duration's fraction ("0:00:00.320", as ANY-maze writes time) is a
   # decimal point too
@@ -1590,6 +1611,18 @@ read_tracks <- function(x,
       }
     }
   }
+
+  # A delimited file that came out as one column was not split: say so rather
+  # than ask for columns it does not have. (A one-column sheet or Arrow file is
+  # a real one-column table; the generic error below stands for it.)
+  user_cols <- setdiff(names(df), c("..source_file", "..source_path"))
+  if (is.null(angle) && is.null(dialect) && is.character(x) && length(user_cols) == 1L &&
+      !tolower(tools::file_ext(x[1L])) %in% c("xlsx", "xls", "parquet", "feather"))
+    radiatR_abort_malformed_file(
+      x[1L], "one_column", columns = user_cols, detail = sprintf(paste0(
+        "read as a single column ('%s'); no separator (, ; tab |) is used the ",
+        "same number of times on its lines. Name it with read_opts = list(delim = )."),
+        user_cols))
 
   if (is.null(angle) && (is.null(xcol) || is.null(ycol)))
     stop("Need either an angle column or both x and y columns; specify mapping=")

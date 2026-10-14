@@ -732,3 +732,33 @@ test_that("a byte that is not UTF-8 does not stop the separator sniff", {
              charToRaw("\n1;2;0,2;0,3;b\n")), p2)
   expect_identical(.guess_delim(p2), list(delim = ";", decimal = ","))
 })
+
+test_that("the separator sniff ignores separators inside quotes", {
+  p <- withr::local_tempfile(fileext = ".csv")
+  writeBin(charToRaw(paste0("id;time;x;y;note\n1;1;0,1;0,1;\"a; b\"\n",
+                            "1;2;0,2;0,2;c\n1;3;0,3;0,3;\"d; e; f\"\n")), p)
+  expect_identical(.guess_delim(p), list(delim = ";", decimal = ","))
+  expect_equal(read_tracks(p)@data$x, c(.1, .2, .3))
+  q <- withr::local_tempfile(fileext = ".csv")
+  writeBin(charToRaw(paste0("id,time,x,y,note\n1,1,.1,.1,\"a, b\"\n",
+                            "1,2,.2,.2,c\n1,3,.3,.3,\"d,\ne, f\"\n")), q)   # and across a line
+  expect_identical(.guess_delim(q)$delim, ",")
+  expect_equal(nrow(read_tracks(q)@data), 3L)
+})
+
+test_that("a tab file written with row names is named as such, not read as one column", {
+  p <- withr::local_tempfile(fileext = ".tsv")
+  utils::write.table(data.frame(id = 1, time = 1:3, x = c(.1, .2, .3), y = .1), p,
+                     sep = "\t", quote = FALSE)            # row.names = TRUE
+  e <- expect_error(read_tracks(p), class = "radiatR_malformed_file")
+  expect_match(conditionMessage(e), "row names")
+})
+
+test_that("a file read as one column says the separator was not found", {
+  p <- withr::local_tempfile(fileext = ".csv")
+  # tabs and spaces mixed: no candidate is used consistently, so one column
+  writeBin(charToRaw("id\ttime x\ty\n1 1\t0.1\t0.2\n1\t2 0.2 0.3\n1 3 0.3\t0.4\n"), p)
+  e <- expect_error(read_tracks(p), class = "radiatR_malformed_file")
+  expect_identical(e$problem, "one_column")
+  expect_match(conditionMessage(e), "read_opts")
+})
