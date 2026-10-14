@@ -212,3 +212,218 @@ test_that("EthoVision reader: column names must be present and distinct", {
     expect_match(conditionMessage(e), "line 32 of .* should name the columns")
   }
 })
+
+# ---- EthoVision dialect --------------------------------------------------------
+
+ev_tracks <- function(x = fx("ethovision_trial.txt"), ..., on_invalid = "drop")
+  quiet(read_tracks(x, dialect = "ethovision", dialect_args = list(...),
+                    on_invalid = on_invalid))
+# The center positions of the real excerpt as numbers (NA where "-").
+ev_center <- function() {
+  d <- ev_read(fx("ethovision_trial.txt"))
+  list(x = as.numeric(d[["X center"]]), y = as.numeric(d[["Y center"]]))
+}
+# The real excerpt with nose and tail points added (not written by EthoVision):
+# nose = center + (1, 2), tail = center - (1, 2); the nose has no x in row 2.
+ev_multipoint <- function(env = parent.frame()) {
+  l <- ev_lines()
+  ctr <- ev_center()
+  cell <- function(v) ifelse(is.na(v), "\"-\"", sprintf("%.4f", v))
+  nose_x <- ctr$x + 1
+  nose_x[2] <- NA
+  add <- paste(cell(nose_x), cell(ctr$y + 2), cell(ctr$x - 1), cell(ctr$y - 2), sep = ";")
+  ev_file(c(l[1:31],
+            paste0(l[32], "\"X nose\";\"Y nose\";\"X tail\";\"Y tail\";"),
+            paste0(l[33], "\"(mm)\";\"(mm)\";\"(mm)\";\"(mm)\";"),
+            paste0(l[-(1:33)], add, ";")), env = env)
+}
+
+test_that("EthoVision: the real export loads as one track in seconds", {
+  ts <- ev_tracks()
+  d <- rows_of(ts)
+  expect_identical(nrow(d), 40L)
+  expect_identical(unique(as.character(d[[ts@cols$id]])), "1")
+  expect_equal(d[[ts@cols$time]][1:2], c(1.501, 2.002))
+  expect_equal(c(d[[ts@cols$x]][1], d[[ts@cols$y]][1]), c(-47.5671, 36.301))
+  expect_identical(ts@meta$time_unit, "seconds")
+  expect_true(all(c("center_x", "center_y") %in% names(d)))
+  expect_equal(d$center_x, d[[ts@cols$x]])
+})
+
+test_that("EthoVision: the header block and units are kept as source_meta", {
+  sm <- ev_tracks()@meta$source_meta
+  expect_length(sm, 1L)
+  expect_identical(sm[[1]]$source, "ethovision_trial.txt")
+  expect_identical(sm[[1]]$header[["Subject name"]], "Subject 1")
+  expect_identical(sm[[1]]$header[["Trial name"]], "Trial     1")
+  expect_identical(sm[[1]]$units[["X center"]], "(mm)")
+})
+
+test_that("EthoVision: samples without a position are counted and stop the default load", {
+  a <- ev_tracks()@meta$attrition
+  expect_identical(a$point, "center")
+  expect_identical(c(a$masked, a$frames, a$frames_no_position), c(31L, 71L, 31L))
+  msgs <- list()
+  e <- withCallingHandlers(
+    cond(read_tracks(fx("ethovision_trial.txt"), dialect = "ethovision")),
+    radiatR_attrition = function(m) {
+      msgs[[length(msgs) + 1L]] <<- conditionMessage(m)
+      invokeRestart("muffleMessage")
+    })
+  expect_s3_class(e, "radiatR_invalid_rows")
+  expect_length(msgs, 1L)
+  expect_match(msgs[[1]], "31 of 71 row")
+})
+
+test_that("EthoVision: a malformed cell is reported by header, row and file", {
+  p <- ev_data_edited(function(x) sub(";36\\.301;", ";36.3o1;", x))
+  e <- cond(read_tracks(p, dialect = "ethovision", on_invalid = "drop"))
+  expect_s3_class(e, "radiatR_malformed_values")
+  expect_match(conditionMessage(e), "Column 'Y center'")
+  expect_match(conditionMessage(e), "rows: 1\n")
+  expect_match(conditionMessage(e), "36.3o1", fixed = TRUE)
+})
+
+test_that("EthoVision: a decimal-comma export gives the same positions", {
+  comma <- ev_data_edited(function(x) gsub(".", ",", x, fixed = TRUE))
+  expect_equal(rows_of(ev_tracks(comma))$center_x, rows_of(ev_tracks())$center_x)
+  # a decimal point in a decimal-comma file is malformed, not a number
+  mixed <- ev_data_edited(function(x) {
+    x <- gsub(".", ",", x, fixed = TRUE)
+    x[2] <- sub("^2,002;", "2.002;", x[2])
+    x
+  })
+  expect_s3_class(cond(ev_tracks(mixed)), "radiatR_malformed_values")
+})
+
+test_that("EthoVision: the time column is Trial time, in seconds, unless named", {
+  expect_equal(rows_of(ev_tracks(time_col = "Recording time"))[[2]][1:2], c(0, 0.5))
+  expect_equal(rows_of(ev_tracks(time_col = "recording_time"))[[2]][1:2], c(0, 0.5))
+  l <- ev_lines()
+  minutes <- ev_file(replace(l, 33, sub("^\"\\(s\\)\"", "\"(min)\"", l[33])))
+  e <- cond(ev_tracks(minutes))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "'Trial time' is in '(min)'", fixed = TRUE)
+  expect_identical(nrow(rows_of(ev_tracks(minutes, time_col = "Recording time"))), 40L)
+  for (bad in list("Elapsed", c("Trial time", "Recording time"), 1))
+    expect_s3_class(cond(ev_tracks(time_col = bad)), "radiatR_dialect_error")
+  no_time <- ev_file(replace(l, 32, sub("Trial time", "Clock", l[32])))
+  expect_match(conditionMessage(cond(ev_tracks(no_time))), "no `Trial time` column")
+})
+
+test_that("EthoVision: bodypart selects points; the default is the center", {
+  p <- ev_multipoint()
+  ctr <- ev_center()
+  keep <- !is.na(ctr$x)
+  d <- rows_of(ev_tracks(p))
+  expect_equal(d$center_x, ctr$x[keep])
+  expect_true(all(c("nose_x", "nose_y", "tail_x", "tail_y") %in% names(d)))
+  for (bp in list("center", "centre", "Center"))
+    expect_equal(rows_of(ev_tracks(p, bodypart = bp))$center_x, ctr$x[keep])
+  nose <- ev_tracks(p, bodypart = "Nose")
+  expect_equal(rows_of(nose)[[nose@cols$x]], (ctr$x + 1)[keep][-2])
+  expect_identical(nose@meta$attrition$masked, 32L)
+})
+
+test_that("EthoVision: several points average; one missing coordinate masks the point", {
+  p <- ev_multipoint()
+  ctr <- ev_center()
+  keep <- !is.na(ctr$x)
+  both <- ev_tracks(p, bodypart = c("nose", "tail"))
+  # the added points are written to four decimals
+  expect_equal(rows_of(both)[[both@cols$x]], ctr$x[keep][-2], tolerance = 1e-4)
+  expect_equal(rows_of(both)[[both@cols$y]], ctr$y[keep][-2], tolerance = 1e-4)
+  expect_identical(both@meta$attrition$masked, c(32L, 31L))
+  expect_identical(both@meta$attrition$frames_no_position, c(32L, 32L))
+  # row 2: the nose has a y but no x, so the position is the tail's alone
+  mean <- ev_tracks(p, bodypart = c("nose", "tail"), partial = "mean")
+  expect_equal(rows_of(mean)[[mean@cols$x]][2], ctr$x[2] - 1)
+  expect_equal(rows_of(mean)[[mean@cols$y]][2], ctr$y[2] - 2)
+  expect_identical(nrow(rows_of(mean)), 40L)
+})
+
+test_that("EthoVision: selection errors say what the table has, and zone is refused", {
+  p <- ev_multipoint()
+  e <- cond(ev_tracks(p, bodypart = "paw"))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "body point(s) not found: paw; available: center, nose, tail",
+               fixed = TRUE)
+  expect_s3_class(cond(ev_tracks(p, bodypart = c("nose", "nose"))), "radiatR_dialect_error")
+  z <- cond(ev_tracks(p, zone = "nose"))
+  expect_s3_class(z, "radiatR_dialect_error")
+  expect_match(conditionMessage(z), "`zone` is now `bodypart`")
+  expect_match(conditionMessage(cond(ev_tracks(partial = "some"))), "should be one of")
+})
+
+test_that("EthoVision: a table without a center point needs bodypart", {
+  df <- data.frame(`Trial time` = c(0, 0.5), `X nose` = c(1, 2), `Y nose` = c(3, 4),
+                   check.names = FALSE)
+  e <- cond(ev_tracks(df))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "no center point; .*`bodypart`: nose")
+  expect_equal(rows_of(ev_tracks(df, bodypart = "nose"))$nose_x, c(1, 2))
+  none <- cond(ev_tracks(data.frame(`Trial time` = 0, x = 1, y = 2, check.names = FALSE)))
+  expect_match(conditionMessage(none), "no `X <point>` / `Y <point>` column pairs")
+})
+
+test_that("EthoVision: a data frame may name an id column, kept as written", {
+  df <- data.frame(`Trial time` = c(0, 0.5, 0, 0.5), `X center` = c(1, 2, 3, 4),
+                   `Y center` = c(1, 1, 2, 2), Fish = c("1.1", "1.1", "1.10", "1.10"),
+                   check.names = FALSE)
+  ts <- ev_tracks(df, id_col = "fish")
+  expect_identical(sort(unique(as.character(rows_of(ts)[[ts@cols$id]]))), c("1.1", "1.10"))
+  expect_identical(ts@meta$time_unit, "seconds")
+  expect_false("source_meta" %in% names(ts@meta))
+  one <- ev_tracks(df[1:2, ])
+  expect_identical(unique(as.character(rows_of(one)[[one@cols$id]])), "1")
+  e <- cond(ev_tracks(id_col = "Trial time"))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "`id_col` does not apply to an EthoVision file")
+})
+
+test_that("EthoVision: a table the caller read still has \"-\" for a missing value", {
+  l <- ev_lines()
+  df <- utils::read.csv2(text = l[c(32, 34:104)], check.names = FALSE, dec = ".")
+  expect_type(df[["X center"]], "character")
+  ts <- ev_tracks(df)
+  expect_identical(nrow(rows_of(ts)), 40L)
+  expect_identical(ts@meta$attrition$masked, 31L)
+  df[["X center"]][1] <- "--"
+  expect_s3_class(cond(ev_tracks(df)), "radiatR_malformed_values")
+  # read.csv(stringsAsFactors = TRUE) gives factors, with "-" a level
+  fac <- utils::read.csv2(text = l[c(32, 34:104)], check.names = FALSE, dec = ".",
+                          stringsAsFactors = TRUE)
+  expect_s3_class(fac[["X center"]], "factor")
+  expect_identical(nrow(rows_of(ev_tracks(fac))), 40L)
+})
+
+test_that("EthoVision: columns that are one column once normalised are refused", {
+  l <- ev_lines()
+  two_times <- ev_file(replace(l, 32, sub("\"Recording time\"", "\"Trial-Time\"", l[32])))
+  e <- cond(ev_tracks(two_times))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "same column .*: Trial time, Trial-Time")
+  both <- data.frame(`Trial time` = 0:1, `X center` = 1:2, `Y center` = 1:2,
+                     `X centre` = 3:4, `Y centre` = 3:4, check.names = FALSE)
+  e <- cond(ev_tracks(both))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "both X center and X centre; they are the same point")
+})
+
+test_that("EthoVision: a sample with no time is an error, not a dropped row", {
+  e <- cond(ev_tracks(ev_data_edited(function(x) sub("^2\\.002;", "\"-\";", x))))
+  expect_s3_class(e, "radiatR_invalid_tracks")
+  expect_match(conditionMessage(e), "missing or non-finite time")
+})
+
+test_that("EthoVision: a folder of trials needs id_collision = 'namespace'", {
+  p <- file.path(withr::local_tempdir(), c("trial1.txt", "trial2.txt"))
+  file.copy(fx("ethovision_trial.txt"), p)
+  expect_error(quiet(read_tracks(p, dialect = "ethovision", on_invalid = "drop")),
+               "id_collision")
+  ts <- quiet(read_tracks(p, dialect = "ethovision", on_invalid = "drop",
+                          id_collision = "namespace"))
+  expect_identical(length(unique(rows_of(ts)[[ts@cols$id]])), 2L)
+  expect_identical(vapply(ts@meta$source_meta, `[[`, "", "path"), p)
+  expect_identical(sum(ts@meta$attrition$masked), 62L)
+})

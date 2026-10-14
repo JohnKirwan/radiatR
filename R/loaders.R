@@ -2010,69 +2010,105 @@ register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = N
   d
 }
 
-# EthoVision XT: single- or multi-body-point exports.
-# Standard export: "X Center" / "Y Center" -> x_center / y_center (prefix style).
-# Multiple Body Point Tracking export adds "X Nose", "Y Nose", "X Tail", "Y Tail"
-# (also prefix style) or "<Zone> point X" / "<Zone> point Y" (suffix style).
-# zone = NULL  -> use the centre/primary position (backward-compatible default).
-# zone = "nose"               -> position from that single zone.
-# zone = c("nose", "tail")    -> equal-weight centroid of those zones.
-# All detected zone columns are always appended for use with bodypart_axis.
-register_loader_dialect("ethovision", function(x, id_col = NULL, time_col = NULL,
-                                               zone = NULL) {
-  df <- if (is.character(x) && file.exists(x)) .read_any(x) else x
-  stopifnot(is.data.frame(df))
-  norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(v))
-  nms  <- norm(names(df)); names(df) <- nms
-
-  # Detect zones from prefix style (x_<zone>, y_<zone>) and suffix style (<zone>_x, <zone>_y).
-  # Normalise prefix zones to suffix style so access is uniform.
-  zones_a <- intersect(sub("^x_", "", grep("^x_.+", nms, value = TRUE)),
-                       sub("^y_", "", grep("^y_.+", nms, value = TRUE)))
-  zones_b <- intersect(sub("_x$",  "", grep(".+_x$",  nms, value = TRUE)),
-                       sub("_y$",  "", grep(".+_y$",  nms, value = TRUE)))
-  for (z in setdiff(zones_a, zones_b)) {
-    df[[paste0(z, "_x")]] <- df[[paste0("x_", z)]]
-    df[[paste0(z, "_y")]] <- df[[paste0("y_", z)]]
+# EthoVision XT (Noldus). A file is the text export read by .read_ethovision():
+# one subject in one trial, so one track with id "1", and its header block and
+# units are kept as the load's source_meta. A data frame is a table with
+# EthoVision's column names, with an optional id column named by `id_col`.
+#
+# The names row labels each body point "X <point>" / "Y <point>" ("X center",
+# and with multi-point tracking "X nose", "X tail"). Headers are matched
+# lower-cased, with runs of other characters as "_".
+# bodypart = NULL            -> the center point
+# bodypart = "nose"          -> that point
+# bodypart = c("nose","tail") -> their mean, under the masking rule of
+#                               .dialect_position() (`partial`)
+# A point the program did not find ("-") is masked. Every point found is
+# appended as <point>_x / <point>_y for heading rules such as bodypart_axis.
+#
+# The time is `Trial time` (seconds since the trial started) unless `time_col`
+# names another column; a file's units row must give it in seconds.
+register_loader_dialect("ethovision", function(x, bodypart = NULL, partial = c("na", "mean"),
+                                               time_col = NULL, id_col = NULL, zone = NULL) {
+  partial <- match.arg(partial)
+  if (!is.null(zone))
+    rlang::abort(paste0(
+      "ethovision: `zone` is now `bodypart`. In EthoVision a zone is an area of the arena; ",
+      "the argument names body points (center, nose, tail)."),
+      class = "radiatR_dialect_error")
+  norm <- function(v) gsub("^_+|_+$", "", gsub("[^a-z0-9]+", "_", tolower(v)))
+  inp <- .dialect_input(x, "ethovision", norm, read = .read_ethovision)
+  fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error",
+                                     source = inp$source)
+  nms <- inp$names; n <- nrow(inp$df)
+  lay <- attr(inp$df, "ethovision")
+  # a table the caller read from an export still writes "-" for a value the
+  # program did not have
+  if (is.null(lay)) {
+    text <- vapply(inp$df, function(v) is.character(v) || is.factor(v), logical(1))
+    inp$df[text] <- lapply(inp$df[text], function(v) {
+      v <- as.character(v)
+      replace(v, which(trimws(v) == "-"), NA_character_)
+    })
   }
-  nms      <- names(df)
-  zones_all <- setdiff(union(zones_a, zones_b), c("x", "y", ""))
-
-  id   <- id_col %||% .guess_col(nms, c("id","animal","subject","trial","track_id")) %||% "1"
-  time <- time_col %||% .guess_col(nms, c("time","time_s","position_t","t","frame")) %||% "..row"
-  if (time == "..row") { df[["..row"]] <- seq_len(nrow(df)); time <- "..row" }
-  xc   <- .guess_col(nms, c("x_center","x_centre","position_x","x"))
-  yc   <- .guess_col(nms, c("y_center","y_centre","position_y","y"))
-  if (is.null(xc) || is.null(yc)) stop("ethovision: could not find x/y columns")
-
-  if (!is.null(zone)) {
-    sel <- zone
-    bad <- setdiff(sel, zones_all)
-    if (length(bad))
-      stop("ethovision: zone(s) not found: ", paste(bad, collapse = ", "),
-           "; available: ", paste(zones_all, collapse = ", "))
-    if (length(sel) == 1L) {
-      cx <- as.numeric(df[[paste0(sel, "_x")]])
-      cy <- as.numeric(df[[paste0(sel, "_y")]])
-    } else {
-      xs   <- vapply(sel, function(z) as.numeric(df[[paste0(z, "_x")]]), numeric(nrow(df)))
-      ys   <- vapply(sel, function(z) as.numeric(df[[paste0(z, "_y")]]), numeric(nrow(df)))
-      dim(xs) <- c(nrow(df), length(sel)); dim(ys) <- c(nrow(df), length(sel))
-      wsum <- rowSums(!is.na(xs))
-      cx   <- ifelse(wsum > 0L, rowSums(xs, na.rm = TRUE) / wsum, NA_real_)
-      cy   <- ifelse(wsum > 0L, rowSums(ys, na.rm = TRUE) / wsum, NA_real_)
-    }
-  } else {
-    cx <- as.numeric(df[[xc]]); cy <- as.numeric(df[[yc]])
+  arg_col <- function(col, arg) {
+    if (is.null(col)) return(NULL)
+    if (!is.character(col) || length(col) != 1L || is.na(col))
+      fail("ethovision: `%s` must name one column.", arg)
+    .dialect_require(inp, norm(col), arg)
   }
 
-  out <- data.frame(id   = if (id == "1") rep("1", nrow(df)) else df[[id]],
-                    time = df[[time]], x = cx, y = cy, stringsAsFactors = FALSE)
-  for (z in zones_all) {
-    out[[paste0(z, "_x")]] <- as.numeric(df[[paste0(z, "_x")]])
-    out[[paste0(z, "_y")]] <- as.numeric(df[[paste0(z, "_y")]])
+  of <- function(prefix) sub(prefix, "", grep(prefix, nms, value = TRUE))
+  found <- intersect(of("^x_"), of("^y_"))
+  if (!length(found))
+    fail("ethovision: no `X <point>` / `Y <point>` column pairs found; the columns are: %s.",
+         paste(names(inp$df), collapse = ", "))
+  # "centre" is the same point as "center", in a header and in `bodypart`
+  us <- function(v) sub("^centre$", "center", v)
+  if (all(c("center", "centre") %in% found))
+    fail("ethovision: the table has both %s; they are the same point.",
+         paste(.dialect_header(inp, c("x_center", "x_centre")), collapse = " and "))
+  x_cols <- stats::setNames(paste0("x_", found), us(found))
+  y_cols <- stats::setNames(paste0("y_", found), us(found))
+  points <- names(x_cols)
+  if (is.null(bodypart) && !"center" %in% points)
+    fail("ethovision: the table has no center point; name the point(s) to use with `bodypart`: %s.",
+         paste(points, collapse = ", "))
+  sel <- .dialect_select(if (is.null(bodypart)) "center"
+                         else if (is.character(bodypart)) us(norm(bodypart)) else bodypart,
+                         points, "body point", "ethovision", inp$source)
+
+  tc <- arg_col(time_col, "time_col")
+  if (is.null(tc)) {
+    if (!"trial_time" %in% nms)
+      fail("ethovision: no `Trial time` column; name the time column with `time_col`.")
+    tc <- "trial_time"
   }
-  out
+  if (!is.null(lay)) {
+    unit <- lay$units[[match(tc, nms)]]
+    if (!identical(tolower(gsub("[^A-Za-z]", "", unit)), "s"))
+      fail("ethovision: the time column '%s' is in '%s', not in seconds (s).",
+           .dialect_header(inp, tc), unit)
+    if (!is.null(id_col))
+      fail(paste0("ethovision: `id_col` does not apply to an EthoVision file, which holds one ",
+                  "subject (id \"1\"). Load several files with id_collision = \"namespace\"."))
+  }
+  ic <- arg_col(id_col, "id_col")
+  same <- nms %in% nms[duplicated(nms)] &
+    nms %in% c(paste0("x_", found), paste0("y_", found), tc, ic)
+  if (any(same))
+    fail("ethovision: these headers name the same column once case and punctuation are set aside: %s.",
+         paste(names(inp$df)[same], collapse = ", "))
+
+  all_pts <- .dialect_points(inp, x_cols, y_cols)
+  pos <- .dialect_position(list(x = all_pts$x[, sel, drop = FALSE],
+                                y = all_pts$y[, sel, drop = FALSE]),
+                           NULL, partial, "ethovision", inp$source)
+  out <- data.frame(id = if (is.null(ic)) rep("1", n) else .dialect_col(inp, ic),
+                    time = .dialect_time(inp, tc, "seconds"),
+                    x = pos$x, y = pos$y, stringsAsFactors = FALSE)
+  out <- cbind(out, .dialect_position(all_pts, NULL, "na", "ethovision", inp$source)$points)
+  attr(out, "decimal") <- inp$decimal
+  .dialect_output(out, "seconds", pos$attrition, lay)
 })
 
 # TrackMate (Fiji) spot tables: TRACK_ID, FRAME, POSITION_T, POSITION_X,
