@@ -383,6 +383,13 @@
   counts missing headings and the trials they come from, and the app's
   attrition banner does the same. `missing_ids` lists each trial once, and
   the new `n_trials` attribute gives the number of trials.
+* The separator sniff of `read_tracks()` counts fields as the readers do, so
+  a separator inside a quoted field no longer counts: a `;` file with `;` in
+  a quoted label is read as `;`. A file whose header alone has a different
+  number of fields (a table written with row names) is named as such; it was
+  read as one column. A delimited file that still reads as a single column
+  stops with a `radiatR_malformed_file` error saying no separator was found,
+  instead of "Need either an angle column or both x and y columns".
 * `read_tracks()` no longer stops with "invalid UTF-8" when the first lines of
   a delimited file hold a byte that is not UTF-8 (a latin-1 label): the
   separator and decimal mark are sniffed from such lines too.
