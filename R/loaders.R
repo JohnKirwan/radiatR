@@ -433,15 +433,42 @@ guess_columns <- function(data, mapping = list()) {
   out
 }
 
+# A time column of durations written H:MM:SS(.fff), as ANY-maze writes them,
+# as seconds. Hours run to any length; minutes and seconds are two digits
+# below 60. A difftime (hms included) is converted. Missing cells are NA.
+# Anything else is malformed, plain numbers included: their unit (seconds,
+# milliseconds, frames) cannot be told, and a caller who knows it converts
+# them with as.difftime().
+.parse_duration <- function(v, column, source = NULL, dialect = NULL, decimal = ".") {
+  if (inherits(v, "difftime")) return(as.numeric(v, units = "secs"))
+  s <- trimws(as.character(v))
+  missing <- .is_missing_chr(s)
+  mark <- if (identical(decimal, ",")) "," else "[.]"
+  pat <- paste0("^([0-9]+):([0-5][0-9]):([0-5][0-9](", mark, "[0-9]+)?)$")
+  dur <- !missing & grepl(pat, s)
+  part <- function(i) as.numeric(sub(",", ".", sub(pat, paste0("\\", i), s[dur]), fixed = TRUE))
+  bad <- !missing & !dur
+  if (any(bad))
+    radiatR_abort_malformed_values(
+      column, which(bad), s[bad], source = source, dialect = dialect,
+      expected = paste0("a duration H:MM:SS.fff (a column of seconds can be given as ",
+                        "as.difftime(<seconds>, units = \"secs\"))"))
+  out <- rep(NA_real_, length(s))
+  out[dur] <- part(1L) * 3600 + part(2L) * 60 + part(3L)
+  out[missing] <- NA_real_
+  out
+}
+
 # Sniff the field separator (and, for ';', the decimal mark) from a delimited
 # file's first non-empty lines. Returns list(delim, decimal). Chooses the
 # candidate that appears most often AND consistently across lines; ties or no
 # signal fall back to comma + dot. ';' implies the European decimal comma,
 # unless the lines read show decimal points and no decimal comma: a dotted
 # number that cannot be digit grouping ("1.5", "0.125"; not "1.234").
-.guess_delim <- function(path) {
+# `lines` are the file's lines when the caller has read (and decoded) them.
+.guess_delim <- function(path, lines = NULL) {
   default <- list(delim = ",", decimal = ".")
-  lines <- tryCatch(
+  lines <- if (!is.null(lines)) utils::head(lines, 20L) else tryCatch(
     readLines(path, n = 20L, warn = FALSE, encoding = "UTF-8"),
     error = function(e) character(0))
   lines <- lines[nzchar(trimws(lines))]
@@ -464,8 +491,11 @@ guess_columns <- function(data, mapping = list()) {
   if (best != ";") return(list(delim = best, decimal = "."))
   cells <- gsub("^\"|\"$", "", trimws(unlist(strsplit(rows, ";", fixed = TRUE))))
   comma <- grepl("^[-+]?[0-9]*,[0-9]+$", cells)
-  point <- grepl("^[-+]?[0-9]*[.][0-9]+([eE][-+]?[0-9]+)?$", cells) &
-    !grepl("^[-+]?[1-9][0-9]{0,2}([.][0-9]{3})+$", cells)
+  # a duration's fraction ("0:00:00.320", as ANY-maze writes time) is a
+  # decimal point too
+  point <- (grepl("^[-+]?[0-9]*[.][0-9]+([eE][-+]?[0-9]+)?$", cells) &
+              !grepl("^[-+]?[1-9][0-9]{0,2}([.][0-9]{3})+$", cells)) |
+    grepl("^[0-9]+:[0-5][0-9]:[0-5][0-9][.][0-9]+$", cells)
   list(delim = best, decimal = if (any(point) && !any(comma)) "." else ",")
 }
 
@@ -712,7 +742,9 @@ guess_columns <- function(data, mapping = list()) {
   if (lost > 0 && on_invalid == "error")
     msg <- paste0(
       msg, "\n  Pass on_invalid = \"drop\" to leave those rows out",
-      if (partial == "na")
+      # with one point there is nothing left to average (and a dialect that
+      # reads one point has no `partial`)
+      if (partial == "na" && length(unique(masked$point)) > 1L)
         ", or dialect_args = list(partial = \"mean\") to average the points that remain",
       ".")
   rlang::inform(msg, class = "radiatR_attrition")
@@ -2295,82 +2327,86 @@ register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL,
   ), unit)
 })
 
-# ANY-maze (Stoelting): CSV export.  Standard columns: "Trial time", "X Centre",
-# "Y Centre".  Newer versions with nose/tail tracking add "Nose X Centre",
-# "Nose Y Centre", "Tail X Centre", "Tail Y Centre" (or _Center, American).
-# zone = NULL  -> primary centre position (default, backward-compatible).
-# zone = "nose" / zone = c("nose","tail") -> single-zone or equal-weight centroid.
-# skip_units_row strips the optional units row ANY-maze inserts after the header.
-register_loader_dialect("anymaze", function(x, id_col = NULL, time_col = NULL,
-                                            zone = NULL, skip_units_row = TRUE) {
-  df <- if (is.character(x) && length(x) == 1L && file.exists(x)) .read_any(x) else x
-  stopifnot(is.data.frame(df))
-  norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(trimws(v)))
-  nms  <- norm(names(df)); names(df) <- nms
+# A delimited file whose first line is its header, as a table of text columns.
+# Nothing is typed, so a dialect coerces each column itself and a label column
+# keeps its text ("1.1" and "1.10" stay apart). The text is decoded as
+# .read_text_lines() decodes it, and the separator and the decimal mark (attr
+# "decimal") are sniffed as .read_any() sniffs them. Blank lines after the
+# last row are not rows. Every row must have the header's fields:
+# read.table() would pad a short row and wrap a long one.
+.read_text_table <- function(path, dialect) {
+  src <- basename(path)
+  fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error", source = src)
+  lines <- .read_text_lines(path)
+  while (length(lines) && !nzchar(trimws(lines[length(lines)]))) lines <- lines[-length(lines)]
+  if (length(lines) < 2L) fail("%s: '%s' has no data rows.", dialect, src)
+  g <- .guess_delim(path, lines)
+  con <- textConnection(lines)
+  nf <- tryCatch(utils::count.fields(con, sep = g$delim, quote = "\"", comment.char = "",
+                                     blank.lines.skip = FALSE),
+                 finally = close(con))
+  ragged <- which(is.na(nf) | nf != nf[1L])
+  if (length(ragged))
+    fail("%s: line %d of '%s' has %s field(s); its header names %d.",
+         dialect, ragged[1L], src, nf[ragged[1L]], nf[1L])
+  d <- utils::read.table(text = lines, header = TRUE, sep = g$delim, quote = "\"",
+                         colClasses = "character", check.names = FALSE, comment.char = "",
+                         na.strings = character(0), strip.white = TRUE)
+  attr(d, "decimal") <- g$decimal
+  d
+}
 
-  # Detect multi-point zones from "<zone> X Centre" -> <zone>_x_centre pattern,
-  # then normalise to plain <zone>_x / <zone>_y for uniform access.
-  pat_x <- grep("_x_centr[ei]$", nms, value = TRUE)
-  pat_y <- grep("_y_centr[ei]$", nms, value = TRUE)
-  zones_centre <- intersect(sub("_x_centr[ei]$", "", pat_x),
-                            sub("_y_centr[ei]$", "", pat_y))
-  for (z in zones_centre) {
-    xz <- grep(paste0("^", z, "_x_centr"), nms, value = TRUE)[1L]
-    yz <- grep(paste0("^", z, "_y_centr"), nms, value = TRUE)[1L]
-    df[[paste0(z, "_x")]] <- suppressWarnings(as.numeric(df[[xz]]))
-    df[[paste0(z, "_y")]] <- suppressWarnings(as.numeric(df[[yz]]))
+# ANY-maze (Stoelting) CSV export: `Time`, `Centre position X`, `Centre
+# position Y`, then one 0/1 column per zone of the arena (`In <zone>`), which
+# are not read. There is no units row. Headers are matched lower-cased, with
+# runs of other characters as "_". The time is a duration H:MM:SS.fff, read as
+# seconds (see .parse_duration()); `time_col` names another time column. The
+# export holds one animal, id "1", unless `id_col` names an id column, which is
+# kept as written. A sample with no position is masked and counted under
+# .dialect_position(); only the centre point is read, so there is no
+# `bodypart`.
+register_loader_dialect("anymaze", function(x, time_col = NULL, id_col = NULL, zone = NULL,
+                                            bodypart = NULL, skip_units_row = NULL) {
+  gone <- function(msg) rlang::abort(msg, class = "radiatR_dialect_error")
+  if (!is.null(zone) || !is.null(bodypart))
+    gone(paste0("anymaze: `zone` and `bodypart` are not arguments of this dialect. It reads ",
+                "the centre position (`Centre position X` / `Centre position Y`) only."))
+  if (!is.null(skip_units_row))
+    gone(paste0("anymaze: `skip_units_row` was removed. An ANY-maze export has no units row, ",
+                "and no row is skipped."))
+  norm <- function(v) gsub("^_+|_+$", "", gsub("[^a-z0-9]+", "_", tolower(v)))
+  inp <- .dialect_input(x, "anymaze", norm, read = function(p) .read_text_table(p, "anymaze"))
+  fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error",
+                                     source = inp$source)
+  nms <- inp$names; n <- nrow(inp$df)
+  arg_col <- function(col, arg) {
+    if (is.null(col)) return(NULL)
+    if (!is.character(col) || length(col) != 1L || is.na(col))
+      fail("anymaze: `%s` must name one column.", arg)
+    .dialect_require(inp, norm(col), arg)
   }
-  nms <- names(df)
-  zones_plain <- intersect(sub("_x$", "", grep(".+_x$", nms, value = TRUE)),
-                           sub("_y$", "", grep(".+_y$", nms, value = TRUE)))
-  zones_all <- setdiff(union(zones_centre, zones_plain), c("x", "y", "..row"))
+  xc <- .guess_col(nms, c("centre_position_x", "center_position_x"))
+  yc <- .guess_col(nms, c("centre_position_y", "center_position_y"))
+  if (is.null(xc) || is.null(yc))
+    fail("anymaze: no `Centre position X` / `Centre position Y` columns; the columns are: %s.",
+         paste(names(inp$df), collapse = ", "))
+  tc <- arg_col(time_col, "time_col") %||% (if ("time" %in% nms) "time")
+  if (is.null(tc))
+    fail("anymaze: no `Time` column; name the time column with `time_col`.")
+  ic <- arg_col(id_col, "id_col")
+  same <- nms %in% nms[duplicated(nms)] & nms %in% c(xc, yc, tc, ic)
+  if (any(same))
+    fail("anymaze: these headers name the same column once case and punctuation are set aside: %s.",
+         paste(names(inp$df)[same], collapse = ", "))
 
-  # Strip optional units row before any numeric operations
-  xc_peek <- .guess_col(nms, c("x_centre","x_center","x_pos","x_position","x"))
-  if (skip_units_row && !is.null(xc_peek) && nrow(df) > 0 &&
-      is.na(suppressWarnings(as.numeric(df[[xc_peek]][1L]))))
-    df <- df[-1L, , drop = FALSE]
-
-  id   <- id_col %||% .guess_col(nms, c("id","animal","subject","trial","track")) %||% "1"
-  time <- time_col %||% .guess_col(nms, c("trial_time","time_s","time","t")) %||% "..row"
-  if (time == "..row") { df[["..row"]] <- seq_len(nrow(df)); time <- "..row" }
-  xc <- .guess_col(nms, c("x_centre","x_center","x_pos","x_position","x"))
-  yc <- .guess_col(nms, c("y_centre","y_center","y_pos","y_position","y"))
-  if (is.null(xc) || is.null(yc)) stop("anymaze: could not find x/y position columns")
-
-  if (!is.null(zone)) {
-    sel <- zone
-    bad <- setdiff(sel, zones_all)
-    if (length(bad))
-      stop("anymaze: zone(s) not found: ", paste(bad, collapse = ", "),
-           "; available: ", paste(zones_all, collapse = ", "))
-    if (length(sel) == 1L) {
-      cx <- suppressWarnings(as.numeric(df[[paste0(sel, "_x")]]))
-      cy <- suppressWarnings(as.numeric(df[[paste0(sel, "_y")]]))
-    } else {
-      xs   <- vapply(sel, function(z) suppressWarnings(as.numeric(df[[paste0(z,"_x")]])), numeric(nrow(df)))
-      ys   <- vapply(sel, function(z) suppressWarnings(as.numeric(df[[paste0(z,"_y")]])), numeric(nrow(df)))
-      dim(xs) <- c(nrow(df), length(sel)); dim(ys) <- c(nrow(df), length(sel))
-      wsum <- rowSums(!is.na(xs))
-      cx   <- ifelse(wsum > 0L, rowSums(xs, na.rm = TRUE) / wsum, NA_real_)
-      cy   <- ifelse(wsum > 0L, rowSums(ys, na.rm = TRUE) / wsum, NA_real_)
-    }
-  } else {
-    cx <- suppressWarnings(as.numeric(df[[xc]]))
-    cy <- suppressWarnings(as.numeric(df[[yc]]))
-  }
-
-  out <- data.frame(
-    id   = if (id == "1") rep("1", nrow(df)) else df[[id]],
-    time = suppressWarnings(as.numeric(df[[time]])),
-    x = cx, y = cy,
-    stringsAsFactors = FALSE
-  )
-  for (z in zones_all) {
-    out[[paste0(z, "_x")]] <- suppressWarnings(as.numeric(df[[paste0(z, "_x")]]))
-    out[[paste0(z, "_y")]] <- suppressWarnings(as.numeric(df[[paste0(z, "_y")]]))
-  }
-  out
+  pos <- .dialect_position(.dialect_points(inp, c(center = xc), c(center = yc)),
+                           NULL, "na", "anymaze", inp$source)
+  out <- data.frame(id = if (is.null(ic)) rep("1", n) else .dialect_col(inp, ic),
+                    time = .parse_duration(.dialect_col(inp, tc), .dialect_header(inp, tc),
+                                           inp$source, "anymaze", inp$decimal),
+                    x = pos$x, y = pos$y, stringsAsFactors = FALSE)
+  attr(out, "decimal") <- inp$decimal
+  .dialect_output(out, "seconds", pos$attrition)
 })
 
 # SLEAP (https://sleap.ai) analysis CSV: `track`, `frame_idx`, then <node>.x /
