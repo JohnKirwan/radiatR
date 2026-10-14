@@ -68,6 +68,11 @@ vector). Other rules ignore it.
 The `distal` rule accepts `max_radius` (default `Inf`): the furthest-point
 search is restricted to positions with radius `<= max_radius`, so
 `max_radius = 1` ignores beyond-circumference (`rho > 1`) tracking outliers.
+The `straight` rule takes `tol` (default `pi/18`, the largest turn between
+successive steps) and `min_len` (default `5`, the fewest steps in a run). A
+step of zero length (a pause) has no direction: turns are measured between
+successive moving steps, so a pause neither breaks a run nor counts toward
+`min_len`. The heading is the direction of the run's first moving step.
 
 The rules that average directions take a weighting through \code{...}:
 \itemize{

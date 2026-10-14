@@ -92,6 +92,11 @@
 #' The `distal` rule accepts `max_radius` (default `Inf`): the furthest-point
 #' search is restricted to positions with radius `<= max_radius`, so
 #' `max_radius = 1` ignores beyond-circumference (`rho > 1`) tracking outliers.
+#' The `straight` rule takes `tol` (default `pi/18`, the largest turn between
+#' successive steps) and `min_len` (default `5`, the fewest steps in a run). A
+#' step of zero length (a pause) has no direction: turns are measured between
+#' successive moving steps, so a pause neither breaks a run nor counts toward
+#' `min_len`. The heading is the direction of the run's first moving step.
 #'
 #' The rules that average directions take a weighting through \code{...}:
 #' \itemize{
@@ -255,8 +260,10 @@ setGeneric(
 }
 
 # ---- straight rule -----------------------------------------------------------
-# Heading = angle of the longest contiguous segment where turning angle <= tol
-# turning angle between steps i-1->i and i->i+1 via atan2(cross, dot)
+# Heading = direction of the first step of the longest run of moving steps whose
+# successive turns are all <= tol. A pause (a step of zero length) has no
+# direction: turns are measured between successive moving steps, so a pause
+# neither breaks a run nor counts toward min_len (which counts moving steps).
 .set_headings_straight_one <- function(d, id, tc, xc, yc, tol = pi/18, min_len = 5L,
                                        return_coords = FALSE) {
   na_row <- function() {
@@ -267,35 +274,27 @@ setGeneric(
     }
     row
   }
-  n <- nrow(d)
-  if (n < min_len + 1L) return(na_row())
   vx <- diff(d[[xc]]); vy <- diff(d[[yc]])
-  # angles between successive displacement vectors
-  cross <- vx[-1]*vy[-length(vy)] - vy[-1]*vx[-length(vx)]
-  dot   <- vx[-1]*vx[-length(vx)] + vy[-1]*vy[-length(vy)]
-  turn  <- atan2(cross, dot)  # in (-pi, pi]
-  ok <- is.finite(turn) & (abs(turn) <= tol)
-  # run-length encoding to find longest ok-run
-  r <- rle(ok)
+  mv <- which(vx != 0 | vy != 0)   # moving steps; step i joins points i and i + 1
+  k  <- length(mv)
+  if (k < min_len) return(na_row())
+  ux <- vx[mv]; uy <- vy[mv]
+  turn <- atan2(ux[-k] * uy[-1] - uy[-k] * ux[-1], ux[-k] * ux[-1] + uy[-k] * uy[-1])
+  r <- rle(abs(turn) <= tol)
   ends <- cumsum(r$lengths)
   starts <- ends - r$lengths + 1L
   idx_ok <- which(r$values)
   if (!length(idx_ok)) return(na_row())
-  # choose longest run meeting min_len-1 turning checks => segment length >= min_len
   lens <- r$lengths[idx_ok]
-  ok_idx <- which.max(lens)
-  if (lens[ok_idx] < (min_len - 1L)) return(na_row())
-  s_turn <- starts[idx_ok[ok_idx]]; e_turn <- ends[idx_ok[ok_idx]]
-  s <- s_turn     # start step index
-  e <- e_turn + 1 # end step index (because turn array shorter by 1)
-  if (all(vx[s:e] == 0 & vy[s:e] == 0)) return(na_row())  # a run of pauses
-  heading <- atan2(d[[yc]][s+1] - d[[yc]][s], d[[xc]][s+1] - d[[xc]][s])
-  row <- data.frame(id = d[[id]][s], time = d[[tc]][floor((s+e)/2)],
-                    heading = .wrap_to_2pi(heading))
+  j <- which.max(lens)
+  if (lens[j] + 1L < min_len) return(na_row())   # m turns span m + 1 steps
+  first <- mv[starts[idx_ok[j]]]                 # first moving step of the run
+  p1    <- mv[ends[idx_ok[j]] + 1L] + 1L         # end point of its last step
+  row <- data.frame(id = d[[id]][first], time = d[[tc]][floor((first + p1) / 2)],
+                    heading = .wrap_to_2pi(atan2(vy[first], vx[first])))
   if (return_coords) {
-    last_pt <- e_turn + 2L          # last point of the straight run
-    row$x_seg0 <- d[[xc]][s];        row$y_seg0 <- d[[yc]][s]
-    row$x_seg1 <- d[[xc]][last_pt];  row$y_seg1 <- d[[yc]][last_pt]
+    row$x_seg0 <- d[[xc]][first]; row$y_seg0 <- d[[yc]][first]
+    row$x_seg1 <- d[[xc]][p1];    row$y_seg1 <- d[[yc]][p1]
   }
   row
 }

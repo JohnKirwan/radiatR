@@ -757,6 +757,38 @@ test_that("maxspeed_window gives the direction of a short moving track", {
   expect_equal(heading_of(north_track(6), rule = "maxspeed_window"), pi / 2)
 })
 
+# ---- straight: pauses ---------------------------------------------------------
+
+test_that("straight: a pause does not hide a turn", {
+  # east x3, pause, north x3
+  ts <- xy_track(c(0, .1, .2, .3, .3, .3, .3, .3), c(0, 0, 0, 0, 0, .1, .2, .3))
+  expect_true(is.na(heading_of(ts, rule = "straight", min_len = 6)))
+  out <- derive_headings(ts, rule = "straight", min_len = 3, return_coords = TRUE,
+                         on_missing = "quiet")
+  expect_equal(out$heading, 0)                       # first of two equal runs
+  expect_equal(c(out$x_seg0, out$y_seg0, out$x_seg1, out$y_seg1), c(0, 0, .3, 0))
+})
+
+test_that("straight: a pause inside a run neither breaks it nor counts toward min_len", {
+  ts <- xy_track(c(0, .1, .2, .2, .3, .4), rep(0, 6))   # 4 moving steps, 1 pause
+  expect_equal(heading_of(ts, rule = "straight", min_len = 4), 0)
+  expect_true(is.na(heading_of(ts, rule = "straight", min_len = 5)))
+})
+
+test_that("straight: remaps run indices past leading pauses", {
+  ts <- xy_track(c(0, 0, 0, .1, .2, .3, .4), rep(0, 7))  # rows 1-3 still, then east
+  out <- derive_headings(ts, rule = "straight", min_len = 4, return_coords = TRUE,
+                         on_missing = "quiet")
+  expect_equal(out$heading, 0)
+  expect_equal(out$time, 5)                              # rows 3..7, midpoint 5
+  expect_equal(c(out$x_seg0, out$x_seg1), c(0, .4))
+})
+
+test_that("straight: a run that starts after a pause takes its first moving step", {
+  ts <- xy_track(rep(0, 7), c(0, 0, .1, .2, .3, .4, .5))
+  expect_equal(heading_of(ts, rule = "straight"), pi / 2)
+})
+
 # ---- rule argument -----------------------------------------------------------
 test_that("derive_headings() requires a rule and names the choices", {
   ts <- unequal_steps()
