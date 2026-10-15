@@ -427,6 +427,18 @@ test_that("text time reads a zone designator and refuses a column that mixes zon
     c("2024-01-01 10:00:00", "2024-01-01 11:00:00", "2024-01-01T12:00:00+01:00"),
     tz = "UTC", column = "time"))
   expect_identical(e$rows, 3L)
+  # in one layout the zone mix is named, the minority kind reported
+  e <- malformed(radiatR:::.coerce_time(
+    c("2024-01-01T10:00:00", "2024-01-01T11:00:00", "2024-01-01T12:00:00+01:00"),
+    tz = "UTC", column = "time"))
+  expect_identical(e$rows, 3L)
+  expect_identical(e$values, "2024-01-01T12:00:00+01:00")
+  expect_match(conditionMessage(e), "date-times that all carry a zone, or none", fixed = TRUE)
+  e <- malformed(radiatR:::.coerce_time(
+    c("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", "2024-01-01T12:00:00"),
+    tz = "UTC", column = "time"))
+  expect_identical(e$values, "2024-01-01T12:00:00")
+  expect_match(conditionMessage(e), "date-times that all carry a zone, or none", fixed = TRUE)
   # an offset outside +-14:00 is no offset
   expect_error(radiatR:::.coerce_time(c("2024-01-01T10:00:00+15:00"), tz = "UTC",
                                       column = "time"),
@@ -1229,6 +1241,8 @@ test_that("a time in a DST gap and a leap second are named under every reader", 
   }
   gap  <- csv("gap.csv", c("2024-03-10 01:30:00", "2024-03-10 02:30:00"))
   leap <- csv("leap.csv", c("2016-12-31T23:59:59Z", "2016-12-31T23:59:60Z"))
+  basic <- csv("basic.csv", c("20161231T235959Z", "20161231T235960Z"))
+  basic_local <- csv("basic_local.csv", c("20161231T235959", "20161231T235960"))
   bad  <- csv("bad.csv", c("2024-02-28 10:00:00", "2024-02-30 10:00:00"))
   apia <- csv("apia.csv", c("2011-12-29 10:00:00", "2011-12-30 10:00:00"))
   for (hide in readers) {
@@ -1241,6 +1255,11 @@ test_that("a time in a DST gap and a leap second are named under every reader", 
     e <- malformed(read_tracks(leap))
     expect_identical(e$values, "2016-12-31T23:59:60Z", info = info)
     expect_match(conditionMessage(e), "leap second", info = info)
+    for (p in c(basic, basic_local)) {    # ISO 8601 basic: no ':' before the seconds
+      e <- malformed(read_tracks(p))
+      expect_identical(e$rows, 2L, info = paste(info, basename(p)))
+      expect_match(conditionMessage(e), "leap second", info = paste(info, basename(p)))
+    }
     e <- malformed(read_tracks(bad, tz = "America/New_York"))
     expect_identical(e$values, "2024-02-30 10:00:00", info = info)
     expect_false(grepl("exist in time zone", conditionMessage(e)), info = info)
@@ -1250,6 +1269,7 @@ test_that("a time in a DST gap and a leap second are named under every reader", 
     expect_match(conditionMessage(e), "exist in time zone 'Pacific/Apia'", info = info)
   }
 })
+
 
 test_that("a bare date on a day the zone skips reports its own row under every reader", {
   dir <- withr::local_tempdir()
