@@ -275,3 +275,57 @@ test_that("upload_read_opts drops controls hidden for the file type", {
   expect_identical(upload_read_opts("a.xlsx", ";", ",", ""), list())
   expect_identical(upload_read_opts("a.xlsx", NULL, NULL, NULL), list())
 })
+
+test_that("a decimal-comma tab file is refused on auto and loads on Comma", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  tsv <- tempfile(fileext = ".tsv")
+  writeLines(c("id\tframe\tx\ty", paste0("a\t", 1:3, "\t0,", 1:3, "\t0,", 4:6)), tsv)
+  shiny::testServer(app_dir(), {
+    session$setInputs(file = list(datapath = tsv, name = "t.tsv"))
+    session$setInputs(dialect_sel = "generic", delim_sel = "auto", decimal_sel = "auto")
+    session$setInputs(map_x = "x", map_y = "y", map_time = "frame", map_id = "id",
+                      normalize_sel = "FALSE")   # raw coordinates, to compare values
+    session$setInputs(go2 = 1)
+    expect_null(rv$ts)
+    expect_true(is.character(rv$error) && nzchar(rv$error))
+    session$setInputs(decimal_sel = ",")
+    session$setInputs(go2 = 2)
+    expect_false(is.null(rv$ts))
+    expect_equal(as.data.frame(rv$ts)[[rv$ts@cols$x]], c(0.1, 0.2, 0.3))
+  })
+})
+
+test_that("a headings file re-reads when the decimal mark changes", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  tsv <- tempfile(fileext = ".tsv")
+  writeLines(c("bearing\tcond", "10,5\ta", "20,5\tb"), tsv)
+  shiny::testServer(app_dir(), {
+    session$setInputs(input_type = "headings")
+    session$setInputs(file = list(datapath = tsv, name = "h.tsv"))
+    session$setInputs(delim_sel = "auto", decimal_sel = "auto")
+    expect_type(rv$raw_hd$bearing, "character")
+    session$setInputs(decimal_sel = ",")
+    expect_equal(rv$raw_hd$bearing, c(10.5, 20.5))
+  })
+})
+
+test_that("a DeepLabCut upload on auto controls sends no read_opts", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  # testServer runs in the app dir: the path must be absolute
+  dlc <- normalizePath(testthat::test_path("fixtures", "real", "dlc_single_wasp_predictions.csv"))
+  shiny::testServer(app_dir(), {
+    session$setInputs(input_type = "trajectories")
+    session$setInputs(file = list(datapath = dlc, name = "wasp.csv"))
+    session$setInputs(dialect_sel = "auto", delim_sel = "auto", decimal_sel = "auto",
+                      sheet_sel = "Sheet1")   # stale value from an earlier Excel upload
+    session$setInputs(go2 = 1)
+    # stopped only for its 9 masked positions (as in test-app-drop-control.R),
+    # not for read_opts
+    expect_identical(rv$drop_offer[c("kind", "n")], list(kind = "positions", n = 9L))
+    session$setInputs(drop_btn = 1)
+    expect_equal(nrow(as.data.frame(rv$ts)), 43L)
+  })
+})
