@@ -225,14 +225,15 @@ list_loader_formats <- function() sort(ls(envir = .loader_format_registry))
 #' in `Tracks@meta$source_meta`, each the dialect's list with the file's name
 #' (`source`) and path (`path`) in front. The records are a plain list in file
 #' order, not named by file, because files in different folders share names.
+#'
+#' A loader that reads files can take `read_tracks(read_opts = )` by
+#' declaring a `read_opts` argument: it receives the non-`NULL` entries
+#' (`decimal`, `delim`, `sheet`, `ext`) and must honour them or stop. A table
+#' it returns without `attr(, "decimal")` is coerced with `read_opts$decimal`,
+#' else the file's sniffed mark. Without that argument, any `read_opts` stop
+#' the load.
 #' @param name Unique dialect name
 #' @param fun Function that accepts (x, ...) and returns a data.frame with id/time/angle or id/time/x/y
-#'   A loader that reads files can take `read_tracks(read_opts = )` by
-#'   declaring a `read_opts` argument: it receives the non-`NULL` entries
-#'   (`decimal`, `delim`, `sheet`, `ext`) and must honour them or stop. A table
-#'   it returns without `attr(, "decimal")` is coerced with `read_opts$decimal`,
-#'   else the file's sniffed mark. Without that argument, any `read_opts` stop
-#'   the load.
 #' @param overwrite Replace an existing dialect registered with the same name
 #' @return `name`, invisibly. Called for its side effect of registering the
 #'   dialect for `read_tracks(dialect = )`.
@@ -1440,8 +1441,8 @@ read_tracks_format <- function(x, format, ...)
     nm <- NULL
     if (is.data.frame(x)) nm <- names(x)
     else if (is.character(x) && length(x) >= 1L && file.exists(x[1])) {
-      ro <- dots$read_opts %||% list()
-      nm <- .read_names(x[1], ext = ro$ext, delim = ro$delim, sheet = ro$sheet)
+      ro <- dots[["read_opts"]] %||% list()
+      nm <- .read_names(x[1], ext = ro[["ext"]], delim = ro[["delim"]], sheet = ro[["sheet"]])
     }
     if (!is.null(nm)) {
       # A pattern that matches nothing is an error: left unset, the role would
@@ -1540,12 +1541,15 @@ read_tracks_format <- function(x, format, ...)
 #'   coordinate units. Supplied together, they map every trajectory uniformly via
 #'   `(xy - origin) / radius`, preserving bearings from the origin. Mutually
 #'   exclusive with `normalize_xy = TRUE`.
-#' @param read_opts list of file-reading overrides: `delim` (field separator),
-#'   `decimal` (decimal mark), and `sheet` (Excel worksheet name or number).
-#'   Any `NULL` element is auto-detected. Defaults to all-auto. With a
+#' @param read_opts list of file-reading overrides: `delim` (field separator)
+#'   and `decimal` (decimal mark) for a text file, `sheet` (Excel worksheet
+#'   name or number) for an Excel file, and `ext` (file type, for a path
+#'   without its extension). Any `NULL` element is auto-detected. Defaults to all-auto. With a
 #'   `dialect`, the non-`NULL` entries are handed to the dialect: every
 #'   built-in takes `decimal`; `trackmate`, `trex`, `sleap` and
-#'   `idtrackerai_wide` also take `delim`, `sheet` and `ext`; `ethovision` and
+#'   `idtrackerai_wide` also take `delim` and `ext` for a text file and `sheet`
+#'   for an Excel file (`decimal` and `delim` are refused for Excel, `sheet`
+#'   for a text file); `ethovision` and
 #'   `anymaze` take `delim` (for EthoVision it must be the export's own
 #'   separator). An entry a dialect cannot use stops with a
 #'   `radiatR_invalid_argument` error, as does any entry for a registered
@@ -2291,21 +2295,34 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
 # The non-NULL entries of read_opts, checked: an unknown name or a decimal
 # mark other than "." / "," stops (`who` names the caller in the message).
 .check_read_opts <- function(read_opts, who) {
-  bad <- function(...) rlang::abort(sprintf(...), class = "radiatR_invalid_argument",
-                                    arg = "read_opts")
+  bad <- function(..., option = NULL)
+    rlang::abort(sprintf(...), class = "radiatR_invalid_argument", arg = "read_opts",
+                 option = option)
   if (is.null(read_opts) || !length(read_opts)) return(list())
   if (!is.list(read_opts) || is.null(names(read_opts)) || any(!nzchar(names(read_opts))))
     bad("%s: read_opts must be a named list.", who)
   unknown <- setdiff(names(read_opts), .read_opt_names)
   if (length(unknown))
     bad("%s: read_opts has no entry %s; it takes %s.", who,
-        paste0("'", unknown, "'", collapse = ", "), paste(.read_opt_names, collapse = ", "))
+        paste0("'", unknown, "'", collapse = ", "), paste(.read_opt_names, collapse = ", "),
+        option = unknown[1L])
+  if (anyDuplicated(names(read_opts))) {
+    dup <- names(read_opts)[duplicated(names(read_opts))][1L]
+    bad("%s: read_opts names '%s' more than once.", who, dup, option = dup)
+  }
   opts <- read_opts[!vapply(read_opts, is.null, logical(1))]
   dec <- opts[["decimal"]]
   if (!is.null(dec) && !(is.character(dec) && length(dec) == 1L && dec %in% c(".", ",")))
-    bad('%s: read_opts$decimal must be "." or ",".', who)
+    bad('%s: read_opts$decimal must be "." or ",".', who, option = "decimal")
   opts
 }
+
+# A dialect's refusal of one read_opts entry: `option` names it, `refused_by`
+# the dialect (the app turns the pair into advice about its own controls).
+.refuse_read_opt <- function(dialect, option, why)
+  rlang::abort(sprintf("%s: read_opts$%s cannot be used: %s.", dialect, option, why),
+               class = "radiatR_invalid_argument", arg = "read_opts", option = option,
+               refused_by = dialect)
 
 # The read_opts a dialect was given, checked (.check_read_opts()); an entry
 # the dialect cannot honour (`honours`), or any but `decimal` for a data
@@ -2315,11 +2332,10 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
   ok <- if (file) honours else intersect(honours, "decimal")
   extra <- setdiff(names(opts), ok)
   if (length(extra))
-    rlang::abort(sprintf("%s: read_opts$%s cannot be used: %s.", dialect, extra[1L],
-                         if (!file) "the input is a data frame, not a file"
-                         else paste("this dialect reads its own file layout and takes only",
-                                    paste0("read_opts$", honours, collapse = ", "))),
-                 class = "radiatR_invalid_argument", arg = "read_opts", option = extra[1L])
+    .refuse_read_opt(dialect, extra[1L],
+                     if (!file) "the input is a data frame, not a file"
+                     else paste("this dialect reads its own file layout and takes only",
+                                paste0("read_opts$", honours, collapse = ", ")))
   opts
 }
 
@@ -2344,6 +2360,15 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
                  class = "radiatR_dialect_error")
   opts <- .dialect_read_opts(read_opts, dialect, honours, file)
   if (file) {
+    # an option that does not fit the kind of file is refused, as .read_any()
+    # would otherwise ignore it
+    ext <- tolower(sub("^\\.", "", opts[["ext"]] %||% sub(".*\\.", "", x)))
+    kind <- if (ext %in% c("xlsx", "xls")) "an Excel workbook"
+            else if (ext %in% c("parquet", "feather")) "an Arrow file"
+            else "a delimited text file"
+    for (o in intersect(names(opts), if (kind == "a delimited text file") "sheet"
+                                     else c("delim", "decimal")))
+      .refuse_read_opt(dialect, o, sprintf("'%s' is %s", basename(x), kind))
     df <- do.call(read, c(list(x), opts[intersect(names(opts), names(formals(read)))]))
     src <- basename(x)
   } else {
@@ -2734,8 +2759,11 @@ register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = N
                 "first line is its column header is read as a data frame, not as a file."),
          src, substr(first, 1L, 60L))
   if (!is.null(delim) && !identical(delim, top[2L]))
-    fail("ethovision: line 1 of '%s' is separated by %s, not by the read_opts delimiter %s.",
-         src, encodeString(top[2L], quote = "'"), encodeString(delim, quote = "'"))
+    rlang::abort(sprintf(
+      "ethovision: line 1 of '%s' is separated by %s, not by the read_opts delimiter %s.",
+      src, encodeString(top[2L], quote = "'"), encodeString(delim, quote = "'")),
+      class = "radiatR_dialect_error", source = src, arg = "read_opts", option = "delim",
+      refused_by = "ethovision")
   delim <- top[2L]
   fields <- function(ln)
     scan(text = ln, what = "", sep = delim, quote = "\"", quiet = TRUE, strip.white = TRUE,

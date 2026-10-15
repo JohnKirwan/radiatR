@@ -332,6 +332,7 @@ test_that("EthoVision: read_opts$delim must be the export's own separator", {
   expect_s3_class(e, "radiatR_dialect_error")
   expect_match(conditionMessage(e), "is separated by ';', not by the read_opts delimiter ','",
                fixed = TRUE)
+  expect_identical(c(e$arg, e$option, e$refused_by), c("read_opts", "delim", "ethovision"))
   expect_s3_class(cond(ev_tracks(read_opts = list(sheet = 1))), "radiatR_invalid_argument")
 })
 

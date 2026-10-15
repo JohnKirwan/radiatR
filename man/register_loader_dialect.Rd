@@ -9,13 +9,7 @@ register_loader_dialect(name, fun, overwrite = FALSE)
 \arguments{
 \item{name}{Unique dialect name}
 
-\item{fun}{Function that accepts (x, ...) and returns a data.frame with id/time/angle or id/time/x/y
-A loader that reads files can take `read_tracks(read_opts = )` by
-declaring a `read_opts` argument: it receives the non-`NULL` entries
-(`decimal`, `delim`, `sheet`, `ext`) and must honour them or stop. A table
-it returns without `attr(, "decimal")` is coerced with `read_opts$decimal`,
-else the file's sniffed mark. Without that argument, any `read_opts` stop
-the load.}
+\item{fun}{Function that accepts (x, ...) and returns a data.frame with id/time/angle or id/time/x/y}
 
 \item{overwrite}{Replace an existing dialect registered with the same name}
 }
@@ -53,6 +47,13 @@ other than `source` and `path`. [read_tracks()] stores one record per file
 in `Tracks@meta$source_meta`, each the dialect's list with the file's name
 (`source`) and path (`path`) in front. The records are a plain list in file
 order, not named by file, because files in different folders share names.
+
+A loader that reads files can take `read_tracks(read_opts = )` by
+declaring a `read_opts` argument: it receives the non-`NULL` entries
+(`decimal`, `delim`, `sheet`, `ext`) and must honour them or stop. A table
+it returns without `attr(, "decimal")` is coerced with `read_opts$decimal`,
+else the file's sniffed mark. Without that argument, any `read_opts` stop
+the load.
 }
 \examples{
 # dtrack writes headerless, tab-separated frame, x, y (and a flag) columns
