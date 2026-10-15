@@ -4,6 +4,13 @@
 # NOT_CRAN is set so their skip_on_cran() guards do not short-circuit them;
 # on Windows/macOS (no preinstalled Chrome) those tests still skip cleanly
 # via their own skip_if(is.null(chromote::find_chrome())) guard.
+#
+# Two rows mirror CRAN's own checks. The R-devel row is CRAN's devel flavour.
+# The `cran: true` row is a CRAN-mode check with only the hard dependencies
+# (plus testthat, knitr and rmarkdown, which run the tests and vignettes): it
+# leaves NOT_CRAN and R_KEEP_PKG_SOURCE unset, so skip_on_cran() applies and
+# its "installed size is" line is the size CRAN will see (kept sources add
+# about 0.5 MB to R/). It runs on macOS, the platform with the largest install.
 on:
   push:
     branches: [main, master]
@@ -17,7 +24,7 @@ permissions: read-all
 jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
-    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }})${{ matrix.config.cran && ' CRAN mode, no Suggests' || '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -26,14 +33,17 @@ jobs:
           - {os: ubuntu-latest, r: 'oldrel-1'}
           - {os: windows-latest, r: 'release'}
           - {os: macos-latest, r: 'release'}
+          - {os: ubuntu-latest, r: 'devel', http-user-agent: 'release'}
+          - {os: macos-latest, r: 'release', cran: true}
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      R_KEEP_PKG_SOURCE: yes
+      R_KEEP_PKG_SOURCE: ${{ matrix.config.cran && 'no' || 'yes' }}
       # Run tests guarded by skip_on_cran(), including the shinytest2 browser
       # walk-through. The Ubuntu runner's preinstalled Chrome is detected by
       # chromote; setup-shinytest2.R supplies the sandbox-safe launch flags.
-      NOT_CRAN: true
+      NOT_CRAN: ${{ matrix.config.cran && 'false' || 'true' }}
+      _R_CHECK_FORCE_SUGGESTS_: false
 
     steps:
       - uses: actions/checkout@v4
@@ -48,7 +58,10 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::rcmdcheck
+          dependencies: ${{ matrix.config.cran && '"hard"' || '"all"' }}
+          extra-packages: >-
+            any::rcmdcheck
+            ${{ matrix.config.cran && 'any::testthat any::knitr any::rmarkdown' || '' }}
           needs: check
 
       - uses: r-lib/actions/check-r-package@v2
