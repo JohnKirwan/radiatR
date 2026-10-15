@@ -427,6 +427,13 @@
 
 ## Bug fixes
 
+* App: the script downloaded for a headings upload reads the file with the
+  delimiter and decimal mark the app read it with. With the delimiter control
+  on "auto" (the default) a `;` file was read with `read.csv()`, which
+  stopped, and a `;` file with decimal points was read with `read.csv2()`,
+  which left its numbers as text. A latin-1 file is read with
+  `fileEncoding = "latin1"`.
+
 * `read_tracks()` reads a zip archive without readr or data.table installed.
   The `read.table()` fallback was handed the archive itself and stopped with
   a misleading "0 row(s) were read" error; it now reads the archive's first
