@@ -1020,6 +1020,45 @@ test_that("quoted line breaks and latin-1 bytes are no ragged rows", {
   }
 })
 
+test_that("a latin-1 file reads as its text under every reader", {
+  dir <- withr::local_tempdir()
+  latin1 <- function(name, text, open = file) {
+    p <- file.path(dir, name)
+    con <- open(p, "wb")
+    writeBin(iconv(text, "UTF-8", "latin1", toRaw = TRUE)[[1]], con)
+    close(con)
+    p
+  }
+  text <- paste0("id,frame,x (µm),y,note\nrené,1,1,2,café\n",
+                 "rené,2,2,3,b\nb,1,3,4,c\n")
+  files <- c(latin1("latin.csv", text), latin1("latin.csv.gz", text, gzfile))
+  # one latin-1 byte makes the whole file latin-1, as .read_text_lines() reads
+  # a dialect's file: the UTF-8 header of this one reads as latin-1 too
+  mixed <- file.path(dir, "mixed.csv")
+  writeBin(c(charToRaw(enc2utf8("id,frame,x (µm),y,note\na,1,1,2,")),
+             as.raw(0xe9), charToRaw("\n")), mixed)
+  nm <- c("id", "frame", "x (µm)", "y", "note")
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    for (p in files) {
+      i <- paste(info, basename(p))
+      df <- .read_any(p)
+      expect_identical(names(df), nm, info = i)
+      expect_identical(df$id, c("rené", "rené", "b"), info = i)
+      expect_identical(df$note, c("café", "b", "c"), info = i)
+      expect_true(all(validUTF8(c(names(df), df$id, df$note))), info = i)
+      expect_identical(.read_names(p), nm, info = i)
+      tr <- read_tracks(p, mapping = list(time = "frame", x = "x (µm)"), keep = "note")
+      expect_setequal(as.character(tr@data[[tr@cols$id]]), c("rené", "b"))
+    }
+    df <- .read_any(mixed)
+    expect_identical(names(df)[3], "x (Âµm)", info = info)
+    expect_identical(df$note, "é", info = info)
+    expect_identical(.read_names(mixed), names(df), info = info)
+  }
+})
+
 test_that("a compressed file is counted as the table it holds", {
   dir <- withr::local_tempdir()
   txt <- c("id,frame,x,y", "a,1,1,2", "a,2,2,3", "a,3,3,4")
