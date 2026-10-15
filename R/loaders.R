@@ -2254,21 +2254,64 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
 #   ts <- read_tracks_format("/data/dir/run1.csv", format = "my_frames_spec")
 
 # ---- dialect helpers -----------------------------------------------------------
+# The file-reading options read_tracks() hands a dialect (see read_opts).
+.read_opt_names <- c("decimal", "delim", "sheet", "ext")
+
+# The non-NULL entries of read_opts, checked: an unknown name or a decimal
+# mark other than "." / "," stops (`who` names the caller in the message).
+.check_read_opts <- function(read_opts, who) {
+  bad <- function(...) rlang::abort(sprintf(...), class = "radiatR_invalid_argument",
+                                    arg = "read_opts")
+  if (is.null(read_opts) || !length(read_opts)) return(list())
+  if (!is.list(read_opts) || is.null(names(read_opts)) || any(!nzchar(names(read_opts))))
+    bad("%s: read_opts must be a named list.", who)
+  unknown <- setdiff(names(read_opts), .read_opt_names)
+  if (length(unknown))
+    bad("%s: read_opts has no entry %s; it takes %s.", who,
+        paste0("'", unknown, "'", collapse = ", "), paste(.read_opt_names, collapse = ", "))
+  opts <- read_opts[!vapply(read_opts, is.null, logical(1))]
+  dec <- opts[["decimal"]]
+  if (!is.null(dec) && !(is.character(dec) && length(dec) == 1L && dec %in% c(".", ",")))
+    bad('%s: read_opts$decimal must be "." or ",".', who)
+  opts
+}
+
+# The read_opts a dialect was given, checked (.check_read_opts()); an entry
+# the dialect cannot honour (`honours`), or any but `decimal` for a data
+# frame, stops rather than being ignored. The condition's `option` names it.
+.dialect_read_opts <- function(read_opts, dialect, honours, file = TRUE) {
+  opts <- .check_read_opts(read_opts, dialect)
+  ok <- if (file) honours else intersect(honours, "decimal")
+  extra <- setdiff(names(opts), ok)
+  if (length(extra))
+    rlang::abort(sprintf("%s: read_opts$%s cannot be used: %s.", dialect, extra[1L],
+                         if (!file) "the input is a data frame, not a file"
+                         else paste("this dialect reads its own file layout and takes only",
+                                    paste0("read_opts$", honours, collapse = ", "))),
+                 class = "radiatR_invalid_argument", arg = "read_opts", option = extra[1L])
+  opts
+}
+
 # What a built-in dialect works on: its table (read from one path with `read`,
 # or handed over as a data frame), the file it came from, the decimal mark it
 # was read with, and its headers normalised for matching (`names`). The table
-# keeps the headers as written, so that errors can name them.
-.dialect_input <- function(x, dialect, norm = identity, read = .read_any) {
-  if (is.character(x) && length(x) == 1L && file.exists(x)) {
-    df <- read(x)
-    src <- basename(x)
-  } else if (is.data.frame(x)) {
-    df <- x
-    src <- NULL
-  } else {
+# keeps the headers as written, so that errors can name them. `read` gets the
+# read_opts its arguments name; a given decimal mark is the table's.
+.dialect_input <- function(x, dialect, norm = identity, read = .read_any,
+                           read_opts = list(), honours = .read_opt_names) {
+  file <- is.character(x) && length(x) == 1L && file.exists(x)
+  if (!file && !is.data.frame(x))
     rlang::abort(sprintf("%s: expected a data frame or the path of one file.", dialect),
                  class = "radiatR_dialect_error")
+  opts <- .dialect_read_opts(read_opts, dialect, honours, file)
+  if (file) {
+    df <- do.call(read, c(list(x), opts[intersect(names(opts), names(formals(read)))]))
+    src <- basename(x)
+  } else {
+    df <- x
+    src <- NULL
   }
+  if (!is.null(opts[["decimal"]])) attr(df, "decimal") <- opts[["decimal"]]
   list(df = df, source = src, dialect = dialect,
        decimal = attr(df, "decimal") %||% ".", names = norm(names(df)))
 }
@@ -2494,9 +2537,11 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
 # they are NA where the point is masked.
 register_loader_dialect("deeplabcut", function(x, bodypart = NULL, likelihood_min = NULL,
                                                 partial = c("na", "mean"), individuals = NULL,
-                                                id_col = NULL, time_col = NULL, fps = NULL) {
+                                                id_col = NULL, time_col = NULL, fps = NULL,
+                                                read_opts = list()) {
   partial <- match.arg(partial)
-  inp <- .dialect_input(x, "deeplabcut", read = .read_deeplabcut)
+  inp <- .dialect_input(x, "deeplabcut", read = .read_deeplabcut, read_opts = read_opts,
+                        honours = "decimal")
   fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error",
                                      source = inp$source)
   nms <- inp$names; n <- nrow(inp$df)
@@ -2576,8 +2621,9 @@ register_loader_dialect("deeplabcut", function(x, bodypart = NULL, likelihood_mi
 # (trajectories.csv) or `x_1,y_1,...`, with an optional time column. `seconds`
 # is seconds, `frame`/`frames` and row order are frames. Missing positions are
 # `nan`. Each column is checked on the table as read, before the reshape.
-register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = NULL, ids = NULL) {
-  inp <- .dialect_input(x, "idtrackerai_wide")
+register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = NULL, ids = NULL,
+                                                      read_opts = list()) {
+  inp <- .dialect_input(x, "idtrackerai_wide", read_opts = read_opts)
   nms <- inp$names
   xs <- grep("^x_?[0-9]+$", nms, value = TRUE)
   if (!length(xs)) stop("idtrackerai_wide: no x<id>/y<id> column pairs found")
@@ -2636,7 +2682,7 @@ register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = N
 # block of a file written with decimal points still holds "3,6 %".
 # attr(, "ethovision") is list(header =, units =): the header block as a named
 # character vector, and the units named by column.
-.read_ethovision <- function(path) {
+.read_ethovision <- function(path, delim = NULL) {
   src <- basename(path)
   fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error", source = src)
   lines <- .read_text_lines(path)
@@ -2648,6 +2694,9 @@ register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = N
                 "an export starts with \"Number of header lines:\" and a count. A table whose ",
                 "first line is its column header is read as a data frame, not as a file."),
          src, substr(first, 1L, 60L))
+  if (!is.null(delim) && !identical(delim, top[2L]))
+    fail("ethovision: line 1 of '%s' is separated by %s, not by the read_opts delimiter %s.",
+         src, encodeString(top[2L], quote = "'"), encodeString(delim, quote = "'"))
   delim <- top[2L]
   fields <- function(ln)
     scan(text = ln, what = "", sep = delim, quote = "\"", quiet = TRUE, strip.white = TRUE,
@@ -2731,7 +2780,8 @@ register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = N
 # The time is `Trial time` (seconds since the trial started) unless `time_col`
 # names another column; a file's units row must give it in seconds.
 register_loader_dialect("ethovision", function(x, bodypart = NULL, partial = c("na", "mean"),
-                                               time_col = NULL, id_col = NULL, zone = NULL) {
+                                               time_col = NULL, id_col = NULL, zone = NULL,
+                                               read_opts = list()) {
   partial <- match.arg(partial)
   if (!is.null(zone))
     rlang::abort(paste0(
@@ -2739,7 +2789,8 @@ register_loader_dialect("ethovision", function(x, bodypart = NULL, partial = c("
       "the argument names body points (center, nose, tail)."),
       class = "radiatR_dialect_error")
   norm <- function(v) gsub("^_+|_+$", "", gsub("[^a-z0-9]+", "_", tolower(v)))
-  inp <- .dialect_input(x, "ethovision", norm, read = .read_ethovision)
+  inp <- .dialect_input(x, "ethovision", norm, read = .read_ethovision, read_opts = read_opts,
+                        honours = c("decimal", "delim"))
   fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error",
                                      source = inp$source)
   nms <- inp$names; n <- nrow(inp$df)
@@ -2822,10 +2873,11 @@ register_loader_dialect("ethovision", function(x, bodypart = NULL, partial = c("
 # (frames). Spots that belong to no track carry TRACK_ID "None" (or nothing):
 # `unlinked` says whether that stops the load or leaves them out.
 register_loader_dialect("trackmate", function(x, id_col = NULL, time_col = NULL, fps = NULL,
-                                              unlinked = c("error", "drop")) {
+                                              unlinked = c("error", "drop"),
+                                              read_opts = list()) {
   unlinked <- match.arg(unlinked)
   norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(v))
-  inp <- .dialect_input(x, "trackmate", norm)
+  inp <- .dialect_input(x, "trackmate", norm, read_opts = read_opts)
   nms <- inp$names
   id  <- id_col %||% .guess_col(nms, c("track_id", "trajectory_id", "id"))
   xc  <- .guess_col(nms, c("position_x", "x"))
@@ -2885,13 +2937,13 @@ register_loader_dialect("trackmate", function(x, id_col = NULL, time_col = NULL,
 # ToxTrac Tracking.txt, read when it has no header row (the first line is all
 # numbers): frame, arena, track, x, y, label, with five bounding-box columns
 # before the label in the 2026 layout. Read as text for the strict coercion.
-.read_toxtrac <- function(path) {
+.read_toxtrac <- function(path, decimal = NULL) {
   latin1 <- .is_latin1(path)
   first <- readLines(path, n = 1L, warn = FALSE)
   if (latin1) first <- iconv(first, "latin1", "UTF-8")
   first <- strsplit(first, "\t", fixed = TRUE)
-  if (!length(first) || !length(first[[1L]]) || anyNA(.parse_number(trimws(first[[1L]]))))
-    return(.read_any(path))
+  if (!length(first) || !length(first[[1L]]) || anyNA(.parse_number(trimws(first[[1L]]), decimal %||% ".")))
+    return(.read_any(path, decimal = decimal))
   d <- utils::read.table(path, header = FALSE, sep = "\t", colClasses = "character",
                          blank.lines.skip = FALSE, quote = "", comment.char = "",
                          fileEncoding = if (latin1) "latin1" else "")
@@ -2913,10 +2965,11 @@ register_loader_dialect("trackmate", function(x, id_col = NULL, time_col = NULL,
 # .read_toxtrac). The id is <arena>_<track>, because each arena numbers its
 # tracks from 1. Label is ToxTrac's detection flag (0 predicted, 1 detected,
 # 2 texture-matched, 3 interpolated) and is kept as a column, not filtered on.
-register_loader_dialect("toxtrac", function(x, fps = NULL) {
+register_loader_dialect("toxtrac", function(x, fps = NULL, read_opts = list()) {
   norm <- function(v)
     gsub("^_+|_+$", "", gsub("[^a-z0-9]+", "_", tolower(sub("\\s*\\([^)]*\\)\\s*$", "", v))))
-  inp <- .dialect_input(x, "toxtrac", norm, read = .read_toxtrac)
+  inp <- .dialect_input(x, "toxtrac", norm, read = .read_toxtrac, read_opts = read_opts,
+                        honours = "decimal")
   nms <- inp$names
   track <- .guess_col(nms, c("trackid", "track", "id", "animal", "subject"))
   time  <- .guess_col(nms, c("time_s", "time", "frame"))
@@ -2948,12 +3001,12 @@ register_loader_dialect("toxtrac", function(x, fps = NULL) {
 # X/Y, then wcentroid, then centroid, then pcentroid; set `centroid` to force
 # one source ("wcentroid", "centroid", or "pcentroid").
 register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL,
-                                          fps = NULL, centroid = NULL) {
+                                          fps = NULL, centroid = NULL, read_opts = list()) {
   # TRex annotates headers with a trailing unit in parentheses, e.g.
   # "X#wcentroid (cm)" or "SPEED#wcentroid (cm/s)"; strip it before normalising.
   strip_unit <- function(v) sub("\\s*\\([^)]*\\)\\s*$", "", v)
   norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(strip_unit(v)))
-  inp <- .dialect_input(x, "trex", norm)
+  inp <- .dialect_input(x, "trex", norm, read_opts = read_opts)
   nms <- inp$names
   stem <- if (!is.null(inp$source)) tools::file_path_sans_ext(inp$source)
 
@@ -3010,17 +3063,18 @@ register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL,
 # A delimited file whose first line is its header, as a table of text columns.
 # Nothing is typed, so a dialect coerces each column itself and a label column
 # keeps its text ("1.1" and "1.10" stay apart). The text is decoded as
-# .read_text_lines() decodes it, and the separator and the decimal mark (attr
-# "decimal") are sniffed as .read_any() sniffs them. Blank lines after the
+# .read_text_lines() decodes it, and the separator (unless `delim` gives it) and
+# the decimal mark (attr "decimal") are sniffed as .read_any() sniffs them. Blank lines after the
 # last row are not rows. Every row must have the header's fields:
 # read.table() would pad a short row and wrap a long one.
-.read_text_table <- function(path, dialect) {
+.read_text_table <- function(path, dialect, delim = NULL) {
   src <- basename(path)
   fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error", source = src)
   lines <- .read_text_lines(path)
   while (length(lines) && !nzchar(trimws(lines[length(lines)]))) lines <- lines[-length(lines)]
   if (length(lines) < 2L) fail("%s: '%s' has no data rows.", dialect, src)
   g <- .guess_delim(path, lines)
+  if (!is.null(delim)) g$delim <- delim
   con <- textConnection(lines)
   nf <- tryCatch(utils::count.fields(con, sep = g$delim, quote = "\"", comment.char = "",
                                      blank.lines.skip = FALSE),
@@ -3046,7 +3100,8 @@ register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL,
 # .dialect_position(); only the centre point is read, so there is no
 # `bodypart`.
 register_loader_dialect("anymaze", function(x, time_col = NULL, id_col = NULL, zone = NULL,
-                                            bodypart = NULL, skip_units_row = NULL) {
+                                            bodypart = NULL, skip_units_row = NULL,
+                                            read_opts = list()) {
   gone <- function(msg) rlang::abort(msg, class = "radiatR_dialect_error")
   if (!is.null(zone) || !is.null(bodypart))
     gone(paste0("anymaze: `zone` and `bodypart` are not arguments of this dialect. It reads ",
@@ -3055,7 +3110,9 @@ register_loader_dialect("anymaze", function(x, time_col = NULL, id_col = NULL, z
     gone(paste0("anymaze: `skip_units_row` was removed. An ANY-maze export has no units row, ",
                 "and no row is skipped."))
   norm <- function(v) gsub("^_+|_+$", "", gsub("[^a-z0-9]+", "_", tolower(v)))
-  inp <- .dialect_input(x, "anymaze", norm, read = function(p) .read_text_table(p, "anymaze"))
+  inp <- .dialect_input(x, "anymaze", norm,
+                        read = function(p, delim = NULL) .read_text_table(p, "anymaze", delim),
+                        read_opts = read_opts, honours = c("decimal", "delim"))
   fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error",
                                      source = inp$source)
   nms <- inp$names; n <- nrow(inp$df)
@@ -3104,10 +3161,11 @@ register_loader_dialect("anymaze", function(x, time_col = NULL, id_col = NULL, z
 # appended, NA where the node is masked.
 register_loader_dialect("sleap", function(x, bodypart = NULL, score_min = NULL,
                                           partial = c("na", "mean"),
-                                          id_col = NULL, time_col = NULL, fps = NULL) {
+                                          id_col = NULL, time_col = NULL, fps = NULL,
+                                          read_opts = list()) {
   partial <- match.arg(partial)
   norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(v))
-  inp <- .dialect_input(x, "sleap", norm)
+  inp <- .dialect_input(x, "sleap", norm, read_opts = read_opts)
   fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error",
                                      source = inp$source)
   nms <- inp$names; n <- nrow(inp$df)
