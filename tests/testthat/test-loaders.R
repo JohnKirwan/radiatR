@@ -805,3 +805,23 @@ test_that(".source_labels picks the shortest prefix that is unique", {
     unname(.source_labels(c("x/n1.csv", "x/n1.tsv", "a/n2.csv", "b/n2.csv", "c/n3.csv"))),
     c("n1.csv", "n1.tsv", "a/n2.csv", "b/n2.csv", "n3"))
 })
+
+test_that(".read_names gives the names .read_any gives, from one record", {
+  dir <- withr::local_tempdir()
+  for (txt in c("id,time,x,y\n1,1,.1,.1\n", "id;time; x ;\"y, z\"\n1;1;0,1;0,1\n",
+                "a\tb\tc\n1\t2\t3\n", "﻿id,time,x,y\n1,1,.1,.1\n")) {
+    p <- file.path(dir, "f.csv"); writeBin(charToRaw(enc2utf8(txt)), p)
+    expect_identical(radiatR:::.read_names(p), names(radiatR:::.read_any(p)), info = txt)
+  }
+  gz <- file.path(dir, "f.csv.gz"); con <- gzfile(gz, "wb")
+  writeLines(c("id,time,x,y", "1,1,.1,.1"), con); close(con)
+  expect_identical(radiatR:::.read_names(gz), c("id", "time", "x", "y"))
+})
+
+test_that("read_tracks_format resolves regex_mapping from names alone", {
+  dir <- withr::local_tempdir(); p <- file.path(dir, "f.csv")
+  writeBin(charToRaw("animal,sec,px,py\na,1,.1,.1\na,2,.2,.2\n"), p)
+  ts <- read_tracks_format(p, list(regex_mapping = list(id = "^animal", time = "^sec",
+                                                        x = "^px", y = "^py")))
+  expect_identical(unique(as.character(ts@data$animal)), "a")
+})

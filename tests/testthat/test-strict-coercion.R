@@ -427,6 +427,18 @@ test_that("text time reads a zone designator and refuses a column that mixes zon
     c("2024-01-01 10:00:00", "2024-01-01 11:00:00", "2024-01-01T12:00:00+01:00"),
     tz = "UTC", column = "time"))
   expect_identical(e$rows, 3L)
+  # in one layout the zone mix is named, the minority kind reported
+  e <- malformed(radiatR:::.coerce_time(
+    c("2024-01-01T10:00:00", "2024-01-01T11:00:00", "2024-01-01T12:00:00+01:00"),
+    tz = "UTC", column = "time"))
+  expect_identical(e$rows, 3L)
+  expect_identical(e$values, "2024-01-01T12:00:00+01:00")
+  expect_match(conditionMessage(e), "date-times that all carry a zone, or none", fixed = TRUE)
+  e <- malformed(radiatR:::.coerce_time(
+    c("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", "2024-01-01T12:00:00"),
+    tz = "UTC", column = "time"))
+  expect_identical(e$values, "2024-01-01T12:00:00")
+  expect_match(conditionMessage(e), "date-times that all carry a zone, or none", fixed = TRUE)
   # an offset outside +-14:00 is no offset
   expect_error(radiatR:::.coerce_time(c("2024-01-01T10:00:00+15:00"), tz = "UTC",
                                       column = "time"),
@@ -587,7 +599,7 @@ test_that("Excel date-times, which carry no zone, are read in tz", {
   writexl::write_xlsx(d, path)
   # the same wall-clock times, five hours later; epoch seconds resolve ~2e-7 s
   got <- as.numeric(read_tracks(path, tz = "America/New_York")@data$frame)
-  expect_lt(max(abs(got - as.numeric(d$frame) - 5 * 3600)), 1e-5)
+  expect_lt(max(abs(got - as.numeric(d$frame) - 5 * 3600)), 5e-7)
   expect_identical(as.numeric(read_tracks(path)@data$frame), as.numeric(d$frame))
 })
 
@@ -648,7 +660,7 @@ test_that("a kept Excel date-time column is not blanked by a time that tz skips"
   expect_identical(e$rows, 2L)
 })
 
-test_that("a time that tz skips, typed by readr, is named and not blanked", {
+test_that("a time that tz skips, read on the text path, is named and not blanked", {
   skip_if_not_installed("readr")
   dir <- withr::local_tempdir()
   stamp <- sprintf("2024-03-10 0%d:30:00", 1:3)
@@ -689,6 +701,102 @@ hide_readers <- function(hide, env = parent.frame())
   testthat::local_mocked_bindings(
     .is_installed = function(pkg) !pkg %in% hide && requireNamespace(pkg, quietly = TRUE),
     .env = env)
+
+# ---- one date-time parser for every reader -------------------------------------
+
+test_that("every reader gives the same instants: one parser decides", {
+  dir <- withr::local_tempdir()
+  mixed <- file.path(dir, "mixed.csv")     # zoned beside unzoned: malformed on the text path
+  writeBin(charToRaw(paste0("id,time,x,y\na,2024-01-01 10:00:00,.1,.1\n",
+                            "a,2024-01-01 11:00:00,.2,.2\na,2024-01-01T12:00:00Z,.3,.3\n")), mixed)
+  layouts <- list(c("2024-01-01T10:00", "2024-01-01T10:01"),
+                  c("20240101T100000", "20240101T100100"),
+                  c("2024-01-01T1000", "2024-01-01T1001"),
+                  # ISO 8601 basic, zoned: the zone says the instant
+                  c("20240101T100000Z", "20240101T100100Z"),
+                  c("20240101T120000+0200", "20240101T120100+0200"),
+                  c("2024-01-01T1000Z", "2024-01-01T1001Z"),
+                  c("2024-01-01T1200+02:00", "2024-01-01T1201+02:00"))
+  for (v in layouts) {
+    p <- file.path(dir, "lay.csv")
+    writeBin(charToRaw(sprintf("id,time,x,y\na,%s,.1,.1\na,%s,.2,.2\n", v[1], v[2])), p)
+    for (hide in readers) {
+      hide_readers(hide)
+      expect_equal(as.numeric(read_tracks(p)@data$time),
+                   as.numeric(as.POSIXct(c("2024-01-01 10:00", "2024-01-01 10:01"), tz = "UTC")),
+                   info = paste(v[1], "without", paste(hide, collapse = " ")))
+    }
+  }
+  for (hide in readers) {
+    hide_readers(hide)
+    expect_error(read_tracks(mixed), class = "radiatR_malformed_values")
+  }
+  hours <- file.path(dir, "hours.csv")      # hours only: refused, named
+  writeBin(charToRaw("id,time,x,y\na,2024-01-01 10,.1,.1\na,2024-01-01 11,.2,.2\n"), hours)
+  for (hide in readers) {
+    hide_readers(hide)
+    expect_error(read_tracks(hours), class = "radiatR_malformed_values")
+  }
+})
+
+test_that("a kept timestamp column is POSIXct in tz under every reader; an unused one is not read", {
+  dir <- withr::local_tempdir()
+  p <- file.path(dir, "kept.csv")
+  writeBin(charToRaw(paste0("id,time,x,y,stamp,slash,junk\n",
+                            "a,1,.1,.1,2024-01-01 10:00:00,2024/01/01 10:00:00,2024-01-01 10:00:00\n",
+                            "a,2,.2,.2,2024-01-01 11:00:00,2024/01/01 11:00:00,2024-02-30 99:00:00\n")), p)
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    ts <- read_tracks(p, tz = "America/New_York", keep = c("stamp", "slash"))
+    for (cc in c("stamp", "slash")) {
+      expect_s3_class(ts@data[[cc]], "POSIXct")
+      expect_identical(attr(ts@data[[cc]], "tzone"), "America/New_York", info = info)
+      expect_equal(as.numeric(ts@data[[cc]][1]),
+                   as.numeric(as.POSIXct("2024-01-01 10:00:00", tz = "America/New_York")),
+                   info = paste(info, cc))
+    }
+  }
+})
+
+test_that("a kept column not all in one date-time layout is kept as read, under every reader", {
+  dir <- withr::local_tempdir()
+  p <- file.path(dir, "loose.csv")
+  writeBin(charToRaw(paste0("id,time,x,y,hours,mixed\n",
+                            "a,1,.1,.1,2024-01-01 10,2024-01-01 10:00:00\n",
+                            "a,2,.2,.2,2024-01-01 11,2024-01-01T12:00:00Z\n")), p)
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    ts <- read_tracks(p, keep = c("hours", "mixed"))
+    expect_identical(ts@data$hours, c("2024-01-01 10", "2024-01-01 11"), info = info)
+    expect_identical(ts@data$mixed, c("2024-01-01 10:00:00", "2024-01-01T12:00:00Z"), info = info)
+  }
+})
+
+test_that("files whose date-time columns are typed differently still bind", {
+  dir <- withr::local_tempdir()
+  a <- file.path(dir, "a.csv"); b <- file.path(dir, "b.csv")
+  writeBin(charToRaw("id,time,x,y,day\na,1,.1,.1,2024-01-01\na,2,.2,.2,2024-01-02\n"), a)
+  writeBin(charToRaw("id,time,x,y,day\nb,1,.1,.1,2024-01-01 10:00:00\nb,2,.2,.2,2024-01-01 11:00:00\n"), b)
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    expect_no_error(read_tracks(c(a, b)))                      # `day` unused
+    ts <- read_tracks(c(a, b), keep = "day")                   # `day` kept: POSIXct
+    expect_s3_class(ts@data$day, "POSIXct")
+  }
+  skip_if_not_installed("readxl"); skip_if_not_installed("writexl")
+  x <- file.path(dir, "c.xlsx")
+  writexl::write_xlsx(data.frame(id = "c", time = 1:2, x = c(.1, .2), y = c(.1, .2),
+                                 day = as.POSIXct(c("2024-01-01 10:00", "2024-01-01 11:00"),
+                                                  tz = "UTC")), x)
+  for (hide in readers) {
+    hide_readers(hide)
+    expect_no_error(read_tracks(c(b, x)))
+    expect_s3_class(read_tracks(c(b, x), keep = "day")@data$day, "POSIXct")
+  }
+})
 
 test_that("ids that differ as text are not merged by reading them as numbers", {
   dir <- withr::local_tempdir()
@@ -1053,4 +1161,189 @@ test_that("load_manifest() passes on only what its caller supplied", {
   expect_equal(frame_rate(load_manifest(file_tbl, dir, format = spec, fps = 50)), 50)
   # and without a format the defaults are read_tracks()'s own
   expect_identical(suppressWarnings(load_manifest(file_tbl, dir))@angle_unit, "radians")
+})
+
+test_that(".wall_clock gives the instants ISOdatetime gives, gaps NA", {
+  ref <- function(lt, tz) {   # the implementation before 2026-10-14
+    out <- ISOdatetime(lt$year + 1900, lt$mon + 1, lt$mday, lt$hour, lt$min, lt$sec, tz = tz)
+    back <- as.POSIXlt(out, tz = tz)
+    out[which(back$hour != lt$hour | back$min != lt$min)] <- NA
+    out
+  }
+  s <- c("2024-01-01 00:00:00", "2024-03-10 02:30:00", "2024-03-10 03:00:00",
+         "2024-11-03 01:30:00", "2024-04-26 00:00:00", "2024-06-30 23:59:59.25",
+         "2024-10-27 02:30:00", "1970-01-01 00:00:00", "2038-01-19 03:14:08", NA)
+  for (tz in c("UTC", "America/New_York", "Africa/Cairo", "Europe/London",
+               "Australia/Lord_Howe", "America/Sao_Paulo")) {
+    lt <- strptime(s, "%Y-%m-%d %H:%M:%OS", tz = tz)
+    expect_identical(as.numeric(radiatR:::.wall_clock(lt, tz)), as.numeric(ref(lt, tz)),
+                     info = tz)
+    expect_length(radiatR:::.wall_clock(lt[0], tz), 0L)
+  }
+  # an all-zoned column calls .wall_clock() on no unzoned values
+  z <- radiatR:::.coerce_time(c("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z"),
+                              tz = "America/New_York")
+  expect_equal(as.numeric(z), as.numeric(as.POSIXct(c("2024-01-01 10:00:00",
+                                                       "2024-01-01 11:00:00"), tz = "UTC")))
+})
+
+# ---- a bare date is the first instant of its day -------------------------------
+
+test_that(".day_start is midnight, or the first instant after a gap", {
+  d <- as.Date(c("2024-04-25", "2024-04-26", NA))
+  got <- radiatR:::.day_start(d, "Africa/Cairo")       # Cairo skipped 00:00-01:00 on 26 April 2024
+  expect_identical(format(got, "%Y-%m-%d %H:%M:%S", tz = "Africa/Cairo"),
+                   c("2024-04-25 00:00:00", "2024-04-26 01:00:00", NA))
+  expect_identical(attr(got, "tzone"), "Africa/Cairo")
+  sp <- radiatR:::.day_start(as.Date("2018-11-04"), "America/Sao_Paulo")
+  expect_identical(format(sp, "%H:%M", tz = "America/Sao_Paulo"), "01:00")
+  expect_error(radiatR:::.day_start(as.Date("2011-12-30"), "Pacific/Apia"),
+               class = "radiatR_malformed_values")
+})
+
+test_that("a bare date in a DST gap is its day's first instant under every reader", {
+  dir <- withr::local_tempdir()
+  bare  <- file.path(dir, "bare.csv")
+  writeBin(charToRaw("id,time,x,y\na,2024-04-25,.1,.1\na,2024-04-26,.2,.2\n"), bare)
+  slash <- file.path(dir, "slash.csv")
+  writeBin(charToRaw("id,time,x,y\na,2024/04/25,.1,.1\na,2024/04/26,.2,.2\n"), slash)
+  mixed <- file.path(dir, "mixed.csv")
+  writeBin(charToRaw("id,time,x,y\na,2024-04-26,.1,.1\na,2024-04-26 10:00:00,.2,.2\n"), mixed)
+  want <- function(s) as.numeric(as.POSIXct(s, tz = "Africa/Cairo"))
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    for (p in c(bare, slash))
+      expect_equal(as.numeric(read_tracks(p, tz = "Africa/Cairo")@data$time),
+                   want(c("2024-04-25 00:00:00", "2024-04-26 01:00:00")), info = paste(info, p))
+    expect_equal(as.numeric(read_tracks(mixed, tz = "Africa/Cairo")@data$time),
+                 want(c("2024-04-26 01:00:00", "2024-04-26 10:00:00")), info = info)
+  }
+})
+
+test_that("an Excel date cell at a midnight that is skipped is its day's first instant", {
+  skip_if_not_installed("readxl")
+  skip_if_not_installed("writexl")
+  path <- withr::local_tempfile(fileext = ".xlsx")
+  writexl::write_xlsx(xy_df(frame = as.POSIXct(c("2024-04-24", "2024-04-25", "2024-04-26"),
+                                               tz = "UTC")), path)
+  got <- read_tracks(path, tz = "Africa/Cairo")@data$frame
+  expect_identical(format(got, "%Y-%m-%d %H:%M", tz = "Africa/Cairo"),
+                   c("2024-04-24 00:00", "2024-04-25 00:00", "2024-04-26 01:00"))
+})
+
+test_that("a time in a DST gap and a leap second are named under every reader", {
+  dir <- withr::local_tempdir()
+  csv <- function(name, rows) {
+    p <- file.path(dir, name)
+    writeBin(charToRaw(paste0("id,time,x,y\n", paste0("a,", rows, ",.1,.1\n", collapse = ""))), p)
+    p
+  }
+  gap  <- csv("gap.csv", c("2024-03-10 01:30:00", "2024-03-10 02:30:00"))
+  leap <- csv("leap.csv", c("2016-12-31T23:59:59Z", "2016-12-31T23:59:60Z"))
+  basic <- csv("basic.csv", c("20161231T235959Z", "20161231T235960Z"))
+  basic_local <- csv("basic_local.csv", c("20161231T235959", "20161231T235960"))
+  bad  <- csv("bad.csv", c("2024-02-28 10:00:00", "2024-02-30 10:00:00"))
+  apia <- csv("apia.csv", c("2011-12-29 10:00:00", "2011-12-30 10:00:00"))
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    e <- malformed(read_tracks(gap, tz = "America/New_York"))
+    expect_s3_class(e, "radiatR_malformed_values")
+    expect_identical(e$values, "2024-03-10 02:30:00", info = info)
+    expect_match(conditionMessage(e), "exist in time zone 'America/New_York'", info = info)
+    e <- malformed(read_tracks(leap))
+    expect_identical(e$values, "2016-12-31T23:59:60Z", info = info)
+    expect_match(conditionMessage(e), "leap second", info = info)
+    for (p in c(basic, basic_local)) {    # ISO 8601 basic: no ':' before the seconds
+      e <- malformed(read_tracks(p))
+      expect_identical(e$rows, 2L, info = paste(info, basename(p)))
+      expect_match(conditionMessage(e), "leap second", info = paste(info, basename(p)))
+    }
+    e <- malformed(read_tracks(bad, tz = "America/New_York"))
+    expect_identical(e$values, "2024-02-30 10:00:00", info = info)
+    expect_false(grepl("exist in time zone", conditionMessage(e)), info = info)
+    # a day the zone skips altogether is named, not moved a day back
+    e <- malformed(read_tracks(apia, tz = "Pacific/Apia"))
+    expect_identical(e$values, "2011-12-30 10:00:00", info = info)
+    expect_match(conditionMessage(e), "exist in time zone 'Pacific/Apia'", info = info)
+  }
+})
+
+
+test_that("a bare date on a day the zone skips reports its own row under every reader", {
+  dir <- withr::local_tempdir()
+  beside <- file.path(dir, "beside.csv")    # a bare date beside date-times
+  writeBin(charToRaw(paste0("id,time,x,y\na,2011-12-28 10:00:00,.1,.1\n",
+                            "a,2011-12-29 10:00:00,.2,.2\na,2011-12-30,.3,.3\n")), beside)
+  dates <- file.path(dir, "dates.csv")      # bare dates throughout
+  writeBin(charToRaw(paste0("id,time,x,y\na,2011-12-28,.1,.1\n",
+                            "a,2011-12-29,.2,.2\na,2011-12-30,.3,.3\n")), dates)
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    for (p in c(beside, dates)) {
+      e <- malformed(read_tracks(p, tz = "Pacific/Apia"))
+      expect_s3_class(e, "radiatR_malformed_values")
+      expect_identical(e$rows, 3L, info = paste(info, basename(p)))
+      expect_match(conditionMessage(e), "exist in time zone 'Pacific/Apia'", info = info)
+    }
+  }
+})
+
+test_that("bare dates in one file and date-times in another bind under every reader", {
+  dir <- withr::local_tempdir()
+  csv <- function(name, rows) {
+    p <- file.path(dir, name)
+    writeBin(charToRaw(paste0("id,time,x,y\n", paste0(rows, ",.1,.1\n", collapse = ""))), p)
+    p
+  }
+  bare <- csv("bare.csv", c("a,2024-04-25", "a,2024-04-26"))
+  dt   <- csv("dt.csv", c("b,2024-04-26 10:00:00", "b,2024-04-26 11:00:00"))
+  apia <- csv("apia.csv", c("a,2011-12-29", "a,2011-12-30"))
+  apia_dt <- csv("apia_dt.csv", c("b,2011-12-29 10:00:00", "b,2011-12-31 10:00:00"))
+  want <- function(s) as.numeric(as.POSIXct(s, tz = "Africa/Cairo"))
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    got <- read_tracks(c(bare, dt), tz = "Africa/Cairo")@data$time
+    expect_equal(as.numeric(got), want(c("2024-04-25 00:00:00", "2024-04-26 01:00:00",
+                                         "2024-04-26 10:00:00", "2024-04-26 11:00:00")),
+                 info = info)
+    e <- malformed(read_tracks(c(apia, apia_dt), tz = "Pacific/Apia"))
+    expect_s3_class(e, "radiatR_malformed_values")
+    expect_identical(e$rows, 2L, info = info)
+    expect_identical(e$source, "apia.csv", info = info)
+    expect_match(conditionMessage(e), "exist in time zone 'Pacific/Apia'", info = info)
+  }
+  skip_if_not_installed("readxl"); skip_if_not_installed("writexl")
+  x <- file.path(dir, "dt.xlsx")
+  writexl::write_xlsx(data.frame(id = "c", time = as.POSIXct(
+    c("2024-04-26 10:00:00", "2024-04-26 11:00:00"), tz = "UTC"), x = .1, y = .1), x)
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    got <- read_tracks(c(bare, x), tz = "Africa/Cairo")@data$time
+    expect_equal(as.numeric(got), want(c("2024-04-25 00:00:00", "2024-04-26 01:00:00",
+                                         "2024-04-26 10:00:00", "2024-04-26 11:00:00")),
+                 info = info)
+  }
+})
+
+test_that("an Excel cell on a day the zone skips stops the load only in a column it uses", {
+  skip_if_not_installed("readxl"); skip_if_not_installed("writexl")
+  skipped <- as.POSIXct(c("2011-12-28", "2011-12-29", "2011-12-30"), tz = "UTC")
+  used <- withr::local_tempfile(fileext = ".xlsx")
+  writexl::write_xlsx(xy_df(frame = skipped), used)
+  e <- malformed(read_tracks(used, tz = "Pacific/Apia"))
+  expect_s3_class(e, "radiatR_malformed_values")
+  expect_identical(e$rows, 3L)
+  expect_identical(e$columns, "frame")
+  expect_match(conditionMessage(e), "exist in time zone 'Pacific/Apia'")
+  unused <- withr::local_tempfile(fileext = ".xlsx")
+  writexl::write_xlsx(xy_df(note = skipped), unused)
+  expect_false("note" %in% names(read_tracks(unused, tz = "Pacific/Apia")@data))
+  e <- malformed(read_tracks(unused, tz = "Pacific/Apia", keep = "note"))
+  expect_identical(e$rows, 3L)
+  expect_identical(e$columns, "note")
 })

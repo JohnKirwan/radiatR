@@ -40,14 +40,17 @@ a duration): seconds are recorded as such in the Tracks metadata
 (`time_unit`), so [elapsed_seconds()] and the kinematics use them directly,
 with no frame rate.}
 
-\item{tz}{Time zone of timestamps that carry none (default "UTC") in a
-delimited or Excel file `read_tracks()` reads itself, and in a text column
-of a data frame; a bare date is midnight in `tz`. A wall-clock time that
-does not exist in `tz` (the hour skipped when clocks go forward) is an
-error. A timestamp that ends in a zone designator (`Z`, `+02:00`,
-`-0130`, `+02`) is that instant whatever `tz` is, a date-time column
-of a data frame keeps its instants, and `tz` does not reach a file read by
-a dialect.}
+\item{tz}{Time zone of timestamps that carry none (default "UTC"): in the
+time column and the kept columns (see `keep`) of a file, in an Excel
+date-time cell, and in a text time column of a data frame. A dialect is
+not given `tz`: it applies to the dates and text date-times of the table
+the dialect returns. A bare date is the first instant of that day in `tz`
+(midnight, or the end of a DST change that skips midnight; so is an Excel
+date-time cell at such a midnight). A wall-clock time that does not exist
+in `tz` (the hour skipped when clocks go forward, or a day skipped
+altogether) is an error. A timestamp that ends in a zone designator (`Z`,
+`+02:00`, `-0130`, `+02`) is that instant whatever `tz` is, and a
+date-time column of a data frame keeps its instants.}
 
 \item{fps}{Frames-per-second. Required when time_type = "frames" (the time
 column is kept as a raw frame index). When a single finite positive value
@@ -83,7 +86,12 @@ Any `NULL` element is auto-detected. Defaults to all-auto.}
 
 \item{keep}{extra columns to retain besides the mapped ones and those a
 dialect produces (NULL = none). All other columns are dropped; a name
-that is not in the data is ignored without a message.}
+that is not in the data is ignored without a message. A kept column of a
+file is read as date-times by content, under every reader: when its
+reader typed it as dates or date-times, or every value that is not
+missing is a date-time in one layout, it is parsed in `tz` as the time
+column is (a value that is no instant there stops the load); otherwise it
+stays as read.}
 
 \item{drop}{drop these columns after mapping}
 

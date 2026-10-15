@@ -115,3 +115,75 @@ test_that("accept list excludes .mat and gates Excel on readxl", {
   # delimited always present
   expect_true(all(c(".csv", ".tsv", ".txt") %in% accepted_exts("headings")))
 })
+
+test_that("upload_preview shows a dialect's file as its first lines when it is no table", {
+  # the EthoVision preamble is one column under readr and an error under fread
+  hidden <- c(list(character(0)),
+              if (requireNamespace("data.table", quietly = TRUE)) list("readr"))
+  for (hide in hidden) {
+    testthat::local_mocked_bindings(
+      .is_installed = function(pkg) !pkg %in% hide && requireNamespace(pkg, quietly = TRUE),
+      .package = "radiatR")
+    ev <- testthat::test_path("fixtures", "real", "ethovision_trial.txt")
+    # the discarded table read's warnings (fread's) are discarded with it
+    expect_no_warning(pv <- upload_preview(ev, "ethovision_trial.txt", dialect = "ethovision"))
+    expect_identical(names(pv), "Line")
+    expect_equal(nrow(pv), 10L)
+    expect_match(pv$Line[1], "header", ignore.case = TRUE)
+  }
+  tr <- testthat::test_path("fixtures", "real", "trex_beetle.csv")
+  expect_gt(ncol(upload_preview(tr, "trex_beetle.csv", dialect = "trex")), 1L)
+  p <- withr::local_tempfile(fileext = ".csv")
+  writeBin(charToRaw("id,time,x,y\na,1,.1,.2\n"), p)
+  expect_identical(names(upload_preview(p, "t.csv", dialect = "generic")), c("id", "time", "x", "y"))
+})
+
+test_that("upload_preview re-emits the table read's warnings only when it shows the table", {
+  p <- withr::local_tempfile(fileext = ".csv")
+  writeBin(charToRaw("a,b\n1,2\n"), p)
+  with_read <- function(tbl) {
+    f <- upload_preview
+    environment(f) <- list2env(list(upload_read = function(...) {
+      warning("table read warned"); tbl }), parent = environment(upload_preview))
+    f
+  }
+  shown <- with_read(data.frame(a = 1, b = 2))
+  expect_warning(pv <- shown(p, "t.csv", dialect = "trex"), "table read warned")
+  expect_named(pv, c("a", "b"))
+  raw <- with_read(data.frame(a = 1))
+  expect_no_warning(pv <- raw(p, "t.csv", dialect = "trex"))
+  expect_named(pv, "Line")
+})
+
+test_that("upload_preview reads only the lines it shows", {
+  ev <- testthat::test_path("fixtures", "real", "ethovision_trial.txt")
+  seen <- NULL
+  testthat::local_mocked_bindings(
+    .read_text_lines = function(path, n = -1L) { seen <<- n; rep("line", max(n, 0L)) },
+    .is_installed = function(pkg) pkg != "readr" && requireNamespace(pkg, quietly = TRUE),
+    .package = "radiatR")
+  pv <- upload_preview(ev, "ethovision_trial.txt", dialect = "ethovision", n = 4L)
+  expect_identical(seen, 4L)
+  expect_equal(nrow(pv), 4L)
+})
+
+test_that(".read_text_lines reads the first n lines in any of its encodings", {
+  dir <- withr::local_tempdir()
+  utf8 <- file.path(dir, "utf8.txt")
+  writeBin(c(as.raw(c(0xef, 0xbb, 0xbf)), charToRaw("a\u00e9\nb\nc\n")), utf8)
+  latin <- file.path(dir, "latin.txt")
+  writeBin(c(charToRaw("a"), as.raw(0xe9), charToRaw("\nb\nc\n")), latin)
+  utf16 <- file.path(dir, "utf16.txt")
+  writeBin(c(as.raw(c(0xff, 0xfe)), iconv("a\u00e9\nb\nc\n", "UTF-8", "UTF-16LE", toRaw = TRUE)[[1]]),
+           utf16)
+  for (p in c(utf8, latin, utf16)) {
+    expect_identical(radiatR:::.read_text_lines(p, n = 2L), c("a\u00e9", "b"), info = basename(p))
+    expect_length(radiatR:::.read_text_lines(p), 3L)
+  }
+})
+
+test_that("upload_preview of a missing file stops before trying to open it", {
+  bad <- file.path(withr::local_tempdir(), "no-such.txt")
+  expect_no_warning(expect_error(upload_preview(bad, "x.txt", dialect = "ethovision"),
+                                 "not found"))
+})
