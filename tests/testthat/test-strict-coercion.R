@@ -1174,3 +1174,48 @@ test_that(".wall_clock gives the instants ISOdatetime gives, gaps NA", {
   expect_equal(as.numeric(z), as.numeric(as.POSIXct(c("2024-01-01 10:00:00",
                                                        "2024-01-01 11:00:00"), tz = "UTC")))
 })
+
+# ---- a bare date is the first instant of its day -------------------------------
+
+test_that(".day_start is midnight, or the first instant after a gap", {
+  d <- as.Date(c("2024-04-25", "2024-04-26", NA))
+  got <- radiatR:::.day_start(d, "Africa/Cairo")       # Cairo skipped 00:00-01:00 on 26 April 2024
+  expect_identical(format(got, "%Y-%m-%d %H:%M:%S", tz = "Africa/Cairo"),
+                   c("2024-04-25 00:00:00", "2024-04-26 01:00:00", NA))
+  expect_identical(attr(got, "tzone"), "Africa/Cairo")
+  sp <- radiatR:::.day_start(as.Date("2018-11-04"), "America/Sao_Paulo")
+  expect_identical(format(sp, "%H:%M", tz = "America/Sao_Paulo"), "01:00")
+  expect_error(radiatR:::.day_start(as.Date("2011-12-30"), "Pacific/Apia"),
+               class = "radiatR_malformed_values")
+})
+
+test_that("a bare date in a DST gap is its day's first instant under every reader", {
+  dir <- withr::local_tempdir()
+  bare  <- file.path(dir, "bare.csv")
+  writeBin(charToRaw("id,time,x,y\na,2024-04-25,.1,.1\na,2024-04-26,.2,.2\n"), bare)
+  slash <- file.path(dir, "slash.csv")
+  writeBin(charToRaw("id,time,x,y\na,2024/04/25,.1,.1\na,2024/04/26,.2,.2\n"), slash)
+  mixed <- file.path(dir, "mixed.csv")
+  writeBin(charToRaw("id,time,x,y\na,2024-04-26,.1,.1\na,2024-04-26 10:00:00,.2,.2\n"), mixed)
+  want <- function(s) as.numeric(as.POSIXct(s, tz = "Africa/Cairo"))
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    for (p in c(bare, slash))
+      expect_equal(as.numeric(read_tracks(p, tz = "Africa/Cairo")@data$time),
+                   want(c("2024-04-25 00:00:00", "2024-04-26 01:00:00")), info = paste(info, p))
+    expect_equal(as.numeric(read_tracks(mixed, tz = "Africa/Cairo")@data$time),
+                 want(c("2024-04-26 01:00:00", "2024-04-26 10:00:00")), info = info)
+  }
+})
+
+test_that("an Excel date cell at a midnight that is skipped is its day's first instant", {
+  skip_if_not_installed("readxl")
+  skip_if_not_installed("writexl")
+  path <- withr::local_tempfile(fileext = ".xlsx")
+  writexl::write_xlsx(xy_df(frame = as.POSIXct(c("2024-04-24", "2024-04-25", "2024-04-26"),
+                                               tz = "UTC")), path)
+  got <- read_tracks(path, tz = "Africa/Cairo")@data$frame
+  expect_identical(format(got, "%Y-%m-%d %H:%M", tz = "Africa/Cairo"),
+                   c("2024-04-24 00:00", "2024-04-25 00:00", "2024-04-26 01:00"))
+})

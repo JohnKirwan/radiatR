@@ -2,6 +2,13 @@
 
 ## Breaking changes
 
+* A bare date whose midnight does not exist in `tz` (a DST change at
+  midnight, as in Cairo or Sao Paulo) is the first instant of that day
+  (01:00 there) under every reader, and so is an Excel date cell at such a
+  midnight. readr and `fread()` gave 01:00 for a column of such dates and
+  `read.table()` an error; a date beside date-times stopped under readr. A
+  date that does not exist at all in `tz` is an error.
+
 * `derive_headings(rule = "straight")` measures turns between moving steps
   only. A pause (a step of zero length) has no direction; it was read as a
   turn of 0, so a pause hid any turn around it, padded runs, and a run that
