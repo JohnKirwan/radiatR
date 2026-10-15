@@ -6,7 +6,8 @@ source(.p, local = TRUE)
 # Minimal headings-mode spec built the way the app does (build_plot_spec), with
 # data$delim/sheet/ext overridden to simulate a non-default upload. Exercises
 # the public spec_to_code() seam only -- no fragile internal-accumulator capture.
-.headings_spec <- function(delim = NULL, sheet = NULL, ext = "csv", path = "a.csv") {
+.headings_spec <- function(delim = NULL, sheet = NULL, ext = "csv", path = "a.csv",
+                           text_cols = NULL) {
   raw <- data.frame(
     angle_deg = c(10, 20, 30, 200, 210, 5, 95, 185, 275, 100),
     stringsAsFactors = FALSE)
@@ -14,7 +15,7 @@ source(.p, local = TRUE)
                         angle_convention = "unit_circle")
   data <- list(source = "file", mode = "headings", path = path,
                col = "angle_deg", units = "degrees", convention = "unit_circle",
-               delim = delim, sheet = sheet, ext = ext)
+               delim = delim, sheet = sheet, ext = ext, text_cols = text_cols)
   build_plot_spec(NULL, hd, method = NULL, data = data,
                    inputs = list(colour_by = NULL, cond_col = NULL,
                                  heading_display = "points", plot_theme = "void",
@@ -31,4 +32,21 @@ test_that("spec_to_code emits read_excel + sheet for Excel headings uploads", {
     .headings_spec(sheet = "two", ext = "xlsx", path = "b.xlsx")), collapse = "\n")
   expect_match(code, 'read_excel\\(')
   expect_match(code, 'sheet = "two"')
+})
+
+test_that("spec_to_code reads the app's text label columns as text", {
+  code <- paste(spec_to_code(.headings_spec(text_cols = "grp")), collapse = "\n")
+  expect_match(code, 'read.csv("a.csv", colClasses = c(grp = "character"))', fixed = TRUE)
+  expect_false(grepl("colClasses", paste(spec_to_code(.headings_spec()), collapse = "\n")))
+  # keyed by the name read.csv() gives the column, or it would miss it
+  p <- withr::local_tempfile(fileext = ".csv")
+  writeLines(c("g1;g 2;angle", "1,1;1,1;10", "1,10;1,10;20"), p)
+  code <- unlist(strsplit(spec_to_code(.headings_spec(delim = ";", path = p,
+                                                     text_cols = c("g1", "g 2"))), "\n"))
+  rd <- grep("^df <- ", code, value = TRUE)
+  expect_length(rd, 1L)
+  expect_match(rd, 'colClasses = c(g1 = "character", g.2 = "character")', fixed = TRUE)
+  df <- eval(parse(text = rd))
+  expect_identical(df$g1, c("1,1", "1,10"))
+  expect_identical(df$g.2, c("1,1", "1,10"))
 })
