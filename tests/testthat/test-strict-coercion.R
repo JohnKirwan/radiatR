@@ -1020,6 +1020,49 @@ test_that("quoted line breaks and latin-1 bytes are no ragged rows", {
   }
 })
 
+test_that("a latin-1 file reads as its text under every reader", {
+  dir <- withr::local_tempdir()
+  latin1 <- function(name, text, open = file) {
+    p <- file.path(dir, name)
+    con <- open(p, "wb")
+    writeBin(iconv(text, "UTF-8", "latin1", toRaw = TRUE)[[1]], con)
+    close(con)
+    p
+  }
+  text <- paste0("id,frame,x (\u00b5m),y,note\nren\u00e9,1,1,2,caf\u00e9\n",
+                 "ren\u00e9,2,2,3,b\nb,1,3,4,c\n")
+  files <- c(latin1("latin.csv", text), latin1("latin.csv.gz", text, gzfile))
+  # one latin-1 byte makes the whole file latin-1, as .read_text_lines() reads
+  # a dialect's file: the UTF-8 header of this one reads as latin-1 too
+  mixed <- file.path(dir, "mixed.csv")
+  writeBin(c(charToRaw(enc2utf8("id,frame,x (\u00b5m),y,note\na,1,1,2,")),
+             as.raw(0xe9), charToRaw("\n")), mixed)
+  # a UTF-8 file with the same characters is not taken for latin-1
+  utf8 <- file.path(dir, "utf8.csv")
+  writeBin(charToRaw(enc2utf8(text)), utf8)
+  files <- c(files, utf8)
+  nm <- c("id", "frame", "x (\u00b5m)", "y", "note")
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    for (p in files) {
+      i <- paste(info, basename(p))
+      df <- .read_any(p)
+      expect_identical(names(df), nm, info = i)
+      expect_identical(df$id, c("ren\u00e9", "ren\u00e9", "b"), info = i)
+      expect_identical(df$note, c("caf\u00e9", "b", "c"), info = i)
+      expect_true(all(validUTF8(c(names(df), df$id, df$note))), info = i)
+      expect_identical(.read_names(p), nm, info = i)
+      tr <- read_tracks(p, mapping = list(time = "frame", x = "x (\u00b5m)"), keep = "note")
+      expect_setequal(as.character(tr@data[[tr@cols$id]]), c("ren\u00e9", "b"))
+    }
+    df <- .read_any(mixed)
+    expect_identical(names(df)[3], "x (\u00c2\u00b5m)", info = info)
+    expect_identical(df$note, "\u00e9", info = info)
+    expect_identical(.read_names(mixed), names(df), info = info)
+  }
+})
+
 test_that("a compressed file is counted as the table it holds", {
   dir <- withr::local_tempdir()
   txt <- c("id,frame,x,y", "a,1,1,2", "a,2,2,3", "a,3,3,4")

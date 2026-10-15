@@ -427,6 +427,18 @@
 
 ## Bug fixes
 
+* A latin-1 delimited file (as Windows programs write) reads as its text
+  under every reader: a byte such as `µ` in a column name or `é` in an id
+  stopped the load with an untyped "invalid UTF-8" error, and one in another
+  text column was kept as an invalid string. As for a tracker's
+  dialect file, one line that is not valid UTF-8 makes the whole file
+  latin-1, so in a file that mixes the two, its UTF-8 characters read as two
+  latin-1 ones each (`µ` as `Âµ`).
+
+* `read_tracks(dialect = "deeplabcut")`: a latin-1 body-part name (a header
+  re-saved by a Windows program) reads as its text. It made the file "not a
+  DeepLabCut output file".
+
 * App: a headings upload's group columns, and the generic preview's mapped
   id column, keep their text where reading them as numbers would merge
   labels (`1.1` and `1.10`), as `read_tracks()` already did for loads. The
