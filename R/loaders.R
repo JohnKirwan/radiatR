@@ -564,35 +564,62 @@ guess_columns <- function(data, mapping = list()) {
 
 # Sniff the field separator (and, for ';', the decimal mark) from a delimited
 # file's first non-empty lines. Returns list(delim, decimal). Chooses the
-# candidate that appears most often AND consistently across lines; ties or no
-# signal fall back to comma + dot. ';' implies the European decimal comma,
+# candidate that appears most often AND consistently across lines; fields are
+# counted as .check_fields() counts them (a separator inside quotes is not
+# one); a header that alone differs is left to .check_fields(), which names
+# it; no signal falls back to comma + dot (read_tracks() names a file that
+# then reads as one column). ';' implies the European decimal comma,
 # unless the lines read show decimal points and no decimal comma: a dotted
 # number that cannot be digit grouping ("1.5", "0.125"; not "1.234").
 # `lines` are the file's lines when the caller has read (and decoded) them.
 .guess_delim <- function(path, lines = NULL) {
   default <- list(delim = ",", decimal = ".")
-  lines <- if (!is.null(lines)) utils::head(lines, 20L) else tryCatch(
-    readLines(path, n = 20L, warn = FALSE, encoding = "UTF-8"),
-    error = function(e) character(0))
+  if (is.null(lines)) {
+    lines <- readLines(path, n = 20L, warn = FALSE, encoding = "UTF-8")
+    # The sniff looks only at separators and digits, which are ASCII: read a
+    # line that is not UTF-8 (latin-1 from a Windows program) as latin-1 so the
+    # pattern matching below can run on it.
+    bad <- !validUTF8(lines)
+    lines[bad] <- iconv(lines[bad], "latin1", "UTF-8")
+  }
+  lines <- utils::head(lines, 20L)
   lines <- lines[nzchar(trimws(lines))]
-  rows <- lines
+  sample <- lines
   lines <- utils::head(lines, 5L)
   if (!length(lines)) return(default)
 
   cands <- c(",", ";", "\t", "|")
-  counts <- vapply(cands, function(d) {
-    vapply(lines, function(ln) lengths(regmatches(ln, gregexpr(d, ln, fixed = TRUE))),
-           integer(1))
-  }, integer(length(lines)))
-  if (is.null(dim(counts))) counts <- matrix(counts, nrow = length(lines))
+  # Times each candidate separates fields on each line, counted as
+  # .check_fields() counts them: a separator inside quotes is part of a field,
+  # and a line that continues a quoted field gives NA (dropped). Up to the 20
+  # kept lines are counted so that continuations still leave 5 counts.
+  per <- lapply(cands, function(d) {
+    con <- textConnection(sample)
+    on.exit(close(con))
+    n <- utils::count.fields(con, sep = d, quote = "\"", comment.char = "",
+                             blank.lines.skip = TRUE)
+    n[!is.na(n)] - 1L
+  })
+  k <- min(5L, lengths(per))
+  if (k == 0L) return(default)   # an unclosed quote: leave it to .check_fields()
+  counts <- matrix(vapply(per, function(n) n[seq_len(k)], integer(k)), nrow = k)
 
   # a separator is viable only if it appears at least once and the same number
   # of times on every line we looked at (consistency guard)
-  viable <- apply(counts, 2L, function(col) col[1L] > 0 && length(unique(col)) == 1L)
+  consistent <- function(m) apply(m, 2L, function(col) col[1L] > 0 && length(unique(col)) == 1L)
+  first <- 1L
+  viable <- consistent(counts)
+  # A header that alone differs (a table written with row names): take the
+  # rows' separator and leave the header to .check_fields(), which names it.
+  # It must separate the header too, or a ';' file's decimal commas could win.
+  if (!any(viable) && nrow(counts) > 1L) {
+    first <- 2L
+    viable <- consistent(counts[-1L, , drop = FALSE]) & counts[1L, ] > 0L
+  }
   if (!any(viable)) return(default)
-  best <- cands[which(viable)][which.max(counts[1L, viable])]
+  best <- cands[which(viable)][which.max(counts[first, viable])]
   if (best != ";") return(list(delim = best, decimal = "."))
-  cells <- gsub("^\"|\"$", "", trimws(unlist(strsplit(rows, ";", fixed = TRUE))))
+  cells <- gsub("^\"|\"$", "", trimws(unlist(strsplit(sample, ";", fixed = TRUE))))
   comma <- grepl("^[-+]?[0-9]*,[0-9]+$", cells)
   # a duration's fraction ("0:00:00.320", as ANY-maze writes time) is a
   # decimal point too
@@ -611,7 +638,7 @@ guess_columns <- function(data, mapping = list()) {
   lines <- tryCatch(readLines(path, n = 20L, warn = FALSE),
                     error = function(e) character(0))
   if (!all(validUTF8(lines))) return(".")
-  .guess_delim(path)$decimal
+  .guess_delim(path, lines)$decimal
 }
 
 # read file with soft dependencies. Delimited formats are content-sniffed
@@ -843,6 +870,22 @@ guess_columns <- function(data, mapping = list()) {
 # `pos` as text; text that does not read as the values the reader typed is
 # from other cells, and stops the load rather than be attached to the rows.
 .keep_labels <- function(df, id, read_text, id_text = FALSE) {
+  # readr keeps the whitespace around a cell, so " 1" is text to it and the
+  # number 1 to the other readers. Type such an id-like column as they do,
+  # unless that would merge labels (" 1.1" and " 1.10"), which stay text under
+  # every reader.
+  dec <- attr(df, "decimal") %||% "."
+  for (j in which((names(df) %in% id | tolower(names(df)) %in% .id_candidates) &
+                  vapply(df, is.character, logical(1)))) {
+    if (id_text && names(df)[j] %in% id) next
+    v <- df[[j]]
+    seen <- !is.na(v)
+    if (!any(seen) || !any(v[seen] != trimws(v[seen]))) next
+    num <- .parse_number(trimws(v[seen]), dec, dot_ok = !identical(dec, ","))
+    if (anyNA(num) || length(unique(num)) != length(unique(v[seen]))) next
+    out <- rep(NA_real_, length(v)); out[seen] <- num
+    df[[j]] <- out
+  }
   is_id <- names(df) %in% id
   # dates and times too: "2024-01-01 00:00" and "2024-01-01 00:00:00" are one
   # instant but two labels
@@ -974,6 +1017,26 @@ guess_columns <- function(data, mapping = list()) {
         ", or dialect_args = list(partial = \"mean\") to average the points that remain",
       ".")
   rlang::inform(msg, class = "radiatR_attrition")
+}
+
+# The prefix id_collision = "namespace" gives each file of an import: its name
+# less extension, or, where two files share that (n1.csv and n1.tsv), its full
+# name, or, where two still share it (a/n1.csv and b/n1.csv), the fewest
+# trailing parts of its path that tell them apart.
+.source_labels <- function(paths) {
+  up <- unique(paths)
+  parts <- strsplit(gsub("\\\\", "/", up), "/", fixed = TRUE)
+  lab <- tools::file_path_sans_ext(basename(up))
+  shared <- function(l) l %in% l[duplicated(l)]
+  s <- shared(lab); lab[s] <- basename(up[s])
+  for (k in seq(2L, max(2L, lengths(parts)))) {
+    s <- shared(lab)
+    if (!any(s)) break
+    lab[s] <- vapply(parts[s], function(p) paste(utils::tail(p, k), collapse = "/"),
+                     character(1))
+  }
+  stopifnot("two source paths normalise to one namespace label" = !anyDuplicated(lab))
+  stats::setNames(lab, up)
 }
 
 # Read and combine multiple track files into one long data frame, preserving
@@ -1288,8 +1351,10 @@ read_tracks_format <- function(x, format, ...)
 #' @param id_collision how to handle a trajectory id that appears under more
 #'   than one source file during a multi-file import: `"error"` (default) stops
 #'   with a message naming the colliding id(s) and files; `"namespace"` rewrites
-#'   every id to `paste0(file_stem, "::", id)` so ids are unique per file. Has no
-#'   effect on single-file or data.frame input.
+#'   every id as `<file>::<id>`, where `<file>` is the file name less extension,
+#'   or the full file name where two files share that, or the trailing part of
+#'   the path that tells them apart (`a/n1.csv`). Has no effect on single-file
+#'   or data.frame input.
 #' @param on_invalid How to handle rows whose x/y coordinates are missing or
 #'   non-finite: "error" (default) aborts with a radiatR_invalid_rows condition
 #'   listing the affected rows and ids; "drop" removes them and signals a
@@ -1332,7 +1397,8 @@ read_tracks_format <- function(x, format, ...)
 #' lines (`problem = "ragged"`), as does a reader returning fewer rows than
 #' the file holds (`"rows"`) and a column name used twice
 #' (`"duplicate_columns"`; a dialect handles its format's repeated columns
-#' itself).
+#' itself), and a delimited file that reads as a single column
+#' (`"one_column"`).
 #'
 #' @section Malformed values:
 #' A cell in an x, y, angle, weight or time column that is present but does not
@@ -1574,16 +1640,32 @@ read_tracks <- function(x,
         }, character(1))
         stop("read_tracks: trajectory id(s) collide across source files:\n",
              paste(details, collapse = "\n"),
-             "\nPass id_collision = \"namespace\" to prefix ids with the file ",
-             "stem, or supply a mapping that yields file-unique ids.",
+             "\nPass id_collision = \"namespace\" to prefix ids with the file's ",
+             "name, or supply a mapping that yields file-unique ids.",
              call. = FALSE)
       } else {
-        # "namespace": prefix ALL ids (not just colliding ones) so id "1" means
-        # the same thing everywhere it appears.
-        df[[id]] <- paste0(tools::file_path_sans_ext(src_vals), "::", id_vals)
+        # "namespace": prefix ALL ids (not just colliding ones) with the file's
+        # own label (see .source_labels()) so id "1" means the same thing
+        # everywhere it appears.
+        df[[id]] <- paste0(unname(.source_labels(path_vals)[path_vals]), "::", id_vals)
       }
     }
   }
+
+  # A delimited file that came out as one column was not split: say so rather
+  # than ask for columns it does not have. (A one-column sheet or Arrow file is
+  # a real one-column table; the generic error below stands for it.)
+  user_cols <- setdiff(names(df), c("..source_file", "..source_path"))
+  one_ext <- tolower(read_opts$ext %||% tools::file_ext(if (is.character(x)) x[1L] else ""))
+  one_ext <- sub("^\\.", "", one_ext)
+  if (is.null(angle) && is.null(dialect) && is.character(x) && length(user_cols) == 1L &&
+      !one_ext %in% c("xlsx", "xls", "parquet", "feather"))
+    radiatR_abort_malformed_file(
+      basename(x[1L]), "one_column", columns = user_cols, detail = sprintf(paste0(
+        "read as a single column ('%s'). If it has more columns, %s or read a ",
+        "tracker's export with its dialect (see list_loader_dialects()); ",
+        "otherwise map the column."),
+        user_cols, if (is.null(read_opts$delim)) "name its separator with read_opts = list(delim = )," else "check the separator you named,"))
 
   if (is.null(angle) && (is.null(xcol) || is.null(ycol)))
     stop("Need either an angle column or both x and y columns; specify mapping=")
