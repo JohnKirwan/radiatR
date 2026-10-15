@@ -443,6 +443,19 @@ group_compare_table <- function(hd, by_col, axial = FALSE) {
   rbind(row_mean, row_conc, row_dist)
 }
 
+# Advice naming the Decimal mark control, when the package suggests the other
+# mark (it suggests none for Excel, where the control is hidden).
+decimal_advice <- function(e) {
+  s <- e$suggested_decimal
+  if (is.null(s)) return("")
+  if (identical(s, ","))
+    " If the file's decimal mark is a comma, set Decimal mark to Comma (,)."
+  else " If the file's decimal mark is a point, set Decimal mark to Point (.)."
+}
+
+# The app control behind a read_opts entry a dialect refused.
+read_opt_controls <- c(delim = "Delimiter", decimal = "Decimal mark")
+
 plain_error <- function(e) {
   if (inherits(e, "radiatR_invalid_tracks") && "time_duplicate" %in% e$problems$rule)
     return(paste(
@@ -450,10 +463,10 @@ plain_error <- function(e) {
       "Check that the ID column identifies single tracks; see Technical details."
     ))
   if (inherits(e, "radiatR_malformed_values"))
-    return(sprintf(
+    return(paste0(sprintf(
       "Column '%s' has values that are not %s, such as '%s'. See Technical details for the rows.",
       e$columns, e$expected, e$values[1]
-    ))
+    ), decimal_advice(e)))
   if (inherits(e, "radiatR_unlinked_rows"))
     return(sprintf(paste(
       "This TrackMate file contains %d spot(s) that belong to no track.",
@@ -474,7 +487,14 @@ plain_error <- function(e) {
   if (inherits(e, "radiatR_dialect_error")) return(conditionMessage(e))
   # So does the reader, for a file that is not one table or ids that differ
   # only by whitespace (these name columns, which the guesses below misread).
-  if (inherits(e, c("radiatR_malformed_file", "radiatR_ambiguous_ids")))
+  if (inherits(e, "radiatR_invalid_argument") && identical(e$arg, "read_opts") &&
+      !is.null(e$option) && e$option %in% names(read_opt_controls)) {
+    lab <- read_opt_controls[[e$option]]
+    return(sprintf("This file's format sets its own %s: set %s to Auto-detect.",
+                   tolower(lab), lab))
+  }
+  if (inherits(e, c("radiatR_malformed_file", "radiatR_ambiguous_ids",
+                    "radiatR_invalid_argument")))
     return(sub("^read_tracks: ", "", conditionMessage(e)))
   m <- conditionMessage(e)
   if (grepl("id|time|mapping", m, ignore.case = TRUE))
