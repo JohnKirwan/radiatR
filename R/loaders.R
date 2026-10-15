@@ -554,13 +554,14 @@ guess_columns <- function(data, mapping = list()) {
   out <- .POSIXct(rep(NA_real_, length(core)), tz = tz)
   out[!z] <- if (grepl("%H", fmt, fixed = TRUE))
     .wall_clock(strptime(core[!z], fmt, tz = tz), tz)
-  else .day_start(as.Date(strptime(core[!z], fmt, tz = "UTC")), tz, column, source, dialect)
+  else .day_start(as.Date(strptime(core[!z], fmt, tz = "UTC")), tz, column, source, dialect,
+                  rows = which(!z))
   out[z] <-.wall_clock(strptime(core[z], fmt, tz = "UTC"), "UTC") - zn$offset[z]
   date_fmt <- sub("[ T]%H.*$", "", fmt)
   bare <- fmt != date_fmt & grepl(.time_format_regex(date_fmt), s)
   # a bare date carries no zone, whatever the layout beside it says
   out[bare] <- .day_start(as.Date(strptime(s[bare], date_fmt, tz = "UTC")), tz,
-                          column, source, dialect)
+                          column, source, dialect, rows = which(bare))
   attr(out, "tzone") <- tz
   ok <- (hit[[best]] | bare) & !is.na(out)
   # Zoned and unzoned date-times in one column are two readings: the fewer

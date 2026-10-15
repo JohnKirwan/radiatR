@@ -1261,3 +1261,23 @@ test_that("an Excel date cell on a day the zone skips reports its row", {
   expect_identical(e$rows, 3L)
   expect_match(conditionMessage(e), "exist in time zone 'Pacific/Apia'")
 })
+
+test_that("a bare date on a day the zone skips reports its own row under every reader", {
+  dir <- withr::local_tempdir()
+  beside <- file.path(dir, "beside.csv")    # a bare date beside date-times
+  writeBin(charToRaw(paste0("id,time,x,y\na,2011-12-28 10:00:00,.1,.1\n",
+                            "a,2011-12-29 10:00:00,.2,.2\na,2011-12-30,.3,.3\n")), beside)
+  dates <- file.path(dir, "dates.csv")      # bare dates throughout
+  writeBin(charToRaw(paste0("id,time,x,y\na,2011-12-28,.1,.1\n",
+                            "a,2011-12-29,.2,.2\na,2011-12-30,.3,.3\n")), dates)
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    for (p in c(beside, dates)) {
+      e <- malformed(read_tracks(p, tz = "Pacific/Apia"))
+      expect_s3_class(e, "radiatR_malformed_values")
+      expect_identical(e$rows, 3L, info = paste(info, basename(p)))
+      expect_match(conditionMessage(e), "exist in time zone 'Pacific/Apia'", info = info)
+    }
+  }
+})
