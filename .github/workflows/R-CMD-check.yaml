@@ -63,6 +63,23 @@ jobs:
             any::rcmdcheck
             ${{ matrix.config.cran && 'any::testthat any::knitr any::rmarkdown' || '' }}
           needs: check
+          # A cache of its own: the shared key's restore-keys would otherwise
+          # restore the macOS release row's library, Suggests and all.
+          cache-version: ${{ matrix.config.cran && 'no-suggests-1' || '1' }}
+
+      # Fail if the no-Suggests row has any Suggests beyond the test and
+      # vignette tooling (and their own dependencies, e.g. withr, yaml).
+      - name: Check that Suggests are absent
+        if: matrix.config.cran
+        shell: Rscript {0}
+        run: |
+          sugg <- trimws(sub("\\(.*", "", strsplit(read.dcf("DESCRIPTION", "Suggests"), ",")[[1]]))
+          tooling <- c("testthat", "knitr", "rmarkdown")
+          keep <- unique(c(tooling, unlist(tools::package_dependencies(
+            tooling, db = installed.packages(), recursive = TRUE))))
+          present <- setdiff(sugg[vapply(sugg, requireNamespace, logical(1), quietly = TRUE)], keep)
+          if (length(present)) stop("Suggests installed: ", toString(present))
+          cat("Not installed:", toString(setdiff(sugg, keep)), "\n")
 
       - uses: r-lib/actions/check-r-package@v2
         with:
