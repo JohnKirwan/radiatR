@@ -246,3 +246,32 @@ test_that("a headings upload on auto records the delimiter it was read with", {
     expect_identical(list(d$delim, d$decimal, d$latin1), list(";", ".", FALSE))
   })
 })
+
+test_that("format_read_opts keeps only the controls not on auto", {
+  expect_identical(format_read_opts(NULL, NULL), list())
+  expect_identical(format_read_opts("auto", "auto"), list())
+  expect_identical(format_read_opts(";", "auto"), list(delim = ";"))
+  expect_identical(format_read_opts("auto", ","), list(decimal = ","))
+  expect_identical(format_read_opts("\t", "."), list(delim = "\t", decimal = "."))
+})
+
+test_that("upload_read and upload_read_format honour the decimal mark control", {
+  tmp <- tempfile(fileext = ".tsv")
+  writeLines(c("x\ty", "1,5\t2,5", "1,6\t2,6"), tmp)
+  expect_type(upload_read(tmp, "a.tsv")$x, "character")      # sniffed: point
+  expect_equal(upload_read(tmp, "a.tsv", decimal_sel = ",")$x, c(1.5, 1.6))
+  expect_identical(upload_read_format(tmp, "a.tsv")$decimal, ".")
+  expect_identical(upload_read_format(tmp, "a.tsv", decimal_sel = ",")$decimal, ",")
+  expect_identical(upload_read_format(tmp, "a.tsv", "auto", "auto")$delim, "\t")
+})
+
+test_that("upload_read_opts drops controls hidden for the file type", {
+  # Shiny keeps a removed control's last value: a CSV after an Excel upload
+  # still has sheet_sel, an Excel file after a CSV still has delim/decimal.
+  expect_identical(upload_read_opts("a.csv", "auto", "auto", "Sheet2"), list())
+  expect_identical(upload_read_opts("a.csv", ";", ",", "Sheet2"),
+                   list(delim = ";", decimal = ","))
+  expect_identical(upload_read_opts("a.xlsx", ";", ",", "Sheet2"), list(sheet = "Sheet2"))
+  expect_identical(upload_read_opts("a.xlsx", ";", ",", ""), list())
+  expect_identical(upload_read_opts("a.xlsx", NULL, NULL, NULL), list())
+})
