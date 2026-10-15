@@ -9,6 +9,14 @@
   `read.table()` an error; a date beside date-times stopped under readr. A
   date that does not exist at all in `tz` is an error.
 
+* Two date-times that used to load now stop with an error naming them, as
+  bugs fixed: a leap second (`23:59:60`, or `235960` in ISO 8601 basic)
+  under readr, which rolled it over to the next minute, now stops with an
+  error saying leap seconds cannot be represented, under every reader; and a
+  date-time on a day `tz` skips altogether (2011-12-30 in Pacific/Apia)
+  under `data.table::fread()` and `read.table()`, which moved it a day back,
+  now stops with an error saying it does not exist in `tz`.
+
 * `derive_headings(rule = "straight")` measures turns between moving steps
   only. A pause (a step of zero length) has no direction; it was read as a
   turn of 0, so a pause hid any turn around it, padded runs, and a run that
@@ -338,7 +346,10 @@
   is a date) is read as date-times in `tz` under every reader, where
   `fread()` and `read.table()` gave its text; any other kept column is kept
   as read, the same under every reader (readr typed some, such as hours
-  alone). Files whose unused date-time columns were typed differently (a CSV
+  alone). So a kept column can now stop the load under `fread()` and
+  `read.table()`, where it stayed text: one holding a time that does not
+  exist in `tz` (a DST gap), a leap second, or zoned and unzoned date-times
+  in one layout. Files whose unused date-time columns were typed differently (a CSV
   beside an xlsx) bind again. A time column of date-times read with
   `time_type = "seconds"` or `"frames"` now stops with
   `radiatR_malformed_values` under every reader, as it did under
@@ -418,13 +429,20 @@
   It showed one column of preamble text under readr and could not be
   previewed under `data.table::fread()`.
 
-* A date-time that does not exist in `tz` (the hour skipped when clocks go
-  forward, or a whole skipped day such as 2011-12-30 in Pacific/Apia) stops
-  with an error saying so under every reader; under `fread()` and
-  `read.table()` it said only "not a date-time", and a skipped day was moved
-  a day back. A leap second (`23:59:60`) stops with an error saying leap
-  seconds cannot be represented; readr rolled it over to the next minute.
-  An Excel date cell on a skipped day reports its row.
+* A time that does not exist in `tz` (the hour skipped when clocks go
+  forward) stops with an error saying so under every reader; under `fread()`
+  and `read.table()` it said only "not a date-time". (A skipped day and a
+  leap second: see Breaking changes.) A column of zoned and unzoned
+  date-times in one layout stops with an error saying the zones are mixed,
+  not that a valid value is no date-time. A bare date on a day `tz` skips
+  reports its own row. An Excel date cell on a day `tz` skips altogether
+  stops the load only when its column is used or kept, and reports its row.
+
+* A multi-file import whose time column holds bare dates in one file and
+  date-times in another (a CSV of dates beside a CSV or an xlsx of
+  date-times) binds under every reader, each date the first instant of its
+  day in `tz`. `fread()` stopped with a type clash, and under readr a date
+  on a day `tz` skips was reported as a missing time.
 
 * `derive_headings()` no longer calls headings "trials" for a rule that gives
   several per trial (`window_net`, `crossing`): the `on_missing` message
