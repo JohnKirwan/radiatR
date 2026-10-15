@@ -53,6 +53,13 @@ exdir = tempdir())`), and the trial manifest in
 `inst/extdata/millipede_trials.csv`, so the full import pipeline can be
 reproduced with [get_all_object_pos()]. See `data-raw/millipede_example.R`.
 }
+\examples{
+cpunctatus
+# One heading per trial (the bearing of its furthest point from the
+# origin), keeping the target half-width
+hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+table(hd$arc)
+}
 \references{
 Kirwan, J. D., & Nilsson, D.-E. (2019). A millipede compound eye
   mediating low-resolution vision. *Vision Research*, 165, 36--44.

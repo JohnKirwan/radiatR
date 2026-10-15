@@ -44,4 +44,10 @@
 #' @source Behavioural experiment from Kirwan & Nilsson (2019); raw tracks
 #'   produced with dtrack and normalised with \pkg{radiatR}. A subset of the
 #'   published dataset.
+#' @examples
+#' cpunctatus
+#' # One heading per trial (the bearing of its furthest point from the
+#' # origin), keeping the target half-width
+#' hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
+#' table(hd$arc)
 "cpunctatus"
