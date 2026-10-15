@@ -424,6 +424,11 @@
 
 ## Bug fixes
 
+* App: a headings upload's group columns, and the generic preview's mapped
+  id column, keep their text where reading them as numbers would merge
+  labels (`1.1` and `1.10`), as `read_tracks()` already did for loads; the
+  downloaded script reads such columns as text too (`colClasses`).
+
 * App: a file read by a tracker's dialect that the generic preview cannot
   make a table of (a raw EthoVision export) is previewed as its first lines.
   It showed one column of preamble text under readr and could not be

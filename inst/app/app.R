@@ -900,10 +900,20 @@ server <- function(input, output, session) {
         input$hd_group else NULL
       grp2 <- if (!is.null(input$hd_group2) && nzchar(input$hd_group2))
         input$hd_group2 else NULL
-      hd <- tryCatch(
-        build_headings_input(rv$raw_hd, col = input$hd_col,
+      # The group columns are labels: read the file again naming them, so
+      # "1.1" and "1.10" stay two groups (rv$raw_hd was read before they were
+      # chosen).
+      labs <- c(grp, grp2)
+      src <- NULL
+      hd <- tryCatch({
+        src <- if (length(labs))
+          as.data.frame(upload_read(rv$path, rv$file_name, input$delim_sel,
+                                    input$sheet_sel, unique_names = TRUE, id = labs))
+        else rv$raw_hd
+        build_headings_input(src, col = input$hd_col,
                              units = input$hd_units,
-                             convention = input$hd_convention, group = grp),
+                             convention = input$hd_convention, group = grp)
+      },
         error = function(e) {
           rv$error        <- plain_error(e)
           rv$error_detail <- ingest_detail(e)
@@ -913,7 +923,9 @@ server <- function(input, output, session) {
         rv$hd     <- hd; rv$method <- NULL; rv$step <- 3L
         rv$error  <- NULL; rv$error_detail <- NULL
         rv$hd_map <- list(col = input$hd_col, units = input$hd_units,
-                          convention = input$hd_convention, group = grp, group2 = grp2)
+                          convention = input$hd_convention, group = grp, group2 = grp2,
+                          text_cols = labs[vapply(labs, function(cl) is.character(src[[cl]]),
+                                                  logical(1))])
       }
       return()
     }
@@ -1613,9 +1625,12 @@ server <- function(input, output, session) {
     req(rv$path)
     d <- if (!is.null(input$dialect_sel) && input$dialect_sel != "auto")
       input$dialect_sel else rv$dialect
+    # the mapped id is a label column (see upload_read())
+    id <- if (identical(d %||% "generic", "generic") && !is.null(input$map_id) &&
+              nzchar(input$map_id)) input$map_id else NULL
     df <- tryCatch(
       upload_preview(rv$path, rv$file_name, dialect = d %||% "generic",
-                     input$delim_sel, input$sheet_sel),
+                     input$delim_sel, input$sheet_sel, id = id),
       error = function(e) NULL)
     if (is.null(df))
       return(data.frame(Note = "Could not preview this file"))
@@ -1741,7 +1756,7 @@ server <- function(input, output, session) {
           source = if (identical(rv$source, "example")) "example" else "file",
           mode = "headings", path = rv$file_name %||% "your_headings.csv",
           col = map$col, units = map$units,
-          convention = map$convention, group = grp,
+          convention = map$convention, group = grp, text_cols = map$text_cols,
           delim = input$delim_sel, sheet = input$sheet_sel,
           ext = tolower(tools::file_ext(rv$file_name %||% ""))),
         inputs = list(
