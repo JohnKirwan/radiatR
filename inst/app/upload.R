@@ -36,3 +36,21 @@ upload_read <- function(path, name, delim_sel = NULL, sheet_sel = NULL,
     unique_names = unique_names
   )
 }
+
+# Preview of an upload. A file a tracker's dialect reads is shown as its first
+# lines when the generic table read cannot make a table of it (EthoVision's
+# preamble: one column under readr, an error under fread); otherwise its first
+# rows. Reading the first lines is the preview's fallback, not the data path:
+# the load reads the file with its dialect and reports any error itself.
+upload_preview <- function(path, name, dialect = "generic", delim_sel = NULL,
+                           sheet_sel = NULL, n = 10L, ...) {
+  ext <- tolower(tools::file_ext(name %||% path))
+  raw_ok <- !identical(dialect, "generic") && !ext %in% c("xlsx", "xls")
+  tbl <- if (raw_ok) tryCatch(upload_read(path, name, delim_sel, sheet_sel, ...),
+                              error = function(e) NULL)
+         else upload_read(path, name, delim_sel, sheet_sel, ...)
+  if (raw_ok && (is.null(tbl) || ncol(tbl) < 2L)) {
+    return(data.frame(Line = utils::head(radiatR:::.read_text_lines(path), n)))
+  }
+  utils::head(as.data.frame(tbl), n)
+}

@@ -115,3 +115,24 @@ test_that("accept list excludes .mat and gates Excel on readxl", {
   # delimited always present
   expect_true(all(c(".csv", ".tsv", ".txt") %in% accepted_exts("headings")))
 })
+
+test_that("upload_preview shows a dialect's file as its first lines when it is no table", {
+  # the EthoVision preamble is one column under readr and an error under fread
+  hidden <- c(list(character(0)),
+              if (requireNamespace("data.table", quietly = TRUE)) list("readr"))
+  for (hide in hidden) {
+    testthat::local_mocked_bindings(
+      .is_installed = function(pkg) !pkg %in% hide && requireNamespace(pkg, quietly = TRUE),
+      .package = "radiatR")
+    ev <- testthat::test_path("fixtures", "real", "ethovision_trial.txt")
+    pv <- upload_preview(ev, "ethovision_trial.txt", dialect = "ethovision")
+    expect_identical(names(pv), "Line")
+    expect_equal(nrow(pv), 10L)
+    expect_match(pv$Line[1], "header", ignore.case = TRUE)
+  }
+  tr <- testthat::test_path("fixtures", "real", "trex_beetle.csv")
+  expect_gt(ncol(upload_preview(tr, "trex_beetle.csv", dialect = "trex")), 1L)
+  p <- withr::local_tempfile(fileext = ".csv")
+  writeBin(charToRaw("id,time,x,y\na,1,.1,.2\n"), p)
+  expect_identical(names(upload_preview(p, "t.csv", dialect = "generic")), c("id", "time", "x", "y"))
+})

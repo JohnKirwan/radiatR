@@ -413,6 +413,11 @@
 
 ## Bug fixes
 
+* App: a file read by a tracker's dialect that the generic preview cannot
+  make a table of (a raw EthoVision export) is previewed as its first lines.
+  It showed one column of preamble text under readr and could not be
+  previewed under `data.table::fread()`.
+
 * A date-time that does not exist in `tz` (the hour skipped when clocks go
   forward, or a whole skipped day such as 2011-12-30 in Pacific/Apia) stops
   with an error saying so under every reader; under `fread()` and
