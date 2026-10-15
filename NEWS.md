@@ -374,6 +374,12 @@
 
 ## Changes
 
+* The app has a "Decimal mark" control (Auto-detect / Point / Comma) beside
+  Delimiter for text uploads. It applies to previews, trajectory and headings
+  loads and the downloaded scripts, and an error about values written with
+  the other mark says which setting to choose. A tab or comma file with
+  decimal commas, and a `;` file whose decimals look like digit grouping,
+  can now be loaded in the app.
 * The `sleap` dialect accepts a node name as it is written in the file
   (`bodypart = "Tail Base"`).
 * A dialect can keep facts about the file it read with
