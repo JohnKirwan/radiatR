@@ -894,7 +894,8 @@ guess_columns <- function(data, mapping = list()) {
 .first_member <- function(path)
   if (.compression(path) == "zip") unz(path, utils::unzip(path, list = TRUE)$Name[1L]) else path
 
-# The column names .read_any() gives `path`, read from the header record only.
+# The column names .read_any() gives `path`, read from its first line that is
+# not blank (of the first 20) or, for Excel and Arrow, its schema.
 .read_names <- function(path, ext = NULL, delim = NULL, sheet = NULL) {
   ext <- if (!is.null(ext)) tolower(sub("^\\.", "", ext)) else tolower(sub(".*\\.", "", path))
   src <- basename(path)
@@ -1447,16 +1448,17 @@ read_tracks_format <- function(x, format, ...)
 #'   a duration): seconds are recorded as such in the Tracks metadata
 #'   (`time_unit`), so [elapsed_seconds()] and the kinematics use them directly,
 #'   with no frame rate.
-#' @param tz Time zone of timestamps that carry none (default "UTC") in a
-#'   delimited or Excel file `read_tracks()` reads itself, and in a text column
-#'   of a data frame; a bare date is the first instant of that day in `tz`
+#' @param tz Time zone of timestamps that carry none (default "UTC"): in the
+#'   time column and the kept columns (see `keep`) of a file, in an Excel
+#'   date-time cell, and in a text time column of a data frame. A dialect is
+#'   not given `tz`: it applies to the dates and text date-times of the table
+#'   the dialect returns. A bare date is the first instant of that day in `tz`
 #'   (midnight, or the end of a DST change that skips midnight; so is an Excel
-#'   date-time cell at such a midnight). A wall-clock time that
-#'   does not exist in `tz` (the hour skipped when clocks go forward) is an
-#'   error. A timestamp that ends in a zone designator (`Z`, `+02:00`,
-#'   `-0130`, `+02`) is that instant whatever `tz` is, a date-time column
-#'   of a data frame keeps its instants, and `tz` does not reach a file read by
-#'   a dialect.
+#'   date-time cell at such a midnight). A wall-clock time that does not exist
+#'   in `tz` (the hour skipped when clocks go forward, or a day skipped
+#'   altogether) is an error. A timestamp that ends in a zone designator (`Z`,
+#'   `+02:00`, `-0130`, `+02`) is that instant whatever `tz` is, and a
+#'   date-time column of a data frame keeps its instants.
 #' @section Time units from a dialect:
 #' A dialect that knows the unit of its time column says so, and under the
 #' default `time_type = "auto"` that decides how the column is read: TrackMate
@@ -1518,7 +1520,11 @@ read_tracks_format <- function(x, format, ...)
 #' @param mutate list of transformations applied after reading (named functions or formulas)
 #' @param keep extra columns to retain besides the mapped ones and those a
 #'   dialect produces (NULL = none). All other columns are dropped; a name
-#'   that is not in the data is ignored without a message.
+#'   that is not in the data is ignored without a message. A kept column of a
+#'   file is read as date-times by content, under every reader: when its reader
+#'   typed it as dates or date-times, or every value that is not missing is a date-time in one layout,
+#'   it is parsed in `tz` as the time column is (a value that is no instant
+#'   there stops the load); otherwise it stays as read.
 #' @param drop drop these columns after mapping
 #' @param id_from_filename if TRUE and id missing, derive id from file stem when reading multiple files
 #' @param validate Deprecated and ignored: `Tracks` invariants are always
