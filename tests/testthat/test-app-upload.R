@@ -293,6 +293,28 @@ test_that("a decimal-comma tab file is refused on auto and loads on Comma", {
     session$setInputs(go2 = 2)
     expect_false(is.null(rv$ts))
     expect_equal(as.data.frame(rv$ts)[[rv$ts@cols$x]], c(0.1, 0.2, 0.3))
+    # the downloaded scripts re-read the file with the same mark
+    expect_identical(current_spec()$data$decimal, ",")
+    expect_identical(kinematics_spec()$data$decimal, ",")
+  })
+})
+
+test_that("an Excel upload with a text-export dialect says to upload the text export", {
+  skip_if_not_installed("shiny")
+  skip_if_not_installed("readxl")
+  skip_if_not_installed("writexl")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  xl <- tempfile(fileext = ".xlsx")
+  writexl::write_xlsx(list(Sheet1 = data.frame(a = 1:2)), xl)
+  shiny::testServer(app_dir(), {
+    session$setInputs(input_type = "trajectories")
+    session$setInputs(file = list(datapath = xl, name = "book.xlsx"))
+    session$setInputs(dialect_sel = "ethovision", delim_sel = "auto", decimal_sel = "auto",
+                      sheet_sel = "Sheet1")
+    session$setInputs(go2 = 1)
+    expect_null(rv$ts)
+    expect_match(rv$error, "read from its text export, not from an Excel workbook", fixed = TRUE)
+    expect_false(grepl("read_opts", rv$error, fixed = TRUE))
   })
 })
 
