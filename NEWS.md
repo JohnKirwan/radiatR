@@ -331,7 +331,10 @@
   a warning only for the inner radius. A trial that is not mapped (it starts
   too far from the centre) has `NA` landmarks and `order`/`vid_ord` in
   `trial_limits`, not 0. `get_all_object_pos()` keeps the `trial_limits` rows
-  of a file none of whose trials is valid.
+  of a file none of whose trials is valid. The bundled `cpunctatus` follows
+  suit: trial `con_19_1`, which never reaches the inner radius, now has `NA`
+  landmarks in `meta$trial_limits` instead of its farthest point (0.059,
+  0.015) for both. Nothing else in the dataset changes.
 * readr no longer decides how a delimited file's date-times are read: like
   `data.table::fread()`, it hands them back as the text in the file, and one
   parser reads them for every reader. That parser now also reads ISO 8601
