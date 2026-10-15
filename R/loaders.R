@@ -443,11 +443,20 @@ guess_columns <- function(data, mapping = list()) {
 
 # Wall-clock fields `lt` (POSIXlt) as instants in `tz`. A time that does not
 # exist there (the hour skipped when clocks go forward) is NA: base R moves it
-# an hour on, or not, by platform.
+# an hour on, or not, by platform. Built with as.POSIXct.POSIXlt (mktime),
+# several times faster than ISOdatetime().
 .wall_clock <- function(lt, tz) {
-  out <- ISOdatetime(lt$year + 1900, lt$mon + 1, lt$mday, lt$hour, lt$min, lt$sec, tz = tz)
+  lt <- as.POSIXlt(lt)
+  want <- lt
+  # mktime() in tz, with DST left for it to find; a time that does not exist
+  # there comes back moved, which the check below turns into NA
+  attr(lt, "tzone") <- tz
+  lt$isdst[] <- -1L
+  lt$zone <- NULL
+  lt$gmtoff <- NULL
+  out <- as.POSIXct(lt, tz = tz)
   back <- as.POSIXlt(out, tz = tz)
-  out[which(back$hour != lt$hour | back$min != lt$min)] <- NA
+  out[which(back$hour != want$hour | back$min != want$min)] <- NA
   out
 }
 

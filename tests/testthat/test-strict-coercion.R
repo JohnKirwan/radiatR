@@ -1054,3 +1054,27 @@ test_that("load_manifest() passes on only what its caller supplied", {
   # and without a format the defaults are read_tracks()'s own
   expect_identical(suppressWarnings(load_manifest(file_tbl, dir))@angle_unit, "radians")
 })
+
+test_that(".wall_clock gives the instants ISOdatetime gives, gaps NA", {
+  ref <- function(lt, tz) {   # the implementation before 2026-10-14
+    out <- ISOdatetime(lt$year + 1900, lt$mon + 1, lt$mday, lt$hour, lt$min, lt$sec, tz = tz)
+    back <- as.POSIXlt(out, tz = tz)
+    out[which(back$hour != lt$hour | back$min != lt$min)] <- NA
+    out
+  }
+  s <- c("2024-01-01 00:00:00", "2024-03-10 02:30:00", "2024-03-10 03:00:00",
+         "2024-11-03 01:30:00", "2024-04-26 00:00:00", "2024-06-30 23:59:59.25",
+         "2024-10-27 02:30:00", "1970-01-01 00:00:00", "2038-01-19 03:14:08", NA)
+  for (tz in c("UTC", "America/New_York", "Africa/Cairo", "Europe/London",
+               "Australia/Lord_Howe", "America/Sao_Paulo")) {
+    lt <- strptime(s, "%Y-%m-%d %H:%M:%OS", tz = tz)
+    expect_identical(as.numeric(radiatR:::.wall_clock(lt, tz)), as.numeric(ref(lt, tz)),
+                     info = tz)
+    expect_length(radiatR:::.wall_clock(lt[0], tz), 0L)
+  }
+  # an all-zoned column calls .wall_clock() on no unzoned values
+  z <- radiatR:::.coerce_time(c("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z"),
+                              tz = "America/New_York")
+  expect_equal(as.numeric(z), as.numeric(as.POSIXct(c("2024-01-01 10:00:00",
+                                                       "2024-01-01 11:00:00"), tz = "UTC")))
+})
