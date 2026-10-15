@@ -256,6 +256,20 @@ test_that("an attrition record of the wrong shape is a dialect error", {
 wasp <- "dlc_single_wasp_predictions.csv"
 mice <- "dlc_two_mice_predictions.csv"
 
+test_that("DeepLabCut: a latin-1 body-part name reads as its text", {
+  # a re-save by a Windows program writes the header in latin-1
+  p <- withr::local_tempfile(fileext = ".csv")
+  l <- readLines(fx(wasp))
+  l[2] <- gsub("head", "t\u00eate", l[2], fixed = TRUE)
+  writeLines(iconv(l, "UTF-8", "latin1"), p, useBytes = TRUE)
+  read <- function(path, part)
+    rows_of(quiet(read_tracks(path, dialect = "deeplabcut", on_invalid = "drop",
+                              dialect_args = list(bodypart = part))))
+  d <- read(p, "t\u00eate")
+  expect_equal(d[c("x", "y")], read(fx(wasp), "head")[c("x", "y")])
+  expect_true("t\u00eate_x" %in% names(d))
+})
+
 test_that("DeepLabCut: a predictions file loads as one track in frames", {
   msg <- testthat::capture_messages(
     ts <- suppressWarnings(read_tracks(fx(wasp), dialect = "deeplabcut", fps = 40,
