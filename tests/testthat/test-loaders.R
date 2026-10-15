@@ -769,10 +769,14 @@ test_that("a file read as one column says the separator was not found", {
 })
 
 test_that("an explicit ext exempts an extensionless path from the one-column error", {
+  skip_if_not_installed("readxl")
+  skip_if_not_installed("writexl")
+  # A real one-column workbook at a path with no extension: the read must reach
+  # the column check and stop there, not with the one-column error.
   p <- withr::local_tempfile()
-  writeBin(charToRaw("id\n1\n2\n"), p)
-  e <- tryCatch(read_tracks(p, read_opts = list(ext = "xlsx")), error = function(e) e)
-  expect_false(inherits(e, "radiatR_malformed_file"))
+  writexl::write_xlsx(data.frame(id = 1:2), p)
+  expect_error(read_tracks(p, read_opts = list(ext = "xlsx")),
+               "angle column or both x and y columns")
 })
 
 test_that("namespace gives files that share a stem their own prefix", {
