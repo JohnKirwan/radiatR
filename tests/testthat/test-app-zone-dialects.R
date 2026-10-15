@@ -49,7 +49,7 @@ test_that("an uploaded EthoVision export is detected, offers the drop, and loads
     session$setInputs(file = list(datapath = path, name = "Track-Trial 1.txt"))
     session$setInputs(dialect_sel = "auto")
     expect_identical(rv$dialect, "ethovision")
-    # the generic "First 5 rows" preview cannot read the header block: it must
+    # the generic table preview cannot read the header block: it must
     # say so (or show something) without setting the load error
     preview <- output$preview_tbl
     expect_null(rv$error)
