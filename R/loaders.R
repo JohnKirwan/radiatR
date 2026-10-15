@@ -909,24 +909,28 @@ guess_columns <- function(data, mapping = list()) {
 
 # Whether the text of delimited file `path` is latin-1, by the rule of
 # .read_text_lines(): a line that is not valid UTF-8 makes the whole file
-# latin-1. A file of ASCII bytes alone is not scanned for lines, and one that
-# starts with a UTF-16 byte-order mark is left as it is read.
+# latin-1 (as a line break is never part of a UTF-8 character, that is the
+# file's bytes not being valid UTF-8). A file of ASCII bytes alone is UTF-8,
+# and one that starts with a UTF-16 byte-order mark is left as it is read.
 .is_latin1 <- function(path) {
   # gzfile() reads gzip, bzip2, xz and plain files as their bytes
   con <- .first_member(path)
   if (is.character(con)) con <- gzfile(con, "rb") else open(con, "rb")
   on.exit(close(con))
-  first <- TRUE
-  repeat {
-    bytes <- readBin(con, "raw", n = 1e7)
-    if (!length(bytes)) return(FALSE)
-    if (first && length(bytes) >= 2L &&
-        (identical(bytes[1:2], as.raw(c(0xff, 0xfe))) || identical(bytes[1:2], as.raw(c(0xfe, 0xff)))))
-      return(FALSE)
-    first <- FALSE
-    if (any(bytes > as.raw(0x7f))) break
-  }
-  !all(validUTF8(readLines(.first_member(path), warn = FALSE)))
+  bytes <- readBin(con, "raw", n = 1e7)
+  if (length(bytes) >= 2L && (identical(bytes[1:2], as.raw(c(0xff, 0xfe))) ||
+                              identical(bytes[1:2], as.raw(c(0xfe, 0xff)))))
+    return(FALSE)
+  while (length(bytes) && !any(bytes > as.raw(0x7f))) bytes <- readBin(con, "raw", n = 1e7)
+  if (!length(bytes)) return(FALSE)
+  # the rest of the file is checked whole, as a chunk boundary can split a
+  # character; a NUL byte, which rawToChar() refuses, is no part of one
+  rest <- list(bytes)
+  while (length(bytes <- readBin(con, "raw", n = 1e7))) rest[[length(rest) + 1L]] <- bytes
+  bytes <- unlist(rest)
+  nul <- bytes == as.raw(0)
+  if (any(nul)) bytes <- bytes[!nul]
+  !validUTF8(rawToChar(bytes))
 }
 
 # The column names .read_any() gives `path`, read from its first line that is
@@ -2416,7 +2420,7 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
 .read_deeplabcut <- function(path) {
   src <- basename(path)
   fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error", source = src)
-  hdr <- lapply(strsplit(readLines(path, n = 4L, warn = FALSE), ",", fixed = TRUE),
+  hdr <- lapply(strsplit(.read_text_lines(path, n = 4L), ",", fixed = TRUE),
                 function(f) gsub("^\"|\"$", "", trimws(f)))
   lab <- tolower(vapply(hdr, function(f) if (length(f)) f[1L] else "", character(1)))
   n_hdr <- if (identical(lab[1:3], c("scorer", "bodyparts", "coords"))) 3L

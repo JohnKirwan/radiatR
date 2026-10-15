@@ -114,7 +114,7 @@ test_that("ToxTrac Tracking.txt: with or without a header row, 11 or 6 columns, 
 
 test_that("ToxTrac: a latin-1 label reads as its text, with or without a header row", {
   latin <- function(l) {
-    l[length(l)] <- sub("1$", "é", l[length(l)])
+    l[length(l)] <- sub("1$", "\u00e9", l[length(l)])
     iconv(l, "UTF-8", "latin1")
   }
   for (drop in c(FALSE, TRUE)) {
@@ -122,7 +122,7 @@ test_that("ToxTrac: a latin-1 label reads as its text, with or without a header 
     l <- readLines(fx("toxtrac_tracking.txt"))
     writeLines(latin(if (drop) l[-1] else l), p, useBytes = TRUE)
     d <- rows_of(read_tracks(p, dialect = "toxtrac"))
-    expect_identical(d$label[nrow(d)], "é", info = paste("headerless:", drop))
+    expect_identical(d$label[nrow(d)], "\u00e9", info = paste("headerless:", drop))
   }
 })
 
