@@ -927,7 +927,8 @@ server <- function(input, output, session) {
         rv$hd_map <- list(col = input$hd_col, units = input$hd_units,
                           convention = input$hd_convention, group = grp, group2 = grp2,
                           text_cols = labs[vapply(labs, function(cl) is.character(src[[cl]]),
-                                                  logical(1))])
+                                                  logical(1))],
+                          read = upload_read_format(rv$path, rv$file_name, input$delim_sel))
       }
       return()
     }
@@ -1759,7 +1760,8 @@ server <- function(input, output, session) {
           mode = "headings", path = rv$file_name %||% "your_headings.csv",
           col = map$col, units = map$units,
           convention = map$convention, group = grp, text_cols = map$text_cols,
-          delim = input$delim_sel, sheet = input$sheet_sel,
+          delim = map$read$delim, decimal = map$read$decimal, latin1 = map$read$latin1,
+          sheet = input$sheet_sel,
           ext = tolower(tools::file_ext(rv$file_name %||% ""))),
         inputs = list(
           cond_col = grp, hd_group2 = grp2, group_by = input$group_by,

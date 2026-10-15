@@ -219,3 +219,30 @@ test_that("a headings upload keeps its group labels apart and says so in the spe
   go(p, "grp")             # 1.1 and 1.10: kept as their text
   go(q, character(0))      # 1 and 2: stay numbers
 })
+
+test_that("upload_read_format() resolves what .read_any() reads the file with", {
+  p <- withr::local_tempfile(fileext = ".csv")
+  writeLines(c("g;angle", "a;1,5", "b;2,5"), p)
+  expect_identical(upload_read_format(p, "h.csv", "auto"),
+                   list(delim = ";", decimal = ",", latin1 = FALSE))
+  expect_identical(upload_read_format(p, "h.csv", "\t")$delim, "\t")
+  writeBin(iconv("g,angle\nµm,10\n", "UTF-8", "latin1", toRaw = TRUE)[[1]], p)
+  expect_true(upload_read_format(p, "h.csv", NULL)$latin1)
+  expect_null(upload_read_format(p, "h.xlsx", NULL))
+})
+
+test_that("a headings upload on auto records the delimiter it was read with", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  p <- withr::local_tempfile(fileext = ".csv")
+  writeBin(charToRaw("grp;angle\na;10.5\nb;20.5\na;30.5\n"), p)
+  shiny::testServer(app_dir(), {
+    session$setInputs(input_type = "headings", delim_sel = "auto")
+    session$setInputs(file = list(datapath = p, name = "h.csv"))
+    session$setInputs(hd_col = "angle", hd_units = "degrees",
+                      hd_convention = "unit_circle", go3 = 1)
+    expect_null(rv$error)
+    d <- current_spec()$data
+    expect_identical(list(d$delim, d$decimal, d$latin1), list(";", ".", FALSE))
+  })
+})
