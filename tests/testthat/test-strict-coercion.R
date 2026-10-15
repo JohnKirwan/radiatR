@@ -1219,3 +1219,45 @@ test_that("an Excel date cell at a midnight that is skipped is its day's first i
   expect_identical(format(got, "%Y-%m-%d %H:%M", tz = "Africa/Cairo"),
                    c("2024-04-24 00:00", "2024-04-25 00:00", "2024-04-26 01:00"))
 })
+
+test_that("a time in a DST gap and a leap second are named under every reader", {
+  dir <- withr::local_tempdir()
+  csv <- function(name, rows) {
+    p <- file.path(dir, name)
+    writeBin(charToRaw(paste0("id,time,x,y\n", paste0("a,", rows, ",.1,.1\n", collapse = ""))), p)
+    p
+  }
+  gap  <- csv("gap.csv", c("2024-03-10 01:30:00", "2024-03-10 02:30:00"))
+  leap <- csv("leap.csv", c("2016-12-31T23:59:59Z", "2016-12-31T23:59:60Z"))
+  bad  <- csv("bad.csv", c("2024-02-28 10:00:00", "2024-02-30 10:00:00"))
+  apia <- csv("apia.csv", c("2011-12-29 10:00:00", "2011-12-30 10:00:00"))
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    e <- malformed(read_tracks(gap, tz = "America/New_York"))
+    expect_s3_class(e, "radiatR_malformed_values")
+    expect_identical(e$values, "2024-03-10 02:30:00", info = info)
+    expect_match(conditionMessage(e), "exist in time zone 'America/New_York'", info = info)
+    e <- malformed(read_tracks(leap))
+    expect_identical(e$values, "2016-12-31T23:59:60Z", info = info)
+    expect_match(conditionMessage(e), "leap second", info = info)
+    e <- malformed(read_tracks(bad, tz = "America/New_York"))
+    expect_identical(e$values, "2024-02-30 10:00:00", info = info)
+    expect_false(grepl("exist in time zone", conditionMessage(e)), info = info)
+    # a day the zone skips altogether is named, not moved a day back
+    e <- malformed(read_tracks(apia, tz = "Pacific/Apia"))
+    expect_identical(e$values, "2011-12-30 10:00:00", info = info)
+    expect_match(conditionMessage(e), "exist in time zone 'Pacific/Apia'", info = info)
+  }
+})
+
+test_that("an Excel date cell on a day the zone skips reports its row", {
+  skip_if_not_installed("readxl"); skip_if_not_installed("writexl")
+  path <- withr::local_tempfile(fileext = ".xlsx")
+  writexl::write_xlsx(xy_df(frame = as.POSIXct(
+    c("2011-12-28", "2011-12-29", "2011-12-30"), tz = "UTC")), path)
+  e <- malformed(radiatR:::.read_any(path, tz = "Pacific/Apia"))
+  expect_s3_class(e, "radiatR_malformed_values")
+  expect_identical(e$rows, 3L)
+  expect_match(conditionMessage(e), "exist in time zone 'Pacific/Apia'")
+})

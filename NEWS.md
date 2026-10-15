@@ -413,6 +413,14 @@
 
 ## Bug fixes
 
+* A date-time that does not exist in `tz` (the hour skipped when clocks go
+  forward, or a whole skipped day such as 2011-12-30 in Pacific/Apia) stops
+  with an error saying so under every reader; under `fread()` and
+  `read.table()` it said only "not a date-time", and a skipped day was moved
+  a day back. A leap second (`23:59:60`) stops with an error saying leap
+  seconds cannot be represented; readr rolled it over to the next minute.
+  An Excel date cell on a skipped day reports its row.
+
 * `derive_headings()` no longer calls headings "trials" for a rule that gives
   several per trial (`window_net`, `crossing`): the `on_missing` message
   counts missing headings and the trials they come from, and the app's
