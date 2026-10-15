@@ -478,8 +478,8 @@ guess_columns <- function(data, mapping = list()) {
 }
 
 # Wall-clock fields `lt` (POSIXlt) as instants in `tz`. A time that does not
-# exist there (the hour skipped when clocks go forward) is NA: base R moves it
-# an hour on, or not, by platform. Built with as.POSIXct.POSIXlt (mktime),
+# exist there (the hour skipped when clocks go forward, or a whole day) is NA:
+# base R moves it on, or not, by platform. Built with as.POSIXct.POSIXlt (mktime),
 # several times faster than ISOdatetime().
 .wall_clock <- function(lt, tz) {
   lt <- as.POSIXlt(lt)
@@ -492,14 +492,18 @@ guess_columns <- function(data, mapping = list()) {
   lt$gmtoff <- NULL
   out <- as.POSIXct(lt, tz = tz)
   back <- as.POSIXlt(out, tz = tz)
-  out[which(back$hour != want$hour | back$min != want$min)] <- NA
+  moved <- back$hour != want$hour | back$min != want$min |
+    back$mday != want$mday | back$mon != want$mon | back$year != want$year
+  out[which(moved)] <- NA
   out
 }
 
 # The first instant of each date in tz: midnight, or, where a DST change skips
 # midnight (Cairo, Sao Paulo), the end of the skipped time. A bare date names a
-# day, so it is that day's start. A date tz skips altogether is malformed.
-.day_start <- function(dates, tz, column = "time", source = NULL, dialect = NULL) {
+# day, so it is that day's start. A date tz skips altogether is malformed;
+# `rows` are the positions to report for `dates` (default: their own).
+.day_start <- function(dates, tz, column = "time", source = NULL, dialect = NULL,
+                       rows = seq_along(dates)) {
   dates <- as.Date(dates)     # also fread's IDate
   out <- .wall_clock(as.POSIXlt(dates), tz)
   # .wall_clock() checks the hour, not the day, so a date skipped altogether
@@ -512,9 +516,9 @@ guess_columns <- function(data, mapping = list()) {
       seq(0, 36 * 3600, by = 900)
     hit <- t[match(day, format(t, "%Y-%m-%d", tz = tz))]
     if (is.na(hit)) {
-      rows <- which(format(dates) %in% day)
+      at <- which(format(dates) %in% day)
       radiatR_abort_malformed_values(
-        column, rows, format(dates[rows]),
+        column, rows[at], format(dates[at]),
         expected = sprintf("dates that exist in time zone '%s'", tz),
         source = source, dialect = dialect)
     }
@@ -567,6 +571,20 @@ guess_columns <- function(data, mapping = list()) {
   if (all(ok | missing)) return(out)
   as_num <- sum(num_ok) >= sum(ok)
   bad <- !missing & !(if (as_num) num_ok else ok)
+  if (!as_num) {
+    # name the cause where it is known: a leap second, then a time skipped in tz
+    layout <- hit[[best]] & !missing & !bare
+    leap <- layout & grepl("%OS", fmt, fixed = TRUE) & grepl(":60([.][0-9]+)?$", core)
+    real <- !is.na(strptime(core, fmt, tz = "UTC"))
+    gapv <- layout & !leap & !z & real & is.na(out)
+    for (cause in list(list(leap, "a date-time (a leap second, :60, cannot be represented)"),
+                       list(gapv, sprintf("times that exist in time zone '%s'", tz))))
+      if (any(cause[[1]]))
+        radiatR_abort_malformed_values(column, which(cause[[1]]), s[cause[[1]]],
+                                       expected = cause[[2]], source = source,
+                                       dialect = dialect, decimal_hint = FALSE,
+                                       decimal = decimal)
+  }
   expected <- if (!any(num_ok | ok)) "a number or date-time"
               else if (as_num) "numeric" else "a date-time"
   radiatR_abort_malformed_values(column, which(bad), s[bad], expected = expected,
@@ -773,7 +791,8 @@ guess_columns <- function(data, mapping = list()) {
         # a date cell at a midnight that is skipped is its day's first instant
         mid <- gap[format(df[[cc]][gap], "%H:%M:%S", tz = "UTC") == "00:00:00"]
         if (length(mid)) {
-          out[mid] <- .day_start(as.Date(df[[cc]][mid], tz = "UTC"), tz, cc, basename(path))
+          out[mid] <- .day_start(as.Date(df[[cc]][mid], tz = "UTC"), tz, cc,
+                                 basename(path), rows = mid)
           gap <- setdiff(gap, mid)
         }
         if (length(gap))
