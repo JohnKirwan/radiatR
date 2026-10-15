@@ -563,6 +563,12 @@
 
 ### Bug fixes
 
+- [`launch_app()`](https://johnkirwan.github.io/radiatR/reference/launch_app.md)
+  no longer writes to the global environment. The app sourced its helper
+  files there (functions and constants such as `build_plot_spec()` and
+  `APP_SEED`), which CRAN policy forbids; they now live in the app’s own
+  environment.
+
 - A latin-1 delimited file (as Windows programs write) reads as its text
   under every reader: a byte such as `µ` in a column name or `é` in an
   id stopped the load with an untyped “invalid UTF-8” error, and one in
