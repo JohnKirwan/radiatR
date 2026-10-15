@@ -699,7 +699,12 @@ test_that("every reader gives the same instants: one parser decides", {
                             "a,2024-01-01 11:00:00,.2,.2\na,2024-01-01T12:00:00Z,.3,.3\n")), mixed)
   layouts <- list(c("2024-01-01T10:00", "2024-01-01T10:01"),
                   c("20240101T100000", "20240101T100100"),
-                  c("2024-01-01T1000", "2024-01-01T1001"))
+                  c("2024-01-01T1000", "2024-01-01T1001"),
+                  # ISO 8601 basic, zoned: the zone says the instant
+                  c("20240101T100000Z", "20240101T100100Z"),
+                  c("20240101T120000+0200", "20240101T120100+0200"),
+                  c("2024-01-01T1000Z", "2024-01-01T1001Z"),
+                  c("2024-01-01T1200+02:00", "2024-01-01T1201+02:00"))
   for (v in layouts) {
     p <- file.path(dir, "lay.csv")
     writeBin(charToRaw(sprintf("id,time,x,y\na,%s,.1,.1\na,%s,.2,.2\n", v[1], v[2])), p)
@@ -739,6 +744,21 @@ test_that("a kept timestamp column is POSIXct in tz under every reader; an unuse
                    as.numeric(as.POSIXct("2024-01-01 10:00:00", tz = "America/New_York")),
                    info = paste(info, cc))
     }
+  }
+})
+
+test_that("a kept column not all in one date-time layout is kept as read, under every reader", {
+  dir <- withr::local_tempdir()
+  p <- file.path(dir, "loose.csv")
+  writeBin(charToRaw(paste0("id,time,x,y,hours,mixed\n",
+                            "a,1,.1,.1,2024-01-01 10,2024-01-01 10:00:00\n",
+                            "a,2,.2,.2,2024-01-01 11,2024-01-01T12:00:00Z\n")), p)
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    ts <- read_tracks(p, keep = c("hours", "mixed"))
+    expect_identical(ts@data$hours, c("2024-01-01 10", "2024-01-01 11"), info = info)
+    expect_identical(ts@data$mixed, c("2024-01-01 10:00:00", "2024-01-01T12:00:00Z"), info = info)
   }
 })
 

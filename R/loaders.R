@@ -422,7 +422,9 @@ guess_columns <- function(data, mapping = list()) {
 # date-time).
 .split_zone <- function(s) {
   zre <- "(Z|[+-][0-9]{2}(:?[0-9]{2})?)$"
-  zoned <- !is.na(s) & grepl(paste0("[0-9]:[0-9]{2}(:[0-9]{2}([.][0-9]+)?)?", zre), s)
+  # after hh:mm(:ss), or the ISO 8601 basic Thhmm(ss)
+  zoned <- !is.na(s) & grepl(paste0(
+    "([0-9]:[0-9]{2}(:[0-9]{2}([.][0-9]+)?)?|T[0-9]{4}([0-9]{2}([.][0-9]+)?)?)", zre), s)
   core <- s
   core[zoned] <- sub(zre, "", s[zoned])
   z <- substring(s[zoned], nchar(core[zoned]) + 1L)
@@ -962,15 +964,17 @@ guess_columns <- function(data, mapping = list()) {
 }
 
 # The columns `cols` of `d`, which the caller keeps, read as date-times in
-# `tz` where they hold them: those a reader typed (handed back as text and
-# named in attr(d, "datetime_text"), or a Date or POSIXct) and text whose
-# every value is a date-time (see .looks_like_time()). Malformed values stop
-# the load, as in the time column. Other columns are left as they are.
+# `tz` where they hold them: a Date or POSIXct (from Excel, or a reader's
+# dates) and text whose every value is in one date-time layout (see
+# .looks_like_time()), whichever reader read it. A delimited file's
+# date-times are text here (see .datetime_as_text()), so a column that is
+# not all in one layout is left as read under every reader. A value of that
+# layout that is no date-time (a time tz skips) stops the load, as in the
+# time column.
 .parse_kept_times <- function(d, cols, tz, source, decimal = ".") {
   for (cc in cols) {
     v <- d[[cc]]
-    if (cc %in% attr(d, "datetime_text") || inherits(v, c("Date", "POSIXct")) ||
-        .looks_like_time(v))
+    if (inherits(v, c("Date", "POSIXct")) || .looks_like_time(v))
       d[[cc]] <- .coerce_time(v, time_type = "posix", tz = tz, column = cc,
                               source = source, decimal = decimal)
   }
