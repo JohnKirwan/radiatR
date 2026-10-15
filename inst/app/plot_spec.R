@@ -466,12 +466,17 @@ spec_to_plot <- function(spec, ts, hd) {
       paste0(", sheet = ", q(data$sheet)) else ""
     return(paste0("df <- as.data.frame(readxl::read_excel(", q(data$path), sh, "))"))
   }
+  # Label columns the app kept as text, keyed by the name read.csv() gives
+  # them (check.names), or colClasses would miss them.
+  tc <- data$text_cols
+  cc <- if (length(tc)) paste0(", colClasses = c(", paste0(
+    make.names(tc), " = \"character\"", collapse = ", "), ")") else ""
   d <- data$delim
   if (!is.null(d) && identical(d, ";"))
-    return(paste0("df <- read.csv2(", q(data$path), ")"))
+    return(paste0("df <- read.csv2(", q(data$path), cc, ")"))
   if (!is.null(d) && identical(d, "\t"))
-    return(paste0("df <- read.delim(", q(data$path), ")"))
-  paste0("df <- read.csv(", q(data$path), ")")
+    return(paste0("df <- read.delim(", q(data$path), cc, ")"))
+  paste0("df <- read.csv(", q(data$path), cc, ")")
 }
 
 # Emit the data-load + headings-derivation lines shared by the figure-code and
