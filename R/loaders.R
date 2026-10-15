@@ -836,32 +836,40 @@ guess_columns <- function(data, mapping = list()) {
   records <- .check_fields(path, delim, src)
   use_readr <- .is_installed("readr")
   use_fread <- !use_readr && .is_installed("data.table")
+  # A latin-1 file is decoded by every reader (see .is_latin1()), and its
+  # text handed on as UTF-8.
+  latin1 <- .is_latin1(path)
+  decode <- if (latin1) .as_utf8 else identity
   # fread() decompresses gzip and bzip2 only with R.utils, and parses xz as
   # it stands: it is handed the file decompressed (it reads a zip archive itself).
   input <- path
+  # A date-time readr or fread() types is read again as its text (see
+  # .datetime_as_text()), so each types it in UTC: in `tz`, readr would turn a
+  # time that does not exist there into NA with a warning that names nothing,
+  # and fread() takes no zone but UTC and the local one.
   readr_read <- function(...)
-    readr::read_delim(path, delim = delim, quote = "\"", na = c("", "NA"),
-                      trim_ws = FALSE, name_repair = "minimal",
-                      show_col_types = FALSE, progress = FALSE, ...)
+    decode(readr::read_delim(
+      path, delim = delim, quote = "\"", na = c("", "NA"), trim_ws = FALSE,
+      locale = readr::locale(decimal_mark = decimal, grouping_mark = "", tz = "UTC",
+                             encoding = if (latin1) "latin1" else "UTF-8"),
+      name_repair = "minimal", show_col_types = FALSE, progress = FALSE, ...))
   fread_read <- function(...)
-    data.table::fread(input, sep = delim, showProgress = FALSE, blank.lines.skip = TRUE,
-                      strip.white = FALSE, na.strings = c("", "NA"), ...)
+    decode(data.table::fread(input, sep = delim, showProgress = FALSE, blank.lines.skip = TRUE,
+                               strip.white = FALSE, na.strings = c("", "NA"),
+                               encoding = if (latin1) "Latin-1" else "unknown", ...))
+  table_read <- function(...)
+    decode(utils::read.table(path, header = TRUE, sep = delim, quote = "\"",
+                               comment.char = "", check.names = FALSE, stringsAsFactors = FALSE,
+                               fileEncoding = if (latin1) "latin1" else "", ...))
   # The columns at positions `pos` read again, as the text in the file.
   read_text <- function(pos) {
     if (use_readr)
       readr_read(col_types = paste(ifelse(seq_along(df) %in% pos, "c", "_"), collapse = ""), ...)
     else if (use_fread) fread_read(select = pos, colClasses = "character", ...)
-    else utils::read.table(path, header = TRUE, sep = delim, quote = "\"",
-                           comment.char = "", check.names = FALSE,
-                           stringsAsFactors = FALSE, colClasses = "character", ...)[pos]
+    else table_read(colClasses = "character", ...)[pos]
   }
-  # A date-time readr or fread() types is read again as its text (see
-  # .datetime_as_text()), so each types it in UTC: in `tz`, readr would turn a
-  # time that does not exist there into NA with a warning that names nothing,
-  # and fread() takes no zone but UTC and the local one.
   df <- if (use_readr)
-    readr_read(locale = readr::locale(decimal_mark = decimal, grouping_mark = "", tz = "UTC"),
-               guess_max = Inf, ...)
+    readr_read(guess_max = Inf, ...)
   else if (use_fread) {
     if (.compression(path) %in% c("gzip", "bzip2", "xz")) {
       input <- tempfile()
@@ -870,9 +878,7 @@ guess_columns <- function(data, mapping = list()) {
     }
     fread_read(dec = decimal, tz = "UTC", ...)
   }
-  else utils::read.table(
-    path, header = TRUE, sep = delim, dec = decimal, quote = "\"", comment.char = "",
-    na.strings = c("", "NA"), check.names = FALSE, stringsAsFactors = FALSE, ...)
+  else table_read(dec = decimal, na.strings = c("", "NA"), ...)
   df <- .lf_breaks(df)
   # fread() skips first lines it takes for a preamble, readr a cut-off last line
   if (nrow(df) != records)
@@ -894,6 +900,35 @@ guess_columns <- function(data, mapping = list()) {
 .first_member <- function(path)
   if (.compression(path) == "zip") unz(path, utils::unzip(path, list = TRUE)$Name[1L]) else path
 
+# `df` with its names and text columns as UTF-8.
+.as_utf8 <- function(df) {
+  names(df) <- enc2utf8(names(df))
+  for (j in which(vapply(df, is.character, logical(1)))) df[[j]] <- enc2utf8(df[[j]])
+  df
+}
+
+# Whether the text of delimited file `path` is latin-1, by the rule of
+# .read_text_lines(): a line that is not valid UTF-8 makes the whole file
+# latin-1. A file of ASCII bytes alone is not scanned for lines, and one that
+# starts with a UTF-16 byte-order mark is left as it is read.
+.is_latin1 <- function(path) {
+  # gzfile() reads gzip, bzip2, xz and plain files as their bytes
+  con <- .first_member(path)
+  if (is.character(con)) con <- gzfile(con, "rb") else open(con, "rb")
+  on.exit(close(con))
+  first <- TRUE
+  repeat {
+    bytes <- readBin(con, "raw", n = 1e7)
+    if (!length(bytes)) return(FALSE)
+    if (first && length(bytes) >= 2L &&
+        (identical(bytes[1:2], as.raw(c(0xff, 0xfe))) || identical(bytes[1:2], as.raw(c(0xfe, 0xff)))))
+      return(FALSE)
+    first <- FALSE
+    if (any(bytes > as.raw(0x7f))) break
+  }
+  !all(validUTF8(readLines(.first_member(path), warn = FALSE)))
+}
+
 # The column names .read_any() gives `path`, read from its first line that is
 # not blank (of the first 20) or, for Excel and Arrow, its schema.
 .read_names <- function(path, ext = NULL, delim = NULL, sheet = NULL) {
@@ -912,6 +947,7 @@ guess_columns <- function(data, mapping = list()) {
   } else {
     delim <- delim %||% .guess_delim(path)$delim
     lines <- readLines(.first_member(path), n = 20L, warn = FALSE, encoding = "UTF-8")
+    if (.is_latin1(path)) lines <- iconv(lines, "latin1", "UTF-8")
     lines <- lines[nzchar(trimws(lines))]
     if (!length(lines)) return(character(0))
     line <- sub(paste0("^", intToUtf8(0xfeff)), "", lines[1L])
@@ -2839,11 +2875,16 @@ register_loader_dialect("trackmate", function(x, id_col = NULL, time_col = NULL,
 # numbers): frame, arena, track, x, y, label, with five bounding-box columns
 # before the label in the 2026 layout. Read as text for the strict coercion.
 .read_toxtrac <- function(path) {
-  first <- strsplit(readLines(path, n = 1L, warn = FALSE), "\t", fixed = TRUE)
+  latin1 <- .is_latin1(path)
+  first <- readLines(path, n = 1L, warn = FALSE)
+  if (latin1) first <- iconv(first, "latin1", "UTF-8")
+  first <- strsplit(first, "\t", fixed = TRUE)
   if (!length(first) || !length(first[[1L]]) || anyNA(.parse_number(trimws(first[[1L]]))))
     return(.read_any(path))
   d <- utils::read.table(path, header = FALSE, sep = "\t", colClasses = "character",
-                         blank.lines.skip = FALSE, quote = "", comment.char = "")
+                         blank.lines.skip = FALSE, quote = "", comment.char = "",
+                         fileEncoding = if (latin1) "latin1" else "")
+  if (latin1) d <- .as_utf8(d)
   cols <- list(c("frame", "arena", "track", "x", "y", "label"),
                c("frame", "arena", "track", "x", "y", "box_angle", "box_x", "box_y",
                  "box_width", "box_height", "label"))

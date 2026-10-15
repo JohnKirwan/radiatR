@@ -112,6 +112,20 @@ test_that("ToxTrac Tracking.txt: with or without a header row, 11 or 6 columns, 
   expect_match(conditionMessage(e), "7 columns")
 })
 
+test_that("ToxTrac: a latin-1 label reads as its text, with or without a header row", {
+  latin <- function(l) {
+    l[length(l)] <- sub("1$", "é", l[length(l)])
+    iconv(l, "UTF-8", "latin1")
+  }
+  for (drop in c(FALSE, TRUE)) {
+    p <- withr::local_tempfile(fileext = ".txt")
+    l <- readLines(fx("toxtrac_tracking.txt"))
+    writeLines(latin(if (drop) l[-1] else l), p, useBytes = TRUE)
+    d <- rows_of(read_tracks(p, dialect = "toxtrac"))
+    expect_identical(d$label[nrow(d)], "é", info = paste("headerless:", drop))
+  }
+})
+
 test_that("ToxTrac: a bad cell in a headerless file is reported by row and file", {
   p <- edited("toxtrac_tracking.txt", function(l) sub("^2\t0\t1\t141.487", "2\t0\t1\toops", l[-1]))
   e <- cond(read_tracks(p, dialect = "toxtrac"))
