@@ -587,7 +587,7 @@ test_that("Excel date-times, which carry no zone, are read in tz", {
   writexl::write_xlsx(d, path)
   # the same wall-clock times, five hours later; epoch seconds resolve ~2e-7 s
   got <- as.numeric(read_tracks(path, tz = "America/New_York")@data$frame)
-  expect_lt(max(abs(got - as.numeric(d$frame) - 5 * 3600)), 1e-5)
+  expect_lt(max(abs(got - as.numeric(d$frame) - 5 * 3600)), 5e-7)
   expect_identical(as.numeric(read_tracks(path)@data$frame), as.numeric(d$frame))
 })
 
