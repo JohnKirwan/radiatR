@@ -790,7 +790,7 @@ test_that("namespace gives files that share a stem their own prefix", {
   ts <- read_tracks(c(file.path(dir, "n1.csv"), file.path(dir, "n1.tsv"),
                       file.path(dir, "a", "n2.csv"), file.path(dir, "b", "n2.csv")),
                     id_collision = "namespace")
-  ids <- unique(as.character(ts@data$animal))
+  ids <- unique(as.character(ts@data$id))
   expect_length(ids, 4L)
   expect_true(all(c("n1.csv::1", "n1.tsv::1") %in% ids))
   expect_true(all(c("a/n2.csv::1", "b/n2.csv::1") %in% ids))
