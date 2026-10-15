@@ -4,13 +4,16 @@
 
 * `read_tracks(read_opts = )` now reaches the built-in dialects, which used to
   ignore it: every dialect takes `decimal`; the `.read_any()`-based ones
-  (`trackmate`, `trex`, `sleap`, `idtrackerai_wide`) also `delim`, `sheet` and
-  `ext`; `ethovision` and `anymaze` `delim`. An option a dialect cannot use,
+  (`trackmate`, `trex`, `sleap`, `idtrackerai_wide`) also `delim` and `ext`
+  (text files) and `sheet` (Excel files); `ethovision` and `anymaze` `delim`.
+  An option a dialect cannot use or that does not fit the file's type (`delim`
+  or `decimal` for an Excel file, `sheet` for a text file),
   or any option for a registered dialect without a `read_opts` argument, now
   stops with `radiatR_invalid_argument` instead of being silently ignored.
   `read_opts` entries are checked on every path: an unknown name (which `$`
   used to match partially: `decimals = ","` was read as `decimal`) or a
-  decimal mark other than `"."` / `","` stops. The decimal-mark hint on
+  decimal mark other than `"."` / `","` stops, as does a name given twice. Every
+  refusal carries the offending entry as `option`. The decimal-mark hint on
   malformed values now applies to dialects and to `H:MM:SS` durations, no
   longer to Excel files, and the error carries `decimal` and
   `suggested_decimal`.

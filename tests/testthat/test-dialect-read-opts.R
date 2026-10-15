@@ -43,10 +43,14 @@ test_that("an unknown entry or a bad decimal mark is refused by name", {
                         dialect_args = list(read_opts = list(decimals = ","))))
   expect_s3_class(e, "radiatR_invalid_argument")
   expect_match(conditionMessage(e), "trackmate: read_opts has no entry 'decimals'", fixed = TRUE)
+  expect_identical(e$option, "decimals")
+  expect_null(e$refused_by)
   e <- cond(read_tracks(p, dialect = "trackmate",
                         dialect_args = list(read_opts = list(decimal = ";"))))
   expect_s3_class(e, "radiatR_invalid_argument")
   expect_match(conditionMessage(e), 'read_opts$decimal must be "." or ","', fixed = TRUE)
+  expect_identical(e$option, "decimal")
+  expect_null(e$refused_by)
 })
 
 test_that("DeepLabCut and ToxTrac refuse a delimiter; DeepLabCut honours a decimal mark", {
@@ -151,8 +155,51 @@ test_that("read_opts are checked on the generic path too", {
   e <- cond(read_tracks(p, read_opts = list(decimals = ",")))   # not a partial match
   expect_s3_class(e, "radiatR_invalid_argument")
   expect_match(conditionMessage(e), "read_tracks: read_opts has no entry 'decimals'", fixed = TRUE)
-  expect_s3_class(cond(read_tracks(p, read_opts = list(decimal = ";"))),
-                  "radiatR_invalid_argument")
+  e <- cond(read_tracks(p, read_opts = list(decimal = ";")))
+  expect_s3_class(e, "radiatR_invalid_argument")
+  expect_identical(e$option, "decimal")
+})
+
+test_that("a read_opts name given twice is refused, not resolved by position", {
+  p <- tm_file(c("id,frame,x,y", paste0("a,", 0:2, ",1.5,2.5")))
+  dup <- list(decimal = ".", decimal = ",")
+  e <- cond(read_tracks(p, read_opts = dup))
+  expect_s3_class(e, "radiatR_invalid_argument")
+  expect_identical(e$option, "decimal")
+  expect_match(conditionMessage(e), "read_opts names 'decimal' more than once", fixed = TRUE)
+  e <- cond(read_tracks(p, dialect = "trackmate", dialect_args = list(read_opts = dup)))
+  expect_s3_class(e, "radiatR_invalid_argument")
+  expect_identical(e$option, "decimal")
+})
+
+test_that("a dialect refusal names the dialect that refused", {
+  e <- cond(read_tracks(fx("dlc_single_wasp_predictions.csv"), dialect = "deeplabcut",
+                        dialect_args = list(read_opts = list(delim = ";"))))
+  expect_identical(e$refused_by, "deeplabcut")
+  expect_identical(e$option, "delim")
+})
+
+test_that("a read_opts entry that does not fit the file type is refused", {
+  skip_if_not_installed("writexl")
+  skip_if_not_installed("readxl")
+  x <- withr::local_tempfile(fileext = ".xlsx")
+  tm <- function(v) data.frame(TRACK_ID = "a", FRAME = 0:2, POSITION_X = v, POSITION_Y = 2.5)
+  writexl::write_xlsx(list(One = tm(1.5), Two = tm(7.5)), x)
+  e <- cond(read_tracks(x, dialect = "trackmate", dialect_args = list(read_opts = list(delim = ";"))))
+  expect_s3_class(e, "radiatR_invalid_argument")
+  expect_identical(e$option, "delim")
+  expect_identical(e$refused_by, "trackmate")
+  expect_match(conditionMessage(e), "is an Excel workbook", fixed = TRUE)
+  e <- cond(read_tracks(x, dialect = "trackmate", dialect_args = list(read_opts = list(decimal = ","))))
+  expect_identical(e$option, "decimal")
+  ts <- read_tracks(x, dialect = "trackmate", dialect_args = list(read_opts = list(sheet = "Two")))
+  expect_equal(col_of(ts, "x"), rep(7.5, 3))
+  p <- tm_file(c("TRACK_ID,FRAME,POSITION_X,POSITION_Y", paste0("a,", 0:2, ",1.5,2.5")))
+  e <- cond(read_tracks(p, dialect = "trackmate", dialect_args = list(read_opts = list(sheet = "Two"))))
+  expect_s3_class(e, "radiatR_invalid_argument")
+  expect_identical(e$option, "sheet")
+  expect_identical(e$refused_by, "trackmate")
+  expect_match(conditionMessage(e), "is a delimited text file", fixed = TRUE)
 })
 
 test_that("a duration with the other decimal mark gets the suggestion", {
