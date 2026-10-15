@@ -427,6 +427,11 @@
 
 ## Bug fixes
 
+* `read_tracks()` reads a zip archive without readr or data.table installed.
+  The `read.table()` fallback was handed the archive itself and stopped with
+  a misleading "0 row(s) were read" error; it now reads the archive's first
+  member, as readr and `fread()` do, a latin-1 one included.
+
 * A latin-1 delimited file (as Windows programs write) reads as its text
   under every reader: a byte such as `µ` in a column name or `é` in an id
   stopped the load with an untyped "invalid UTF-8" error, and one in another
