@@ -317,6 +317,24 @@
   too far from the centre) has `NA` landmarks and `order`/`vid_ord` in
   `trial_limits`, not 0. `get_all_object_pos()` keeps the `trial_limits` rows
   of a file none of whose trials is valid.
+* readr no longer decides how a delimited file's date-times are read: like
+  `data.table::fread()`, it hands them back as the text in the file, and one
+  parser reads them for every reader. That parser now also reads ISO 8601
+  basic and hour-minute times (`20240101T100000`, `2024-01-01T1000`,
+  `2024-01-01T10:00`). A column that mixes zoned (`Z`, `+02:00`) and unzoned
+  date-times, hours alone (`2024-01-01 10`), a trailing decimal point or
+  seconds on some values only now stops under readr too, with an error
+  naming the values; so do ISO 8601 basic times with a zone
+  (`20240101T100000Z`) and a basic date and time split by a space
+  (`20240101 100000`), which readr read, and an offset after a space
+  (`2024-01-01 10:00:00 +0200`), which `fread()` read. A kept column (`keep =`) whose every value is a
+  date-time (or a date) is read as date-times in `tz` under every reader;
+  `fread()` and `read.table()` gave its text. Files whose unused date-time columns were typed differently
+  (a CSV beside an xlsx) bind again. A time column of date-times read with
+  `time_type = "seconds"` or `"frames"` now stops with
+  `radiatR_malformed_values` under every reader, as it did under
+  `read.table()`; readr gave epoch seconds (or, for frames, a
+  `radiatR_time_type_mismatch` error).
 
 ## Changes
 
