@@ -563,6 +563,13 @@
 
 ### Bug fixes
 
+- [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  reads a zip archive without readr or data.table installed. The
+  [`read.table()`](https://rdrr.io/r/utils/read.table.html) fallback was
+  handed the archive itself and stopped with a misleading “0 row(s) were
+  read” error; it now reads the archive’s first member, as readr and
+  `fread()` do, a latin-1 one included.
+
 - [`launch_app()`](https://johnkirwan.github.io/radiatR/reference/launch_app.md)
   no longer writes to the global environment. The app sourced its helper
   files there (functions and constants such as `build_plot_spec()` and
