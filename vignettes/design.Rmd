@@ -43,7 +43,7 @@ durably through dplyr verbs (via the `dplyr_reconstruct` contract), so a
 with the `hf_*` accessors. A plain data frame with a heading column is always an
 acceptable substitute — the class is an enhancement, never a requirement:
 
-```{r}
+```{r, eval = requireNamespace("dplyr", quietly = TRUE)}
 data(cpunctatus)
 hd <- derive_headings(cpunctatus, rule = "distal")
 hd2 <- dplyr::filter(hd, is.finite(heading))   # class + display preserved

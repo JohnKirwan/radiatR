@@ -1041,6 +1041,11 @@ test_that("a latin-1 file reads as its text under every reader", {
   utf8 <- file.path(dir, "utf8.csv")
   writeBin(charToRaw(enc2utf8(text)), utf8)
   files <- c(files, utf8)
+  # a zip archive, whose first member read.table() reads through a connection
+  zp <- file.path(dir, "latin.zip")
+  suppressWarnings(try(withr::with_dir(dir, utils::zip("latin.zip", "latin.csv", flags = "-q")),
+                       silent = TRUE))
+  if (file.exists(zp)) files <- c(files, zp)
   nm <- c("id", "frame", "x (\u00b5m)", "y", "note")
   for (hide in readers) {
     hide_readers(hide)
@@ -1076,8 +1081,7 @@ test_that("a compressed file is counted as the table it holds", {
   suppressWarnings(try(withr::with_dir(dir, utils::zip("t.zip", "t.csv", flags = "-q")),
                        silent = TRUE))
   skip_if_not(file.exists(zp), "no zip program")
-  # read.table() reads neither a zip archive nor, here, needs to
-  for (hide in readers[lengths(readers) < 2L]) {
+  for (hide in readers) {
     hide_readers(hide)
     info <- paste(c("without", hide), collapse = " ")
     for (p in packed)

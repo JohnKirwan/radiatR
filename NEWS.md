@@ -427,6 +427,11 @@
 
 ## Bug fixes
 
+* `read_tracks()` reads a zip archive without readr or data.table installed.
+  The `read.table()` fallback was handed the archive itself and stopped with
+  a misleading "0 row(s) were read" error; it now reads the archive's first
+  member, as readr and `fread()` do, a latin-1 one included.
+
 * `launch_app()` no longer writes to the global environment. The app sourced
   its helper files there (functions and constants such as `build_plot_spec()`
   and `APP_SEED`), which CRAN policy forbids; they now live in the app's own

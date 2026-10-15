@@ -857,10 +857,17 @@ guess_columns <- function(data, mapping = list()) {
     decode(data.table::fread(input, sep = delim, showProgress = FALSE, blank.lines.skip = TRUE,
                                strip.white = FALSE, na.strings = c("", "NA"),
                                encoding = if (latin1) "Latin-1" else "unknown", ...))
-  table_read <- function(...)
-    decode(utils::read.table(path, header = TRUE, sep = delim, quote = "\"",
-                               comment.char = "", check.names = FALSE, stringsAsFactors = FALSE,
-                               fileEncoding = if (latin1) "latin1" else "", ...))
+  # read.table() reads a zip archive's first member through a connection. A
+  # latin-1 file is re-encoded when read from a path (fileEncoding), but its
+  # strings are only marked latin-1 when read through a connection (encoding).
+  table_read <- function(...) {
+    src <- .first_member(path)
+    zip <- !is.character(src)
+    decode(utils::read.table(src, header = TRUE, sep = delim, quote = "\"",
+                             comment.char = "", check.names = FALSE, stringsAsFactors = FALSE,
+                             fileEncoding = if (latin1 && !zip) "latin1" else "",
+                             encoding = if (latin1 && zip) "latin1" else "unknown", ...))
+  }
   # The columns at positions `pos` read again, as the text in the file.
   read_text <- function(pos) {
     if (use_readr)
