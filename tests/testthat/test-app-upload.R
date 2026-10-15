@@ -187,3 +187,35 @@ test_that("upload_preview of a missing file stops before trying to open it", {
   expect_no_warning(expect_error(upload_preview(bad, "x.txt", dialect = "ethovision"),
                                  "not found"))
 })
+
+test_that("upload_read keeps label columns it is told of as their text", {
+  p <- withr::local_tempfile(fileext = ".csv")
+  writeBin(charToRaw("grp,angle\n1.1,10\n1.10,20\n1.1,30\n"), p)
+  expect_length(unique(upload_read(p, "h.csv")$grp), 1L)          # typed: merged
+  expect_setequal(upload_read(p, "h.csv", id = "grp")$grp, c("1.1", "1.10"))
+  # a label column that types without merging stays numeric
+  q <- withr::local_tempfile(fileext = ".csv")
+  writeBin(charToRaw("grp,angle\n1,10\n2,20\n"), q)
+  expect_true(is.numeric(upload_read(q, "h.csv", id = "grp")$grp))
+})
+
+test_that("a headings upload keeps its group labels apart and says so in the spec", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  p <- withr::local_tempfile(fileext = ".csv")
+  writeBin(charToRaw("grp,angle\n1.1,10\n1.10,20\n1.1,30\n1.10,40\n"), p)
+  q <- withr::local_tempfile(fileext = ".csv")
+  writeBin(charToRaw("grp,angle\n1,10\n2,20\n1,30\n2,40\n"), q)
+  go <- function(path, text_cols) shiny::testServer(app_dir(), {
+    session$setInputs(input_type = "headings")
+    session$setInputs(file = list(datapath = path, name = "h.csv"))
+    session$setInputs(hd_col = "angle", hd_units = "degrees",
+                      hd_convention = "unit_circle", hd_group = "grp", go3 = 1)
+    expect_null(rv$error)
+    expect_length(unique(rv$hd$grp), 2L)
+    expect_identical(rv$hd_map$text_cols, text_cols)
+    expect_identical(current_spec()$data$text_cols, text_cols)
+  })
+  go(p, "grp")             # 1.1 and 1.10: kept as their text
+  go(q, character(0))      # 1 and 2: stay numbers
+})
