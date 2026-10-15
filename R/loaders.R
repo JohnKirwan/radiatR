@@ -411,7 +411,9 @@ guess_columns <- function(data, mapping = list()) {
 # is read apart from the layout (see .split_zone()).
 .time_formats <- c("%Y-%m-%d %H:%M:%OS", "%Y/%m/%d %H:%M:%OS",
                    "%Y-%m-%dT%H:%M:%OS",
-                   "%Y-%m-%d %H:%M", "%Y/%m/%d %H:%M", "%Y-%m-%d", "%Y/%m/%d")
+                   "%Y-%m-%d %H:%M", "%Y-%m-%dT%H:%M", "%Y-%m-%dT%H%M",
+                   "%Y%m%dT%H%M%OS",
+                   "%Y/%m/%d %H:%M", "%Y-%m-%d", "%Y/%m/%d")
 
 # The zone designator that ends a date-time: "Z" (UTC) or an offset from UTC
 # of at most 14 hours, +hh:mm, +hhmm or +hh. Returns the value without it
@@ -434,11 +436,43 @@ guess_columns <- function(data, mapping = list()) {
   list(core = core, zoned = zoned, offset = offset)
 }
 
+# A field between separators may drop its leading zero; one run into the
+# field before or after it (ISO 8601 basic, "%Y%m%dT%H%M%OS") has its full
+# two digits, or it could not be told from its neighbour.
 .time_format_regex <- function(fmt) {
-  subs <- list(c("%OS", "[0-9]{1,2}([.][0-9]+)?"), c("%Y", "[0-9]{4}"),
-               c("%[mdHM]", "[0-9]{1,2}"))
-  for (p in subs) fmt <- gsub(p[1], p[2], fmt)
-  paste0("^", fmt, "$")
+  tok <- regmatches(fmt, gregexpr("%OS|%[YmdHM]|[^%]+", fmt))[[1L]]
+  field <- startsWith(tok, "%")
+  run <- field & (c(FALSE, utils::head(field, -1L)) | c(field[-1L], FALSE))
+  re <- ifelse(!field, tok, ifelse(tok == "%Y", "[0-9]{4}", paste0(
+    ifelse(run, "[0-9]{2}", "[0-9]{1,2}"), ifelse(tok == "%OS", "([.][0-9]+)?", ""))))
+  paste0("^", paste(re, collapse = ""), "$")
+}
+
+# The layout of .time_formats that text date-times `core` (zone designators
+# split off) are read in: the one most of them match, a bare date counting
+# toward a date-time layout that has values of its own. Returns its index
+# (`best`) and which values match each layout (`hit`).
+.time_layout <- function(core) {
+  hit <- lapply(.time_formats, function(f) grepl(.time_format_regex(f), core))
+  n_hit <- vapply(hit, sum, integer(1))
+  n_bare <- n_hit[match(sub("[ T]%H.*$", "", .time_formats), .time_formats)]
+  n_bare[is.na(n_bare)] <- 0L     # the bare date of a basic layout is no layout
+  has_time <- grepl("%H", .time_formats, fixed = TRUE) & n_hit > 0L
+  list(best = which.max(n_hit + ifelse(has_time, n_bare, 0L)), hit = hit)
+}
+
+# Whether text `v` is date-times: every value that is not missing, less its
+# zone designator, in the one layout .parse_time_chr() would read it in, or
+# the bare date of that layout.
+.looks_like_time <- function(v) {
+  if (!is.character(v)) return(FALSE)
+  s <- trimws(v)
+  s <- s[!.is_missing_chr(s)]
+  if (!length(s)) return(FALSE)
+  lay <- .time_layout(.split_zone(s)$core)
+  fmt <- .time_formats[lay$best]
+  date_fmt <- sub("[ T]%H.*$", "", fmt)
+  all(lay$hit[[lay$best]] | (fmt != date_fmt & grepl(.time_format_regex(date_fmt), s)))
 }
 
 # Wall-clock fields `lt` (POSIXlt) as instants in `tz`. A time that does not
@@ -476,12 +510,9 @@ guess_columns <- function(data, mapping = list()) {
   }
   zn <- .split_zone(s)
   core <- zn$core
-  hit <- lapply(.time_formats, function(f) grepl(.time_format_regex(f), core))
-  # Bare dates count toward a date-time layout that has values of its own.
-  n_hit <- vapply(hit, sum, integer(1))
-  n_bare <- n_hit[match(sub("[ T]%H.*$", "", .time_formats), .time_formats)]
-  has_time <- grepl("%H", .time_formats, fixed = TRUE) & n_hit > 0L
-  best <- which.max(n_hit + ifelse(has_time, n_bare, 0L))
+  lay <- .time_layout(core)
+  hit <- lay$hit
+  best <- lay$best
   fmt <- .time_formats[best]
   # a zoned value is the instant its own zone says, wherever tz is
   z <- zn$zoned
@@ -650,11 +681,30 @@ guess_columns <- function(data, mapping = list()) {
   .guess_delim(path, lines)$decimal
 }
 
+# Replace the date-time columns a reader typed (POSIXct) by the text in the
+# file, for .parse_time_chr() to read: one parser for every reader, so DST
+# gaps, leap seconds, zones and fractions of a second come out the same.
+# `read_text(pos)` reads the columns at positions `pos` as text. The names of
+# the replaced columns are kept in attr(df, "datetime_text").
+.datetime_as_text <- function(df, read_text, source) {
+  pos <- which(vapply(df, inherits, logical(1), "POSIXct"))
+  if (!length(pos)) return(df)
+  text <- read_text(unname(pos))
+  if (nrow(text) != nrow(df) || ncol(text) != length(pos))
+    radiatR_abort_malformed_file(source, "rows", detail = sprintf(
+      "its date-time column(s) %s were not read the same way twice.",
+      paste0("'", names(df)[pos], "'", collapse = ", ")))
+  for (i in seq_along(pos)) df[[pos[i]]] <- as.character(text[[i]])
+  attr(df, "datetime_text") <- names(df)[pos]
+  df
+}
+
 # read file with soft dependencies. Delimited formats are content-sniffed
 # (separator + decimal mark) unless delim/decimal are supplied; Excel and
 # Arrow formats dispatch by extension. `sheet` selects an Excel worksheet.
-# `tz` is the time zone of timestamps that carry none: a reader that types
-# them itself must do so in `tz`, as .coerce_time() does for those left as text.
+# `tz` is the time zone of timestamps that carry none: an Excel date-time is
+# typed in `tz` here; a delimited file's are handed back as text (named in
+# attr(df, "datetime_text")), which .coerce_time() reads in `tz`.
 # `id` names the mapped id column, a label column like those an id is guessed
 # from (see .keep_labels()).
 .read_any <- function(path, ext = NULL, delim = NULL, decimal = NULL, sheet = NULL,
@@ -678,7 +728,7 @@ guess_columns <- function(data, mapping = list()) {
                        basename(path), unique_names)
     # A date-time cell has no zone: readxl hands back its wall-clock time as UTC.
     # A time that does not exist in `tz` is NA and is noted in `tz_gaps` (rows
-    # and values by column), as below for readr: read_tracks() stops on one in
+    # and values by column): read_tracks() stops on one in
     # a column it uses (see .abort_tz_gaps()), so that it never blanks a kept
     # column unseen.
     if (!identical(tz, "UTC")) {
@@ -718,43 +768,41 @@ guess_columns <- function(data, mapping = list()) {
   # a ragged file in its own way, some with only a warning (see .check_fields()).
   src <- basename(path)
   records <- .check_fields(path, delim, src)
-  df <- if (.is_installed("readr"))
-    readr::read_delim(
-      path, delim = delim,
-      locale = readr::locale(decimal_mark = decimal, grouping_mark = "", tz = tz),
-      guess_max = Inf, name_repair = "minimal", show_col_types = FALSE,
-      progress = FALSE, ...)
-  else if (.is_installed("data.table")) {
-    # fread() accepts only tz = "UTC" or "" (local zone) and types unmarked
-    # timestamps in that zone, so a non-UTC tz never reaches it. Its POSIXct
-    # columns are read again as the text in the file, for .coerce_time() to
-    # read in tz as it does text a reader leaves alone: an instant written
-    # back as text would lose its zone ("Z", "+02:00") and fraction.
-    # fread() decompresses gzip and bzip2 only with R.utils, and parses xz as
-    # it stands: hand it the file decompressed (it reads a zip archive itself).
-    input <- path
+  use_readr <- .is_installed("readr")
+  use_fread <- !use_readr && .is_installed("data.table")
+  # fread() decompresses gzip and bzip2 only with R.utils, and parses xz as
+  # it stands: it is handed the file decompressed (it reads a zip archive itself).
+  input <- path
+  readr_read <- function(...)
+    readr::read_delim(path, delim = delim, quote = "\"", na = c("", "NA"),
+                      trim_ws = FALSE, name_repair = "minimal",
+                      show_col_types = FALSE, progress = FALSE, ...)
+  fread_read <- function(...)
+    data.table::fread(input, sep = delim, showProgress = FALSE, blank.lines.skip = TRUE,
+                      strip.white = FALSE, na.strings = c("", "NA"), ...)
+  # The columns at positions `pos` read again, as the text in the file.
+  read_text <- function(pos) {
+    if (use_readr)
+      readr_read(col_types = paste(ifelse(seq_along(df) %in% pos, "c", "_"), collapse = ""), ...)
+    else if (use_fread) fread_read(select = pos, colClasses = "character", ...)
+    else utils::read.table(path, header = TRUE, sep = delim, quote = "\"",
+                           comment.char = "", check.names = FALSE,
+                           stringsAsFactors = FALSE, colClasses = "character", ...)[pos]
+  }
+  # A date-time readr or fread() types is read again as its text (see
+  # .datetime_as_text()), so each types it in UTC: in `tz`, readr would turn a
+  # time that does not exist there into NA with a warning that names nothing,
+  # and fread() takes no zone but UTC and the local one.
+  df <- if (use_readr)
+    readr_read(locale = readr::locale(decimal_mark = decimal, grouping_mark = "", tz = "UTC"),
+               guess_max = Inf, ...)
+  else if (use_fread) {
     if (.compression(path) %in% c("gzip", "bzip2", "xz")) {
       input <- tempfile()
       on.exit(unlink(input), add = TRUE)
       .decompress(path, input)
     }
-    df <- data.table::fread(
-      input, sep = delim, dec = decimal, showProgress = FALSE,
-      blank.lines.skip = TRUE, strip.white = FALSE, na.strings = c("", "NA"),
-      tz = if (identical(tz, "UTC")) "UTC" else "", ...)
-    pos <- which(vapply(df, inherits, logical(1), "POSIXct"))
-    if (!identical(tz, "UTC") && length(pos)) {
-      text <- data.table::fread(
-        input, sep = delim, select = unname(pos), colClasses = "character",
-        showProgress = FALSE, blank.lines.skip = TRUE, strip.white = FALSE,
-        na.strings = c("", "NA"), ...)
-      if (nrow(text) != nrow(df) || ncol(text) != length(pos))
-        radiatR_abort_malformed_file(basename(path), "rows", detail = sprintf(paste0(
-          "its date-time column(s) %s were not read the same way twice."),
-          paste0("'", names(df)[pos], "'", collapse = ", ")))
-      for (i in seq_along(pos)) df[[pos[i]]] <- text[[i]]
-    }
-    df
+    fread_read(dec = decimal, tz = "UTC", ...)
   }
   else utils::read.table(
     path, header = TRUE, sep = delim, dec = decimal, quote = "\"", comment.char = "",
@@ -768,33 +816,11 @@ guess_columns <- function(data, mapping = list()) {
   df <- .check_names(df, src, unique_names)
   # Kept for the strict coercion of any column the reader left as text.
   attr(df, "decimal") <- decimal
-  # readr reads a time that does not exist in `tz` as NA, with a warning that
-  # names nothing: note it as the Excel branch does. A problem's `row` counts
-  # the header.
-  if (.is_installed("readr")) {
-    pr <- readr::problems(df)
-    gaps <- list()
-    for (j in which(vapply(df, inherits, logical(1), "POSIXct"))) {
-      hit <- pr[pr$col == j & pr$row - 1L <= nrow(df), ]
-      hit <- hit[is.na(df[[j]][hit$row - 1L]), ]
-      if (nrow(hit)) gaps[[names(df)[j]]] <- list(rows = hit$row - 1L, values = hit$actual)
-    }
-    if (length(gaps)) attr(df, "tz_gaps") <- gaps
-  }
-  .keep_labels(df, id, id_text = id_text, read_text = function(pos) {
-    if (.is_installed("readr"))
-      readr::read_delim(
-        path, delim = delim, show_col_types = FALSE, progress = FALSE,
-        name_repair = "minimal",
-        col_types = paste(ifelse(seq_along(df) %in% pos, "c", "_"), collapse = ""), ...)
-    else if (.is_installed("data.table"))
-      data.table::fread(path, sep = delim, select = pos, colClasses = "character",
-                        blank.lines.skip = TRUE, strip.white = FALSE,
-                        showProgress = FALSE, ...)
-    else utils::read.table(path, header = TRUE, sep = delim, quote = "\"",
-                           comment.char = "", check.names = FALSE,
-                           stringsAsFactors = FALSE, colClasses = "character", ...)[pos]
-  })
+  df <- .datetime_as_text(df, read_text, src)
+  text <- attr(df, "datetime_text")
+  df <- .keep_labels(df, id, id_text = id_text, read_text = read_text)
+  attr(df, "datetime_text") <- text
+  df
 }
 
 # Count the fields of each record of a delimited file, as .read_any() reads
@@ -935,6 +961,22 @@ guess_columns <- function(data, mapping = list()) {
   df
 }
 
+# The columns `cols` of `d`, which the caller keeps, read as date-times in
+# `tz` where they hold them: those a reader typed (handed back as text and
+# named in attr(d, "datetime_text"), or a Date or POSIXct) and text whose
+# every value is a date-time (see .looks_like_time()). Malformed values stop
+# the load, as in the time column. Other columns are left as they are.
+.parse_kept_times <- function(d, cols, tz, source, decimal = ".") {
+  for (cc in cols) {
+    v <- d[[cc]]
+    if (cc %in% attr(d, "datetime_text") || inherits(v, c("Date", "POSIXct")) ||
+        .looks_like_time(v))
+      d[[cc]] <- .coerce_time(v, time_type = "posix", tz = tz, column = cc,
+                              source = source, decimal = decimal)
+  }
+  d
+}
+
 # `gaps` holds, for each file read, list(source, cols): its name and what
 # .read_any() noted about times that do not exist in `tz`. One in a column
 # that is `used` stops the load. Files are told apart by position: two of one
@@ -1069,7 +1111,7 @@ guess_columns <- function(data, mapping = list()) {
 # is re-raised naming the file.
 .combine_track_files <- function(paths, mapping, id_from_filename, read_opts,
                                  time_args = list(), reader = NULL,
-                                 dialect = NULL) {
+                                 dialect = NULL, keep = NULL, drop = NULL) {
   read_opts <- read_opts %||% list()
   read <- function(p, id, id_text = FALSE)
     .read_any(p, ext = read_opts$ext, delim = read_opts$delim,
@@ -1137,6 +1179,9 @@ guess_columns <- function(data, mapping = list()) {
   # see whether it was a duration.
   roles <- guess_columns(dfl[[1L]], mapping)
   num_cols <- unlist(roles[c("x", "y", "angle", "weight")], use.names = FALSE)
+  role_cols <- unlist(roles, use.names = FALSE)
+  kept <- setdiff(keep, c(drop, role_cols))
+  used <- c(role_cols, kept, "..source_file", "..source_path")
 
   dfl <- Map(function(d, p) {
     dec <- attr(d, "decimal") %||% "."
@@ -1148,6 +1193,12 @@ guess_columns <- function(data, mapping = list()) {
       d[[tc]] <- do.call(.coerce_time, c(
         list(d[[tc]], column = tc, source = basename(p), dialect = dialect,
              decimal = dec), time_args))
+    d <- .parse_kept_times(d, intersect(kept, names(d)), time_args$tz %||% "UTC",
+                           basename(p), dec)
+    # A date-time column that is not used is dropped with the others after
+    # binding; its text beside another file's typed dates would stop the bind.
+    if (is.null(reader))
+      for (cc in setdiff(attr(d, "datetime_text"), used)) d[[cc]] <- NULL
     if (synth) d[[id_col]] <- tools::file_path_sans_ext(basename(p))
     d[["..source_file"]] <- basename(p)
     # Internal only: full/relative path, used to distinguish same-named files
@@ -1164,6 +1215,18 @@ guess_columns <- function(data, mapping = list()) {
       "read_tracks: the files do not share a time unit under dialect '%s' (%s).", dialect,
       paste(vapply(units, function(u) u %||% "unknown", character(1)), collapse = ", ")),
       class = "radiatR_time_type_mismatch")
+
+  # An unused column that holds dates or date-times in one file and values of
+  # another type in another (an Excel date-time beside the text of a file
+  # whose reader typed none, a Date beside a POSIXct) would stop the bind too:
+  # it is dropped from every file.
+  if (is.null(reader))
+    for (cc in setdiff(unique(unlist(lapply(dfl, names))), used)) {
+      cls <- Filter(Negate(is.null), lapply(dfl, function(d) if (cc %in% names(d)) class(d[[cc]])))
+      dated <- vapply(cls, function(k) any(k %in% c("Date", "POSIXct")), logical(1))
+      if (any(dated) && length(unique(cls)) > 1L)
+        dfl <- lapply(dfl, function(d) { d[[cc]] <- NULL; d })
+    }
 
   attrition <- Filter(Negate(is.null), lapply(dfl, attr, "attrition"))
   source_meta <- Filter(Negate(is.null),
@@ -1543,7 +1606,7 @@ read_tracks <- function(x,
   } else if (is.character(x) && length(x) > 1L) {
     combined <- .combine_track_files(x, mapping, id_from_filename, read_opts,
                                      list(time_type = time_type, tz = tz, fps = fps),
-                                     reader = prep, dialect = dialect)
+                                     reader = prep, dialect = dialect, keep = keep, drop = drop)
     df <- combined$df
     # Force the synthesized id column to be picked up by guess_columns() below,
     # so multi-file input never falls into the single-track "(multiple)" path.
@@ -1605,6 +1668,13 @@ read_tracks <- function(x,
       paste(names(df), collapse = ", ")),
       class = "radiatR_missing_columns", columns = unname(absent))
   .abort_tz_gaps(tz_gaps, setdiff(c(roles, keep), drop), tz)
+  # A kept column of date-times is read in tz, as the time column is (the
+  # files of a multi-file import were so read one by one). The reader's note
+  # of the date-times it typed has then been read.
+  if (is.character(x) && length(x) == 1L)
+    df <- .parse_kept_times(df, intersect(setdiff(keep, c(drop, roles)), names(df)),
+                            tz, src, dec)
+  attr(df, "datetime_text") <- NULL
   # A guessed id column with no values is no id column (SLEAP writes an empty
   # `track` for single-animal exports). A column named in `mapping` is taken at
   # the caller's word, and multi-file imports keep their own id handling.

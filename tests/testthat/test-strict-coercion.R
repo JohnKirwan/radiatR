@@ -648,7 +648,7 @@ test_that("a kept Excel date-time column is not blanked by a time that tz skips"
   expect_identical(e$rows, 2L)
 })
 
-test_that("a time that tz skips, typed by readr, is named and not blanked", {
+test_that("a time that tz skips, read on the text path, is named and not blanked", {
   skip_if_not_installed("readr")
   dir <- withr::local_tempdir()
   stamp <- sprintf("2024-03-10 0%d:30:00", 1:3)
@@ -689,6 +689,82 @@ hide_readers <- function(hide, env = parent.frame())
   testthat::local_mocked_bindings(
     .is_installed = function(pkg) !pkg %in% hide && requireNamespace(pkg, quietly = TRUE),
     .env = env)
+
+# ---- one date-time parser for every reader -------------------------------------
+
+test_that("every reader gives the same instants: one parser decides", {
+  dir <- withr::local_tempdir()
+  mixed <- file.path(dir, "mixed.csv")     # zoned beside unzoned: malformed on the text path
+  writeBin(charToRaw(paste0("id,time,x,y\na,2024-01-01 10:00:00,.1,.1\n",
+                            "a,2024-01-01 11:00:00,.2,.2\na,2024-01-01T12:00:00Z,.3,.3\n")), mixed)
+  layouts <- list(c("2024-01-01T10:00", "2024-01-01T10:01"),
+                  c("20240101T100000", "20240101T100100"),
+                  c("2024-01-01T1000", "2024-01-01T1001"))
+  for (v in layouts) {
+    p <- file.path(dir, "lay.csv")
+    writeBin(charToRaw(sprintf("id,time,x,y\na,%s,.1,.1\na,%s,.2,.2\n", v[1], v[2])), p)
+    for (hide in readers) {
+      hide_readers(hide)
+      expect_equal(as.numeric(read_tracks(p)@data$time),
+                   as.numeric(as.POSIXct(c("2024-01-01 10:00", "2024-01-01 10:01"), tz = "UTC")),
+                   info = paste(v[1], "without", paste(hide, collapse = " ")))
+    }
+  }
+  for (hide in readers) {
+    hide_readers(hide)
+    expect_error(read_tracks(mixed), class = "radiatR_malformed_values")
+  }
+  hours <- file.path(dir, "hours.csv")      # hours only: refused, named
+  writeBin(charToRaw("id,time,x,y\na,2024-01-01 10,.1,.1\na,2024-01-01 11,.2,.2\n"), hours)
+  for (hide in readers) {
+    hide_readers(hide)
+    expect_error(read_tracks(hours), class = "radiatR_malformed_values")
+  }
+})
+
+test_that("a kept timestamp column is POSIXct in tz under every reader; an unused one is not read", {
+  dir <- withr::local_tempdir()
+  p <- file.path(dir, "kept.csv")
+  writeBin(charToRaw(paste0("id,time,x,y,stamp,slash,junk\n",
+                            "a,1,.1,.1,2024-01-01 10:00:00,2024/01/01 10:00:00,2024-01-01 10:00:00\n",
+                            "a,2,.2,.2,2024-01-01 11:00:00,2024/01/01 11:00:00,2024-02-30 99:00:00\n")), p)
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    ts <- read_tracks(p, tz = "America/New_York", keep = c("stamp", "slash"))
+    for (cc in c("stamp", "slash")) {
+      expect_s3_class(ts@data[[cc]], "POSIXct")
+      expect_identical(attr(ts@data[[cc]], "tzone"), "America/New_York", info = info)
+      expect_equal(as.numeric(ts@data[[cc]][1]),
+                   as.numeric(as.POSIXct("2024-01-01 10:00:00", tz = "America/New_York")),
+                   info = paste(info, cc))
+    }
+  }
+})
+
+test_that("files whose date-time columns are typed differently still bind", {
+  dir <- withr::local_tempdir()
+  a <- file.path(dir, "a.csv"); b <- file.path(dir, "b.csv")
+  writeBin(charToRaw("id,time,x,y,day\na,1,.1,.1,2024-01-01\na,2,.2,.2,2024-01-02\n"), a)
+  writeBin(charToRaw("id,time,x,y,day\nb,1,.1,.1,2024-01-01 10:00:00\nb,2,.2,.2,2024-01-01 11:00:00\n"), b)
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    expect_no_error(read_tracks(c(a, b)))                      # `day` unused
+    ts <- read_tracks(c(a, b), keep = "day")                   # `day` kept: POSIXct
+    expect_s3_class(ts@data$day, "POSIXct")
+  }
+  skip_if_not_installed("readxl"); skip_if_not_installed("writexl")
+  x <- file.path(dir, "c.xlsx")
+  writexl::write_xlsx(data.frame(id = "c", time = 1:2, x = c(.1, .2), y = c(.1, .2),
+                                 day = as.POSIXct(c("2024-01-01 10:00", "2024-01-01 11:00"),
+                                                  tz = "UTC")), x)
+  for (hide in readers) {
+    hide_readers(hide)
+    expect_no_error(read_tracks(c(b, x)))
+    expect_s3_class(read_tracks(c(b, x), keep = "day")@data$day, "POSIXct")
+  }
+})
 
 test_that("ids that differ as text are not merged by reading them as numbers", {
   dir <- withr::local_tempdir()
