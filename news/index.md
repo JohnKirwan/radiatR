@@ -426,6 +426,10 @@
   landmarks and `order`/`vid_ord` in `trial_limits`, not 0.
   [`get_all_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.md)
   keeps the `trial_limits` rows of a file none of whose trials is valid.
+  The bundled `cpunctatus` follows suit: trial `con_19_1`, which never
+  reaches the inner radius, now has `NA` landmarks in
+  `meta$trial_limits` instead of its farthest point (0.059, 0.015) for
+  both. Nothing else in the dataset changes.
 
 - readr no longer decides how a delimited file’s date-times are read:
   like
