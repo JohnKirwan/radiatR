@@ -2555,13 +2555,15 @@ register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = N
 # latin-1 (the Windows programs that write tracking exports). A UTF-8
 # byte-order mark is removed. Bytes are never dropped: a line that is not
 # valid UTF-8 makes the whole file latin-1, in which every byte is a character.
-.read_text_lines <- function(path) {
+# `n` (default all) is how many lines to read; the encoding is then that of
+# those lines.
+.read_text_lines <- function(path, n = -1L) {
   bom <- readBin(path, "raw", n = 2L)
   if (identical(bom, as.raw(c(0xff, 0xfe))) || identical(bom, as.raw(c(0xfe, 0xff)))) {
     con <- file(path, encoding = "UTF-16")
-    lines <- tryCatch(enc2utf8(readLines(con, warn = FALSE)), finally = close(con))
+    lines <- tryCatch(enc2utf8(readLines(con, n = n, warn = FALSE)), finally = close(con))
   } else {
-    lines <- readLines(path, warn = FALSE)
+    lines <- readLines(path, n = n, warn = FALSE)
     if (all(validUTF8(lines))) Encoding(lines) <- "UTF-8"
     else lines <- iconv(lines, "latin1", "UTF-8")
   }

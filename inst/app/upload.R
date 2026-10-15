@@ -41,16 +41,26 @@ upload_read <- function(path, name, delim_sel = NULL, sheet_sel = NULL,
 # lines when the generic table read cannot make a table of it (EthoVision's
 # preamble: one column under readr, an error under fread); otherwise its first
 # rows. Reading the first lines is the preview's fallback, not the data path:
-# the load reads the file with its dialect and reports any error itself.
+# the load reads the file with its dialect and reports any error itself. The
+# warnings of that table read go with its result: dropped when the preview
+# falls back to the lines (fread's about the preamble), raised when its table
+# is shown. A missing file stops before any read (the preview follows the
+# dialect control, so it is read again whenever that changes).
 upload_preview <- function(path, name, dialect = "generic", delim_sel = NULL,
                            sheet_sel = NULL, n = 10L, ...) {
+  if (!file.exists(path)) stop("upload_preview: file not found: ", path, call. = FALSE)
   ext <- tolower(tools::file_ext(name %||% path))
   raw_ok <- !identical(dialect, "generic") && !ext %in% c("xlsx", "xls")
-  tbl <- if (raw_ok) tryCatch(upload_read(path, name, delim_sel, sheet_sel, ...),
-                              error = function(e) NULL)
-         else upload_read(path, name, delim_sel, sheet_sel, ...)
-  if (raw_ok && (is.null(tbl) || ncol(tbl) < 2L)) {
-    return(data.frame(Line = utils::head(radiatR:::.read_text_lines(path), n)))
-  }
+  if (!raw_ok) return(utils::head(as.data.frame(upload_read(path, name, delim_sel, sheet_sel, ...)), n))
+  warns <- list()
+  tbl <- tryCatch(withCallingHandlers(
+    upload_read(path, name, delim_sel, sheet_sel, ...),
+    warning = function(w) {
+      warns[[length(warns) + 1L]] <<- w
+      invokeRestart("muffleWarning")
+    }), error = function(e) NULL)
+  if (is.null(tbl) || ncol(tbl) < 2L)
+    return(data.frame(Line = radiatR:::.read_text_lines(path, n)))
+  for (w in warns) warning(w)
   utils::head(as.data.frame(tbl), n)
 }
