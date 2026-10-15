@@ -882,6 +882,38 @@ guess_columns <- function(data, mapping = list()) {
   df
 }
 
+# What to open to read the text of `path`: a connection to the first member of
+# a zip archive, else the path (file() decompresses gzip, bzip2 and xz itself).
+.first_member <- function(path)
+  if (.compression(path) == "zip") unz(path, utils::unzip(path, list = TRUE)$Name[1L]) else path
+
+# The column names .read_any() gives `path`, read from the header record only.
+.read_names <- function(path, ext = NULL, delim = NULL, sheet = NULL) {
+  ext <- if (!is.null(ext)) tolower(sub("^\\.", "", ext)) else tolower(sub(".*\\.", "", path))
+  src <- basename(path)
+  if (ext %in% c("xlsx", "xls")) {
+    if (!.is_installed("readxl"))
+      stop("Reading Excel files requires the 'readxl' package; ",
+           "install it with install.packages(\"readxl\").")
+    nm <- names(readxl::read_excel(path, sheet = sheet %||% 1L, n_max = 0L,
+                                   .name_repair = "minimal"))
+  } else if (.is_installed("arrow") && ext == "parquet") {
+    nm <- arrow::open_dataset(path)$schema$names
+  } else if (.is_installed("arrow") && ext == "feather") {
+    nm <- names(arrow::read_feather(path, as_data_frame = FALSE))
+  } else {
+    delim <- delim %||% .guess_delim(path)$delim
+    lines <- readLines(.first_member(path), n = 20L, warn = FALSE, encoding = "UTF-8")
+    lines <- lines[nzchar(trimws(lines))]
+    if (!length(lines)) return(character(0))
+    line <- sub(paste0("^", intToUtf8(0xfeff)), "", lines[1L])
+    nm <- unname(unlist(utils::read.table(
+      text = line, sep = delim, quote = "\"", header = FALSE, colClasses = "character",
+      comment.char = "", check.names = FALSE, na.strings = character(0))[1L, ]))
+  }
+  names(.check_names(stats::setNames(rep(list(NULL), length(nm)), nm), src))
+}
+
 # Count the fields of each record of a delimited file, as .read_any() reads
 # it ('"' quotes, no comment character), and stop on any record whose count
 # is not the header's. Returns the number of records after the header, which
@@ -891,8 +923,7 @@ guess_columns <- function(data, mapping = list()) {
 .check_fields <- function(path, delim, source) {
   # readr and fread() read the first file of a zip archive; count its fields
   # (gzip, bzip2 and xz are decompressed by file() itself)
-  con <- if (.compression(path) == "zip") unz(path, utils::unzip(path, list = TRUE)$Name[1L]) else path
-  n <- utils::count.fields(con, sep = delim, quote = "\"", comment.char = "",
+  n <- utils::count.fields(.first_member(path), sep = delim, quote = "\"", comment.char = "",
                            blank.lines.skip = FALSE)
   run <- 0L
   start <- integer(length(n))
@@ -1346,8 +1377,8 @@ read_tracks_format <- function(x, format, ...)
     nm <- NULL
     if (is.data.frame(x)) nm <- names(x)
     else if (is.character(x) && length(x) >= 1L && file.exists(x[1])) {
-      peek <- .read_any(x[1])
-      nm <- names(peek)
+      ro <- dots$read_opts %||% list()
+      nm <- .read_names(x[1], ext = ro$ext, delim = ro$delim, sheet = ro$sheet)
     }
     if (!is.null(nm)) {
       # A pattern that matches nothing is an error: left unset, the role would

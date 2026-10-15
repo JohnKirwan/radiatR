@@ -790,7 +790,7 @@ test_that("namespace gives files that share a stem their own prefix", {
   ts <- read_tracks(c(file.path(dir, "n1.csv"), file.path(dir, "n1.tsv"),
                       file.path(dir, "a", "n2.csv"), file.path(dir, "b", "n2.csv")),
                     id_collision = "namespace")
-  ids <- unique(as.character(ts@data$id))
+  ids <- unique(as.character(ts@data$animal))
   expect_length(ids, 4L)
   expect_true(all(c("n1.csv::1", "n1.tsv::1") %in% ids))
   expect_true(all(c("a/n2.csv::1", "b/n2.csv::1") %in% ids))
@@ -804,4 +804,24 @@ test_that(".source_labels picks the shortest prefix that is unique", {
   expect_identical(
     unname(.source_labels(c("x/n1.csv", "x/n1.tsv", "a/n2.csv", "b/n2.csv", "c/n3.csv"))),
     c("n1.csv", "n1.tsv", "a/n2.csv", "b/n2.csv", "n3"))
+})
+
+test_that(".read_names gives the names .read_any gives, from one record", {
+  dir <- withr::local_tempdir()
+  for (txt in c("id,time,x,y\n1,1,.1,.1\n", "id;time; x ;\"y, z\"\n1;1;0,1;0,1\n",
+                "a\tb\tc\n1\t2\t3\n", "﻿id,time,x,y\n1,1,.1,.1\n")) {
+    p <- file.path(dir, "f.csv"); writeBin(charToRaw(enc2utf8(txt)), p)
+    expect_identical(radiatR:::.read_names(p), names(radiatR:::.read_any(p)), info = txt)
+  }
+  gz <- file.path(dir, "f.csv.gz"); con <- gzfile(gz, "wb")
+  writeLines(c("id,time,x,y", "1,1,.1,.1"), con); close(con)
+  expect_identical(radiatR:::.read_names(gz), c("id", "time", "x", "y"))
+})
+
+test_that("read_tracks_format resolves regex_mapping from names alone", {
+  dir <- withr::local_tempdir(); p <- file.path(dir, "f.csv")
+  writeBin(charToRaw("animal,sec,px,py\na,1,.1,.1\na,2,.2,.2\n"), p)
+  ts <- read_tracks_format(p, list(regex_mapping = list(id = "^animal", time = "^sec",
+                                                        x = "^px", y = "^py")))
+  expect_identical(unique(as.character(ts@data$animal)), "a")
 })
