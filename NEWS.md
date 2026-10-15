@@ -2,6 +2,19 @@
 
 ## Breaking changes
 
+* `read_tracks(read_opts = )` now reaches the built-in dialects, which used to
+  ignore it: every dialect takes `decimal`; the `.read_any()`-based ones
+  (`trackmate`, `trex`, `sleap`, `idtrackerai_wide`) also `delim`, `sheet` and
+  `ext`; `ethovision` and `anymaze` `delim`. An option a dialect cannot use,
+  or any option for a registered dialect without a `read_opts` argument, now
+  stops with `radiatR_invalid_argument` instead of being silently ignored.
+  `read_opts` entries are checked on every path: an unknown name (which `$`
+  used to match partially: `decimals = ","` was read as `decimal`) or a
+  decimal mark other than `"."` / `","` stops. The decimal-mark hint on
+  malformed values now applies to dialects and to `H:MM:SS` durations, no
+  longer to Excel files, and the error carries `decimal` and
+  `suggested_decimal`.
+
 * A bare date whose midnight does not exist in `tz` (a DST change at
   midnight, as in Cairo or Sao Paulo) is the first instant of that day
   (01:00 there) under every reader, and so is an Excel date cell at such a

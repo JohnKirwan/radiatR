@@ -53,6 +53,7 @@ test_that("DeepLabCut and ToxTrac refuse a delimiter; DeepLabCut honours a decim
   e <- cond(read_tracks(fx("dlc_single_wasp_predictions.csv"), dialect = "deeplabcut",
                         dialect_args = list(read_opts = list(delim = ";"))))
   expect_s3_class(e, "radiatR_invalid_argument")
+  expect_identical(e$option, "delim")
   expect_match(conditionMessage(e),
                "deeplabcut: read_opts$delim cannot be used: this dialect reads its own file layout and takes only read_opts$decimal",
                fixed = TRUE)
@@ -91,4 +92,97 @@ test_that("a data frame takes a decimal mark but no file option", {
                         dialect_args = list(read_opts = list(delim = ";"))))
   expect_s3_class(e, "radiatR_invalid_argument")
   expect_match(conditionMessage(e), "the input is a data frame, not a file", fixed = TRUE)
+})
+
+local_dialect <- function(name, fun, env = parent.frame()) {
+  register_loader_dialect(name, fun, overwrite = TRUE)
+  withr::defer(rm(list = name, envir = radiatR:::.loader_registry), envir = env)
+}
+
+test_that("read_tracks() hands read_opts to a built-in dialect", {
+  p <- tm_tab_comma()
+  ts <- read_tracks(p, dialect = "trackmate", read_opts = list(decimal = ","))
+  expect_equal(col_of(ts, "x"), c(1.5, 1.6, 1.7))
+  # multi-file: every file
+  q <- tm_tab_comma()
+  ts <- read_tracks(c(p, q), dialect = "trackmate", read_opts = list(decimal = ","),
+                    id_collision = "namespace")
+  expect_equal(col_of(ts, "x"), rep(c(1.5, 1.6, 1.7), 2))
+})
+
+test_that("read_opts given twice is an error", {
+  e <- cond(read_tracks(tm_tab_comma(), dialect = "trackmate",
+                        read_opts = list(decimal = ","),
+                        dialect_args = list(read_opts = list(decimal = ","))))
+  expect_s3_class(e, "radiatR_invalid_argument")
+  expect_match(conditionMessage(e), "read_opts is given both", fixed = TRUE)
+})
+
+test_that("a custom dialect without a read_opts argument refuses them", {
+  local_dialect("plain", function(x) utils::read.delim(x, colClasses = "character"))
+  p <- tm_tab_comma()
+  e <- cond(read_tracks(p, dialect = "plain", read_opts = list(decimal = ",")))
+  expect_s3_class(e, "radiatR_invalid_argument")
+  expect_match(conditionMessage(e), "the 'plain' dialect takes no read_opts", fixed = TRUE)
+  # all-NULL read_opts (the default) are no options: the load goes on and
+  # stops on the commas instead
+  e <- cond(read_tracks(p, dialect = "plain",
+                        read_opts = list(delim = NULL, decimal = NULL, sheet = NULL),
+                        mapping = list(id = "TRACK_ID", time = "FRAME",
+                                       x = "POSITION_X", y = "POSITION_Y")))
+  expect_s3_class(e, "radiatR_malformed_values")
+})
+
+test_that("a custom dialect with read_opts gets them, and its table keeps the mark", {
+  seen <- NULL
+  local_dialect("plain2", function(x, read_opts = list()) {
+    seen <<- read_opts
+    utils::read.delim(x, colClasses = "character")   # sets no decimal attr
+  })
+  ts <- read_tracks(tm_tab_comma(), dialect = "plain2", read_opts = list(decimal = ","),
+                    mapping = list(id = "TRACK_ID", time = "FRAME",
+                                   x = "POSITION_X", y = "POSITION_Y"))
+  expect_identical(seen, list(decimal = ","))
+  expect_equal(col_of(ts, "x"), c(1.5, 1.6, 1.7))
+})
+
+test_that("read_opts are checked on the generic path too", {
+  p <- tm_file(c("id,frame,x,y", paste0("a,", 0:2, ",1.5,2.5")))
+  e <- cond(read_tracks(p, read_opts = list(decimals = ",")))   # not a partial match
+  expect_s3_class(e, "radiatR_invalid_argument")
+  expect_match(conditionMessage(e), "read_tracks: read_opts has no entry 'decimals'", fixed = TRUE)
+  expect_s3_class(cond(read_tracks(p, read_opts = list(decimal = ";"))),
+                  "radiatR_invalid_argument")
+})
+
+test_that("a duration with the other decimal mark gets the suggestion", {
+  d <- tm_file(c("Time\tCentre position X\tCentre position Y",
+                 "0:00:00,320\t410\t352", "0:00:01,000\t411\t353"))
+  e <- cond(quiet(read_tracks(d, dialect = "anymaze")))
+  expect_s3_class(e, "radiatR_malformed_values")
+  expect_identical(e$decimal, ".")
+  expect_identical(e$suggested_decimal, ",")
+  e <- cond(radiatR:::.parse_duration("0:00:00.320", "Time", source = "a.csv",
+                                      dialect = "anymaze", decimal = ","))
+  expect_identical(e$decimal, ",")
+  expect_identical(e$suggested_decimal, ".")
+})
+
+test_that("an Excel source gets no decimal suggestion (read_opts cannot change it)", {
+  e <- cond(radiatR:::radiatR_abort_malformed_values("x", 1L, "1,5", source = "a.xlsx",
+                                                     decimal_hint = TRUE, decimal = "."))
+  expect_null(e$suggested_decimal)
+  expect_false(grepl("read_opts", conditionMessage(e), fixed = TRUE))
+})
+
+test_that("a dialect's malformed values carry the mark and a suggestion", {
+  e <- cond(read_tracks(tm_tab_comma(), dialect = "trackmate"))
+  expect_s3_class(e, "radiatR_malformed_values")
+  expect_identical(e$decimal, ".")
+  expect_identical(e$suggested_decimal, ",")
+  expect_match(conditionMessage(e), 'Pass read_opts = list(decimal = ",")', fixed = TRUE)
+  # a value that is no number in either mark suggests nothing
+  p <- tm_file(c("TRACK_ID,FRAME,POSITION_X,POSITION_Y", paste0("a,", 0:2, ",oops,2.5")))
+  e <- cond(read_tracks(p, dialect = "trackmate"))
+  expect_null(e$suggested_decimal)
 })

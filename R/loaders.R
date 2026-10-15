@@ -227,6 +227,12 @@ list_loader_formats <- function() sort(ls(envir = .loader_format_registry))
 #' order, not named by file, because files in different folders share names.
 #' @param name Unique dialect name
 #' @param fun Function that accepts (x, ...) and returns a data.frame with id/time/angle or id/time/x/y
+#'   A loader that reads files can take `read_tracks(read_opts = )` by
+#'   declaring a `read_opts` argument: it receives the non-`NULL` entries
+#'   (`decimal`, `delim`, `sheet`, `ext`) and must honour them or stop. A table
+#'   it returns without `attr(, "decimal")` is coerced with `read_opts$decimal`,
+#'   else the file's sniffed mark. Without that argument, any `read_opts` stop
+#'   the load.
 #' @param overwrite Replace an existing dialect registered with the same name
 #' @return `name`, invisibly. Called for its side effect of registering the
 #'   dialect for `read_tracks(dialect = )`.
@@ -398,9 +404,8 @@ guess_columns <- function(data, mapping = list()) {
   if (any(bad))
     radiatR_abort_malformed_values(
       column, which(bad), s[bad], source = source, dialect = dialect,
-      # read_opts only helps a file read_tracks() itself read; a dialect
-      # reads its own file and is not passed read_opts
-      decimal_hint = !is.null(source) && is.null(dialect), decimal = decimal)
+      # read_opts help only where they reach the reader (see .takes_read_opts())
+      decimal_hint = !is.null(source) && .takes_read_opts(dialect), decimal = decimal)
   num
 }
 
@@ -596,7 +601,7 @@ guess_columns <- function(data, mapping = list()) {
               else if (as_num) "numeric" else "a date-time"
   radiatR_abort_malformed_values(column, which(bad), s[bad], expected = expected,
                                  source = source, dialect = dialect,
-                                 decimal_hint = !is.null(source) && is.null(dialect),
+                                 decimal_hint = !is.null(source) && .takes_read_opts(dialect),
                                  decimal = decimal)
 }
 
@@ -653,6 +658,7 @@ guess_columns <- function(data, mapping = list()) {
   if (any(bad))
     radiatR_abort_malformed_values(
       column, which(bad), s[bad], source = source, dialect = dialect,
+      decimal_hint = !is.null(source) && .takes_read_opts(dialect), decimal = decimal,
       expected = paste0("a duration H:MM:SS.fff (a column of seconds can be given as ",
                         "as.difftime(<seconds>, units = \"secs\"))"))
   out <- rep(NA_real_, length(s))
@@ -1536,7 +1542,14 @@ read_tracks_format <- function(x, format, ...)
 #'   exclusive with `normalize_xy = TRUE`.
 #' @param read_opts list of file-reading overrides: `delim` (field separator),
 #'   `decimal` (decimal mark), and `sheet` (Excel worksheet name or number).
-#'   Any `NULL` element is auto-detected. Defaults to all-auto.
+#'   Any `NULL` element is auto-detected. Defaults to all-auto. With a
+#'   `dialect`, the non-`NULL` entries are handed to the dialect: every
+#'   built-in takes `decimal`; `trackmate`, `trex`, `sleap` and
+#'   `idtrackerai_wide` also take `delim`, `sheet` and `ext`; `ethovision` and
+#'   `anymaze` take `delim` (for EthoVision it must be the export's own
+#'   separator). An entry a dialect cannot use stops with a
+#'   `radiatR_invalid_argument` error, as does any entry for a registered
+#'   dialect whose function has no `read_opts` argument.
 #' @section Masked points:
 #' The `deeplabcut`, `sleap`, `ethovision` and `anymaze` dialects take each
 #' position from one or more points (bodyparts, nodes, body points; ANY-maze's
@@ -1636,7 +1649,9 @@ read_tracks_format <- function(x, format, ...)
 #' `columns`, `rows`, `values`, `source` and `dialect` fields name the column,
 #' the data rows (counted from the first row after the header, within its own
 #' file in a multi-file import), the offending strings, the file and the
-#' dialect. Such a value is never dropped or turned into `NA`. Blank cells and
+#' dialect, `decimal` (the mark the file was read with) and `suggested_decimal`
+#' (the other mark when the values look written with it, else `NULL`). Such a
+#' value is never dropped or turned into `NA`. Blank cells and
 #' `NA` are missing values; `nan` and `inf` are read as such. Files are read
 #' with no digit-grouping mark, so `1,5` is malformed unless
 #' `read_opts = list(decimal = ",")` says the comma is the decimal mark. Where
@@ -1705,6 +1720,8 @@ read_tracks <- function(x,
     return(.read_tracks_format(x, format, mget(supplied), angle_default = "radians"))
   }
 
+  read_opts <- .check_read_opts(read_opts, "read_tracks")
+
   if (!isTRUE(validate))
     .Deprecated(msg = paste("`validate` is deprecated and has no effect:",
                             "Tracks invariants are always checked."))
@@ -1729,12 +1746,26 @@ read_tracks <- function(x,
       stop("Unknown dialect '", dialect, "'")
     }
     fun <- get(dialect, envir = .loader_registry, inherits = FALSE)
+    opts <- read_opts            # already checked, NULLs dropped
+    if (length(opts)) {
+      if (!.takes_read_opts(dialect))
+        rlang::abort(sprintf(paste0(
+          "read_tracks: the '%s' dialect takes no read_opts: it reads its own file. Give ",
+          "its function a read_opts argument to accept them (see register_loader_dialect())."),
+          dialect), class = "radiatR_invalid_argument", arg = "read_opts")
+      if (!is.null(dialect_args[["read_opts"]]))
+        rlang::abort("read_tracks: read_opts is given both to read_tracks() and in dialect_args; give it once.",
+                     class = "radiatR_invalid_argument", arg = "read_opts")
+    }
     # Called on a data frame or on one path. The table keeps the decimal mark
-    # of its file, for the strict coercion of any column left as text.
+    # of its file (or the one read_opts gave), for the strict coercion of any
+    # column left as text.
     prep <- function(input) {
-      out <- do.call(fun, c(list(input), dialect_args))
-      if (is.data.frame(out) && is.character(input) && is.null(attr(out, "decimal")))
-        attr(out, "decimal") <- .file_decimal(input)
+      out <- do.call(fun, c(list(input), dialect_args,
+                            if (length(opts)) list(read_opts = opts)))
+      if (is.data.frame(out) && is.null(attr(out, "decimal")) &&
+          (is.character(input) || !is.null(opts[["decimal"]])))
+        attr(out, "decimal") <- opts[["decimal"]] %||% .file_decimal(input)
       out
     }
     # Dialects no longer convert frame indices to seconds themselves (that
@@ -2290,6 +2321,14 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
                                     paste0("read_opts$", honours, collapse = ", "))),
                  class = "radiatR_invalid_argument", arg = "read_opts", option = extra[1L])
   opts
+}
+
+# Whether read_tracks() can hand `dialect` its read_opts: always when it reads
+# the file itself (NULL), else when the dialect's function takes read_opts.
+.takes_read_opts <- function(dialect) {
+  if (is.null(dialect)) return(TRUE)
+  exists(dialect, envir = .loader_registry, inherits = FALSE) &&
+    "read_opts" %in% names(formals(get(dialect, envir = .loader_registry, inherits = FALSE)))
 }
 
 # What a built-in dialect works on: its table (read from one path with `read`,

@@ -9,7 +9,13 @@ register_loader_dialect(name, fun, overwrite = FALSE)
 \arguments{
 \item{name}{Unique dialect name}
 
-\item{fun}{Function that accepts (x, ...) and returns a data.frame with id/time/angle or id/time/x/y}
+\item{fun}{Function that accepts (x, ...) and returns a data.frame with id/time/angle or id/time/x/y
+A loader that reads files can take `read_tracks(read_opts = )` by
+declaring a `read_opts` argument: it receives the non-`NULL` entries
+(`decimal`, `delim`, `sheet`, `ext`) and must honour them or stop. A table
+it returns without `attr(, "decimal")` is coerced with `read_opts$decimal`,
+else the file's sniffed mark. Without that argument, any `read_opts` stop
+the load.}
 
 \item{overwrite}{Replace an existing dialect registered with the same name}
 }
