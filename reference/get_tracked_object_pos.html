@@ -96,7 +96,8 @@ entire video.</p></dd>
 <dt id="arg-radius-criterion">radius_criterion<a class="anchor" aria-label="anchor" href="#arg-radius-criterion"></a></dt>
 <dd><p>Strategy for choosing the radius landmarks. `"first_past"`
 selects the first point beyond each threshold, while `"closest"` chooses the
-closest sample to the specified radius.</p></dd>
+closest sample to the specified radius. With `"first_past"`, a radius no
+point reaches gives that landmark `NA`, with a warning.</p></dd>
 
 
 <dt id="arg--report-oob">.report_oob<a class="anchor" aria-label="anchor" href="#arg--report-oob"></a></dt>

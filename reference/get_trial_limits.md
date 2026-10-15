@@ -57,6 +57,6 @@ limits
 #>   first_f orig_x orig_y ref_x ref_y last_f ref_x_0 ref_y_0 ref_theta  r_px
 #>     <dbl>  <dbl>  <dbl> <dbl> <dbl>  <dbl>   <dbl>   <dbl>     <dbl> <dbl>
 #> 1       1   458.   375.  139.  392.    299  -0.999 -0.0545      3.20  319.
-#> # ℹ 8 more variables: quadrant <chr>, video <chr>, order <dbl>, vid_ord <dbl>,
+#> # ℹ 8 more variables: quadrant <chr>, video <chr>, order <chr>, vid_ord <chr>,
 #> #   x0 <dbl>, y0 <dbl>, x1 <dbl>, y1 <dbl>
 ```

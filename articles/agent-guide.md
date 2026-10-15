@@ -155,7 +155,8 @@ it.
   so report it.
 - When the same id appears in more than one file, the default
   `id_collision = "error"` stops. `"namespace"` prefixes each id with
-  its file stem.
+  its file’s name (less extension; the full name or the end of the path
+  where files share that).
 
 ## Heading rules and attrition
 

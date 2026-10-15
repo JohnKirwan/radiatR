@@ -142,8 +142,10 @@ read_tracks(
   how to handle a trajectory id that appears under more than one source
   file during a multi-file import: \`"error"\` (default) stops with a
   message naming the colliding id(s) and files; \`"namespace"\` rewrites
-  every id to \`paste0(file_stem, "::", id)\` so ids are unique per
-  file. Has no effect on single-file or data.frame input.
+  every id as \`\<file\>::\<id\>\`, where \`\<file\>\` is the file name
+  less extension, or the full file name where two files share that, or
+  the trailing part of the path that tells them apart (\`a/n1.csv\`).
+  Has no effect on single-file or data.frame input.
 
 - on_invalid:
 
@@ -236,7 +238,8 @@ a separator at the end of every row) stops the load with a
 \`radiatR_malformed_file\` error naming the lines (\`problem =
 "ragged"\`), as does a reader returning fewer rows than the file holds
 (\`"rows"\`) and a column name used twice (\`"duplicate_columns"\`; a
-dialect handles its format's repeated columns itself).
+dialect handles its format's repeated columns itself), and a delimited
+file that reads as a single column (\`"one_column"\`).
 
 ## Malformed values
 

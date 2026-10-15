@@ -396,6 +396,18 @@
   are the same (350 of 39631 windows in `cpunctatus`, which had heading
   0), so `on_missing` now warns about them.
 
+- [`get_tracked_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_tracked_object_pos.md)
+  and
+  [`get_all_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.md)
+  with `radius_criterion = "first_past"` give a landmark (`x0`/`y0`,
+  `x1`/`y1` in `meta$trial_limits`) of `NA`, with a warning naming the
+  trial, when no point of the trial reaches that radius. The farthest
+  point was substituted, with a warning only for the inner radius. A
+  trial that is not mapped (it starts too far from the centre) has `NA`
+  landmarks and `order`/`vid_ord` in `trial_limits`, not 0.
+  [`get_all_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.md)
+  keeps the `trial_limits` rows of a file none of whose trials is valid.
+
 ### Changes
 
 - The `sleap` dialect accepts a node name as it is written in the file
@@ -505,6 +517,36 @@
   missing headings and the trials they come from, and the app’s
   attrition banner does the same. `missing_ids` lists each trial once,
   and the new `n_trials` attribute gives the number of trials.
+
+- `read_tracks(id_collision = "namespace")` gave files that share a name
+  less extension (`n1.csv` and `n1.xlsx`, or `a/n1.csv` and `b/n1.csv`)
+  the same prefix, so their ids still collided. Such files are now
+  prefixed with their full name, or the end of their path that tells
+  them apart (`a/n1.csv`).
+
+- Ids written with surrounding spaces and no unpadded twin (`1`, `10`)
+  are the same ids under every reader: readr kept them as the text
+  `" 1"`, where
+  [`data.table::fread()`](https://rdrr.io/pkg/data.table/man/fread.html)
+  and [`read.table()`](https://rdrr.io/r/utils/read.table.html) read the
+  number 1.
+
+- The separator sniff of
+  [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  counts fields as the readers do, so a separator inside a quoted field
+  no longer counts: a `;` file with `;` in a quoted label is read as
+  `;`. A file whose header alone has a different number of fields (a
+  table written with row names) is named as such; it was read as one
+  column. A delimited file that still reads as a single column stops
+  with a `radiatR_malformed_file` error saying no separator was found,
+  instead of “Need either an angle column or both x and y columns”.
+
+- [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  no longer stops with “invalid UTF-8” in the separator sniff when the
+  first lines of a delimited file hold a byte that is not UTF-8 in a
+  data cell that is not an id (a latin-1 label): the separator and
+  decimal mark are sniffed from such lines too. A latin-1 byte in a
+  column name or in an id column still stops the read.
 
 - [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
   with a `tz` other than `"UTC"` put a timestamp that names its zone
