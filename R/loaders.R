@@ -501,21 +501,23 @@ guess_columns <- function(data, mapping = list()) {
 # The first instant of each date in tz: midnight, or, where a DST change skips
 # midnight (Cairo, Sao Paulo), the end of the skipped time. A bare date names a
 # day, so it is that day's start. A date tz skips altogether is malformed;
-# `rows` are the positions to report for `dates` (default: their own).
+# `rows` are the positions to report for `dates` (default: their own). With
+# `skipped = "na"` such a date is NA instead, for the caller to report.
 .day_start <- function(dates, tz, column = "time", source = NULL, dialect = NULL,
-                       rows = seq_along(dates)) {
+                       rows = seq_along(dates), skipped = c("abort", "na")) {
+  skipped <- match.arg(skipped)
   dates <- as.Date(dates)     # also fread's IDate
   out <- .wall_clock(as.POSIXlt(dates), tz)
-  # .wall_clock() checks the hour, not the day, so a date skipped altogether
-  # (Apia) comes back a day on rather than NA
-  need <- !is.na(dates) & (is.na(out) | format(out, "%Y-%m-%d", tz = tz) != format(dates))
+  # .wall_clock() gives NA for a midnight tz skips (Cairo) and for a day it
+  # skips altogether (Apia): look for the day's first instant
+  need <- !is.na(dates) & is.na(out)
   for (day in unique(format(dates[need]))) {
     # from the previous noon (a real time) in 15-minute steps to the first
     # instant whose date in tz is `day`
     t <- as.POSIXct(paste(as.Date(day) - 1, "12:00:00"), tz = tz) +
       seq(0, 36 * 3600, by = 900)
     hit <- t[match(day, format(t, "%Y-%m-%d", tz = tz))]
-    if (is.na(hit)) {
+    if (is.na(hit) && skipped == "abort") {
       at <- which(format(dates) %in% day)
       radiatR_abort_malformed_values(
         column, rows[at], format(dates[at]),
@@ -789,12 +791,12 @@ guess_columns <- function(data, mapping = list()) {
       for (cc in names(df)[vapply(df, inherits, logical(1), "POSIXct")]) {
         out <- .wall_clock(as.POSIXlt(df[[cc]], tz = "UTC"), tz)
         gap <- which(is.na(out) & !is.na(df[[cc]]))
-        # a date cell at a midnight that is skipped is its day's first instant
+        # a date cell at a midnight that is skipped is its day's first instant;
+        # one on a day tz skips altogether stays a gap
         mid <- gap[format(df[[cc]][gap], "%H:%M:%S", tz = "UTC") == "00:00:00"]
         if (length(mid)) {
-          out[mid] <- .day_start(as.Date(df[[cc]][mid], tz = "UTC"), tz, cc,
-                                 basename(path), rows = mid)
-          gap <- setdiff(gap, mid)
+          out[mid] <- .day_start(as.Date(df[[cc]][mid], tz = "UTC"), tz, skipped = "na")
+          gap <- setdiff(gap, mid[!is.na(out[mid])])
         }
         if (length(gap))
           gaps[[cc]] <- list(rows = gap,

@@ -1251,17 +1251,6 @@ test_that("a time in a DST gap and a leap second are named under every reader", 
   }
 })
 
-test_that("an Excel date cell on a day the zone skips reports its row", {
-  skip_if_not_installed("readxl"); skip_if_not_installed("writexl")
-  path <- withr::local_tempfile(fileext = ".xlsx")
-  writexl::write_xlsx(xy_df(frame = as.POSIXct(
-    c("2011-12-28", "2011-12-29", "2011-12-30"), tz = "UTC")), path)
-  e <- malformed(radiatR:::.read_any(path, tz = "Pacific/Apia"))
-  expect_s3_class(e, "radiatR_malformed_values")
-  expect_identical(e$rows, 3L)
-  expect_match(conditionMessage(e), "exist in time zone 'Pacific/Apia'")
-})
-
 test_that("a bare date on a day the zone skips reports its own row under every reader", {
   dir <- withr::local_tempdir()
   beside <- file.path(dir, "beside.csv")    # a bare date beside date-times
@@ -1319,4 +1308,22 @@ test_that("bare dates in one file and date-times in another bind under every rea
                                          "2024-04-26 10:00:00", "2024-04-26 11:00:00")),
                  info = info)
   }
+})
+
+test_that("an Excel cell on a day the zone skips stops the load only in a column it uses", {
+  skip_if_not_installed("readxl"); skip_if_not_installed("writexl")
+  skipped <- as.POSIXct(c("2011-12-28", "2011-12-29", "2011-12-30"), tz = "UTC")
+  used <- withr::local_tempfile(fileext = ".xlsx")
+  writexl::write_xlsx(xy_df(frame = skipped), used)
+  e <- malformed(read_tracks(used, tz = "Pacific/Apia"))
+  expect_s3_class(e, "radiatR_malformed_values")
+  expect_identical(e$rows, 3L)
+  expect_identical(e$columns, "frame")
+  expect_match(conditionMessage(e), "exist in time zone 'Pacific/Apia'")
+  unused <- withr::local_tempfile(fileext = ".xlsx")
+  writexl::write_xlsx(xy_df(note = skipped), unused)
+  expect_false("note" %in% names(read_tracks(unused, tz = "Pacific/Apia")@data))
+  e <- malformed(read_tracks(unused, tz = "Pacific/Apia", keep = "note"))
+  expect_identical(e$rows, 3L)
+  expect_identical(e$columns, "note")
 })
