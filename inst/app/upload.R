@@ -40,6 +40,16 @@ upload_read <- function(path, name, delim_sel = NULL, sheet_sel = NULL,
   )
 }
 
+# What .read_any() reads a delimited upload with: the delimiter (the control's,
+# else sniffed), the sniffed decimal mark and whether the file is latin-1.
+# NULL for an Excel file. Kept for the downloaded script's read call.
+upload_read_format <- function(path, name, delim_sel = NULL) {
+  if (tolower(tools::file_ext(name %||% path)) %in% c("xlsx", "xls")) return(NULL)
+  g <- radiatR:::.guess_delim(path)
+  list(delim = delim_read_opts(delim_sel)$delim %||% g$delim, decimal = g$decimal,
+       latin1 = radiatR:::.is_latin1(path))
+}
+
 # Preview of an upload. A file a tracker's dialect reads is shown as its first
 # lines when the generic table read cannot make a table of it (EthoVision's
 # preamble: one column under readr, an error under fread); otherwise its first

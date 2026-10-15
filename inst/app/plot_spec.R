@@ -458,7 +458,7 @@ spec_to_plot <- function(spec, ts, hd) {
 }
 
 # Emit a public-function read expression for a headings upload that matches the
-# resolved delimiter / Excel sheet, so the downloaded script reproduces ingest.
+# resolved delimiter, decimal mark, encoding / Excel sheet, so the downloaded script reproduces ingest.
 .emit_headings_read <- function(data, q) {
   ext <- tolower(data$ext %||% tools::file_ext(data$path))
   if (ext %in% c("xlsx", "xls")) {
@@ -469,14 +469,19 @@ spec_to_plot <- function(spec, ts, hd) {
   # Label columns the app kept as text, keyed by the name read.csv() gives
   # them (check.names), or colClasses would miss them.
   tc <- data$text_cols
-  cc <- if (length(tc)) paste0(", colClasses = c(", paste0(
-    make.names(tc), " = \"character\"", collapse = ", "), ")") else ""
-  d <- data$delim
-  if (!is.null(d) && identical(d, ";"))
-    return(paste0("df <- read.csv2(", q(data$path), cc, ")"))
-  if (!is.null(d) && identical(d, "\t"))
-    return(paste0("df <- read.delim(", q(data$path), cc, ")"))
-  paste0("df <- read.csv(", q(data$path), cc, ")")
+  cc <- if (length(tc)) paste0("colClasses = c(", paste0(
+    make.names(tc), " = \"character\"", collapse = ", "), ")")
+  # The delimiter and decimal mark the app read the file with (not the
+  # delimiter control, whose "auto" says nothing), and its encoding.
+  d <- data$delim %||% ","
+  m <- data$decimal %||% "."
+  fn <- if (d == ";" && m == ",") "read.csv2"
+        else if (d == "\t" && m == ".") "read.delim" else "read.csv"
+  args <- c(q(data$path),
+            if (fn == "read.csv" && d != ",") paste0("sep = ", q(d)),
+            if (fn == "read.csv" && m != ".") paste0("dec = ", q(m)),
+            if (isTRUE(data$latin1)) 'fileEncoding = "latin1"', cc)
+  paste0("df <- ", fn, "(", paste(args, collapse = ", "), ")")
 }
 
 # Emit the data-load + headings-derivation lines shared by the figure-code and
