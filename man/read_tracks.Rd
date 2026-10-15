@@ -42,7 +42,9 @@ with no frame rate.}
 
 \item{tz}{Time zone of timestamps that carry none (default "UTC") in a
 delimited or Excel file `read_tracks()` reads itself, and in a text column
-of a data frame; a bare date is midnight in `tz`. A wall-clock time that
+of a data frame; a bare date is the first instant of that day in `tz`
+(midnight, or the end of a DST change that skips midnight; so is an Excel
+date-time cell at such a midnight). A wall-clock time that
 does not exist in `tz` (the hour skipped when clocks go forward) is an
 error. A timestamp that ends in a zone designator (`Z`, `+02:00`,
 `-0130`, `+02`) is that instant whatever `tz` is, a date-time column

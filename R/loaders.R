@@ -496,10 +496,39 @@ guess_columns <- function(data, mapping = list()) {
   out
 }
 
+# The first instant of each date in tz: midnight, or, where a DST change skips
+# midnight (Cairo, Sao Paulo), the end of the skipped time. A bare date names a
+# day, so it is that day's start. A date tz skips altogether is malformed.
+.day_start <- function(dates, tz, column = "time", source = NULL, dialect = NULL) {
+  dates <- as.Date(dates)     # also fread's IDate
+  out <- .wall_clock(as.POSIXlt(dates), tz)
+  # .wall_clock() checks the hour, not the day, so a date skipped altogether
+  # (Apia) comes back a day on rather than NA
+  need <- !is.na(dates) & (is.na(out) | format(out, "%Y-%m-%d", tz = tz) != format(dates))
+  for (day in unique(format(dates[need]))) {
+    # from the previous noon (a real time) in 15-minute steps to the first
+    # instant whose date in tz is `day`
+    t <- as.POSIXct(paste(as.Date(day) - 1, "12:00:00"), tz = tz) +
+      seq(0, 36 * 3600, by = 900)
+    hit <- t[match(day, format(t, "%Y-%m-%d", tz = tz))]
+    if (is.na(hit)) {
+      rows <- which(format(dates) %in% day)
+      radiatR_abort_malformed_values(
+        column, rows, format(dates[rows]),
+        expected = sprintf("dates that exist in time zone '%s'", tz),
+        source = source, dialect = dialect)
+    }
+    out[which(format(dates) %in% day)] <- hit
+  }
+  attr(out, "tzone") <- tz
+  out
+}
+
 # Text time: numbers throughout give numeric time, timestamps in one layout
 # throughout give POSIXct. Otherwise the values that break the majority
 # reading abort with radiatR_malformed_values. Beside a date-time layout a
-# bare date is midnight (as.character() writes midnight that way).
+# bare date is the first instant of its day (as.character() writes midnight
+# that way).
 .parse_time_chr <- function(v, tz, column, source, dialect, decimal = ".",
                             allow_numeric = TRUE) {
   s <- trimws(as.character(v))
@@ -519,12 +548,15 @@ guess_columns <- function(data, mapping = list()) {
   # a zoned value is the instant its own zone says, wherever tz is
   z <- zn$zoned
   out <- .POSIXct(rep(NA_real_, length(core)), tz = tz)
-  out[!z] <- .wall_clock(strptime(core[!z], fmt, tz = tz), tz)
+  out[!z] <- if (grepl("%H", fmt, fixed = TRUE))
+    .wall_clock(strptime(core[!z], fmt, tz = tz), tz)
+  else .day_start(as.Date(strptime(core[!z], fmt, tz = "UTC")), tz, column, source, dialect)
   out[z] <-.wall_clock(strptime(core[z], fmt, tz = "UTC"), "UTC") - zn$offset[z]
   date_fmt <- sub("[ T]%H.*$", "", fmt)
   bare <- fmt != date_fmt & grepl(.time_format_regex(date_fmt), s)
   # a bare date carries no zone, whatever the layout beside it says
-  out[bare] <- as.POSIXct(strptime(s[bare], date_fmt, tz = tz))
+  out[bare] <- .day_start(as.Date(strptime(s[bare], date_fmt, tz = "UTC")), tz,
+                          column, source, dialect)
   attr(out, "tzone") <- tz
   ok <- (hit[[best]] | bare) & !is.na(out)
   # Zoned and unzoned date-times in one column are two readings: the fewer
@@ -562,7 +594,7 @@ guess_columns <- function(data, mapping = list()) {
       column, class(v)[1L]), class = "radiatR_time_type_mismatch")
   duration <- inherits(v, "difftime")
   if (duration) v <- as.numeric(v, units = "secs")
-  if (inherits(v, "Date")) v <- as.POSIXct(format(v), tz = tz)
+  if (inherits(v, "Date")) v <- .day_start(v, tz, column, source, dialect)
   if (time_type %in% c("seconds", "frames")) {
     if (inherits(v, "POSIXt")) return(as.numeric(v))
     return(as.numeric(.as_numeric_strict(v, column, source, dialect, decimal)))
@@ -738,6 +770,12 @@ guess_columns <- function(data, mapping = list()) {
       for (cc in names(df)[vapply(df, inherits, logical(1), "POSIXct")]) {
         out <- .wall_clock(as.POSIXlt(df[[cc]], tz = "UTC"), tz)
         gap <- which(is.na(out) & !is.na(df[[cc]]))
+        # a date cell at a midnight that is skipped is its day's first instant
+        mid <- gap[format(df[[cc]][gap], "%H:%M:%S", tz = "UTC") == "00:00:00"]
+        if (length(mid)) {
+          out[mid] <- .day_start(as.Date(df[[cc]][mid], tz = "UTC"), tz, cc, basename(path))
+          gap <- setdiff(gap, mid)
+        }
         if (length(gap))
           gaps[[cc]] <- list(rows = gap,
                              values = format(df[[cc]][gap], "%Y-%m-%d %H:%M:%S", tz = "UTC"))
@@ -1352,7 +1390,9 @@ read_tracks_format <- function(x, format, ...)
 #'   with no frame rate.
 #' @param tz Time zone of timestamps that carry none (default "UTC") in a
 #'   delimited or Excel file `read_tracks()` reads itself, and in a text column
-#'   of a data frame; a bare date is midnight in `tz`. A wall-clock time that
+#'   of a data frame; a bare date is the first instant of that day in `tz`
+#'   (midnight, or the end of a DST change that skips midnight; so is an Excel
+#'   date-time cell at such a midnight). A wall-clock time that
 #'   does not exist in `tz` (the hour skipped when clocks go forward) is an
 #'   error. A timestamp that ends in a zone designator (`Z`, `+02:00`,
 #'   `-0130`, `+02`) is that instant whatever `tz` is, a date-time column
