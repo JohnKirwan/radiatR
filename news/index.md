@@ -4,6 +4,25 @@
 
 ### Breaking changes
 
+- A bare date whose midnight does not exist in `tz` (a DST change at
+  midnight, as in Cairo or Sao Paulo) is the first instant of that day
+  (01:00 there) under every reader, and so is an Excel date cell at such
+  a midnight. readr and `fread()` gave 01:00 for a column of such dates
+  and [`read.table()`](https://rdrr.io/r/utils/read.table.html) an
+  error; a date beside date-times stopped under readr. A date that does
+  not exist at all in `tz` is an error.
+
+- Two date-times that used to load now stop with an error naming them,
+  as bugs fixed: a leap second (`23:59:60`, or `235960` in ISO 8601
+  basic) under readr, which rolled it over to the next minute, now stops
+  with an error saying leap seconds cannot be represented, under every
+  reader; and a date-time on a day `tz` skips altogether (2011-12-30 in
+  Pacific/Apia) under
+  [`data.table::fread()`](https://rdrr.io/pkg/data.table/man/fread.html)
+  and [`read.table()`](https://rdrr.io/r/utils/read.table.html), which
+  moved it a day back, now stops with an error saying it does not exist
+  in `tz`.
+
 - `derive_headings(rule = "straight")` measures turns between moving
   steps only. A pause (a step of zero length) has no direction; it was
   read as a turn of 0, so a pause hid any turn around it, padded runs,
@@ -408,6 +427,35 @@
   [`get_all_object_pos()`](https://johnkirwan.github.io/radiatR/reference/get_all_object_pos.md)
   keeps the `trial_limits` rows of a file none of whose trials is valid.
 
+- readr no longer decides how a delimited file’s date-times are read:
+  like
+  [`data.table::fread()`](https://rdrr.io/pkg/data.table/man/fread.html),
+  it hands them back as the text in the file, and one parser reads them
+  for every reader. That parser now also reads ISO 8601 basic and
+  hour-minute times, zoned or not (`20240101T100000`,
+  `20240101T100000Z`, `2024-01-01T1000+02:00`, `2024-01-01T10:00`). A
+  time column that mixes zoned (`Z`, `+02:00`) and unzoned date-times,
+  or holds hours alone (`2024-01-01 10`), a trailing decimal point,
+  seconds on some values only or a basic date and time split by a space
+  (`20240101 100000`) now stops under readr too, with an error naming
+  the values; so does an offset after a space
+  (`2024-01-01 10:00:00 +0200`), which `fread()` read. A kept column
+  (`keep =`) whose every value is in one date-time layout (or is a date)
+  is read as date-times in `tz` under every reader, where `fread()` and
+  [`read.table()`](https://rdrr.io/r/utils/read.table.html) gave its
+  text; any other kept column is kept as read, the same under every
+  reader (readr typed some, such as hours alone). So a kept column can
+  now stop the load under `fread()` and
+  [`read.table()`](https://rdrr.io/r/utils/read.table.html), where it
+  stayed text: one holding a time that does not exist in `tz` (a DST
+  gap), a leap second, or zoned and unzoned date-times in one layout.
+  Files whose unused date-time columns were typed differently (a CSV
+  beside an xlsx) bind again. A time column of date-times read with
+  `time_type = "seconds"` or `"frames"` now stops with
+  `radiatR_malformed_values` under every reader, as it did under
+  [`read.table()`](https://rdrr.io/r/utils/read.table.html); readr gave
+  epoch seconds (or, for frames, a `radiatR_time_type_mismatch` error).
+
 ### Changes
 
 - The `sleap` dialect accepts a node name as it is written in the file
@@ -510,6 +558,29 @@
   [`add_circular_boxplot()`](https://johnkirwan.github.io/radiatR/reference/add_circular_boxplot.md).
 
 ### Bug fixes
+
+- App: a file read by a tracker’s dialect that the generic preview
+  cannot make a table of (a raw EthoVision export) is previewed as its
+  first lines. It showed one column of preamble text under readr and
+  could not be previewed under
+  [`data.table::fread()`](https://rdrr.io/pkg/data.table/man/fread.html).
+
+- A time that does not exist in `tz` (the hour skipped when clocks go
+  forward) stops with an error saying so under every reader; under
+  `fread()` and
+  [`read.table()`](https://rdrr.io/r/utils/read.table.html) it said only
+  “not a date-time”. (A skipped day and a leap second: see Breaking
+  changes.) A column of zoned and unzoned date-times in one layout stops
+  with an error saying the zones are mixed, not that a valid value is no
+  date-time. A bare date on a day `tz` skips reports its own row. An
+  Excel date cell on a day `tz` skips altogether stops the load only
+  when its column is used or kept, and reports its row.
+
+- A multi-file import whose time column holds bare dates in one file and
+  date-times in another (a CSV of dates beside a CSV or an xlsx of
+  date-times) binds under every reader, each date the first instant of
+  its day in `tz`. `fread()` stopped with a type clash, and under readr
+  a date on a day `tz` skips was reported as a missing time.
 
 - [`derive_headings()`](https://johnkirwan.github.io/radiatR/reference/derive_headings.md)
   no longer calls headings “trials” for a rule that gives several per
