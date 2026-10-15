@@ -1,6 +1,13 @@
 # Too slow for CRAN's check time budget; runs locally and on CI.
 skip_on_cran()
 
+# testServer() evaluates its block with this file's environment as parent, not
+# the app's, so the plot_spec.R helpers the block calls are sourced here.
+.p <- system.file("app", "plot_spec.R", package = "radiatR")
+if (!nzchar(.p) || !file.exists(.p))
+  .p <- testthat::test_path("..", "..", "inst", "app", "plot_spec.R")
+source(.p, local = TRUE)
+
 # The Kinematics subtab's image-export wiring: kin_plot_fmt drives the
 # dl_kin_plot filename and the kinematics figure/code reactives still resolve
 # after the sidebar was reorganised into accordion sections (no shinytest2).
