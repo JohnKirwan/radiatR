@@ -569,19 +569,23 @@ guess_columns <- function(data, mapping = list()) {
   # Zoned and unzoned date-times in one column are two readings: the fewer
   # are malformed, as a layout in the minority is.
   dt <- hit[[best]] & !bare
-  if (any(dt & z) && any(dt & !z))
-    ok[dt & (if (sum(dt & z) >= sum(dt & !z)) !z else z)] <- FALSE
+  mix <- dt & (if (sum(dt & z) >= sum(dt & !z)) !z else z) & any(dt & z) & any(dt & !z)
+  ok[mix] <- FALSE
   if (all(ok | missing)) return(out)
   as_num <- sum(num_ok) >= sum(ok)
   bad <- !missing & !(if (as_num) num_ok else ok)
   if (!as_num) {
-    # name the cause where it is known: a leap second, then a time skipped in tz
+    # name the cause where it is known: a leap second, a time skipped in tz,
+    # then a zone mix. %OS ends every layout it is in, and its field there is
+    # two digits after ':' or (ISO 8601 basic) after the hour and minute.
     layout <- hit[[best]] & !missing & !bare
-    leap <- layout & grepl("%OS", fmt, fixed = TRUE) & grepl(":60([.][0-9]+)?$", core)
+    leap <- layout & grepl("%OS", fmt, fixed = TRUE) &
+      grepl("(:|T[0-9]{4})60([.][0-9]+)?$", core)
     real <- !is.na(strptime(core, fmt, tz = "UTC"))
     gapv <- layout & !leap & !z & real & is.na(out)
     for (cause in list(list(leap, "a date-time (a leap second, :60, cannot be represented)"),
-                       list(gapv, sprintf("times that exist in time zone '%s'", tz))))
+                       list(gapv, sprintf("times that exist in time zone '%s'", tz)),
+                       list(mix & !missing, "date-times that all carry a zone, or none")))
       if (any(cause[[1]]))
         radiatR_abort_malformed_values(column, which(cause[[1]]), s[cause[[1]]],
                                        expected = cause[[2]], source = source,
