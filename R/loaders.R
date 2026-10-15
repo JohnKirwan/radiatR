@@ -1266,10 +1266,11 @@ guess_columns <- function(data, mapping = list()) {
   tz_gaps <- Map(function(d, p) list(source = basename(p), cols = attr(d, "tz_gaps")),
                  dfl, paths)
 
-  # The numeric role columns and text time are coerced file by file, so a
-  # malformed cell is reported against its own file and row rather than as a
-  # type clash on bind. Typed time is left for read_tracks(), which needs to
-  # see whether it was a duration.
+  # The numeric role columns and text or Date time are coerced file by file,
+  # so a malformed cell is reported against its own file and row rather than
+  # as a type clash on bind, and a Date is its day's first instant in tz (cast
+  # on bind it would be read some other way). Other typed time is left for
+  # read_tracks(), which needs to see whether it was a duration.
   roles <- guess_columns(dfl[[1L]], mapping)
   num_cols <- unlist(roles[c("x", "y", "angle", "weight")], use.names = FALSE)
   role_cols <- unlist(roles, use.names = FALSE)
@@ -1282,7 +1283,8 @@ guess_columns <- function(data, mapping = list()) {
       d[[cc]] <- .as_numeric_strict(d[[cc]], cc, source = basename(p),
                                     dialect = dialect, decimal = dec)
     tc <- roles$time
-    if (!is.null(tc) && (is.character(d[[tc]]) || is.factor(d[[tc]])))
+    if (!is.null(tc) && (is.character(d[[tc]]) || is.factor(d[[tc]]) ||
+                         inherits(d[[tc]], "Date")))
       d[[tc]] <- do.call(.coerce_time, c(
         list(d[[tc]], column = tc, source = basename(p), dialect = dialect,
              decimal = dec), time_args))
