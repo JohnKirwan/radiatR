@@ -238,3 +238,27 @@ test_that("an option a dialect cannot use names the app control", {
                   error = function(cnd) cnd)
   expect_match(e$plain_error(err), "takes no read_opts", fixed = TRUE)
 })
+
+test_that("a text-export dialect given an Excel option says to upload the text export", {
+  skip_if_not_installed("shiny")
+  e <- app_env()
+  txt <- "This software's files are read from its text export, not from an Excel workbook: upload the .txt or .csv export."
+  dlc <- testthat::test_path("fixtures", "real", "dlc_single_wasp_predictions.csv")
+  err <- tryCatch(read_tracks(dlc, dialect = "deeplabcut", read_opts = list(sheet = "Sheet1")),
+                  error = function(cnd) cnd)
+  expect_identical(e$plain_error(err), txt)
+  err <- tryCatch(read_tracks(dlc, dialect = "deeplabcut", read_opts = list(ext = "xlsx")),
+                  error = function(cnd) cnd)
+  expect_identical(e$plain_error(err), txt)
+})
+
+test_that("an EthoVision delimiter mismatch names the Delimiter control", {
+  skip_if_not_installed("shiny")
+  e <- app_env()
+  eth <- tempfile(fileext = ".txt")
+  writeLines(c('"Number of header lines:";"2"', '"Experiment";"x"'), eth)
+  err <- tryCatch(read_tracks(eth, dialect = "ethovision", read_opts = list(delim = ",")),
+                  error = function(cnd) cnd)
+  expect_identical(e$plain_error(err),
+                   "This file's format sets its own delimiter: set Delimiter to Auto-detect.")
+})

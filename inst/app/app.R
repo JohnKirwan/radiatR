@@ -483,16 +483,21 @@ plain_error <- function(e) {
       "Some rows of this file are not valid track data.",
       "See Technical details for the rows and ids affected."
     ))
+  # A read_opts entry a dialect refused: tell the user which control to reset.
+  if (identical(e$arg, "read_opts") && !is.null(e$refused_by) && !is.null(e$option)) {
+    if (e$option %in% names(read_opt_controls)) {
+      lab <- read_opt_controls[[e$option]]
+      return(sprintf("This file's format sets its own %s: set %s to Auto-detect.",
+                     tolower(lab), lab))
+    }
+    if (e$option %in% c("sheet", "ext"))
+      return(paste("This software's files are read from its text export, not from an",
+                   "Excel workbook: upload the .txt or .csv export."))
+  }
   # A dialect says what is wrong with the file in its own words.
   if (inherits(e, "radiatR_dialect_error")) return(conditionMessage(e))
   # So does the reader, for a file that is not one table or ids that differ
   # only by whitespace (these name columns, which the guesses below misread).
-  if (inherits(e, "radiatR_invalid_argument") && identical(e$arg, "read_opts") &&
-      !is.null(e$option) && e$option %in% names(read_opt_controls)) {
-    lab <- read_opt_controls[[e$option]]
-    return(sprintf("This file's format sets its own %s: set %s to Auto-detect.",
-                   tolower(lab), lab))
-  }
   if (inherits(e, c("radiatR_malformed_file", "radiatR_ambiguous_ids",
                     "radiatR_invalid_argument")))
     return(sub("^read_tracks: ", "", conditionMessage(e)))
