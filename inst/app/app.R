@@ -1611,13 +1611,16 @@ server <- function(input, output, session) {
 
   output$preview_tbl <- renderTable({
     req(rv$path)
+    d <- if (!is.null(input$dialect_sel) && input$dialect_sel != "auto")
+      input$dialect_sel else rv$dialect
     df <- tryCatch(
-      upload_read(rv$path, rv$file_name, input$delim_sel, input$sheet_sel),
+      upload_preview(rv$path, rv$file_name, dialect = d %||% "generic",
+                     input$delim_sel, input$sheet_sel),
       error = function(e) NULL)
     if (is.null(df))
       return(data.frame(Note = "Could not preview this file"))
-    utils::head(as.data.frame(df), 5L)
-  }, striped = TRUE, caption = "First 5 rows",
+    if (identical(names(df), "Line")) df else utils::head(df, 5L)
+  }, striped = TRUE, caption = "Preview",
      caption.placement = "top")
 
   # ---- step 2 condition selector ---------------------------------------------
