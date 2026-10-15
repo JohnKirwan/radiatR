@@ -87,10 +87,11 @@ Any `NULL` element is auto-detected. Defaults to all-auto.}
 \item{keep}{extra columns to retain besides the mapped ones and those a
 dialect produces (NULL = none). All other columns are dropped; a name
 that is not in the data is ignored without a message. A kept column of a
-file is read as date-times by content, under every reader: when its reader
-typed it as dates or date-times, or every value that is not missing is a date-time in one layout,
-it is parsed in `tz` as the time column is (a value that is no instant
-there stops the load); otherwise it stays as read.}
+file is read as date-times by content, under every reader: when its
+reader typed it as dates or date-times, or every value that is not
+missing is a date-time in one layout, it is parsed in `tz` as the time
+column is (a value that is no instant there stops the load); otherwise it
+stays as read.}
 
 \item{drop}{drop these columns after mapping}
 
