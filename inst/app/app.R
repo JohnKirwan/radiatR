@@ -738,8 +738,10 @@ server <- function(input, output, session) {
       tryCatch(
         load_ts(rv$path, d, mapping = map,
                 read_opts = c(delim_read_opts(input$delim_sel),
-                              list(ext = tolower(tools::file_ext(rv$file_name %||% "")),
-                                   sheet = input$sheet_sel)),
+                              if (is.null(d) || d %in% c("auto", "generic"))
+                                list(ext = tolower(tools::file_ext(rv$file_name %||% ""))),
+                              if (!is.null(input$sheet_sel) && nzchar(input$sheet_sel))
+                                list(sheet = input$sheet_sel)),
                 normalize_xy = nrm, origin = origin, radius = radius,
                 on_invalid = if ("positions" %in% drop) "drop" else "error",
                 dialect_args = if ("unlinked" %in% drop) list(unlinked = "drop") else list()),

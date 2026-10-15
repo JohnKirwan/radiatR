@@ -467,7 +467,7 @@ test_that("a semicolon file that shows decimal points is read with them", {
   path <- withr::local_tempfile(fileext = ".csv")
   writeLines(c("id;frame;x;y", "a;1;1.5;0.25", "a;2;2.25;0.5", "a;3;3.125;0.75"), path)
   expect_equal(as.data.frame(read_tracks(path))$x, c(1.5, 2.25, 3.125))
-  # through a dialect too, which is not passed read_opts
+  # through a dialect too, which sniffs it the same way
   writeLines(c("TRACK_ID;FRAME;POSITION_X;POSITION_Y", "0;0;1.5;0.25", "0;1;2.25;0.5"), path)
   tm <- suppressMessages(read_tracks(path, dialect = "trackmate"))
   expect_equal(as.data.frame(tm)$x, c(1.5, 2.25))

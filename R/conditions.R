@@ -67,18 +67,27 @@ radiatR_abort_malformed_values <- function(column, rows, values,
     length(rows), expected, first(rows, 20L),
     first(paste0("'", unique(values), "'"), 10L)
   )
-  # The values look like numbers written with the other decimal mark.
-  if (decimal_hint && identical(decimal, ",") &&
-      any(grepl("^[-+]?([0-9]+[.][0-9]*|[.][0-9]+)([eE][-+]?[0-9]+)?$", values)))
+  # The values look like numbers (or H:MM:SS durations) written with the
+  # other decimal mark. Not for Excel, whose cells read_opts cannot change.
+  if (!is.null(source) && tolower(tools::file_ext(source)) %in% c("xlsx", "xls"))
+    decimal_hint <- FALSE
+  dur <- "^[0-9]+:[0-5][0-9]:[0-5][0-9]"
+  suggested <- if (decimal_hint && identical(decimal, ",") &&
+                   any(grepl("^[-+]?([0-9]+[.][0-9]*|[.][0-9]+)([eE][-+]?[0-9]+)?$", values) |
+                       grepl(paste0(dur, "[.][0-9]+$"), values))) "."
+               else if (decimal_hint && !identical(decimal, ",") &&
+                        any(grepl("^-?[0-9]+,[0-9]+$", values) |
+                            grepl(paste0(dur, ",[0-9]+$"), values))) ","
+  if (identical(suggested, "."))
     msg <- paste0(msg, "\n  The file was read with a decimal comma. If its decimal mark ",
                   "is a point, pass read_opts = list(decimal = \".\").")
-  else if (decimal_hint && !identical(decimal, ",") &&
-           any(grepl("^-?[0-9]+,[0-9]+$", values)))
+  else if (identical(suggested, ","))
     msg <- paste0(msg, "\n  Decimal commas? Pass read_opts = list(decimal = \",\").")
   rlang::abort(msg, class = c("radiatR_malformed_values", "radiatR_invalid_rows"),
                rows = as.integer(rows), ids = character(0),
                columns = as.character(column), values = as.character(values),
                expected = expected, source = source, dialect = dialect,
+               decimal = decimal, suggested_decimal = suggested,
                call = NULL)
 }
 
