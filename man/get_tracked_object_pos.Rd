@@ -25,7 +25,8 @@ entire video.}
 
 \item{radius_criterion}{Strategy for choosing the radius landmarks. `"first_past"`
 selects the first point beyond each threshold, while `"closest"` chooses the
-closest sample to the specified radius.}
+closest sample to the specified radius. With `"first_past"`, a radius no
+point reaches gives that landmark `NA`, with a warning.}
 
 \item{.report_oob}{Internal. When `TRUE` (default), emit a single message
 summarising any track points that fall outside the unit circle. Callers that
