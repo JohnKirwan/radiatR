@@ -911,7 +911,8 @@ server <- function(input, output, session) {
       hd <- tryCatch({
         src <- if (length(labs))
           as.data.frame(upload_read(rv$path, rv$file_name, input$delim_sel,
-                                    input$sheet_sel, unique_names = TRUE, id = labs))
+                                    input$sheet_sel, unique_names = TRUE, id = labs,
+                                    decimal_sel = input$decimal_sel))
         else rv$raw_hd
         build_headings_input(src, col = input$hd_col,
                              units = input$hd_units,
@@ -929,7 +930,8 @@ server <- function(input, output, session) {
                           convention = input$hd_convention, group = grp, group2 = grp2,
                           text_cols = labs[vapply(labs, function(cl) is.character(src[[cl]]),
                                                   logical(1))],
-                          read = upload_read_format(rv$path, rv$file_name, input$delim_sel))
+                          read = upload_read_format(rv$path, rv$file_name, input$delim_sel,
+                                                  input$decimal_sel))
       }
       return()
     }
@@ -1013,8 +1015,10 @@ server <- function(input, output, session) {
     req(identical(rv$mode, "headings"), rv$source == "file", rv$path)
     ds <- input$delim_sel
     ss <- input$sheet_sel
+    dc <- input$decimal_sel
     parsed <- tryCatch(
-      as.data.frame(upload_read(rv$path, rv$file_name, ds, ss, unique_names = TRUE)),
+      as.data.frame(upload_read(rv$path, rv$file_name, ds, ss, unique_names = TRUE,
+                                  decimal_sel = dc)),
       error = function(e) {
         rv$error        <- plain_error(e)
         rv$error_detail <- ingest_detail(e)
@@ -1148,6 +1152,7 @@ server <- function(input, output, session) {
         },
         uiOutput("format_box"),
         uiOutput("delim_box"),
+        uiOutput("decimal_box"),
         uiOutput("sheet_box"),
         uiOutput("normalize_box"),
         uiOutput("mapping_box"),
@@ -1537,6 +1542,17 @@ server <- function(input, output, session) {
                 selected = "auto")
   })
 
+  # Decimal-mark override for delimited (non-Excel) uploads; own renderUI like
+  # delim_box so a wizard re-render does not reset the choice.
+  output$decimal_box <- renderUI({
+    req(rv$path)
+    ext <- tolower(sub(".*\\.", "", rv$path))
+    if (ext %in% c("xlsx", "xls")) return(NULL)
+    selectInput("decimal_sel", "Decimal mark",
+                choices = c("Auto-detect" = "auto", "Point (.)" = ".", "Comma (,)" = ","),
+                selected = "auto")
+  })
+
   # Worksheet selector for Excel uploads. Own renderUI (like delim_box) so a
   # wizard re-render does not reset the choice. Mutually exclusive with
   # delim_box by construction: delim_box returns NULL for Excel, this NULL
@@ -1596,7 +1612,8 @@ server <- function(input, output, session) {
       input$dialect_sel else rv$dialect
     if (!identical(d, "generic")) return(NULL)
     df <- tryCatch(
-      upload_read(rv$path, rv$file_name, input$delim_sel, input$sheet_sel),
+      upload_read(rv$path, rv$file_name, input$delim_sel, input$sheet_sel,
+                  decimal_sel = input$decimal_sel),
       error = function(e) NULL)
     if (is.null(df) || !ncol(df)) return(NULL)
     df   <- utils::head(as.data.frame(df), 200L)
@@ -1634,7 +1651,8 @@ server <- function(input, output, session) {
               nzchar(input$map_id)) input$map_id else NULL
     df <- tryCatch(
       upload_preview(rv$path, rv$file_name, dialect = d %||% "generic",
-                     input$delim_sel, input$sheet_sel, id = id),
+                     input$delim_sel, input$sheet_sel, id = id,
+                     decimal_sel = input$decimal_sel),
       error = function(e) NULL)
     if (is.null(df))
       return(data.frame(Note = "Could not preview this file"))
@@ -1784,6 +1802,8 @@ server <- function(input, output, session) {
     }
     gc <- if (!is.null(input$cond_col) && nzchar(input$cond_col))
       input$cond_col else NULL
+    ro <- upload_read_opts(rv$file_name, input$delim_sel, input$decimal_sel,
+                           input$sheet_sel)
     build_plot_spec(
       ts = rv$ts, hd = rv$hd, method = rv$method,
       data = list(
@@ -1794,7 +1814,7 @@ server <- function(input, output, session) {
           NULL else rv$dialect,
         normalize_xy = rv$normalize_xy,
         origin = rv$origin, radius = rv$radius, drop = rv$drop_used,
-        delim = input$delim_sel, sheet = input$sheet_sel),
+        delim = ro$delim, decimal = ro$decimal, sheet = ro$sheet),
       inputs = list(
         cond_col = input$cond_col, cond_col2 = input$cond_col2,
         group_by = input$group_by,
@@ -2142,6 +2162,8 @@ server <- function(input, output, session) {
 
   kinematics_spec <- reactive({
     req(rv$ts)
+    ro <- upload_read_opts(rv$file_name, input$delim_sel, input$decimal_sel,
+                           input$sheet_sel)
     build_kinematics_spec(rv$ts, list(
       kin_metric    = input$kin_metric,
       kin_units     = input$kin_units,
@@ -2158,7 +2180,7 @@ server <- function(input, output, session) {
           NULL else rv$dialect,
         normalize_xy = rv$normalize_xy,
         origin = rv$origin, radius = rv$radius, drop = rv$drop_used,
-        delim = input$delim_sel, sheet = input$sheet_sel)))
+        delim = ro$delim, decimal = ro$decimal, sheet = ro$sheet)))
   })
 
   # fps is required only for numeric-frame Tracks; POSIXct time and numeric

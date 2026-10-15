@@ -90,3 +90,16 @@ test_that("spec_to_code reads the app's text label columns as text", {
   expect_identical(df$g1, c("1,1", "1,10"))
   expect_identical(df$g.2, c("1,1", "1,10"))
 })
+
+test_that("spec_to_code emits the trajectory decimal mark beside delim and sheet", {
+  spec <- function(...) list(
+    data = c(list(source = "file", mode = "trajectories", path = "t.tsv"), list(...)),
+    headings = list(rule = "distal"), group_col = "id", facet_by = NULL,
+    colour = list(by = "trajectory", cap = 20, legend = FALSE),
+    theme = "bw", angle_labels = "degrees", display = list(zero = 0),
+    heading_display = "stacked", show = list(tracks = TRUE, arrow = TRUE, vectors = FALSE))
+  code <- paste(spec_to_code(spec(delim = "\t", decimal = ",")), collapse = "\n")
+  expect_match(code, 'read_opts = list(delim = "\\t", decimal = ",")', fixed = TRUE)
+  code <- paste(spec_to_code(spec()), collapse = "\n")
+  expect_false(grepl("read_opts", code, fixed = TRUE))
+})
