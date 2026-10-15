@@ -475,6 +475,9 @@ spec_to_plot <- function(spec, ts, hd) {
   # delimiter control, whose "auto" says nothing), and its encoding.
   d <- data$delim %||% ","
   m <- data$decimal %||% "."
+  if (!d %in% c(",", ";", "\t", "|") || !m %in% c(".", ","))
+    stop(".emit_headings_read: unexpected delimiter ", encodeString(d, quote = '"'),
+         " or decimal mark ", encodeString(m, quote = '"'), call. = FALSE)
   fn <- if (d == ";" && m == ",") "read.csv2"
         else if (d == "\t" && m == ".") "read.delim" else "read.csv"
   args <- c(q(data$path),

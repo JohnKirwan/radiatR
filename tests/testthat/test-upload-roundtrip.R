@@ -54,6 +54,10 @@ test_that("spec_to_code emits the delimiter and decimal mark the app read with",
   expect_identical(rd, paste0("df <- read.csv(", encodeString(p, quote = '"'), ")"))
 })
 
+test_that("spec_to_code stops on a delimiter the app did not resolve", {
+  expect_error(spec_to_code(.headings_spec(delim = "auto")), "unexpected delimiter")
+})
+
 test_that("spec_to_code reads a latin-1 file as latin-1", {
   p <- withr::local_tempfile(fileext = ".csv")
   writeBin(iconv("g,angle\n\u00b5m,10\n", "UTF-8", "latin1", toRaw = TRUE)[[1]], p)
