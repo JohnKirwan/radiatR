@@ -1281,3 +1281,42 @@ test_that("a bare date on a day the zone skips reports its own row under every r
     }
   }
 })
+
+test_that("bare dates in one file and date-times in another bind under every reader", {
+  dir <- withr::local_tempdir()
+  csv <- function(name, rows) {
+    p <- file.path(dir, name)
+    writeBin(charToRaw(paste0("id,time,x,y\n", paste0(rows, ",.1,.1\n", collapse = ""))), p)
+    p
+  }
+  bare <- csv("bare.csv", c("a,2024-04-25", "a,2024-04-26"))
+  dt   <- csv("dt.csv", c("b,2024-04-26 10:00:00", "b,2024-04-26 11:00:00"))
+  apia <- csv("apia.csv", c("a,2011-12-29", "a,2011-12-30"))
+  apia_dt <- csv("apia_dt.csv", c("b,2011-12-29 10:00:00", "b,2011-12-31 10:00:00"))
+  want <- function(s) as.numeric(as.POSIXct(s, tz = "Africa/Cairo"))
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    got <- read_tracks(c(bare, dt), tz = "Africa/Cairo")@data$time
+    expect_equal(as.numeric(got), want(c("2024-04-25 00:00:00", "2024-04-26 01:00:00",
+                                         "2024-04-26 10:00:00", "2024-04-26 11:00:00")),
+                 info = info)
+    e <- malformed(read_tracks(c(apia, apia_dt), tz = "Pacific/Apia"))
+    expect_s3_class(e, "radiatR_malformed_values")
+    expect_identical(e$rows, 2L, info = info)
+    expect_identical(e$source, "apia.csv", info = info)
+    expect_match(conditionMessage(e), "exist in time zone 'Pacific/Apia'", info = info)
+  }
+  skip_if_not_installed("readxl"); skip_if_not_installed("writexl")
+  x <- file.path(dir, "dt.xlsx")
+  writexl::write_xlsx(data.frame(id = "c", time = as.POSIXct(
+    c("2024-04-26 10:00:00", "2024-04-26 11:00:00"), tz = "UTC"), x = .1, y = .1), x)
+  for (hide in readers) {
+    hide_readers(hide)
+    info <- paste(c("without", hide), collapse = " ")
+    got <- read_tracks(c(bare, x), tz = "Africa/Cairo")@data$time
+    expect_equal(as.numeric(got), want(c("2024-04-25 00:00:00", "2024-04-26 01:00:00",
+                                         "2024-04-26 10:00:00", "2024-04-26 11:00:00")),
+                 info = info)
+  }
+})
