@@ -19,12 +19,14 @@ ensure_pkgs <- function() {
 }
 
 # Configure-step preview helpers (demo_tracks(), build_method_preview()).
-source("preview.R", local = FALSE)
-source("preview_constructions.R", local = FALSE)
-source("download_helpers.R", local = FALSE)
-source("ui_helpers.R", local = FALSE)
-source("plot_spec.R", local = FALSE)
-source("upload.R", local = FALSE)
+# local = TRUE keeps the helpers in the app's environment: CRAN policy forbids
+# writing to the user's global environment.
+source("preview.R", local = TRUE)
+source("preview_constructions.R", local = TRUE)
+source("download_helpers.R", local = TRUE)
+source("ui_helpers.R", local = TRUE)
+source("plot_spec.R", local = TRUE)
+source("upload.R", local = TRUE)
 
 # ---- dialect registry --------------------------------------------------------
 
