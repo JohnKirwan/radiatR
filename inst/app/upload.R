@@ -51,7 +51,8 @@ upload_preview <- function(path, name, dialect = "generic", delim_sel = NULL,
   if (!file.exists(path)) stop("upload_preview: file not found: ", path, call. = FALSE)
   ext <- tolower(tools::file_ext(name %||% path))
   raw_ok <- !identical(dialect, "generic") && !ext %in% c("xlsx", "xls")
-  if (!raw_ok) return(utils::head(as.data.frame(upload_read(path, name, delim_sel, sheet_sel, ...)), n))
+  if (!raw_ok)
+    return(utils::head(as.data.frame(upload_read(path, name, delim_sel, sheet_sel, ...)), n))
   warns <- list()
   tbl <- tryCatch(withCallingHandlers(
     upload_read(path, name, delim_sel, sheet_sel, ...),
