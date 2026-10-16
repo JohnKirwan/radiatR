@@ -726,13 +726,90 @@ guess_columns <- function(data, mapping = list()) {
   best <- cands[which(viable)][which.max(counts[first, viable])]
   if (best != ";") return(list(delim = best, decimal = "."))
   cells <- gsub("^\"|\"$", "", trimws(unlist(strsplit(sample, ";", fixed = TRUE))))
-  comma <- grepl("^[-+]?[0-9]*,[0-9]+$", cells)
-  # a duration's fraction ("0:00:00.320", as ANY-maze writes time) is a
-  # decimal point too
-  point <- (grepl("^[-+]?[0-9]*[.][0-9]+([eE][-+]?[0-9]+)?$", cells) &
-              !grepl("^[-+]?[1-9][0-9]{0,2}([.][0-9]{3})+$", cells)) |
-    grepl("^[0-9]+:[0-5][0-9]:[0-5][0-9][.][0-9]+$", cells)
-  list(delim = best, decimal = if (any(point) && !any(comma)) "." else ",")
+  m <- .mark_cells(cells)
+  if (!any(m$point) || any(m$comma)) return(list(delim = best, decimal = ","))
+  # A point: keep each column's cells, from the data records of the sample, so
+  # that read_tracks() can check the point is shown by a column it reads
+  # (.check_decimal_evidence()). Fields are split as the readers split them
+  # ('"' quotes). The tally ends at the last line where no quoted field is
+  # open; a record whose quoted field runs past the sample is left out.
+  # `cells` is list() when no data record is whole in the sample (the first
+  # one's quoted field runs past it): the reader stops on that, as the point
+  # cannot be checked.
+  quotes <- lengths(regmatches(sample, gregexpr("\"", sample, fixed = TRUE)))
+  closed <- which(cumsum(quotes) %% 2L == 0L)
+  rows <- if (length(closed) >= 2L) sample[(closed[1L] + 1L):closed[length(closed)]]
+  tally <- if (length(rows))
+    utils::read.table(text = rows, sep = ";", quote = "\"", header = FALSE,
+                      colClasses = "character", fill = TRUE, comment.char = "",
+                      na.strings = character(0), strip.white = TRUE,
+                      blank.lines.skip = TRUE)
+  list(delim = best, decimal = ".", cells = if (is.null(tally)) list() else unname(as.list(tally)))
+}
+
+# What each cell (trimmed text) shows about the decimal mark: a decimal comma
+# ("1,5"); a decimal point that cannot be digit grouping ("1.5", "0.125", or a
+# duration's fraction "0:00:00.320", as ANY-maze writes time); or a dotted
+# number that may as well be digit grouping ("1.234", "1.234.567").
+.mark_cells <- function(cells) {
+  # A grouping shape has a dot ("1.234.567" is not `dotted`), a comma or
+  # duration cell is not `dotted`: each pattern is tried only on the cells it
+  # can still match.
+  dotted <- grepl("^[-+]?[0-9]*[.][0-9]+([eE][-+]?[0-9]+)?$", cells)
+  grouping <- comma <- duration <- logical(length(cells))
+  dot <- grepl(".", cells, fixed = TRUE)
+  grouping[dot] <- grepl("^[-+]?[1-9][0-9]{0,2}([.][0-9]{3})+$", cells[dot])
+  comma[!dotted] <- grepl("^[-+]?[0-9]*,[0-9]+$", cells[!dotted])
+  duration[!dotted] <- grepl("^[0-9]+:[0-5][0-9]:[0-5][0-9][.][0-9]+$", cells[!dotted])
+  list(comma = comma, point = (dotted & !grouping) | duration,
+       grouping = grouping, dotted = dotted)
+}
+
+# Each column's distinct non-missing cells, trimmed.
+.distinct_cells <- function(cells) lapply(cells, function(v) unique(trimws(unique(v[!is.na(v)]))))
+
+# The decimal-point evidence of a table's columns (`cells`, a named list of
+# character vectors): `point`, the columns with a decimal point that cannot be
+# digit grouping; `grouping`, the columns whose dotted numbers all could be,
+# each with up to three of them (for the error). `marks` are the columns'
+# .mark_cells() when the caller has them (of `vals`, the distinct trimmed cells).
+.decimal_evidence <- function(cells, vals = .distinct_cells(cells),
+                              marks = lapply(vals, .mark_cells)) {
+  point <- vapply(marks, function(m) any(m$point), logical(1))
+  # a column with a decimal comma is not grouping-only: EthoVision assumes a
+  # point beside commas, and the comma cell is then malformed, which says more
+  grouping <- !point & vapply(marks, function(m) any(m$grouping) && !any(m$comma),
+                              logical(1))
+  list(point = names(vals)[point],
+       grouping = Map(function(v, m) utils::head(v[m$grouping], 3L),
+                      vals[grouping], marks[grouping]))
+}
+
+# A decimal point sniffed from a file stands when a column read for a role
+# (`cols`: x, y, time, angle, weight) shows one, or when no such column holds
+# only dotted numbers that could be digit grouping. Otherwise "1.234" there is
+# 1.234 or 1234 on the strength of some other column (a label "1.5"), and the
+# load stops. `evidence` is attr(, "decimal_evidence"); NULL (the mark was
+# given, or not sniffed) is no check.
+.check_decimal_evidence <- function(evidence, cols, source, dialect = NULL) {
+  if (is.null(evidence)) return(invisible(NULL))
+  cols <- unique(as.character(cols))
+  hit <- intersect(cols, names(evidence$grouping))
+  if (!length(hit) || length(intersect(cols, evidence$point))) return(invisible(NULL))
+  radiatR_abort_ambiguous_decimal(source, hit,
+                                  utils::head(unlist(evidence$grouping[hit], use.names = FALSE), 3L),
+                                  evidence$point, dialect)
+}
+
+# The column count of the sniff's cells must be the table's; `cells` empty
+# means no whole data record was sniffed, so a sniffed point cannot be checked.
+.sniffed_evidence <- function(cells, names, source, dialect = NULL) {
+  if (!length(cells))
+    radiatR_abort_ambiguous_decimal(source, character(0), character(0), character(0), dialect)
+  if (length(cells) != length(names))
+    radiatR_abort_malformed_file(source, "columns", detail = sprintf(
+      "the decimal-mark sniff saw %d columns, the reader %d.", length(cells), length(names)))
+  .decimal_evidence(stats::setNames(cells, names))
 }
 
 # Decimal mark .read_any() sniffs for `path`: what a dialect that reads its own
@@ -825,10 +902,17 @@ guess_columns <- function(data, mapping = list()) {
   }
 
   # delimited: sniff separator + decimal mark unless overridden
+  cells <- NULL
   if (is.null(delim) || is.null(decimal)) {
     g <- .guess_delim(path)
     if (is.null(delim))   delim   <- g$delim
-    if (is.null(decimal)) decimal <- g$decimal
+    # a sniffed point is checked against the role columns
+    # (.check_decimal_evidence()); the sniff's cells are fields of its own
+    # delimiter, so they count only when that is the one read with
+    if (is.null(decimal)) {
+      decimal <- g$decimal
+      if (identical(delim, g$delim)) cells <- g$cells
+    }
   }
 
   # Column types are guessed from every row, and no grouping mark is assumed:
@@ -906,6 +990,10 @@ guess_columns <- function(data, mapping = list()) {
   text <- attr(df, "datetime_text")
   df <- .keep_labels(df, id, id_text = id_text, read_text = read_text)
   attr(df, "datetime_text") <- text
+  # the sniff's cells by column; the sniff split them as the reader did, so
+  # their count is the table's (.check_fields() has stopped a ragged file)
+  if (!is.null(cells))
+    attr(df, "decimal_evidence") <- .sniffed_evidence(cells, names(df), src)
   df
 }
 
@@ -1339,6 +1427,8 @@ guess_columns <- function(data, mapping = list()) {
   used <- c(role_cols, kept, "..source_file", "..source_path")
 
   dfl <- Map(function(d, p) {
+    .check_decimal_evidence(attr(d, "decimal_evidence"), c(num_cols, roles$time),
+                            basename(p), dialect)
     dec <- attr(d, "decimal") %||% "."
     for (cc in intersect(num_cols, names(d)))
       d[[cc]] <- .as_numeric_strict(d[[cc]], cc, source = basename(p),
@@ -1361,6 +1451,7 @@ guess_columns <- function(data, mapping = list()) {
     # in different directories for collision detection. Dropped before the
     # final Tracks data is built (not in keep_cols selection below).
     d[["..source_path"]] <- p
+    attr(d, "decimal_evidence") <- NULL
     d
   }, dfl, paths)
 
@@ -1669,6 +1760,17 @@ read_tracks_format <- function(x, format, ...)
 #' `0.125`, which cannot be digit grouping, or the fraction of a duration such
 #' as `0:00:00.320`);
 #' `read_opts = list(decimal = ".")` says so outright.
+#' A point found that way must be shown by a column read for a role (x, y,
+#' time, angle, weight): where such a column holds only values that could be
+#' digit grouping (`523.117`, `1.234`) and the clear decimal points are all in
+#' other columns (a label `1.5`), the load stops with a
+#' `radiatR_ambiguous_decimal` error (fields `columns`, `values`, `evidence`,
+#' `decimal`, `source`, `dialect`) rather than read `1.234` for what may be 1234.
+#' So does a file where no data row of the first 20 lines is whole (a quoted
+#' field runs past them), as the point cannot then be checked. Give the
+#' mark with `read_opts`. The same holds for the built-in dialects that sniff the
+#' mark (ANY-maze, the others read as tables, and EthoVision when not
+#' comma-separated). Other tab- and comma-separated files are read with a point.
 #'
 #' Every built-in dialect checks
 #' its source columns the same way, before any reshaping, so the error names
@@ -1784,6 +1886,7 @@ read_tracks <- function(x,
 
   # read
   dec <- "."
+  evidence <- NULL
   tz_gaps <- list()
   if (is.character(x) && any(!file.exists(x)))
     stop("read_tracks: file(s) not found: ",
@@ -1805,6 +1908,7 @@ read_tracks <- function(x,
                          decimal = read_opts$decimal, sheet = read_opts$sheet, tz = tz,
                          id = mapping$id, unique_names = TRUE)
     dec <- attr(df, "decimal") %||% "."
+    evidence <- attr(df, "decimal_evidence")
     src <- basename(x)
     tz_gaps <- list(list(source = src, cols = attr(df, "tz_gaps")))
   } else if (is.character(x) && length(x) > 1L) {
@@ -1839,7 +1943,8 @@ read_tracks <- function(x,
                  else Filter(Negate(is.null), list(
                    .source_meta_record(df, if (is.character(x)) x, dialect)))
   # The reader's notes have been read; they are not part of the Tracks data.
-  attr(df, "decimal") <- attr(df, "time_unit") <- attr(df, "attrition") <-
+  attr(df, "decimal") <- attr(df, "decimal_evidence") <- attr(df, "time_unit") <-
+    attr(df, "attrition") <-
     attr(df, "source_meta") <- attr(df, "tz_gaps") <- NULL
   if (!is.null(declared)) {
     if (!(identical(declared, "seconds") || identical(declared, "frames")))
@@ -1871,6 +1976,8 @@ read_tracks <- function(x,
       paste0(names(absent), " = '", absent, "'", collapse = ", "),
       paste(names(df), collapse = ", ")),
       class = "radiatR_missing_columns", columns = unname(absent))
+  # A sniffed decimal point must be shown by a column read for a role.
+  .check_decimal_evidence(evidence, c(time, angle, xcol, ycol, wcol), src, dialect)
   .abort_tz_gaps(tz_gaps, setdiff(c(roles, keep), drop), tz)
   # A kept column of date-times is read in tz, as the time column is (the
   # files of a multi-file import were so read one by one). The reader's note
@@ -2395,9 +2502,15 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
     df <- x
     src <- NULL
   }
-  if (!is.null(opts[["decimal"]])) attr(df, "decimal") <- opts[["decimal"]]
+  # A given mark is not checked against the sniff's evidence. The evidence is
+  # held apart from `df`, which a dialect may subset (dropping attributes).
+  if (!is.null(opts[["decimal"]])) {
+    attr(df, "decimal") <- opts[["decimal"]]
+    attr(df, "decimal_evidence") <- NULL
+  }
   list(df = df, source = src, dialect = dialect, norm = norm,
-       decimal = attr(df, "decimal") %||% ".", names = norm(names(df)))
+       decimal = attr(df, "decimal") %||% ".", names = norm(names(df)),
+       evidence = attr(df, "decimal_evidence"))
 }
 
 # A column of a dialect table by its normalised name, and its header as written.
@@ -2409,6 +2522,11 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
 .dialect_num <- function(inp, col)
   .as_numeric_strict(.dialect_col(inp, col), .dialect_header(inp, col),
                      inp$source, inp$dialect, inp$decimal)
+
+# A sniffed decimal point must be shown by a column the dialect reads for a
+# role (`cols`, normalised names): see .check_decimal_evidence().
+.dialect_check_decimal <- function(inp, cols)
+  .check_decimal_evidence(inp$evidence, .dialect_header(inp, cols), inp$source, inp$dialect)
 
 # The time column, coerced under the unit the dialect knows it to have
 # ("seconds", "frames" or NULL for unknown). No column means row order (frames).
@@ -2739,6 +2857,7 @@ register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = N
   time_col <- time_col %||% .guess_col(nms, c("time", "t", "frame", "frames", "seconds"))
   unit <- if (is.null(time_col) || grepl("^frames?$", time_col, ignore.case = TRUE)) "frames"
           else if (tolower(time_col) == "seconds") "seconds"
+  .dialect_check_decimal(inp, c(xs, ys, time_col))
   tv <- .dialect_time(inp, time_col, unit, fps)
   rows <- Map(function(xc, yc, idv)
     data.frame(id = idv, time = tv, x = .dialect_num(inp, xc), y = .dialect_num(inp, yc),
@@ -2779,7 +2898,7 @@ register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = N
 # block of a file written with decimal points still holds "3,6 %".
 # attr(, "ethovision") is list(header =, units =): the header block as a named
 # character vector, and the units named by column.
-.read_ethovision <- function(path, delim = NULL) {
+.read_ethovision <- function(path, delim = NULL, decimal = NULL) {
   src <- basename(path)
   fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error", source = src)
   lines <- .read_text_lines(path)
@@ -2854,10 +2973,23 @@ register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = N
   d <- d[seq_along(nm)]
   names(d) <- nm
   d[d == "-"] <- NA_character_
-  cells <- unlist(d, use.names = FALSE)
-  comma <- any(grepl("^[-+]?[0-9]*,[0-9]+$", cells))
-  point <- any(grepl("^[-+]?[0-9]*[.][0-9]+([eE][-+]?[0-9]+)?$", cells))
-  attr(d, "decimal") <- if (delim != "," && comma && !point) "," else "."
+  # A given mark is used as it is. Otherwise a point is assumed unless the rows
+  # show only decimal commas; for a file whose separator leaves room for a
+  # decimal comma, keep every column's evidence for the role check
+  # (.dialect_check_decimal()), from the one pass that also decides the mark.
+  if (!is.null(decimal)) {
+    attr(d, "decimal") <- decimal
+  } else if (delim == ",") {
+    attr(d, "decimal") <- "."
+  } else {
+    vals <- .distinct_cells(as.list(d))
+    marks <- lapply(vals, .mark_cells)
+    comma <- any(vapply(marks, function(m) any(m$comma), logical(1)))
+    point <- any(vapply(marks, function(m) any(m$dotted), logical(1)))
+    attr(d, "decimal") <- if (comma && !point) "," else "."
+    if (identical(attr(d, "decimal"), "."))
+      attr(d, "decimal_evidence") <- .decimal_evidence(vals = vals, marks = marks)
+  }
   attr(d, "ethovision") <- list(header = header, units = stats::setNames(un, nm))
   d
 }
@@ -2953,6 +3085,7 @@ register_loader_dialect("ethovision", function(x, bodypart = NULL, partial = c("
     fail("ethovision: these headers name the same column once case and punctuation are set aside: %s.",
          paste(names(inp$df)[same], collapse = ", "))
 
+  .dialect_check_decimal(inp, unname(c(x_cols, y_cols, tc)))
   all_pts <- .dialect_points(inp, x_cols, y_cols)
   pos <- .dialect_position(list(x = all_pts$x[, sel, drop = FALSE],
                                 y = all_pts$y[, sel, drop = FALSE]),
@@ -3007,6 +3140,7 @@ register_loader_dialect("trackmate", function(x, id_col = NULL, time_col = NULL,
   t_secs <- !is.null(t_unit) && t_unit %in% c("(s)", "(sec)", "(secs)", "(second)", "(seconds)")
   time <- time_col %||% (if (t_secs) t_c) %||% frame_c %||% t_c
   unit <- if (identical(time, frame_c)) "frames" else if (identical(time, t_c) && t_secs) "seconds"
+  .dialect_check_decimal(inp, c(xc, yc, time))
 
   # Coerced on the spot table as read, so rows in an error count spots.
   out <- data.frame(id = .dialect_col(inp, id), time = .dialect_time(inp, time, unit, fps),
@@ -3088,6 +3222,7 @@ register_loader_dialect("toxtrac", function(x, fps = NULL, read_opts = list()) {
   arena <- .guess_col(nms, "arena")
   idv <- .dialect_col(inp, track)
   if (!is.null(arena)) idv <- paste(.dialect_col(inp, arena), idv, sep = "_")
+  .dialect_check_decimal(inp, c(xc, yc, time))
   out <- data.frame(id = idv, time = .dialect_time(inp, time, unit, fps),
                     x = .dialect_num(inp, xc), y = .dialect_num(inp, yc),
                     stringsAsFactors = FALSE)
@@ -3169,6 +3304,7 @@ register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL,
                             "pos_y","position_y","y_px","cy","center_y"))
   }
   if (is.null(xc) || is.null(yc)) fail("trex: could not find x/y position columns")
+  .dialect_check_decimal(inp, c(xc, yc, time))
   .dialect_output(data.frame(
     id   = idv,
     time = .dialect_time(inp, time, unit, fps),
@@ -3182,17 +3318,19 @@ register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL,
 # Nothing is typed, so a dialect coerces each column itself and a label column
 # keeps its text ("1.1" and "1.10" stay apart). The text is decoded as
 # .read_text_lines() decodes it, and the separator (unless `delim` gives it) and
-# the decimal mark (attr "decimal") are sniffed as .read_any() sniffs them. Blank lines after the
+# the decimal mark (attr "decimal") are sniffed as .read_any() sniffs them
+# (`decimal`, when given, only turns the evidence off; .dialect_input() sets the mark). Blank lines after the
 # last row are not rows. Every row must have the header's fields:
 # read.table() would pad a short row and wrap a long one.
-.read_text_table <- function(path, dialect, delim = NULL) {
+.read_text_table <- function(path, dialect, delim = NULL, decimal = NULL) {
   src <- basename(path)
   fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error", source = src)
   lines <- .read_text_lines(path)
   while (length(lines) && !nzchar(trimws(lines[length(lines)]))) lines <- lines[-length(lines)]
   if (length(lines) < 2L) fail("%s: '%s' has no data rows.", dialect, src)
   g <- .guess_delim(path, lines)
-  if (!is.null(delim)) g$delim <- delim
+  # the sniff's cells are fields of its own delimiter
+  if (!is.null(delim) && !identical(delim, g$delim)) { g$delim <- delim; g$cells <- NULL }
   con <- textConnection(lines)
   nf <- tryCatch(utils::count.fields(con, sep = g$delim, quote = "\"", comment.char = "",
                                      blank.lines.skip = FALSE),
@@ -3205,6 +3343,9 @@ register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL,
                          colClasses = "character", check.names = FALSE, comment.char = "",
                          na.strings = character(0), strip.white = TRUE)
   attr(d, "decimal") <- g$decimal
+  # a given mark is not checked (.dialect_input() sets it on the table)
+  if (is.null(decimal) && !is.null(g$cells))
+    attr(d, "decimal_evidence") <- .sniffed_evidence(g$cells, names(d), src, dialect)
   d
 }
 
@@ -3229,7 +3370,7 @@ register_loader_dialect("anymaze", function(x, time_col = NULL, id_col = NULL, z
                 "and no row is skipped."))
   norm <- function(v) gsub("^_+|_+$", "", gsub("[^a-z0-9]+", "_", tolower(v)))
   inp <- .dialect_input(x, "anymaze", norm,
-                        read = function(p, delim = NULL) .read_text_table(p, "anymaze", delim),
+                        read = function(p, delim = NULL, decimal = NULL) .read_text_table(p, "anymaze", delim, decimal),
                         read_opts = read_opts, honours = c("decimal", "delim"))
   fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error",
                                      source = inp$source)
@@ -3254,6 +3395,7 @@ register_loader_dialect("anymaze", function(x, time_col = NULL, id_col = NULL, z
     fail("anymaze: these headers name the same column once case and punctuation are set aside: %s.",
          paste(names(inp$df)[same], collapse = ", "))
 
+  .dialect_check_decimal(inp, c(xc, yc, tc))
   pos <- .dialect_position(.dialect_points(inp, c(center = xc), c(center = yc)),
                            NULL, "na", "anymaze", inp$source)
   out <- data.frame(id = if (is.null(ic)) rep("1", n) else .dialect_col(inp, ic),
@@ -3311,6 +3453,7 @@ register_loader_dialect("sleap", function(x, bodypart = NULL, score_min = NULL,
   unit <- if (grepl("^(frame_idx|frames?)$", time_col)) "frames"
 
   sc <- stats::setNames(paste0(sel, "_score"), sel)
+  .dialect_check_decimal(inp, unname(c(paste0(sel, "_x"), paste0(sel, "_y"), sc[sc %in% nms], time_col)))
   pts <- .dialect_points(inp, stats::setNames(paste0(sel, "_x"), sel),
                          stats::setNames(paste0(sel, "_y"), sel), sc[sc %in% nms])
   pos <- .dialect_position(pts, score_min, partial, "sleap", inp$source)

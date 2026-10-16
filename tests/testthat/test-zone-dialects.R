@@ -76,7 +76,11 @@ test_that("a source_meta that is not a named list is a dialect error", {
 
 # ---- EthoVision reader ---------------------------------------------------------
 
-ev_read <- function(p) radiatR:::.read_ethovision(p)
+ev_read <- function(p) {
+  d <- radiatR:::.read_ethovision(p)
+  attr(d, "decimal_evidence") <- NULL
+  d
+}
 # The lines of an EthoVision fixture (latin-1 in the file) as UTF-8 text.
 ev_lines <- function(f = "ethovision_trial.txt")
   iconv(readLines(fx(f), warn = FALSE), "latin1", "UTF-8")
