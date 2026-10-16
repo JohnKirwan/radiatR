@@ -93,3 +93,41 @@ upload_preview <- function(path, name, dialect = "generic", delim_sel = NULL,
   for (w in warns) warning(w)
   utils::head(as.data.frame(tbl), n)
 }
+
+# The angle picker of a headings upload. A text column whose values are all
+# numbers in the decimal mark other than the one the file was read with
+# (attr(df, "decimal"); none recorded for Excel, so none flagged), and some
+# only in that mark, is offered and preselected so Continue stops with advice
+# rather than an id column being plotted as angles. Id-like label columns
+# ("1.1", "1.10") are not angles and are never flagged.
+.number_re <- c("." = "^[-+]?([0-9]+([.][0-9]*)?|[.][0-9]+)([eE][-+]?[0-9]+)?$",
+                "," = "^[-+]?([0-9]+(,[0-9]*)?|,[0-9]+)$")
+hd_angle_choices <- function(df) {
+  num <- names(df)[vapply(df, is.numeric, logical(1))]
+  mark <- attr(df, "decimal")
+  flagged <- character(0)
+  if (!is.null(mark)) {
+    other <- if (identical(mark, ",")) "." else ","
+    labels <- tolower(trimws(names(df))) %in% radiatR:::.id_candidates
+    flagged <- names(df)[!labels & vapply(df, function(v) {
+      if (!is.character(v)) return(FALSE)
+      s <- trimws(v)
+      s <- s[!is.na(s) & !toupper(s) %in% c("", "NA")]
+      length(s) > 0L && all(grepl(.number_re[[other]], s)) &&
+        any(!grepl(.number_re[[mark]], s))
+    }, logical(1))]
+  }
+  choices <- c(num, flagged)
+  list(choices = choices, selected = c(flagged, num)[1L], flagged = flagged)
+}
+
+# What to tell the user when the chosen angle column is one hd_angle_choices()
+# flagged; NULL otherwise.
+hd_mark_advice <- function(df, col) {
+  if (is.null(col) || !col %in% hd_angle_choices(df)$flagged) return(NULL)
+  if (identical(attr(df, "decimal"), ","))
+    sprintf(paste("Column '%s' was read as text: its values look like numbers with a",
+                  "decimal point. Set Decimal mark to Point (.)."), col)
+  else sprintf(paste("Column '%s' was read as text: its values look like numbers with a",
+                     "decimal comma. Set Decimal mark to Comma (,)."), col)
+}
