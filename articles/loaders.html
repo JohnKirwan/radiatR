@@ -249,7 +249,9 @@ dense posture polylines are not ingested.</li>
 <code>#pcentroid</code> centroid variants, and TRex’s <code>(cm)</code>
 / <code>(px)</code> unit annotations in headers. Per-individual
 <code>_fishN</code> files (id from filename) and aggregated files with
-an id column.</td>
+an id column. A file with a track column (<code>Track</code>,
+<code>TRACK_ID</code>) is refused unless <code>id_col</code> names the
+id.</td>
 <td>Native <code>.npz</code> export; posture export
 (<code>midline_points</code>, <code>outline_points</code>).</td>
 </tr>
@@ -269,8 +271,10 @@ in the metadata. Bodypart columns are preserved for
 <td><code>sleap</code></td>
 <td>Analysis CSV: <code>&lt;node&gt;.x</code> / <code>.y</code> /
 <code>.score</code>; a single node or a score-weighted centroid;
-<code>track</code> and <code>frame_idx</code>; <code>score_min</code>
-masks points and the count is kept in the metadata.</td>
+<code>track</code> and <code>frame_idx</code> (a table without
+<code>frame_idx</code> is refused unless <code>time_col</code> is
+given); <code>score_min</code> masks points and the count is kept in the
+metadata.</td>
 <td>Native <code>.slp</code> / HDF5 export.</td>
 </tr>
 <tr class="even">
