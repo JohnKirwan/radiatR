@@ -26,6 +26,14 @@
   frame, `read_opts` takes only `decimal`: `delim`, `sheet` and `ext` stop
   instead of being accepted without effect.
 
+* `headings_frame()` stops on an angle column held as text (character or
+  factor), with `radiatR_malformed_values` naming the values that are not
+  numbers, or `radiatR_invalid_argument` when all are. With
+  `units = "radians"` and the unit-circle convention a character column used
+  to load as a text heading column; otherwise these columns failed with bare
+  base-R errors ("non-numeric argument to binary operator", "'abs' not
+  meaningful for factors").
+
 * A bare date whose midnight does not exist in `tz` (a DST change at
   midnight, as in Cairo or Sao Paulo) is the first instant of that day
   (01:00 there) under every reader, and so is an Excel date cell at such a
@@ -460,12 +468,6 @@
 * `read_tracks(<data frame>, read_opts = list(decimal = ","))` reads a column
   of "1,5" text as 1.5; the option was ignored, and the error about such
   values now suggests it for a data frame too.
-
-* `headings_frame()` stops on an angle column held as text (character or
-  factor), with `radiatR_malformed_values` naming the values that are not
-  numbers, or `radiatR_invalid_argument` when all are. These columns failed
-  with bare base-R errors ("non-numeric argument to binary operator", "'abs'
-  not meaningful for factors").
 
 * App: a headings file read with the wrong decimal mark no longer has its id
   column plotted as the angles. The angle picker only listed numeric columns,

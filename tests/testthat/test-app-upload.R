@@ -376,6 +376,15 @@ test_that("hd_angle_choices() offers a text column of other-mark numbers, presel
   attr(df3, "decimal") <- "."
   expect_identical(hd_angle_choices(df3)[c("choices", "selected")],
                    list(choices = c("id", "angle"), selected = "id"))
+  # the column the user chose stays chosen once it reads as numbers
+  expect_identical(hd_angle_choices(df3, current = "angle")$selected, "angle")
+  expect_identical(hd_angle_choices(df3, current = "gone")$selected, "id")
+  # a numeric column with decimals confirms the mark the file was read with:
+  # a text column of "1.1" / "1.10" beside it is labels, not angles
+  df4 <- data.frame(grp = c("1.1", "1.10"), angle = c(123.5, 10.25))
+  attr(df4, "decimal") <- ","
+  expect_identical(hd_angle_choices(df4)[c("choices", "selected", "flagged")],
+                   list(choices = "angle", selected = "angle", flagged = character(0)))
 })
 
 test_that("a headings upload with the other decimal mark is stopped with advice", {
@@ -388,9 +397,14 @@ test_that("a headings upload with the other decimal mark is stopped with advice"
     session$setInputs(file = list(datapath = p, name = "h.csv"))
     session$setInputs(hd_col = "heading", hd_units = "degrees",
                       hd_convention = "unit_circle", go3 = 1)
-    expect_match(rv$error, "Set Decimal mark to Point (.)", fixed = TRUE)
+    expect_match(rv$error, "Set Decimal mark to Point (.) in step 1", fixed = TRUE)
     expect_null(rv$hd)
-    session$setInputs(decimal_sel = ".")
+    session$setInputs(go2 = 1)            # step 2: the flagged column is preselected
+    sel <- function() regmatches(output$wizard$html,
+                                 regexpr('<option value="[^"]*" selected', output$wizard$html))
+    expect_identical(sel(), '<option value="heading" selected')
+    session$setInputs(decimal_sel = ".")  # now numeric: the user's choice stays
+    expect_identical(sel(), '<option value="heading" selected')
     session$setInputs(go3 = 2)
     expect_null(rv$error)
     expect_equal(rv$hd$heading, c(123.456, 234.567, 10.125) * pi / 180)
