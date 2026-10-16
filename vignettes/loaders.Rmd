@@ -1,5 +1,9 @@
 ---
 title: "Working with Loaders"
+description: >
+  Turning tracking exports into Tracks: experiment manifests,
+  read_tracks() and read_tracks_dir(), and registering a custom loader
+  dialect or format.
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Working with Loaders}
