@@ -257,7 +257,13 @@ test_that("TRex refuses a track column it was not told to use", {
 test_that("a dialect refusal in a multi-file read names the file", {
   e <- cond(read_tracks(rep(fx("toxtrac_tracking.txt"), 2), dialect = "sleap"))
   expect_s3_class(e, "radiatR_dialect_error")
-  expect_match(conditionMessage(e), "toxtrac_tracking.txt", fixed = TRUE)
+  expect_match(conditionMessage(e), "frame_idx.*\\(file 'toxtrac_tracking.txt'\\)\\.$")
+  e <- cond(read_tracks(rep(fx("trex_beetle.csv"), 2), dialect = "trex",
+                        dialect_args = list(id_col = "trak")))
+  expect_match(conditionMessage(e), "names no column.*\\(file 'trex_beetle.csv'\\)\\.$")
+  e <- cond(read_tracks(fx("trex_beetle.csv"), dialect = "trex",
+                        dialect_args = list(id_col = c("a", "b"))))
+  expect_s3_class(e, "radiatR_dialect_error")
 })
 
 test_that("refusals of the generic-column dialects are typed", {
