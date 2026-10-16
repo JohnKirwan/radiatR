@@ -246,3 +246,108 @@ test_that("a headings upload on auto records the delimiter it was read with", {
     expect_identical(list(d$delim, d$decimal, d$latin1), list(";", ".", FALSE))
   })
 })
+
+test_that("format_read_opts keeps only the controls not on auto", {
+  expect_identical(format_read_opts(NULL, NULL), list())
+  expect_identical(format_read_opts("auto", "auto"), list())
+  expect_identical(format_read_opts(";", "auto"), list(delim = ";"))
+  expect_identical(format_read_opts("auto", ","), list(decimal = ","))
+  expect_identical(format_read_opts("\t", "."), list(delim = "\t", decimal = "."))
+})
+
+test_that("upload_read and upload_read_format honour the decimal mark control", {
+  tmp <- tempfile(fileext = ".tsv")
+  writeLines(c("x\ty", "1,5\t2,5", "1,6\t2,6"), tmp)
+  expect_type(upload_read(tmp, "a.tsv")$x, "character")      # sniffed: point
+  expect_equal(upload_read(tmp, "a.tsv", decimal_sel = ",")$x, c(1.5, 1.6))
+  expect_identical(upload_read_format(tmp, "a.tsv")$decimal, ".")
+  expect_identical(upload_read_format(tmp, "a.tsv", decimal_sel = ",")$decimal, ",")
+  expect_identical(upload_read_format(tmp, "a.tsv", "auto", "auto")$delim, "\t")
+})
+
+test_that("upload_read_opts drops controls hidden for the file type", {
+  # Shiny keeps a removed control's last value: a CSV after an Excel upload
+  # still has sheet_sel, an Excel file after a CSV still has delim/decimal.
+  expect_identical(upload_read_opts("a.csv", "auto", "auto", "Sheet2"), list())
+  expect_identical(upload_read_opts("a.csv", ";", ",", "Sheet2"),
+                   list(delim = ";", decimal = ","))
+  expect_identical(upload_read_opts("a.xlsx", ";", ",", "Sheet2"), list(sheet = "Sheet2"))
+  expect_identical(upload_read_opts("a.xlsx", ";", ",", ""), list())
+  expect_identical(upload_read_opts("a.xlsx", NULL, NULL, NULL), list())
+})
+
+test_that("a decimal-comma tab file is refused on auto and loads on Comma", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  tsv <- tempfile(fileext = ".tsv")
+  writeLines(c("id\tframe\tx\ty", paste0("a\t", 1:3, "\t0,", 1:3, "\t0,", 4:6)), tsv)
+  shiny::testServer(app_dir(), {
+    session$setInputs(file = list(datapath = tsv, name = "t.tsv"))
+    session$setInputs(dialect_sel = "generic", delim_sel = "auto", decimal_sel = "auto")
+    session$setInputs(map_x = "x", map_y = "y", map_time = "frame", map_id = "id",
+                      normalize_sel = "FALSE")   # raw coordinates, to compare values
+    session$setInputs(go2 = 1)
+    expect_null(rv$ts)
+    expect_true(is.character(rv$error) && nzchar(rv$error))
+    session$setInputs(decimal_sel = ",")
+    session$setInputs(go2 = 2)
+    expect_false(is.null(rv$ts))
+    expect_equal(as.data.frame(rv$ts)[[rv$ts@cols$x]], c(0.1, 0.2, 0.3))
+    # the downloaded scripts re-read the file with the same mark
+    expect_identical(current_spec()$data$decimal, ",")
+    expect_identical(kinematics_spec()$data$decimal, ",")
+  })
+})
+
+test_that("an Excel upload with a text-export dialect says to upload the text export", {
+  skip_if_not_installed("shiny")
+  skip_if_not_installed("readxl")
+  skip_if_not_installed("writexl")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  xl <- tempfile(fileext = ".xlsx")
+  writexl::write_xlsx(list(Sheet1 = data.frame(a = 1:2)), xl)
+  shiny::testServer(app_dir(), {
+    session$setInputs(input_type = "trajectories")
+    session$setInputs(file = list(datapath = xl, name = "book.xlsx"))
+    session$setInputs(dialect_sel = "ethovision", delim_sel = "auto", decimal_sel = "auto",
+                      sheet_sel = "Sheet1")
+    session$setInputs(go2 = 1)
+    expect_null(rv$ts)
+    expect_match(rv$error, "read from its text export, not from an Excel workbook", fixed = TRUE)
+    expect_false(grepl("read_opts", rv$error, fixed = TRUE))
+  })
+})
+
+test_that("a headings file re-reads when the decimal mark changes", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  tsv <- tempfile(fileext = ".tsv")
+  writeLines(c("bearing\tcond", "10,5\ta", "20,5\tb"), tsv)
+  shiny::testServer(app_dir(), {
+    session$setInputs(input_type = "headings")
+    session$setInputs(file = list(datapath = tsv, name = "h.tsv"))
+    session$setInputs(delim_sel = "auto", decimal_sel = "auto")
+    expect_type(rv$raw_hd$bearing, "character")
+    session$setInputs(decimal_sel = ",")
+    expect_equal(rv$raw_hd$bearing, c(10.5, 20.5))
+  })
+})
+
+test_that("a DeepLabCut upload on auto controls sends no read_opts", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  # testServer runs in the app dir: the path must be absolute
+  dlc <- normalizePath(testthat::test_path("fixtures", "real", "dlc_single_wasp_predictions.csv"))
+  shiny::testServer(app_dir(), {
+    session$setInputs(input_type = "trajectories")
+    session$setInputs(file = list(datapath = dlc, name = "wasp.csv"))
+    session$setInputs(dialect_sel = "auto", delim_sel = "auto", decimal_sel = "auto",
+                      sheet_sel = "Sheet1")   # stale value from an earlier Excel upload
+    session$setInputs(go2 = 1)
+    # stopped only for its 9 masked positions (as in test-app-drop-control.R),
+    # not for read_opts
+    expect_identical(rv$drop_offer[c("kind", "n")], list(kind = "positions", n = 9L))
+    session$setInputs(drop_btn = 1)
+    expect_equal(nrow(as.data.frame(rv$ts)), 43L)
+  })
+})

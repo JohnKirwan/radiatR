@@ -532,11 +532,13 @@ spec_to_plot <- function(spec, ts, hd) {
       cal <- if (!is.null(spec$data$origin) && !is.null(spec$data$radius))
         paste0(", origin = c(", spec$data$origin[1], ", ", spec$data$origin[2],
                "), radius = ", spec$data$radius) else ""
-      # read_opts carries a non-default delimiter/Excel sheet so the emitted
+      # read_opts carries a non-default delimiter/decimal mark/Excel sheet so the emitted
       # read_tracks() call reproduces the app's upload ingest.
       ropts <- character(0)
       if (!is.null(spec$data$delim) && !identical(spec$data$delim, "auto"))
         ropts <- c(ropts, paste0("delim = ", q(spec$data$delim)))
+      if (!is.null(spec$data$decimal) && !identical(spec$data$decimal, "auto"))
+        ropts <- c(ropts, paste0("decimal = ", q(spec$data$decimal)))
       if (!is.null(spec$data$sheet) && nzchar(spec$data$sheet %||% ""))
         ropts <- c(ropts, paste0("sheet = ", q(spec$data$sheet)))
       ro <- if (length(ropts))

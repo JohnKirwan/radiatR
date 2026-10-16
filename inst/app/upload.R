@@ -4,9 +4,12 @@
 
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
-# Map the app's delimiter dropdown to a read_opts override. "auto" -> sniff.
-delim_read_opts <- function(sel) {
-  if (is.null(sel) || identical(sel, "auto")) list(delim = NULL) else list(delim = sel)
+# The format controls as read_opts: an entry for each control not on "auto".
+format_read_opts <- function(delim_sel = NULL, decimal_sel = NULL) {
+  set <- function(v) !is.null(v) && !identical(v, "auto")
+  out <- c(if (set(delim_sel)) list(delim = delim_sel),
+           if (set(decimal_sel)) list(decimal = decimal_sel))
+  if (is.null(out)) list() else out
 }
 
 # Upload extensions to advertise, by input mode and installed optional deps.
@@ -21,33 +24,45 @@ accepted_exts <- function(mode = "trajectories") {
 
 # Single validated reader shared by preview, headings ingest, and the generic
 # column-mapping preview. Dispatch keys on the ORIGINAL filename's extension
-# (`name`) while bytes are read from Shiny's temp `path` (datapath). Delimiter
-# and Excel sheet come from the wizard controls (NULL/"auto" -> sniff/first).
+# (`name`) while bytes are read from Shiny's temp `path` (datapath). Delimiter,
+# decimal mark and Excel sheet come from the wizard controls (NULL/"auto" -> sniff/first).
 # `unique_names`: a column name used twice stops the read, as it does for
 # read_tracks(); previews leave it to the dialect (TRex writes `frame` twice).
 # `id`: label columns (a mapped id, a headings group), which keep their text
 # where reading them as numbers would merge labels ("1.1" and "1.10").
 upload_read <- function(path, name, delim_sel = NULL, sheet_sel = NULL,
-                        unique_names = FALSE, id = NULL) {
+                        unique_names = FALSE, id = NULL, decimal_sel = NULL) {
   ext <- tolower(tools::file_ext(name %||% path))
+  ro <- format_read_opts(delim_sel, decimal_sel)
   radiatR:::.read_any(
     path,
-    ext   = if (nzchar(ext)) ext else NULL,
-    delim = delim_read_opts(delim_sel)$delim,
-    sheet = if (!is.null(sheet_sel) && nzchar(sheet_sel)) sheet_sel else NULL,
+    ext     = if (nzchar(ext)) ext else NULL,
+    delim   = ro$delim,
+    decimal = ro$decimal,
+    sheet   = if (!is.null(sheet_sel) && nzchar(sheet_sel)) sheet_sel else NULL,
     unique_names = unique_names,
     id = id
   )
 }
 
-# What .read_any() reads a delimited upload with: the delimiter (the control's,
-# else sniffed), the sniffed decimal mark and whether the file is latin-1.
+# What .read_any() reads a delimited upload with: the delimiter and decimal
+# mark (each the control's, else sniffed) and whether the file is latin-1.
 # NULL for an Excel file. Kept for the downloaded script's read call.
-upload_read_format <- function(path, name, delim_sel = NULL) {
+upload_read_format <- function(path, name, delim_sel = NULL, decimal_sel = NULL) {
   if (tolower(tools::file_ext(name %||% path)) %in% c("xlsx", "xls")) return(NULL)
   g <- radiatR:::.guess_delim(path)
-  list(delim = delim_read_opts(delim_sel)$delim %||% g$delim, decimal = g$decimal,
+  ro <- format_read_opts(delim_sel, decimal_sel)
+  list(delim = ro$delim %||% g$delim, decimal = ro$decimal %||% g$decimal,
        latin1 = radiatR:::.is_latin1(path))
+}
+
+# read_opts for a trajectory load (and its script) from the format controls
+# that apply to this file: Shiny keeps a removed control's last value, so a
+# sheet is sent only for Excel and a delimiter / decimal mark only for text.
+upload_read_opts <- function(name, delim_sel = NULL, decimal_sel = NULL, sheet_sel = NULL) {
+  if (tolower(tools::file_ext(name %||% "")) %in% c("xlsx", "xls"))
+    return(if (!is.null(sheet_sel) && nzchar(sheet_sel)) list(sheet = sheet_sel) else list())
+  format_read_opts(delim_sel, decimal_sel)
 }
 
 # Preview of an upload. A file a tracker's dialect reads is shown as its first

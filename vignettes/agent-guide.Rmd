@@ -122,8 +122,9 @@ radiatR stops rather than guessing. Read the error; do not work around it.
 | Condition class | Meaning |
 |---|---|
 | `radiatR_invalid_rows` | x/y missing or non-finite; the error lists rows and ids |
-| `radiatR_malformed_values` | a column holds values that are not numeric; lists rows and values |
+| `radiatR_malformed_values` | a column holds values that are not numeric; lists rows and values, and `suggested_decimal` when they look written with the other decimal mark |
 | `radiatR_invalid_tracks` | the data break a `Tracks` invariant (see `?tracks`) |
+| `radiatR_invalid_argument` | an argument cannot be used as given (for `read_opts`: an unknown entry, a bad decimal mark, or an option the dialect cannot use; `option` names it) |
 | `radiatR_nonestimable` | a statistic cannot be estimated for a group |
 | `radiatR_dropped_rows` | warning raised when `on_invalid = "drop"` removed rows |
 | `radiatR_attrition` | message from the `deeplabcut`, `sleap`, `ethovision` and `anymaze` dialects: the points masked at load and the rows left without a position (kept in `@meta$attrition`; not the heading attrition of the next section) |
