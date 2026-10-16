@@ -120,6 +120,37 @@ radiatR_abort_ambiguous_ids <- function(column, ids) {
     call = NULL)
 }
 
+# A decimal point sniffed from a file that no column read for a role backs:
+# `columns` hold only dotted numbers that could as well be digit grouping
+# ("1.234": 1.234, or 1234), with `values` among them, and the clear decimal
+# points are in `evidence`, columns read for no role (empty when none shows
+# one, e.g. a point seen only in the header).
+radiatR_abort_ambiguous_decimal <- function(source, columns, values, evidence,
+                                            dialect = NULL) {
+  q <- function(v) paste0("'", v, "'", collapse = ", ")
+  fields <- list(class = "radiatR_ambiguous_decimal", source = source,
+                 columns = as.character(columns), values = as.character(values),
+                 evidence = as.character(evidence), decimal = ".", dialect = dialect,
+                 call = NULL)
+  if (!length(columns))   # no whole data record in the lines sniffed
+    return(do.call(rlang::abort, c(list(sprintf(paste0(
+      "%s: the first lines of '%s' hold no whole row to check its decimal point by ",
+      "(a quoted field runs on). Give the mark: read_opts = list(decimal = \".\") or ",
+      "list(decimal = \",\")."), dialect %||% "read_tracks", source)), fields)))
+  rlang::abort(sprintf(paste0(
+    "%s: column(s) %s in '%s' hold values like '%s', which read as %s with a decimal ",
+    "point or as %s with digit grouping, and %s. If the decimal mark is a point, pass ",
+    "read_opts = list(decimal = \".\"). Digit grouping is not supported: if the decimal ",
+    "mark is a comma, remove the grouping first."),
+    dialect %||% "read_tracks", q(columns), source, values[1L], values[1L],
+    gsub(".", "", values[1L], fixed = TRUE),
+    if (length(evidence)) sprintf("the only clear decimal point is in %s", q(evidence))
+    else "no column shows a clear decimal point"),
+    class = fields$class, source = source, columns = fields$columns,
+    values = fields$values, evidence = fields$evidence, decimal = ".",
+    dialect = dialect, call = NULL)
+}
+
 # get_all_object_pos(): no file of the manifest holds a valid trial (each
 # track starts too far from the centre), so there is no Tracks to return.
 radiatR_abort_no_valid_trials <- function(n_files) {
