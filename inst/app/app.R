@@ -467,6 +467,16 @@ plain_error <- function(e) {
       "Column '%s' has values that are not %s, such as '%s'. See Technical details for the rows.",
       e$columns, e$expected, e$values[1]
     ), decimal_advice(e)))
+  if (inherits(e, "radiatR_ambiguous_decimal")) {
+    if (length(e$columns) == 0L)
+      return(paste("The decimal mark can't be told from the file's first lines.",
+                   "Set Decimal mark to Point (.) or Comma (,)."))
+    return(sprintf(paste(
+      "Can't tell the decimal mark of column '%s' (values like '%s': a decimal",
+      "point, or digit grouping?). If the file's decimal mark is a point, set",
+      "Decimal mark to Point (.). Digit grouping is not supported."),
+      e$columns[1L], e$values[1L]))
+  }
   if (inherits(e, "radiatR_unlinked_rows"))
     return(sprintf(paste(
       "This TrackMate file contains %d spot(s) that belong to no track.",
@@ -938,11 +948,16 @@ server <- function(input, output, session) {
       labs <- c(grp, grp2)
       src <- NULL
       hd <- tryCatch({
+        # a sniffed decimal point must be shown by the angle column itself
+        radiatR:::.check_decimal_evidence(attr(rv$raw_hd, "decimal_evidence"),
+                                          input$hd_col, rv$file_name)
         src <- if (length(labs))
           as.data.frame(upload_read(rv$path, rv$file_name, input$delim_sel,
                                     input$sheet_sel, unique_names = TRUE, id = labs,
                                     decimal_sel = input$decimal_sel))
         else rv$raw_hd
+        # the reader's bookkeeping must not reach the headings frame
+        attr(src, "decimal_evidence") <- attr(src, "decimal") <- NULL
         build_headings_input(src, col = input$hd_col,
                              units = input$hd_units,
                              convention = input$hd_convention, group = grp)
