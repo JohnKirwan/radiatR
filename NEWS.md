@@ -391,6 +391,20 @@
   `read.table()`; readr gave epoch seconds (or, for frames, a
   `radiatR_time_type_mismatch` error).
 
+* A file given to the wrong built-in dialect now stops instead of loading
+  wrong positions or ids. The `sleap` dialect needs a `frame_idx` column
+  unless `time_col` names the time: it read any `<name>_x` / `<name>_y` pair
+  as a node, so a ToxTrac file loaded its bounding box and a TRex file its
+  midline. The `trex` dialect refuses a track column (`Track`, `TrackID`,
+  `TRACK_ID`, `trajectory_id`) unless `id_col` names the id: it ignored one,
+  so a ToxTrac file's tracks became one id and a TrackMate file's spots one
+  track each. `id_col` and `time_col` of `trex` and `trackmate` are now
+  matched as the headers are (`"Track"` failed with an untyped error) and a
+  name that matches no column stops with `radiatR_dialect_error`, as do the
+  other refusals of `trex`, `trackmate`, `toxtrac` and `idtrackerai_wide`,
+  which were plain errors. A refusal from one of these dialects or `sleap`
+  names its file.
+
 ## Changes
 
 * The app has a "Decimal mark" control (Auto-detect / Point / Comma) beside
