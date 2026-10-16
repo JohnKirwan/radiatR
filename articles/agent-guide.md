@@ -144,6 +144,7 @@ it.
 |----|----|
 | `radiatR_invalid_rows` | x/y missing or non-finite; the error lists rows and ids |
 | `radiatR_malformed_values` | a column holds values that are not numeric; lists rows and values, and `suggested_decimal` when they look written with the other decimal mark |
+| `radiatR_ambiguous_decimal` | a `;` file’s sniffed decimal point is shown only outside the role columns, which hold values like `1.234` (1.234 or 1234?); pass `read_opts = list(decimal = )` (also raised when no data row of the first 20 lines is whole) |
 | `radiatR_invalid_tracks` | the data break a `Tracks` invariant (see [`?tracks`](https://johnkirwan.github.io/radiatR/reference/Tracks-class.md)) |
 | `radiatR_invalid_argument` | an argument cannot be used as given (for `read_opts`: an unknown entry, a bad decimal mark, or an option the dialect cannot use; `option` names it) |
 | `radiatR_nonestimable` | a statistic cannot be estimated for a group |

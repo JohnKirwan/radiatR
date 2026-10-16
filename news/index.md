@@ -4,6 +4,20 @@
 
 ### Breaking changes
 
+- A semicolon-separated file whose decimal point was sniffed from a
+  column
+  [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  does not read for a role (a label `1.5`), while its x, y, time, angle
+  or weight columns hold only values that could be digit grouping
+  (`1.234`), now stops with `radiatR_ambiguous_decimal` instead of
+  loading values that may be wrong by a factor of 1000.
+  `read_opts = list(decimal = ".")` loads it as before. Files whose role
+  columns show a decimal point (a time column `0.040`) are unaffected.
+  The same applies to EthoVision exports that are not comma-separated,
+  and to the other dialects that sniff the mark. A `;` file whose
+  decimal sniff finds a point, and whose first data row’s quoted field
+  runs past the first 20 lines, now needs the mark given in `read_opts`.
+
 - `read_tracks(read_opts = )` now reaches the built-in dialects, which
   used to ignore it: every dialect takes `decimal`; the
   `.read_any()`-based ones (`trackmate`, `trex`, `sleap`,
