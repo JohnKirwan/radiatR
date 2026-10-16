@@ -202,6 +202,59 @@ test_that("a read_opts entry that does not fit the file type is refused", {
   expect_match(conditionMessage(e), "is a delimited text file", fixed = TRUE)
 })
 
+test_that("an Arrow file refuses a sheet (the refusal comes before any read)", {
+  pq <- withr::local_tempfile(fileext = ".parquet")
+  writeLines("not read", pq)
+  e <- cond(read_tracks(pq, dialect = "trackmate", read_opts = list(sheet = "Two")))
+  expect_s3_class(e, "radiatR_invalid_argument")
+  expect_identical(e$option, "sheet")
+  expect_identical(e$refused_by, "trackmate")
+  expect_match(conditionMessage(e), "is an Arrow file", fixed = TRUE)
+})
+
+test_that("the generic file path refuses an entry that does not fit the file type", {
+  p <- tm_file(c("id,frame,x,y", paste0("a,", 0:2, ",1.5,2.5")))
+  pq <- withr::local_tempfile(fileext = ".parquet")
+  writeLines("not read", pq)
+  for (case in list(list(p, "sheet"), list(c(p, p), "sheet"), list(pq, "sheet"),
+                    list(pq, "delim"), list(pq, "decimal"))) {
+    opts <- stats::setNames(list(if (case[[2]] == "decimal") "," else "x"), case[[2]])
+    e <- cond(read_tracks(case[[1]], read_opts = opts))
+    expect_s3_class(e, "radiatR_invalid_argument")
+    expect_identical(e$option, case[[2]])
+    expect_null(e$refused_by)
+  }
+  # what the app sends for a text file still reads
+  ts <- read_tracks(p, read_opts = list(ext = "csv", delim = ",", decimal = "."))
+  expect_equal(col_of(ts, "x"), rep(1.5, 3))
+  skip_if_not_installed("writexl")
+  skip_if_not_installed("readxl")
+  x <- withr::local_tempfile(fileext = ".xlsx")
+  writexl::write_xlsx(data.frame(id = "a", frame = 0:2, x = 1.5, y = 2.5), x)
+  e <- cond(read_tracks(x, read_opts = list(delim = ";")))
+  expect_identical(e$option, "delim")
+  expect_null(e$refused_by)
+  expect_match(conditionMessage(e), "is an Excel workbook", fixed = TRUE)
+  ts <- read_tracks(x, read_opts = list(ext = "xlsx", sheet = 1))
+  expect_equal(col_of(ts, "x"), rep(1.5, 3))
+})
+
+test_that("a data frame on the generic path takes a decimal mark and no file option", {
+  d <- data.frame(id = "a", frame = 0:2, x = c("1,5", "1,6", "1,7"), y = 2.5)
+  ts <- read_tracks(d, read_opts = list(decimal = ","))
+  expect_equal(col_of(ts, "x"), c(1.5, 1.6, 1.7))
+  e <- cond(read_tracks(d))
+  expect_s3_class(e, "radiatR_malformed_values")
+  expect_match(conditionMessage(e), "read_opts = list(decimal = \",\")", fixed = TRUE)
+  for (o in c("delim", "sheet", "ext")) {
+    e <- cond(read_tracks(d, read_opts = stats::setNames(list("x"), o)))
+    expect_s3_class(e, "radiatR_invalid_argument")
+    expect_identical(e$option, o)
+    expect_null(e$refused_by)
+    expect_match(conditionMessage(e), "the input is a data frame, not a file", fixed = TRUE)
+  }
+})
+
 test_that("a duration with the other decimal mark gets the suggestion", {
   d <- tm_file(c("Time\tCentre position X\tCentre position Y",
                  "0:00:00,320\t410\t352", "0:00:01,000\t411\t353"))
