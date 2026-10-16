@@ -35,6 +35,24 @@ test_that("headings_frame errors informatively when units missing", {
                "'units' must be specified")
 })
 
+test_that("headings_frame stops on a text angle column rather than coerce it", {
+  df <- data.frame(heading = c("123,5", NA, "10.25", "N"))
+  e <- expect_error(headings_frame(df, col = "heading", units = "degrees"),
+                    class = "radiatR_malformed_values")
+  expect_identical(e$rows, c(1L, 4L))
+  expect_identical(e$values, c("123,5", "N"))
+  expect_no_match(conditionMessage(e), "read_opts")
+  e <- expect_error(headings_frame(data.frame(heading = factor("x")), col = "heading",
+                                   units = "degrees"),
+                    class = "radiatR_malformed_values")
+  expect_identical(e$values, "x")
+  # every value a number, but held as text: still not coerced
+  e <- expect_error(headings_frame(data.frame(heading = c("1.5", "2")), col = "heading",
+                                   units = "degrees"),
+                    class = "radiatR_invalid_argument")
+  expect_match(conditionMessage(e), "'heading' holds text", fixed = TRUE)
+})
+
 test_that("headings_frame preserves all original columns", {
   df <- data.frame(id = "A", trial = 1L, heading = pi/4)
   hf <- headings_frame(df, col = "heading", units = "radians")

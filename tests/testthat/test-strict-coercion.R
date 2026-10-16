@@ -62,14 +62,14 @@ test_that("long lists of rows and values are truncated with a marker", {
   expect_match(conditionMessage(e), "'v10', ...", fixed = TRUE)
 })
 
-test_that("a decimal comma from a file earns a hint; nothing else does", {
+test_that("a decimal comma earns a hint; nothing else does", {
   e <- malformed(radiatR:::.as_numeric_strict(c("1,5", "2,25"), "x", source = "a.tsv"))
   expect_match(conditionMessage(e), "read_opts = list(decimal = \",\")", fixed = TRUE)
   e <- malformed(radiatR:::.as_numeric_strict(c("oops"), "x", source = "a.tsv"))
   expect_no_match(conditionMessage(e), "decimal")
-  # read_opts does nothing for a data frame
+  # a data frame takes read_opts$decimal too
   e <- malformed(radiatR:::.as_numeric_strict(c("1,5", "2,25"), "x"))
-  expect_no_match(conditionMessage(e), "decimal")
+  expect_match(conditionMessage(e), "read_opts = list(decimal = \",\")", fixed = TRUE)
 })
 
 test_that("text read with a decimal comma parses, and only the bad cell is named", {

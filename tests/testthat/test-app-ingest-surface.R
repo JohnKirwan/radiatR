@@ -203,9 +203,9 @@ test_that("a value written with the other decimal mark names the control", {
 test_that("no decimal advice without a suggestion", {
   skip_if_not_installed("shiny")
   e <- app_env()
-  err <- tryCatch(read_tracks(data.frame(id = "a", time = 1:3, x = "1,5", y = 0)),
+  err <- tryCatch(read_tracks(data.frame(id = "a", time = 1:3, x = "oops", y = 0)),
                   error = function(cnd) cnd)
-  expect_null(err$suggested_decimal)      # a data frame has no file to re-read
+  expect_null(err$suggested_decimal)      # no number under either mark
   expect_false(grepl("Decimal mark", e$plain_error(err), fixed = TRUE))
 })
 

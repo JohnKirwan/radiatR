@@ -406,7 +406,7 @@ guess_columns <- function(data, mapping = list()) {
     radiatR_abort_malformed_values(
       column, which(bad), s[bad], source = source, dialect = dialect,
       # read_opts help only where they reach the reader (see .takes_read_opts())
-      decimal_hint = !is.null(source) && .takes_read_opts(dialect), decimal = decimal)
+      decimal_hint = .takes_read_opts(dialect), decimal = decimal)
   num
 }
 
@@ -602,7 +602,7 @@ guess_columns <- function(data, mapping = list()) {
               else if (as_num) "numeric" else "a date-time"
   radiatR_abort_malformed_values(column, which(bad), s[bad], expected = expected,
                                  source = source, dialect = dialect,
-                                 decimal_hint = !is.null(source) && .takes_read_opts(dialect),
+                                 decimal_hint = .takes_read_opts(dialect),
                                  decimal = decimal)
 }
 
@@ -659,7 +659,7 @@ guess_columns <- function(data, mapping = list()) {
   if (any(bad))
     radiatR_abort_malformed_values(
       column, which(bad), s[bad], source = source, dialect = dialect,
-      decimal_hint = !is.null(source) && .takes_read_opts(dialect), decimal = decimal,
+      decimal_hint = .takes_read_opts(dialect), decimal = decimal,
       expected = paste0("a duration H:MM:SS.fff (a column of seconds can be given as ",
                         "as.difftime(<seconds>, units = \"secs\"))"))
   out <- rep(NA_real_, length(s))
@@ -1553,7 +1553,11 @@ read_tracks_format <- function(x, format, ...)
 #'   `anymaze` take `delim` (for EthoVision it must be the export's own
 #'   separator). An entry a dialect cannot use stops with a
 #'   `radiatR_invalid_argument` error, as does any entry for a registered
-#'   dialect whose function has no `read_opts` argument.
+#'   dialect whose function has no `read_opts` argument. Without a dialect,
+#'   an entry that does not fit the file's type (`delim` or `decimal` for an
+#'   Excel or Arrow file, `sheet` for a text or Arrow file) stops the same
+#'   way. A data frame `x` takes only `decimal`, the mark of any numeric
+#'   column it holds as text.
 #' @section Masked points:
 #' The `deeplabcut`, `sleap`, `ethovision` and `anymaze` dialects take each
 #' position from one or more points (bodyparts, nodes, body points; ANY-maze's
@@ -1784,8 +1788,16 @@ read_tracks <- function(x,
   if (is.character(x) && any(!file.exists(x)))
     stop("read_tracks: file(s) not found: ",
          paste(x[!file.exists(x)], collapse = ", "), call. = FALSE)
+  if (is.character(x) && is.null(prep))
+    for (p in x) .refuse_misfit_read_opts(read_opts, p, "read_tracks")
   if (is.data.frame(x)) {
+    # a data frame was read already: only its decimal mark can be given
+    extra <- setdiff(names(read_opts), "decimal")
+    if (is.null(prep) && length(extra))
+      .refuse_read_opt("read_tracks", extra[1L], "the input is a data frame, not a file",
+                       refused_by = NULL)
     df <- if (is.null(prep)) x else .assert_dialect_table(prep(x), dialect)
+    dec <- read_opts$decimal %||% attr(df, "decimal") %||% "."
     src <- NULL
   } else if (is.character(x) && length(x) == 1L) {
     df <- if (!is.null(prep)) .assert_dialect_table(prep(x), dialect, basename(x))
@@ -2317,12 +2329,28 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
   opts
 }
 
-# A dialect's refusal of one read_opts entry: `option` names it, `refused_by`
-# the dialect (the app turns the pair into advice about its own controls).
-.refuse_read_opt <- function(dialect, option, why)
-  rlang::abort(sprintf("%s: read_opts$%s cannot be used: %s.", dialect, option, why),
+# A refusal of one read_opts entry: `option` names it, `refused_by` the
+# dialect that refused it, if any (the app turns the pair into advice about
+# its own controls). `who` names the caller in the message.
+.refuse_read_opt <- function(who, option, why, refused_by = who)
+  rlang::abort(sprintf("%s: read_opts$%s cannot be used: %s.", who, option, why),
                class = "radiatR_invalid_argument", arg = "read_opts", option = option,
-               refused_by = dialect)
+               refused_by = refused_by)
+
+# An entry that does not fit the kind of file at `path` (a sheet for text or
+# Arrow, a delimiter or decimal mark for Excel or Arrow) is refused, as
+# .read_any() would otherwise ignore it.
+.refuse_misfit_read_opts <- function(opts, path, who, refused_by = NULL) {
+  ext <- tolower(sub("^\\.", "", opts[["ext"]] %||% sub(".*\\.", "", path)))
+  kind <- if (ext %in% c("xlsx", "xls")) "an Excel workbook"
+          else if (ext %in% c("parquet", "feather")) "an Arrow file"
+          else "a delimited text file"
+  misfit <- switch(kind, "an Excel workbook" = c("delim", "decimal"),
+                   "a delimited text file" = "sheet", c("delim", "decimal", "sheet"))
+  for (o in intersect(names(opts), misfit))
+    .refuse_read_opt(who, o, sprintf("'%s' is %s", basename(path), kind), refused_by)
+  invisible(NULL)
+}
 
 # The read_opts a dialect was given, checked (.check_read_opts()); an entry
 # the dialect cannot honour (`honours`), or any but `decimal` for a data
@@ -2360,15 +2388,7 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
                  class = "radiatR_dialect_error")
   opts <- .dialect_read_opts(read_opts, dialect, honours, file)
   if (file) {
-    # an option that does not fit the kind of file is refused, as .read_any()
-    # would otherwise ignore it
-    ext <- tolower(sub("^\\.", "", opts[["ext"]] %||% sub(".*\\.", "", x)))
-    kind <- if (ext %in% c("xlsx", "xls")) "an Excel workbook"
-            else if (ext %in% c("parquet", "feather")) "an Arrow file"
-            else "a delimited text file"
-    for (o in intersect(names(opts), if (kind == "a delimited text file") "sheet"
-                                     else c("delim", "decimal")))
-      .refuse_read_opt(dialect, o, sprintf("'%s' is %s", basename(x), kind))
+    .refuse_misfit_read_opts(opts, x, dialect, refused_by = dialect)
     df <- do.call(read, c(list(x), opts[intersect(names(opts), names(formals(read)))]))
     src <- basename(x)
   } else {
