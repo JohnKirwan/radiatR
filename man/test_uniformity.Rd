@@ -89,5 +89,4 @@ Landler, L., Ruxton, G.D. & Malkemper, E.P. (2019). The
 Pycke, S.-R. (2010). Some tests for uniformity of circular
   distributions powered by the multivariate Rayleigh test. Annals of the
   Institute of Statistical Mathematics, 62(2), 323-340.
-  \doi{10.1007/s10463-008-0179-9}.
 }

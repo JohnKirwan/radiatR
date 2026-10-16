@@ -1047,7 +1047,6 @@ circ_cor <- function(hd, x_col, angle_col = "heading",
 #' @references Pycke, S.-R. (2010). Some tests for uniformity of circular
 #'   distributions powered by the multivariate Rayleigh test. Annals of the
 #'   Institute of Statistical Mathematics, 62(2), 323-340.
-#'   \doi{10.1007/s10463-008-0179-9}.
 #' @examples
 #' hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
 #' test_uniformity(hd, group_col = "arc", p_adjust = "BH")
