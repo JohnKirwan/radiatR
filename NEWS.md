@@ -10,8 +10,9 @@
   loads it as before. Files whose role columns show a decimal point (a time
   column `0.040`) are unaffected. The same applies to EthoVision exports that
   are not comma-separated, and to the other dialects that sniff the mark.
-  A `;` file whose first data row's quoted field runs past the first 20 lines
-  now needs the mark given in `read_opts`.
+  A `;` file whose decimal sniff finds a point, and whose first data row's
+  quoted field runs past the first 20 lines, now needs the mark given in
+  `read_opts`.
 * `read_tracks(read_opts = )` now reaches the built-in dialects, which used to
   ignore it: every dialect takes `decimal`; the `.read_any()`-based ones
   (`trackmate`, `trex`, `sleap`, `idtrackerai_wide`) also `delim` and `ext`
