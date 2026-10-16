@@ -244,9 +244,12 @@ time, angle, weight): where such a column holds only values that could be
 digit grouping (`523.117`, `1.234`) and the clear decimal points are all in
 other columns (a label `1.5`), the load stops with a
 `radiatR_ambiguous_decimal` error (fields `columns`, `values`, `evidence`,
-`source`, `dialect`) rather than read `1.234` for what may be 1234. Give the
-mark with `read_opts`. The same holds for an EthoVision export that is not
-comma-separated. Other tab- and comma-separated files are read with a point.
+`decimal`, `source`, `dialect`) rather than read `1.234` for what may be 1234.
+So does a file where no data row of the first 20 lines is whole (a quoted
+field runs past them), as the point cannot then be checked. Give the
+mark with `read_opts`. The same holds for the built-in dialects that sniff the
+mark (ANY-maze, the others read as tables, and EthoVision when not
+comma-separated). Other tab- and comma-separated files are read with a point.
 
 Every built-in dialect checks
 its source columns the same way, before any reshaping, so the error names
