@@ -193,6 +193,20 @@
 
         <dt>
 
+          <code><a href="ids.html">ids()</a></code>
+
+        </dt>
+        <dd>Trajectory identifiers of a Tracks</dd>
+
+        <dt>
+
+          <code><a href="as.data.frame.Tracks.html">as.data.frame(<i>&lt;Tracks&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Coerce a Tracks to a data frame</dd>
+
+        <dt>
+
           <code><a href="transform_history.html">transform_history()</a></code> <code><a href="transform_history.html">log_transform()</a></code> <code><a href="transform_history.html">set_transform_history()</a></code>
 
         </dt>
@@ -429,17 +443,45 @@
 
         <dt>
 
-          <code><a href="boot_mean_ci.html">boot_mean_ci()</a></code>
-
-        </dt>
-        <dd>Bootstrap confidence interval for a mean direction</dd>
-
-        <dt>
-
           <code><a href="test_concentration.html">test_concentration()</a></code>
 
         </dt>
         <dd>Test whether groups share the same concentration (dispersion)</dd>
+
+        <dt>
+
+          <code><a href="test_distributions.html">test_distributions()</a></code>
+
+        </dt>
+        <dd>Test whether groups share the same circular distribution</dd>
+
+        <dt>
+
+          <code><a href="test_gof.html">test_gof()</a></code>
+
+        </dt>
+        <dd>Goodness-of-fit test against a wrapped Cauchy distribution</dd>
+
+        <dt>
+
+          <code><a href="test_symmetry.html">test_symmetry()</a></code>
+
+        </dt>
+        <dd>Test a circular distribution for reflective symmetry</dd>
+
+        <dt>
+
+          <code><a href="test_unimodality.html">test_unimodality()</a></code>
+
+        </dt>
+        <dd>Test a circular sample for unimodality against bimodality</dd>
+
+        <dt>
+
+          <code><a href="boot_mean_ci.html">boot_mean_ci()</a></code>
+
+        </dt>
+        <dd>Bootstrap confidence interval for a mean direction</dd>
 
         <dt>
 
@@ -568,6 +610,13 @@
 
         </dt>
         <dd>Mark the centre of a radial plot</dd>
+
+        <dt>
+
+          <code><a href="add_landmark.html">add_landmark()</a></code>
+
+        </dt>
+        <dd>Add a landmark marker to a circular plot</dd>
 
         <dt>
 
@@ -789,6 +838,13 @@
 
       <dl><dt>
 
+          <code><a href="add_stimulus_arc.html">add_stimulus_arc()</a></code>
+
+        </dt>
+        <dd>Add a stimulus arc to a circular plot</dd>
+
+        <dt>
+
           <code><a href="add_quadrant_lines.html">add_quadrant_lines()</a></code>
 
         </dt>
@@ -837,6 +893,13 @@
 
         </dt>
         <dd>Derive polar and reference-relative coordinates from unit-circle position</dd>
+
+        <dt>
+
+          <code><a href="circular_mapping.html">circular_mapping</a></code>
+
+        </dt>
+        <dd>Circular coordinate utilities</dd>
       </dl></div><div class="section level2">
       <h2 id="reference-frame-transforms">Reference frame &amp; transforms<a class="anchor" aria-label="anchor" href="#reference-frame-transforms"></a></h2>
 
@@ -918,6 +981,20 @@
 
         </dt>
         <dd>Tortuosity ratio for a single trajectory</dd>
+
+        <dt>
+
+          <code><a href="path_sinuosity.html">path_sinuosity()</a></code>
+
+        </dt>
+        <dd>Sinuosity index for a single trajectory</dd>
+
+        <dt>
+
+          <code><a href="sinuosity.html">sinuosity()</a></code>
+
+        </dt>
+        <dd>Per-trajectory sinuosity for a Tracks</dd>
 
         <dt>
 
@@ -1034,897 +1111,6 @@
 
         </dt>
         <dd>*Cylindroiulus punctatus* visual orientation trajectory dataset</dd>
-      </dl></div><div class="section level2">
-      <h2 id="miscellaneous">Miscellaneous<a class="anchor" aria-label="anchor" href="#miscellaneous"></a></h2>
-
-      <div class="section-desc"><p>Any remaining exported topics.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="Tracks-class.html">tracks()</a></code> <code><a href="Tracks-class.html">length(<i>&lt;Tracks&gt;</i>)</a></code> <code><a href="Tracks-class.html">`[`(<i>&lt;Tracks&gt;</i>,<i>&lt;ANY&gt;</i>,<i>&lt;missing&gt;</i>,<i>&lt;missing&gt;</i>)</a></code> <code><a href="Tracks-class.html">c(<i>&lt;Tracks&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Tracks container for circular trajectories</dd>
-
-        <dt>
-
-          <code><a href="add_angle_rose.html">add_angle_rose()</a></code>
-
-        </dt>
-        <dd>Add a rose diagram of heading angles to a radiate plot</dd>
-
-        <dt>
-
-          <code><a href="add_circ.html">add_circ()</a></code>
-
-        </dt>
-        <dd>Draw a circular guide.</dd>
-
-        <dt>
-
-          <code><a href="add_circ_interval.html">add_circ_interval()</a></code>
-
-        </dt>
-        <dd>Render a pre-computed circular interval arc on a radial plot</dd>
-
-        <dt>
-
-          <code><a href="add_circ_mean.html">add_circ_mean()</a></code>
-
-        </dt>
-        <dd>Render pre-computed circular mean arrows on a radial plot</dd>
-
-        <dt>
-
-          <code><a href="add_circular_boxplot.html">add_circular_boxplot()</a></code>
-
-        </dt>
-        <dd>Add a circular boxplot layer to a radial plot</dd>
-
-        <dt>
-
-          <code><a href="add_circular_density.html">add_circular_density()</a></code>
-
-        </dt>
-        <dd>Wrap a pre-computed circular density around the unit circle</dd>
-
-        <dt>
-
-          <code><a href="add_circular_kde.html">add_circular_kde()</a></code>
-
-        </dt>
-        <dd>Overlay a non-parametric circular kernel density estimate on a radiate plot</dd>
-
-        <dt>
-
-          <code><a href="add_critical_r.html">add_critical_r()</a></code>
-
-        </dt>
-        <dd>Add a critical resultant-length circle to a radiate plot</dd>
-
-        <dt>
-
-          <code><a href="add_critical_v_line.html">add_critical_v_line()</a></code>
-
-        </dt>
-        <dd>Add a V-test significance boundary to a radiate plot</dd>
-
-        <dt>
-
-          <code><a href="add_heading_arrow.html">add_heading_arrow()</a></code>
-
-        </dt>
-        <dd>Compute a circular mean arrow and add it to a radial plot in one step</dd>
-
-        <dt>
-
-          <code><a href="add_heading_density.html">add_heading_density()</a></code>
-
-        </dt>
-        <dd>Compute a circular density and add it to a radial plot in one step</dd>
-
-        <dt>
-
-          <code><a href="add_heading_interval.html">add_heading_interval()</a></code>
-
-        </dt>
-        <dd>Compute a circular interval arc and add it to a radial plot in one step</dd>
-
-        <dt>
-
-          <code><a href="add_heading_points.html">add_heading_points()</a></code>
-
-        </dt>
-        <dd>Add heading endpoint markers on the unit circle</dd>
-
-        <dt>
-
-          <code><a href="add_heading_vectors.html">add_heading_vectors()</a></code>
-
-        </dt>
-        <dd>Add heading vector segments from inner crossing to unit circle</dd>
-
-        <dt>
-
-          <code><a href="add_landmark.html">add_landmark()</a></code>
-
-        </dt>
-        <dd>Add a landmark marker to a circular plot</dd>
-
-        <dt>
-
-          <code><a href="add_multiple_circles.html">add_multiple_circles()</a></code>
-
-        </dt>
-        <dd>Add multiple concentric circles to a ggplot object</dd>
-
-        <dt>
-
-          <code><a href="add_origin_point.html">add_origin_point()</a></code>
-
-        </dt>
-        <dd>Mark the centre of a radial plot</dd>
-
-        <dt>
-
-          <code><a href="add_quadrant_lines.html">add_quadrant_lines()</a></code>
-
-        </dt>
-        <dd>Add quadrant lines to a radial plot</dd>
-
-        <dt>
-
-          <code><a href="add_radial_grid.html">add_radial_grid()</a></code>
-
-        </dt>
-        <dd>Radial grid layers (the radial analogue of a Cartesian grid)</dd>
-
-        <dt>
-
-          <code><a href="add_stacked_headings.html">add_stacked_headings()</a></code>
-
-        </dt>
-        <dd>Add stacked heading dots as a ggplot2 layer</dd>
-
-        <dt>
-
-          <code><a href="add_stimulus_arc.html">add_stimulus_arc()</a></code>
-
-        </dt>
-        <dd>Add a stimulus arc to a circular plot</dd>
-
-        <dt>
-
-          <code><a href="add_ticks.html">add_ticks()</a></code>
-
-        </dt>
-        <dd>Create evenly spaced radial tick marks.</dd>
-
-        <dt>
-
-          <code><a href="add_vonmises_density.html">add_vonmises_density()</a></code>
-
-        </dt>
-        <dd>Overlay a fitted von Mises density curve on a radiate plot</dd>
-
-        <dt>
-
-          <code><a href="add_wrappedcauchy_density.html">add_wrappedcauchy_density()</a></code>
-
-        </dt>
-        <dd>Overlay a fitted wrapped Cauchy density curve on a radiate plot</dd>
-
-        <dt>
-
-          <code><a href="angular_velocity.html">angular_velocity()</a></code>
-
-        </dt>
-        <dd>Per-observation angular (turning-rate) velocity for a Tracks</dd>
-
-        <dt>
-
-          <code><a href="apply_transform.html">apply_transform()</a></code>
-
-        </dt>
-        <dd>Apply a bespoke transformation to a Tracks</dd>
-
-        <dt>
-
-          <code><a href="as.data.frame.Tracks.html">as.data.frame(<i>&lt;Tracks&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Coerce a Tracks to a data frame</dd>
-
-        <dt>
-
-          <code><a href="as_angle.html">as_angle()</a></code>
-
-        </dt>
-        <dd>Map periodic time, date, or numeric data onto circular angles</dd>
-
-        <dt>
-
-          <code><a href="assign_colour_key.html">assign_colour_key()</a></code> <code><a href="assign_colour_key.html">assign_color_key()</a></code>
-
-        </dt>
-        <dd>Assign a shared colour-key column to a Tracks or data frame</dd>
-
-        <dt>
-
-          <code><a href="assign_cycle_colours.html">assign_cycle_colours()</a></code> <code><a href="assign_cycle_colours.html">assign_cycle_colors()</a></code>
-
-        </dt>
-        <dd>Assign cycling colour indices to trajectories</dd>
-
-        <dt>
-
-          <code><a href="bin_angles.html">bin_angles()</a></code>
-
-        </dt>
-        <dd>Snap angles to fixed-width circular bin centres</dd>
-
-        <dt>
-
-          <code><a href="boot_kappa_ci.html">boot_kappa_ci()</a></code>
-
-        </dt>
-        <dd>Bootstrap confidence intervals for circular concentration</dd>
-
-        <dt>
-
-          <code><a href="boot_kappa_contrast.html">boot_kappa_contrast()</a></code>
-
-        </dt>
-        <dd>Bootstrap confidence interval for a between-condition concentration contrast</dd>
-
-        <dt>
-
-          <code><a href="boot_mean_ci.html">boot_mean_ci()</a></code>
-
-        </dt>
-        <dd>Bootstrap confidence interval for a mean direction</dd>
-
-        <dt>
-
-          <code><a href="circ_boxplot_stats.html">circ_boxplot_stats()</a></code>
-
-        </dt>
-        <dd>Circular boxplot statistics (Tukey-like, for circular and axial data)</dd>
-
-        <dt>
-
-          <code><a href="circ_cor.html">circ_cor()</a></code>
-
-        </dt>
-        <dd>Circular correlation between headings and a covariate</dd>
-
-        <dt>
-
-          <code><a href="circ_dispersion.html">circ_dispersion()</a></code>
-
-        </dt>
-        <dd>Per-group circular dispersion statistics for a dense heading series</dd>
-
-        <dt>
-
-          <code><a href="circ_display.html">circ_display()</a></code>
-
-        </dt>
-        <dd>Circular display convention specification</dd>
-
-        <dt>
-
-          <code><a href="circ_model_select.html">circ_model_select()</a></code>
-
-        </dt>
-        <dd>Select among candidate circular models by AICc</dd>
-
-        <dt>
-
-          <code><a href="circ_regression.html">circ_regression()</a></code> <code><a href="circ_regression.html">summary(<i>&lt;circ_regression&gt;</i>)</a></code> <code><a href="circ_regression.html">predict(<i>&lt;circ_regression&gt;</i>)</a></code> <code><a href="circ_regression.html">fitted(<i>&lt;circ_regression&gt;</i>)</a></code> <code><a href="circ_regression.html">print(<i>&lt;circ_regression&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Circular-linear regression of a heading on linear covariates</dd>
-
-        <dt>
-
-          <code><a href="circ_summarise.html">circ_summarise()</a></code>
-
-        </dt>
-        <dd>Tidy circular summary of a grouped data frame</dd>
-
-        <dt>
-
-          <code><a href="circ_summary.html">circ_summary()</a></code>
-
-        </dt>
-        <dd>Circular summary statistics for trajectories</dd>
-
-        <dt>
-
-          <code><a href="circ_summary_headings.html">circ_summary_headings()</a></code>
-
-        </dt>
-        <dd>Circular statistics over derived headings</dd>
-
-        <dt>
-
-          <code><a href="circular_mapping.html">circular_mapping</a></code>
-
-        </dt>
-        <dd>Circular coordinate utilities</dd>
-
-        <dt>
-
-          <code><a href="circumference_labs.html">circumference_labs()</a></code>
-
-        </dt>
-        <dd>Label the circumference of a radial plot in domain units</dd>
-
-        <dt>
-
-          <code><a href="compute_circ_interval.html">compute_circ_interval()</a></code>
-
-        </dt>
-        <dd>Compute a circular interval arc from heading angles</dd>
-
-        <dt>
-
-          <code><a href="compute_circ_mean.html">compute_circ_mean()</a></code>
-
-        </dt>
-        <dd>Compute circular mean direction and resultant length from a headings data frame</dd>
-
-        <dt>
-
-          <code><a href="compute_circular_density.html">compute_circular_density()</a></code>
-
-        </dt>
-        <dd>Compute a circular density data frame from heading observations</dd>
-
-        <dt>
-
-          <code><a href="concentration_regression.html">concentration_regression()</a></code> <code><a href="concentration_regression.html">summary(<i>&lt;concentration_regression&gt;</i>)</a></code> <code><a href="concentration_regression.html">predict(<i>&lt;concentration_regression&gt;</i>)</a></code> <code><a href="concentration_regression.html">fitted(<i>&lt;concentration_regression&gt;</i>)</a></code> <code><a href="concentration_regression.html">print(<i>&lt;concentration_regression&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Von Mises regression of concentration on covariates</dd>
-
-        <dt>
-
-          <code><a href="count_goal_entries.html">count_goal_entries()</a></code>
-
-        </dt>
-        <dd>Count entries into a goal zone for trajectories in a circular field</dd>
-
-        <dt>
-
-          <code><a href="cpunctatus.html">cpunctatus</a></code>
-
-        </dt>
-        <dd>*Cylindroiulus punctatus* visual orientation trajectory dataset</dd>
-
-        <dt>
-
-          <code><a href="cycle_colours.html">cycle_colours()</a></code> <code><a href="cycle_colours.html">cycle_colors()</a></code>
-
-        </dt>
-        <dd>Cycle a bounded set of colour indices over the values of a key</dd>
-
-        <dt>
-
-          <code><a href="degree_labs.html">degree_labs()</a></code>
-
-        </dt>
-        <dd>Label the four diagonal directions.</dd>
-
-        <dt>
-
-          <code><a href="derive_coords.html">derive_coords()</a></code>
-
-        </dt>
-        <dd>Derive polar and reference-relative coordinates from unit-circle position</dd>
-
-        <dt>
-
-          <code><a href="derive_headings.html">derive_headings()</a></code>
-
-        </dt>
-        <dd>Derive heading angle(s) from trajectories using specified rule</dd>
-
-        <dt>
-
-          <code><a href="directedness_arrow.html">directedness_arrow()</a></code>
-
-        </dt>
-        <dd>Make mean resultant length arrow</dd>
-
-        <dt>
-
-          <code><a href="distance_scale.html">distance_scale()</a></code> <code><a href="distance_scale.html">distance_unit()</a></code> <code><a href="distance_scale.html">set_distance_scale()</a></code> <code><a href="distance_scale.html">calibrate_distance()</a></code>
-
-        </dt>
-        <dd>Distance calibration for a Tracks object</dd>
-
-        <dt>
-
-          <code><a href="elapsed_seconds.html">elapsed_seconds()</a></code>
-
-        </dt>
-        <dd>Elapsed time per observation of a Tracks object</dd>
-
-        <dt>
-
-          <code><a href="fitted_directions.html">fitted_directions()</a></code>
-
-        </dt>
-        <dd>Fitted mean directions from a circular regression, for plotting</dd>
-
-        <dt>
-
-          <code><a href="frame_rate.html">frame_rate()</a></code> <code><a href="frame_rate.html">set_frame_rate()</a></code>
-
-        </dt>
-        <dd>Frame rate of a Tracks object</dd>
-
-        <dt>
-
-          <code><a href="get_all_object_pos.html">get_all_object_pos()</a></code>
-
-        </dt>
-        <dd>Aggregate track positions across all videos in a manifest.</dd>
-
-        <dt>
-
-          <code><a href="get_tracked_object_pos.html">get_tracked_object_pos()</a></code>
-
-        </dt>
-        <dd>Derive trial-level track positions in polar coordinates.</dd>
-
-        <dt>
-
-          <code><a href="get_trial_limits.html">get_trial_limits()</a></code>
-
-        </dt>
-        <dd>Summarise per-trial metadata for a single video.</dd>
-
-        <dt>
-
-          <code><a href="gg_traj.html">gg_traj()</a></code>
-
-        </dt>
-        <dd>Plot trajectories from a Tracks (overlay or faceted)</dd>
-
-        <dt>
-
-          <code><a href="guess_columns.html">guess_columns()</a></code>
-
-        </dt>
-        <dd>Guess the role of each column in a track table</dd>
-
-        <dt>
-
-          <code><a href="headings_frame.html">headings_frame()</a></code>
-
-        </dt>
-        <dd>Construct a headings frame from a data frame of angles</dd>
-
-        <dt>
-
-          <code><a href="hf_accessors.html">hf_display()</a></code> <code><a href="hf_accessors.html">hf_heading_col()</a></code> <code><a href="hf_accessors.html">hf_colour_col()</a></code> <code><a href="hf_accessors.html">hf_color_col()</a></code> <code><a href="hf_accessors.html">hf_coords()</a></code>
-
-        </dt>
-        <dd>Read the canonical attributes of a heading frame</dd>
-
-        <dt>
-
-          <code><a href="ids.html">ids()</a></code>
-
-        </dt>
-        <dd>Trajectory identifiers of a Tracks</dd>
-
-        <dt>
-
-          <code><a href="import_info.html">import_info()</a></code>
-
-        </dt>
-        <dd>Import landmark coordinates from text files</dd>
-
-        <dt>
-
-          <code><a href="import_tracks.html">import_tracks()</a></code>
-
-        </dt>
-        <dd>Discover dtrack (or compatible) landmark/track file pairs in a directory</dd>
-
-        <dt>
-
-          <code><a href="instantaneous_speed.html">instantaneous_speed()</a></code>
-
-        </dt>
-        <dd>Per-observation instantaneous speed for a Tracks</dd>
-
-        <dt>
-
-          <code><a href="launch_app.html">launch_app()</a></code>
-
-        </dt>
-        <dd>Launch the radiatR Shiny companion app</dd>
-
-        <dt>
-
-          <code><a href="line_circle_intercept.html">line_circle_intercept()</a></code>
-
-        </dt>
-        <dd>Find the intercept of a line with the unit circle</dd>
-
-        <dt>
-
-          <code><a href="list_heading_rules.html">list_heading_rules()</a></code>
-
-        </dt>
-        <dd>List registered custom heading rules</dd>
-
-        <dt>
-
-          <code><a href="list_loader_dialects.html">list_loader_dialects()</a></code>
-
-        </dt>
-        <dd>List registered loader dialects</dd>
-
-        <dt>
-
-          <code><a href="list_loader_formats.html">list_loader_formats()</a></code>
-
-        </dt>
-        <dd>List registered declarative formats</dd>
-
-        <dt>
-
-          <code><a href="load_manifest.html">load_manifest()</a></code>
-
-        </dt>
-        <dd>Load trajectories listed in a file table into a Tracks</dd>
-
-        <dt>
-
-          <code><a href="path_sinuosity.html">path_sinuosity()</a></code>
-
-        </dt>
-        <dd>Sinuosity index for a single trajectory</dd>
-
-        <dt>
-
-          <code><a href="path_straightness.html">path_straightness()</a></code>
-
-        </dt>
-        <dd>Path straightness index for a single trajectory</dd>
-
-        <dt>
-
-          <code><a href="path_tortuosity.html">path_tortuosity()</a></code>
-
-        </dt>
-        <dd>Tortuosity ratio for a single trajectory</dd>
-
-        <dt>
-
-          <code><a href="plot_profile.html">plot_profile()</a></code>
-
-        </dt>
-        <dd>Kinematics profile plot for a Tracks</dd>
-
-        <dt>
-
-          <code><a href="plot_speed_direction.html">plot_speed_direction()</a></code>
-
-        </dt>
-        <dd>Speed-vs-direction scatter for a Tracks</dd>
-
-        <dt>
-
-          <code><a href="plot_speed_histogram.html">plot_speed_histogram()</a></code>
-
-        </dt>
-        <dd>Speed distribution histogram for a Tracks</dd>
-
-        <dt>
-
-          <code><a href="pose_to_headings.html">pose_to_headings()</a></code>
-
-        </dt>
-        <dd>Derive per-frame headings from pose data without a Tracks</dd>
-
-        <dt>
-
-          <code><a href="rad_shepherd.html">rad_shepherd()</a></code>
-
-        </dt>
-        <dd>Wrap angles to the interval (-pi, pi]</dd>
-
-        <dt>
-
-          <code><a href="radial_theme.html">radial_theme()</a></code>
-
-        </dt>
-        <dd>Themes for radial track plots, named for the ggplot2 base themes.</dd>
-
-        <dt>
-
-          <code><a href="radiate.html">radiate()</a></code>
-
-        </dt>
-        <dd>Make ggplot object of tracks radiating from circle centre.</dd>
-
-        <dt>
-
-          <code><a href="read_tracks.html">read_tracks()</a></code>
-
-        </dt>
-        <dd>Construct a Tracks from a data.frame or file(s)</dd>
-
-        <dt>
-
-          <code><a href="read_tracks_dir.html">read_tracks_dir()</a></code>
-
-        </dt>
-        <dd>Read all matching files from a directory and bind into a Tracks</dd>
-
-        <dt>
-
-          <code><a href="read_tracks_format.html">read_tracks_format()</a></code>
-
-        </dt>
-        <dd>Construct a Tracks from a *format* spec (registered name or inline list)</dd>
-
-        <dt>
-
-          <code><a href="reference.html">reference()</a></code>
-
-        </dt>
-        <dd>Per-trajectory reference direction of a Tracks</dd>
-
-        <dt>
-
-          <code><a href="register_heading_rule.html">register_heading_rule()</a></code>
-
-        </dt>
-        <dd>Register a custom heading derivation rule</dd>
-
-        <dt>
-
-          <code><a href="register_loader_dialect.html">register_loader_dialect()</a></code>
-
-        </dt>
-        <dd>Register a custom loader dialect</dd>
-
-        <dt>
-
-          <code><a href="register_loader_format.html">register_loader_format()</a></code>
-
-        </dt>
-        <dd>Register a declarative loader *format* (list or YAML/JSON file)</dd>
-
-        <dt>
-
-          <code><a href="restrict_to_circumference.html">restrict_to_circumference()</a></code>
-
-        </dt>
-        <dd>Restrict a Tracks to within the unit circle</dd>
-
-        <dt>
-
-          <code><a href="scale_cardinal.html">scale_cardinal()</a></code>
-
-        </dt>
-        <dd>Circumference scale: cardinal compass directions</dd>
-
-        <dt>
-
-          <code><a href="scale_clock.html">scale_clock()</a></code>
-
-        </dt>
-        <dd>Circumference scale: clock hours</dd>
-
-        <dt>
-
-          <code><a href="scale_months.html">scale_months()</a></code>
-
-        </dt>
-        <dd>Circumference scale: months of the year</dd>
-
-        <dt>
-
-          <code><a href="scale_seconds.html">scale_seconds()</a></code>
-
-        </dt>
-        <dd>Circumference scale: seconds (or minutes)</dd>
-
-        <dt>
-
-          <code><a href="sector_summary.html">sector_summary()</a></code>
-
-        </dt>
-        <dd>Proportion of time spent in angular sectors</dd>
-
-        <dt>
-
-          <code><a href="set_reference.html">set_reference()</a></code>
-
-        </dt>
-        <dd>Set the per-trajectory reference and re-derive the relative frame</dd>
-
-        <dt>
-
-          <code><a href="simulate_tracks.html">simulate_tracks()</a></code>
-
-        </dt>
-        <dd>Simulate trajectory sets under configurable experimental conditions</dd>
-
-        <dt>
-
-          <code><a href="sinuosity.html">sinuosity()</a></code>
-
-        </dt>
-        <dd>Per-trajectory sinuosity for a Tracks</dd>
-
-        <dt>
-
-          <code><a href="stack_headings.html">stack_headings()</a></code>
-
-        </dt>
-        <dd>Add stacking columns to a headings data frame</dd>
-
-        <dt>
-
-          <code><a href="step_speed.html">step_speed()</a></code>
-
-        </dt>
-        <dd>Per-step speed along a trajectory</dd>
-
-        <dt>
-
-          <code><a href="straightness_index.html">straightness_index()</a></code>
-
-        </dt>
-        <dd>Per-trajectory straightness index for a Tracks</dd>
-
-        <dt>
-
-          <code><a href="test_concentration.html">test_concentration()</a></code>
-
-        </dt>
-        <dd>Test whether groups share the same concentration (dispersion)</dd>
-
-        <dt>
-
-          <code><a href="test_distributions.html">test_distributions()</a></code>
-
-        </dt>
-        <dd>Test whether groups share the same circular distribution</dd>
-
-        <dt>
-
-          <code><a href="test_gof.html">test_gof()</a></code>
-
-        </dt>
-        <dd>Goodness-of-fit test against a wrapped Cauchy distribution</dd>
-
-        <dt>
-
-          <code><a href="test_mean_directions.html">test_mean_directions()</a></code>
-
-        </dt>
-        <dd>Test whether groups share the same mean direction</dd>
-
-        <dt>
-
-          <code><a href="test_symmetry.html">test_symmetry()</a></code>
-
-        </dt>
-        <dd>Test a circular distribution for reflective symmetry</dd>
-
-        <dt>
-
-          <code><a href="test_uniformity.html">test_uniformity()</a></code>
-
-        </dt>
-        <dd>Per-group tests of circular uniformity</dd>
-
-        <dt>
-
-          <code><a href="test_unimodality.html">test_unimodality()</a></code>
-
-        </dt>
-        <dd>Test a circular sample for unimodality against bimodality</dd>
-
-        <dt>
-
-          <code><a href="tortuosity_ratio.html">tortuosity_ratio()</a></code>
-
-        </dt>
-        <dd>Per-trajectory tortuosity ratio for a Tracks</dd>
-
-        <dt>
-
-          <code><a href="track_duration.html">track_duration()</a></code>
-
-        </dt>
-        <dd>Duration of each track</dd>
-
-        <dt>
-
-          <code><a href="track_length.html">track_length()</a></code>
-
-        </dt>
-        <dd>Per-trajectory path length for a Tracks</dd>
-
-        <dt>
-
-          <code><a href="track_speed.html">track_speed()</a></code>
-
-        </dt>
-        <dd>Per-trajectory speed for a Tracks, in real units</dd>
-
-        <dt>
-
-          <code><a href="track_turning.html">track_turning()</a></code>
-
-        </dt>
-        <dd>Per-trajectory turning-rate summary for a Tracks</dd>
-
-        <dt>
-
-          <code><a href="track_velocity.html">track_velocity()</a></code>
-
-        </dt>
-        <dd>Per-trajectory net velocity for a Tracks</dd>
-
-        <dt>
-
-          <code><a href="transform_history.html">transform_history()</a></code> <code><a href="transform_history.html">log_transform()</a></code> <code><a href="transform_history.html">set_transform_history()</a></code>
-
-        </dt>
-        <dd>Transform history helpers for Tracks objects</dd>
-
-        <dt>
-
-          <code><a href="velocity_angle.html">velocity_angle()</a></code>
-
-        </dt>
-        <dd>Per-row movement direction</dd>
-
-        <dt>
-
-          <code><a href="velocity_vector.html">velocity_vector()</a></code>
-
-        </dt>
-        <dd>Per-observation velocity vector for a Tracks</dd>
-
-        <dt>
-
-          <code><a href="vonmises_fit.html">vonmises_fit()</a></code>
-
-        </dt>
-        <dd>Fit a von Mises distribution to per-group heading data</dd>
-
-        <dt>
-
-          <code><a href="wrappedcauchy_fit.html">wrappedcauchy_fit()</a></code>
-
-        </dt>
-        <dd>Fit a wrapped Cauchy distribution to per-group heading data</dd>
-
-        <dt>
-
-          <code><a href="zone_dwell.html">zone_dwell()</a></code>
-
-        </dt>
-        <dd>Dwell-time proportions across quadrant x ring zones</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
