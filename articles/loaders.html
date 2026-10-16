@@ -502,6 +502,12 @@ one:</p>
 <span><span class="co">#&gt; 4 10_10_point02     4 482.48 400.81</span></span>
 <span><span class="co">#&gt; 5 10_10_point02     5 484.85 406.34</span></span>
 <span><span class="co">#&gt; 6 10_10_point02     6 484.06 417.40</span></span></code></pre></div>
+<p>A loader that reads files can take
+<code>read_tracks(read_opts = )</code> by declaring a
+<code>read_opts</code> argument: it receives the non-<code>NULL</code>
+entries (<code>decimal</code>, <code>delim</code>, <code>sheet</code>,
+<code>ext</code>) and must honour them or stop. Without that argument,
+any <code>read_opts</code> stop the load.</p>
 <p>Given several files, the loader is called once per file and the
 results are combined. Here <code>pattern</code> picks one session’s
 trajectory files and leaves out the <code>_point01</code> landmark

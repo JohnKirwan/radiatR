@@ -377,6 +377,11 @@ head(ts_raw@data[, c("id", "frame", "x", "y")])
 #> 6 10_10_point02     6 484.06 417.40
 ```
 
+A loader that reads files can take `read_tracks(read_opts = )` by
+declaring a `read_opts` argument: it receives the non-`NULL` entries
+(`decimal`, `delim`, `sheet`, `ext`) and must honour them or stop.
+Without that argument, any `read_opts` stop the load.
+
 Given several files, the loader is called once per file and the results
 are combined. Here `pattern` picks one session’s trajectory files and
 leaves out the `_point01` landmark files, which share the same layout:

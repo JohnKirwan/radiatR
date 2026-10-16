@@ -248,8 +248,9 @@ around it.</p>
 </tr>
 <tr class="even">
 <td><code>radiatR_malformed_values</code></td>
-<td>a column holds values that are not numeric; lists rows and
-values</td>
+<td>a column holds values that are not numeric; lists rows and values,
+and <code>suggested_decimal</code> when they look written with the other
+decimal mark</td>
 </tr>
 <tr class="odd">
 <td><code>radiatR_invalid_tracks</code></td>
@@ -257,15 +258,21 @@ values</td>
 <code><a href="../reference/Tracks-class.html">?tracks</a></code>)</td>
 </tr>
 <tr class="even">
+<td><code>radiatR_invalid_argument</code></td>
+<td>an argument cannot be used as given (for <code>read_opts</code>: an
+unknown entry, a bad decimal mark, or an option the dialect cannot use;
+<code>option</code> names it)</td>
+</tr>
+<tr class="odd">
 <td><code>radiatR_nonestimable</code></td>
 <td>a statistic cannot be estimated for a group</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>radiatR_dropped_rows</code></td>
 <td>warning raised when <code>on_invalid = "drop"</code> removed
 rows</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>radiatR_attrition</code></td>
 <td>message from the <code>deeplabcut</code>, <code>sleap</code>,
 <code>ethovision</code> and <code>anymaze</code> dialects: the points
@@ -273,7 +280,7 @@ masked at load and the rows left without a position (kept in
 <code>@meta$attrition</code>; not the heading attrition of the next
 section)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>radiatR_dialect_error</code></td>
 <td>a dialect cannot read the file as that program’s output; the message
 says why</td>

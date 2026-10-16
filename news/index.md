@@ -4,6 +4,23 @@
 
 ### Breaking changes
 
+- `read_tracks(read_opts = )` now reaches the built-in dialects, which
+  used to ignore it: every dialect takes `decimal`; the
+  `.read_any()`-based ones (`trackmate`, `trex`, `sleap`,
+  `idtrackerai_wide`) also `delim` and `ext` (text files) and `sheet`
+  (Excel files); `ethovision` and `anymaze` `delim`. An option a dialect
+  cannot use or that does not fit the file’s type (`delim` or `decimal`
+  for an Excel file, `sheet` for a text file), or any option for a
+  registered dialect without a `read_opts` argument, now stops with
+  `radiatR_invalid_argument` instead of being silently ignored.
+  `read_opts` entries are checked on every path: an unknown name (which
+  `$` used to match partially: `decimals = ","` was read as `decimal`)
+  or a decimal mark other than `"."` / `","` stops, as does a name given
+  twice. Every refusal carries the offending entry as `option`. The
+  decimal-mark hint on malformed values now applies to dialects and to
+  `H:MM:SS` durations, no longer to Excel files, and the error carries
+  `decimal` and `suggested_decimal`.
+
 - A bare date whose midnight does not exist in `tz` (a DST change at
   midnight, as in Cairo or Sao Paulo) is the first instant of that day
   (01:00 there) under every reader, and so is an Excel date cell at such
@@ -461,6 +478,13 @@
   epoch seconds (or, for frames, a `radiatR_time_type_mismatch` error).
 
 ### Changes
+
+- The app has a “Decimal mark” control (Auto-detect / Point / Comma)
+  beside Delimiter for text uploads. It applies to previews, trajectory
+  and headings loads and the downloaded scripts, and an error about
+  values written with the other mark says which setting to choose. A tab
+  or comma file with decimal commas, and a `;` file whose decimals look
+  like digit grouping, can now be loaded in the app.
 
 - The `sleap` dialect accepts a node name as it is written in the file
   (`bodypart = "Tail Base"`).
