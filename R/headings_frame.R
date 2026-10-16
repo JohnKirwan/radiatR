@@ -47,7 +47,7 @@ headings_frame <- function(data,
   v <- data[[col_name]]
   if (is.character(v) || is.factor(v)) {
     v <- as.character(v)
-    bad <- which(!is.na(v) & is.na(suppressWarnings(as.numeric(v))))
+    bad <- which(!.is_missing_chr(trimws(v)) & is.na(suppressWarnings(as.numeric(v))))
     if (length(bad))
       radiatR_abort_malformed_values(col_name, bad, v[bad])
     rlang::abort(sprintf("headings_frame: column '%s' holds text; convert it with as.numeric().",
