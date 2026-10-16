@@ -21,6 +21,24 @@
   `H:MM:SS` durations, no longer to Excel files, and the error carries
   `decimal` and `suggested_decimal`.
 
+- [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  without a dialect now refuses a `read_opts` entry that does not fit
+  the file’s type, as dialects do: `delim` or `decimal` for an Excel or
+  Arrow file, `sheet` for a text or Arrow file (Arrow files were also
+  let through by the dialects). A folder of mixed text and Arrow files
+  read with `read_tracks_dir(read_opts = list(delim = ))` therefore
+  stops. For a data frame, `read_opts` takes only `decimal`: `delim`,
+  `sheet` and `ext` stop instead of being accepted without effect.
+
+- [`headings_frame()`](https://johnkirwan.github.io/radiatR/reference/headings_frame.md)
+  stops on an angle column held as text (character or factor), with
+  `radiatR_malformed_values` naming the values that are not numbers, or
+  `radiatR_invalid_argument` when all are. With `units = "radians"` and
+  the unit-circle convention a character column used to load as a text
+  heading column; otherwise these columns failed with bare base-R errors
+  (“non-numeric argument to binary operator”, “‘abs’ not meaningful for
+  factors”).
+
 - A bare date whose midnight does not exist in `tz` (a DST change at
   midnight, as in Cairo or Sao Paulo) is the first instant of that day
   (01:00 there) under every reader, and so is an Excel date cell at such
@@ -586,6 +604,17 @@
   [`add_circular_boxplot()`](https://johnkirwan.github.io/radiatR/reference/add_circular_boxplot.md).
 
 ### Bug fixes
+
+- `read_tracks(<data frame>, read_opts = list(decimal = ","))` reads a
+  column of “1,5” text as 1.5; the option was ignored, and the error
+  about such values now suggests it for a data frame too.
+
+- App: a headings file read with the wrong decimal mark no longer has
+  its id column plotted as the angles. The angle picker only listed
+  numeric columns, so an angle column read as text was missing and the
+  first numeric column (often the id) was preselected. A text column of
+  numbers in the other mark is now listed and preselected, with a note
+  saying which Decimal mark to set, and Continue stops with that advice.
 
 - App: the script downloaded for a headings upload reads the file with
   the delimiter and decimal mark the app read it with. With the

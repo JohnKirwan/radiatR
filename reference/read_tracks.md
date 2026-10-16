@@ -120,6 +120,10 @@ read_tracks(
   it must be the export's own separator). An entry a dialect cannot use
   stops with a \`radiatR_invalid_argument\` error, as does any entry for
   a registered dialect whose function has no \`read_opts\` argument.
+  Without a dialect, an entry that does not fit the file's type
+  (\`delim\` or \`decimal\` for an Excel or Arrow file, \`sheet\` for a
+  text or Arrow file) stops the same way. A data frame \`x\` takes only
+  \`decimal\`, the mark of any numeric column it holds as text.
 
 - mutate:
 
