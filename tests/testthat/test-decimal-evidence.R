@@ -131,3 +131,59 @@ test_that(".decimal_evidence sorts columns by what their cells show", {
   expect_identical(names(ev$grouping), c("a", "d"))
   expect_identical(ev$grouping$a, c("1.234", "2.345"))
 })
+
+# AnyMaze: Time is a duration; a fraction there is a clear point.
+am <- function(rows, env = parent.frame())
+  semi(c("Time;Centre position X;Centre position Y;Label", rows), env)
+
+test_that("anymaze: grouping-shaped positions backed only by a label stop", {
+  p <- am(c("0:00:00;1.234;2.345;1.5", "0:00:01;1.240;2.350;2.5"))
+  e <- cond(suppressMessages(read_tracks(p, dialect = "anymaze")))
+  expect_s3_class(e, "radiatR_ambiguous_decimal")
+  expect_identical(e$dialect, "anymaze")
+  expect_identical(e$columns, c("Centre position X", "Centre position Y"))
+  ts <- suppressMessages(read_tracks(p, dialect = "anymaze", read_opts = list(decimal = ".")))
+  expect_equal(col_of(ts, "x"), c(1.234, 1.240))
+})
+
+test_that("anymaze: a duration with a fraction backs %.3f positions", {
+  p <- am(c("0:00:00.000;523.117;401.250;1.5", "0:00:00.040;524.310;402.115;2.5"))
+  ts <- suppressMessages(read_tracks(p, dialect = "anymaze"))
+  expect_equal(col_of(ts, "x"), c(523.117, 524.310))
+})
+
+ev_file <- function(rows, env = parent.frame()) {
+  # minimal EthoVision text export: header line count, preamble, names, units
+  semi(c('"Number of header lines:";"5"', '"Experiment";"x"', "",
+         '"Trial time";"X center";"Y center";"Label"', '"s";"mm";"mm";""', rows), env)
+}
+
+test_that("ethovision: grouping-shaped centres backed only by a label stop", {
+  p <- ev_file(c('"0";"1.234";"2.345";"1.5"', '"1";"1.240";"2.350";"2.5"'))
+  e <- cond(suppressMessages(read_tracks(p, dialect = "ethovision")))
+  expect_s3_class(e, "radiatR_ambiguous_decimal")
+  expect_identical(e$dialect, "ethovision")
+  ts <- suppressMessages(read_tracks(p, dialect = "ethovision", read_opts = list(decimal = ".")))
+  expect_equal(col_of(ts, "x"), c(1.234, 1.240))
+})
+
+test_that("ethovision: a time with a fraction backs %.3f centres", {
+  p <- ev_file(c('"0.000";"523.117";"401.250";"1.5"', '"0.040";"524.310";"402.115";"2.5"'))
+  ts <- suppressMessages(read_tracks(p, dialect = "ethovision"))
+  expect_equal(col_of(ts, "x"), c(523.117, 524.310))
+})
+
+test_that("trackmate (a .read_any() dialect) checks the evidence, v7 descriptor rows too", {
+  p <- semi(c("LABEL;TRACK_ID;FRAME;POSITION_X;POSITION_Y",
+              "1.5;a;0;1.234;2.345", "2.5;a;1;1.240;2.350"))
+  e <- cond(read_tracks(p, dialect = "trackmate"))
+  expect_s3_class(e, "radiatR_ambiguous_decimal")
+  expect_identical(e$dialect, "trackmate")
+  v7 <- semi(c("LABEL;TRACK_ID;FRAME;POSITION_X;POSITION_Y",
+               "Label;Track ID;Frame;X;Y", "Label;Track ID;Frame;X;Y", ";;;(micron);(micron)",
+               "1.5;a;0;1.234;2.345", "2.5;a;1;1.240;2.350"))
+  e <- cond(read_tracks(v7, dialect = "trackmate"))
+  expect_s3_class(e, "radiatR_ambiguous_decimal")
+  ts <- read_tracks(v7, dialect = "trackmate", read_opts = list(decimal = "."))
+  expect_equal(col_of(ts, "x"), c(1.234, 1.240))
+})
