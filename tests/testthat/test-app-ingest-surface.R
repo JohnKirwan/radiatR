@@ -7,6 +7,14 @@ app_dir <- function() {
   d
 }
 
+app_env <- function() {
+  app_file <- system.file("app", "app.R", package = "radiatR")
+  if (!nzchar(app_file)) app_file <- testthat::test_path("..", "..", "inst", "app", "app.R")
+  e <- new.env()
+  suppressWarnings(suppressMessages(sys.source(app_file, envir = e, chdir = TRUE)))
+  e
+}
+
 test_that("a failed trajectory ingest records the original exception in detail", {
   skip_if_not_installed("shiny")
   skip_if(!dir.exists(app_dir()), "app dir not found")
@@ -176,4 +184,81 @@ test_that("an uploaded idtracker.ai file is detected; its 'nan' positions stop t
     expect_match(rv$error, "2 row(s) of this file have no x/y position", fixed = TRUE)
     expect_match(rv$error_detail, "non-finite coordinates", fixed = TRUE)
   })
+})
+
+test_that("a value written with the other decimal mark names the control", {
+  skip_if_not_installed("shiny")
+  e <- app_env()
+  tsv <- withr::local_tempfile(fileext = ".tsv")
+  writeLines(c("id\tframe\tx\ty", paste0("a\t", 1:3, "\t0,", 1:3, "\t0,5")), tsv)
+  err <- tryCatch(read_tracks(tsv), error = function(cnd) cnd)
+  expect_match(e$plain_error(err), "If the file's decimal mark is a comma, set Decimal mark to Comma (,).",
+               fixed = TRUE)
+  semi <- withr::local_tempfile(fileext = ".csv")
+  writeLines(c("id;frame;x;y", paste0("a;", 1:3, ";0.", 1:3, ";0,5")), semi)
+  err <- tryCatch(read_tracks(semi, read_opts = list(decimal = ",")), error = function(cnd) cnd)
+  expect_match(e$plain_error(err), "set Decimal mark to Point (.)", fixed = TRUE)
+})
+
+test_that("no decimal advice without a suggestion", {
+  skip_if_not_installed("shiny")
+  e <- app_env()
+  err <- tryCatch(read_tracks(data.frame(id = "a", time = 1:3, x = "1,5", y = 0)),
+                  error = function(cnd) cnd)
+  expect_null(err$suggested_decimal)      # a data frame has no file to re-read
+  expect_false(grepl("Decimal mark", e$plain_error(err), fixed = TRUE))
+})
+
+test_that("a delimiter a dialect cannot use is refused in app words", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  dlc <- normalizePath(testthat::test_path("fixtures", "real", "dlc_single_wasp_predictions.csv"))
+  shiny::testServer(app_dir(), {
+    session$setInputs(input_type = "trajectories")
+    session$setInputs(file = list(datapath = dlc, name = "wasp.csv"))
+    session$setInputs(dialect_sel = "deeplabcut", delim_sel = ";", decimal_sel = "auto")
+    session$setInputs(go2 = 1)
+    expect_null(rv$ts)
+    expect_match(rv$error, "set Delimiter to Auto-detect", fixed = TRUE)
+  })
+})
+
+test_that("an option a dialect cannot use names the app control", {
+  skip_if_not_installed("shiny")
+  e <- app_env()
+  dlc <- testthat::test_path("fixtures", "real", "dlc_single_wasp_predictions.csv")
+  err <- tryCatch(read_tracks(dlc, dialect = "deeplabcut", read_opts = list(delim = ";")),
+                  error = function(cnd) cnd)
+  expect_identical(e$plain_error(err),
+                   "This file's format sets its own delimiter: set Delimiter to Auto-detect.")
+  # a refusal with no app control behind it is shown as the package words it
+  register_loader_dialect("plain_app_test", function(x) utils::read.csv(x), overwrite = TRUE)
+  withr::defer(rm(list = "plain_app_test", envir = radiatR:::.loader_registry))
+  err <- tryCatch(read_tracks(dlc, dialect = "plain_app_test", read_opts = list(decimal = ",")),
+                  error = function(cnd) cnd)
+  expect_match(e$plain_error(err), "takes no read_opts", fixed = TRUE)
+})
+
+test_that("a text-export dialect given an Excel option says to upload the text export", {
+  skip_if_not_installed("shiny")
+  e <- app_env()
+  txt <- "This software's files are read from its text export, not from an Excel workbook: upload the .txt or .csv export."
+  dlc <- testthat::test_path("fixtures", "real", "dlc_single_wasp_predictions.csv")
+  err <- tryCatch(read_tracks(dlc, dialect = "deeplabcut", read_opts = list(sheet = "Sheet1")),
+                  error = function(cnd) cnd)
+  expect_identical(e$plain_error(err), txt)
+  err <- tryCatch(read_tracks(dlc, dialect = "deeplabcut", read_opts = list(ext = "xlsx")),
+                  error = function(cnd) cnd)
+  expect_identical(e$plain_error(err), txt)
+})
+
+test_that("an EthoVision delimiter mismatch names the Delimiter control", {
+  skip_if_not_installed("shiny")
+  e <- app_env()
+  eth <- tempfile(fileext = ".txt")
+  writeLines(c('"Number of header lines:";"2"', '"Experiment";"x"'), eth)
+  err <- tryCatch(read_tracks(eth, dialect = "ethovision", read_opts = list(delim = ",")),
+                  error = function(cnd) cnd)
+  expect_identical(e$plain_error(err),
+                   "This file's format sets its own delimiter: set Delimiter to Auto-detect.")
 })

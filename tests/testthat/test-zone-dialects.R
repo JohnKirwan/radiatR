@@ -311,6 +311,31 @@ test_that("EthoVision: a decimal-comma export gives the same positions", {
   expect_s3_class(cond(ev_tracks(mixed)), "radiatR_malformed_values")
 })
 
+test_that("EthoVision: read_opts$decimal overrides the data-row sniff", {
+  # A decimal-comma export with one decimal point in an unused column
+  # (Elongation): the sniff reads points, so the positions stop.
+  p <- ev_data_edited(function(x) {
+    x <- gsub(".", ",", x, fixed = TRUE)
+    x[1] <- sub("0,616467", "0.5", x[1], fixed = TRUE)
+    x
+  })
+  expect_identical(attr(ev_read(p), "decimal"), ".")
+  expect_s3_class(cond(ev_tracks(p)), "radiatR_malformed_values")
+  expect_equal(rows_of(ev_tracks(p, read_opts = list(decimal = ",")))$center_x,
+               rows_of(ev_tracks())$center_x)
+})
+
+test_that("EthoVision: read_opts$delim must be the export's own separator", {
+  expect_equal(rows_of(ev_tracks(read_opts = list(delim = ";")))$center_x,
+               rows_of(ev_tracks())$center_x)
+  e <- cond(ev_tracks(read_opts = list(delim = ",")))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "is separated by ';', not by the read_opts delimiter ','",
+               fixed = TRUE)
+  expect_identical(c(e$arg, e$option, e$refused_by), c("read_opts", "delim", "ethovision"))
+  expect_s3_class(cond(ev_tracks(read_opts = list(sheet = 1))), "radiatR_invalid_argument")
+})
+
 test_that("EthoVision: the time column is Trial time, in seconds, unless named", {
   expect_equal(rows_of(ev_tracks(time_col = "Recording time"))[[2]][1:2], c(0, 0.5))
   expect_equal(rows_of(ev_tracks(time_col = "recording_time"))[[2]][1:2], c(0, 0.5))
@@ -641,4 +666,18 @@ test_that("ANY-maze: removed arguments are refused with the reason", {
   e <- cond(am_tracks(skip_units_row = FALSE))
   expect_s3_class(e, "radiatR_dialect_error")
   expect_match(conditionMessage(e), "`skip_units_row` was removed")
+})
+
+test_that("ANY-maze: read_opts give the delimiter and decimal mark", {
+  # tab-separated with decimal commas: sniffed as decimal points
+  tab_comma <- am_edited(function(l) gsub(".", ",", gsub(",", "\t", l, fixed = TRUE),
+                                          fixed = TRUE))
+  expect_s3_class(cond(am_tracks(tab_comma)), "radiatR_malformed_values")
+  ts <- am_tracks(tab_comma, read_opts = list(decimal = ","))
+  expect_equal(rows_of(ts)[[ts@cols$time]], rows_of(am_tracks())[[am_tracks()@cols$time]])
+  ts <- am_tracks(tab_comma, read_opts = list(delim = "\t", decimal = ","))
+  expect_equal(rows_of(ts)[[ts@cols$x]], rows_of(am_tracks())[[am_tracks()@cols$x]])
+  # the delimiter is used: ';' on the comma file is one column
+  expect_s3_class(cond(am_tracks(read_opts = list(delim = ";"))), "radiatR_dialect_error")
+  expect_s3_class(cond(am_tracks(read_opts = list(sheet = 1))), "radiatR_invalid_argument")
 })

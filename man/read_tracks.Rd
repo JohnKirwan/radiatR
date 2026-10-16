@@ -78,9 +78,19 @@ per file when `x` holds several paths. See [register_loader_dialect()].}
 \item{dialect_args}{named list of extra arguments forwarded to the dialect
 function (e.g. \code{list(bodypart = c("head","thorax"))})}
 
-\item{read_opts}{list of file-reading overrides: `delim` (field separator),
-`decimal` (decimal mark), and `sheet` (Excel worksheet name or number).
-Any `NULL` element is auto-detected. Defaults to all-auto.}
+\item{read_opts}{list of file-reading overrides: `delim` (field separator)
+and `decimal` (decimal mark) for a text file, `sheet` (Excel worksheet
+name or number) for an Excel file, and `ext` (file type, for a path
+without its extension). Any `NULL` element is auto-detected. Defaults to all-auto. With a
+`dialect`, the non-`NULL` entries are handed to the dialect: every
+built-in takes `decimal`; `trackmate`, `trex`, `sleap` and
+`idtrackerai_wide` also take `delim` and `ext` for a text file and `sheet`
+for an Excel file (`decimal` and `delim` are refused for Excel, `sheet`
+for a text file); `ethovision` and
+`anymaze` take `delim` (for EthoVision it must be the export's own
+separator). An entry a dialect cannot use stops with a
+`radiatR_invalid_argument` error, as does any entry for a registered
+dialect whose function has no `read_opts` argument.}
 
 \item{mutate}{list of transformations applied after reading (named functions or formulas)}
 
@@ -213,7 +223,9 @@ parse (`"oops"`, `"1,5"`, a stray header or units row) stops the load with a
 `columns`, `rows`, `values`, `source` and `dialect` fields name the column,
 the data rows (counted from the first row after the header, within its own
 file in a multi-file import), the offending strings, the file and the
-dialect. Such a value is never dropped or turned into `NA`. Blank cells and
+dialect, `decimal` (the mark the file was read with) and `suggested_decimal`
+(the other mark when the values look written with it, else `NULL`). Such a
+value is never dropped or turned into `NA`. Blank cells and
 `NA` are missing values; `nan` and `inf` are read as such. Files are read
 with no digit-grouping mark, so `1,5` is malformed unless
 `read_opts = list(decimal = ",")` says the comma is the decimal mark. Where
