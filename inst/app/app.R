@@ -703,8 +703,7 @@ server <- function(input, output, session) {
         rv$error_detail <- NULL
         return()
       }
-      num_cols <- names(rv$raw_hd)[vapply(rv$raw_hd, is.numeric, logical(1))]
-      if (!length(num_cols)) {
+      if (!length(hd_angle_choices(rv$raw_hd)$choices)) {
         rv$error <- "No numeric angle column found; headings input needs a column of angles."
         rv$error_detail <- NULL
         return()
@@ -931,6 +930,11 @@ server <- function(input, output, session) {
       # The group columns are labels: read the file again naming them, so
       # "1.1" and "1.10" stay two groups (rv$raw_hd was read before they were
       # chosen).
+      advice <- hd_mark_advice(rv$raw_hd, input$hd_col)
+      if (!is.null(advice)) {
+        rv$error <- advice; rv$error_detail <- NULL
+        return()
+      }
       labs <- c(grp, grp2)
       src <- NULL
       hd <- tryCatch({
@@ -1209,7 +1213,7 @@ server <- function(input, output, session) {
           err_box
         )
       } else {
-        num_cols <- names(rv$raw_hd)[vapply(rv$raw_hd, is.numeric, logical(1))]
+        ang <- hd_angle_choices(rv$raw_hd)
         all_cols <- names(rv$raw_hd)
         tagList(
           h5("Describe your headings"),
@@ -1218,8 +1222,9 @@ server <- function(input, output, session) {
             choices  = c("Directional" = "directional", "Axial" = "axial"),
             selected = "directional", inline = TRUE
           ),
-          selectInput("hd_col", "Angle column", choices = num_cols,
-                      selected = num_cols[1]),
+          selectInput("hd_col", "Angle column", choices = ang$choices,
+                      selected = ang$selected),
+          uiOutput("hd_mark_note"),
           selectInput("hd_units", "Units",
                       choices = c("Degrees" = "degrees", "Radians" = "radians"),
                       selected = "degrees"),
@@ -1576,6 +1581,15 @@ server <- function(input, output, session) {
     selectInput("decimal_sel", "Decimal mark",
                 choices = c("Auto-detect" = "auto", "Point (.)" = ".", "Comma (,)" = ","),
                 selected = "auto")
+  })
+
+  # Under the headings angle picker: the chosen column holds numbers in the
+  # other decimal mark (see hd_angle_choices()).
+  output$hd_mark_note <- renderUI({
+    req(rv$raw_hd)
+    advice <- hd_mark_advice(rv$raw_hd, input$hd_col)
+    if (is.null(advice)) return(NULL)
+    div(class = "alert alert-warning py-1 px-2 small", advice)
   })
 
   # Worksheet selector for Excel uploads. Own renderUI (like delim_box) so a

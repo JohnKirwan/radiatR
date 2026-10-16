@@ -351,3 +351,48 @@ test_that("a DeepLabCut upload on auto controls sends no read_opts", {
     expect_equal(nrow(as.data.frame(rv$ts)), 43L)
   })
 })
+
+test_that("hd_angle_choices() offers a text column of other-mark numbers, preselected", {
+  df <- data.frame(id = c("1.1", "1.10"), heading = c("123.456", "10.125"),
+                   n = 1:2, note = c("a", "b"), blank = NA_character_)
+  attr(df, "decimal") <- ","
+  ch <- hd_angle_choices(df)
+  expect_identical(ch$choices, c("n", "heading"))   # not the id labels, not text
+  expect_identical(ch$selected, "heading")
+  expect_identical(ch$flagged, "heading")
+  expect_match(hd_mark_advice(df, "heading"), "Set Decimal mark to Point (.)", fixed = TRUE)
+  expect_null(hd_mark_advice(df, "n"))
+  # every value must carry the other mark's reading, and one must need it
+  df2 <- data.frame(a = c("1,5", "oops"), b = c("1", "2"), c = c("1,5", "2,25"),
+                    stringsAsFactors = FALSE)
+  attr(df2, "decimal") <- "."
+  expect_identical(hd_angle_choices(df2)$flagged, "c")
+  expect_match(hd_mark_advice(df2, "c"), "Set Decimal mark to Comma (,)", fixed = TRUE)
+  # no mark recorded (Excel): no advice about a control the app hides
+  attr(df2, "decimal") <- NULL
+  expect_identical(hd_angle_choices(df2)$flagged, character(0))
+  # nothing flagged: the first numeric column, as before
+  df3 <- data.frame(id = 1:2, angle = c(10, 20))
+  attr(df3, "decimal") <- "."
+  expect_identical(hd_angle_choices(df3)[c("choices", "selected")],
+                   list(choices = c("id", "angle"), selected = "id"))
+})
+
+test_that("a headings upload with the other decimal mark is stopped with advice", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  p <- withr::local_tempfile(fileext = ".csv")
+  writeBin(charToRaw("id;heading\n1;123.456\n2;234.567\n3;10.125\n"), p)
+  shiny::testServer(app_dir(), {
+    session$setInputs(input_type = "headings", delim_sel = "auto", decimal_sel = "auto")
+    session$setInputs(file = list(datapath = p, name = "h.csv"))
+    session$setInputs(hd_col = "heading", hd_units = "degrees",
+                      hd_convention = "unit_circle", go3 = 1)
+    expect_match(rv$error, "Set Decimal mark to Point (.)", fixed = TRUE)
+    expect_null(rv$hd)
+    session$setInputs(decimal_sel = ".")
+    session$setInputs(go3 = 2)
+    expect_null(rv$error)
+    expect_equal(rv$hd$heading, c(123.456, 234.567, 10.125) * pi / 180)
+  })
+})
