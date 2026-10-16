@@ -956,6 +956,8 @@ server <- function(input, output, session) {
                                     input$sheet_sel, unique_names = TRUE, id = labs,
                                     decimal_sel = input$decimal_sel))
         else rv$raw_hd
+        # the reader's bookkeeping must not reach the headings frame
+        attr(src, "decimal_evidence") <- attr(src, "decimal") <- NULL
         build_headings_input(src, col = input$hd_col,
                              units = input$hd_units,
                              convention = input$hd_convention, group = grp)
