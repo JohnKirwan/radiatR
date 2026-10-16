@@ -1213,7 +1213,7 @@ server <- function(input, output, session) {
           err_box
         )
       } else {
-        ang <- hd_angle_choices(rv$raw_hd)
+        ang <- hd_angle_choices(rv$raw_hd, current = isolate(input$hd_col))
         all_cols <- names(rv$raw_hd)
         tagList(
           h5("Describe your headings"),

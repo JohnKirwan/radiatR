@@ -99,14 +99,18 @@ upload_preview <- function(path, name, dialect = "generic", delim_sel = NULL,
 # (attr(df, "decimal"); none recorded for Excel, so none flagged), and some
 # only in that mark, is offered and preselected so Continue stops with advice
 # rather than an id column being plotted as angles. Id-like label columns
-# ("1.1", "1.10") are not angles and are never flagged.
+# ("1.1", "1.10") are not angles and are never flagged, and nothing is when a
+# numeric column with decimals confirms the mark. `current` (the user's
+# choice) stays selected while it is offered.
 .number_re <- c("." = "^[-+]?([0-9]+([.][0-9]*)?|[.][0-9]+)([eE][-+]?[0-9]+)?$",
                 "," = "^[-+]?([0-9]+(,[0-9]*)?|,[0-9]+)$")
-hd_angle_choices <- function(df) {
+hd_angle_choices <- function(df, current = NULL) {
   num <- names(df)[vapply(df, is.numeric, logical(1))]
   mark <- attr(df, "decimal")
+  confirmed <- any(vapply(df[num], function(v) any(is.finite(v) & v != round(v)),
+                          logical(1)))
   flagged <- character(0)
-  if (!is.null(mark)) {
+  if (!is.null(mark) && !confirmed) {
     other <- if (identical(mark, ",")) "." else ","
     labels <- tolower(trimws(names(df))) %in% radiatR:::.id_candidates
     flagged <- names(df)[!labels & vapply(df, function(v) {
@@ -118,7 +122,9 @@ hd_angle_choices <- function(df) {
     }, logical(1))]
   }
   choices <- c(num, flagged)
-  list(choices = choices, selected = c(flagged, num)[1L], flagged = flagged)
+  selected <- if (!is.null(current) && current %in% choices) current
+              else c(flagged, num)[1L]
+  list(choices = choices, selected = selected, flagged = flagged)
 }
 
 # What to tell the user when the chosen angle column is one hd_angle_choices()
@@ -127,7 +133,7 @@ hd_mark_advice <- function(df, col) {
   if (is.null(col) || !col %in% hd_angle_choices(df)$flagged) return(NULL)
   if (identical(attr(df, "decimal"), ","))
     sprintf(paste("Column '%s' was read as text: its values look like numbers with a",
-                  "decimal point. Set Decimal mark to Point (.)."), col)
+                  "decimal point. Set Decimal mark to Point (.) in step 1 (Back)."), col)
   else sprintf(paste("Column '%s' was read as text: its values look like numbers with a",
-                     "decimal comma. Set Decimal mark to Comma (,)."), col)
+                     "decimal comma. Set Decimal mark to Comma (,) in step 1 (Back)."), col)
 }
