@@ -94,6 +94,8 @@ reference:
       with column mappings and metadata.
     contents:
       - Tracks-class
+      - ids
+      - as.data.frame.Tracks
       - transform_history
 
   - title: "Simulation"
@@ -159,8 +161,12 @@ reference:
     contents:
       - test_uniformity
       - test_mean_directions
-      - boot_mean_ci
       - test_concentration
+      - test_distributions
+      - test_gof
+      - test_symmetry
+      - test_unimodality
+      - boot_mean_ci
       - boot_kappa_ci
       - boot_kappa_contrast
 
@@ -184,6 +190,7 @@ reference:
       - circ_display
       - add_radial_grid
       - add_origin_point
+      - add_landmark
       - assign_colour_key
       - assign_color_key
       - cycle_colours
@@ -235,6 +242,7 @@ reference:
     desc: >
       Zone dwell-time, quadrant lines, and goal-entry counting.
     contents:
+      - add_stimulus_arc
       - add_quadrant_lines
       - zone_dwell
       - count_goal_entries
@@ -246,6 +254,7 @@ reference:
       - rad_shepherd
       - line_circle_intercept
       - derive_coords
+      - circular_mapping
 
   - title: "Reference frame & transforms"
     desc: >
@@ -267,6 +276,8 @@ reference:
       - tortuosity_ratio
       - path_straightness
       - path_tortuosity
+      - path_sinuosity
+      - sinuosity
       - track_speed
       - track_velocity
       - track_turning
@@ -297,8 +308,3 @@ reference:
       orientation experiment (Kirwan & Nilsson 2019).
     contents:
       - cpunctatus
-
-  - title: "Miscellaneous"
-    desc: Any remaining exported topics.
-    contents:
-      - matches(".")

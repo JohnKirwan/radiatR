@@ -1,5 +1,9 @@
 ---
 title: "Quantifying path shape"
+description: >
+  Per-trajectory spatial metrics -- distance travelled, straightness, and
+  displacement- versus turning-based tortuosity -- on recorded x/y
+  coordinates.
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Quantifying path shape}
