@@ -244,6 +244,7 @@ test_that("a headings upload on auto records the delimiter it was read with", {
     expect_null(rv$error)
     d <- current_spec()$data
     expect_identical(list(d$delim, d$decimal, d$latin1), list(";", ".", FALSE))
+    expect_null(attr(rv$hd, "decimal_evidence"))
   })
 })
 
@@ -428,6 +429,8 @@ test_that("a headings angle column backed only by another column's point is stop
     session$setInputs(go3 = 2)
     expect_null(rv$error)
     expect_equal(rv$hd$heading, c(123.456, 234.567, 10.125) * pi / 180)
+    expect_null(attr(rv$hd, "decimal_evidence"))
+    expect_null(attr(rv$hd, "decimal"))
   })
 })
 
