@@ -42,6 +42,18 @@ headings_frame <- function(data,
   angle_convention <- match.arg(angle_convention, c("unit_circle", "clock"))
   coords           <- match.arg(coords, c("absolute", "relative"))
 
+  # Angles held as text are refused, not coerced: the text may be numbers in
+  # another decimal mark, or not numbers at all.
+  v <- data[[col_name]]
+  if (is.character(v) || is.factor(v)) {
+    v <- as.character(v)
+    bad <- which(!is.na(v) & is.na(suppressWarnings(as.numeric(v))))
+    if (length(bad))
+      radiatR_abort_malformed_values(col_name, bad, v[bad])
+    rlang::abort(sprintf("headings_frame: column '%s' holds text; convert it with as.numeric().",
+                         col_name), class = "radiatR_invalid_argument", arg = "col")
+  }
+
   .check_angle_units(data[[col_name]], units, col_name)
   if (units == "degrees")
     data[[col_name]] <- data[[col_name]] * pi / 180
