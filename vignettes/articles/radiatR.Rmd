@@ -1,5 +1,9 @@
 ---
 title: "radiatR"
+description: >
+  The main workflow: from tracking files or a table of angles, through
+  heading derivation and circular summaries, to a publication-ready
+  radiate() plot.
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{radiatR}

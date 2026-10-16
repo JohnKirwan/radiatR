@@ -1,5 +1,8 @@
 ---
 title: "Simulating Trajectories"
+description: >
+  Generating synthetic trajectories on the unit disk with simulate_tracks(),
+  for pipeline testing, teaching, and power analysis.
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Simulating Trajectories}

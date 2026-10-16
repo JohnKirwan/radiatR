@@ -1,5 +1,9 @@
 ---
 title: "Circular Statistics and Distribution Overlays"
+description: >
+  Dispersion summaries, parametric fits, hypothesis tests with
+  multiple-comparison correction, circular correlation, and rose, density
+  and KDE distribution overlays for a headings data frame.
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Circular Statistics and Distribution Overlays}
