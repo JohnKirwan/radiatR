@@ -195,3 +195,73 @@ test_that("TRex: repeated frame columns that differ are an error", {
   df <- data.frame(frame_1 = 0:2, X = c(0, 1, 2), Y = 0, frame_5 = c(0, 1, 9))
   expect_error(read_tracks(df, dialect = "trex"), "repeated frame columns")
 })
+
+# ---- A wrong dialect is an error --------------------------------------------------
+
+test_that("every real export loads under its own dialect only", {
+  own <- list(dlc_CollectedData_Pranav.csv = character(0), # labelled training data: refused by all
+              dlc_single_wasp_predictions.csv = "deeplabcut",
+              dlc_two_mice_predictions.csv = "deeplabcut",
+              ethovision_trial.txt = "ethovision",
+              ethovision_truncated.txt = character(0), # truncated: refused by all
+              idtrackerai_trajectories.csv = "idtrackerai_wide",
+              sleap_three_mice.analysis.csv = "sleap",
+              sleap_three_nodes.analysis.csv = "sleap",
+              toxtrac_tracking.txt = "toxtrac",
+              toxtrac_tracking_realspace.txt = "toxtrac",
+              trackmate_v6_spots.csv = "trackmate",
+              trackmate_v7_spots.csv = "trackmate",
+              trex_beetle.csv = "trex")
+  dialects <- c("anymaze", "deeplabcut", "ethovision", "idtrackerai_wide", "sleap",
+                "toxtrac", "trackmate", "trex")
+  loads <- function(f, d) {
+    args <- if (d == "trackmate") list(unlinked = "drop") else list()
+    !inherits(cond(suppressWarnings(suppressMessages(
+      read_tracks(fx(f), dialect = d, dialect_args = args, on_invalid = "drop")))), "error")
+  }
+  for (f in names(own)) {
+    got <- dialects[vapply(dialects, function(d) loads(f, d), logical(1))]
+    expect_identical(got, own[[f]], label = f)
+  }
+})
+
+test_that("SLEAP refuses a table with no frame_idx unless time_col names the time", {
+  e <- cond(read_tracks(fx("toxtrac_tracking.txt"), dialect = "sleap"))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "frame_idx", fixed = TRUE)
+  expect_s3_class(cond(read_tracks(fx("trex_beetle.csv"), dialect = "sleap")),
+                  "radiatR_dialect_error")
+  df <- data.frame(frame = 1:3, track = "a", head.x = c(0, .1, .2), head.y = 0,
+                   check.names = FALSE)
+  expect_s3_class(cond(read_tracks(df, dialect = "sleap")), "radiatR_dialect_error")
+  ts <- read_tracks(df, dialect = "sleap", dialect_args = list(time_col = "frame"))
+  expect_equal(nrow(rows_of(ts)), 3L)
+})
+
+test_that("TRex refuses a track column it was not told to use", {
+  e <- cond(read_tracks(fx("toxtrac_tracking.txt"), dialect = "trex"))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "`Track`.*id_col")
+  e <- cond(read_tracks(fx("trackmate_v6_spots.csv"), dialect = "trex"))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "`TRACK_ID`.*id_col")
+  df <- data.frame(Track = rep(c("a", "b"), each = 2), frame = rep(1:2, 2),
+                   X = c(0, 1, 2, 3), Y = 0)
+  ts <- read_tracks(df, dialect = "trex", dialect_args = list(id_col = "Track"))
+  expect_setequal(as.character(rows_of(ts)$id), c("a", "b"))
+  e <- cond(read_tracks(df, dialect = "trex", dialect_args = list(id_col = "trak")))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "`id_col = \"trak\"` names no column", fixed = TRUE)
+})
+
+test_that("a dialect refusal in a multi-file read names the file", {
+  e <- cond(read_tracks(rep(fx("toxtrac_tracking.txt"), 2), dialect = "sleap"))
+  expect_s3_class(e, "radiatR_dialect_error")
+  expect_match(conditionMessage(e), "toxtrac_tracking.txt", fixed = TRUE)
+})
+
+test_that("refusals of the generic-column dialects are typed", {
+  df <- data.frame(a = 1:2, b = 1:2)
+  for (d in c("idtrackerai_wide", "trackmate", "toxtrac", "trex"))
+    expect_s3_class(cond(read_tracks(df, dialect = d)), "radiatR_dialect_error")
+})
