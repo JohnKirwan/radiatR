@@ -752,26 +752,35 @@ guess_columns <- function(data, mapping = list()) {
 # duration's fraction "0:00:00.320", as ANY-maze writes time); or a dotted
 # number that may as well be digit grouping ("1.234", "1.234.567").
 .mark_cells <- function(cells) {
-  grouping <- grepl("^[-+]?[1-9][0-9]{0,2}([.][0-9]{3})+$", cells)
-  list(comma = grepl("^[-+]?[0-9]*,[0-9]+$", cells),
-       point = (grepl("^[-+]?[0-9]*[.][0-9]+([eE][-+]?[0-9]+)?$", cells) & !grouping) |
-         grepl("^[0-9]+:[0-5][0-9]:[0-5][0-9][.][0-9]+$", cells),
-       grouping = grouping)
+  # A grouping shape has a dot ("1.234.567" is not `dotted`), a comma or
+  # duration cell is not `dotted`: each pattern is tried only on the cells it
+  # can still match.
+  dotted <- grepl("^[-+]?[0-9]*[.][0-9]+([eE][-+]?[0-9]+)?$", cells)
+  grouping <- comma <- duration <- logical(length(cells))
+  dot <- grepl(".", cells, fixed = TRUE)
+  grouping[dot] <- grepl("^[-+]?[1-9][0-9]{0,2}([.][0-9]{3})+$", cells[dot])
+  comma[!dotted] <- grepl("^[-+]?[0-9]*,[0-9]+$", cells[!dotted])
+  duration[!dotted] <- grepl("^[0-9]+:[0-5][0-9]:[0-5][0-9][.][0-9]+$", cells[!dotted])
+  list(comma = comma, point = (dotted & !grouping) | duration,
+       grouping = grouping, dotted = dotted)
 }
+
+# Each column's distinct non-missing cells, trimmed.
+.distinct_cells <- function(cells) lapply(cells, function(v) unique(trimws(unique(v[!is.na(v)]))))
 
 # The decimal-point evidence of a table's columns (`cells`, a named list of
 # character vectors): `point`, the columns with a decimal point that cannot be
 # digit grouping; `grouping`, the columns whose dotted numbers all could be,
-# each with up to three of them (for the error).
-.decimal_evidence <- function(cells) {
-  vals <- lapply(cells, function(v) trimws(v[!is.na(v)]))
-  marks <- lapply(vals, .mark_cells)
+# each with up to three of them (for the error). `marks` are the columns'
+# .mark_cells() when the caller has them (of `vals`, the distinct trimmed cells).
+.decimal_evidence <- function(cells, vals = .distinct_cells(cells),
+                              marks = lapply(vals, .mark_cells)) {
   point <- vapply(marks, function(m) any(m$point), logical(1))
   # a column with a decimal comma is not grouping-only: EthoVision assumes a
   # point beside commas, and the comma cell is then malformed, which says more
   grouping <- !point & vapply(marks, function(m) any(m$grouping) && !any(m$comma),
                               logical(1))
-  list(point = names(cells)[point],
+  list(point = names(vals)[point],
        grouping = Map(function(v, m) utils::head(v[m$grouping], 3L),
                       vals[grouping], marks[grouping]))
 }
@@ -1756,9 +1765,12 @@ read_tracks_format <- function(x, format, ...)
 #' digit grouping (`523.117`, `1.234`) and the clear decimal points are all in
 #' other columns (a label `1.5`), the load stops with a
 #' `radiatR_ambiguous_decimal` error (fields `columns`, `values`, `evidence`,
-#' `source`, `dialect`) rather than read `1.234` for what may be 1234. Give the
-#' mark with `read_opts`. The same holds for an EthoVision export that is not
-#' comma-separated. Other tab- and comma-separated files are read with a point.
+#' `decimal`, `source`, `dialect`) rather than read `1.234` for what may be 1234.
+#' So does a file where no data row of the first 20 lines is whole (a quoted
+#' field runs past them), as the point cannot then be checked. Give the
+#' mark with `read_opts`. The same holds for the built-in dialects that sniff the
+#' mark (ANY-maze, the others read as tables, and EthoVision when not
+#' comma-separated). Other tab- and comma-separated files are read with a point.
 #'
 #' Every built-in dialect checks
 #' its source columns the same way, before any reshaping, so the error names
@@ -2886,7 +2898,7 @@ register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = N
 # block of a file written with decimal points still holds "3,6 %".
 # attr(, "ethovision") is list(header =, units =): the header block as a named
 # character vector, and the units named by column.
-.read_ethovision <- function(path, delim = NULL) {
+.read_ethovision <- function(path, delim = NULL, decimal = NULL) {
   src <- basename(path)
   fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error", source = src)
   lines <- .read_text_lines(path)
@@ -2961,15 +2973,23 @@ register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = N
   d <- d[seq_along(nm)]
   names(d) <- nm
   d[d == "-"] <- NA_character_
-  cells <- unlist(d, use.names = FALSE)
-  comma <- any(grepl("^[-+]?[0-9]*,[0-9]+$", cells))
-  point <- any(grepl("^[-+]?[0-9]*[.][0-9]+([eE][-+]?[0-9]+)?$", cells))
-  attr(d, "decimal") <- if (delim != "," && comma && !point) "," else "."
-  # A point is assumed unless the rows show only decimal commas; for a file
-  # whose separator leaves room for a decimal comma, keep every column's
-  # evidence for the role check (.dialect_check_decimal()).
-  if (delim != "," && identical(attr(d, "decimal"), "."))
-    attr(d, "decimal_evidence") <- .decimal_evidence(as.list(d))
+  # A given mark is used as it is. Otherwise a point is assumed unless the rows
+  # show only decimal commas; for a file whose separator leaves room for a
+  # decimal comma, keep every column's evidence for the role check
+  # (.dialect_check_decimal()), from the one pass that also decides the mark.
+  if (!is.null(decimal)) {
+    attr(d, "decimal") <- decimal
+  } else if (delim == ",") {
+    attr(d, "decimal") <- "."
+  } else {
+    vals <- .distinct_cells(as.list(d))
+    marks <- lapply(vals, .mark_cells)
+    comma <- any(vapply(marks, function(m) any(m$comma), logical(1)))
+    point <- any(vapply(marks, function(m) any(m$dotted), logical(1)))
+    attr(d, "decimal") <- if (comma && !point) "," else "."
+    if (identical(attr(d, "decimal"), "."))
+      attr(d, "decimal_evidence") <- .decimal_evidence(vals = vals, marks = marks)
+  }
   attr(d, "ethovision") <- list(header = header, units = stats::setNames(un, nm))
   d
 }

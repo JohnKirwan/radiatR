@@ -2,8 +2,8 @@
 # (x, y, time, angle, weight): see .check_decimal_evidence().
 
 cond <- function(expr) tryCatch(expr, error = function(e) e)
-semi <- function(lines, env = parent.frame()) {
-  p <- withr::local_tempfile(fileext = ".csv", .local_envir = env)
+semi <- function(lines, env = parent.frame(), ext = ".csv") {
+  p <- withr::local_tempfile(fileext = ext, .local_envir = env)
   writeLines(lines, p)
   p
 }
@@ -186,4 +186,56 @@ test_that("trackmate (a .read_any() dialect) checks the evidence, v7 descriptor 
   expect_s3_class(e, "radiatR_ambiguous_decimal")
   ts <- read_tracks(v7, dialect = "trackmate", read_opts = list(decimal = "."))
   expect_equal(col_of(ts, "x"), c(1.234, 1.240))
+})
+
+# The remaining sniffing dialects: each stops when only a label shows the point.
+dialect_stops <- function(lines, dialect, ext = ".csv") {
+  p <- semi(lines, ext = ext)
+  e <- cond(read_tracks(p, dialect = dialect))
+  expect_s3_class(e, "radiatR_ambiguous_decimal")
+  expect_identical(e$dialect, dialect)
+  expect_identical(e$evidence, if (dialect == "toxtrac") "Label" else "lab")
+  expect_no_error(read_tracks(p, dialect = dialect, read_opts = list(decimal = ".")))
+}
+
+test_that("idtrackerai_wide: grouping-shaped positions backed only by a label stop", {
+  dialect_stops(c("seconds;x1;y1;lab", "0;1.234;2.345;1.5", "1;1.240;2.350;2.5"),
+                "idtrackerai_wide")
+})
+
+test_that("idtrackerai_wide: a time with a point backs %.3f positions", {
+  p <- semi(c("seconds;x1;y1;lab", "0.000;1.234;2.345;1.5", "0.036;1.240;2.350;2.5"))
+  expect_no_error(read_tracks(p, dialect = "idtrackerai_wide"))
+})
+
+test_that("toxtrac: header path stops on grouping-shaped positions backed by a label", {
+  dialect_stops(c("Time (sec);Arena;Track;Pos. X (mm);Pos. Y (mm);Label",
+                  "0;1;1;1.234;2.345;1.5", "1;1;1;1.240;2.350;2.5"),
+                "toxtrac", ext = ".txt")
+})
+
+test_that("trex: grouping-shaped positions backed only by a label stop", {
+  dialect_stops(c("frame;X;Y;lab", "0;1.234;2.345;1.5", "1;1.240;2.350;2.5"), "trex")
+})
+
+test_that("sleap: grouping-shaped positions backed only by a label stop", {
+  dialect_stops(c("track;frame_idx;lab;centroid.x;centroid.y",
+                  "t0;0;1.5;1.234;2.345", "t0;1;2.5;1.240;2.350"), "sleap")
+})
+
+test_that("sleap: a score column with a clear point backs %.3f node positions", {
+  p <- semi(c("track;frame_idx;instance.score;centroid.x;centroid.y;centroid.score",
+              "t0;0;0.9;1.234;2.345;0.8", "t0;1;0.9;1.240;2.350;0.7"))
+  expect_no_error(read_tracks(p, dialect = "sleap"))
+})
+
+test_that("ethovision: a given mark keeps no evidence and skips the pass", {
+  hdr <- c('"Number of header lines:";"4"', '"Experiment";"x"',
+           '"Trial time";"Recording time";"X center";"Y center"', '"s";"s";"cm";"cm"')
+  p <- semi(c(hdr, '"0.000";"0.000";"1.234";"2.345"', '"0.040";"0.040";"1.240";"2.350"'),
+            ext = ".txt")
+  expect_false(is.null(attr(radiatR:::.read_ethovision(p), "decimal_evidence")))
+  d <- radiatR:::.read_ethovision(p, decimal = ".")
+  expect_null(attr(d, "decimal_evidence"))
+  expect_identical(attr(d, "decimal"), ".")
 })
