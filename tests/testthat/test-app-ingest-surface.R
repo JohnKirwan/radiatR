@@ -262,3 +262,24 @@ test_that("an EthoVision delimiter mismatch names the Delimiter control", {
   expect_identical(e$plain_error(err),
                    "This file's format sets its own delimiter: set Delimiter to Auto-detect.")
 })
+
+test_that("an ambiguous decimal mark names the Decimal mark control", {
+  e <- app_env()
+  p <- withr::local_tempfile(fileext = ".csv")
+  writeLines(c("id;t;x;y;label", "a;1;1.234;2.345;1.5", "a;2;1.240;2.350;2.5"), p)
+  err <- tryCatch(read_tracks(p, mapping = list(id = "id", time = "t", x = "x", y = "y")),
+                  error = function(x) x)
+  expect_s3_class(err, "radiatR_ambiguous_decimal")
+  msg <- e$plain_error(err)
+  expect_match(msg, "Can't tell the decimal mark of column 'x'", fixed = TRUE)
+  expect_match(msg, "set Decimal mark to Point (.)", fixed = TRUE)
+  expect_false(grepl("read_opts", msg, fixed = TRUE))
+})
+
+test_that("the no-whole-row ambiguous decimal variant has its own plain message", {
+  e <- app_env()
+  err <- tryCatch(radiatR:::radiatR_abort_ambiguous_decimal("f.csv", character(0),
+                                                            character(0), character(0)),
+                  error = function(x) x)
+  expect_match(e$plain_error(err), "can't be told from the file's first lines", fixed = TRUE)
+})
