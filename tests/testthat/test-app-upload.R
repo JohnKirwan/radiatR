@@ -410,3 +410,45 @@ test_that("a headings upload with the other decimal mark is stopped with advice"
     expect_equal(rv$hd$heading, c(123.456, 234.567, 10.125) * pi / 180)
   })
 })
+
+test_that("a headings angle column backed only by another column's point is stopped", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  p <- withr::local_tempfile(fileext = ".csv")
+  writeBin(charToRaw("id;heading;w\n1;123.456;0.5\n2;234.567;0.6\n3;10.125;0.7\n"), p)
+  p <- normalizePath(p)
+  shiny::testServer(app_dir(), {
+    session$setInputs(input_type = "headings", delim_sel = "auto", decimal_sel = "auto")
+    session$setInputs(file = list(datapath = p, name = "h.csv"))
+    session$setInputs(hd_col = "heading", hd_units = "degrees",
+                      hd_convention = "unit_circle", go3 = 1)
+    expect_match(rv$error, "Can't tell the decimal mark of column 'heading'", fixed = TRUE)
+    expect_null(rv$hd)
+    session$setInputs(decimal_sel = ".")
+    session$setInputs(go3 = 2)
+    expect_null(rv$error)
+    expect_equal(rv$hd$heading, c(123.456, 234.567, 10.125) * pi / 180)
+  })
+})
+
+test_that("a trajectory upload with an ambiguous decimal mark loads on Point", {
+  skip_if_not_installed("shiny")
+  skip_if(!dir.exists(app_dir()), "app dir not found")
+  p <- withr::local_tempfile(fileext = ".csv")
+  writeLines(c("id;t;x;y;label", "a;1;1.234;2.345;1.5", "a;2;1.240;2.350;2.5",
+               "a;3;1.250;2.360;3.5"), p)
+  p <- normalizePath(p)
+  shiny::testServer(app_dir(), {
+    session$setInputs(file = list(datapath = p, name = "t.csv"))
+    session$setInputs(dialect_sel = "generic", delim_sel = "auto", decimal_sel = "auto")
+    session$setInputs(map_x = "x", map_y = "y", map_time = "t", map_id = "id",
+                      normalize_sel = "FALSE")
+    session$setInputs(go2 = 1)
+    expect_null(rv$ts)
+    expect_match(rv$error, "set Decimal mark to Point (.)", fixed = TRUE)
+    session$setInputs(decimal_sel = ".")
+    session$setInputs(go2 = 2)
+    expect_false(is.null(rv$ts))
+    expect_equal(as.data.frame(rv$ts)[[rv$ts@cols$x]], c(1.234, 1.240, 1.250))
+  })
+})
