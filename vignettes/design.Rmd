@@ -1,5 +1,8 @@
 ---
 title: "radiatR design contract"
+description: >
+  The design rules behind the radiatR API: which objects are rich classes,
+  which stay plain tibbles, and the conventions the functions share.
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{radiatR design contract}
