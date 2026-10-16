@@ -402,8 +402,10 @@
   matched as the headers are (`"Track"` failed with an untyped error) and a
   name that matches no column stops with `radiatR_dialect_error`, as do the
   other refusals of `trex`, `trackmate`, `toxtrac` and `idtrackerai_wide`,
-  which were plain errors. A refusal from one of these dialects or `sleap`
-  names its file.
+  which were plain errors. These refusals, `sleap`'s, and a misnamed
+  `bodypart`, `id_col` or `time_col` in any built-in dialect name the file,
+  which a multi-file read did not say. `sleap` matches `id_col` / `time_col`
+  as it matches its headers, too.
 
 ## Changes
 
