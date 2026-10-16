@@ -2396,7 +2396,7 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
     src <- NULL
   }
   if (!is.null(opts[["decimal"]])) attr(df, "decimal") <- opts[["decimal"]]
-  list(df = df, source = src, dialect = dialect,
+  list(df = df, source = src, dialect = dialect, norm = norm,
        decimal = attr(df, "decimal") %||% ".", names = norm(names(df)))
 }
 
@@ -2431,13 +2431,26 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
   out
 }
 
-# A column the caller named in `arg` must be one of the table's.
+# A dialect's refusal: sprintf(...), naming the file when there is one (a
+# multi-file read passes radiatR_ errors through, so the message must say which).
+.dialect_failer <- function(source) function(...) {
+  msg <- sprintf(...)
+  if (!is.null(source)) msg <- sprintf("%s (file '%s').", sub("\\.$", "", msg), source)
+  rlang::abort(msg, class = "radiatR_dialect_error", source = source)
+}
+
+# A column the caller named in `arg` must be one of the table's. It is matched
+# as the headers are, normalised, and returned normalised.
 .dialect_require <- function(inp, col, arg) {
-  if (!is.null(col) && !col %in% inp$names)
-    rlang::abort(sprintf("%s: `%s = \"%s\"` names no column; the table has %s.",
-                         inp$dialect, arg, col, paste(inp$names, collapse = ", ")),
-                 class = "radiatR_dialect_error", source = inp$source)
-  col
+  if (is.null(col)) return(NULL)
+  fail <- .dialect_failer(inp$source)
+  if (!is.character(col) || length(col) != 1L || is.na(col))
+    fail("%s: `%s` must name one column.", inp$dialect, arg)
+  key <- inp$norm(col)
+  if (!key %in% inp$names)
+    fail("%s: `%s = \"%s\"` names no column; the table has %s.",
+         inp$dialect, arg, col, paste(names(inp$df), collapse = ", "))
+  key
 }
 
 # The points of a flat table: the <point> of each <point>_x / <point>_y pair.
@@ -2450,8 +2463,7 @@ load_manifest <- function(file_tbl, track_dir, manifest = NULL,
 # must be distinct and among those found. `what` names a point in the errors.
 .dialect_select <- function(sel, found, what, dialect, source = NULL) {
   if (is.null(sel)) return(found)
-  fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error",
-                                     source = source)
+  fail <- .dialect_failer(source)
   if (!is.character(sel) || !length(sel) || anyNA(sel) || anyDuplicated(sel))
     fail("%s: `bodypart` must name one or more distinct %ss.", dialect, what)
   bad <- setdiff(sel, found)
@@ -2708,18 +2720,19 @@ register_loader_dialect("deeplabcut", function(x, bodypart = NULL, likelihood_mi
 register_loader_dialect("idtrackerai_wide", function(x, time_col = NULL, fps = NULL, ids = NULL,
                                                       read_opts = list()) {
   inp <- .dialect_input(x, "idtrackerai_wide", read_opts = read_opts)
+  fail <- .dialect_failer(inp$source)
   nms <- inp$names
   xs <- grep("^x_?[0-9]+$", nms, value = TRUE)
-  if (!length(xs)) stop("idtrackerai_wide: no x<id>/y<id> column pairs found")
+  if (!length(xs)) fail("idtrackerai_wide: no x<id>/y<id> column pairs found")
   ys <- sub("^x", "y", xs)
   if (!all(ys %in% nms))
-    stop("idtrackerai_wide: no y column for ", paste(xs[!ys %in% nms], collapse = ", "))
+    fail("idtrackerai_wide: no y column for %s", paste(xs[!ys %in% nms], collapse = ", "))
   animal <- sub("^x_?", "", xs)
   if (!is.null(ids)) {
     if (!all(as.character(ids) %in% animal))
-      stop("idtrackerai_wide: no such id(s): ",
+      fail("idtrackerai_wide: no such id(s): %s; the file has %s",
            paste(setdiff(as.character(ids), animal), collapse = ", "),
-           "; the file has ", paste(animal, collapse = ", "))
+           paste(animal, collapse = ", "))
     keep <- animal %in% as.character(ids)
     xs <- xs[keep]; ys <- ys[keep]; animal <- animal[keep]
   }
@@ -2895,7 +2908,7 @@ register_loader_dialect("ethovision", function(x, bodypart = NULL, partial = c("
     if (is.null(col)) return(NULL)
     if (!is.character(col) || length(col) != 1L || is.na(col))
       fail("ethovision: `%s` must name one column.", arg)
-    .dialect_require(inp, norm(col), arg)
+    .dialect_require(inp, col, arg)
   }
 
   of <- function(prefix) sub(prefix, "", grep(prefix, nms, value = TRUE))
@@ -2965,14 +2978,18 @@ register_loader_dialect("trackmate", function(x, id_col = NULL, time_col = NULL,
   unlinked <- match.arg(unlinked)
   norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(v))
   inp <- .dialect_input(x, "trackmate", norm, read_opts = read_opts)
+  fail <- .dialect_failer(inp$source)
   nms <- inp$names
-  id  <- id_col %||% .guess_col(nms, c("track_id", "trajectory_id", "id"))
+  time_col <- .dialect_require(inp, time_col, "time_col")
+  id  <- .dialect_require(inp, id_col, "id_col") %||%
+    .guess_col(nms, c("track_id", "trajectory_id", "id"))
   xc  <- .guess_col(nms, c("position_x", "x"))
   yc  <- .guess_col(nms, c("position_y", "y"))
   frame_c <- .guess_col(nms, "frame")
   t_c     <- .guess_col(nms, c("position_t", "time"))
   if (is.null(id) || is.null(xc) || is.null(yc) || is.null(time_col %||% frame_c %||% t_c))
-    stop("trackmate: required columns not found")
+    fail("trackmate: no track id, time and POSITION_X / POSITION_Y columns; the columns are: %s.",
+         paste(names(inp$df), collapse = ", "))
 
   # Version 7 descriptor rows: two rows of names (no number under X or Y),
   # then a units row whose every cell is blank or "(unit)".
@@ -3063,7 +3080,8 @@ register_loader_dialect("toxtrac", function(x, fps = NULL, read_opts = list()) {
   xc    <- .guess_col(nms, c("x", "pos_x", "x_mm", "x_px"))
   yc    <- .guess_col(nms, c("y", "pos_y", "y_mm", "y_px"))
   if (is.null(track) || is.null(time) || is.null(xc) || is.null(yc))
-    stop("toxtrac: required columns not found")
+    .dialect_failer(inp$source)("toxtrac: no track, time and x / y columns; the columns are: %s.",
+                         paste(names(inp$df), collapse = ", "))
   unit <- if (grepl("^frame", time)) "frames"
           else if (grepl("\\((s|sec|secs|seconds)\\)\\s*$", .dialect_header(inp, time),
                          ignore.case = TRUE)) "seconds"
@@ -3081,6 +3099,8 @@ register_loader_dialect("toxtrac", function(x, fps = NULL, read_opts = list()) {
 # Each file typically covers one individual; the individual index is inferred
 # from the numeric suffix of the filename stem (e.g. "run_0.csv" -> id "0").
 # Aggregated exports that include an id/individual column are also supported.
+# A table with a track column (Track, TrackID, TRACK_ID, trajectory_id) is
+# refused unless `id_col` names the id: TRex writes none, ToxTrac and TrackMate do.
 # Position columns: TRex exports plain X / Y, or hashtag-tagged centroid
 # variants -- X#wcentroid (weighted, TRex's recommended best estimate),
 # X#centroid (geometric), and X#pcentroid (posture-based). These normalise to
@@ -3094,9 +3114,20 @@ register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL,
   strip_unit <- function(v) sub("\\s*\\([^)]*\\)\\s*$", "", v)
   norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(strip_unit(v)))
   inp <- .dialect_input(x, "trex", norm, read_opts = read_opts)
+  fail <- .dialect_failer(inp$source)
   nms <- inp$names
   stem <- if (!is.null(inp$source)) tools::file_path_sans_ext(inp$source)
 
+  # TRex writes no track column; ToxTrac and TrackMate do, and guessing the id
+  # past one reads every track as one (or each TrackMate spot as its own).
+  id_col <- .dialect_require(inp, id_col, "id_col")
+  track <- sub("^_+|_+$", "", nms) %in% c("track", "trackid", "track_id", "trajectory_id")
+  if (is.null(id_col) && any(track))
+    fail(paste0("trex: `%s` looks like a track id, which a TRex export does not have. ",
+                "If this is a ToxTrac or TrackMate export, choose that dialect; ",
+                "otherwise name the id column with `id_col`."),
+         names(inp$df)[which(track)[1L]])
+  time_col <- .dialect_require(inp, time_col, "time_col")
   id <- id_col %||% .guess_col(nms, c("id","individual","individual_id","fish","animal","subject"))
   idv <- if (!is.null(id)) .dialect_col(inp, id) else {
     m <- if (!is.null(stem)) regmatches(stem, regexpr("[0-9]+$", stem)) else character(0)
@@ -3115,8 +3146,8 @@ register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL,
     same <- vapply(copies[-1L], function(k)
       identical(inp$df[[k]], inp$df[[copies[1L]]]), logical(1))
     if (!all(same))
-      stop("trex: the repeated frame columns (", paste(names(inp$df)[copies], collapse = ", "),
-           ") differ; name one with time_col")
+      fail("trex: the repeated frame columns (%s) differ; name one with time_col",
+           paste(names(inp$df)[copies], collapse = ", "))
   }
   time <- time_col %||% frame_c %||% .guess_col(nms, c("frames","time","t","timestamp"))
   # frame/frames and row order are frames; TRex's `time` is seconds
@@ -3128,8 +3159,8 @@ register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL,
     xc <- .guess_col(nms, paste0("x_", centroid))
     yc <- .guess_col(nms, paste0("y_", centroid))
     if (is.null(xc) || is.null(yc))
-      stop("trex: centroid = '", centroid, "' requested but X#", centroid,
-           " / Y#", centroid, " columns not found")
+      fail("trex: centroid = '%s' requested but X#%s / Y#%s columns not found",
+           centroid, centroid, centroid)
   } else {
     # priority: plain X/Y, then weighted, geometric, posture centroid
     xc <- .guess_col(nms, c("x","x_wcentroid","x_centroid","x_pcentroid",
@@ -3137,7 +3168,7 @@ register_loader_dialect("trex", function(x, id_col = NULL, time_col = NULL,
     yc <- .guess_col(nms, c("y","y_wcentroid","y_centroid","y_pcentroid",
                             "pos_y","position_y","y_px","cy","center_y"))
   }
-  if (is.null(xc) || is.null(yc)) stop("trex: could not find x/y position columns")
+  if (is.null(xc) || is.null(yc)) fail("trex: could not find x/y position columns")
   .dialect_output(data.frame(
     id   = idv,
     time = .dialect_time(inp, time, unit, fps),
@@ -3207,7 +3238,7 @@ register_loader_dialect("anymaze", function(x, time_col = NULL, id_col = NULL, z
     if (is.null(col)) return(NULL)
     if (!is.character(col) || length(col) != 1L || is.na(col))
       fail("anymaze: `%s` must name one column.", arg)
-    .dialect_require(inp, norm(col), arg)
+    .dialect_require(inp, col, arg)
   }
   xc <- .guess_col(nms, c("centre_position_x", "center_position_x"))
   yc <- .guess_col(nms, c("centre_position_y", "center_position_y"))
@@ -3238,7 +3269,8 @@ register_loader_dialect("anymaze", function(x, time_col = NULL, id_col = NULL, z
 # other characters as "_" (`Tail Base.x` is tail_base_x); `bodypart` is
 # normalised the same way. The id is `track`, and an empty track column (an
 # untracked, single-animal export) is one track. The time is `frame_idx`, in
-# frames (a time column of another name has no declared unit).
+# frames; a table without it is refused unless `time_col` names the time (a
+# column of another name has no declared unit).
 # `instance.score` is not a node and is not used. Two headers that normalise
 # to the same column are refused.
 #
@@ -3253,9 +3285,16 @@ register_loader_dialect("sleap", function(x, bodypart = NULL, score_min = NULL,
   partial <- match.arg(partial)
   norm <- function(v) gsub("[^a-z0-9]+", "_", tolower(v))
   inp <- .dialect_input(x, "sleap", norm, read_opts = read_opts)
-  fail <- function(...) rlang::abort(sprintf(...), class = "radiatR_dialect_error",
-                                     source = inp$source)
+  fail <- .dialect_failer(inp$source)
   nms <- inp$names; n <- nrow(inp$df)
+  # Every SLEAP analysis CSV has frame_idx; other trackers' <name>_x / _y
+  # columns (a bounding box, a midline) would otherwise be read as nodes.
+  time_col <- .dialect_require(inp, time_col, "time_col") %||%
+    (if ("frame_idx" %in% nms) "frame_idx")
+  if (is.null(time_col))
+    fail(paste0("sleap: no `frame_idx` column, so this does not look like a SLEAP analysis ",
+                "CSV. Choose the dialect of the program that wrote it, or name the time ",
+                "column with `time_col`."))
   same <- nms %in% nms[duplicated(nms)] & grepl("_(x|y|score)$", nms)
   if (any(same))
     fail("sleap: these headers name the same column once case and punctuation are set aside: %s.",
@@ -3269,9 +3308,7 @@ register_loader_dialect("sleap", function(x, bodypart = NULL, score_min = NULL,
     .guess_col(nms, c("track", "id", "individual", "animal", "subject"))
   idv <- if (!is.null(id)) .dialect_col(inp, id)
   if (is.null(idv) || all(.is_missing_chr(trimws(as.character(idv))))) idv <- rep("1", n)
-  time_col <- .dialect_require(inp, time_col, "time_col") %||%
-    .guess_col(nms, c("frame_idx", "frame", "frames", "time", "t"))
-  unit <- if (is.null(time_col) || grepl("^(frame_idx|frames?)$", time_col)) "frames"
+  unit <- if (grepl("^(frame_idx|frames?)$", time_col)) "frames"
 
   sc <- stats::setNames(paste0(sel, "_score"), sel)
   pts <- .dialect_points(inp, stats::setNames(paste0(sel, "_x"), sel),
