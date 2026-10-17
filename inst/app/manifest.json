@@ -1421,16 +1421,16 @@
         "RemoteUsername": "JohnKirwan",
         "RemotePkgRef": "github::JohnKirwan/radiatR@master",
         "RemoteRef": "master",
-        "RemoteSha": "ff3590f51aac7d77f4ef14a8766846b31c6ab01f",
+        "RemoteSha": "08b61298a2ba4ab69396cf85119923e168346b84",
         "GithubRepo": "radiatR",
         "GithubUsername": "JohnKirwan",
         "GithubRef": "master",
-        "GithubSHA1": "ff3590f51aac7d77f4ef14a8766846b31c6ab01f",
+        "GithubSHA1": "08b61298a2ba4ab69396cf85119923e168346b84",
         "NeedsCompilation": "no",
-        "Packaged": "2026-10-15 22:10:38 UTC; runner",
+        "Packaged": "2026-10-17 11:46:44 UTC; runner",
         "Author": "John D. Kirwan [aut, cre, cph],\n  A. & M.W. Mathis Labs [cph] (test fixture\n    tests/testthat/fixtures/real/dlc_CollectedData_Pranav.csv, from\n    'DeepLabCut'),\n  Talmo Pereira [cph] (example file inst/extdata/sleap_example.csv, from\n    'SLEAP'),\n  The Trustees of Princeton University [cph] (example file\n    inst/extdata/sleap_example.csv, from 'SLEAP')",
         "Maintainer": "John D. Kirwan <john@jkirwan.org>",
-        "Built": "R 4.5.3; ; 2026-10-15 22:10:40 UTC; unix"
+        "Built": "R 4.5.3; ; 2026-10-17 11:46:45 UTC; unix"
       }
     },
     "rappdirs": {
@@ -1475,36 +1475,36 @@
       "description": {
         "Package": "readxl",
         "Title": "Read Excel Files",
-        "Version": "1.5.0.1",
-        "Authors@R": "c(\n    person(\"Hadley\", \"Wickham\", , \"hadley@posit.co\", role = \"aut\",\n           comment = c(ORCID = \"0000-0003-4757-117X\")),\n    person(\"Jennifer\", \"Bryan\", , \"jenny@posit.co\", role = c(\"aut\", \"cre\"),\n           comment = c(ORCID = \"0000-0002-6983-2759\")),\n    person(\"Posit, PBC\", role = c(\"cph\", \"fnd\"),\n           comment = \"Copyright holder of all R code and all C/C++ code without explicit copyright attribution\"),\n    person(\"Marcin\", \"Kalicinski\", role = c(\"ctb\", \"cph\"),\n           comment = \"Author of included RapidXML code\"),\n    person(\"Komarov Valery\", role = c(\"ctb\", \"cph\"),\n           comment = \"Author of included libxls code\"),\n    person(\"Christophe Leitienne\", role = c(\"ctb\", \"cph\"),\n           comment = \"Author of included libxls code\"),\n    person(\"Bob Colbert\", role = c(\"ctb\", \"cph\"),\n           comment = \"Author of included libxls code\"),\n    person(\"David Hoerl\", role = c(\"ctb\", \"cph\"),\n           comment = \"Author of included libxls code\"),\n    person(\"Evan Miller\", role = c(\"ctb\", \"cph\"),\n           comment = \"Author of included libxls code\")\n  )",
-        "Description": "Import excel files into R. Supports '.xls' via the embedded\n    'libxls' C library <https://github.com/libxls/libxls> and '.xlsx' via\n    the embedded 'RapidXML' C++ library\n    <https://rapidxml.sourceforge.net/>.  Works on Windows, Mac and Linux\n    without external dependencies.",
+        "Version": "1.6.0",
+        "Authors@R": "c(\n    person(\"Hadley\", \"Wickham\", , \"hadley@posit.co\", role = \"aut\",\n           comment = c(ORCID = \"0000-0003-4757-117X\")),\n    person(\"Jennifer\", \"Bryan\", , \"jenny@posit.co\", role = c(\"aut\", \"cre\"),\n           comment = c(ORCID = \"0000-0002-6983-2759\")),\n    person(\"Posit, PBC\", role = c(\"cph\", \"fnd\"),\n           comment = \"Copyright holder of all R code and all C/C++ code without explicit copyright attribution\"),\n    person(\"Marcin\", \"Kalicinski\", role = c(\"ctb\", \"cph\"),\n           comment = \"Author of included RapidXML code\"),\n    person(\"Komarov Valery\", role = c(\"ctb\", \"cph\"),\n           comment = \"Author of included libxls code\"),\n    person(\"Christophe Leitienne\", role = c(\"ctb\", \"cph\"),\n           comment = \"Author of included libxls code\"),\n    person(\"Bob Colbert\", role = c(\"ctb\", \"cph\"),\n           comment = \"Author of included libxls code\"),\n    person(\"David Hoerl\", role = c(\"ctb\", \"cph\"),\n           comment = \"Author of included libxls code\"),\n    person(\"Evan Miller\", role = c(\"ctb\", \"cph\"),\n           comment = \"Author of included libxls code\"),\n    person(\"kokke\", role = \"ctb\",\n           comment = \"Author of included tiny-AES-c code\")\n  )",
+        "Description": "Import excel files into R. Supports '.xls' via the embedded\n    'libxls' C library <https://github.com/libxls/libxls> and '.xlsx' via\n    the embedded 'RapidXML' C++ library\n    <https://rapidxml.sourceforge.net/>.  Works on Windows, Mac and Linux\n    without external dependencies. Reading of password-encrypted '.xlsx'\n    files is supported via the embedded 'tiny-AES-c' C library\n    <https://github.com/kokke/tiny-AES-c>.",
         "License": "MIT + file LICENSE",
         "URL": "https://readxl.tidyverse.org, https://github.com/tidyverse/readxl",
         "BugReports": "https://github.com/tidyverse/readxl/issues",
-        "Depends": "R (>= 4.1)",
-        "Imports": "cellranger, tibble (>= 2.0.1), utils",
-        "Suggests": "covr, knitr, rmarkdown, testthat (>= 3.1.6), withr",
+        "Depends": "R (>= 4.2)",
+        "Imports": "cellranger, cli, rlang, tibble (>= 2.0.1), utils",
+        "Suggests": "askpass, covr, knitr, rmarkdown, testthat (>= 3.1.6), withr",
         "LinkingTo": "cpp11 (>= 0.5.5), progress",
         "VignetteBuilder": "knitr",
         "Config/build/compilation-database": "true",
         "Config/Needs/website": "tidyverse/tidytemplate, tidyverse",
-        "Config/roxygen2/version": "8.0.0",
+        "Config/roxygen2/version": "8.1.0",
         "Config/testthat/edition": "3",
         "Encoding": "UTF-8",
-        "Note": "libxls v1.6.3 c199d13",
+        "Note": "libxls v1.6.4 34c7cc6; tiny-AES-c 2385675",
         "NeedsCompilation": "yes",
-        "Packaged": "2026-09-16 07:49:42 UTC; ripley",
-        "Author": "Hadley Wickham [aut] (ORCID: <https://orcid.org/0000-0003-4757-117X>),\n  Jennifer Bryan [aut, cre] (ORCID:\n    <https://orcid.org/0000-0002-6983-2759>),\n  Posit, PBC [cph, fnd] (Copyright holder of all R code and all C/C++\n    code without explicit copyright attribution),\n  Marcin Kalicinski [ctb, cph] (Author of included RapidXML code),\n  Komarov Valery [ctb, cph] (Author of included libxls code),\n  Christophe Leitienne [ctb, cph] (Author of included libxls code),\n  Bob Colbert [ctb, cph] (Author of included libxls code),\n  David Hoerl [ctb, cph] (Author of included libxls code),\n  Evan Miller [ctb, cph] (Author of included libxls code)",
+        "Packaged": "2026-10-16 22:54:36 UTC; jenny",
+        "Author": "Hadley Wickham [aut] (ORCID: <https://orcid.org/0000-0003-4757-117X>),\n  Jennifer Bryan [aut, cre] (ORCID:\n    <https://orcid.org/0000-0002-6983-2759>),\n  Posit, PBC [cph, fnd] (Copyright holder of all R code and all C/C++\n    code without explicit copyright attribution),\n  Marcin Kalicinski [ctb, cph] (Author of included RapidXML code),\n  Komarov Valery [ctb, cph] (Author of included libxls code),\n  Christophe Leitienne [ctb, cph] (Author of included libxls code),\n  Bob Colbert [ctb, cph] (Author of included libxls code),\n  David Hoerl [ctb, cph] (Author of included libxls code),\n  Evan Miller [ctb, cph] (Author of included libxls code),\n  kokke [ctb] (Author of included tiny-AES-c code)",
         "Maintainer": "Jennifer Bryan <jenny@posit.co>",
         "Repository": "CRAN",
-        "Date/Publication": "2026-09-16 07:53:07 UTC",
-        "Built": "R 4.5.3; x86_64-pc-linux-gnu; 2026-10-14 09:47:27 UTC; unix",
+        "Date/Publication": "2026-10-17 07:20:02 UTC",
+        "Built": "R 4.5.3; x86_64-pc-linux-gnu; 2026-10-17 11:47:18 UTC; unix",
         "RemoteType": "standard",
         "RemotePkgRef": "readxl",
         "RemoteRef": "readxl",
         "RemoteRepos": "https://cran.rstudio.com",
         "RemotePkgPlatform": "source",
-        "RemoteSha": "1.5.0.1"
+        "RemoteSha": "1.6.0"
       }
     },
     "rematch": {
@@ -2081,13 +2081,13 @@
   },
   "files": {
     "app.R": {
-      "checksum": "47e1918ec5c5ddd5fc2737c071a6a364"
+      "checksum": "2a1a91945d0fdbe47f29b257e526ba01"
     },
     "download_helpers.R": {
       "checksum": "baed9472b0de62136d821fe7dd0bdfac"
     },
     "plot_spec.R": {
-      "checksum": "65039cb7bc287afb2665b5046fc0f59e"
+      "checksum": "1fa52bb985500ade1b08cb7f9e10104d"
     },
     "preview_constructions.R": {
       "checksum": "e2ddcfdfd5a8e8c0473134fe43a9085c"
@@ -2099,7 +2099,7 @@
       "checksum": "5ead9614c339dab20298a43076ffe1e8"
     },
     "upload.R": {
-      "checksum": "dfcf3dc7c89c707f62947ecae70507ad"
+      "checksum": "70ec38e6848ad6217818c3b912b98651"
     },
     "www/apple-touch-icon.png": {
       "checksum": "5742e2e36ebe10ed7e65f6ab23716300"
