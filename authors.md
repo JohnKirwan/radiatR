@@ -18,7 +18,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/JohnKirwan/radiatR/blob/master/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/JohnKirwan/radiatR/blob/main/DESCRIPTION)
 
 Kirwan J (2026). *radiatR: Analyse and Visualise Headings and
 Trajectories on the Unit Disk*. R package version 0.1.3,
