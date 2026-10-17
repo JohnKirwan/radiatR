@@ -15,7 +15,7 @@ on:
     inputs:
       ref:
         description: "radiatR git ref to install & record in the manifest"
-        default: master
+        default: main
         required: false
 
 name: connect-manifest
@@ -64,7 +64,7 @@ jobs:
             shiny
             bslib
             svglite
-            github::JohnKirwan/radiatR@${{ github.event.inputs.ref || 'master' }}
+            github::JohnKirwan/radiatR@${{ github.event.inputs.ref || 'main' }}
 
       - name: Write manifest
         shell: Rscript {0}
@@ -98,5 +98,5 @@ jobs:
           commit-message: "chore: regenerate inst/app/manifest.json"
           body: |
             Regenerated `inst/app/manifest.json` via the `connect-manifest`
-            workflow (radiatR ref: `${{ github.event.inputs.ref || 'master' }}`).
+            workflow (radiatR ref: `${{ github.event.inputs.ref || 'main' }}`).
             Merge to update the dependencies Posit Connect Cloud installs.

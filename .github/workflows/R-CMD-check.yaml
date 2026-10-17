@@ -13,9 +13,9 @@
 # about 0.5 MB to R/). It runs on macOS, the platform with the largest install.
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
-    branches: [main, master]
+    branches: [main]
 
 name: R-CMD-check
 
