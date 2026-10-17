@@ -4,6 +4,7 @@
 ^\.Renviron$
 ^dev$
 ^LICENSE\.md$
+^paper\.(md|bib|pdf|jats)$
 ^doc$
 ^Meta$
 ^data-raw$
