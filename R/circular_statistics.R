@@ -1044,10 +1044,9 @@ circ_cor <- function(hd, x_col, angle_col = "heading",
 #'   Hermans-Rasson test as a powerful alternative to the Rayleigh test for
 #'   circular statistics in biology. BMC Ecology 19:30.
 #'   \doi{10.1186/s12898-019-0246-8}.
-#' @references Pycke, S.-R. (2010). Some tests for uniformity of circular
-#'   distributions powered by the multivariate Rayleigh test. Annals of the
-#'   Institute of Statistical Mathematics, 62(2), 323-340.
-#'   \doi{10.1007/s10463-008-0179-9}.
+#' @references Pycke, J.-R. (2010). Some tests for uniformity of circular
+#'   distributions powerful against multimodal alternatives. Canadian Journal
+#'   of Statistics, 38(1), 80-96. \doi{10.1002/cjs.10048}.
 #' @examples
 #' hd <- derive_headings(cpunctatus, rule = "distal", carry = "arc")
 #' test_uniformity(hd, group_col = "arc", p_adjust = "BH")
