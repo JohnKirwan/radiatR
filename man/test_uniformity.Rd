@@ -86,7 +86,7 @@ Landler, L., Ruxton, G.D. & Malkemper, E.P. (2019). The
   circular statistics in biology. BMC Ecology 19:30.
   \doi{10.1186/s12898-019-0246-8}.
 
-Pycke, S.-R. (2010). Some tests for uniformity of circular
-  distributions powered by the multivariate Rayleigh test. Annals of the
-  Institute of Statistical Mathematics, 62(2), 323-340.
+Pycke, J.-R. (2010). Some tests for uniformity of circular
+  distributions powerful against multimodal alternatives. Canadian Journal
+  of Statistics, 38(1), 80-96. \doi{10.1002/cjs.10048}.
 }
