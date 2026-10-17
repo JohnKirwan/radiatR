@@ -39,6 +39,7 @@ BugReports: https://github.com/JohnKirwan/radiatR/issues
 License: GPL (>= 3)
 Copyright: file inst/COPYRIGHTS
 Encoding: UTF-8
+Language: en-GB
 LazyData: true
 LazyDataCompression: xz
 Depends: R (>= 4.1.0)
