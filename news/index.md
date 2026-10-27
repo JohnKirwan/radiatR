@@ -2,6 +2,8 @@
 
 ## radiatR 0.1.3
 
+CRAN release: 2026-10-27
+
 ### Breaking changes
 
 - A semicolon-separated file whose decimal point was sniffed from a
