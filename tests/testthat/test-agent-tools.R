@@ -553,3 +553,72 @@ test_that("plot refuses a wrong handle or an unknown facet column, logging nothi
   expect_error(tools$plot(handle = "nope"), class = "radiatR_unknown_handle")
   expect_length(agent_store_of(tools)$log, logged)
 })
+
+test_that("radiatR_tools exposes the ten documented tools", {
+  expect_identical(
+    names(radiatR_tools()),
+    c("list_options", "load_tracks", "load_headings", "derive_headings",
+      "describe", "summarise", "test_uniformity", "compare_groups", "plot",
+      "export_script"))
+})
+
+test_that("the exported script reproduces every object and every result", {
+  fx <- agent_fixture()
+  # A path with a space and an apostrophe (both legal on every CI platform).
+  odd <- file.path(fx$dir, "my sim's file.csv")
+  expect_true(file.copy(fx$path, odd))
+  angles <- agent_write(data.frame(bearing = c(10, 20, 350, 5, 15, 340),
+                                   site = rep(c("a", "b"), each = 3)),
+                        fx$dir, "angles.csv")
+  tools <- radiatR_tools()
+
+  # Tracks path.
+  tools$load_tracks(paths = odd, time_type = "frames", fps = 30,
+                    mapping = fx$mapping, keep = "condition")
+  tools$derive_headings(handle = "tracks_1", rule = "distal", seed = 1L,
+                        params = list(max_radius = 1), carry = "condition")
+  tools$derive_headings(handle = "tracks_1", rule = "ransac_straight", seed = 2L,
+                        on_missing = "quiet")
+  tools$summarise(handle = "headings_1", by = "condition")
+  tools$test_uniformity(handle = "headings_1", seed = 5L, group_col = "condition",
+                        test = "kuiper", p_method = "monte_carlo", n_sim = 199L)
+  tools$compare_groups(handle = "headings_1", aspect = "mean_direction",
+                       group_col = "condition", seed = 6L,
+                       method = "permutation", n_perm = 199L)
+  # Table-of-angles path.
+  tools$load_headings(path = angles, delim = "comma", col = "bearing",
+                      units = "degrees", angle_convention = "clock")
+  tools$summarise(handle = "headings_3", by = "site")
+  tools$test_uniformity(handle = "headings_3", seed = 7L)
+  if (capabilities("png")) tools$plot(handle = "headings_3")
+
+  store <- agent_store_of(tools)
+  script <- agent_json(tools$export_script())$code
+  expect_identical(script, .agent_script(store))
+
+  # Run the whole script in a fresh environment: every object matches.
+  env <- new.env(parent = baseenv())
+  eval(parse(text = script), env)
+  expect_setequal(ls(env), ls(store$objects))
+  for (handle in ls(store$objects))
+    expect_identical(get(handle, env), get(handle, store$objects), info = handle)
+
+  # Run it call by call: every result matches the value the tool computed.
+  env <- new.env(parent = baseenv())
+  for (i in seq_along(store$log)) {
+    value <- NULL
+    for (stmt in parse(text = store$log[[i]])) value <- eval(stmt, env)
+    if (inherits(value, "ggplot")) next
+    expect_identical(value, store$results[[i]], info = store$log[[i]])
+  }
+})
+
+test_that("a tool that prints does not write to stdout", {
+  store <- .agent_store()
+  expect_silent(
+    run <- .agent_run(store, "t", list(.agent_step(
+      "print", list("to stdout"), ns = "base"))))
+  expect_match(run$output, "to stdout", fixed = TRUE)
+  env <- jsonlite::fromJSON(.agent_envelope(run), simplifyVector = FALSE)
+  expect_match(env$output, "to stdout", fixed = TRUE)
+})
