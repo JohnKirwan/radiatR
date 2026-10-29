@@ -302,6 +302,13 @@ reference:
       - distance_unit
       - calibrate_distance
 
+  - title: "AI agent tools"
+    desc: >
+      Tool definitions for driving radiatR from a language model, through
+      ellmer or an MCP client. See the "Guide for AI agents" article.
+    contents:
+      - radiatR_tools
+
   - title: "Datasets"
     desc: >
       Bundled example data from a Cylindroiulus punctatus (millipede) visual

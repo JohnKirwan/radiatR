@@ -1,5 +1,16 @@
 # radiatR (development version)
 
+## Changes
+
+* New `radiatR_tools()`: tool definitions that let an AI agent run a radiatR
+  analysis through the ellmer package, or through an MCP client such as
+  Claude Code or Claude Desktop via mcptools. Loaded objects are referred to
+  by handles; every result carries its units, any warnings, and the R code
+  that produced it; `radiatR_export_script` returns the session as a script
+  that reproduces the data objects and result tables exactly. Units and seeds
+  are never guessed. ellmer is a suggested package, needed only for this
+  function.
+
 # radiatR 0.1.3
 
 ## Breaking changes
