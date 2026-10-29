@@ -1,5 +1,7 @@
 # Changelog
 
+## radiatR (development version)
+
 ## radiatR 0.1.3
 
 CRAN release: 2026-10-27
