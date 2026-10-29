@@ -2,7 +2,7 @@
 
 <!-- badges: start -->
 [![CRAN status](https://www.r-pkg.org/badges/version/radiatR)](https://CRAN.R-project.org/package=radiatR)
-[![CRAN downloads](https://cranlogs.r-pkg.org/badges/grand-total/radiatR)](https://cran.r-project.org/package=radiatR)
+[![CRAN downloads](https://cranlogs.r-pkg.org/badges/grand-total/radiatR)](https://CRAN.R-project.org/package=radiatR)
 [![R-CMD-check](https://github.com/JohnKirwan/radiatR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/JohnKirwan/radiatR/actions/workflows/R-CMD-check.yaml)
 [![r-universe](https://johnkirwan.r-universe.dev/badges/radiatR)](https://johnkirwan.r-universe.dev/radiatR)
 <!-- badges: end -->
