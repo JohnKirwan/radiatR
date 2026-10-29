@@ -518,6 +518,34 @@
     })
 }
 
+# ---- plot --------------------------------------------------------------------
+.tool_plot <- function(store) {
+  .agent_tool(
+    "plot", "Plot tracks or headings",
+    "Draw a Tracks or headings handle on the unit circle with radiatR::radiate() and return the image. For any further styling, edit the code this tool returns.",
+    list(
+      handle = ellmer::type_string("Tracks or headings handle."),
+      facets = ellmer::type_array(ellmer::type_string(), "Column(s) to facet by.", required = FALSE)
+    ),
+    function(handle = NULL, facets = NULL) {
+      obj <- .agent_get(store, handle, c("Tracks", "headings_frame"))
+      facets <- .agent_columns(.agent_strings(facets, "facets"),
+                               names(as.data.frame(obj)), "facets")
+      file <- tempfile(fileext = ".png")
+      on.exit(unlink(file), add = TRUE)
+      # Rendering is the step's check, so a plot that cannot be drawn fails the
+      # call as a whole and nothing is logged.
+      run <- .agent_run(store, "radiatR_plot", list(.agent_step(
+        "radiate",
+        c(list(rlang::sym(handle)), .agent_args(facets = facets)),
+        check = function(plot)
+          ggplot2::ggsave(file, plot, width = 6, height = 6, dpi = 120))))
+      # resize = "none": any other value makes ellmer require the magick package.
+      list(ellmer::ContentText(as.character(.agent_envelope(run))),
+           ellmer::content_image_file(file, resize = "none"))
+    })
+}
+
 # ---- public ------------------------------------------------------------------
 #' Tools for driving radiatR from an AI agent
 #'
@@ -570,6 +598,6 @@ radiatR_tools <- function() {
     load_headings = .tool_load_headings, derive_headings = .tool_derive_headings,
     describe = .tool_describe, summarise = .tool_summarise,
     test_uniformity = .tool_test_uniformity, compare_groups = .tool_compare_groups,
-    export_script = .tool_export_script)
+    plot = .tool_plot, export_script = .tool_export_script)
   lapply(builders, function(build) build(store))
 }

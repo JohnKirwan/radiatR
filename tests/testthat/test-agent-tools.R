@@ -522,3 +522,34 @@ test_that("comparing on a column that was not carried names the column", {
     class = "radiatR_invalid_argument")
   expect_match(conditionMessage(err), "not in the data: condition", fixed = TRUE)
 })
+
+test_that("plot returns the envelope and an inline PNG, and cleans up", {
+  skip_if_not(capabilities("png"))
+  fx <- agent_fixture()
+  tools <- radiatR_tools()
+  agent_headings(tools, fx)
+  before <- list.files(tempdir(), pattern = "\\.png$")
+  out <- tools$plot(handle = "headings_1", facets = "condition")
+
+  expect_length(out, 2L)
+  expect_s3_class(out[[1]], "ellmer::ContentText")
+  expect_s3_class(out[[2]], "ellmer::ContentImageInline")
+  expect_identical(out[[2]]@type, "image/png")
+  expect_identical(agent_json(out[[1]]@text)$code,
+                   'radiatR::radiate(headings_1, facets = "condition")')
+  expect_identical(list.files(tempdir(), pattern = "\\.png$"), before)
+
+  expect_length(tools$plot(handle = "tracks_1"), 2L)
+})
+
+test_that("plot refuses a wrong handle or an unknown facet column, logging nothing", {
+  fx <- agent_fixture()
+  tools <- radiatR_tools()
+  agent_headings(tools, fx)
+  logged <- length(agent_store_of(tools)$log)
+
+  expect_error(tools$plot(handle = "headings_1", facets = "conditon"),
+               class = "radiatR_invalid_argument")
+  expect_error(tools$plot(handle = "nope"), class = "radiatR_unknown_handle")
+  expect_length(agent_store_of(tools)$log, logged)
+})
