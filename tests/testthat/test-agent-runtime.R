@@ -168,3 +168,141 @@ test_that("stores are independent", {
   expect_identical(ls(b$objects), character(0))
   expect_identical(b$log, character(0))
 })
+
+test_that("a missing required argument is an error, never a default", {
+  expect_identical(.agent_string("degrees", "units", c("radians", "degrees")),
+                   "degrees")
+  err <- expect_error(.agent_string(NULL, "units"),
+                      class = "radiatR_missing_argument")
+  expect_match(conditionMessage(err), "`units` is required", fixed = TRUE)
+  expect_null(.agent_string(NULL, "units", required = FALSE))
+  expect_error(.agent_string("deg", "units", c("radians", "degrees")),
+               class = "radiatR_invalid_argument")
+  expect_error(.agent_string(c("a", "b"), "units"),
+               class = "radiatR_invalid_argument")
+  expect_error(.agent_string(1, "units"), class = "radiatR_invalid_argument")
+  expect_error(.agent_strings(NULL, "paths", required = TRUE),
+               class = "radiatR_missing_argument")
+  expect_error(.agent_strings(list("a"), "keep"),
+               class = "radiatR_invalid_argument")
+})
+
+test_that("numbers are checked, and a non-whole value is never truncated", {
+  expect_identical(.agent_number(30, "fps"), 30)
+  expect_identical(.agent_number(7, "seed", whole = TRUE), 7L)
+  expect_null(.agent_number(NULL, "fps"))
+  expect_error(.agent_number(NULL, "seed", required = TRUE),
+               class = "radiatR_missing_argument")
+  expect_error(.agent_number(5.9, "seed", whole = TRUE),
+               class = "radiatR_invalid_argument")
+  expect_error(.agent_number("7", "seed"), class = "radiatR_invalid_argument")
+  expect_error(.agent_number(Inf, "fps"), class = "radiatR_invalid_argument")
+  expect_identical(.agent_number(1, "n_sim", whole = TRUE, min = 1), 1L)
+  expect_error(.agent_number(0, "n_sim", whole = TRUE, min = 1),
+               class = "radiatR_invalid_argument")
+  expect_true(.agent_flag(TRUE, "axial"))
+  expect_null(.agent_flag(NULL, "axial"))
+  expect_error(.agent_flag("yes", "axial"), class = "radiatR_invalid_argument")
+})
+
+test_that("objects must be fully named and hold only known fields", {
+  expect_identical(.agent_object(NULL, "mapping", c("id", "x")), list())
+  expect_identical(.agent_object(list(id = "a", x = NULL), "mapping", c("id", "x")),
+                   list(id = "a"))
+  expect_error(.agent_object(list("a"), "mapping", c("id", "x")),
+               class = "radiatR_invalid_argument")
+  err <- expect_error(.agent_object(list(id = "a", z = 1), "mapping", c("id", "x")),
+                      class = "radiatR_invalid_argument")
+  expect_match(conditionMessage(err), "unknown: z", fixed = TRUE)
+  # An unknown field is refused even when its value is null, and a field given
+  # twice is refused rather than the first one winning.
+  expect_error(.agent_object(list(id = "a", z = NULL), "mapping", c("id", "x")),
+               class = "radiatR_invalid_argument")
+  err <- expect_error(.agent_object(list(x = "a", x = "b"), "mapping", c("id", "x")),
+                      class = "radiatR_invalid_argument")
+  expect_match(conditionMessage(err), "repeated: x", fixed = TRUE)
+  expect_null(.agent_unused(NULL, "fps", "time_type is 'frames'"))
+  err <- expect_error(.agent_unused(30, "fps", "time_type is 'frames'"),
+                      class = "radiatR_invalid_argument")
+  expect_match(conditionMessage(err), "it would be ignored", fixed = TRUE)
+  expect_identical(.agent_columns(c("a", "b"), c("a", "b", "c"), "keep"), c("a", "b"))
+  expect_null(.agent_columns(NULL, "a", "keep"))
+  err <- expect_error(.agent_columns(c("a", "typo"), c("a", "b"), "keep"),
+                      class = "radiatR_invalid_argument")
+  expect_match(conditionMessage(err), "not in the data: typo", fixed = TRUE)
+})
+
+test_that(".agent_paths makes paths absolute and rejects missing ones", {
+  dir <- withr::local_tempdir()
+  writeLines("a", file.path(dir, "x.csv"))
+  withr::local_dir(dir)
+
+  expect_identical(.agent_paths("x.csv"),
+                   normalizePath(file.path(dir, "x.csv"), winslash = "/"))
+  err <- expect_error(.agent_paths(c("x.csv", "nope.csv")),
+                      class = "radiatR_path_not_found")
+  expect_match(conditionMessage(err), "'nope.csv'", fixed = TRUE)
+  expect_match(conditionMessage(err), "Server working directory", fixed = TRUE)
+  expect_error(.agent_paths(NULL), class = "radiatR_missing_argument")
+})
+
+test_that(".agent_json states missing and non-finite values instead of dropping them", {
+  skip_if_not_installed("jsonlite")
+  json <- .agent_json(list(x = c(1, NA, Inf, 2 * pi), s = NA_character_))
+  expect_identical(
+    as.character(json),
+    '{"x":[1,"NA","Inf",6.28318530717959],"s":"NA"}')
+  when <- as.POSIXct("2026-01-02 03:04:05", tz = "UTC")
+  expect_identical(as.character(.agent_json(list(t = when))),
+                   '{"t":"2026-01-02T03:04:05Z"}')
+})
+
+test_that(".agent_envelope carries handle, result, units, conditions, output and code", {
+  skip_if_not_installed("jsonlite")
+  run <- list(value = 1, code = "f()", output = "printed",
+              warnings = list(list(class = "radiatR_dropped_rows", message = "m")))
+  env <- jsonlite::fromJSON(
+    .agent_envelope(run, handle = "tracks_1", result = list(n = 2L),
+                    units = .agent_units()),
+    simplifyVector = FALSE)
+
+  expect_identical(names(env),
+                   c("handle", "result", "units", "warnings", "output", "code"))
+  expect_identical(env$warnings[[1]]$class, list("radiatR_dropped_rows"))
+  expect_identical(env$units, list(angles = .agent_angle_units))
+  expect_identical(env$code, "f()")
+
+  quiet <- jsonlite::fromJSON(
+    .agent_envelope(list(code = "f()", output = "", warnings = list())),
+    simplifyVector = FALSE)
+  expect_identical(names(quiet), c("warnings", "code"))
+  expect_identical(quiet$warnings, list())
+})
+
+test_that(".agent_units describes the display convention of degree columns", {
+  units <- .agent_units(circ_display())
+  expect_match(units$mean_dir_deg, "0 at 90 degrees counter-clockwise from East",
+               fixed = TRUE)
+  expect_match(units$mean_dir_deg, "increasing clockwise", fixed = TRUE)
+})
+
+test_that(".agent_describe summarises Tracks, headings and plain tables", {
+  sim <- as.data.frame(simulate_tracks(seed = 1, n_points = 50))
+  ts <- tracks(sim, id = "trial_id", time = "frame", x = "abs_x", y = "abs_y")
+  d <- .agent_describe(ts)
+  expect_identical(d$class, "Tracks")
+  expect_identical(d$n_tracks, 60L)
+  expect_identical(d$mapped_columns$id, "trial_id")
+  expect_false(d$meta$normalize_xy)
+  expect_false("transform_history" %in% names(d$meta))
+  expect_identical(nrow(d$head), 5L)
+
+  hd <- headings_frame(data.frame(b = c(10, NA, 350), g = c("a", "a", "b")),
+                       col = "b", units = "degrees", angle_convention = "clock")
+  h <- .agent_describe(hd)
+  expect_identical(h$class, "headings_frame")
+  expect_identical(h$heading_col, "b")
+  expect_identical(h$n_missing_headings, 1L)
+
+  expect_identical(.agent_describe(data.frame(a = 1:2))$n_rows, 2L)
+})

@@ -171,3 +171,172 @@
                   utils::packageVersion("radiatR")),
           store$log), collapse = "\n")
 }
+
+# ---- argument checks ---------------------------------------------------------
+# Tool arguments arrive as parsed JSON. An MCP server calls the tool function
+# directly, without applying the schema, so "required", types and enums are
+# enforced here: a JSON null must never turn into a package default.
+.agent_string <- function(x, arg, choices = NULL, required = TRUE, why = NULL) {
+  if (is.null(x)) {
+    if (required) .agent_missing(arg, why)
+    return(NULL)
+  }
+  if (!is.character(x) || length(x) != 1L || is.na(x))
+    .agent_invalid(arg, "a single string")
+  if (!is.null(choices) && !x %in% choices)
+    .agent_invalid(arg, sprintf("one of %s (got '%s')",
+                                paste0("'", choices, "'", collapse = ", "), x))
+  x
+}
+
+.agent_strings <- function(x, arg, required = FALSE) {
+  if (is.null(x)) {
+    if (required) .agent_missing(arg)
+    return(NULL)
+  }
+  if (!is.character(x) || !length(x) || anyNA(x))
+    .agent_invalid(arg, "one or more strings")
+  x
+}
+
+.agent_number <- function(x, arg, required = FALSE, whole = FALSE, min = NULL) {
+  if (is.null(x)) {
+    if (required) .agent_missing(arg)
+    return(NULL)
+  }
+  if (!is.numeric(x) || length(x) != 1L || !is.finite(x))
+    .agent_invalid(arg, "a single finite number")
+  if (!is.null(min) && x < min)
+    .agent_invalid(arg, sprintf("at least %s (got %s)", format(min), format(x)))
+  if (!whole) return(x)
+  if (x != round(x) || abs(x) > .Machine$integer.max)
+    .agent_invalid(arg, sprintf("a whole number (got %s)", format(x)))
+  as.integer(x)
+}
+
+.agent_flag <- function(x, arg) {
+  if (is.null(x)) return(NULL)
+  if (!is.logical(x) || length(x) != 1L || is.na(x))
+    .agent_invalid(arg, "true or false")
+  x
+}
+
+.agent_compact <- function(x) Filter(Negate(is.null), x)
+
+# An argument the call would ignore is refused, so the model is never told it
+# got something it did not.
+.agent_unused <- function(x, arg, unless) {
+  if (!is.null(x))
+    .agent_invalid(arg, sprintf("omitted unless %s (it would be ignored)", unless))
+  invisible(NULL)
+}
+
+# A JSON object: absent means empty; every field must be named, known and
+# given once. Field names are checked before null fields are dropped.
+.agent_object <- function(x, arg, allowed) {
+  x <- as.list(x)
+  if (!length(x)) return(list())
+  nms <- names(x)
+  if (is.null(nms) || !all(nzchar(nms)))
+    .agent_invalid(arg, "an object whose fields are all named")
+  unknown <- setdiff(nms, allowed)
+  if (length(unknown))
+    .agent_invalid(arg, sprintf("an object with fields from: %s (unknown: %s)",
+                                paste(allowed, collapse = ", "),
+                                paste(unknown, collapse = ", ")))
+  if (anyDuplicated(nms))
+    .agent_invalid(arg, sprintf("an object naming each field once (repeated: %s)",
+                                paste(unique(nms[duplicated(nms)]), collapse = ", ")))
+  .agent_compact(x)
+}
+
+.agent_columns <- function(cols, available, arg) {
+  absent <- setdiff(cols, available)
+  if (length(absent))
+    rlang::abort(
+      sprintf("`%s` names column(s) that are not in the data: %s. Available: %s.",
+              arg, paste(absent, collapse = ", "),
+              paste(available, collapse = ", ")),
+      class = "radiatR_invalid_argument", arg = arg, columns = absent)
+  cols
+}
+
+.agent_paths <- function(paths, arg = "paths") {
+  paths <- .agent_strings(paths, arg, required = TRUE)
+  absent <- paths[!file.exists(paths)]
+  if (length(absent)) {
+    rlang::abort(
+      sprintf("Path(s) not found: %s. Server working directory: '%s'.",
+              paste0("'", absent, "'", collapse = ", "), getwd()),
+      class = "radiatR_path_not_found", paths = absent, wd = getwd())
+  }
+  normalizePath(paths, winslash = "/", mustWork = TRUE)
+}
+
+# Drop NULLs so emitted calls carry only what the agent chose and package
+# defaults apply to the rest. Every value passed here has already been checked.
+.agent_args <- function(...) .agent_compact(list(...))
+
+# ---- result envelope ---------------------------------------------------------
+# Numbers go out at 15 significant digits (jsonlite's maximum for digits = NA);
+# exact values are reproduced by the script. Missing and non-finite values are
+# encoded as the strings "NA", "NaN", "Inf", "-Inf" rather than dropped, and
+# date-times as ISO 8601 in UTC.
+.agent_json <- function(x) {
+  jsonlite::toJSON(x, auto_unbox = TRUE, digits = NA, na = "string",
+                   null = "null", dataframe = "rows", POSIXt = "ISO8601",
+                   UTC = TRUE)
+}
+
+.agent_envelope <- function(run = NULL, handle = NULL, result = NULL,
+                            units = NULL, code = run$code) {
+  env <- list()
+  if (!is.null(handle)) env$handle <- handle
+  if (!is.null(result)) env$result <- result
+  if (!is.null(units)) env$units <- units
+  env$warnings <- lapply(run$warnings, function(w)
+    list(class = I(w$class), message = w$message))
+  if (!is.null(run) && nzchar(run$output)) env$output <- run$output
+  if (!is.null(code)) env$code <- code
+  .agent_json(env)
+}
+
+.agent_angle_units <- "radians, unit-circle convention (0 = East, counter-clockwise)"
+
+.agent_units <- function(display = NULL) {
+  units <- list(angles = .agent_angle_units)
+  if (!is.null(display)) {
+    units$mean_dir_deg <- sprintf(
+      "degrees in the display convention: 0 at %s degrees counter-clockwise from East, increasing %s",
+      format(display$zero * 180 / pi),
+      if (isTRUE(display$clockwise)) "clockwise" else "counter-clockwise")
+  }
+  units
+}
+
+.agent_describe <- function(obj) {
+  if (inherits(obj, "Tracks")) {
+    d <- obj@data
+    ids <- unique(d[[obj@cols$id]])
+    return(list(
+      class = "Tracks", n_rows = nrow(d), n_tracks = length(ids),
+      first_ids = I(as.character(utils::head(ids, 10L))),
+      mapped_columns = .agent_compact(obj@cols),
+      data_columns = I(names(d)),
+      meta = obj@meta[setdiff(names(obj@meta), "transform_history")],
+      head = utils::head(as.data.frame(d), 5L)))
+  }
+  out <- list(class = class(obj)[1L], n_rows = nrow(obj),
+              columns = I(names(obj)))
+  if (inherits(obj, "headings_frame")) {
+    col <- attr(obj, "heading_col", exact = TRUE)
+    out$heading_col <- col
+    out$coords <- attr(obj, "coords", exact = TRUE)
+    out$n_missing_headings <- sum(is.na(obj[[col]]))
+    if ("id" %in% names(obj)) out$n_tracks <- length(unique(obj$id))
+    missing_ids <- attr(obj, "missing_ids", exact = TRUE)
+    if (!is.null(missing_ids)) out$missing_ids <- I(as.character(missing_ids))
+  }
+  out$head <- utils::head(as.data.frame(obj), 5L)
+  out
+}
