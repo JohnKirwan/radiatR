@@ -811,6 +811,14 @@ time per observation or per trajectory.
   [`calibrate_distance()`](https://johnkirwan.github.io/radiatR/reference/distance_scale.md)
   : Distance calibration for a Tracks object
 
+## AI agent tools
+
+Tool definitions for driving radiatR from a language model, through
+ellmer or an MCP client. See the “Guide for AI agents” article.
+
+- [`radiatR_tools()`](https://johnkirwan.github.io/radiatR/reference/radiatR_tools.md)
+  : Tools for driving radiatR from an AI agent
+
 ## Datasets
 
 Bundled example data from a Cylindroiulus punctatus (millipede) visual

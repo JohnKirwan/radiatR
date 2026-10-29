@@ -8,3 +8,7 @@ pitfalls.
   [`vignette("agent-guide", package = "radiatR")`](https://johnkirwan.github.io/radiatR/articles/agent-guide.md)
 - Online:
   <https://johnkirwan.github.io/radiatR/articles/agent-guide.html>
+
+To drive radiatR through tools instead of writing R, see
+[`?radiatR_tools`](https://johnkirwan.github.io/radiatR/reference/radiatR_tools.md)
+and the “Driving radiatR through tools” section of the guide.

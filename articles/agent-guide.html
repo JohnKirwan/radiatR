@@ -376,6 +376,84 @@ were dropped.</li>
 from its name.</li>
 </ol>
 </div>
+<div class="section level2">
+<h2 id="driving-radiatr-through-tools">Driving radiatR through tools<a class="anchor" aria-label="anchor" href="#driving-radiatr-through-tools"></a>
+</h2>
+<p><code><a href="../reference/radiatR_tools.html">radiatR_tools()</a></code> returns tool definitions for the <a href="https://ellmer.tidyverse.org" class="external-link">ellmer</a> package. They let a model
+run an analysis without writing R: load tracks or a table of headings,
+derive headings, summarise, test and plot.</p>
+<p>Serve them to an MCP client such as Claude Code or Claude Desktop
+with the <a href="https://posit-dev.github.io/mcptools/" class="external-link">mcptools</a>
+package:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="ex">claude</span> mcp add radiatR <span class="at">--</span> Rscript <span class="at">-e</span> <span class="dt">\</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="st">'mcptools::mcp_server(tools = radiatR::radiatR_tools(), session_tools = FALSE)'</span></span></code></pre></div>
+<p>Or register them with an ellmer chat:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">chat</span> <span class="op">&lt;-</span> <span class="fu">ellmer</span><span class="fu">::</span><span class="fu"><a href="https://ellmer.tidyverse.org/reference/chat_anthropic.html" class="external-link">chat_anthropic</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">chat</span><span class="op">$</span><span class="fu">register_tools</span><span class="op">(</span><span class="fu"><a href="../reference/radiatR_tools.html">radiatR_tools</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>What the tools guarantee:</p>
+<ul>
+<li>
+<strong>Handles.</strong> Loaded and derived objects are referred to
+by name (<code>tracks_1</code>, <code>headings_1</code>). They live in
+the server process, so they cannot be inspected from another R
+console.</li>
+<li>
+<strong>Code.</strong> Every result includes the R code that
+produced it, and <code>radiatR_export_script</code> returns the whole
+session as one script. Running that script reproduces the data objects
+and result tables exactly. Save it with the analysis.</li>
+<li>
+<strong>Nothing filled in.</strong> The time type, the unit of a
+mapped angle column, and the unit and convention of a table of angles
+must be stated. A missing argument is an error, never a default, and so
+is an option the chosen test or method would ignore. A column that
+<code><a href="../reference/read_tracks.html">read_tracks()</a></code> would pick up by name as an angle or weight
+is refused, and so is a name in <code>keep</code>, <code>carry</code> or
+a grouping argument that is not in the data. A table of angles whose
+rows differ in length is refused. Heading derivation and every test take
+a seed.</li>
+<li>
+<strong>Nothing hidden.</strong> Warnings and printed output come
+back in the result under <code>warnings</code> and <code>output</code>.
+An error message names the condition classes, the call that failed, and
+anything raised before the failure.</li>
+<li>
+<strong>Numbers.</strong> Results are given to 15 significant
+digits; missing and non-finite values appear as the strings
+<code>"NA"</code>, <code>"NaN"</code>, <code>"Inf"</code>, so a missing
+string cannot be told from the text <code>"NA"</code>. The script holds
+the exact values.</li>
+</ul>
+<p>Limits to know about:</p>
+<ul>
+<li>
+<code>radiatR_load_tracks</code> reads a file as
+<code><a href="../reference/read_tracks.html">read_tracks()</a></code> does: the delimiter and the decimal mark are
+detected from the file, not stated. A wrong detection fails with
+<code>radiatR_malformed_values</code> or
+<code>radiatR_ambiguous_decimal</code> rather than loading wrong
+numbers. Date-times are read as UTC, a dialect’s defaults apply (for
+example, which body parts make up the position), and a workbook must
+have a single sheet.</li>
+<li>A mapped angle column must already be in the unit-circle convention;
+<code><a href="../reference/read_tracks.html">read_tracks()</a></code> has no convention argument.</li>
+<li>A file with a column named like an angle or a weight
+(<code>theta</code>, <code>angle</code>, <code>phi</code>,
+<code>bearing</code>, <code>deg</code>, <code>degrees</code>,
+<code>w</code>, <code>weight</code>, <code>weights</code>) that is not
+one cannot be loaded through the tools until the column is renamed:
+<code><a href="../reference/read_tracks.html">read_tracks()</a></code> cannot be told to leave it alone.</li>
+</ul>
+<p>The tools cover the common path only. To let the agent also read help
+pages and vignettes, serve them together with the documentation tools of
+the <a href="https://posit-dev.github.io/btw/" class="external-link">btw</a> package:
+<code>tools = c(btw::btw_tools("docs"), radiatR::radiatR_tools())</code>.</p>
+<p>An MCP server talks over standard output, so anything R prints at
+startup breaks the connection. In a project that uses renv, start the
+server with <code>RENV_CONFIG_SYNCHRONIZED_CHECK=FALSE</code> so renv’s
+status line is not printed.</p>
+</div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
 </div>

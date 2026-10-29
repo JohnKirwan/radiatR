@@ -230,3 +230,83 @@ test_mean_directions(hd, group_col = "condition", angle_col = "heading")
 9.  Letting
     [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
     guess an angle or weight column from its name.
+
+## Driving radiatR through tools
+
+[`radiatR_tools()`](https://johnkirwan.github.io/radiatR/reference/radiatR_tools.md)
+returns tool definitions for the [ellmer](https://ellmer.tidyverse.org)
+package. They let a model run an analysis without writing R: load tracks
+or a table of headings, derive headings, summarise, test and plot.
+
+Serve them to an MCP client such as Claude Code or Claude Desktop with
+the [mcptools](https://posit-dev.github.io/mcptools/) package:
+
+``` sh
+claude mcp add radiatR -- Rscript -e \
+  'mcptools::mcp_server(tools = radiatR::radiatR_tools(), session_tools = FALSE)'
+```
+
+Or register them with an ellmer chat:
+
+``` r
+
+chat <- ellmer::chat_anthropic()
+chat$register_tools(radiatR_tools())
+```
+
+What the tools guarantee:
+
+- **Handles.** Loaded and derived objects are referred to by name
+  (`tracks_1`, `headings_1`). They live in the server process, so they
+  cannot be inspected from another R console.
+- **Code.** Every result includes the R code that produced it, and
+  `radiatR_export_script` returns the whole session as one script.
+  Running that script reproduces the data objects and result tables
+  exactly. Save it with the analysis.
+- **Nothing filled in.** The time type, the unit of a mapped angle
+  column, and the unit and convention of a table of angles must be
+  stated. A missing argument is an error, never a default, and so is an
+  option the chosen test or method would ignore. A column that
+  [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  would pick up by name as an angle or weight is refused, and so is a
+  name in `keep`, `carry` or a grouping argument that is not in the
+  data. A table of angles whose rows differ in length is refused.
+  Heading derivation and every test take a seed.
+- **Nothing hidden.** Warnings and printed output come back in the
+  result under `warnings` and `output`. An error message names the
+  condition classes, the call that failed, and anything raised before
+  the failure.
+- **Numbers.** Results are given to 15 significant digits; missing and
+  non-finite values appear as the strings `"NA"`, `"NaN"`, `"Inf"`, so a
+  missing string cannot be told from the text `"NA"`. The script holds
+  the exact values.
+
+Limits to know about:
+
+- `radiatR_load_tracks` reads a file as
+  [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  does: the delimiter and the decimal mark are detected from the file,
+  not stated. A wrong detection fails with `radiatR_malformed_values` or
+  `radiatR_ambiguous_decimal` rather than loading wrong numbers.
+  Date-times are read as UTC, a dialect’s defaults apply (for example,
+  which body parts make up the position), and a workbook must have a
+  single sheet.
+- A mapped angle column must already be in the unit-circle convention;
+  [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  has no convention argument.
+- A file with a column named like an angle or a weight (`theta`,
+  `angle`, `phi`, `bearing`, `deg`, `degrees`, `w`, `weight`, `weights`)
+  that is not one cannot be loaded through the tools until the column is
+  renamed:
+  [`read_tracks()`](https://johnkirwan.github.io/radiatR/reference/read_tracks.md)
+  cannot be told to leave it alone.
+
+The tools cover the common path only. To let the agent also read help
+pages and vignettes, serve them together with the documentation tools of
+the [btw](https://posit-dev.github.io/btw/) package:
+`tools = c(btw::btw_tools("docs"), radiatR::radiatR_tools())`.
+
+An MCP server talks over standard output, so anything R prints at
+startup breaks the connection. In a project that uses renv, start the
+server with `RENV_CONFIG_SYNCHRONIZED_CHECK=FALSE` so renv’s status line
+is not printed.
