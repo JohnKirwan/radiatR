@@ -55,6 +55,7 @@ Imports:
 Suggests:
     bpDir,
     dplyr (>= 1.0.0),
+    ellmer (>= 0.5.0),
     testthat (>= 3.2.0),
     knitr,
     rmarkdown,
@@ -83,6 +84,7 @@ VignetteBuilder: knitr
 Collate:
     'conditions.R'
     'agent_runtime.R'
+    'agent_tools.R'
     'Tracks.R'
     'circular_boxplot.R'
     'circular_mapping.R'
