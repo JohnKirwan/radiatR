@@ -238,7 +238,9 @@ Limits to know about:
 - `radiatR_load_tracks` reads a file as `read_tracks()` does: the delimiter
   and the decimal mark are detected from the file, not stated. A wrong
   detection fails with `radiatR_malformed_values` or
-  `radiatR_ambiguous_decimal` rather than loading wrong numbers.
+  `radiatR_ambiguous_decimal` rather than loading wrong numbers. Date-times
+  are read as UTC, a dialect's defaults apply (for example, which body parts
+  make up the position), and a workbook must have a single sheet.
 - A mapped angle column must already be in the unit-circle convention;
   `read_tracks()` has no convention argument.
 - A file with a column named like an angle or a weight (`theta`, `angle`,

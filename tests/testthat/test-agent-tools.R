@@ -622,3 +622,80 @@ test_that("a tool that prints does not write to stdout", {
   env <- jsonlite::fromJSON(.agent_envelope(run), simplifyVector = FALSE)
   expect_match(env$output, "to stdout", fixed = TRUE)
 })
+
+test_that("a kept column absent from one of several files is refused", {
+  fx <- agent_fixture()
+  tools <- radiatR_tools()
+  a <- fx$sim[fx$sim$condition == "control", ]
+  b <- fx$sim[fx$sim$condition != "control", ]
+  names(b)[names(b) == "condition"] <- "Condition"
+  paths <- c(agent_write(a, fx$dir, "fa.csv"), agent_write(b, fx$dir, "fb.csv"))
+  err <- expect_error(
+    tools$load_tracks(paths = paths, time_type = "frames", fps = 30,
+                      mapping = fx$mapping, keep = "condition"),
+    class = "radiatR_invalid_argument")
+  expect_match(conditionMessage(err), "'condition'.*fb\\.csv")
+  expect_length(agent_store_of(tools)$log, 0L)
+  # Present in every file: loads.
+  b$Condition <- NULL
+  b$condition <- "stimulus"
+  paths[2] <- agent_write(b, fx$dir, "fb.csv")
+  res <- agent_json(tools$load_tracks(paths = paths, time_type = "frames", fps = 30,
+                                      mapping = fx$mapping, keep = "condition"))
+  expect_identical(res$handle, "tracks_1")
+})
+
+test_that("a workbook with more than one sheet is refused", {
+  skip_if_not_installed("readxl")
+  skip_if_not_installed("writexl")
+  fx <- agent_fixture()
+  tools <- radiatR_tools()
+  xl <- file.path(fx$dir, "two.xlsx")
+  writexl::write_xlsx(list(day1 = fx$sim, day2 = fx$sim), xl)
+  err <- expect_error(
+    tools$load_tracks(paths = xl, time_type = "frames", fps = 30,
+                      mapping = fx$mapping),
+    class = "radiatR_invalid_argument")
+  expect_match(conditionMessage(err), "day1, day2", fixed = TRUE)
+  one <- file.path(fx$dir, "one.xlsx")
+  writexl::write_xlsx(list(day1 = fx$sim), one)
+  res <- agent_json(tools$load_tracks(paths = one, time_type = "frames", fps = 30,
+                                      mapping = fx$mapping))
+  expect_identical(res$handle, "tracks_1")
+})
+
+test_that("a string rule parameter must be one of the rule's choices in full", {
+  fx <- agent_fixture()
+  tools <- radiatR_tools()
+  agent_load(tools, fx)
+  derive <- function(...) tools$derive_headings(handle = "tracks_1", seed = 1L, ...)
+  err <- expect_error(
+    derive(rule = "crossing", params = list(circ0 = 0.2, circ1 = 0.8, direction = "in")),
+    class = "radiatR_invalid_argument")
+  expect_match(conditionMessage(err), "'outward', 'inward' (got 'in')", fixed = TRUE)
+  # "either" is a ring_tangent direction, not a crossing one.
+  expect_error(
+    derive(rule = "crossing", params = list(circ0 = 0.2, circ1 = 0.8, direction = "either")),
+    class = "radiatR_invalid_argument")
+  expect_error(derive(rule = "velocity_mean", params = list(weight_by = "step")),
+               class = "radiatR_invalid_argument")
+  expect_error(derive(rule = "pca_axis", params = list(source = "vel")),
+               class = "radiatR_invalid_argument")
+  res <- agent_json(derive(rule = "pca_axis", params = list(source = "velocity")))
+  expect_identical(res$handle, "headings_1")
+})
+
+test_that("the rule-parameter choices match the rule helpers", {
+  helper <- function(rule)
+    get(paste0(".set_headings_", if (rule == "vm_fit") "velocity_mean" else rule, "_one"))
+  for (rule in names(.agent_rule_param_choices))
+    for (p in names(.agent_rule_param_choices[[rule]]))
+      expect_identical(.agent_rule_param_choices[[rule]][[p]],
+                       eval(formals(helper(rule))[[p]]), label = paste(rule, p))
+  # Every string parameter of every rule has its choices listed.
+  for (rule in names(.agent_rule_params)) {
+    strings <- .agent_rule_params[[rule]][
+      .agent_rule_param_types[.agent_rule_params[[rule]]] == "string"]
+    expect_setequal(names(.agent_rule_param_choices[[rule]]) %||% character(), strings)
+  }
+})

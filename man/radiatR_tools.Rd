@@ -27,9 +27,11 @@ The tools do not fill in what was left unsaid: the time type, the unit of
 any angle column, the convention of a table of angles, and a seed for
 heading derivation and for every test must be stated. A missing or invalid
 argument is an error rather than a default, and so is an argument the call
-would ignore. One thing is still detected rather than stated: \code{load_tracks}
+would ignore. Some things are still chosen rather than stated: \code{load_tracks}
 reads a file as \code{\link[=read_tracks]{read_tracks()}} does, sniffing its delimiter and decimal
-mark. Warnings and printed
+mark, reading date-times as UTC, and taking a dialect's defaults (such as
+which body parts make up the position); it refuses a workbook with more
+than one sheet. Warnings and printed
 output are returned to the model in the result instead of being written to
 the console, and an error message carries the condition class, the failing
 call, and anything raised before the failure.

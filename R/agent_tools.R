@@ -34,6 +34,17 @@
   smooth_n = "integer", deriv_span = "integer"
 )
 
+# Choices of each string rule parameter, taken in full: the rule helpers
+# match.arg() them, which would accept an abbreviation.
+.agent_rule_param_choices <- list(
+  crossing      = list(direction = c("outward", "inward")),
+  pca_axis      = list(source = c("position", "velocity")),
+  velocity_mean = list(weight_by = c("uniform", "step_length")),
+  velocity_axis = list(weight_by = c("step_length", "uniform")),
+  vm_fit        = list(weight_by = c("uniform", "step_length")),
+  ring_tangent  = list(direction = c("either", "outward", "inward"))
+)
+
 .agent_roles <- c("id", "time", "x", "y", "angle", "weight")
 .agent_delim_readers <- c(comma = "read.csv", semicolon = "read.csv2", tab = "read.delim")
 .agent_delim_seps <- c(comma = ",", semicolon = ";", tab = "\t")
@@ -125,6 +136,19 @@
 # The tool never lets that pass: a weight role nobody mapped, or an angle that
 # is not simply the direction of the stored position, means a column was
 # guessed.
+.agent_check_kept <- function(ts, keep) {
+  src <- ts@data[["..source_file"]]
+  if (!length(keep) || is.null(src)) return(invisible(NULL))
+  for (col in keep) {
+    empty <- names(which(tapply(is.na(ts@data[[col]]), src, all)))
+    if (length(empty))
+      .agent_invalid("keep", sprintf(
+        "columns that hold values in every file: '%s' is absent or empty in %s, so those tracks would drop out of grouped results",
+        col, paste(empty, collapse = ", ")))
+  }
+  invisible(NULL)
+}
+
 .agent_check_roles <- function(ts, mapping) {
   if (is.null(mapping$weight) && !is.null(ts@cols$weight))
     rlang::abort(
@@ -215,6 +239,7 @@
       if (is.null(origin_x) != is.null(origin_y))
         .agent_invalid("origin_x, origin_y", "given together or not at all")
       keep <- .agent_strings(keep, "keep")
+      .agent_check_sheets(paths)
 
       handle <- .agent_next_handle(store, "tracks")
       run <- .agent_run(store, "radiatR_load_tracks", list(.agent_step(
@@ -234,12 +259,29 @@
         creates = handle,
         check = function(ts) {
           .agent_columns(keep, names(ts@data), "keep")
+          .agent_check_kept(ts, keep)
           .agent_check_roles(ts, mapping)
         })))
       .agent_envelope(run, handle = handle,
                       result = .agent_describe(run$value),
                       units = .agent_units())
     })
+}
+
+# read_tracks() reads the first sheet of a workbook unless told otherwise, and
+# the tools do not take a sheet, so a workbook with more sheets is refused.
+.agent_check_sheets <- function(paths) {
+  books <- paths[tolower(tools::file_ext(paths)) %in% c("xlsx", "xls")]
+  if (!length(books) || !requireNamespace("readxl", quietly = TRUE))
+    return(invisible(NULL))   # read_tracks() itself stops without readxl
+  for (p in books) {
+    sheets <- readxl::excel_sheets(p)
+    if (length(sheets) > 1L)
+      .agent_invalid("paths", sprintf(
+        "workbooks with a single sheet: '%s' has sheets %s and only the first would be read. Save each sheet as its own file",
+        p, paste(sheets, collapse = ", ")))
+  }
+  invisible(NULL)
 }
 
 # read.csv() reshapes a file whose records differ in length without a word: a
@@ -313,8 +355,13 @@
     type <- switch(.agent_rule_param_types[[p]],
                    number = ellmer::type_number, integer = ellmer::type_integer,
                    string = ellmer::type_string, boolean = ellmer::type_boolean)
-    type(sprintf("Rule parameter `%s`; see ?radiatR::derive_headings.", p),
-         required = FALSE)
+    desc <- sprintf("Rule parameter `%s`; see ?radiatR::derive_headings.", p)
+    if (identical(type, ellmer::type_string)) {
+      choices <- unique(unlist(lapply(.agent_rule_param_choices, `[[`, p)))
+      return(ellmer::type_enum(choices, paste(desc, "Which values apply depends on the rule."),
+                               required = FALSE))
+    }
+    type(desc, required = FALSE)
   })
   names(rule_props) <- names(.agent_rule_param_types)
   .agent_tool(
@@ -345,7 +392,8 @@
           .agent_rule_param_types[[p]],
           number = .agent_number(params[[p]], arg),
           integer = .agent_number(params[[p]], arg, whole = TRUE),
-          string = .agent_string(params[[p]], arg),
+          string = .agent_string(params[[p]], arg,
+                                 .agent_rule_param_choices[[rule]][[p]]),
           boolean = .agent_flag(params[[p]], arg))
       }
       carry <- .agent_columns(.agent_strings(carry, "carry"),
@@ -565,9 +613,11 @@
 #' any angle column, the convention of a table of angles, and a seed for
 #' heading derivation and for every test must be stated. A missing or invalid
 #' argument is an error rather than a default, and so is an argument the call
-#' would ignore. One thing is still detected rather than stated: `load_tracks`
+#' would ignore. Some things are still chosen rather than stated: `load_tracks`
 #' reads a file as [read_tracks()] does, sniffing its delimiter and decimal
-#' mark. Warnings and printed
+#' mark, reading date-times as UTC, and taking a dialect's defaults (such as
+#' which body parts make up the position); it refuses a workbook with more
+#' than one sheet. Warnings and printed
 #' output are returned to the model in the result instead of being written to
 #' the console, and an error message carries the condition class, the failing
 #' call, and anything raised before the failure.
