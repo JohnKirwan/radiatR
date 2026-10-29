@@ -6,15 +6,14 @@
 # development version, not the CRAN release, so the manifest must record radiatR
 # with its GitHub remote -- which requires radiatR
 # to be *installed from GitHub* when the manifest is written. This workflow does
-# that in a clean environment and opens a PR with the regenerated manifest.
-#
-# The PR is opened with MANIFEST_PAT (a fine-grained token of the repo owner,
-# Contents + Pull requests: read/write), not GITHUB_TOKEN: a PR opened by
+# that in a clean environment and pushes the regenerated manifest to the
+# chore/connect-manifest branch. It does not open the PR: a PR opened by
 # github-actions[bot] makes a squash-merge author the commit as the bot, which
-# adds it to the repo's contributors.
+# adds it to the repo's contributors. Open it yourself with the `gh pr create`
+# command printed in the run summary.
 #
 # Run it (Actions -> "connect-manifest" -> Run workflow) whenever the app's
-# dependencies or the pinned R version change. Merge the PR; Connect Cloud
+# dependencies or the pinned R version change. Open and merge the PR; Connect Cloud
 # redeploys from the updated manifest on the next push to the tracked branch.
 on:
   workflow_dispatch:
@@ -28,7 +27,6 @@ name: connect-manifest
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   manifest:
@@ -95,26 +93,26 @@ jobs:
                  paste0("  ", names(bad), ": ", bad, collapse = "\n"), call. = FALSE)
           }
 
-      - name: Require MANIFEST_PAT
+      - name: Push regenerated manifest
         env:
-          MANIFEST_PAT: ${{ secrets.MANIFEST_PAT }}
+          RADIATR_REF: ${{ github.event.inputs.ref || 'main' }}
         run: |
-          if [ -z "$MANIFEST_PAT" ]; then
-            echo "::error::secret MANIFEST_PAT is not set; refusing to open the PR as github-actions[bot]"
-            exit 1
+          git config user.name JohnKirwan
+          git config user.email 3696221+JohnKirwan@users.noreply.github.com
+          git add inst/app/manifest.json
+          if git diff --cached --quiet; then
+            echo "::notice::inst/app/manifest.json is unchanged; nothing to push"
+            exit 0
           fi
-
-      - name: Open PR with regenerated manifest
-        uses: peter-evans/create-pull-request@v6
-        with:
-          token: ${{ secrets.MANIFEST_PAT }}
-          author: JohnKirwan <3696221+JohnKirwan@users.noreply.github.com>
-          committer: JohnKirwan <3696221+JohnKirwan@users.noreply.github.com>
-          add-paths: inst/app/manifest.json
-          branch: chore/connect-manifest
-          title: "chore: regenerate Connect Cloud manifest"
-          commit-message: "chore: regenerate inst/app/manifest.json"
-          body: |
-            Regenerated `inst/app/manifest.json` via the `connect-manifest`
-            workflow (radiatR ref: `${{ github.event.inputs.ref || 'main' }}`).
-            Merge to update the dependencies Posit Connect Cloud installs.
+          git commit -m "chore: regenerate inst/app/manifest.json"
+          # chore/connect-manifest belongs to this workflow; each run replaces it.
+          git push --force origin HEAD:refs/heads/chore/connect-manifest
+          {
+            echo "Pushed \`chore/connect-manifest\`. Open the PR as yourself:"
+            echo
+            echo '```sh'
+            echo "gh pr create --base main --head chore/connect-manifest \\"
+            echo "  --title 'chore: regenerate Connect Cloud manifest' \\"
+            echo "  --body 'Regenerated inst/app/manifest.json via the connect-manifest workflow (radiatR ref: $RADIATR_REF).'"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
