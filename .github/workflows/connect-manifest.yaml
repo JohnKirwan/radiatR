@@ -2,8 +2,9 @@
 #
 # Connect Cloud is git-backed: it pulls this repo and rebuilds the app in
 # inst/app on every push, resolving R package dependencies from the committed
-# manifest.json (there is no deploy step and no secrets). radiatR is not on CRAN,
-# so the manifest must record it with its GitHub remote -- which requires radiatR
+# manifest.json (there is no deploy step and no secrets). The app tracks the
+# development version, not the CRAN release, so the manifest must record radiatR
+# with its GitHub remote -- which requires radiatR
 # to be *installed from GitHub* when the manifest is written. This workflow does
 # that in a clean environment and opens a PR with the regenerated manifest.
 #
