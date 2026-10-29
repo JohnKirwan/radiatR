@@ -308,6 +308,216 @@
     })
 }
 
+.tool_derive_headings <- function(store) {
+  rule_props <- lapply(names(.agent_rule_param_types), function(p) {
+    type <- switch(.agent_rule_param_types[[p]],
+                   number = ellmer::type_number, integer = ellmer::type_integer,
+                   string = ellmer::type_string, boolean = ellmer::type_boolean)
+    type(sprintf("Rule parameter `%s`; see ?radiatR::derive_headings.", p),
+         required = FALSE)
+  })
+  names(rule_props) <- names(.agent_rule_param_types)
+  .agent_tool(
+    "derive_headings", "Derive one heading per track",
+    "Derive heading angles from a Tracks handle with radiatR::derive_headings() and return a headings handle. Radii in rule parameters are in the same units as the track coordinates (1 = arena edge only if the tracks were calibrated or normalised). Tracks for which the rule yields no heading are kept as NA and reported; such attrition is often non-random. Use `carry` to bring grouping columns across. radiatR_list_options shows which parameters each rule accepts.",
+    list(
+      handle = ellmer::type_string("Tracks handle, e.g. 'tracks_1'."),
+      rule = ellmer::type_enum(names(.agent_rule_params), "Heading rule."),
+      seed = .agent_arg_seed(),
+      params = do.call(ellmer::type_object, c(
+        list(.description = "Parameters for the chosen rule. A parameter the rule does not use is an error."),
+        rule_props, list(.required = FALSE))),
+      carry = ellmer::type_array(ellmer::type_string(),
+        "Track columns to copy onto the headings (e.g. grouping columns).", required = FALSE),
+      coords = ellmer::type_enum(c("absolute", "relative"),
+        "Coordinate frame. Default 'absolute'.", required = FALSE),
+      on_missing = ellmer::type_enum(c("warn", "error", "quiet"),
+        "What to do when a track yields no heading. Default 'warn' (reported under `warnings`).", required = FALSE)
+    ),
+    function(handle = NULL, rule = NULL, seed = NULL, params = NULL,
+             carry = NULL, coords = NULL, on_missing = NULL) {
+      ts <- .agent_get(store, handle, "Tracks")
+      rule <- .agent_string(rule, "rule", names(.agent_rule_params))
+      params <- .agent_object(params, "params", .agent_rule_params[[rule]])
+      for (p in names(params)) {
+        arg <- paste0("params.", p)
+        params[[p]] <- switch(
+          .agent_rule_param_types[[p]],
+          number = .agent_number(params[[p]], arg),
+          integer = .agent_number(params[[p]], arg, whole = TRUE),
+          string = .agent_string(params[[p]], arg),
+          boolean = .agent_flag(params[[p]], arg))
+      }
+      carry <- .agent_columns(.agent_strings(carry, "carry"),
+                              names(as.data.frame(ts)), "carry")
+      out <- .agent_next_handle(store, "headings")
+      run <- .agent_run(store, "radiatR_derive_headings", list(
+        .agent_seed_step(seed),
+        .agent_step(
+          "derive_headings",
+          c(list(rlang::sym(handle), rule = rule), params,
+            .agent_args(
+              carry = carry,
+              coords = .agent_string(coords, "coords",
+                                     c("absolute", "relative"), required = FALSE),
+              on_missing = .agent_string(on_missing, "on_missing",
+                                         c("warn", "error", "quiet"),
+                                         required = FALSE))),
+          creates = out)))
+      hd <- run$value
+      # n_total and n_missing count result rows, which exceed the number of
+      # tracks for rules that return several headings per track.
+      .agent_envelope(
+        run, handle = out,
+        result = c(.agent_describe(hd),
+                   list(n_total = attr(hd, "n_total", exact = TRUE),
+                        n_missing = attr(hd, "n_missing", exact = TRUE))),
+        units = .agent_units())
+    })
+}
+
+# ---- analysis ----------------------------------------------------------------
+.agent_headings <- function(store, handle) {
+  hd <- .agent_get(store, handle, "headings_frame")
+  list(data = hd, col = attr(hd, "heading_col", exact = TRUE))
+}
+
+.tool_summarise <- function(store) {
+  .agent_tool(
+    "summarise", "Circular summary statistics",
+    "Summarise a headings handle with radiatR::circ_summarise(): n, mean direction, resultant length and concentration, optionally per group. `mean_dir` is in radians; `mean_dir_deg` is in the display convention reported under `units`, which is NOT a plain radians-to-degrees conversion.",
+    list(
+      handle = ellmer::type_string("Headings handle, e.g. 'headings_1'."),
+      by = ellmer::type_array(ellmer::type_string(), "Grouping column(s).", required = FALSE),
+      axial = ellmer::type_boolean("TRUE for axial (bidirectional) data. Default FALSE.", required = FALSE)
+    ),
+    function(handle = NULL, by = NULL, axial = NULL) {
+      hd <- .agent_headings(store, handle)
+      by <- .agent_columns(.agent_strings(by, "by"), names(hd$data), "by")
+      run <- .agent_run(store, "radiatR_summarise", list(.agent_step(
+        "circ_summarise",
+        c(list(rlang::sym(handle), col = hd$col, units = "radians"),
+          .agent_args(.by = by, axial = .agent_flag(axial, "axial"))))))
+      .agent_envelope(run, result = as.data.frame(run$value),
+                      units = .agent_units(circ_display()))
+    })
+}
+
+.tool_test_uniformity <- function(store) {
+  tests <- .agent_choices(test_uniformity, "test")
+  p_methods <- .agent_choices(test_uniformity, "p_method")
+  .agent_tool(
+    "test_uniformity", "Test for uniformity",
+    "Test whether headings are uniformly distributed around the circle with radiatR::test_uniformity(), optionally per group. An option the chosen test does not use is an error, not ignored.",
+    list(
+      handle = ellmer::type_string("Headings handle, e.g. 'headings_1'."),
+      seed = .agent_arg_seed(),
+      test = ellmer::type_enum(tests, "Test to run. Default 'rayleigh'.", required = FALSE),
+      group_col = ellmer::type_string("Column to test within, one result row per group.", required = FALSE),
+      axial = ellmer::type_boolean("TRUE for axial (bidirectional) data.", required = FALSE),
+      p_method = ellmer::type_enum(p_methods, "Tests 'kuiper', 'rao' and 'watson' only: tabled significance level ('table', the default) or a simulated p-value ('monte_carlo').", required = FALSE),
+      n_sim = ellmer::type_integer("Monte Carlo simulations, for p_method 'monte_carlo' and for tests 'hermans_rasson' and 'pycke' only. Default 9999.", required = FALSE),
+      p_adjust = ellmer::type_enum(stats::p.adjust.methods, "Multiple-comparison adjustment across groups; only with group_col. Default 'none'.", required = FALSE),
+      mu = ellmer::type_number("Expected direction in radians, for test 'vtest' only.", required = FALSE)
+    ),
+    function(handle = NULL, seed = NULL, test = NULL, group_col = NULL,
+             axial = NULL, p_method = NULL, n_sim = NULL, p_adjust = NULL,
+             mu = NULL) {
+      hd <- .agent_headings(store, handle)
+      test <- .agent_string(test, "test", tests, required = FALSE)
+      mu <- .agent_number(mu, "mu")
+      if (!identical(test, "vtest")) .agent_unused(mu, "mu", "test is 'vtest'")
+      group_col <- .agent_string(group_col, "group_col", required = FALSE)
+      .agent_columns(group_col, names(hd$data), "group_col")
+      if (!isTRUE(test %in% .agent_mc_tests))
+        .agent_unused(p_method, "p_method", sprintf(
+          "test is one of %s", paste0("'", .agent_mc_tests, "'", collapse = ", ")))
+      p_method <- .agent_string(p_method, "p_method", p_methods, required = FALSE)
+      if (!identical(p_method, "monte_carlo") && !isTRUE(test %in% .agent_sim_tests))
+        .agent_unused(n_sim, "n_sim", sprintf(
+          "p_method is 'monte_carlo' or test is one of %s",
+          paste0("'", .agent_sim_tests, "'", collapse = ", ")))
+      if (is.null(group_col))
+        .agent_unused(p_adjust, "p_adjust", "group_col is given")
+      run <- .agent_run(store, "radiatR_test_uniformity", list(
+        .agent_seed_step(seed),
+        .agent_step(
+          "test_uniformity",
+          c(list(rlang::sym(handle)),
+            .agent_args(
+              group_col = group_col, angle_col = hd$col, test = test,
+              p_adjust = .agent_string(p_adjust, "p_adjust",
+                                       stats::p.adjust.methods, required = FALSE),
+              axial = .agent_flag(axial, "axial"),
+              n_sim = .agent_number(n_sim, "n_sim", whole = TRUE, min = 1),
+              mu = mu, p_method = p_method)))))
+      .agent_envelope(run, result = as.data.frame(run$value),
+                      units = .agent_units())
+    })
+}
+
+.tool_compare_groups <- function(store) {
+  .agent_tool(
+    "compare_groups", "Compare groups",
+    "Compare groups of headings: 'mean_direction' (radiatR::test_mean_directions), 'concentration' (radiatR::test_concentration) or 'distribution' (radiatR::test_distributions). An argument the chosen aspect or method does not use is an error, not ignored. radiatR_list_options lists the methods for each aspect.",
+    list(
+      handle = ellmer::type_string("Headings handle, e.g. 'headings_1'."),
+      aspect = ellmer::type_enum(names(.agent_compare_fns), "What to compare."),
+      group_col = ellmer::type_string("Grouping column."),
+      seed = .agent_arg_seed(),
+      method = ellmer::type_string("Method for the aspect (mean_direction, distribution), named in full.", required = FALSE),
+      parametric = ellmer::type_boolean("Concentration only: parametric test (TRUE) or not.", required = FALSE),
+      pairwise = ellmer::type_boolean("Also run pairwise comparisons (mean_direction, distribution).", required = FALSE),
+      p_adjust = ellmer::type_enum(stats::p.adjust.methods, "Adjustment for pairwise p-values; only with pairwise true.", required = FALSE),
+      axial = ellmer::type_boolean("TRUE for axial (bidirectional) data.", required = FALSE),
+      p_method = ellmer::type_enum(c("table", "monte_carlo"), "Distribution with method 'watson_two' only: tabled band or permutation p-value.", required = FALSE),
+      n_perm = ellmer::type_integer("Label permutations, for method 'permutation' or p_method 'monte_carlo' only. Default 9999.", required = FALSE)
+    ),
+    function(handle = NULL, aspect = NULL, group_col = NULL, seed = NULL,
+             method = NULL, parametric = NULL, pairwise = NULL, p_adjust = NULL,
+             axial = NULL, p_method = NULL, n_perm = NULL) {
+      hd <- .agent_headings(store, handle)
+      aspect <- .agent_string(aspect, "aspect", names(.agent_compare_fns))
+      group_col <- .agent_columns(.agent_string(group_col, "group_col"),
+                                  names(hd$data), "group_col")
+      fn <- get(.agent_compare_fns[[aspect]], mode = "function")
+      given <- .agent_compact(list(
+        method = method, parametric = parametric, pairwise = pairwise,
+        p_adjust = p_adjust, axial = axial, p_method = p_method, n_perm = n_perm))
+      for (arg in setdiff(names(given), names(formals(fn))))
+        .agent_unused(given[[arg]], arg, sprintf(
+          "the aspect takes it ('%s' does not)", aspect))
+      if ("method" %in% names(formals(fn)))
+        method <- .agent_string(method, "method", .agent_choices(fn, "method"),
+                                required = FALSE)
+      pairwise <- .agent_flag(pairwise, "pairwise")
+      if (!isTRUE(pairwise)) .agent_unused(p_adjust, "p_adjust", "pairwise is true")
+      if (aspect == "distribution" && !identical(method, "watson_two"))
+        .agent_unused(p_method, "p_method", "method is 'watson_two'")
+      p_method <- .agent_string(p_method, "p_method", c("table", "monte_carlo"),
+                                required = FALSE)
+      if (!identical(method, "permutation") && !identical(p_method, "monte_carlo"))
+        .agent_unused(n_perm, "n_perm",
+                      "method is 'permutation' or p_method is 'monte_carlo'")
+      run <- .agent_run(store, "radiatR_compare_groups", list(
+        .agent_seed_step(seed),
+        .agent_step(
+          .agent_compare_fns[[aspect]],
+          c(list(rlang::sym(handle), group_col = group_col, angle_col = hd$col),
+            .agent_args(
+              method = method,
+              parametric = .agent_flag(parametric, "parametric"),
+              pairwise = pairwise,
+              p_adjust = .agent_string(p_adjust, "p_adjust",
+                                       stats::p.adjust.methods, required = FALSE),
+              axial = .agent_flag(axial, "axial"),
+              p_method = p_method,
+              n_perm = .agent_number(n_perm, "n_perm", whole = TRUE, min = 1))))))
+      .agent_envelope(run, result = as.data.frame(run$value),
+                      units = .agent_units())
+    })
+}
+
 # ---- public ------------------------------------------------------------------
 #' Tools for driving radiatR from an AI agent
 #'
@@ -357,7 +567,9 @@ radiatR_tools <- function() {
   store <- .agent_store()
   builders <- list(
     list_options = .tool_list_options, load_tracks = .tool_load_tracks,
-    load_headings = .tool_load_headings, describe = .tool_describe,
+    load_headings = .tool_load_headings, derive_headings = .tool_derive_headings,
+    describe = .tool_describe, summarise = .tool_summarise,
+    test_uniformity = .tool_test_uniformity, compare_groups = .tool_compare_groups,
     export_script = .tool_export_script)
   lapply(builders, function(build) build(store))
 }

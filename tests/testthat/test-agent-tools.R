@@ -319,3 +319,206 @@ test_that("two tool sets do not share a session", {
   agent_load(a, fx)
   expect_length(agent_json(b$describe())$result$handles, 0L)
 })
+
+agent_headings <- function(tools, fx) {
+  agent_load(tools, fx)
+  agent_json(tools$derive_headings(handle = "tracks_1", rule = "distal",
+                                   seed = 1L, params = list(max_radius = 1),
+                                   carry = "condition"))
+}
+
+test_that("derive_headings returns a headings handle and the attrition counts", {
+  fx <- agent_fixture()
+  tools <- radiatR_tools()
+  res <- agent_headings(tools, fx)
+
+  expect_identical(res$handle, "headings_1")
+  expect_identical(res$result$n_tracks, 60L)
+  expect_identical(res$result$n_total, 60L)
+  expect_identical(res$result$n_missing, 0L)
+  expect_identical(
+    res$code,
+    paste0("base::set.seed(1L)\n",
+           'headings_1 <- radiatR::derive_headings(tracks_1, rule = "distal", max_radius = 1, carry = "condition")'))
+})
+
+test_that("derive_headings checks rule parameters, carry columns and the seed", {
+  fx <- agent_fixture()
+  tools <- radiatR_tools()
+  agent_load(tools, fx)
+  derive <- function(...) tools$derive_headings(handle = "tracks_1", ...)
+
+  err <- expect_error(derive(rule = "distal", seed = 1L, params = list(circ0 = 0.2)),
+                      class = "radiatR_invalid_argument")
+  expect_match(conditionMessage(err), "unknown: circ0", fixed = TRUE)
+  expect_error(derive(rule = "straight", seed = 1L, params = list(min_len = 2.5)),
+               class = "radiatR_invalid_argument")
+  expect_error(derive(rule = "distal", seed = 1L, params = list(0.2)),
+               class = "radiatR_invalid_argument")
+  err <- expect_error(derive(rule = "distal", seed = 1L, carry = "conditon"),
+                      class = "radiatR_invalid_argument")
+  expect_match(conditionMessage(err), "not in the data: conditon", fixed = TRUE)
+  # A carried column may not replace one the rule produced.
+  clash <- fx$sim
+  clash$heading <- 1.234
+  tools$load_tracks(paths = agent_write(clash, fx$dir, "clash.csv"),
+                    time_type = "frames", fps = 30, mapping = fx$mapping,
+                    keep = "heading")
+  err <- expect_error(
+    tools$derive_headings(handle = "tracks_2", rule = "distal", seed = 1L,
+                          carry = "heading"),
+    class = "radiatR_invalid_argument")
+  expect_match(conditionMessage(err), "would overwrite", fixed = TRUE)
+  expect_error(derive(rule = "distal", seed = 1L, params = list(circ0 = NULL)),
+               class = "radiatR_invalid_argument")
+  expect_error(tools$derive_headings(rule = "distal", seed = 1L),
+               class = "radiatR_missing_argument")
+  expect_error(derive(rule = "distal"), class = "radiatR_missing_argument")
+  expect_error(derive(rule = "distal", seed = 5.9),
+               class = "radiatR_invalid_argument")
+  expect_error(derive(seed = 1L), class = "radiatR_missing_argument")
+  expect_error(tools$derive_headings(handle = "nope", rule = "distal", seed = 1L),
+               class = "radiatR_unknown_handle")
+  expect_identical(ls(agent_store_of(tools)$objects), c("tracks_1", "tracks_2"))
+})
+
+test_that("a rule that draws random numbers is reproducible from its seed", {
+  fx <- agent_fixture()
+  tools <- radiatR_tools()
+  agent_load(tools, fx)
+  derive <- function(seed) tools$derive_headings(
+    handle = "tracks_1", rule = "ransac_straight", seed = seed, on_missing = "quiet")
+  derive(4L); derive(4L); derive(5L)
+  objects <- agent_store_of(tools)$objects
+
+  expect_identical(objects$headings_1, objects$headings_2)
+  expect_false(identical(objects$headings_1, objects$headings_3))
+})
+
+test_that("tracks that yield no heading are reported, not hidden", {
+  fx <- agent_fixture()
+  tools <- radiatR_tools()
+  agent_load(tools, fx)
+  res <- agent_json(tools$derive_headings(
+    handle = "tracks_1", rule = "crossing", seed = 1L,
+    params = list(circ0 = 0.2, circ1 = 50)))
+
+  expect_identical(res$result$n_missing, 60L)
+  expect_length(res$result$missing_ids, 60L)
+  expect_match(res$warnings[[1]]$message, "produced no heading", fixed = TRUE)
+  expect_match(res$code, "circ0 = 0.2, circ1 = 50", fixed = TRUE)
+})
+
+test_that("summarise returns one row per group with stated units", {
+  fx <- agent_fixture()
+  tools <- radiatR_tools()
+  agent_headings(tools, fx)
+  res <- agent_json(tools$summarise(handle = "headings_1", by = "condition"))
+
+  expect_length(res$result, 3L)
+  expect_identical(res$result[[1]]$n, 20L)
+  expect_match(res$units$mean_dir_deg, "display convention", fixed = TRUE)
+  expect_identical(
+    res$code,
+    'radiatR::circ_summarise(headings_1, col = "heading", units = "radians", .by = "condition")')
+  expect_error(tools$summarise(handle = "tracks_1"),
+               class = "radiatR_wrong_handle_type")
+  expect_error(tools$summarise(handle = "headings_1", by = "conditon"),
+               class = "radiatR_invalid_argument")
+})
+
+test_that("test_uniformity is seeded, reproducible and records the seed", {
+  fx <- agent_fixture()
+  tools <- radiatR_tools()
+  agent_headings(tools, fx)
+  # Kuiper with a Monte Carlo p-value draws random numbers (Rayleigh does not),
+  # and on scattered angles that p-value is not pinned at its minimum.
+  scattered <- agent_write(
+    data.frame(a = withr::with_seed(42, stats::runif(25, 0, 360))),
+    fx$dir, "scattered.csv")
+  tools$load_headings(path = scattered, delim = "comma", col = "a",
+                      units = "degrees", angle_convention = "unit_circle")
+  run <- function(seed, ...) agent_json(tools$test_uniformity(
+    handle = "headings_2", seed = seed, test = "kuiper",
+    p_method = "monte_carlo", n_sim = 199L, ...))
+  first <- run(11L)
+  second <- run(11L)
+  p <- function(res) res$result[[1]]$p_value
+
+  expect_identical(first$result, second$result)
+  expect_false(all(vapply(12:16, function(s) identical(p(run(s)), p(first)), NA)))
+  expect_match(first$code, "^base::set.seed\\(11L\\)\n")
+  expect_identical(first$result[[1]]$test, "kuiper")
+
+  uniformity <- function(...) tools$test_uniformity(handle = "headings_1", ...)
+  expect_error(uniformity(), class = "radiatR_missing_argument")
+  # An option the chosen test would ignore is refused, never silently dropped.
+  refused <- function(...) expect_error(uniformity(seed = 1L, ...),
+                                        class = "radiatR_invalid_argument")
+  refused(mu = 1)
+  refused(p_method = "monte_carlo")                      # default test: Rayleigh
+  refused(test = "rayleigh", p_method = "monte_carlo")
+  refused(test = "kuiper", n_sim = 50L)                  # tabled p-value
+  refused(test = "kuiper", p_method = "monte_carlo", n_sim = 0L)
+  refused(p_adjust = "BH")                               # no group_col
+  refused(group_col = "condition", p_adjust = "bonf")    # no abbreviations
+  expect_identical(
+    agent_json(uniformity(seed = 1L, test = "pycke", n_sim = 99L))$result[[1]]$test,
+    "pycke")
+  expect_identical(
+    agent_json(tools$test_uniformity(handle = "headings_1", seed = 1L,
+                                     test = "vtest", mu = 1))$result[[1]]$test,
+    "vtest")
+})
+
+test_that("compare_groups dispatches on aspect and passes failures through", {
+  fx <- agent_fixture()
+  tools <- radiatR_tools()
+  agent_headings(tools, fx)
+  compare <- function(...) tools$compare_groups(
+    handle = "headings_1", group_col = "condition", seed = 3L, ...)
+
+  expect_match(agent_json(compare(aspect = "mean_direction"))$code,
+               "radiatR::test_mean_directions(", fixed = TRUE)
+  expect_match(agent_json(compare(aspect = "concentration"))$code,
+               "radiatR::test_concentration(", fixed = TRUE)
+  expect_match(agent_json(compare(aspect = "distribution"))$code,
+               "radiatR::test_distributions(", fixed = TRUE)
+
+  expect_error(compare(), class = "radiatR_missing_argument")
+  null_aspect <- '{"handle":"headings_1","aspect":null,"group_col":"condition","seed":3}'
+  expect_error(agent_mcp_call(tools$compare_groups, null_aspect),
+               class = "radiatR_missing_argument")
+  # An argument the aspect or method would ignore is refused, and a method or
+  # adjustment must be named in full.
+  refused <- function(...) expect_error(compare(...),
+                                        class = "radiatR_invalid_argument")
+  logged <- length(agent_store_of(tools)$log)
+  refused(aspect = "concentration", method = "watson_williams")
+  refused(aspect = "concentration", n_perm = 99L)
+  refused(aspect = "mean_direction", parametric = TRUE)
+  refused(aspect = "mean_direction", method = "perm")
+  refused(aspect = "mean_direction", n_perm = 99L)          # watson_williams
+  refused(aspect = "mean_direction", method = "permutation", n_perm = 0L)
+  refused(aspect = "mean_direction", p_adjust = "holm")     # not pairwise
+  refused(aspect = "mean_direction", pairwise = TRUE, p_adjust = "bonf")
+  refused(aspect = "distribution", p_method = "monte_carlo")   # watson_wheeler
+  refused(aspect = "distribution", method = "watson_two", n_perm = 99L)
+  expect_length(agent_store_of(tools)$log, logged)
+  two <- agent_json(compare(aspect = "distribution", method = "watson_two",
+                            pairwise = TRUE, p_method = "monte_carlo",
+                            n_perm = 99L))
+  expect_match(two$code, "n_perm = 99L", fixed = TRUE)
+})
+
+test_that("comparing on a column that was not carried names the column", {
+  fx <- agent_fixture()
+  tools <- radiatR_tools()
+  agent_load(tools, fx)
+  tools$derive_headings(handle = "tracks_1", rule = "distal", seed = 1L)
+  err <- expect_error(
+    tools$compare_groups(handle = "headings_1", aspect = "mean_direction",
+                         group_col = "condition", seed = 1L),
+    class = "radiatR_invalid_argument")
+  expect_match(conditionMessage(err), "not in the data: condition", fixed = TRUE)
+})
