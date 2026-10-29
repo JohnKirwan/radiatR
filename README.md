@@ -1,6 +1,7 @@
 # radiatR <a href="https://johnkirwan.github.io/radiatR/"><img src="man/figures/logo.png" align="right" height="139" alt="radiatR website" /></a>
 
 <!-- badges: start -->
+[![CRAN status](https://www.r-pkg.org/badges/version/radiatR)](https://CRAN.R-project.org/package=radiatR)
 [![R-CMD-check](https://github.com/JohnKirwan/radiatR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/JohnKirwan/radiatR/actions/workflows/R-CMD-check.yaml)
 [![r-universe](https://johnkirwan.r-universe.dev/badges/radiatR)](https://johnkirwan.r-universe.dev/radiatR)
 <!-- badges: end -->
